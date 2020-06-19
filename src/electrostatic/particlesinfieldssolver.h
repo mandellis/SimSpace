@@ -18,6 +18,7 @@
 #include <utility>
 #include <vector>
 #include <iostream>
+#include <fstream>
 using namespace std;
 
 //! ---
@@ -60,6 +61,9 @@ class particlesInFieldsSolver: public QObject
 public:
 
     //! constructor
+    particlesInFieldsSolver(const std::string &inputFilePath);
+
+    //! constructor
     particlesInFieldsSolver(simulationDataBase *sDB, QStandardItem *simulationRoot, QObject *parent=0);
 
     //! init
@@ -94,7 +98,8 @@ private:
 private:
 
     int myNbParticles;
-    std::map<int,shared_ptr<particle>> myParticles;
+    std::map<int,std::shared_ptr<particle>> myParticles;
+    std::shared_ptr<std::map<int,particle>> myParticles1;
     double myFinalTime;
     double myTimeStep;
 
@@ -106,6 +111,11 @@ private:
     void getElectricFieldAtPoint(double x, double y, double z, double &Ex, double &Ez, double &Ey);
     void moveParticles();
     std::string getTimeStamp();
+
+private:
+
+    bool loadTimeInfo(ifstream &inputFileStream);
+    bool loadDomainMesh(ifstream &inputFileStream);
 };
 
 #endif // PARTICLESINFIELDSSOLVER_H

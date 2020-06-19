@@ -759,6 +759,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
             case SimulationNodeClass::nodeType_thermalAnalysis:
             case SimulationNodeClass::nodeType_structuralAnalysis:
             case SimulationNodeClass::nodeType_combinedAnalysis:
+            case SimulationNodeClass::nodeType_particlesInFieldsAnalysis:
             {
                 emit requestHideAllResults();
                 emit requestUnhighlightBodies(Standard_True);
@@ -773,6 +774,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
             case SimulationNodeClass::nodeType_structuralAnalysisSettings:
             case SimulationNodeClass::nodeType_thermalAnalysisSettings:
             case SimulationNodeClass::nodeType_combinedAnalysisSettings:
+            case SimulationNodeClass::nodeType_particlesInFieldsAnalysisSettings:
             {
                 cout<<"SimulationManager::highlighter()->____analysis settings selected____"<<endl;
                 emit requestHideAllResults();

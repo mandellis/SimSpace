@@ -37,6 +37,21 @@ double tetVol(double *P0,double* P1, double *P2, double *P3)
     return (1.0/6.0)*J.determinant();
 }
 
+
+//! ----------------------
+//! function: constructor
+//! details:  from file
+//! ----------------------
+particlesInFieldsSolver::particlesInFieldsSolver(const string &inputFilePath)
+{
+    ifstream inputFileStream(inputFilePath);
+    if(inputFileStream.is_open()==false) return;
+
+    this->loadTimeInfo(inputFileStream);
+    this->loadDomainMesh(inputFileStream);
+    this->loadParticles(inputFileStream);
+}
+
 //! ----------------------
 //! function: constructor
 //! details:
@@ -443,4 +458,139 @@ std::string particlesInFieldsSolver::getTimeStamp()
     std::time_t theNow_time = std::chrono::system_clock::to_time_t(theNow);
     std::string timeStamp(std::ctime(&theNow_time));
     return timeStamp;
+}
+
+//! -----------------------
+//! function: loadTimeInfo
+//! details:
+//! -----------------------
+bool particlesInFieldsSolver::loadTimeInfo(ifstream &inputFileStream)
+{
+    std::string val;
+
+    //! header
+    std::getline(inputFileStream,val);
+    if(strcmp(val.c_str(),"Final time")!=0) return false;
+
+    //! final simulation time
+    inputFileStream>>myFinalTime;
+
+    //! header
+    std::getline(inputFileStream,val);
+    if(strcmp(val.c_str(),"Time step")!=0) return false;
+
+    //! time step size
+    inputFileStream>>myTimeStep;
+
+    return true;
+}
+
+//! -------------------------
+//! function: loadDomainMesh
+//! details:
+//! -------------------------
+bool particlesInFieldsSolver::loadDomainMesh(ifstream &inputFileStream)
+{
+    occHandle(Ng_MeshVS_DataSource3D) volumeMesh = new Ng_MeshVS_DataSource3D();
+    bool isDone = volumeMesh->readFromStream(inputFileStream);
+    if(isDone==false) return false;
+
+    //! ------------------------
+    //! setup mesh: mesh points
+    //! ------------------------
+    int NbPoints = volumeMesh->GetAllNodes().Extent();
+    V.resize(NbPoints,3);
+    for(int row=1; row<=NbPoints; row++)
+    {
+        const std::vector<double> &P = volumeMesh->getNodeCoordinates(row);
+        for(int col=1; col<=3; col++) V(row-1,col-1) = P[col];
+    }
+
+    //! --------------
+    //! mesh elements
+    //! --------------
+    int NbElements = volumeMesh->GetAllElements().Extent();
+    T.resize(NbElements,4);
+    int NbNodes = -1, buf[4];
+    TColStd_Array1OfInteger nodeIDs(*buf,1,4);
+    TColStd_IndexedMapOfInteger nodesMap = volumeMesh->myNodesMap;
+    for(int i=1; i<=NbElements; i++)
+    {
+        int globalElementID = volumeMesh->myElementsMap.FindIndex(i);
+        volumeMesh->GetNodesByElement(globalElementID,nodeIDs,NbNodes);
+
+        int row = i-1;
+        T(row,0) = nodesMap.FindIndex(nodeIDs(1))-1;
+        T(row,1) = nodesMap.FindIndex(nodeIDs(2))-1;
+        T(row,2) = nodesMap.FindIndex(nodeIDs(3))-1;
+        T(row,3) = nodesMap.FindIndex(nodeIDs(4))-1;
+
+        std::vector<double> P0 = volumeMesh->getNodeCoordinates(nodeIDs(1));
+        std::vector<double> P1 = volumeMesh->getNodeCoordinates(nodeIDs(2));
+        std::vector<double> P2 = volumeMesh->getNodeCoordinates(nodeIDs(3));
+        std::vector<double> P3 = volumeMesh->getNodeCoordinates(nodeIDs(4));
+
+        myVolumes(row) = tetVol(P0.data(),P1.data(),P2.data(),P3.data());
+    }
+
+    //! ----------------------------------------
+    //! initialize AABB tree for point location
+    //! ----------------------------------------
+    mySearchTree.init(V,T);
+
+    //! ----------------------------------------
+    //! allocate space for density distribution
+    //! and reset distribution
+    //! ----------------------------------------
+    myDensity.resize(V.rows());
+    for(int i=0; i<V.rows(); i++) myDensity(i) = 0.0;
+
+    //! --------------------------------
+    //! the same for the electric field
+    //! --------------------------------
+    myElectricField.resize(V.rows(),3);
+    for(int i=0; i<V.rows(); i++) myElectricField(i,0) = myElectricField(i,1) = myElectricField(i,2) = 0.0;
+
+    //! --------------------------
+    //! create the Poisson solver
+    //! --------------------------
+    myPoissonSolver = new PoissonSolver(volumeMesh,this);
+
+    //! -----------------------------
+    //! init the number of particles
+    //! -----------------------------
+    myNbParticles = 0;
+
+    //! ----------------------------
+    //! mass matrix and its inverse
+    //! ----------------------------
+    igl::massmatrix(V,T,igl::MASSMATRIX_TYPE_BARYCENTRIC, M);
+    igl::invert_diag(M,Minv);
+
+    //! ------------------
+    //! gradient operator
+    //! ------------------
+    igl::grad(V,T,G);
+
+    return true;
+}
+
+
+
+int particlesInFieldsSolver::loadParticles(ifstream &inputFileStream)
+{
+    int N;
+    inputFileStream>>N;
+    for(int n=1; n<=N; n++)
+    {
+        double x,y,z,m,q,r;
+        std::string val;
+        std::getline(inputFileStream,val);
+        sscanf(val.c_str(),"%lf%lf%lf%lf%lf%lf",&x,&y,&z,&vx,&vy,&vz,&m,&q,&r);
+        particle aParticle(x,y,z,vx,vy,m,q,r);
+        std::pair<int,aParticle> apair;
+        apair.first = 1;
+        apair.second = aParticle;
+        myParticles1->insert(apair);
+    }
 }

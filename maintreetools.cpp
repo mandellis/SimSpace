@@ -664,6 +664,7 @@ void mainTreeTools::addSolution(QStandardItem *analysisRootItem)
     case SimulationNodeClass::nodeType_structuralAnalysis: typeOfSolution = SimulationNodeClass::nodeType_StructuralAnalysisSolution; break;
     case SimulationNodeClass::nodeType_thermalAnalysis: typeOfSolution = SimulationNodeClass::nodeType_thermalAnalysisSolution; break;
     case SimulationNodeClass::nodeType_combinedAnalysis: typeOfSolution = SimulationNodeClass::nodeType_combinedAnalysisSolution; break;
+    case SimulationNodeClass::nodeType_particlesInFieldsAnalysis: typeOfSolution = SimulationNodeClass::nodeType_particlesInFieldsSolution; break;
     }
 
     //! ----------------
@@ -749,6 +750,7 @@ void mainTreeTools::addSolutionInformation(QStandardItem* solutionItem)
     case SimulationNodeClass::nodeType_structuralAnalysis: typeOfSolutionInformation = SimulationNodeClass::nodeType_StructuralAnalysisSolutionInformation; break;
     case SimulationNodeClass::nodeType_thermalAnalysis: typeOfSolutionInformation = SimulationNodeClass::nodeType_thermalAnalysisSolutionInformation; break;
     case SimulationNodeClass::nodeType_combinedAnalysis: typeOfSolutionInformation = SimulationNodeClass::nodeType_combinedAnalysisSolutionInformation; break;
+    case SimulationNodeClass::nodeType_particlesInFieldsAnalysis: typeOfSolutionInformation = SimulationNodeClass::nodeType_particlesInFieldsSolutionInformation; break;
     }
 
     //! ----------------

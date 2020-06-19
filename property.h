@@ -384,7 +384,8 @@ public:
         analysisType_modal,
         analysisType_frequencyResponse,
         analysisType_uncoupledTemperatureDisplacement,
-        analysisType_coupledTemperatureDisplacement
+        analysisType_coupledTemperatureDisplacement,
+        analysisType_particlesInFields
     } ant;
     Q_ENUM(analysisType)
 

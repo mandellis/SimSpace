@@ -14,12 +14,13 @@ public:
     //! constructor
     particle(double aX = 0, double aY = 0, double aZ = 0,
              double vx = 0, double vy = 0, double vz = 0,
-             double aMass = 1.0, double aCharge = 1.0)
+             double aMass = 1.0, double aCharge = 1.0, double aRadius = 0)
     {
         x[0] = aX; x[1] = aY; x[2] = aZ;
         v[0] = vx; v[1] = vy; v[2] = vz;
         mass =aMass;
         q = aCharge;
+        R = aRadius;
     }
 
     //! copy constructor
