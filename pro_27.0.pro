@@ -431,26 +431,26 @@ DEFINES += QCUSTOMPLOT_USE_LIBRARY
 #DEFINES += ONLY_MESHER
 DEFINES += NEW_HASH
 
-INCLUDEPATH = D:/Work/Qt/pro_27.0_OCC7.3.0/src/geometry \
+INCLUDEPATH = D:/Work/Qt/SimSpace/src/geometry \
               C:/OpenCASCADE7.3.0-vc14-64/opencascade-7.3.0/inc \
-              D:/Work/Qt/pro_27.0_OCC7.3.0/compatibility/StlMesh    \
+              D:/Work/Qt/SimSpace/compatibility/StlMesh    \
               "D:/Work/Costamp/OCC lib/EMESH_7.3.0_binaries_win64vc14/inc"     \
               "D:/Work/Costamp/OCC lib/OMF_7.3.0_binaries_win64vc14/inc"   \
-              D:/Work/Qt/pro_27.0_OCC7.3.0/src/mesh   \
-              D:/Work/Qt/pro_27.0_OCC7.3.0/src/viewer   \
-              D:/Work/Qt/pro_27.0_OCC7.3.0/optionsWidget    \
-              D:/Work/Qt/pro_27.0_OCC7.3.0/src/post \
-              D:/Work/Qt/pro_27.0_OCC7.3.0/src/testTools    \
-              D:/Work/Qt/pro_27.0_OCC7.3.0/databases    \
-              D:/Work/Qt/pro_27.0_OCC7.3.0/registeredMetatypes  \
-              D:/Work/Qt/pro_27.0_OCC7.3.0/src/gui  \
-              D:/Work/Qt/pro_27.0_OCC7.3.0/eigen    \
-              D:/Work/Qt/pro_27.0_OCC7.3.0    \
+              D:/Work/Qt/SimSpace/src/mesh   \
+              D:/Work/Qt/SimSpace/src/viewer   \
+              D:/Work/Qt/SimSpace/optionsWidget    \
+              D:/Work/Qt/SimSpace/src/post \
+              D:/Work/Qt/SimSpace/src/testTools    \
+              D:/Work/Qt/SimSpace/databases    \
+              D:/Work/Qt/SimSpace/registeredMetatypes  \
+              D:/Work/Qt/SimSpace/src/gui  \
+              D:/Work/Qt/SimSpace/eigen    \
+              D:/Work/Qt/SimSpace    \
               C:/CGAL-4.14/include    \
               C:/local/boost_1_69_0   \                 # needed by cgal
               C:/CGAL-4.14/auxiliary/gmp/include    \   # needed by cgal
-              D:/Work/Qt/pro_27.0_OCC7.3.0/libigl   \
-              D:/Work/Qt/pro_27.0_OCC7.3.0/src/pymesh
+              D:/Work/Qt/SimSpace/libigl   \
+              D:/Work/Qt/SimSpace/src/pymesh
 
 LIBS += \
 -lC:\OpenCASCADE7.3.0-vc14-64\opencascade-7.3.0\win64\vc14\lib\TKBin   \
