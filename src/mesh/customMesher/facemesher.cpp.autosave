@@ -1,0 +1,612 @@
+#include "custommesher.h"
+
+//! Qt
+#include <QDir>
+#include <QProcess>
+
+//! OCC
+#include <GeomAPI_ProjectPointOnSurf.hxx>
+#include <gp_Pnt.hxx>
+#include <Geom_Surface.hxx>
+#include <GeomAdaptor_Surface.hxx>
+#include <BRepAdaptor_Surface.hxx>
+#include <TopExp_Explorer.hxx>
+#include <TopoDS.hxx>
+#include <TopoDS_Edge.hxx>
+#include <TopTools_IndexedMapOfShape.hxx>
+#include <TopExp.hxx>
+#include <meshdatabase.h>
+#include <BRep_Tool.hxx>
+#include <BRepAdaptor_Curve.hxx>
+#include <GeomAdaptor_Curve.hxx>
+#include <CPnts_AbscissaPoint.hxx>
+#include <TopExp_Explorer.hxx>
+#include <TopAbs.hxx>
+#include <TopoDS.hxx>
+#include <TopoDS_Wire.hxx>
+#include <QList>
+#include <Eigen/Dense>
+
+using namespace std;
+
+//! --------------------
+//! function: meshEdges
+//! details:
+//! --------------------
+QMap<GeometryTag,std::vector<CustomMesher::point>> CustomMesher::meshAllEdges()
+{
+    cout<<"CustomMesher::meshEdges()->____function called____"<<endl;
+
+    //!----------------
+    //! the edges mesh
+    //! ---------------
+    QMap<GeometryTag,std::vector<point>> edgeMesh;
+
+    //! ----------------------------    
+    //! scan the edges of the solid
+    //! ----------------------------
+    for(TopExp_Explorer edgeExp(mySolid,TopAbs_EDGE); edgeExp.More(); edgeExp.Next())
+    {
+        cout<<"CustomMesher::meshEdges()->____meshing an edge____"<<endl;
+
+        //! -----------------
+        //! the current edge
+        //! -----------------
+        const TopoDS_Edge &edge = TopoDS::Edge(edgeExp.Current());
+
+        //! -------------------------
+        //! dimension of the element
+        //! -------------------------
+        if(BRep_Tool::Degenerated(edge))
+        {
+            cout<<"CustomMesher::meshEdges()->____a degenerate edge has been found: jumping over it____"<<endl;
+            continue;
+        }
+
+        BRepAdaptor_Curve BRepAdaptor(edge);
+        GeomAdaptor_Curve curve = BRepAdaptor.Curve();
+
+        //! -------------------
+        //! length of the edge
+        //! -------------------
+        CPnts_AbscissaPoint CP;
+        CP.Init(curve);
+        double edgeLength = CP.Length(curve);
+        //cout<<"CustomMesher::meshEdges()->____length of the current edge: "<<edgeLength<<"____"<<endl;
+
+        //! --------------------
+        //! temporary criterion
+        //! --------------------
+        const int NbDivisions = 3;
+        double deltaL = edgeLength/NbDivisions;
+
+        //! ---------------------
+        //! the mesh of the edge
+        //! ---------------------
+        std::vector<point> points;
+
+        //! ----------------------------------------
+        //! retrieve the first point in another way
+        //! ----------------------------------------
+        double s_first = BRepAdaptor.FirstParameter();
+        gp_Pnt P_in = BRepAdaptor.Value(s_first);
+        point P_first;
+        P_first.x = P_in.X(); P_first.y = P_in.Y(); P_first.z = P_in.Z();
+        points.push_back(P_first);
+
+        //cout<<"____point: ("<<P_first.x<<", "<<P_first.y<<", "<<P_first.z<<")____"<<endl;
+
+        double s_old = s_first;
+        const double tol = 1e-6;
+        for(int n=1; n<=NbDivisions-1; n++)
+        {
+            CP.Perform(deltaL,s_old,tol);
+            double s = CP.Parameter();
+            gp_Pnt P_s = BRepAdaptor.Value(s);
+            point P;
+            P.x = P_s.X(); P.y = P_s.Y(); P.z = P_s.Z();
+            points.push_back(P);
+            s_old = s;
+
+            //cout<<"____point: ("<<P.x<<", "<<P.y<<", "<<P.z<<")____"<<endl;
+        }
+
+        //! ---------------------------------------
+        //! retrieve the last point in another way
+        //! ---------------------------------------
+        double s_last = BRepAdaptor.LastParameter();
+        gp_Pnt P_fin = BRepAdaptor.Value(s_last);
+        point P_last;
+        P_last.x = P_fin.X(); P_last.y = P_fin.Y(); P_last.z = P_fin.Z();
+        points.push_back(P_last);
+
+        //cout<<"____point: ("<<P_last.x<<", "<<P_last.y<<", "<<P_last.z<<")____"<<endl;
+
+        const GeometryTag &edgeTag = this->edgeTag(edge);
+        edgeMesh.insert(edgeTag,points);
+    }
+    return edgeMesh;
+}
+
+
+//! --------------------
+//! function: meshEdges
+//! details:
+//! --------------------
+QMap<GeometryTag,std::vector<CustomMesher::point>> CustomMesher::meshEdges()
+{
+    cout<<"CustomMesher::meshEdges()->____function called____"<<endl;
+
+    //!---------------------------------------
+    //! key => edge number
+    //! value => vector of points (edge mesh)
+    //! --------------------------------------
+    QMap<GeometryTag,std::vector<point>> edgeMesh;
+    for(TopExp_Explorer edgeExp(myFace,TopAbs_EDGE); edgeExp.More(); edgeExp.Next())
+    {
+        cout<<"CustomMesher::meshEdges()->____meshing an edge____"<<endl;
+
+        //! -----------------
+        //! the current edge
+        //! -----------------
+        const TopoDS_Edge &edge = TopoDS::Edge(edgeExp.Current());
+
+        //! -------------------------
+        //! dimension of the element
+        //! -------------------------
+        if(BRep_Tool::Degenerated(edge))
+        {
+            cout<<"CustomMesher::meshEdges()->____a degenerate edge has been found: jumping over it____"<<endl;
+            continue;
+        }
+
+        BRepAdaptor_Curve BRepAdaptor(edge);
+        GeomAdaptor_Curve curve = BRepAdaptor.Curve();
+
+        //! -------------------
+        //! length of the edge
+        //! -------------------
+        CPnts_AbscissaPoint CP;
+        CP.Init(curve);
+        double edgeLength = CP.Length(curve);
+        cout<<"CustomMesher::meshEdges()->____length of the current edge: "<<edgeLength<<"____"<<endl;
+
+        //! --------------------
+        //! temporary criterion
+        //! --------------------
+        const int NbDivisions = 3;
+        double deltaL = edgeLength/NbDivisions;
+
+        std::vector<point> points;
+
+        //! ----------------------------------------
+        //! retrieve the first point in another way
+        //! ----------------------------------------
+        double s_first = BRepAdaptor.FirstParameter();
+        gp_Pnt P_in = BRepAdaptor.Value(s_first);
+        point P_first;
+        P_first.x = P_in.X(); P_first.y = P_in.Y(); P_first.z = P_in.Z();
+        points.push_back(P_first);
+
+        //!cout<<"____point: ("<<P_first.x<<", "<<P_first.y<<", "<<P_first.z<<")____"<<endl;
+
+        double s_old = s_first;
+        const double tol = 1e-6;
+        for(int n=1; n<=NbDivisions-1; n++)
+        {
+            CP.Perform(deltaL,s_old,tol);
+            double s = CP.Parameter();
+            gp_Pnt P_s = BRepAdaptor.Value(s);
+            point P;
+            P.x = P_s.X(); P.y = P_s.Y(); P.z = P_s.Z();
+            points.push_back(P);
+            s_old = s;
+
+            //cout<<"____point: ("<<P.x<<", "<<P.y<<", "<<P.z<<")____"<<endl;
+        }
+
+        //! ---------------------------------------
+        //! retrieve the last point in another way
+        //! ---------------------------------------
+        double s_last = BRepAdaptor.LastParameter();
+        gp_Pnt P_fin = BRepAdaptor.Value(s_last);
+        point P_last;
+        P_last.x = P_fin.X(); P_last.y = P_fin.Y(); P_last.z = P_fin.Z();
+        points.push_back(P_last);
+
+        //cout<<"____point: ("<<P_last.x<<", "<<P_last.y<<", "<<P_last.z<<")____"<<endl;
+
+        const GeometryTag &edgeTag = this->edgeTag(edge);
+        edgeMesh.insert(edgeTag,points);
+    }
+    return edgeMesh;
+}
+
+//! ----------------------
+//! function: constructor
+//! details:  
+//! ----------------------
+CustomMesher::CustomMesher(const TopoDS_Solid &aSolid, meshDataBase *mDB):mySolid(aSolid),myMes
+ 
+
+//! ----------------------
+//! function: constructor
+//! details:
+//! ----------------------
+CustomMesher::CustomMesher(const TopoDS_Face &aFace, meshDataBase *mDB, std::vector<point> &boundaryPoints, bool useFaceBoundary):
+    myFace(aFace),
+    myMeshDB(mDB),
+    myBoundaryPoints(boundaryPoints)
+{
+    if(useFaceBoundary)
+    {
+        cout<<"CustomMesher::CustomMesher()->____constructor called with option \"useFaceBoundary\" ON____"<<endl;
+
+        //! ---------------------------------------------------
+        //! before meshing edges check the correct orientation
+        //! of each edge of the wire
+        //! ---------------------------------------------------
+        QList<point> uniquePoints;
+        QMap<GeometryTag,std::vector<point>> edgeMesh = this->meshEdges();
+        for(QMap<GeometryTag,std::vector<point>>::iterator it = edgeMesh.begin(); it!=edgeMesh.end(); ++it)
+        {
+            const GeometryTag &edgeTag = it.key();
+            Q_UNUSED(edgeTag)
+
+            const std::vector<point> points = it.value();
+            for(int n=0; n<points.size(); n++)
+            {
+                point P = points.at(n);
+                if(!uniquePoints.contains(P)) uniquePoints<<P;
+            }
+        }
+        for(int n=0; n<uniquePoints.length(); n++)
+        {
+            myBoundaryPoints.push_back(uniquePoints.at(n));
+        }
+    }
+
+    BRepAdaptor_Surface adaptor(myFace,true);
+    const GeomAdaptor_Surface &s_adaptor = adaptor.Surface();
+    myGeomSurface =  s_adaptor.Surface();
+
+    //! -------------------
+    //! create the process
+    //! -------------------
+    myTriangleMesher = new QProcess(this);
+
+    //! -------------------
+    //! define the program
+    //! -------------------
+    QString program = QString(TRIANGLE_PROGRAM_PATH);
+    myTriangleMesher->setProgram(program);
+
+    QString currentPath = QDir::currentPath();
+    QString tmpDir = currentPath+"/tmp";
+    cout<<"____"<<tmpDir.toStdString()<<"____"<<endl;
+}
+
+//! -----------------------------------------------------------------------------
+//! function: projectBoundary
+//! details:  perform the projection of each boundary point onto the (u,v) plane
+//! -----------------------------------------------------------------------------
+void CustomMesher::projectBoundary(std::vector<double> &u_vector, std::vector<double> &v_vector)
+{
+    FILE *f = fopen("D:/faceBoundaryPoints.txt","w");
+
+    //! -----------------------------------------------------
+    //! the boundary points belong to the face by definition
+    //! project them before, in order to eliminate round off
+    //! errors and similar stuff
+    //! -----------------------------------------------------
+    double u,v;
+    GeomAPI_ProjectPointOnSurf aProjector;
+
+    cout<<"CustomMesher::projectBoundary()->____projecting nr: "<<myBoundaryPoints.size()<<" boundary points____"<<endl;
+    for(int i=0; i<myBoundaryPoints.size(); i++)
+    {
+        cout<<"____projecting point: ("<<myBoundaryPoints.at(i).x<<", "<<
+              myBoundaryPoints.at(i).y<<", "<<
+              myBoundaryPoints.at(i).z<<")____"<<endl;
+
+        fprintf(f,"%d\t%lf\t%lf\t%lf\n",i,myBoundaryPoints.at(i).x,myBoundaryPoints.at(i).y,myBoundaryPoints.at(i).z);
+
+        gp_Pnt P(myBoundaryPoints.at(i).x,myBoundaryPoints.at(i).y,myBoundaryPoints.at(i).z);
+        aProjector.Init(P, myGeomSurface);
+
+        if(!aProjector.IsDone()) continue;
+
+        //! --------------------
+        //! get the first point
+        //! --------------------
+        aProjector.LowerDistanceParameters(u,v);
+        u_vector.push_back(u);
+        v_vector.push_back(v);
+        //cout<<"____the point has (u, v) = ("<<u<<", "<<v<<")____"<<endl;
+    }
+    fclose(f);
+}
+
+//! --------------------------------------------
+//! function: buildPSLG
+//! details:  Planar Straight Line Graph (PSLG)
+//! --------------------------------------------
+occHandle(Ng_MeshVS_DataSourceFace) CustomMesher::buildPlanarMesh()
+{
+    //! -----------------
+    //! analyze the face
+    //! -----------------
+    QList<TopoDS_Wire> wireList;
+    for(TopExp_Explorer anExp(myFace,TopAbs_WIRE); anExp.More(); anExp.Next())
+    {
+        const TopoDS_Wire &aWire = TopoDS::Wire(anExp.Current());
+        wireList<<aWire;
+    }
+    int NbHoles = wireList.length()-1;
+    cout<<"CustomMesher::buildPlanarMesh()->____number of holes: "<<NbHoles<<"____"<<endl;
+
+    //! ---------------------------
+    //! create a support directory
+    //! ---------------------------
+    QString currentPath = QDir::currentPath();
+    QString tmpDir = currentPath+"/tmp";
+
+    //! --------------------------------------
+    //! check if the directory already exists
+    //! --------------------------------------
+    QDir aDir;
+    aDir.setPath(tmpDir);
+    if(!aDir.exists()) aDir.mkdir(tmpDir);
+
+    myWorkingDir = tmpDir;
+
+    //! ------------------
+    //! build the contour
+    //! ------------------
+    char polyFileName[256];
+    QString QPolyFileName = tmpDir+"/"+"aFace.poly";
+    sprintf(polyFileName,"%s",QPolyFileName.toStdString().c_str());
+
+    //! ---------------------
+    //! face in (u, v) plane
+    //! ---------------------
+    std::vector<double> u_vector, v_vector;
+    this->projectBoundary(u_vector, v_vector);
+
+    //! -------------------------------------------------------------------------------------------------------
+    //! First line: <# of vertices> <dimension (must be 2)> <# of attributes> <# of boundary markers (0 or 1)>
+    //! Following lines: <vertex #> <x> <y> [attributes] [boundary marker]
+    //! One line: <# of segments> <# of boundary markers (0 or 1)>
+    //! Following lines: <segment #> <endpoint> <endpoint> [boundary marker]
+    //! One line: <# of holes>
+    //! Following lines: <hole #> <x> <y>
+    //! Optional line: <# of regional attributes and/or area constraints>
+    //! Optional following lines: <region #> <x> <y> <attribute> <maximum area>
+    //! -------------------------------------------------------------------------------------------------------
+    FILE *polyFile = fopen(polyFileName,"w");
+
+    //! -----------------------
+    //! write the node section
+    //! -----------------------
+    int NbPoints = int(myBoundaryPoints.size());
+    fprintf(polyFile,"%d\t2\t0\t0\n",NbPoints);
+    fprintf(polyFile,"#node section\n");
+    for(int i=0; i<NbPoints; i++)
+    {
+        fprintf(polyFile,"%d\t%.9e\t%.9e\n",i+1,u_vector.at(i),v_vector.at(i));
+    }
+
+    //! -------------------------------------
+    //! write the segment section
+    //! for the moment holes are not handled
+    //! -------------------------------------
+    int NbSegments = int(myBoundaryPoints.size());
+    fprintf(polyFile,"#segment section\n");
+    fprintf(polyFile,"%d\t%d\n",NbSegments,0);
+    for(int i=0; i<NbPoints; i++)
+    {
+        int first = i%NbPoints+1;
+        int second = (i+1)%NbPoints+1;
+        fprintf(polyFile,"%d\t%d\t%d\n",i+1,first,second);
+    }
+
+    //! ------------------------
+    //! write the holes section
+    //! ------------------------
+    fprintf(polyFile,"#holes section\n");
+    fprintf(polyFile,"%d\n",0);
+
+    fclose(polyFile);
+
+    //! --------------------------------------------------
+    //! set the working directory for the triangle mesher
+    //! --------------------------------------------------
+    myTriangleMesher->setWorkingDirectory(tmpDir);
+
+    //! ----------
+    //! arguments
+    //! ----------
+    QStringList arguments;
+    QString meshParametersString = QString("-pq10.0a%1").arg(this->faceArea()/20.0);
+    //arguments<<"-pq20.0a5.0"<<QPolyFileName;
+    arguments<<meshParametersString<<QPolyFileName;
+
+    myTriangleMesher->setArguments(arguments);
+
+    //! -----------------------------------
+    //! setup a connection before starting
+    //! -----------------------------------
+    disconnect(myTriangleMesher,SIGNAL(readyReadStandardOutput()),this,SLOT(redirectOutput()));
+    connect(myTriangleMesher,SIGNAL(readyReadStandardOutput()),this,SLOT(redirectOutput()));
+
+    myTriangleMesher->start();
+    myTriangleMesher->waitForFinished(-1);
+
+    int exitCode = myTriangleMesher->exitCode();
+    cout<<"____\"triangle\" exit code: "<<exitCode<<"____"<<endl;
+
+    //! ------------------------
+    //! read the generated mesh
+    //! ------------------------
+    occHandle(Ng_MeshVS_DataSourceFace) theFaceMeshDS;
+    if(exitCode==0)
+    {
+        char tmpName[256];
+        QString nodeFileName = tmpDir+"/"+"aFace.1.node";
+        sprintf(tmpName,"%s",nodeFileName.toStdString().c_str());
+        FILE *nodeFile = fopen(tmpName,"r");
+        cout<<"opening the node file: "<<tmpName<<" is null____"<<endl;
+
+        QString faceFileName = tmpDir+"/"+"aFace.1.ele";
+        sprintf(tmpName,"%s",faceFileName.toStdString().c_str());
+        FILE *faceFile = fopen(tmpName,"r");
+        cout<<"opening the face file: "<<tmpName<<"____"<<endl;
+
+        //! --------------------
+        //! read the mesh nodes
+        //! --------------------
+        Eigen::MatrixXd V;
+
+        int nodeID;
+        int NbNodes,dim,NbAttributes,bm;
+        double x,y;
+        fscanf(nodeFile,"%d%d%d%d",&NbNodes,&dim,&NbAttributes,&bm);
+        V.resize(NbNodes,2);
+
+        for(int i=1; i<=NbNodes; i++)
+        {
+            fscanf(nodeFile,"%d%lf%lf%d",&nodeID,&x,&y,&bm);
+            V(i-1,0) = x;
+            V(i-1,1) = y;
+        }
+        fclose(nodeFile);
+
+        //! ---------------------
+        //! reading the elements
+        //! ---------------------
+        Eigen::MatrixXi F;
+
+        int elementID;
+        int NbTriangles;
+        int a,i1,i2,i3;
+        fscanf(faceFile,"%d\t%d\t%d\n",&NbTriangles,&a,&NbAttributes);
+        F.resize(NbTriangles,3);
+
+        for(int i=1; i<=NbTriangles; i++)
+        {
+            fscanf(faceFile,"%d%d%d%d",&elementID,&i1,&i2,&i3);
+            F(i-1,0) = i1;
+            F(i-1,1) = i2;
+            F(i-1,2) = i3;
+            //cout<<"____(i1, i2, i3) = ("<<i1<<", "<<i2<<", "<<i3<<")____"<<endl;
+        }
+        fclose(faceFile);
+
+        //! -------------------
+        //! inverse projection
+        //! -------------------
+        Eigen::MatrixXd Vt;
+        Vt.resize(NbNodes,3);
+        for(int i=1; i<=NbNodes; i++)
+        {
+            double u = V(i-1,0);
+            double v = V(i-1,1);
+            gp_Pnt Pt = myGeomSurface->Value(u,v);
+            Vt(i-1,0)= Pt.X();
+            Vt(i-1,1)= Pt.Y();
+            Vt(i-1,2)= Pt.Z();
+        }
+        cout<<"CustomMesher::buildPlanarMesh()->____building the face mesh in physical space____"<<endl;
+        theFaceMeshDS = new Ng_MeshVS_DataSourceFace(Vt,F);
+    }
+    return theFaceMeshDS;
+}
+
+//! -----------------------------------
+//! function: inverseTransformation
+//! details:  from (u, v) to (x, y, z)
+//! -----------------------------------
+bool CustomMesher::inverseTransformation(double u, double v, gp_Pnt &P)
+{
+    //cout<<"CustomMesher::inverseTransformation()->____function called____"<<endl;
+    P = myGeomSurface->Value(u,v);
+    return true;
+}
+
+//! --------------------------------
+//! function: faceTag
+//! details:  retrieve the face tag
+//! --------------------------------
+GeometryTag CustomMesher::faceTag()
+{
+    int bodyIndex = -1;
+    bool bodyIndexFound = false;
+    for(QMap<int,TopoDS_Shape>::iterator it = myMeshDB->bodyMap.begin(); it!=myMeshDB->bodyMap.end(); ++it)
+    {
+        bodyIndex = it.key();
+        const TopTools_IndexedMapOfShape &faceMap = myMeshDB->MapOfBodyTopologyMap.value(bodyIndex).faceMap;
+        if(faceMap.Contains(myFace))
+        {
+            bodyIndexFound = true;
+            break;
+        }
+    }
+    GeometryTag faceTag;
+    faceTag.parentShapeNr = bodyIndex;
+    faceTag.subShapeType = TopAbs_FACE;
+    faceTag.subTopNr = myMeshDB->MapOfBodyTopologyMap.value(bodyIndex).faceMap.FindIndex(myFace);
+    faceTag.isParent = false;
+
+    return faceTag;
+}
+
+//! --------------------------------
+//! function: edgeTag
+//! details:  retrieve the edge tag
+//! --------------------------------
+GeometryTag CustomMesher::edgeTag(const TopoDS_Edge &anEdge)
+{
+    int bodyIndex = -1;
+    bool bodyIndexFound = false;
+    for(QMap<int,TopoDS_Shape>::iterator it = myMeshDB->bodyMap.begin(); it!=myMeshDB->bodyMap.end(); ++it)
+    {
+        bodyIndex = it.key();
+        const TopTools_IndexedMapOfShape &faceMap = myMeshDB->MapOfBodyTopologyMap.value(bodyIndex).faceMap;
+        if(faceMap.Contains(myFace))
+        {
+            bodyIndexFound = true;
+            break;
+        }
+    }
+    GeometryTag edgeTag;
+    edgeTag.parentShapeNr = bodyIndex;
+    edgeTag.subShapeType = TopAbs_EDGE;
+    edgeTag.subTopNr = myMeshDB->MapOfBodyTopologyMap.value(bodyIndex).edgeMap.FindIndex(anEdge);
+    edgeTag.isParent = false;
+
+    return edgeTag;
+}
+
+//! -------------------------
+//! function: redirectOutput
+//! details:
+//! -------------------------
+void CustomMesher::redirectOutput()
+{
+    const std::string &message = myTriangleMesher->readAllStandardOutput().toStdString();
+    cout<<message<<endl;
+}
+
+//! -----------------------------------------------------------
+//! function: faceArea
+//! details:  compute the area of the face in the (u, v) plane
+//!           for automatic sizing purposes
+//! -----------------------------------------------------------
+#include <BRepGProp.hxx>
+#include <GProp_GProps.hxx>
+double CustomMesher::faceArea()
+{
+    GProp_GProps SProps;
+    BRepGProp::SurfaceProperties(myFace,SProps);
+    return SProps.Mass();
+}

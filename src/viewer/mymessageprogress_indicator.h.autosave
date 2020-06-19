@@ -1,0 +1,34 @@
+#ifndef MYMESSAGEPROGRESS_INDICATOR_H
+#define MYMESSAGEPROGRESS_INDICATOR_H
+
+#include <Message_ProgressIndicator.hxx>
+#include 
+class myMessageProgress_Indicator: public Message_ProgressIndicator
+{
+public:
+
+    Standard_EXPORT myMessageProgress_Indicator(QWidget* theParent,
+                                                int theMinVal = 0, int theMaxVal = 100, Qt::WindowFlags theFlags = 0);
+
+    //! Deletes the object.
+    Standard_EXPORT virtual ~myMessageProgress_Indicator ();
+    
+    //! Updates presentation of the object
+    Standard_EXPORT virtual Standard_Boolean Show (const Standard_Boolean theForce);
+
+    //! Returns True if the user has signaled to cancel the process
+    Standard_EXPORT virtual Standard_Boolean UserBreak();
+
+protected:
+
+QProgressDialog* myProgress;
+    
+};
+
+#endif // MYMESSAGEPROGRESS_INDICATOR_H
+
+
+
+public:
+DEFINE_STANDARD_RTTI(QOBase_ProgressIndicator)
+};

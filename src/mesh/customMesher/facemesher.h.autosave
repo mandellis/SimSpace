@@ -1,0 +1,183 @@
+#ifndef CUSTOMMESHER_H
+#define CUSTOMMESHER_H
+
+//! path to triangle.exe
+#define TRIANGLE_PROGRAM_PATH "D:/Work/CustomMesher/FaceMesher/triangle.exe"
+
+//! custom includes
+#include "occhandle.h"
+#include <meshdatabase.h>
+#include <geometrytag.h>
+
+//! OCC
+#include <TopoDS_Solid.hxx>
+#include <TopoDS_Face.hxx>
+#include <TopoDS_Edge.hxx>
+
+//! std
+#include <vector>
+
+//! Qt
+#include <QObject>
+
+//! custom
+#include "hash_c.h"
+
+class QProcess;
+class Geom_Surface;
+class gp_Pnt;
+
+//! -----------------------------
+//! the class of the face mesher
+//! -----------------------------
+class CustomMesher: public QObject
+{
+    Q_OBJECT
+
+public:
+
+    //! ---------------------------
+    //! definition of a mesh point
+    //! ---------------------------
+    struct point
+    {
+        double x,y,z;
+        int ID;
+
+        point::point(){ x=y=z=-1; ID = -1; }
+        point::point(double x0,double y0,double z0):x(x0),y(y0),z(z0),ID(-1){;}
+        point::point(double x0,double y0,double z0,int ID0):x(x0),y(y0),z(z0),ID(ID0){;}
+
+        inline bool operator <(const point &rhs)
+        {
+            std::size_t seed_1 = 0, seed_2 = 0;
+            hash_c<double>(seed_1,x); hash_c<double>(seed_1,y); hash_c<double>(seed_1,z);
+            hash_c<double>(seed_2,rhs.x); hash_c<double>(seed_2,rhs.y); hash_c<double>(seed_2,rhs.z);
+            if(seed_1<seed_2) return true; return false;
+        }
+
+        inline point* operator = (const point &rhs)
+        {
+            x = rhs.x; y = rhs.y; z = rhs.z; ID = rhs.ID;
+            return this;
+        }
+
+        //! -----------------------------------------
+        //! a weak "==" acting only over coordinates
+        //! -----------------------------------------
+        inline bool operator == (const point &rhs)
+        {
+            if(x==rhs.x && y==rhs.y && z==rhs.z) return true;
+            return false;
+        }
+    };
+
+public:
+
+    //! --------------------------------------------------------------
+    //! constructor: can init with face and vector of boundary points
+    //! if useFaceBoudary == false
+    //! --------------------------------------------------------------
+    CustomMesher(const TopoDS_Face &aFace,
+               meshDataBase *mDB,
+               std::vector<point> &boundaryPoints = std::vector<point>(),
+               bool useFaceBoundary = true);
+
+    CustomMesher(const TopoDS_Solid &aSolid, meshDataBase *mDB);
+
+private:
+
+    //! -------------------
+    //! the mesh data base
+    //! -------------------
+    meshDataBase *myMeshDB;
+
+    //! ----------------------
+    //! the face to be meshed
+    //! ----------------------
+    TopoDS_Face myFace;
+
+    TopoDS_Solid mySolid;
+    
+    //! ----------------------------------------
+    //! the points describing the face boundary
+    //! ----------------------------------------
+    std::vector<point> myBoundaryPoints;
+
+    //! --------------------
+    //! surface of the face
+    //! --------------------
+    occHandle(Geom_Surface) myGeomSurface;
+
+    //! ----------------------------
+    //! QProcess for "Triangle.exe"
+    //! ----------------------------
+    QProcess *myTriangleMesher;
+
+    //! ------------------
+    //! working directory
+    //! ------------------
+    QString myWorkingDir;
+
+    //! ---------------------------------------------------------
+    //! project the points of the boundary onto the (u, v) plane
+    //! ---------------------------------------------------------
+    void projectBoundary(std::vector<double> &u_vector, std::vector<double> &v_vector);
+
+    //! -----------------------
+    //! inverse transformation
+    //! -----------------------
+    bool inverseTransformation(double u, double v, gp_Pnt &P);
+
+    //! -----------------
+    //! helper functions
+    //! -----------------
+    double faceArea();
+
+    //! -----------------------------------------------------------
+    //! get the face geometry tag. It acts onto the private member
+    //! -----------------------------------------------------------
+    GeometryTag faceTag();
+
+    //! --------------------------
+    //! get the edge geometry tag
+    //! --------------------------
+    GeometryTag edgeTag(const TopoDS_Edge &anEdge);
+
+    //! -----------
+    //! mesh edges
+    //! -----------
+    QMap<GeometryTag, std::vector<point> > meshEdges();
+
+    //! ---------------    
+    //! mesh all edges
+    //! ---------------
+    QMap<GeometryTag, std::vector<point>> meshAllEdges();
+    
+public:
+
+    //! ----------------------
+    //! get working directory
+    //! ----------------------
+    const QString getWorkingDir() const { return myWorkingDir; }
+
+    //! -------------------------------------------------
+    //! programmatically set the boundary through points
+    //! -------------------------------------------------
+    void setBoundary(std::vector<point> &boundaryPoints) { myBoundaryPoints = boundaryPoints; }
+
+    //! ----------------------
+    //! build the planar mesh
+    //! ----------------------
+    occHandle(Ng_MeshVS_DataSourceFace) buildPlanarMesh();
+
+
+private slots:
+
+    //! ------------------------
+    //! QProcess shell messages
+    //! ------------------------
+    void redirectOutput();
+};
+
+#endif // FACEMESHER_H

@@ -1,0 +1,18 @@
+<RCC>
+    <qresource prefix="/">
+        <file>icons/icon_add.png</file>
+        <file>icons/icon_remove.png</file>
+        <file>icons/icon_cursor.png</file>
+        <file>icons/icon_clear.png</file>
+        <file>icons/icon_exit.png</file>
+        <file>icons/icon_open.png</file>
+        <file>icons/icon_fit all.png</file>
+        <file>icons/icon_pan.png</file>
+        <file>icons/icon_zoom.png</file>
+        <file>icons/icon_closed.png</file>
+        <file>icons/icon_opened.png</file>
+        <file>icons/icon_accept.png</file>
+        <file>icons/icon_save image.png</file>
+        <file>icons/icon_expand.png</file>
+    </qresource>
+</RCC>
