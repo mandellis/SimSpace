@@ -1,0 +1,156 @@
+<div class="wikidoc"><h3>Project Description</h3>The C++ Mathematical Expression Toolkit Library <b><a href="http://partow.net/programming/exprtk/index.html">(ExprTk)</a></b> is a simple to use, easy to integrate and extremely efficient run-time mathematical expression parser and evaluation engine. ExprTk supports numerous forms of functional, logical and vector processing semantics and is very easily extendible. 
+<hr />
+<h3>Download</h3><h2><a href="http://partow.net/programming/exprtk/index.html">http://partow.net/programming/exprtk/index.html</a></h2>
+<hr />
+<h3>Capabilities</h3>The ExprTk library has the following capabilities:<br />
+<ul><li>Mathematical operators (+, -, *, /, %, ^)</li>
+<li>Functions (min, max, avg, sum, abs, ceil, floor, round, roundn, exp, log, log10, logn, root, sqrt, clamp, inrange)</li>
+<li>Trigonometry (sin, cos, tan, acos, asin, atan, atan2, cosh, cot, csc, sec, sinh, tanh, d2r, r2d, d2g, g2d, hyp)</li>
+<li>Equalities, Inequalities (=, ==, &lt;&gt;, !=, &lt;, &lt;=, &gt;, &gt;=)</li>
+<li>Assignment (:=, +=, -=, *=, /=)</li>
+<li>Boolean logic (and, nand, nor, not, or, xor, xnor, mand, mor)</li>
+<li>Control Structures (if-then-else, ternary conditional, switch case)</li>
+<li>Loop Structures (while loop, for loop, repeat until loop, break, continue)</li>
+<li>Optimization of expressions (constant folding, strength reduction, operator coupling, special functions and dead code elimination)</li>
+<li>String operations (equalities, inequalities, boolean logic, concatenation and ranges)</li>
+<li>Expression local variables, vectors and strings</li>
+<li>User defined variables, vectors, strings, constants and function support</li>
+<li>Multivariate function composition</li>
+<li>Multiple sequence point and sub expression support</li>
+<li>Numeric integration and differentiation</li>
+<li>Vector Processing: BLAS-L1 (axpy, axpby, axpb), all/any-true/false, count, rotate-left/right, shift-left/right, sort, nth_element, iota, sum, kahan-sum, dot-product, copy</li>
+<li>File-IO package (routines include: open, close, read, write, getline, support for binary and text modes)</li>
+<li>Support for various numeric types (float, double, long double, MPFR/GMP)</li>
+<li>Single header implementation, no building required. No external dependencies.</li>
+<li>Completely portable (Compiled and executed upon: x86 x86-64, ARMv7/8, POWER6/7 and AVR32)</li></ul>
+<hr />
+<h3>Compatible C++ Compilers:</h3><ul><li>GNU Compiler Collection (3.3+)</li>
+<li>Intel&#174; C++ Compiler (8.x+)</li>
+<li>Clang/LLVM (1.1+)</li>
+<li>PGI C++ (10.x+)</li>
+<li>Microsoft Visual Studio C++ Compiler (8.1+)</li>
+<li>IBM XL C/C++ (9.x+)</li>
+<li>C++ Builder (XE4+)</li></ul>
+<hr />
+<h3>Example Expressions</h3><ul><li>sqrt(1 - (x^2))</li>
+<li>clamp(-1,sin(2 * pi * x) + cos(y / 2 * pi),+1)</li>
+<li>sin(2 * x)</li>
+<li>if(((x + 2) == 3) and ((y + 5) &lt;= 9),1 + w, 2 / z)</li>
+<li>inrange(-2,m,+2) == if(({-2 &lt;= m} and [m &lt;= +2]),1,0)</li>
+<li>({1 / 1} * [1 / 2] + (1 / 3)) - {1 / 4} ^ [1 / 5] + (1 / 6) -({1 / 7} + [1 / 8]*(1 / 9))</li>
+<li>a * exp(2 * t) + c</li>
+<li>z := x + sin(2 * pi / y)</li>
+<li>u := 2 * (pi * z) / (w := x + cos(y / pi))</li>
+<li>2x + 3y + 4z + 5w == 2 * x + 3 * y + 4 * z + 5 * w</li>
+<li>3(x + y) / 2 + 1 == 3 * (x + y) / 2 + 1</li>
+<li>(x + y)3 + 1 / 4 == (x + y) * 3 + 1 / 4</li>
+<li>(x + y)z + 1 / 2 == (x + y) * z + 1 / 2</li>
+<li>(sin(x/pi)cos(2y) + 1)==(sin(x / pi) * cos(2 * y) + 1)</li>
+<li>(avg(x,y) &lt;= x + y ? x - y : x * y) + 2.345 * pi / x</li>
+<li>while(x &lt;= 100) { x -= 1; }</li>
+<li>x &lt;= &#39;abc123&#39; and (y in &#39;AString&#39;) or (&#39;1x2y3z&#39; != z)</li>
+<li>(x like &#39;*123*&#39;) or (&#39;a123b&#39; ilike y)</li></ul>
+<hr />
+<h3>Simple Example Usage</h3>This example will compile and evaluate a simple expression containing one variable called: <b>x</b><br /><br /><pre>
+#include &lt;cstdio&gt;
+#include &lt;string&gt;
+
+#include &quot;exprtk.hpp&quot;
+
+int main()
+{
+   typedef exprtk::symbol_table&lt;double&gt; symbol_table_t;
+   typedef exprtk::expression&lt;double&gt;     expression_t;
+   typedef exprtk::parser&lt;double&gt;             parser_t;
+
+   std::string expression_str = &quot;abs((2 * x)  - 1)&quot;;
+
+   double x = 1.1;
+
+   // Register x with the symbol_table
+   symbol_table_t symbol_table;
+   symbol_table.add_variable(&quot;x&quot;,x);
+
+   // Instantiate expression and register symbol_table
+   expression_t expression;
+   expression.register_symbol_table(symbol_table);
+
+   // Instantiate parser and compile the expression
+   parser_t parser;
+   parser.compile(expression_str,expression);
+
+   double result = 0.0;
+
+   // Evaluate and print result for when x = 1.1
+   result = expression.value();
+   printf(&quot;Result1: %10.5f\n&quot;,result);
+
+   // Update/modify the value of x
+   x = 2.2;
+
+   // Evaluate and print result for when x = 2.2
+   result = expression.value();
+   printf(&quot;Result2: %10.5f\n&quot;,result);
+
+   return 0;
+}
+</pre>
+<hr />
+<h3>More Extensive Example</h3>The following example demonstrates how an expression with three variables specialized upon the <i>double</i> type is compiled and evaluated using <b>ExprTk</b>. Furthermore, there is code for displaying any errors that occur during the expression compilation process and finally the result of the evaluation is printed to <b>stdout</b>.<br /><br /><pre>#include &lt;cstdio&gt;
+#include &lt;string&gt;
+
+#include &quot;exprtk.hpp&quot;
+
+int main()
+{
+   typedef exprtk::symbol_table&lt;double&gt; symbol_table_t;
+   typedef exprtk::expression&lt;double&gt; expression_t;
+   typedef exprtk::parser&lt;double&gt; parser_t;
+   typedef exprtk::parser_error::type error_t;
+
+   std::string expression_str = &quot;z := 2 [sin(x * pi)^3.3 + cos(pi / y)^4.4] % (2.3/3.2x + 3.4/4.3y)&quot;;
+
+   double x = 1.1;
+   double y = 2.2;
+   double z = 3.3;
+
+   symbol_table_t symbol_table;
+   symbol_table.add_constants();
+   symbol_table.add_variable(&quot;x&quot;,x);
+   symbol_table.add_variable(&quot;y&quot;,y);
+   symbol_table.add_variable(&quot;z&quot;,z);
+
+   expression_t expression;
+   expression.register_symbol_table(symbol_table);
+
+   parser_t parser;
+
+   if (!parser.compile(expression_str,expression))
+   {
+      printf(&quot;Error: %s\tExpression: %s\n&quot;,
+             parser.error().c_str(),
+             expression_str.c_str());
+
+      for (std::size_t i = 0; i &lt; parser.error_count(); ++i)
+      {
+         const error_t error = parser.get_error(i);
+         printf(&quot;Error: %02d Position: %02d Type: [%s] Msg: %s Expr: %s\n&quot;,
+                static_cast&lt;int&gt;(i),
+                static_cast&lt;int&gt;(error.token.position),
+                exprtk::parser_error::to_str(error.mode).c_str(),
+                error.diagnostic.c_str(),
+                expression_str.c_str());
+      }
+
+      return 1;
+   }
+
+   double result = expression.value();
+
+   printf(&quot;Result: %10.5f\n&quot;,result);
+
+   return 0;
+}
+</pre><br />
+<hr />
+<h3>Extensive Documentation</h3><h2><a href="http://partow.net/programming/exprtk/code/readme.txt">http://partow.net/programming/exprtk/code/readme.txt</a></h2></div><div class="ClearBoth"></div>

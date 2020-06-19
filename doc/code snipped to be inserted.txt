@@ -1,0 +1,16 @@
+    //! ----------------------------------------------------------
+    //! experimental - test new nglib function
+    //! I've replaced with a mesher working on OCC instead of stl
+    //! ----------------------------------------------------------
+    theNetgenSTLMesher->setMeshDataBase(myMeshDB);
+    occHandle(Ng_MeshVS_DataSource3D) dummyDS;
+    bool isVolume = true;
+    meshingResult mr = theNetgenSTLMesher->perform2(bodyIndex,isVolume,mainMesh2D,dummyDS);
+    if(mr.isDone)
+    {
+        myMeshDB->ArrayOfMeshDS2D.insert(bodyIndex,mainMesh2D);
+        myMeshDB->ArrayOfMeshDS.insert(bodyIndex,dummyDS);
+    }
+    //! -----------------
+    //! end experimental
+    //! -----------------

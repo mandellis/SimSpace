@@ -1,0 +1,10 @@
+def resizeEvent(self, event):
+    """ Resize all sections to content and user interactive """
+
+    super(Table, self).resizeEvent(event)
+    header = self.horizontalHeader()
+    for column in range(header.count()):
+        header.setSectionResizeMode(column, QHeaderView.ResizeToContents)
+        width = header.sectionSize(column)
+        header.setSectionResizeMode(column, QHeaderView.Interactive)
+        header.resizeSection(column, width)

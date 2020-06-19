@@ -1,0 +1,2 @@
+OMF-7.3          PUZZLE_DIE         0        0      0    0 5ba43f346b9dfbd4ece27b57443b309961676c9bb98db05e041047c22e93a907 Co.Stamp s.r.l. / Master key
+EMESH-7.3        PUZZLE_DIE         0        0      0    0 613699cc791fa76a08d0c5f8534c2db8eb89565b94cfcdcbc600ba4639221061 Co.Stamp s.r.l. / Master key

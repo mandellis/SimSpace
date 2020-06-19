@@ -1,0 +1,39 @@
+{
+  "WorkItem": {
+    "AffectedComponent": {
+      "Name": "",
+      "DisplayName": ""
+    },
+    "ClosedComment": "",
+    "ClosedDate": null,
+    "CommentCount": 0,
+    "Custom": null,
+    "Description": "I love this as a solution, but I have a problem. I want to create several solvers in several different object files. However, because you have your entire implementation in a single header, linking multiple object files which include your .hpp file means multiple definition errors in the link stage. We have a solution to mitigate this, but would it be possible to transition this to a .h and .cpp file? Is there a benefit to how you have structured the solution?",
+    "LastUpdatedDate": "2015-09-28T12:52:05.777-07:00",
+    "PlannedForRelease": "",
+    "ReleaseVisibleToPublic": false,
+    "Priority": {
+      "Name": "Unassigned",
+      "Severity": 0,
+      "Id": 0
+    },
+    "ProjectName": "fastmathparser",
+    "ReportedDate": "2015-09-28T12:52:05.777-07:00",
+    "Status": {
+      "Name": "Proposed",
+      "Id": 1
+    },
+    "ReasonClosed": {
+      "Name": "Unassigned"
+    },
+    "Summary": "Linker issues",
+    "Type": {
+      "Name": "Unassigned",
+      "Id": 5
+    },
+    "VoteCount": 1,
+    "Id": 1
+  },
+  "FileAttachments": [],
+  "Comments": []
+}

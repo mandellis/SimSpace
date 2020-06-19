@@ -1,0 +1,23 @@
+﻿C:\Program Files (x86)\MSBuild\Microsoft.Cpp\v4.0\V140\Microsoft.CppBuild.targets(392,5): warning MSB8028: The intermediate directory (x64\Release\) contains files shared from another project (libqhull.vcxproj, qconvex.vcxproj, qdelaunay.vcxproj, qhalf.vcxproj, qhull.vcxproj, qhullstatic_r.vcxproj, qhull_p.vcxproj, qvoronoi.vcxproj, rbox.vcxproj, testqset.vcxproj, testqset_r.vcxproj, user_eg.vcxproj, user_eg2.vcxproj, user_eg3.vcxproj).  This can lead to incorrect clean and rebuild behavior.
+  Coordinates.cpp
+  PointCoordinates.cpp
+  Qhull.cpp
+  QhullFacet.cpp
+  QhullFacetList.cpp
+  QhullFacetSet.cpp
+  QhullHyperplane.cpp
+  QhullPoint.cpp
+  QhullPoints.cpp
+  QhullPointSet.cpp
+  QhullQh.cpp
+  QhullRidge.cpp
+  QhullSet.cpp
+  QhullStat.cpp
+  QhullVertex.cpp
+  QhullVertexSet.cpp
+  RboxPoints.cpp
+  RoadError.cpp
+  RoadLogEvent.cpp
+  Generating Code...
+C:\Program Files (x86)\MSBuild\Microsoft.Cpp\v4.0\V140\Microsoft.CppBuild.targets(1357,5): warning MSB8012: TargetPath(D:\Work\Qt\pro_26.0_OCC7.3.0\qhull-2019.1\build\x64\Release\qhullcpp.lib) does not match the Library's OutputFile property value (D:\Work\Qt\pro_26.0_OCC7.3.0\qhull-2019.1\lib\qhullcpp.lib). This may cause your project to build incorrectly. To correct this, please make sure that $(OutDir), $(TargetName) and $(TargetExt) property values match the value specified in %(Lib.OutputFile).
+  qhullcpp.vcxproj -> D:\Work\Qt\pro_26.0_OCC7.3.0\qhull-2019.1\build\x64\Release\qhullcpp.lib

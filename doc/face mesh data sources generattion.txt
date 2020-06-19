@@ -1,0 +1,43 @@
+    /*
+    //! ----------------------------------
+    //! create the face mesh data sources
+    //! ----------------------------------
+    cout<<"NetgenTools::generateFaceMeshDataSources()->____function called____"<<endl;
+    int NbTopologyFaces = myMDB->MapOfBodyTopologyMap.value(bodyIndex).faceMap.Extent();
+
+    //! --------------------------------
+    //! init the secondary progress bar
+    //! --------------------------------
+    QProgressEvent *pe = new QProgressEvent();
+    pe->setVal(done);
+    pe->setMessage("Generating the face mesh data sources");
+    pe->setAction1(QProgressEventAction::QProgressEvent_Init);
+    pe->setRange1(0, NbTopologyFaces);
+    if(myProgressIndicator) QApplication::postEvent(myProgressIndicator,pe);
+
+    int offset = 0;
+    occHandle(Ng_MeshVS_DataSourceFace) faceMeshDS;
+    for(int faceNr=0; faceNr<=NbTopologyFaces; faceNr++)
+    {
+        if(myInvalidFaceTags.contains(faceNr))
+        {
+            cout<<"____the current face nr: "<<faceNr<<" is not valid____"<<endl;
+            if(faceNr!=0) offset++;
+            continue;
+        }
+        faceMeshDS = new Ng_MeshVS_DataSourceFace(aNgMesh,faceNr-offset);
+        myMDB->ArrayOfMeshDSOnFaces.setValue(bodyIndex,faceNr,faceMeshDS);
+
+        //! -------------------------------------------
+        //! post update events on face mesh generation
+        //! -------------------------------------------
+        if(faceNr%5==0)
+        {
+            QProgressEvent *pe = new QProgressEvent();
+            pe->setVal(done);
+            pe->setMessage(QString("Face mesh %1").arg(faceNr));
+            pe->setVal1(faceNr);
+            if(myProgressIndicator) QApplication::postEvent(myProgressIndicator,pe);
+        }
+    }    
+    */
