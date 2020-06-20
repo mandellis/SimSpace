@@ -9,6 +9,7 @@
 #include "simulationdatabase.h"
 #include "indexedmapofmeshdatasources.h"
 #include "geometrytag.h"
+#include <meshelementbycoords.h>
 
 //! ---
 //! Qt
@@ -22,6 +23,365 @@
 #include <libigl/include/igl/grad.h>
 #include <libigl/include/igl/massmatrix.h>
 #include <libigl/include/igl/invert_diag.h>
+
+//! ----
+//! C++
+//! ----
+#include <utility>
+
+//! -------------------------
+//! function: writeInputFile
+//! details:
+//! -------------------------
+bool particlesInFieldsSolver::writeInputFile(simulationDataBase *sDB, QStandardItem *simulationRoot, const string &inputFilePath)
+{
+    //! --------------
+    //! open a stream
+    //! --------------
+    ofstream os(inputFilePath);
+    if(os.is_open()==false) return false;
+
+    //! ---------------------
+    //! write the body index
+    //! ---------------------
+    int bodyIndex = 1;
+    os<<"BODYINDEX "<<bodyIndex<<endl;
+
+    //! ----------------------
+    //! write the volume mesh
+    //! ----------------------
+    os<<"VOLUMEMESH"<<endl;
+    occHandle(Ng_MeshVS_DataSource3D) volumeMesh = occHandle(Ng_MeshVS_DataSource3D)::DownCast(sDB->ArrayOfMeshDS.value(bodyIndex));
+    volumeMesh->writeIntoStream(os);
+
+    //! --------------------------
+    //! write the number of faces
+    //! --------------------------
+    int NbFaces = sDB->MapOfBodyTopologyMap.value(bodyIndex).faceMap.Extent();
+    os<<"NUMBEROFFACES "<<NbFaces<<endl;
+
+    for(int faceNr = 1; faceNr<=NbFaces; faceNr++)
+    {
+        //! ----------------------
+        //! write the face number
+        //! ----------------------
+        os<<"FACENUMBER "<<faceNr<<endl;
+
+        //! -----------------------------------------------------------------------------
+        //! write the definition of the face mesh through the ID of the surface elements
+        //! -----------------------------------------------------------------------------
+        occHandle(Ng_MeshVS_DataSourceFace) aFaceMeshDS = occHandle(Ng_MeshVS_DataSourceFace)::DownCast(sDB->ArrayOfMeshDSOnFaces.getValue(bodyIndex,faceNr));
+        int NbFaceElements = aFaceMeshDS->GetAllElements().Extent();
+        os<<"NUMBEROFELEMENTS "<<NbFaceElements<<endl;
+
+        for(TColStd_MapIteratorOfPackedMapOfInteger it(aFaceMeshDS->GetAllElements()); it.More(); it.Next())
+        {
+            int NbNodes, buf[8];
+            TColStd_Array1OfInteger nodeIDs(*buf,1,8);
+            aFaceMeshDS->GetNodesByElement(it.Key(),nodeIDs,NbNodes);
+
+            switch(NbNodes)
+            {
+            case 3:
+            {
+                os<<"TRIG"<<endl;
+                os<<nodeIDs(1)<<"\t"<<nodeIDs(2)<<"\t"<<nodeIDs(3)<<endl;
+            }
+                break;
+            case 4:
+            {
+                os<<"QUAD"<<endl;
+                os<<nodeIDs(1)<<"\t"<<nodeIDs(2)<<"\t"<<nodeIDs(3)<<"\t"<<nodeIDs(4)<<endl;
+            }
+                break;
+            }
+        }
+    }
+
+    //! ----------------------------------------
+    //! write the number of boundary conditions
+    //! ----------------------------------------
+    int NbBC = simulationRoot->rowCount()-2;
+    os<<"BOUNDARYCONDITIONSNUMBER "<<NbBC<<endl;
+
+    //! -------------------------------------------------------------
+    //! now scan the simulation root (start after "Analysis setting"
+    //! and finish an item before "Solution")
+    //! -------------------------------------------------------------
+    for(int n=1; n<simulationRoot->rowCount()-1; n++)
+    {
+        QStandardItem *item = simulationRoot->child(n,0);
+        SimulationNodeClass *curNode = item->data(Qt::UserRole).value<SimulationNodeClass*>();
+        switch(curNode->getType())
+        {
+        case SimulationNodeClass::nodeType_electrostaticPotential:
+        {
+            //! ---------------
+            //! write the type
+            //! ---------------
+            os<<"ELECTROSTATICPOTENTIAL"<<endl;
+
+            //! --------------------------------------
+            //! write the time behavior and the value
+            //! --------------------------------------
+            os<<"CONSTANT"<<endl;
+            double val = curNode->getPropertyValue<double>("Potential");
+            os<<val<<endl;
+
+            //! -----------------------------------------
+            //! build a composite face mesh on whith the
+            //! current boundary condition is applied
+            //! -----------------------------------------
+            const QVector<GeometryTag> &vecLoc = curNode->getPropertyValue<QVector<GeometryTag>>("Tags");
+            QList<occHandle(Ng_MeshVS_DataSourceFace)> listOfFaceMeshDS;
+            for(int n=0; n<vecLoc.length(); n++)
+            {
+                int faceNr = vecLoc[n].subTopNr;
+                occHandle(Ng_MeshVS_DataSourceFace) aFaceMeshDS = occHandle(Ng_MeshVS_DataSourceFace)::DownCast(sDB->ArrayOfMeshDSOnFaces.getValue(bodyIndex,faceNr));
+                listOfFaceMeshDS.append(aFaceMeshDS);
+            }
+            occHandle(Ng_MeshVS_DataSourceFace) compositeFaceDS = new Ng_MeshVS_DataSourceFace(listOfFaceMeshDS);
+
+            //! ---------------------------
+            //! write the surface elements
+            //! ---------------------------
+            os<<"BOUNDARYPATCHDEFINITION"<<endl;
+
+            int NbFaceElements = compositeFaceDS->GetAllElements().Extent();
+            os<<"NUMBEROFELEMENTS "<<NbFaceElements<<endl;
+            for(TColStd_MapIteratorOfPackedMapOfInteger it(compositeFaceDS->GetAllElements()); it.More(); it.Next())
+            {
+                int NbNodes, buf[8];
+                TColStd_Array1OfInteger nodeIDs(*buf,1,8);
+                compositeFaceDS->GetNodesByElement(it.Key(),nodeIDs,NbNodes);
+                switch(NbNodes)
+                {
+                case 3: os<<"TRIG"<<endl; os<<nodeIDs(1)<<"\t"<<nodeIDs(2)<<"\t"<<nodeIDs(3)<<endl; break;
+                case 4: os<<"QUAD"<<endl; os<<nodeIDs(1)<<"\t"<<nodeIDs(2)<<"\t"<<nodeIDs(3)<<"\t"<<nodeIDs(4)<<endl; break;
+                }
+            }
+        }
+            break;
+        }
+    }
+    os.close();
+    return true;
+}
+
+//! ------------------------
+//! function: readInputFile
+//! details:
+//! ------------------------
+bool particlesInFieldsSolver::readInputFile(const std::string &inputFilePath,
+                                            occHandle(Ng_MeshVS_DataSource3D) &volumeMesh,
+                                            std::map<int,occHandle(Ng_MeshVS_DataSourceFace)> &allFacesMeshDSMap)
+{
+    //! --------------
+    //! open a stream
+    //! --------------
+    ifstream is(inputFilePath);
+    if(is.is_open()==false) return false;
+
+    std::string val;
+    char tmp[512];
+
+    //! --------------------
+    //! read the body index
+    //! --------------------
+    int bodyIndex;
+    std::getline(is,val);
+    sscanf(val.c_str(),"%s%d",tmp,&bodyIndex);
+    cout<<val<<endl;
+
+    //! ---------------------
+    //! read the volume mesh
+    //! ---------------------
+    std::getline(is,val);
+    cout<<val<<endl;
+
+    volumeMesh = new Ng_MeshVS_DataSource3D(is);
+
+    //! -------------
+    //! blank line ?
+    //! -------------
+    std::getline(is,val);
+    cout<<val<<endl;
+
+    //! -------------------------
+    //! read the number of faces
+    //! -------------------------
+    int NbFaces;
+    std::getline(is,val);
+    sscanf(val.c_str(),"%s%d",tmp,&NbFaces);
+    cout<<val<<endl;
+
+    for(int n = 1; n<=NbFaces; n++)
+    {
+        //! ---------------------
+        //! read the face number
+        //! ---------------------
+        int faceNr;
+        std::getline(is,val);
+        sscanf(val.c_str(),"%s%d",tmp,&faceNr);
+        cout<<val<<endl;
+
+        //! ---------------------------------
+        //! read the number of face elements
+        //! ---------------------------------
+        int NbElements;
+        std::getline(is,val);
+        sscanf(val.c_str(),"%s%d",tmp,&NbElements);
+        cout<<val<<endl;
+
+        std::vector<meshElementByCoords> vecElem;
+        for(int n=1; n<=NbElements; n++)
+        {
+            std::getline(is,val);
+            cout<<val<<endl;
+            if(strcmp(val.c_str(),"TRIG")==0)
+            {
+                int V[3];
+                std::getline(is,val);
+                sscanf(val.c_str(),"%d%d%d",&V[0],&V[1],&V[2]);
+                cout<<val<<endl;
+
+                //! -----------------------------
+                //! build a surface mesh element
+                //! -----------------------------
+                meshElementByCoords anElement;
+                anElement.ID = n;
+
+                for(int n=0; n<3; n++)
+                {
+                    double c[3];
+                    int NbNodes;
+                    TColStd_Array1OfReal coords(*c,1,3);
+                    MeshVS_EntityType aType;
+                    volumeMesh->GetGeom(V[n],false,coords,NbNodes,aType);
+                    anElement.pointList<<mesh::meshPoint(coords(1),coords(2),coords(3),V[n]);
+                }
+                vecElem.push_back(anElement);
+            }
+        }
+
+        //! -----------------------------------
+        //! build the surface mesh data source
+        //! and insert it into the map
+        //! -----------------------------------
+        occHandle(Ng_MeshVS_DataSourceFace) aFaceMeshDS = new Ng_MeshVS_DataSourceFace(vecElem,false,false);
+        std::pair<int,occHandle(Ng_MeshVS_DataSourceFace)> apair;
+        apair.first = faceNr;
+        apair.second = aFaceMeshDS;
+        allFacesMeshDSMap.insert(apair);
+    }
+
+    //! ---------------------------------------
+    //! read the number of boundary conditions
+    //! ---------------------------------------
+    int NbBC;
+    std::getline(is,val);
+    sscanf(val.c_str(),"%s%d",tmp,&NbBC);
+    cout<<val<<endl;
+
+    //! ----------------------------------------
+    //! read the boundary conditions one by one
+    //! ----------------------------------------
+    for(int i=0; i<NbBC; i++)
+    {
+        //! --------------
+        //! read the type
+        //! --------------
+        std::string BCType;
+        std::getline(is,BCType);
+        cout<<BCType<<endl;
+
+        //! -----------------------
+        //! read the time behavior
+        //! -----------------------
+        std::string value;
+        if(BCType=="CONSTANT")
+        {
+            std::getline(is,value);
+            cout<<value<<endl;
+        }
+        if(BCType=="FUNCTIONOFTIME")
+        {
+            std::getline(is,value);
+            cout<<value<<endl;
+        }
+
+        //! ----------------
+        //! a blank line ??
+        //! ----------------
+        std::getline(is,val);
+        cout<<val<<endl;
+
+        //! -------------------------------
+        //! read "BOUNDARYPATCHDEFINITION"
+        //! -------------------------------
+        std::getline(is,val);
+        cout<<val<<endl;
+
+        //! ----------------
+        //! a blank line ??
+        //! ----------------
+        std::getline(is,val);
+        cout<<val<<endl;
+
+        //! ---------------------------------
+        //! read the number of face elements
+        //! ---------------------------------
+        int NbElements;
+        std::getline(is,val);
+        sscanf(val.c_str(),"%s%d",tmp,&NbElements);
+        cout<<val<<endl;
+
+        std::vector<meshElementByCoords> vecElem;
+        for(int n=1; n<=NbElements; n++)
+        {
+            std::getline(is,val);
+            cout<<val<<endl;
+            if(strcmp(val.c_str(),"TRIG")==0)
+            {
+                int V[3];
+                std::getline(is,val);
+                sscanf(val.c_str(),"%d%d%d",&V[0],&V[1],&V[2]);
+                cout<<val<<endl;
+
+                //! -----------------------------
+                //! build a surface mesh element
+                //! -----------------------------
+                meshElementByCoords anElement;
+                anElement.ID = n;
+
+                for(int n=0; n<3; n++)
+                {
+                    double c[3];
+                    int NbNodes;
+                    TColStd_Array1OfReal coords(*c,1,3);
+                    MeshVS_EntityType aType;
+                    volumeMesh->GetGeom(V[n],false,coords,NbNodes,aType);
+                    anElement.pointList<<mesh::meshPoint(coords(1),coords(2),coords(3),V[n]);
+                }
+                vecElem.push_back(anElement);
+            }
+        }
+
+        //! -----------------------------------
+        //! build the surface mesh data source
+        //! and insert it into the map
+        //! -----------------------------------
+        occHandle(Ng_MeshVS_DataSourceFace) aCompositeFaceDS = new Ng_MeshVS_DataSourceFace(vecElem,false,false);
+
+        //! ---------------------
+        //! for testing purposes
+        //! ---------------------
+        aCompositeFaceDS->writeMesh("D:/Work/WBtest/BCMesh.txt",2);
+    }
+
+    return true;
+}
+
 
 //! -------------------------------------------------
 //! function: tetVol
@@ -37,19 +397,26 @@ double tetVol(double *P0,double* P1, double *P2, double *P3)
     return (1.0/6.0)*J.determinant();
 }
 
-
 //! ----------------------
 //! function: constructor
 //! details:  from file
 //! ----------------------
 particlesInFieldsSolver::particlesInFieldsSolver(const string &inputFilePath)
 {
-    ifstream inputFileStream(inputFilePath);
-    if(inputFileStream.is_open()==false) return;
+    ifstream is(inputFilePath);
+    if(is.is_open()==false) return;
 
-    this->loadTimeInfo(inputFileStream);
-    this->loadDomainMesh(inputFileStream);
-    this->loadParticles(inputFileStream);
+    //! --------------
+    //! read the mesh
+    //! --------------
+    occHandle(Ng_MeshVS_DataSource3D) volumeMesh;
+    std::map<int,occHandle(Ng_MeshVS_DataSourceFace)> allFacesMeshDS;
+    this->readInputFile(inputFilePath,volumeMesh,allFacesMeshDS);
+
+    //! -----------------------------------
+    //! once the volume mesh has been read
+    //! -----------------------------------
+    this->setUpDomainMesh(volumeMesh);
 }
 
 //! ----------------------
@@ -62,87 +429,11 @@ particlesInFieldsSolver::particlesInFieldsSolver(simulationDataBase *sDB, QStand
     mySDB =  sDB;
     this->init(mySimulationRoot);
 
-    //! ---------------------
-    //! computational domain
-    //! ---------------------
+    //! -----------------------
+    //! set up the domain mesh
+    //! -----------------------
     occHandle(Ng_MeshVS_DataSource3D) volumeMesh = occHandle(Ng_MeshVS_DataSource3D)::DownCast(sDB->ArrayOfMeshDS.first());
-
-    //! ------------------------
-    //! setup mesh: mesh points
-    //! ------------------------
-    int NbPoints = volumeMesh->GetAllNodes().Extent();
-    V.resize(NbPoints,3);
-    for(int row=1; row<=NbPoints; row++)
-    {
-        const std::vector<double> &P = volumeMesh->getNodeCoordinates(row);
-        for(int col=1; col<=3; col++) V(row-1,col-1) = P[col];
-    }
-
-    //! --------------
-    //! mesh elements
-    //! --------------
-    int NbElements = volumeMesh->GetAllElements().Extent();
-    T.resize(NbElements,4);
-    int NbNodes = -1, buf[4];
-    TColStd_Array1OfInteger nodeIDs(*buf,1,4);
-    TColStd_IndexedMapOfInteger nodesMap = volumeMesh->myNodesMap;
-    for(int i=1; i<=NbElements; i++)
-    {
-        int globalElementID = volumeMesh->myElementsMap.FindIndex(i);
-        volumeMesh->GetNodesByElement(globalElementID,nodeIDs,NbNodes);
-
-        int row = i-1;
-        T(row,0) = nodesMap.FindIndex(nodeIDs(1))-1;
-        T(row,1) = nodesMap.FindIndex(nodeIDs(2))-1;
-        T(row,2) = nodesMap.FindIndex(nodeIDs(3))-1;
-        T(row,3) = nodesMap.FindIndex(nodeIDs(4))-1;
-
-        std::vector<double> P0 = volumeMesh->getNodeCoordinates(nodeIDs(1));
-        std::vector<double> P1 = volumeMesh->getNodeCoordinates(nodeIDs(2));
-        std::vector<double> P2 = volumeMesh->getNodeCoordinates(nodeIDs(3));
-        std::vector<double> P3 = volumeMesh->getNodeCoordinates(nodeIDs(4));
-
-        myVolumes(row) = tetVol(P0.data(),P1.data(),P2.data(),P3.data());
-    }
-
-    //! ----------------------------------------
-    //! initialize AABB tree for point location
-    //! ----------------------------------------
-    mySearchTree.init(V,T);
-
-    //! ----------------------------------------
-    //! allocate space for density distribution
-    //! and reset distribution
-    //! ----------------------------------------
-    myDensity.resize(V.rows());
-    for(int i=0; i<V.rows(); i++) myDensity(i) = 0.0;
-
-    //! --------------------------------
-    //! the same for the electric field
-    //! --------------------------------
-    myElectricField.resize(V.rows(),3);
-    for(int i=0; i<V.rows(); i++) myElectricField(i,0) = myElectricField(i,1) = myElectricField(i,2) = 0.0;
-
-    //! --------------------------
-    //! create the Poisson solver
-    //! --------------------------
-    myPoissonSolver = new PoissonSolver(volumeMesh,this);
-
-    //! -----------------------------
-    //! init the number of particles
-    //! -----------------------------
-    myNbParticles = 0;
-
-    //! ----------------------------
-    //! mass matrix and its inverse
-    //! ----------------------------
-    igl::massmatrix(V,T,igl::MASSMATRIX_TYPE_BARYCENTRIC, M);
-    igl::invert_diag(M,Minv);
-
-    //! ------------------
-    //! gradient operator
-    //! ------------------
-    igl::grad(V,T,G);
+    this->setUpDomainMesh(volumeMesh);
 }
 
 //! ---------------
@@ -173,10 +464,10 @@ bool particlesInFieldsSolver::init(QStandardItem* simulationRoot)
     myFinalTime = node->getPropertyValue<double>("Step end time");
     myTimeStep = node->getPropertyValue<double>("Time step size");
 
-    //! --------------------------------
-    //! for each face a potential patch
-    //! --------------------------------
-    std::map<int,occHandle(Ng_MeshVS_DataSourceFace)> patches;
+    //! ---------------------------------
+    //! model faces on which a BC is put
+    //! ---------------------------------
+    std::map<int,occHandle(Ng_MeshVS_DataSourceFace)> BoundaryConditionsFaceDSMap;
 
     //! --------------
     //! scan the tree
@@ -200,7 +491,7 @@ bool particlesInFieldsSolver::init(QStandardItem* simulationRoot)
                         occHandle(Ng_MeshVS_DataSourceFace)::DownCast(mySDB->ArrayOfMeshDSOnFaces.getValue(1,faceNr));
                 apair.first = faceNr;
                 apair.second = aFaceMeshDS;
-                patches.insert(apair);
+                BoundaryConditionsFaceDSMap.insert(apair);
 
                 //! -------------------------------
                 //! sum the face mesh data sources
@@ -221,7 +512,7 @@ bool particlesInFieldsSolver::init(QStandardItem* simulationRoot)
                 double charge = curNode->getPropertyValue<double>("Electric charge");
 
                 occHandle(Ng_MeshVS_DataSourceFace) emitterFaceMeshDS = new Ng_MeshVS_DataSourceFace(listOfFaceMeshDS);
-                std::shared_ptr<particlesEmitter> anEmitter(new particlesEmitter(emitterFaceMeshDS,intensity));
+                particlesEmitter anEmitter(emitterFaceMeshDS,intensity);
                 myEmitters.push_back(anEmitter);
             }
         }
@@ -232,7 +523,7 @@ bool particlesInFieldsSolver::init(QStandardItem* simulationRoot)
         //! define the patches and initialize the potential
         //! on all the surface mesh nodes
         //! ------------------------------------------------
-        myPoissonSolver->definePatches(patches);
+        myPoissonSolver->definePatches(BoundaryConditionsFaceDSMap);
         myPoissonSolver->initPotentialOnBoundary(0.0);
     }
     return true;
@@ -269,9 +560,9 @@ void particlesInFieldsSolver::run()
         //! ---------------------------------------
         for(int i=0; i<myEmitters.size(); i++)
         {
-            std::shared_ptr<particlesEmitter> anEmitter = myEmitters.at(i);
+            particlesEmitter anEmitter = myEmitters.at(i);
             std::vector<particle> newParticles;
-            anEmitter->generateParticles(newParticles,time);
+            anEmitter.generateParticles(newParticles,time);
             for(int n=0; n<newParticles.size(); n++)
             {
                 myNbParticles++;
@@ -489,12 +780,8 @@ bool particlesInFieldsSolver::loadTimeInfo(ifstream &inputFileStream)
 //! function: loadDomainMesh
 //! details:
 //! -------------------------
-bool particlesInFieldsSolver::loadDomainMesh(ifstream &inputFileStream)
+bool particlesInFieldsSolver::setUpDomainMesh(occHandle(Ng_MeshVS_DataSource3D) volumeMesh)
 {
-    occHandle(Ng_MeshVS_DataSource3D) volumeMesh = new Ng_MeshVS_DataSource3D();
-    bool isDone = volumeMesh->readFromStream(inputFileStream);
-    if(isDone==false) return false;
-
     //! ------------------------
     //! setup mesh: mesh points
     //! ------------------------
@@ -575,22 +862,26 @@ bool particlesInFieldsSolver::loadDomainMesh(ifstream &inputFileStream)
     return true;
 }
 
-
-
+//! -----------------------
+//! function: loadParticle
+//! details:
+//! -----------------------
 int particlesInFieldsSolver::loadParticles(ifstream &inputFileStream)
 {
     int N;
     inputFileStream>>N;
     for(int n=1; n<=N; n++)
     {
-        double x,y,z,m,q,r;
+        double x,y,z,vx,vy,vz,m,q,r;
         std::string val;
         std::getline(inputFileStream,val);
-        sscanf(val.c_str(),"%lf%lf%lf%lf%lf%lf",&x,&y,&z,&vx,&vy,&vz,&m,&q,&r);
+        sscanf(val.c_str(),"%lf%lf%lf%lf%lf%lf%lf%lf%lf",&x,&y,&z,&vx,&vy,&vz,&m,&q,&r);
         particle aParticle(x,y,z,vx,vy,m,q,r);
-        std::pair<int,aParticle> apair;
+        std::pair<int,particle> apair;
         apair.first = 1;
         apair.second = aParticle;
         myParticles1->insert(apair);
     }
+    myNbParticles++;
+    return N;
 }

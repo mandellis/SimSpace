@@ -97,8 +97,13 @@ public:
     //! constructor VIII - from vectors of elements and nodes
     Standard_EXPORT Ng_MeshVS_DataSource3D(const std::vector<mesh::meshElement> &elements, const std::vector<mesh::meshPoint> &nodes);
 
+    //! constructor X - from a C++ stream
+    Standard_EXPORT Ng_MeshVS_DataSource3D(std::ifstream &stream);
+
     //! constructor XI - make a n-th order mesh
     Standard_EXPORT Ng_MeshVS_DataSource3D(const occHandle(Ng_MeshVS_DataSource3D) &aMesh, int order);
+
+
 
     Standard_EXPORT virtual Standard_Boolean GetGeom (const Standard_Integer ID,
                                                       const Standard_Boolean IsElement,

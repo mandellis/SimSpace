@@ -450,7 +450,8 @@ INCLUDEPATH = D:/Work/Qt/SimSpace/src/geometry \
               C:/local/boost_1_69_0   \                 # needed by cgal
               C:/CGAL-4.14/auxiliary/gmp/include    \   # needed by cgal
               D:/Work/Qt/SimSpace/libigl   \
-              D:/Work/Qt/SimSpace/src/pymesh
+              D:/Work/Qt/SimSpace/src/pymesh    \
+              D:/Work/Qt/SimSpace/src/electrostatic
 
 LIBS += \
 -lC:\OpenCASCADE7.3.0-vc14-64\opencascade-7.3.0\win64\vc14\lib\TKBin   \

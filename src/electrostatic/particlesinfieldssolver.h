@@ -48,6 +48,7 @@ using namespace std;
 //! ----
 #include <string>
 #include <iostream>
+#include <map>
 using namespace std;
 
 class simulationDataBase;
@@ -93,7 +94,7 @@ private:
 
     //std::shared_ptr<PoissonSolver> myPoissonSolver;
     PoissonSolver *myPoissonSolver;
-    std::vector<shared_ptr<particlesEmitter>> myEmitters;
+    std::vector<particlesEmitter> myEmitters;
 
 private:
 
@@ -115,7 +116,16 @@ private:
 private:
 
     bool loadTimeInfo(ifstream &inputFileStream);
-    bool loadDomainMesh(ifstream &inputFileStream);
+    bool setUpDomainMesh(opencascade::handle<Ng_MeshVS_DataSource3D> volumeMesh);
+    int loadParticles(ifstream &inputFileStream);
+
+public:
+
+    static bool readInputFile(const std::string &inputFilePath,
+                              opencascade::handle<Ng_MeshVS_DataSource3D> &volumeMesh,
+                              std::map<int,occHandle(Ng_MeshVS_DataSourceFace)> &allFacesMeshDS);
+
+    static bool writeInputFile(simulationDataBase *sDB, QStandardItem *simulationRoot, const std::string &inputFilePath);
 };
 
 #endif // PARTICLESINFIELDSSOLVER_H

@@ -24,9 +24,8 @@
 //! ----------------------
 particlesEmitter::particlesEmitter(const occHandle(Ng_MeshVS_DataSourceFace) &theFaceMesh,
                                    double theIntensity,
-                                   double theInternalTime,
-                                   QObject *parent):
-    myFaceMesh(theFaceMesh), myIntensity(theIntensity),myInternalTime(theInternalTime),QObject(parent)
+                                   double theInternalTime):
+    myFaceMesh(theFaceMesh), myIntensity(theIntensity),myInternalTime(theInternalTime)
 {
     //! --------------
     //! discrete face
@@ -90,7 +89,7 @@ double particlesEmitter::getIntensity() const
 //! function: getBirthPosition
 //! details:
 //! ---------------------------
-bool particlesEmitter::sampleRandomBirthPositionOnSource(double &x, double &y, double &z)
+bool particlesEmitter::sampleRandomBirthPositionOnSource(double &x, double &y, double &z) const
 {
     double p[3];
     myDiscreteFace->randomPointOn(p);
@@ -118,12 +117,17 @@ void particlesEmitter::generateParticles(std::vector<particle> &newParticles, do
         double x,y,z;
         this->sampleRandomBirthPositionOnSource(x,y,z);
 
+        //! ------------------------------
         //! sample velocity ... to do ...
+        //! ------------------------------
         double vx = 1e5; double vy = 1e5; double vz = 1e5;
 
         x += vx*dt; y += vy*dt; z += vz*dt;
         particle aParticle(x,y,z,vx,vy,vz,9.11e-31,1.6e-19);
         newParticles.push_back(aParticle);
     }
+    //! --------------------------
+    //! set the new internal time
+    //! --------------------------
     myInternalTime = time;
 }

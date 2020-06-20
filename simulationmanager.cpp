@@ -66,6 +66,7 @@
 #include "qccxsolvermessageevent.h"
 #include "ccxsolvermessage.h"
 #include "ccxtools.h"
+#include <particlesinfieldssolver.h>
 
 //! ----
 //! C++
@@ -7515,15 +7516,42 @@ void SimulationManager::writeSolverInputFile()
     //! ----------------------
     //! write the solver file
     //! ----------------------
-    bool generateDual = false;
-    if(curNode->getType()==SimulationNodeClass::nodeType_thermalAnalysis) generateDual = true;
-    this->generateBoundaryConditionsMeshDS(generateDual);
+    if(curNode->getType()==SimulationNodeClass::nodeType_particlesInFieldsAnalysis)
+    {
+        bool generateDual = false;
+        this->generateBoundaryConditionsMeshDS(generateDual);
+        particlesInFieldsSolver::writeInputFile(mySimulationDataBase,curItem,fileName.toStdString());
 
-    //this->createSimulationNode(SimulationNodeClass::nodeType_thermalAnalysisAdiabaticWall);
+        //! --------------------------------------------
+        //! test reading - diagnostic for mesh recovery
+        //! --------------------------------------------
+        occHandle(Ng_MeshVS_DataSource3D) volumeMesh;
+        std::map<int,occHandle(Ng_MeshVS_DataSourceFace)> mapFaceMeshDS;
+        particlesInFieldsSolver::readInputFile(fileName.toStdString(),volumeMesh,mapFaceMeshDS);
 
-    writeSolverFileClass theSolverWriter(mySimulationDataBase,(QExtendedStandardItem*)(curItem));
-    theSolverWriter.setName(fileName);
-    theSolverWriter.perform();
+        volumeMesh->writeMesh("D:/Work/WBtest/volumeMesh.txt",3);
+        for(std::map<int,occHandle(Ng_MeshVS_DataSourceFace)>::iterator it = mapFaceMeshDS.begin(); it!=mapFaceMeshDS.end(); it++)
+        {
+            char name[128];
+            std::pair<int,occHandle(Ng_MeshVS_DataSourceFace)> apair = *it;
+            sprintf(name,"D:/Work/WBtest/faceMesh_%d_.txt",apair.first);
+            occHandle(Ng_MeshVS_DataSourceFace) aFaceMeshDS = apair.second;
+            aFaceMeshDS->writeMesh(QString::fromLatin1(name),2);
+        }
+        //! ---------------
+        //! end diagnostic
+        //! ---------------
+    }
+    else
+    {
+        bool generateDual = false;
+        if(curNode->getType()==SimulationNodeClass::nodeType_thermalAnalysis) generateDual = true;
+        this->generateBoundaryConditionsMeshDS(generateDual);
+
+        writeSolverFileClass theSolverWriter(mySimulationDataBase,(QExtendedStandardItem*)(curItem));
+        theSolverWriter.setName(fileName);
+        theSolverWriter.perform();
+    }
 }
 
 //! --------------------------------------------------
@@ -12828,7 +12856,6 @@ void SimulationManager::generateBoundaryConditionsMeshDS(bool computeDual)
     IndexedMapOfMeshDataSources quelCheResta;
     if(computeDual==true)
     {
-        cout<<"____tag0-1____"<<endl;
         //! ---------------
         //! quel che resta
         //! ---------------
@@ -12837,15 +12864,10 @@ void SimulationManager::generateBoundaryConditionsMeshDS(bool computeDual)
             it != mySimulationDataBase->ArrayOfMeshDS2D.end(); it++)
         {
             int bodyIndex = it.key();
-            cout<<"____tag00____"<<endl;
             const occHandle(Ng_MeshVS_DataSource2D) &surfaceMesh = occHandle(Ng_MeshVS_DataSource2D)::DownCast(it.value());
-            cout<<"____tag01____"<<endl;
             const occHandle(Ng_MeshVS_DataSourceFace) &faceMesh = new Ng_MeshVS_DataSourceFace(surfaceMesh);
-            cout<<"____tag02____"<<endl;
             quelCheResta.insert(bodyIndex,faceMesh);
-            cout<<"____tag03____"<<endl;
         }
-        cout<<"____tag04____"<<endl;
     }
 
     //! --------------------------------------------

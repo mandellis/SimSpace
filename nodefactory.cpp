@@ -2536,6 +2536,8 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
         Property prop_isEmitter("Emitter",data,Property::PropertyGroup_Definition);
         vecProp.push_back(prop_isEmitter);
 
+        //! under definition
+        vecProp.push_back(prop_suppressed);
     }
         break;
     }

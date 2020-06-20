@@ -1188,17 +1188,10 @@ Standard_Boolean Ng_MeshVS_DataSource3D::GetGeom(const Standard_Integer ID,
 
         if(localElementID>=1 && localElementID<=myNumberOfElements)
         {
-            //cout<<"____tag002: in range____"<<endl;
-
             Type = MeshVS_ET_Volume;
             switch(myElemType->Value(localElementID))
             {
-            case TET:
-            {
-                NbNodes=4;
-                //cout<<"____tag003: TET found____"<<endl;
-            }
-                break;
+            case TET: NbNodes=4; break;
             case TET10: NbNodes=10; break;
             case HEXA: NbNodes = 8; break;
             case HEXA20: NbNodes = 20; break;
@@ -2072,7 +2065,6 @@ void Ng_MeshVS_DataSource3D::writeIntoStream(ofstream &os)
 
         for(int i=1; i<NbNodes; i++) os<<nodeIDs(i)<<"\t";
         os<<nodeIDs(NbNodes)<<endl;
-
     }
 }
 
@@ -2232,9 +2224,9 @@ void Ng_MeshVS_DataSource3D::CreateTetTopology()
         TET4MeshData->ChangeValue(i).Append((i-1)%4);
         TET4MeshData->ChangeValue(i).Append(i%4);
         TET4MeshData->ChangeValue(i).Append((i+1)%4);
-        cout<<"++++++++++++++++++++++++++++"<<endl;
-        cout<<"+ "<<(i-1)%4<<" "<<i%4<<" "<<(i+1)%4<<endl;
-        cout<<"++++++++++++++++++++++++++++"<<endl;
+        //cout<<"++++++++++++++++++++++++++++"<<endl;
+        //cout<<"+ "<<(i-1)%4<<" "<<i%4<<" "<<(i+1)%4<<endl;
+        //cout<<"++++++++++++++++++++++++++++"<<endl;
     }
 }
 
@@ -2257,66 +2249,15 @@ void Ng_MeshVS_DataSource3D::CreateHexaTopology()
 //! function: computeNormalAtElements
 //! details:
 //! ----------------------------------
-#define USE_POLYGON
 void Ng_MeshVS_DataSource3D::computeNormalAtElements()
 {
     cout<<"Ng_MeshVS_DataSource3D::computeNormalAtElements()->____function called____"<<endl;
-
-#ifndef USE_POLYGON
-    //! -----------------------------------------------------
-    //! calculate the normal vector for each surface element
-    //! for the moment this method handle triangles
-    //! -----------------------------------------------------
     for(TColStd_MapIteratorOfPackedMapOfInteger it(myElements); it.More(); it.Next())
-    {
-        int globalElementID = it.Key();
-        int localElementID = myElementsMap.FindIndex(globalElementID);
-
-        //cout<<"@____(global element ID, local element ID) = ("<<globalElementID<<", "<<localElementID<<")____"<<endl;
-
-        double x[3],y[3],z[3];
-        double nx,ny,nz,L;
-        for(int n=1; n<=3; n++)
-        {
-            int globalNodeID = myElemNodes->Value(localElementID,n);
-            int localNodeID = myNodesMap.FindIndex(globalNodeID);
-
-            //cout<<" ____(global node ID, local node ID) = ("<<globalNodeID<<", "<<localNodeID<<")____"<<endl;
-
-            x[n-1] = myNodeCoords->Value(localNodeID,1);
-            y[n-1] = myNodeCoords->Value(localNodeID,2);
-            z[n-1] = myNodeCoords->Value(localNodeID,3);
-        }
-
-        //! ----------------------
-        //!   i       j       k
-        //! x1-x0   y1-y0   z1-z0
-        //! x2-x0   y2-y0   z2-z0
-        //! ----------------------
-        nx=(y[1]-y[0])*(z[2]-z[0])-(z[1]-z[0])*(y[2]-y[0]);
-        ny=(z[1]-z[0])*(x[2]-x[0])-(x[1]-x[0])*(z[2]-z[0]);
-        nz=(x[1]-x[0])*(y[2]-y[0])-(y[1]-y[0])*(x[2]-x[0]);
-
-        L = sqrt(pow(nx,2)+pow(ny,2)+pow(nz,2));
-        if(L<1e-20) nx=ny=nz=0.0;
-        else { nx=nx/L; ny=ny/L; nz=nz/L; }
-
-        myElemNormals->SetValue(localElementID,1,nx);
-        myElemNormals->SetValue(localElementID,2,ny);
-        myElemNormals->SetValue(localElementID,3,nz);
-        //cout<<"compute normal at elements____("<<nx<<", "<<ny<<", "<<nz<<")____"<<endl;
-    }
-#endif
-#ifdef USE_POLYGON
-    TColStd_MapIteratorOfPackedMapOfInteger it;
-    for(it.Initialize(myElements); it.More(); it.Next())
     {
         std::vector<polygon::Point> points;
 
         int globalElementID = it.Key();
         int localElementID = myElementsMap.FindIndex(globalElementID);
-
-        cout<<"Ng_MeshVS_DataSource3D::computeNormalAtElements()->____(global element ID, local element ID) = ("<<globalElementID<<", "<<localElementID<<")____"<<endl;
 
         int NbNodes;
         double buf[24];
@@ -2338,9 +2279,7 @@ void Ng_MeshVS_DataSource3D::computeNormalAtElements()
         myElemNormals->SetValue(localElementID,1,n.at(0));
         myElemNormals->SetValue(localElementID,2,n.at(1));
         myElemNormals->SetValue(localElementID,3,n.at(2));
-        cout<<"compute normal at elements____("<<n.at(0)<<", "<<n.at(1)<<", "<<n.at(2)<<")____"<<endl;
     }
-#endif
 }
 
 //! ---------------------------
@@ -3422,4 +3361,143 @@ Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(const occHandle(Ng_MeshVS_DataSou
     //! create the topology
     //! --------------------
     this->CreateTet10Topology();
+}
+
+
+//! ----------------------------
+//! function: constructor
+//! details:  from a C++ stream
+//! ----------------------------
+Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(std::ifstream &stream)
+{
+    //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSource3D()->____function called____"<<endl;
+
+    //! -------------------
+    //! read the dimension
+    //! -------------------
+    int meshDimension;
+    stream>>meshDimension;
+
+    //! -------------------------
+    //! read the number of nodes
+    //! -------------------------
+    stream>>myNumberOfNodes;
+
+    if(meshDimension ==2 && myNumberOfNodes<3) return;
+    if(meshDimension ==3 && myNumberOfNodes<4) return;
+
+    myNodeCoords = new TColStd_HArray2OfReal(1,myNumberOfNodes,1,3);
+
+    //! ---------------
+    //! load the nodes
+    //! ---------------
+    for(int n=1; n<=myNumberOfNodes; n++)
+    {
+        int globalNodeID;
+        double x,y,z;
+        stream>>globalNodeID>>x>>y>>z;
+
+        myNodesMap.Add(globalNodeID);
+        myNodes.Add(globalNodeID);
+        myNodeCoords->SetValue(n,1,x);
+        myNodeCoords->SetValue(n,2,y);
+        myNodeCoords->SetValue(n,3,z);
+        //cout<<globalNodeID<<"\t"<<x<<"\t"<<y<<"\t"<<z<<endl;
+    }
+
+    //! ----------------------------
+    //! read the number of elements
+    //! ----------------------------
+    stream>>myNumberOfElements;
+    cout<<myNumberOfElements<<endl;
+    if(myNumberOfElements<1) return;
+    myElemNodes = new TColStd_HArray2OfInteger(1,myNumberOfElements,1,20);
+    myElemType = new TColStd_HArray1OfInteger(1,myNumberOfElements);
+
+    //! ------------------
+    //! load the elements
+    //! ------------------
+    for(int i=1;i<=myNumberOfElements; i++)
+    {
+        int globalElementID;
+        stream>>globalElementID;
+        cout<<globalElementID<<endl;
+        std::string val;
+        stream>>val;
+        cout<<val<<endl;
+        if(strcmp(val.c_str(),"TRIG")==0)
+        {
+            int i1,i2,i3;
+            stream>>i1>>i2>>i3;
+            myElemNodes->SetValue(i,1,i1);
+            myElemNodes->SetValue(i,2,i2);
+            myElemNodes->SetValue(i,3,i3);
+            myElemType->SetValue(i,TRIG);
+        }
+        if(strcmp(val.c_str(),"QUAD")==0)
+        {
+            int i1,i2,i3,i4;
+            stream>>i1>>i2>>i3>>i4;
+            myElemNodes->SetValue(i,1,i1);
+            myElemNodes->SetValue(i,2,i2);
+            myElemNodes->SetValue(i,3,i3);
+            myElemNodes->SetValue(i,4,i4);
+            myElemType->SetValue(i,QUAD);
+        }
+        if(strcmp(val.c_str(),"TET")==0)
+        {
+            int i1,i2,i3,i4;
+            stream>>i1>>i2>>i3>>i4;
+            myElemNodes->SetValue(i,1,i1);
+            myElemNodes->SetValue(i,2,i2);
+            myElemNodes->SetValue(i,3,i3);
+            myElemNodes->SetValue(i,4,i4);
+            myElemType->SetValue(i,TET);
+            cout<<i1<<"\t"<<i2<<"\t"<<i3<<"\t"<<i4<<endl;
+        }
+        if(strcmp(val.c_str(),"HEXA")==0)
+        {
+            int i1,i2,i3,i4,i5,i6,i7,i8;
+            stream>>i1>>i2>>i3>>i4>>i5>>i6>>i7>>i8;
+            myElemNodes->SetValue(i,1,i1);
+            myElemNodes->SetValue(i,2,i2);
+            myElemNodes->SetValue(i,3,i3);
+            myElemNodes->SetValue(i,4,i4);
+            myElemNodes->SetValue(i,5,i5);
+            myElemNodes->SetValue(i,6,i6);
+            myElemNodes->SetValue(i,7,i7);
+            myElemNodes->SetValue(i,8,i8);
+            myElemType->SetValue(i,HEXA);
+        }
+        if(strcmp(val.c_str(),"PRISM")==0)
+        {
+            int i1,i2,i3,i4,i5,i6;
+            stream>>i1>>i2>>i3>>i4>>i5>>i6;
+            myElemNodes->SetValue(i,1,i1);
+            myElemNodes->SetValue(i,2,i2);
+            myElemNodes->SetValue(i,3,i3);
+            myElemNodes->SetValue(i,4,i4);
+            myElemNodes->SetValue(i,5,i5);
+            myElemNodes->SetValue(i,6,i6);
+            myElemType->SetValue(i,PRISM);
+        }
+        if(strcmp(val.c_str(),"PYRAM")==0)
+        {
+            int i1,i2,i3,i4,i5;
+            stream>>i1>>i2>>i3>>i4>>i5;
+            myElemNodes->SetValue(i,1,i1);
+            myElemNodes->SetValue(i,2,i2);
+            myElemNodes->SetValue(i,3,i3);
+            myElemNodes->SetValue(i,4,i4);
+            myElemNodes->SetValue(i,5,i5);
+            myElemType->SetValue(i,PYRAM);
+        }
+        //! note: second order elements not supported. To do ...
+
+        myElementsMap.Add(globalElementID);
+        myElements.Add(globalElementID);
+    }
+
+    //! topology
+    this->CreateTetTopology();
 }

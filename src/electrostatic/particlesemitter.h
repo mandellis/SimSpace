@@ -16,11 +16,6 @@
 #include <TopoDS_Face.hxx>
 #include <Geom_Surface.hxx>
 
-//! ---
-//! Qt
-//! ---
-#include <QObject>
-
 //! ----
 //! C++
 //! ----
@@ -29,16 +24,29 @@
 #include <iostream>
 using namespace std;
 
-class particlesEmitter: public QObject
+class particlesEmitter
 {
-    Q_OBJECT
-
 public:
 
     particlesEmitter(const occHandle(Ng_MeshVS_DataSourceFace) &theFaceMesh,
                      double theIntensity = 0.0,
-                     double theInternalTime = 0.0,
-                     QObject *parent=0);
+                     double theInternalTime = 0.0);
+
+    particlesEmitter(const particlesEmitter &rhs)
+    {
+        myFaceMesh = new Ng_MeshVS_DataSourceFace(rhs.myFaceMesh);
+        myIntensity = rhs.myIntensity;
+        myInternalTime = rhs.myInternalTime;
+        myDiscreteFace = rhs.myDiscreteFace;
+    }
+
+    void operator = (const particlesEmitter &rhs)
+    {
+        myFaceMesh = new Ng_MeshVS_DataSourceFace(rhs.myFaceMesh);
+        myIntensity = rhs.myIntensity;
+        myInternalTime = rhs.myInternalTime;
+        myDiscreteFace = rhs.myDiscreteFace;
+    }
 
 public:
 
@@ -58,8 +66,8 @@ private:
 
 private:
 
-    bool sampleRandomBirthPositionOnSource(double &x, double &y, double &z);
-
+    bool sampleRandomBirthPositionOnSource(double &x, double &y, double &z) const;
+    void setInternalTime(double time) { myInternalTime = time; }
 };
 
 #endif // PARTICLESEMITTER_H

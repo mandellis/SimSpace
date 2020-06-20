@@ -3786,7 +3786,7 @@ void Ng_MeshVS_DataSourceFace::setNodeNormal(int globalNodeID, double *n)
 //! ------------------------------------------------------------------
 Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const std::vector<meshElementByCoords> &meshElements, bool autoRenumberElements, bool autoRenumberNodes)
 {
-    cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor called____"<<endl;
+    //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor called____"<<endl;
 
     //! -------------
     //! sanity check
@@ -3820,13 +3820,9 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const std::vector<meshElement
             int globalElementID = aMeshElement.ID;
             myElements.Add(globalElementID);
             myElementsMap.Add(globalElementID);
-            //cout<<"____tag01 local element ID: "<<localElementID<<"____"<<endl;
-            //cout<<"____tag01 global element ID: "<<globalElementID<<"____"<<endl;
         }
 
         int NbPoints = aMeshElement.pointList.length();
-        //cout<<"____tag01 NbPoints: "<<NbPoints<<endl;
-        //if(NbPoints!=3) exit(1);
 
         switch(NbPoints)
         {
@@ -3873,8 +3869,6 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const std::vector<meshElement
         }
         else
         {
-            //cout<<"____tag02____"<<endl;
-
             //! ---------------------------------------
             //! label the nodes using their own labels
             //! ---------------------------------------
@@ -3889,7 +3883,6 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const std::vector<meshElement
 
                 if(!myNodes.Contains(aPoint.ID))
                 {
-                    //cout<<"____tag02 labelling point using: "<<aPoint.ID<<"____"<<endl;
                     myNodes.Add(aPoint.ID);
                     myNodesMap.Add(aPoint.ID);
                 }
@@ -3899,20 +3892,15 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const std::vector<meshElement
     }
 
     myNumberOfNodes = myNodes.Extent();
-    //cout<<"____number of nodes: "<<myNumberOfNodes<<"____"<<endl;
     myNodeCoords = new TColStd_HArray2OfReal(1,myNumberOfNodes,1,3);
 
     for(int i=1; i<=myNumberOfNodes; i++)
     {
-        //cout<<"____tag02____"<<endl;
         mesh::meshPoint aMeshPoint = vecMeshPoints[i-1];
         myNodeCoords->SetValue(i,1,aMeshPoint.x);
         myNodeCoords->SetValue(i,2,aMeshPoint.y);
         myNodeCoords->SetValue(i,3,aMeshPoint.z);
     }
-    //cout<<"____tag03____"<<endl;
-
-    //cout<<"____vector of mesh points size: "<<vecMeshPoints.size()<<"____"<<endl;
 
     //! ---------------------------
     //! compute normal at elements
@@ -4219,14 +4207,10 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(ifstream &stream)
     int meshDimension;
     stream>>meshDimension;
 
-    //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____mesh dimension: "<<meshDimension<<"____"<<endl;
-
     //! -------------------------
     //! read the number of nodes
     //! -------------------------
     stream>>myNumberOfNodes;
-
-    //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____number of nodes: "<<myNumberOfNodes<<"____"<<endl;
 
     if(meshDimension ==2 && myNumberOfNodes<3) return;
     if(meshDimension ==3 && myNumberOfNodes<4) return;
@@ -4242,14 +4226,11 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(ifstream &stream)
         double x,y,z;
         stream>>globalNodeID>>x>>y>>z;
 
-        //cout<<"____("<<x<<", "<<y<<", "<<z<<")____"<<endl;
-
         myNodesMap.Add(globalNodeID);
         myNodes.Add(globalNodeID);
         myNodeCoords->SetValue(n,1,x);
         myNodeCoords->SetValue(n,2,y);
         myNodeCoords->SetValue(n,3,z);
-        //cout<<"____adding node "<<globalNodeID<<"("<<x<<", "<<y<<", "<<z<<")____"<<endl;
     }
 
     //! ----------------------------
