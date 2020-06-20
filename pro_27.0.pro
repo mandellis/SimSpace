@@ -531,8 +531,8 @@ LIBS += \
 -l"C:\local\boost_1_69_0\lib64-msvc-14.0\libboost_thread-vc140-mt-x64-1_69" \
 -l"C:\CGAL-4.14\build_MSVC14.0\lib\Release\CGAL-vc140-mt-4.14"   \
 -l"C:\CGAL-4.14\build_MSVC14.0\lib\Release\CGAL_Core-vc140-mt-4.14" \
--l"C:\CGAL-4.14\build_MSVC14.0\lib\Debug\CGAL-vc140-mt-gd-4.14"   \
--l"C:\CGAL-4.14\build_MSVC14.0\lib\Debug\CGAL_Core-vc140-mt-gd-4.14" \
+#-l"C:\CGAL-4.14\build_MSVC14.0\lib\Debug\CGAL-vc140-mt-gd-4.14"   \
+#-l"C:\CGAL-4.14\build_MSVC14.0\lib\Debug\CGAL_Core-vc140-mt-gd-4.14" \
 
 RESOURCES += \
     icons.qrc \
