@@ -28,14 +28,20 @@ class particlesEmitter
 {
 public:
 
-    particlesEmitter(const occHandle(Ng_MeshVS_DataSourceFace) &theFaceMesh,
+    particlesEmitter(const occHandle(Ng_MeshVS_DataSourceFace) &theFaceMesh=occHandle(Ng_MeshVS_DataSourceFace)(),
                      double theIntensity = 0.0,
+                     double theMass = 9.31e-31,
+                     double theCharge = 1.6e-19,
+                     double theRadius = 0.1,
                      double theInternalTime = 0.0);
 
     particlesEmitter(const particlesEmitter &rhs)
     {
         myFaceMesh = new Ng_MeshVS_DataSourceFace(rhs.myFaceMesh);
         myIntensity = rhs.myIntensity;
+        myMass = rhs.myMass;
+        myCharge = rhs.myCharge;
+        myRadius = rhs.myRadius;
         myInternalTime = rhs.myInternalTime;
         myDiscreteFace = rhs.myDiscreteFace;
     }
@@ -44,6 +50,9 @@ public:
     {
         myFaceMesh = new Ng_MeshVS_DataSourceFace(rhs.myFaceMesh);
         myIntensity = rhs.myIntensity;
+        myMass = rhs.myMass;
+        myCharge = rhs.myCharge;
+        myRadius = rhs.myRadius;
         myInternalTime = rhs.myInternalTime;
         myDiscreteFace = rhs.myDiscreteFace;
     }
@@ -51,8 +60,19 @@ public:
 public:
 
     void setLocation(const occHandle(Ng_MeshVS_DataSourceFace) &theFaceMesh);
+
     void setIntensity(double theIntensity); // particles per unit time
     double getIntensity() const;
+
+    void setMass(double theMass);
+    double getMass() const;
+
+    void setChange(double theCharge);
+    double getCharge() const;
+
+    void setRadius(double theRadius);
+    double getRadius() const;
+
     double getInternalTime() const;
     void resetInternalTime();
     void generateParticles(std::vector<particle> &newParticles, double time);
@@ -61,6 +81,9 @@ private:
 
     occHandle(Ng_MeshVS_DataSourceFace) myFaceMesh;
     double myIntensity;
+    double myMass;
+    double myCharge;
+    double myRadius;
     double myInternalTime;
     std::shared_ptr<meshFace> myDiscreteFace;
 

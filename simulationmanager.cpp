@@ -473,7 +473,9 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
             case SimulationNodeClass::nodeType_StructuralAnalysisSolutionInformation:
             case SimulationNodeClass::nodeType_thermalAnalysisSolutionInformation:
             case SimulationNodeClass::nodeType_combinedAnalysisSolutionInformation:
+            case SimulationNodeClass::nodeType_particlesInFieldsSolutionInformation:
             {
+                //! note: CCXSolverMessage is a "solver message" (the .h name should be changed)
                 CCXSolverMessage solverOutput = theNode->getPropertyValue<CCXSolverMessage>("Solver output");
                 emit requestDisplayTextOnConsole(solverOutput.myText);
                 emit requestUnhighlightBodies(false);
@@ -484,6 +486,16 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 this->changeColor();
             }
                 break;
+
+            case SimulationNodeClass::nodeType_electrostaticPotential:
+            {
+                emit requestUnhighlightBodies(false);
+                emit requestSetWorkingMode(2);
+                emit requestHideAllResults();
+                emit requestHideSlicedMeshes();
+                emit requestClearGraph();
+                this->changeColor();
+            }
 
             case SimulationNodeClass::nodeType_OpenFoamScalarData:
             {
@@ -7500,6 +7512,7 @@ void SimulationManager::handleSolutionComponentChanged()
 //! function: writeSolverInputFile
 //! details:
 //! -------------------------------
+#include <particlesemitter.h>
 void SimulationManager::writeSolverInputFile()
 {
     QStandardItem *curItem = myModel->itemFromIndex(myTreeView->currentIndex());
@@ -7523,12 +7536,12 @@ void SimulationManager::writeSolverInputFile()
         particlesInFieldsSolver::writeInputFile(mySimulationDataBase,curItem,fileName.toStdString());
 
         //! --------------------------------------------
-        //! test reading - diagnostic for mesh recovery
+        //! test reading - diagnostic for file recovery
         //! --------------------------------------------
         occHandle(Ng_MeshVS_DataSource3D) volumeMesh;
         std::map<int,occHandle(Ng_MeshVS_DataSourceFace)> mapFaceMeshDS;
-        particlesInFieldsSolver::readInputFile(fileName.toStdString(),volumeMesh,mapFaceMeshDS);
-
+        std::vector<particlesEmitter> vecEmitters;
+        particlesInFieldsSolver::readInputFile(fileName.toStdString(),volumeMesh,mapFaceMeshDS,vecEmitters);
         volumeMesh->writeMesh("D:/Work/WBtest/volumeMesh.txt",3);
         for(std::map<int,occHandle(Ng_MeshVS_DataSourceFace)>::iterator it = mapFaceMeshDS.begin(); it!=mapFaceMeshDS.end(); it++)
         {

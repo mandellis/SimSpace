@@ -24,8 +24,16 @@
 //! ----------------------
 particlesEmitter::particlesEmitter(const occHandle(Ng_MeshVS_DataSourceFace) &theFaceMesh,
                                    double theIntensity,
+                                   double theMass,
+                                   double theCharge,
+                                   double theRadius,
                                    double theInternalTime):
-    myFaceMesh(theFaceMesh), myIntensity(theIntensity),myInternalTime(theInternalTime)
+    myFaceMesh(theFaceMesh),
+    myIntensity(theIntensity),
+    myMass(theMass),
+    myCharge(theCharge),
+    myRadius(theRadius),
+    myInternalTime(theInternalTime)
 {
     //! --------------
     //! discrete face
@@ -83,6 +91,60 @@ void particlesEmitter::setIntensity(double theIntensity)
 double particlesEmitter::getIntensity() const
 {
     return myIntensity;
+}
+
+//! ------------------
+//! function: setMass
+//! details:
+//! ------------------
+void particlesEmitter::setMass(double theMass)
+{
+    myMass = theMass;
+}
+
+//! ------------------
+//! function: getMass
+//! details:
+//! ------------------
+double particlesEmitter::getMass() const
+{
+    return myMass;
+}
+
+//! --------------------
+//! function: setCharge
+//! details:
+//! --------------------
+void particlesEmitter::particlesEmitter::setChange(double theCharge)
+{
+    myCharge = theCharge;
+}
+
+//! --------------------
+//! function: getCharge
+//! details:
+//! --------------------
+double particlesEmitter::getCharge() const
+{
+    return myCharge;
+}
+
+//! --------------------
+//! function: setRadius
+//! details:
+//! --------------------
+void particlesEmitter::setRadius(double theRadius)
+{
+    myRadius = theRadius;
+}
+
+//! --------------------
+//! function: getRadius
+//! details:
+//! --------------------
+double particlesEmitter::getRadius() const
+{
+    return myRadius;
 }
 
 //! ---------------------------

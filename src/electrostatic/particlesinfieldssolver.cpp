@@ -106,12 +106,19 @@ bool particlesInFieldsSolver::writeInputFile(simulationDataBase *sDB, QStandardI
 
     //! -------------------------------------------------------------
     //! now scan the simulation root (start after "Analysis setting"
-    //! and finish an item before "Solution")
+    //! and finish an item before "Solution"). Count also the number
+    //! of emitter associated with the boundary condition
     //! -------------------------------------------------------------
+    int NbEmitters = 0;
     for(int n=1; n<simulationRoot->rowCount()-1; n++)
     {
         QStandardItem *item = simulationRoot->child(n,0);
         SimulationNodeClass *curNode = item->data(Qt::UserRole).value<SimulationNodeClass*>();
+        if(curNode->getPropertyItem("Emitter")!=Q_NULLPTR)
+        {
+            bool isEmitter = curNode->getPropertyValue<bool>("Emitter");
+            if(isEmitter) NbEmitters++;
+        }
         switch(curNode->getType())
         {
         case SimulationNodeClass::nodeType_electrostaticPotential:
@@ -164,6 +171,86 @@ bool particlesInFieldsSolver::writeInputFile(simulationDataBase *sDB, QStandardI
             break;
         }
     }
+
+    //! -----------------------------
+    //! write the number of emitters
+    //! -----------------------------
+    os<<"NUMBEROFEMITTERS "<<NbEmitters<<endl;
+
+    //! --------------------------------------------
+    //! if emitter faces have been found write them
+    //! --------------------------------------------
+    if(NbEmitters!=0)
+    {
+        //! --------------------------------------------------------------
+        //! rescan the simulation root (start after "Analysis setting"
+        //! and finish an item before "Solution") searching for particles
+        //! emitters
+        //! --------------------------------------------------------------
+        for(int n=1; n<simulationRoot->rowCount()-1; n++)
+        {
+            QStandardItem *item = simulationRoot->child(n,0);
+            SimulationNodeClass *curNode = item->data(Qt::UserRole).value<SimulationNodeClass*>();
+            QStandardItem* itemEmitter = curNode->getPropertyItem("Emitter");
+            if(itemEmitter==Q_NULLPTR) continue;
+            bool emitterOn = curNode->getPropertyValue<bool>("Emitter");
+            if(emitterOn==false) continue;
+
+            os<<"EMITTER"<<endl;
+            os<<"LOCATION"<<endl;
+
+            //! ----------------------------
+            //! build a composite face mesh
+            //! ----------------------------
+            const QVector<GeometryTag> &vecLoc = curNode->getPropertyValue<QVector<GeometryTag>>("Tags");
+            QList<occHandle(Ng_MeshVS_DataSourceFace)> listOfFaceMeshDS;
+            for(int n=0; n<vecLoc.length(); n++)
+            {
+                int faceNr = vecLoc[n].subTopNr;
+                occHandle(Ng_MeshVS_DataSourceFace) aFaceMeshDS = occHandle(Ng_MeshVS_DataSourceFace)::DownCast(sDB->ArrayOfMeshDSOnFaces.getValue(bodyIndex,faceNr));
+                listOfFaceMeshDS.append(aFaceMeshDS);
+            }
+            occHandle(Ng_MeshVS_DataSourceFace) compositeFaceDS = new Ng_MeshVS_DataSourceFace(listOfFaceMeshDS);
+
+            //! ------------------------------
+            //! write the composite face mesh
+            //! ------------------------------
+            int NbFaceElements = compositeFaceDS->GetAllElements().Extent();
+            os<<"NUMBEROFELEMENTS "<<NbFaceElements<<endl;
+            for(TColStd_MapIteratorOfPackedMapOfInteger it(compositeFaceDS->GetAllElements()); it.More(); it.Next())
+            {
+                int NbNodes, buf[8];
+                TColStd_Array1OfInteger nodeIDs(*buf,1,8);
+                compositeFaceDS->GetNodesByElement(it.Key(),nodeIDs,NbNodes);
+                switch(NbNodes)
+                {
+                case 3: os<<"TRIG"<<endl; os<<nodeIDs(1)<<"\t"<<nodeIDs(2)<<"\t"<<nodeIDs(3)<<endl; break;
+                case 4: os<<"QUAD"<<endl; os<<nodeIDs(1)<<"\t"<<nodeIDs(2)<<"\t"<<nodeIDs(3)<<"\t"<<nodeIDs(4)<<endl; break;
+                }
+            }
+
+            double intensity = curNode->getPropertyValue<double>("Intensity");
+            os<<"INTENSITY"<<endl;
+            os<<"CONSTANT"<<endl;
+            os<<intensity<<endl;
+
+            double mass = curNode->getPropertyValue<double>("Particle mass");
+            os<<"MASS"<<endl;
+            os<<"CONSTANT"<<endl;
+            os<<mass<<endl;
+
+            double charge = curNode->getPropertyValue<double>("Electric charge");
+            os<<"CHARGE"<<endl;
+            os<<"CONSTANT"<<endl;
+            os<<charge<<endl;
+
+            double radius = curNode->getPropertyValue<double>("Radius");
+            os<<"RADIUS"<<endl;
+            os<<"CONSTANT"<<endl;
+            os<<radius<<endl;
+        }
+    }
+
     os.close();
     return true;
 }
@@ -174,7 +261,8 @@ bool particlesInFieldsSolver::writeInputFile(simulationDataBase *sDB, QStandardI
 //! ------------------------
 bool particlesInFieldsSolver::readInputFile(const std::string &inputFilePath,
                                             occHandle(Ng_MeshVS_DataSource3D) &volumeMesh,
-                                            std::map<int,occHandle(Ng_MeshVS_DataSourceFace)> &allFacesMeshDSMap)
+                                            std::map<int,occHandle(Ng_MeshVS_DataSourceFace)> &allFacesMeshDSMap,
+                                            std::vector<particlesEmitter> &theEmitters)
 {
     //! --------------
     //! open a stream
@@ -225,9 +313,9 @@ bool particlesInFieldsSolver::readInputFile(const std::string &inputFilePath,
         sscanf(val.c_str(),"%s%d",tmp,&faceNr);
         cout<<val<<endl;
 
-        //! ---------------------------------
-        //! read the number of face elements
-        //! ---------------------------------
+        //! ------------------------------------
+        //! read the number of surface elements
+        //! ------------------------------------
         int NbElements;
         std::getline(is,val);
         sscanf(val.c_str(),"%s%d",tmp,&NbElements);
@@ -379,6 +467,200 @@ bool particlesInFieldsSolver::readInputFile(const std::string &inputFilePath,
         aCompositeFaceDS->writeMesh("D:/Work/WBtest/BCMesh.txt",2);
     }
 
+    //! ----------------------------
+    //! read the number of emitters
+    //! ----------------------------
+    int NbEmitters;
+    std::getline(is,val);
+    sscanf(val.c_str(),"%s%d",tmp,&NbEmitters);
+    cout<<val<<endl;
+
+    //! ------------------
+    //! read the emitters
+    //! ------------------
+    for(int i=0; i<NbEmitters; i++)
+    {
+        //! --------------------------
+        //! read the header "EMITTER"
+        //! --------------------------
+        std::getline(is,val);
+        cout<<val<<endl;
+
+        //! ---------------------------
+        //! read the header "LOCATION"
+        //! ---------------------------
+        std::getline(is,val);
+        cout<<val<<endl;
+
+        //! ------------------------------------------------------
+        //! read the composite face mesh
+        //! read the number of surface elements, the elements one
+        //! by one, finally build the composite mesh data source
+        //! ------------------------------------------------------
+        int NbElements;
+        std::getline(is,val);
+        sscanf(val.c_str(),"%s%d",tmp,&NbElements);
+        cout<<val<<endl;
+
+        std::vector<meshElementByCoords> vecElem;
+        for(int n=1; n<=NbElements; n++)
+        {
+            cout<<n<<endl;
+            std::getline(is,val);
+            cout<<val<<endl;
+            if(strcmp(val.c_str(),"TRIG")==0)
+            {
+                int V[3];
+                std::getline(is,val);
+                sscanf(val.c_str(),"%d%d%d",&V[0],&V[1],&V[2]);
+                cout<<val<<endl;
+
+                //! -----------------------------
+                //! build a surface mesh element
+                //! -----------------------------
+                meshElementByCoords anElement;
+                anElement.ID = n;
+
+                for(int n=0; n<3; n++)
+                {
+                    double c[3];
+                    int NbNodes;
+                    TColStd_Array1OfReal coords(*c,1,3);
+                    MeshVS_EntityType aType;
+                    volumeMesh->GetGeom(V[n],false,coords,NbNodes,aType);
+                    anElement.pointList<<mesh::meshPoint(coords(1),coords(2),coords(3),V[n]);
+                }
+                vecElem.push_back(anElement);
+            }
+        }
+
+        //! -----------------------------------
+        //! build the surface mesh data source
+        //! and insert it into the map
+        //! -----------------------------------
+        occHandle(Ng_MeshVS_DataSourceFace) aCompositeFaceDS = new Ng_MeshVS_DataSourceFace(vecElem,false,false);
+
+        //! ---------------------
+        //! for testing purposes
+        //! ---------------------
+        aCompositeFaceDS->writeMesh(QString("D:/Work/WBtest/EmitterMesh_%1.txt").arg(i+1),2);
+
+        //! read the header "INTENSITY"
+        std::getline(is,val);
+        cout<<val<<endl;
+
+        //! read the header "CONSTANT" or "FUNCTION"
+        std::getline(is,val);
+        cout<<val<<endl;
+
+        double intensity = 0;
+        std::string timeDependentIntensity;
+        if(val=="CONSTANT")
+        {
+            //! -------------------
+            //! read the intensity
+            //! -------------------
+            std::getline(is,val);
+            sscanf(val.c_str(),"%lf",&intensity);
+            cout<<val<<endl;
+        }
+        if(val=="FUNCTION")
+        {
+            cerr<<"particlesInFieldsSolver::readInputFile()->____intensity defined by function not supported____"<<endl;
+            exit(999999);
+        }
+
+        //! read the header "MASS"
+        std::getline(is,val);
+        cout<<val<<endl;
+
+        //! read the header "CONSTANT" or "FUNCTION"
+        std::getline(is,val);
+        cout<<val<<endl;
+
+        double mass;
+        std::string massDistribution;
+        if(val=="CONSTANT")
+        {
+            //! -------------------
+            //! read the intensity
+            //! -------------------
+            std::getline(is,val);
+            sscanf(val.c_str(),"%lf",&mass);
+            cout<<val<<endl;
+        }
+        if(val=="FUNCTION")
+        {
+            cerr<<"particlesInFieldsSolver::readInputFile()->____mass defined by function not supported____"<<endl;
+            exit(999999);
+        }
+
+        //! read the header "CHARGE"
+        std::getline(is,val);
+        cout<<val<<endl;
+
+        //! read the header "CONSTANT" or "FUNCTION"
+        std::getline(is,val);
+        cout<<val<<endl;
+
+        double charge;
+        std::string chargeValueDistribution;
+        if(val=="CONSTANT")
+        {
+            //! -------------------
+            //! read the intensity
+            //! -------------------
+            std::getline(is,val);
+            sscanf(val.c_str(),"%lf",&charge);
+            cout<<val<<endl;
+        }
+        if(val=="FUNCTION")
+        {
+            cerr<<"particlesInFieldsSolver::readInputFile()->____charge distribution defined by function not supported____"<<endl;
+            exit(999999);
+        }
+
+        //! read the header "RADIUS"
+        std::getline(is,val);
+        cout<<val<<endl;
+
+        //! read the header "CONSTANT" or "FUNCTION"
+        std::getline(is,val);
+        cout<<val<<endl;
+
+        double radius;
+        std::string radiusDistribution;
+        if(val=="CONSTANT")
+        {
+            //! -------------------
+            //! read the intensity
+            //! -------------------
+            std::getline(is,val);
+            sscanf(val.c_str(),"%lf",&radius);
+            cout<<val<<endl;
+        }
+        if(val=="FUNCTION")
+        {
+            cerr<<"particlesInFieldsSolver::readInputFile()->____radius distribution defined by function not supported____"<<endl;
+            exit(999999);
+        }
+
+        //! -----------------
+        //! build an emitter
+        //! -----------------
+        particlesEmitter aParticleEmitter;
+        aParticleEmitter.setLocation(aCompositeFaceDS);
+        aParticleEmitter.setIntensity(intensity);
+        aParticleEmitter.setChange(charge);
+        aParticleEmitter.setMass(mass);
+        aParticleEmitter.setRadius(radius);
+
+        //! ------------------------------
+        //! add to the vector of emitters
+        //! ------------------------------
+        theEmitters.push_back(aParticleEmitter);
+    }
+
     return true;
 }
 
@@ -406,17 +688,35 @@ particlesInFieldsSolver::particlesInFieldsSolver(const string &inputFilePath)
     ifstream is(inputFilePath);
     if(is.is_open()==false) return;
 
-    //! --------------
-    //! read the mesh
-    //! --------------
+    //! ---------------------------------------------
+    //! read the mesh, the face meshes, the emitters
+    //! ---------------------------------------------
     occHandle(Ng_MeshVS_DataSource3D) volumeMesh;
     std::map<int,occHandle(Ng_MeshVS_DataSourceFace)> allFacesMeshDS;
-    this->readInputFile(inputFilePath,volumeMesh,allFacesMeshDS);
+    std::vector<particlesEmitter> vecEmitters;
+    this->readInputFile(inputFilePath,volumeMesh,allFacesMeshDS,vecEmitters);
 
-    //! -----------------------------------
-    //! once the volume mesh has been read
-    //! -----------------------------------
+    //! -----------------------------------------------------------------
+    //! - configure the domain mesh in Eigen format
+    //! - initialize AABB tree for point location
+    //! - allocate space for density distribution and reset distribution
+    //! - allocate the space for the electric field
+    //! - init the number of particles to zero
+    //! - mass matrix and its inverse
+    //! - gradient operator
+    //! -----------------------------------------------------------------
     this->setUpDomainMesh(volumeMesh);
+
+    //! --------------------------
+    //! create the Poisson solver
+    //! --------------------------
+    myPoissonSolver = std::make_shared<PoissonSolver>(volumeMesh);
+    myPoissonSolver->definePatches(allFacesMeshDS);
+
+    //! -----------------------
+    //! configure the emitters
+    //! -----------------------
+    for(int i=0; i<vecEmitters.size(); i++) myEmitters.push_back(vecEmitters[i]);
 }
 
 //! ----------------------
@@ -427,13 +727,39 @@ particlesInFieldsSolver::particlesInFieldsSolver(simulationDataBase *sDB, QStand
 {
     mySimulationRoot = simulationRoot;
     mySDB =  sDB;
-    this->init(mySimulationRoot);
 
     //! -----------------------
     //! set up the domain mesh
     //! -----------------------
     occHandle(Ng_MeshVS_DataSource3D) volumeMesh = occHandle(Ng_MeshVS_DataSource3D)::DownCast(sDB->ArrayOfMeshDS.first());
+
+    //! -----------------------------------------------------------------
+    //! - configure the domain mesh in Eigen format
+    //! - initialize AABB tree for point location
+    //! - allocate space for density distribution and reset distribution
+    //! - allocate the space for the electric field
+    //! - init the number of particles
+    //! - mass matrix and its inverse
+    //! - gradient operator
+    //! -----------------------------------------------------------------
     this->setUpDomainMesh(volumeMesh);
+
+    //! --------------------------
+    //! create the Poisson solver
+    //! --------------------------
+    myPoissonSolver = std::make_shared<PoissonSolver>(volumeMesh);
+    std::map<int,occHandle(Ng_MeshVS_DataSourceFace)> allFacesMap;
+    int bodyIndex = -1;
+    int NbFaces = sDB->MapOfBodyTopologyMap.value(bodyIndex).faceMap.Extent();
+    for(int faceNr = 1; faceNr<NbFaces; faceNr++)
+    {
+        const occHandle(Ng_MeshVS_DataSourceFace) &aFaceMeshDS = occHandle(Ng_MeshVS_DataSourceFace)::DownCast(sDB->ArrayOfMeshDSOnFaces.getValue(bodyIndex,faceNr));
+        std::pair<int,occHandle(Ng_MeshVS_DataSourceFace)> apair;
+        apair.first = faceNr;
+        apair.second = aFaceMeshDS;
+        allFacesMap.insert(apair);
+    }
+    myPoissonSolver->definePatches(allFacesMap);
 }
 
 //! ---------------
@@ -442,11 +768,6 @@ particlesInFieldsSolver::particlesInFieldsSolver(simulationDataBase *sDB, QStand
 //! ---------------
 bool particlesInFieldsSolver::init(QStandardItem* simulationRoot)
 {
-    //! ----------------
-    //! simulation root
-    //! ----------------
-    mySimulationRoot = simulationRoot;
-
     //! -----------------------------
     //! init the number of particles
     //! -----------------------------
@@ -510,6 +831,7 @@ bool particlesInFieldsSolver::init(QStandardItem* simulationRoot)
                 double intensity = curNode->getPropertyValue<double>("Intensity");
                 double mass = curNode->getPropertyValue<double>("Particle mass");
                 double charge = curNode->getPropertyValue<double>("Electric charge");
+                double radius = curNode->getPropertyValue<double>("Radius");
 
                 occHandle(Ng_MeshVS_DataSourceFace) emitterFaceMeshDS = new Ng_MeshVS_DataSourceFace(listOfFaceMeshDS);
                 particlesEmitter anEmitter(emitterFaceMeshDS,intensity);
@@ -776,10 +1098,10 @@ bool particlesInFieldsSolver::loadTimeInfo(ifstream &inputFileStream)
     return true;
 }
 
-//! -------------------------
-//! function: loadDomainMesh
+//! --------------------------
+//! function: setUpDomainMesh
 //! details:
-//! -------------------------
+//! --------------------------
 bool particlesInFieldsSolver::setUpDomainMesh(occHandle(Ng_MeshVS_DataSource3D) volumeMesh)
 {
     //! ------------------------
@@ -837,11 +1159,6 @@ bool particlesInFieldsSolver::setUpDomainMesh(occHandle(Ng_MeshVS_DataSource3D) 
     //! --------------------------------
     myElectricField.resize(V.rows(),3);
     for(int i=0; i<V.rows(); i++) myElectricField(i,0) = myElectricField(i,1) = myElectricField(i,2) = 0.0;
-
-    //! --------------------------
-    //! create the Poisson solver
-    //! --------------------------
-    myPoissonSolver = new PoissonSolver(volumeMesh,this);
 
     //! -----------------------------
     //! init the number of particles

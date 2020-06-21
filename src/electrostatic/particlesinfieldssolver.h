@@ -92,8 +92,8 @@ private:
     Eigen::VectorXd myElectrostaticPotential;   // electrostatic potential
     Eigen::MatrixXd myElectricField;            // electric field
 
-    //std::shared_ptr<PoissonSolver> myPoissonSolver;
-    PoissonSolver *myPoissonSolver;
+    std::shared_ptr<PoissonSolver> myPoissonSolver;
+    //PoissonSolver *myPoissonSolver;
     std::vector<particlesEmitter> myEmitters;
 
 private:
@@ -122,8 +122,9 @@ private:
 public:
 
     static bool readInputFile(const std::string &inputFilePath,
-                              opencascade::handle<Ng_MeshVS_DataSource3D> &volumeMesh,
-                              std::map<int,occHandle(Ng_MeshVS_DataSourceFace)> &allFacesMeshDS);
+                              occHandle(Ng_MeshVS_DataSource3D) &volumeMesh,
+                              std::map<int,occHandle(Ng_MeshVS_DataSourceFace)> &allFacesMeshDSMap,
+                              std::vector<particlesEmitter> &theEmitters);
 
     static bool writeInputFile(simulationDataBase *sDB, QStandardItem *simulationRoot, const std::string &inputFilePath);
 };

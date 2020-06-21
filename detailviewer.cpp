@@ -7019,6 +7019,7 @@ void DetailViewer::handleEmitterStatusChanged()
     static double intensity;
     static double mass;
     static double charge;
+    static double radius;
 
     this->connectToSimulationManager(false);
 
@@ -7032,6 +7033,7 @@ void DetailViewer::handleEmitterStatusChanged()
             mass = 9.11e-31;
             charge = 1.6e-19;
             intensity = 1e7;
+            radius = 0.1;
         }
         data.setValue(intensity);
         myCurNode->addProperty(Property("Intensity",data,Property::PropertyGroup_Emitter));
@@ -7039,15 +7041,19 @@ void DetailViewer::handleEmitterStatusChanged()
         myCurNode->addProperty(Property("Particle mass",data,Property::PropertyGroup_Emitter));
         data.setValue(charge);
         myCurNode->addProperty(Property("Electric charge",data,Property::PropertyGroup_Emitter));
+        data.setValue(radius);
+        myCurNode->addProperty(Property("Radius",radius,Property::PropertyGroup_Emitter));
     }
     else
     {
         intensity = myCurNode->getPropertyValue<double>("Intensity");
         mass = myCurNode->getPropertyValue<double>("Particle mass");
         charge = myCurNode->getPropertyValue<double>("Electric charge");
+        radius = myCurNode->getPropertyValue<double>("Radius");
         myCurNode->removeProperty("Intensity");
         myCurNode->removeProperty("Particle mass");
         myCurNode->removeProperty("Electric charge");
+        myCurNode->removeProperty("Radius");
     }
     this->connectToSimulationManager(true);
     call++;

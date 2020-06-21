@@ -2270,7 +2270,7 @@ QVariant QExtendedStandardItem::data(int role) const
             data.setValue(QString("%1").arg(val, 0, 'E', 3));
             return data;
         }
-        else if(name == "Particle mass" || name =="Intensity" || name == "Electric charge")
+        else if(name == "Particle mass" || name =="Intensity" || name == "Electric charge" || name =="Radius")
         {
             double val = QStandardItem::data(Qt::UserRole).value<Property>().getData().toDouble();
             data.setValue(QString("%1").arg(val, 0, 'E', 3));

@@ -4002,7 +4002,7 @@ void Ng_MeshVS_DataSourceFace::displaceMySelf_asRigidAsPossible(const QMap<int, 
 //! --------------------
 bool Ng_MeshVS_DataSourceFace::writeMesh(const QString &meshFileName, int dim)
 {
-    cout<<"Ng_MeshVS_DataSourceFace::writeMesh()->____function called. Writing mesh file: "<<meshFileName.toStdString()<<"____"<<endl;
+    //cout<<"Ng_MeshVS_DataSourceFace::writeMesh()->____function called. Writing mesh file: "<<meshFileName.toStdString()<<"____"<<endl;
 
     char name[128];
     sprintf(name,"%s",meshFileName.toStdString().c_str());
@@ -4079,7 +4079,7 @@ bool Ng_MeshVS_DataSourceFace::writeMesh(const QString &meshFileName, int dim)
     //! close the file
     //! ---------------
     fclose(meshFile);
-    cout<<"Ng_MeshVS_DataSourceFace::writeMesh()->____exiting____"<<endl;
+    //cout<<"Ng_MeshVS_DataSourceFace::writeMesh()->____exiting____"<<endl;
     return true;
 }
 

@@ -2757,10 +2757,10 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
             cb->addItem("On",1);
             return cb;
         }
-        //! ----------------------------------------------
-        //! "Particle mass" "Electric charge" "Intensity"
-        //! ----------------------------------------------
-        else if(propertyName =="Electric charge" || propertyName =="Particle mass" || propertyName =="Intensity")
+        //! -------------------------------------------------------
+        //! "Particle mass" "Electric charge" "Intensity" "Radius"
+        //! -------------------------------------------------------
+        else if(propertyName =="Electric charge" || propertyName =="Particle mass" || propertyName =="Intensity" || propertyName == "Radius")
         {
             QLineEdit *editor = new QLineEdit(parent);
             QDoubleValidator *validator = new QDoubleValidator();
@@ -5077,10 +5077,10 @@ void GeneralDelegate::setEditorData(QWidget *editor, const QModelIndex &index) c
         comboBox->setCurrentIndex(value);
         connect(comboBox,SIGNAL(currentIndexChanged(int)),this,SLOT(commitAndCloseComboBoxEmitter()));
     }
-    //! ----------------------------------------------
-    //! "Particle mass" "Electric charge" "Intensity"
-    //! ----------------------------------------------
-    else if(propertyName =="Particle mass" || propertyName =="Electric charge" || propertyName =="Intensity")
+    //! -------------------------------------------------------
+    //! "Particle mass" "Electric charge" "Intensity" "Radius"
+    //! -------------------------------------------------------
+    else if(propertyName =="Particle mass" || propertyName =="Electric charge" || propertyName =="Intensity" || propertyName =="Radius")
     {
         QLineEdit *lineEdit = static_cast<QLineEdit*>(editor);
         QString name = data.value<Property>().getData().toString();
@@ -6678,10 +6678,10 @@ void GeneralDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, c
             QComboBox *cb = static_cast<QComboBox*>(editor);
             data.setValue(cb->currentIndex());
         }
-        //! ----------------------------------------------
-        //! "Particle mass" "Electric charge" "Intensity"
-        //! ----------------------------------------------
-        else if(propertyName =="Particle mass" || propertyName =="Electric charge" || propertyName =="Intensity")
+        //! -------------------------------------------------------
+        //! "Particle mass" "Electric charge" "Intensity" "Radius"
+        //! -------------------------------------------------------
+        else if(propertyName =="Particle mass" || propertyName =="Electric charge" || propertyName =="Intensity" || propertyName=="Radius")
         {
             QLineEdit *lineEdit = static_cast<QLineEdit*>(editor);
             data.setValue(lineEdit->text());

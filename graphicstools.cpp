@@ -85,6 +85,9 @@ Quantity_NameOfColor graphicsTools::getModelFeatureColor(SimulationNodeClass::no
     case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_CompressionOnlySupport:
         color = COMPRESSION_ONLY_SUPPORT_COLOR;
         break;
+    case SimulationNodeClass::nodeType_electrostaticPotential:
+        color = Quantity_NOC_AQUAMARINE1;
+        break;
     default:
         color = Quantity_NOC_YELLOW;
         break;
