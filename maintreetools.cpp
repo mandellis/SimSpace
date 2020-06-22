@@ -260,7 +260,7 @@ QList<int> mainTreeTools::getColumnsToRead(QExtendedStandardItem *anItem)
         case SimulationNodeClass::nodeType_thermalAnalysisThermalFlow:
         case SimulationNodeClass::nodeType_thermalAnalysisThermalFlux:
         case SimulationNodeClass::nodeType_thermalAnalysisThermalPower:
-
+        case SimulationNodeClass::nodeType_electrostaticPotential:
         {
             theColumnsToShow<<SC;
         }
@@ -353,6 +353,7 @@ int mainTreeTools::calculateStartColumn(QExtendedStandardItem *anItem)
         case SimulationNodeClass::nodeType_thermalAnalysisThermalFlow:
         case SimulationNodeClass::nodeType_thermalAnalysisThermalPower:
         case SimulationNodeClass::nodeType_thermalAnalysisThermalFlux:
+        case SimulationNodeClass::nodeType_electrostaticPotential:
             delta = 0;
             break;
         case SimulationNodeClass::nodeType_thermalAnalysisConvection:
@@ -470,6 +471,7 @@ int mainTreeTools::calculateStartColumn(QTreeView *tree)
         case SimulationNodeClass::nodeType_thermalAnalysisThermalFlow:
         case SimulationNodeClass::nodeType_thermalAnalysisThermalPower:
         case SimulationNodeClass::nodeType_thermalAnalysisThermalFlux:
+        case SimulationNodeClass::nodeType_electrostaticPotential:
             delta = 0;
             break;
         case SimulationNodeClass::nodeType_thermalAnalysisConvection:

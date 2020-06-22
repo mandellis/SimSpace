@@ -246,10 +246,14 @@ public:
 
     enum loadType
     {
-        //! magnetic field
+        //! --------------------------------
+        //! particles in fields environment
+        //! --------------------------------
+        loadType_magneticFieldMagnitude,
         loadType_Bx,
         loadType_By,
         loadType_Bz,
+        loadType_electrostaticPotentialMagnitude,
 
         //! force and remote force
         loadType_forceX,
@@ -289,6 +293,7 @@ public:
         loadType_remoteRotationMagnitude,
         loadType_remoteRotationFree,        // maybe can be removed
 
+        //! pressure
         loadType_pressureMagnitude,
 
         //! --------------------
@@ -300,11 +305,6 @@ public:
         loadType_thermalPowerMagnitude,
         loadType_thermalConvectionFilmCoefficientMagnitude,
         loadType_thermalConvectionReferenceTemperatureMagnitude,
-
-        //! --------------------------------
-        //! particles in fields environment
-        //! --------------------------------
-        loadType_magneticFieldMagnitude,
 
         loadType_thermalConditionTemperature,
 

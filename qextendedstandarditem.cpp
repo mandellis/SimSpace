@@ -2283,15 +2283,6 @@ QVariant QExtendedStandardItem::data(int role) const
             data.setValue(QString("%1").arg(val, 0, 'E', 3));
             return data;
         }
-        //! ------------
-        //! "Potential"
-        //! ------------
-        else if(name =="Potential")
-        {
-            double val = QStandardItem::data(Qt::UserRole).value<Property>().getData().toDouble();
-            data.setValue(QString("%1").arg(val));
-            return data;
-        }
         //! ----------
         //! "Emitter"
         //! ----------
@@ -2306,9 +2297,20 @@ QVariant QExtendedStandardItem::data(int role) const
         //! -------------
         else if(name =="Definition")
         {
-            int val = QStandardItem::data(Qt::UserRole).value<Property>().getData().toInt();
-            data.setValue(val==0? QString("From file"):QString("Function"));
-            return data;
+            SimulationNodeClass *curNode = this->getCurrentNode();
+            if(curNode->isAnalysisSettings())
+            {
+                int val = QStandardItem::data(Qt::UserRole).value<Property>().getData().toInt();
+                if(val==0) data.setValue(QString("Step subdivision"));
+                else data.setValue(QString("Time increment"));
+                return data;
+            }
+            else
+            {
+                int val = QStandardItem::data(Qt::UserRole).value<Property>().getData().toInt();
+                data.setValue(val==0? QString("From file"):QString("Function"));
+                return data;
+            }
         }
         //! -----------------------
         //! "File path" "Function"

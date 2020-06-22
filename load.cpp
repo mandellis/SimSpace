@@ -189,6 +189,11 @@ void load::write(std::ofstream &out) const
     case Property::loadType_forceX:
     case Property::loadType_forceY:
     case Property::loadType_forceZ:
+    case Property::loadType_magneticFieldMagnitude:
+    case Property::loadType_Bx:
+    case Property::loadType_By:
+    case Property::loadType_Bz:
+    case Property::loadType_electrostaticPotentialMagnitude:
     case Property::loadType_momentMagnitude:
     case Property::loadType_momentX:
     case Property::loadType_momentY:
@@ -262,6 +267,11 @@ load load::readLoad(std::ifstream &in)
             loadType == "loadType_momentY" ||
             loadType == "loadType_momentZ" ||
             loadType == "loadType_momentMagnitude" ||
+            loadType == "loadType_Bx" ||
+            loadType == "loadType_By" ||
+            loadType == "loadType_Bz" ||
+            loadType == "loadType_magneticFieldMagnitude" ||
+            loadType == "loadType_electrostaticPotentialMagnitude" ||
             loadType == "loadType_displacementX" ||
             loadType == "loadType_displacementY" ||
             loadType == "loadType_displacementZ" ||

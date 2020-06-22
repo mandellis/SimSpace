@@ -150,6 +150,19 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
         }
 #endif
 
+        //! -------------
+        //! "Definition"
+        //! -------------
+        if(propertyName == "Definition")
+        {
+            if(this->getCurrentNode()->isAnalysisSettings())
+            {
+                QComboBox *cb = new QComboBox(parent);
+                cb->addItem("Step subdivision",0);
+                cb->addItem("Time increment",1);
+                return cb;
+            }
+        }
         //! ------------------
         //! "Static/Transient"
         //! ------------------
@@ -179,6 +192,11 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
             }
                 break;
             case SimulationNodeClass::nodeType_thermalAnalysis:
+            {
+                return Q_NULLPTR;
+            }
+                break;
+            case SimulationNodeClass::nodeType_particlesInFieldsAnalysis:
             {
                 return Q_NULLPTR;
             }
@@ -2747,13 +2765,13 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
         //! ------------
         //! "Potential"
         //! ------------
-        else if(propertyName =="Potential")
-        {
-            QLineEdit *editor = new QLineEdit(parent);
-            QDoubleValidator *validator = new QDoubleValidator();
-            editor->setValidator(validator);
-            return editor;
-        }
+        //else if(propertyName =="Potential")
+        //{
+        //    QLineEdit *editor = new QLineEdit(parent);
+        //    QDoubleValidator *validator = new QDoubleValidator();
+        //    editor->setValidator(validator);
+        //    return editor;
+        //}
         //! ----------
         //! "Emitter"
         //! ----------
@@ -2828,6 +2846,19 @@ void GeneralDelegate::setEditorData(QWidget *editor, const QModelIndex &index) c
     }
 #endif
 
+    //! -------------
+    //! "Definition"
+    //! -------------
+    if(propertyName == "Definition")
+    {
+        if(this->getCurrentNode()->isAnalysisSettings())
+        {
+            QComboBox *cb = static_cast<QComboBox*>(editor);
+            int val = data.value<Property>().getData().toInt();
+            cb->setCurrentIndex(val);
+            connect(cb,SIGNAL(currentIndexChanged(int)),this,SLOT(commitAndCloseTimeIncrementDefinition()));
+        }
+    }
     //! -------------------
     //! "Static/Transient"
     //! -------------------
@@ -5095,13 +5126,13 @@ void GeneralDelegate::setEditorData(QWidget *editor, const QModelIndex &index) c
     //! ------------
     //! "Potential"
     //! ------------
-    else if(propertyName =="Potential")
-    {
-        QLineEdit *lineEdit = static_cast<QLineEdit*>(editor);
-        QString name = data.value<Property>().getData().toString();
-        lineEdit->setText(name);
-        connect(editor,SIGNAL(returnPressed()),this, SLOT(commitAndCloseLineEdit()));
-    }
+    //else if(propertyName =="Potential")
+    //{
+    //    QLineEdit *lineEdit = static_cast<QLineEdit*>(editor);
+    //    QString name = data.value<Property>().getData().toString();
+    //    lineEdit->setText(name);
+    //    connect(editor,SIGNAL(returnPressed()),this, SLOT(commitAndCloseLineEdit()));
+    //}
     //! ----------
     //! "Emitter"
     //! ----------
@@ -5182,6 +5213,17 @@ void GeneralDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, c
         }
 #endif
 
+        //! -------------
+        //! "Definition"
+        //! -------------
+        if(propertyName == "Definition")
+        {
+            if(this->getCurrentNode()->isAnalysisSettings())
+            {
+                QComboBox *cb = static_cast<QComboBox*>(editor);
+                data.setValue(cb->currentData());
+            }
+        }
         //! -------------------
         //! "Static/Transient"
         //! -------------------
@@ -6710,11 +6752,11 @@ void GeneralDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, c
         //! ------------
         //! "Potential"
         //! ------------
-        else if(propertyName=="Potential")
-        {
-            QLineEdit *lineEdit = static_cast<QLineEdit*>(editor);
-            data.setValue(lineEdit->text());
-        }
+        //else if(propertyName=="Potential")
+        //{
+        //    QLineEdit *lineEdit = static_cast<QLineEdit*>(editor);
+        //    data.setValue(lineEdit->text());
+        //}
         //! ----------
         //! "Emitter"
         //! ----------
@@ -8226,4 +8268,16 @@ void GeneralDelegate::commitAndCloseTimeIntegrationChanged()
     emit commitData(editor);
     emit closeEditor(editor);
     emit timeIntegrationChanged();
+}
+
+//! ------------------------------------------------
+//! function: commitAndCloseTimeIncrementDefinition
+//! details:
+//! ------------------------------------------------
+void GeneralDelegate::commitAndCloseTimeIncrementDefinition()
+{
+    QComboBox *editor = qobject_cast<QComboBox *>(sender());
+    emit commitData(editor);
+    emit closeEditor(editor);
+    emit timeIncrementDefinitionChanged();
 }

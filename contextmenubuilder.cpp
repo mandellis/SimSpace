@@ -28,6 +28,8 @@
 //! -----------------------------
 void contextMenuBuilder::buildCommonActions(QMenu *contextMenu, bool isEnabled)
 {
+    if(isEnabled==false) return;
+
     //! ---------------------------------------------
     //! preliminary: retrieve the simulation manager
     //! ---------------------------------------------

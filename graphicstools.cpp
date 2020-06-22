@@ -88,6 +88,9 @@ Quantity_NameOfColor graphicsTools::getModelFeatureColor(SimulationNodeClass::no
     case SimulationNodeClass::nodeType_electrostaticPotential:
         color = Quantity_NOC_AQUAMARINE1;
         break;
+    case SimulationNodeClass::nodeType_magneticField:
+        color = Quantity_NOC_AQUAMARINE2;
+        break;
     default:
         color = Quantity_NOC_YELLOW;
         break;

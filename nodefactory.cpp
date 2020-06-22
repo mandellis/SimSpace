@@ -2526,10 +2526,10 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
         vecProp.push_back(prop_scope);
         vecProp.push_back(prop_tags);
 
-        double wallPotential = 0;
-        data.setValue(wallPotential);
-        Property prop_wallPotential("Potential",data,Property::PropertyGroup_Definition);
-        vecProp.push_back(prop_wallPotential);
+        data.setValue(Property::loadDefinition_constant);
+        Property prop_loadMagnitude("Magnitude",data,Property::PropertyGroup_Definition);
+        data.setValue(prop_loadMagnitude);
+        vecProp.push_back(prop_loadMagnitude);
 
         int isEmitter = 0;
         data.setValue(isEmitter);
@@ -2552,12 +2552,11 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
         vecProp.push_back(prop_scope);
         vecProp.push_back(prop_tags);
 
-        Property::defineBy theDefineby = Property::defineBy_vector;
-        data.setValue(theDefineby);
+        Property::defineBy theDefineBy = Property::defineBy_vector;
+        data.setValue(theDefineBy);
         Property prop_defineBy("Define by",data,Property::PropertyGroup_Definition);
         vecProp.push_back(prop_defineBy);
 
-        //gilda
         //! under definition
         vecProp.push_back(prop_suppressed);
     }

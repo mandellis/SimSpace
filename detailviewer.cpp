@@ -1697,9 +1697,9 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
 
     CustomTableModel *tabularDataModel;
 
-    //! -----------------------------------
-    //! retrieve the "Current step number"
-    //! -----------------------------------
+    //! --------------------------------------
+    //! retrieve the "Analysis settings" node
+    //! --------------------------------------
     SimulationNodeClass *nodeAnalysisSettings = Q_NULLPTR;
     if(myCurNode->isAnalysisRoot()) nodeAnalysisSettings = myCurModelIndex.child(0,0).data(Qt::UserRole).value<SimulationNodeClass*>();
     if(myCurNode->isAnalysisSettings()) nodeAnalysisSettings = myCurModelIndex.data(Qt::UserRole).value<SimulationNodeClass*>();
@@ -1716,21 +1716,24 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
         return;
     }
 
+    //! -----------------------------------
+    //! retrieve the "Current step number"
+    //! -----------------------------------
     int currentStepNumber = nodeAnalysisSettings->getPropertyValue<int>("Current step number");
     tabularDataModel = nodeAnalysisSettings->getTabularDataModel();
 
     //! -------------------------------------------------------------------------------------------------------------------------
     //! Once changed, the node model emits the Qt signal "itemChanged()", which is connected with the SLOT "handleItemChange()".
     //! That SLOT function modifies the tabular data, putting into the table the values set by the DetailViewer controls.
-    //! Instead the function defined in this part of code modifies the DetailViewer content (i.e. the node model) using the
-    //! tabular data. In order to avoid the ping-pong effect first disconnect "itemChanged()" from "handleItemChange()", then,
+    //! Instead the function defined herer modifies the DetailViewer content (i.e. the node model) using the tabular data.
+    //! In order to avoid the ping-pong effect first disconnect "itemChanged()" from "handleItemChange()", then,
     //! after the changes have been applied, reconnect (this is done at the end [*])
     //! -------------------------------------------------------------------------------------------------------------------------
     SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
-    //QStandardItemModel *nodeModel = myCurNode->getModel();
-    //disconnect(nodeModel,SIGNAL(itemChanged(QStandardItem*)),sm,SLOT(handleItemChange(QStandardItem*)));
+    QStandardItemModel *nodeModel = myCurNode->getModel();
+    disconnect(nodeModel,SIGNAL(itemChanged(QStandardItem*)),sm,SLOT(handleItemChange(QStandardItem*)));
 
-    myCurNode->getModel()->blockSignals(true);
+    //myCurNode->getModel()->blockSignals(true);
 
     int row = topLeftIndex.row();
     if(row == currentStepNumber)
@@ -1741,6 +1744,7 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
         case SimulationNodeClass::nodeType_structuralAnalysisSettings:
         case SimulationNodeClass::nodeType_thermalAnalysisSettings:
         case SimulationNodeClass::nodeType_combinedAnalysisSettings:
+        case SimulationNodeClass::nodeType_particlesInFieldsAnalysis:
         {
             int column = topLeftIndex.column();
             QVariant data = tabularDataModel->dataRC(row,column);
@@ -1867,6 +1871,7 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
         case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Moment:
         case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RotationalVelocity:
         case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Acceleration:
+        case SimulationNodeClass::nodeType_magneticField:
         {
             cout<<"____function called for a vectorial quantity____"<<endl;
             Property::defineBy theDefineBy = myCurNode->getPropertyValue<Property::defineBy>("Define by");
@@ -2103,8 +2108,8 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
         case SimulationNodeClass::nodeType_thermalAnalysisThermalFlow:
         case SimulationNodeClass::nodeType_thermalAnalysisThermalFlux:
         case SimulationNodeClass::nodeType_thermalAnalysisThermalPower:
+        case SimulationNodeClass::nodeType_electrostaticPotential:
         {
-            //cout<<"DetailViewer::updateDetailViewerFromTabularData()->____function called for \"Pressure\"____"<<endl;
             QVariant data;
             data.setValue(Property::loadDefinition_tabularData);
             Property prop_magnitude("Magnitude",data,Property::PropertyGroup_Definition);
@@ -2133,19 +2138,17 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
     //! -----------------
     //! [*] reconnection
     //! -----------------
-    //if(myCurNode->getType()!=SimulationNodeClass::nodeType_structuralAnalysisSettings &&
-    //        myCurNode->getType()!=SimulationNodeClass::nodeType_thermalAnalysisSettings)
-    //    connect(nodeModel,SIGNAL(itemChanged(QStandardItem*)),sm,SLOT(handleItemChange(QStandardItem*)));
+    connect(nodeModel,SIGNAL(itemChanged(QStandardItem*)),sm,SLOT(handleItemChange(QStandardItem*)));
 
-    myCurNode->getModel()->blockSignals(false);
+    //myCurNode->getModel()->blockSignals(false);
 
     cout<<"DetailViewer::updateDetailViewerFromTabularData()->____exiting____"<<endl;
 }
 
-//! --------------------------------
-//! function: selectionHasChanged()
+//! ------------------------------
+//! function: selectionHasChanged
 //! details:
-//! --------------------------------
+//! ------------------------------
 void DetailViewer::selectionHasChanged()
 {
     //cout<<"DetailViewer::selectionHasChanged()->____function called____"<<endl;
@@ -3399,20 +3402,22 @@ void DetailViewer::handleZLoadDefinitionChanged(const QString &textData)
     emit requestHandleZLoadDefinitionChanged(textData);
 }
 
-//! ------------------------------------------
-//! function: handleAutoTimeSteppingChanged()
+//! ----------------------------------------
+//! function: handleAutoTimeSteppingChanged
 //! details:
-//! ------------------------------------------
+//! ----------------------------------------
 void DetailViewer::handleAutoTimeSteppingChanged()
 {
     //cout<<"DetailViewer::handleAutoTimeSteppingChanged()->____function called____"<<endl;
+    QVariant data;
     Property::autoTimeStepping theAutoTimeStepping =  myCurNode->getPropertyValue<Property::autoTimeStepping>("Auto time stepping");
-
     QExtendedStandardItem *item;
     int currentStepNumber = myCurNode->getPropertyValue<int>("Current step number");
 
     if(theAutoTimeStepping == Property::autoTimeStepping_ProgramControlled)
     {
+        myCurNode->removeProperty("Definition");
+
         //! set the default values
         QVector<int> N;
         N.append(5); N.append(2); N.append(10); N.append(0);
@@ -3433,12 +3438,17 @@ void DetailViewer::handleAutoTimeSteppingChanged()
         }
         QVariant data;
         data.setValue(N);
-        myCurNode->getTabularDataModel()->setDataRC(data,currentStepNumber,3);
+        myCurNode->getTabularDataModel()->setDataRC(data,currentStepNumber,TABULAR_DATA_TIME_STEP_POLICY);
     }
     else if(theAutoTimeStepping == Property::autoTimeStepping_ON)
     {
+        //! ------------------------------
+        //! "Definition" by step division
+        //! ------------------------------
+        myCurNode->removeProperty("Definition");
+        data.setValue(0);
+        myCurNode->addProperty(Property("Definition",data,Property::PropertyGroup_StepControls));
 
-        //! remove the previous settings
         item = myCurNode->getPropertyItem("Number of substeps");
         if(item!=Q_NULLPTR)
         {
@@ -3446,11 +3456,9 @@ void DetailViewer::handleAutoTimeSteppingChanged()
         }
 
         //! read from the tabData
-        //int currentStepNumber = myCurNode->getPropertyItem("Current step number")->data(Qt::UserRole).value<Property>().getData().toInt();
         CustomTableModel *tabData = myCurNode->getTabularDataModel();
         QVector<int> N = tabData->dataRC(currentStepNumber,3,Qt::EditRole).value<QVector<int>>();
 
-        //! -----
         QVariant data;
         data.setValue(N[0]);
         Property prop_NdivIni("Initial substeps",data,Property::PropertyGroup_StepControls);
@@ -3470,6 +3478,13 @@ void DetailViewer::handleAutoTimeSteppingChanged()
     }
     else if(theAutoTimeStepping == Property::autoTimeStepping_OFF)
     {
+        //! ------------------------------
+        //! "Definition" by step division
+        //! ------------------------------
+        myCurNode->removeProperty("Definition");
+        data.setValue(0);
+        myCurNode->addProperty(Property("Definition",data,Property::PropertyGroup_StepControls));
+
         item = myCurNode->getPropertyItem("Initial substeps");
         if(item!=Q_NULLPTR)
         {
@@ -3481,11 +3496,9 @@ void DetailViewer::handleAutoTimeSteppingChanged()
         }
 
         //! read from the tabData
-        //int currentStepNumber = myCurNode->getPropertyItem("Current step number")->data(Qt::UserRole).value<Property>().getData().toInt();
         CustomTableModel *tabData = myCurNode->getTabularDataModel();
         QVector<int> N = tabData->dataRC(currentStepNumber,3,Qt::EditRole).value<QVector<int>>();
 
-        QVariant data;
         data.setValue(N[0]);
         Property prop_Ndiv("Number of substeps",data,Property::PropertyGroup_StepControls);
         myCurNode->addProperty(prop_Ndiv);

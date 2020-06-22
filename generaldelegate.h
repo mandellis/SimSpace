@@ -235,6 +235,7 @@ private slots:
     void commitAndCloseAnalysisType();                                  //! 19/05/2020
     void commitAndCloseTimeIntegrationChanged();                        //! 20/05/2020
     void commitAndCloseComboBoxEmitter();
+    void commitAndCloseTimeIncrementDefinition();                       //! 22/05/2020
 
 signals:
 
@@ -363,6 +364,7 @@ signals:
     void timeIntegrationChanged();
 
     void EmitterStatusChanged();
+    void timeIncrementDefinitionChanged();  // changes the definition of time increment from substep division to time step size
 };
 
 #endif

@@ -387,7 +387,8 @@ QVariant CustomTableModel::data(const QModelIndex &index, int role) const
                 m_loadTypes.at(index.column())==Property::loadType_magneticFieldMagnitude ||
                 m_loadTypes.at(index.column())==Property::loadType_Bx ||
                 m_loadTypes.at(index.column())==Property::loadType_By ||
-                m_loadTypes.at(index.column())==Property::loadType_Bz)
+                m_loadTypes.at(index.column())==Property::loadType_Bz ||
+                m_loadTypes.at(index.column())==Property::loadType_electrostaticPotentialMagnitude)
         {
             QString cellString = QString("%1").arg(data.toDouble());
             QVariant cellStringVariant;
@@ -513,6 +514,10 @@ QString CustomTableModel::getHeaderString(int section) const
     switch(m_loadTypes.at(section))
     {
     case Property::loadType_magneticFieldMagnitude: horizontalHeaderString = "B"; break;
+    case Property::loadType_Bx: horizontalHeaderString = "Bx"; break;
+    case Property::loadType_By: horizontalHeaderString = "By"; break;
+    case Property::loadType_Bz: horizontalHeaderString = "Bz"; break;
+    case Property::loadType_electrostaticPotentialMagnitude: horizontalHeaderString = "E"; break;
     case Property::loadType_temperatureMagnitude: horizontalHeaderString = "T"; break;
     case Property::loadType_thermalConvectionFilmCoefficientMagnitude: horizontalHeaderString = "Film coeff"; break;
     case Property::loadType_thermalConvectionReferenceTemperatureMagnitude: horizontalHeaderString = "Ref temperature"; break;
@@ -527,9 +532,6 @@ QString CustomTableModel::getHeaderString(int section) const
     case Property::loadType_forceX: horizontalHeaderString = "Fx"; break;
     case Property::loadType_forceY: horizontalHeaderString = "Fy"; break;
     case Property::loadType_forceZ: horizontalHeaderString = "Fz"; break;
-    case Property::loadType_Bx: horizontalHeaderString = "Bx"; break;
-    case Property::loadType_By: horizontalHeaderString = "By"; break;
-    case Property::loadType_Bz: horizontalHeaderString = "Bz"; break;
     case Property::loadType_forceMagnitude: horizontalHeaderString = "F"; break;
     case Property::loadType_rotationalVelocityX: horizontalHeaderString = "Rx"; break;
     case Property::loadType_rotationalVelocityY: horizontalHeaderString = "Ry"; break;

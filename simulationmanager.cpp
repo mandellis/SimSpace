@@ -487,10 +487,11 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
             }
                 break;
 
-            //! ---------------
-            //! Magnetic field
-            //! ---------------
+            //! --------------------------------------
+            //! "Magnetic field" "Electrostatic wall"
+            //! --------------------------------------
             case SimulationNodeClass::nodeType_magneticField:
+            case SimulationNodeClass::nodeType_electrostaticPotential:
             {
                 emit requestHideAllResults();
                 emit requestUnhighlightBodies(true);
@@ -532,19 +533,6 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 if(isDone == true) this->displayMarker();
             }
                 break;
-
-            //! ------------------------
-            //! Electrostatic potential
-            //! ------------------------
-            case SimulationNodeClass::nodeType_electrostaticPotential:
-            {
-                emit requestUnhighlightBodies(false);
-                emit requestSetWorkingMode(2);
-                emit requestHideAllResults();
-                emit requestHideSlicedMeshes();
-                emit requestClearGraph();
-                this->changeColor();
-            }
 
             case SimulationNodeClass::nodeType_OpenFoamScalarData:
             {
@@ -1252,7 +1240,8 @@ QList<int> SimulationManager::calculateColumnsToShow(SimulationNodeClass *aNode)
             theType== SimulationNodeClass::nodeType_thermalAnalysisTemperature ||
             theType== SimulationNodeClass::nodeType_thermalAnalysisThermalFlux ||
             theType== SimulationNodeClass::nodeType_thermalAnalysisThermalFlow ||
-            theType== SimulationNodeClass::nodeType_thermalAnalysisThermalPower)
+            theType== SimulationNodeClass::nodeType_thermalAnalysisThermalPower ||
+            theType== SimulationNodeClass::nodeType_electrostaticPotential)
     {
         theColumnsToShow<<0<<1<<SC;
         return theColumnsToShow;
@@ -3466,7 +3455,6 @@ void SimulationManager::createSimulationNode(SimulationNodeClass::nodeType type,
         item->setData(aNode->getName(),Qt::DisplayRole);
         NamedSelection_RootItem->appendRow(item);
     }
-
     //! -----------------------------
     //! HANDLING PARTICLES IN FIELDS
     //! -----------------------------
@@ -3481,6 +3469,15 @@ void SimulationManager::createSimulationNode(SimulationNodeClass::nodeType type,
         item->setData(data,Qt::DisplayRole);
         data.setValue(aNode);
         item->setData(data,Qt::UserRole);
+
+        //! ------------------------------------
+        //! access the "Analysis settings" item
+        //! ------------------------------------
+        SimulationNodeClass *nodeAnalysisSettings = this->getAnalysisSettingsNodeFromCurrentItem();
+        load aLoad;
+        aLoad.setType(Property::loadType_electrostaticPotentialMagnitude);
+        nodeAnalysisSettings->getTabularDataModel()->appendColumn(aLoad);
+
         markerBuilder::addMarker(this->getCurrentNode(),mySimulationDataBase);
         mainTreeTools::getCurrentSimulationRoot(myTreeView)->insertRow(this->getInsertionRow(),item);
     }
@@ -3500,7 +3497,6 @@ void SimulationManager::createSimulationNode(SimulationNodeClass::nodeType type,
         //! access the "Analysis settings" item
         //! ------------------------------------
         SimulationNodeClass *nodeAnalysisSettings = this->getAnalysisSettingsNodeFromCurrentItem();
-
         load aLoad;
         aLoad.setType(Property::loadType_magneticFieldMagnitude);
         nodeAnalysisSettings->getTabularDataModel()->appendColumn(aLoad);
@@ -8412,6 +8408,9 @@ void SimulationManager::handleLoadMagnitudeDefinitionChanged(const QString& text
     case SimulationNodeClass::nodeType_magneticField:
         aLoadType = Property::loadType_magneticFieldMagnitude;
         break;
+    case SimulationNodeClass::nodeType_electrostaticPotential:
+        aLoadType = Property::loadType_electrostaticPotentialMagnitude;
+        break;
     }
 
     int startColumn = mainTreeTools::calculateStartColumn(myTreeView);
@@ -8581,6 +8580,9 @@ void SimulationManager::handleLoadXDefinitionChanged(const QString &textData)
             break;
         case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Moment:
             aLoadType = Property::loadType_momentX;
+            break;
+        case SimulationNodeClass::nodeType_magneticField:
+            aLoadType = Property::loadType_Bx;
             break;
         }
 
@@ -8779,6 +8781,9 @@ void SimulationManager::handleLoadYDefinitionChanged(const QString &textData)
             break;
         case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Moment:
             aLoadType = Property::loadType_momentY;
+            break;
+        case SimulationNodeClass::nodeType_magneticField:
+            aLoadType = Property::loadType_By;
             break;
         }
 
@@ -9020,6 +9025,9 @@ void SimulationManager::handleLoadZDefinitionChanged(const QString &textData)
             break;
         case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Moment:
             aLoadType = Property::loadType_momentZ;
+            break;
+        case SimulationNodeClass::nodeType_magneticField:
+            aLoadType = Property::loadType_Bz;
             break;
         }
 

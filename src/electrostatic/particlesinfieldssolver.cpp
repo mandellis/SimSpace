@@ -10,6 +10,8 @@
 #include "indexedmapofmeshdatasources.h"
 #include "geometrytag.h"
 #include <meshelementbycoords.h>
+#include "customtablemodel.h"
+#include "tabulardatacolumns.h"
 
 //! ---
 //! Qt
@@ -790,12 +792,17 @@ particlesInFieldsSolver::particlesInFieldsSolver(simulationDataBase *sDB, QStand
     //! -----------------------------
     myNbParticles = 0;
 
-    //! ----------------------------
-    //! simulation time - time step
-    //! ----------------------------
-    SimulationNodeClass *node = mySimulationRoot->data(Qt::UserRole).value<SimulationNodeClass*>();
-    myFinalTime = node->getPropertyValue<double>("Step end time");
-    myTimeStep = node->getPropertyValue<double>("Time step size");
+    //! --------------------------------------------------------------
+    //! simulation time - time step from the "Analysis settings" item
+    //! --------------------------------------------------------------
+    SimulationNodeClass *nodeAnalysisSetting = mySimulationRoot->child(0,0)->data(Qt::UserRole).value<SimulationNodeClass*>();
+
+    CustomTableModel *tabData = nodeAnalysisSetting->getTabularDataModel();
+    int lastTableRow = tabData->rowCount();
+    int col = TABULAR_DATA_STEP_END_TIME_COLUMN;
+
+    myFinalTime = tabData->dataRC(lastTableRow,col).toDouble();
+    myTimeStep = nodeAnalysisSetting->getPropertyValue<double>("Time step size");
 }
 
 //! ---------------
