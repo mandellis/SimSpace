@@ -93,7 +93,6 @@ private:
     Eigen::MatrixXd myElectricField;            // electric field
 
     std::shared_ptr<PoissonSolver> myPoissonSolver;
-    //PoissonSolver *myPoissonSolver;
     std::vector<particlesEmitter> myEmitters;
 
 private:

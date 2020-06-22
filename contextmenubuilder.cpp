@@ -1357,6 +1357,20 @@ void contextMenuBuilder::buildParticlesInFieldsContextMenu(QMenu *contextMenu, b
     QAction *actionInsertElectrostaticWall = menuInsert->addAction("Electrostatic wall");
     actionInsertElectrostaticWall->setIcon(QIcon(":/icons/icon_electrostatic potential.png"));
     actionInsertElectrostaticWall->setData(301);
+
+    //! ----------------------
+    //! insert magnetic field
+    //! ----------------------
+    QAction *actionInsertMagneticField = menuInsert->addAction("Magnetic field");
+    actionInsertMagneticField->setIcon(QIcon(":/icons/icon_magnetic field.png"));
+    actionInsertMagneticField->setData(302);
+
+    //! ----------------------
+    //! insert particles pack
+    //! ----------------------
+    QAction *actionInsertParticlesPack = menuInsert->addAction("Particles pack");
+    actionInsertParticlesPack->setIcon(QIcon(":/icons/icon_point cloud.png"));
+    actionInsertParticlesPack->setData(303);
 }
 
 //! -------------------------------------
@@ -1382,7 +1396,6 @@ void contextMenuBuilder::buildPostObjectContextMenu(QMenu *contextMenu)
     //! add action rename
     //! ------------------
     contextMenuBuilder::addActionRename(contextMenu);
-
 }
 
 //! ---------------------------------------------
@@ -2081,4 +2094,6 @@ void contextMenuBuilder::addActionCreateNamedSelection(QMenu *contextMenu)
 //!
 //! insert particles in fields                 300
 //! insert electrostatic wall                  301
+//! insert magnetic field                      302
+//! insert particles pack                      303
 //! -----------------------------------------------

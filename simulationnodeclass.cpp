@@ -557,9 +557,11 @@ SimulationNodeClass::nodeType SimulationNodeClass::getFamily()
         RV = nodeType_combinedAnalysis;
         break;
 
-   case nodeType_particlesInFieldsAnalysis:
-   case nodeType_particlesInFieldsAnalysisSettings:
-   case nodeType_electrostaticPotential:
+    case nodeType_particlesInFieldsAnalysis:
+    case nodeType_particlesInFieldsAnalysisSettings:
+    case nodeType_particlesInFieldsParticlePack:
+    case nodeType_electrostaticPotential:
+    case nodeType_magneticField:
         RV = nodeType_particlesInFieldsAnalysis;
         break;
 
@@ -886,10 +888,21 @@ void SimulationNodeClass::createSeparators()
         myNodeRootItem->appendRow(itemDefinition);
         myNodeRootItem->appendRow(itemEmitter);
         myNodeRootItem->appendRow(itemAdvanced);
-        //myNodeRootItem->appendRow(itemHidden);
-        //myNodeRootItem->appendRow(itemGraphicObject);
         myNodeRootItem->appendRow(itemMeshDataSources);
         break;
+
+    case nodeType_magneticField:
+        myNodeRootItem->appendRow(itemScope);
+        myNodeRootItem->appendRow(itemDefinition);
+        myNodeRootItem->appendRow(itemAdvanced);
+        myNodeRootItem->appendRow(itemMeshDataSources);
+        break;
+
+    case nodeType_particlesInFieldsParticlePack:
+        myNodeRootItem->appendRow(itemScope);
+        myNodeRootItem->appendRow(itemDefinition);
+        myNodeRootItem->appendRow(itemAdvanced);
+        myNodeRootItem->appendRow(itemMeshDataSources);
 
         //! -------------
         //! Mesh section
@@ -1269,6 +1282,8 @@ void SimulationNodeClass::addTimeTag()
 bool SimulationNodeClass::isSimulationSetUpNode()
 {
     if(myNodeType == SimulationNodeClass::nodeType_electrostaticPotential ||
+            myNodeType == SimulationNodeClass::nodeType_magneticField ||
+            myNodeType == SimulationNodeClass::nodeType_particlesInFieldsParticlePack ||
             myNodeType == SimulationNodeClass::nodeType_thermalAnalysisAdiabaticWall ||
             myNodeType == SimulationNodeClass::nodeType_thermalAnalysisConvection ||
             myNodeType == SimulationNodeClass::nodeType_thermalAnalysisRadiation ||

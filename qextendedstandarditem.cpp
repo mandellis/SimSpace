@@ -998,6 +998,16 @@ QVariant QExtendedStandardItem::data(int role) const
             SimulationNodeClass::nodeType nodeType = this->getCurrentNode()->getType();
             switch(nodeType)
             {
+            case SimulationNodeClass::nodeType_magneticField:
+            {
+                int val = QStandardItem::data(Qt::UserRole).value<Property>().getData().toInt();
+                switch(val)
+                {
+                case 0: data.setValue(QString("Directions")); break;
+                case 1: data.setValue(QString("Vector")); break;
+                }
+            }
+                break;
             case SimulationNodeClass::nodeType_solutionThermalFlux:
             case SimulationNodeClass::nodeType_solutionThermalTemperature:
             case SimulationNodeClass::nodeType_solutionStructuralContact:
@@ -2264,28 +2274,67 @@ QVariant QExtendedStandardItem::data(int role) const
             }
             return data;
         }
+        //! -----------------
+        //! "Time step size"
+        //! -----------------
         else if(name == "Time step size")
         {
             double val = QStandardItem::data(Qt::UserRole).value<Property>().getData().toDouble();
             data.setValue(QString("%1").arg(val, 0, 'E', 3));
             return data;
         }
+        //! -------------------------------------------------------
+        //! "Patricle mass" "Intensity" "Electric charge" "Radius"
+        //! -------------------------------------------------------
         else if(name == "Particle mass" || name =="Intensity" || name == "Electric charge" || name =="Radius")
         {
             double val = QStandardItem::data(Qt::UserRole).value<Property>().getData().toDouble();
             data.setValue(QString("%1").arg(val, 0, 'E', 3));
             return data;
         }
+        //! ------------
+        //! "Potential"
+        //! ------------
         else if(name =="Potential")
         {
             double val = QStandardItem::data(Qt::UserRole).value<Property>().getData().toDouble();
             data.setValue(QString("%1").arg(val));
             return data;
         }
+        //! ----------
+        //! "Emitter"
+        //! ----------
         else if(name =="Emitter")
         {
             int val = QStandardItem::data(Qt::UserRole).value<Property>().getData().toInt();
             data.setValue(val==0? QString("Off"):QString("On"));
+            return data;
+        }
+        //! -------------
+        //! "Definition"
+        //! -------------
+        else if(name =="Definition")
+        {
+            int val = QStandardItem::data(Qt::UserRole).value<Property>().getData().toInt();
+            data.setValue(val==0? QString("From file"):QString("Function"));
+            return data;
+        }
+        //! -----------------------
+        //! "File path" "Function"
+        //! -----------------------
+        else if(name =="File path" || name =="Function")
+        {
+            QString val = QStandardItem::data(Qt::UserRole).value<Property>().getData().toString();
+            data.setValue(val);
+            return data;
+        }
+        //! --------------
+        //! "Temperature"
+        //! --------------
+        else if(name =="Temperature")
+        {
+            double val = QStandardItem::data(Qt::UserRole).value<Property>().getData().toDouble();
+            data.setValue(QString("%1").arg(val));
             return data;
         }
         else if (name1 == "separator")
@@ -2404,6 +2453,7 @@ QIcon QExtendedStandardItem::getIcon(SimulationNodeClass::nodeType theNodeType) 
     case SimulationNodeClass::nodeType_solutionThermalTemperature: return QIcon(":/icons/icon_temperature.png"); break;
     case SimulationNodeClass::nodeType_solutionThermalFlux: return QIcon(":/icons/icon_thermal flux.png"); break;
     case SimulationNodeClass::nodeType_electrostaticPotential: return QIcon(":/icons/icon_electrostatic potential.png"); break;
+    case SimulationNodeClass::nodeType_magneticField: return QIcon(":/icons/icon_magnetic field.png"); break;
 
 #ifdef COSTAMP_VERSION
     case SimulationNodeClass::nodeType_timeStepBuilder: return QIcon(":/icons/icon_clock.png"); break;

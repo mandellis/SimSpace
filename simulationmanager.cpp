@@ -2566,6 +2566,8 @@ void SimulationManager::handleItem(int type)
 
     case 300: mySimulationDataBase->createParticlesInFieldsRootNode(); break;
     case 301: this->createSimulationNode(SimulationNodeClass::nodeType_electrostaticPotential); break;
+    case 302: this->createSimulationNode(SimulationNodeClass::nodeType_magneticField); break;
+    case 303: this->createSimulationNode(SimulationNodeClass::nodeType_particlesInFieldsParticlePack); break;
 
 #ifdef COSTAMP_VERSION
     case 1000:
@@ -3423,6 +3425,34 @@ void SimulationManager::createSimulationNode(SimulationNodeClass::nodeType type,
     else if(type==SimulationNodeClass::nodeType_electrostaticPotential)
     {
         emit request2DBodySelectionMode(true);
+        data.setValue(scope);
+        aNode = nodeFactory::nodeFromScratch(type,mySimulationDataBase,myCTX,data);
+        aNode->setParent(this);
+        QVariant data;
+        data.setValue(aNode->getName());
+        item->setData(data,Qt::DisplayRole);
+        data.setValue(aNode);
+        item->setData(data,Qt::UserRole);
+        markerBuilder::addMarker(this->getCurrentNode(),mySimulationDataBase);
+        mainTreeTools::getCurrentSimulationRoot(myTreeView)->insertRow(this->getInsertionRow(),item);
+    }
+    else if(type==SimulationNodeClass::nodeType_magneticField)
+    {
+        emit request3DBodySelectionMode(true);
+        data.setValue(scope);
+        aNode = nodeFactory::nodeFromScratch(type,mySimulationDataBase,myCTX,data);
+        aNode->setParent(this);
+        QVariant data;
+        data.setValue(aNode->getName());
+        item->setData(data,Qt::DisplayRole);
+        data.setValue(aNode);
+        item->setData(data,Qt::UserRole);
+        markerBuilder::addMarker(this->getCurrentNode(),mySimulationDataBase);
+        mainTreeTools::getCurrentSimulationRoot(myTreeView)->insertRow(this->getInsertionRow(),item);
+    }
+    else if(type==SimulationNodeClass::nodeType_particlesInFieldsParticlePack)
+    {
+        emit request3DBodySelectionMode(true);
         data.setValue(scope);
         aNode = nodeFactory::nodeFromScratch(type,mySimulationDataBase,myCTX,data);
         aNode->setParent(this);

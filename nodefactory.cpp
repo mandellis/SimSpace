@@ -2540,6 +2540,81 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
         vecProp.push_back(prop_suppressed);
     }
         break;
+
+        //! -----------------
+        //! "Magnetic field"
+        //! -----------------
+    case SimulationNodeClass::nodeType_magneticField:
+    {
+        name = "Magnetic field";
+
+        vecProp.push_back(prop_scopingMethod);
+        vecProp.push_back(prop_scope);
+        vecProp.push_back(prop_tags);
+
+        data.setValue(0);
+        vecProp.push_back(Property("By",data,Property::PropertyGroup_Definition));
+
+        double Bx,By,Bz;
+        Bx = By = Bz = 0;
+        data.setValue(Bx);
+        vecProp.push_back(Property("Bx",data,Property::PropertyGroup_Definition));
+        vecProp.push_back(Property("By",data,Property::PropertyGroup_Definition));
+        vecProp.push_back(Property("Bz",data,Property::PropertyGroup_Definition));
+
+        //! under definition
+        vecProp.push_back(prop_suppressed);
+    }
+        break;
+
+        //! -----------------
+        //! "Particles pack"
+        //! -----------------
+    case SimulationNodeClass::nodeType_particlesInFieldsParticlePack:
+    {
+        name = "Particles pack";
+
+        vecProp.push_back(prop_scopingMethod);
+        vecProp.push_back(prop_scope);
+        vecProp.push_back(prop_tags);
+
+        //! ------------------------------
+        //! "Definition" "From file" => 0
+        //! ------------------------------
+        data.setValue(0);
+        vecProp.push_back(Property("Definition",data,Property::PropertyGroup_Definition));
+        data.setValue(QString(""));
+        vecProp.push_back(Property("File path",data,Property::PropertyGroup_Definition));
+        data.setValue(300);
+        vecProp.push_back(Property("Temperature",data,Property::PropertyGroup_Definition));
+        /*
+        //! -----------------------------
+        //! "Definition" "Function" => 0
+        //! -----------------------------
+        data.setValue(1);
+        vecProp.push_back(Property("Function",data,Property::PropertyGroup_Definition));
+        data.setValue(QString(""));
+        vecProp.push_back(Property("Expression",data,Property::PropertyGroup_Definition));
+
+        double mass = 9.11e-31;
+        data.setValue(mass);
+        vecProp.push_back(Property("Particle mass",data,Property::PropertyGroup_Definition));
+
+        double charge = 1.6e-19;
+        data.setValue(charge);
+        vecProp.push_back(Property("Electric charge",data,Property::PropertyGroup_Definition));
+
+        double radius = 0.1;
+        data.setValue(radius);
+        vecProp.push_back(Property("Radius",radius,Property::PropertyGroup_Definition));
+
+        data.setValue(300);
+        vecProp.push_back(Property("Temperature",data,Property::PropertyGroup_Definition));
+        */
+        //! suppression
+        vecProp.push_back(prop_suppressed);
+    }
+        break;
     }
 
     //! ----------------

@@ -1447,6 +1447,12 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
                 data.setValue(1); editor->addItem("Pair distance",data);
             }
                 break;
+            case SimulationNodeClass::nodeType_magneticField:
+            {
+                data.setValue(0); editor->addItem("Components",data);
+                data.setValue(1); editor->addItem("Vactor",data);
+            }
+                break;
             }
             return editor;
         }
@@ -1455,14 +1461,13 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
         //! --------
         else if(propertyName == "Type ")
         {
-            DetailViewer *theDetailViewer = static_cast<DetailViewer*>(parent->parent());
-            SimulationNodeClass *node = theDetailViewer->getNode();
-            SimulationNodeClass::nodeType type = node->getType();
+            //DetailViewer *theDetailViewer = static_cast<DetailViewer*>(parent->parent());
+            //SimulationNodeClass *node = theDetailViewer->getNode();
 
             QComboBox *editor;
             QVariant data;
 
-            switch(type)
+            switch(this->getCurrentNode()->getType())
             {
             case SimulationNodeClass::nodeType_solutionThermalTemperature:
             case SimulationNodeClass::nodeType_solutionThermalFlux:
@@ -3894,6 +3899,14 @@ void GeneralDelegate::setEditorData(QWidget *editor, const QModelIndex &index) c
             break;
 
         case SimulationNodeClass::nodeType_meshMethod:
+        {
+            int val = data.value<Property>().getData().toInt();
+            QComboBox *cb = static_cast<QComboBox*>(editor);
+            cb->setCurrentIndex(val);
+            connect(cb,SIGNAL(currentIndexChanged(int)),this,SLOT(commitAndCloseBySelector()));
+        }
+            break;
+        case SimulationNodeClass::nodeType_magneticField:
         {
             int val = data.value<Property>().getData().toInt();
             QComboBox *cb = static_cast<QComboBox*>(editor);

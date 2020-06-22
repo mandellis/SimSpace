@@ -251,6 +251,22 @@ bool particlesInFieldsSolver::writeInputFile(simulationDataBase *sDB, QStandardI
         }
     }
 
+/*
+    //! ----------------
+    //! particles packs
+    //! ----------------
+    int NbParticlesPacks = 0;
+    for(int n=1; n<simulationRoot->rowCount()-1; n++)
+    {
+        QStandardItem *item = simulationRoot->child(n,0);
+        SimulationNodeClass *curNode = item->data(Qt::UserRole).value<SimulationNodeClass*>();
+        if(curNode==SimulationNodeClass::nodeType_particlesPack) NbParticlesPacks++;
+    }
+
+    os<<"NUMBEROFPARTICLESPACKS "<<NbParticlesPacks<<endl;
+
+  */
+
     os.close();
     return true;
 }
@@ -712,11 +728,18 @@ particlesInFieldsSolver::particlesInFieldsSolver(const string &inputFilePath)
     //! --------------------------
     myPoissonSolver = std::make_shared<PoissonSolver>(volumeMesh);
     myPoissonSolver->definePatches(allFacesMeshDS);
+    myPoissonSolver->initPotentialOnBoundary(0.0);
 
-    //! -----------------------
-    //! configure the emitters
-    //! -----------------------
+    //! --------------------
+    //! set up the emitters
+    //! --------------------
     for(int i=0; i<vecEmitters.size(); i++) myEmitters.push_back(vecEmitters[i]);
+
+
+    //! -----------------------------
+    //! init the number of particles
+    //! -----------------------------
+    myNbParticles = 0;
 }
 
 //! ----------------------
@@ -760,6 +783,19 @@ particlesInFieldsSolver::particlesInFieldsSolver(simulationDataBase *sDB, QStand
         allFacesMap.insert(apair);
     }
     myPoissonSolver->definePatches(allFacesMap);
+    myPoissonSolver->initPotentialOnBoundary(0.0);
+
+    //! -----------------------------
+    //! init the number of particles
+    //! -----------------------------
+    myNbParticles = 0;
+
+    //! ----------------------------
+    //! simulation time - time step
+    //! ----------------------------
+    SimulationNodeClass *node = mySimulationRoot->data(Qt::UserRole).value<SimulationNodeClass*>();
+    myFinalTime = node->getPropertyValue<double>("Step end time");
+    myTimeStep = node->getPropertyValue<double>("Time step size");
 }
 
 //! ---------------
@@ -768,23 +804,6 @@ particlesInFieldsSolver::particlesInFieldsSolver(simulationDataBase *sDB, QStand
 //! ---------------
 bool particlesInFieldsSolver::init(QStandardItem* simulationRoot)
 {
-    //! -----------------------------
-    //! init the number of particles
-    //! -----------------------------
-    myNbParticles = 0;
-
-    //! ---------------------------------
-    //! retrieve the "Analysis settings"
-    //! ---------------------------------
-    SimulationNodeClass *node = mySimulationRoot->data(Qt::UserRole).value<SimulationNodeClass*>();
-    if(node->getType()!= SimulationNodeClass::nodeType_particlesInFieldsAnalysis) return false;
-
-    //! ----------------------------
-    //! simulation time - time step
-    //! ----------------------------
-    myFinalTime = node->getPropertyValue<double>("Step end time");
-    myTimeStep = node->getPropertyValue<double>("Time step size");
-
     //! ---------------------------------
     //! model faces on which a BC is put
     //! ---------------------------------
@@ -846,7 +865,7 @@ bool particlesInFieldsSolver::init(QStandardItem* simulationRoot)
         //! on all the surface mesh nodes
         //! ------------------------------------------------
         myPoissonSolver->definePatches(BoundaryConditionsFaceDSMap);
-        myPoissonSolver->initPotentialOnBoundary(0.0);
+
     }
     return true;
 }
