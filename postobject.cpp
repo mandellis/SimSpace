@@ -165,7 +165,6 @@ void postObject::write(ofstream &file)
     //! ---------------
     QList<QString> nameLines = name.split("\n");
     int NbNameLines = nameLines.length();
-    //cout<<"postObject::write()->____number of lines: "<<NbNameLines<<"____"<<endl;
 
     //! ------------------------------------------
     //! write the name: write the number of lines
@@ -177,7 +176,6 @@ void postObject::write(ofstream &file)
     //! ---------------------------------------
     for(int i=0; i<NbNameLines; i++)
     {
-        //cout<<"postObject::write()->____line "<<i+1<<"th: "<<nameLines.at(i).toStdString()<<"____"<<endl;
         file<<nameLines.at(i).toStdString()<<endl;
     }
 
@@ -185,7 +183,6 @@ void postObject::write(ofstream &file)
     //! write the scope: the number of locations
     //! -----------------------------------------
     file<<vecLoc.size()<<endl;
-    //cout<<"postObject::write()->____number of locations: "<<vecLoc.size()<<"____"<<endl;
 
     //! -----------------------------------------
     //! write the scope: write the geometry tags
@@ -204,7 +201,6 @@ void postObject::write(ofstream &file)
     //! QMap<GeometryTag,QList<QMap<int,double>>> &resMap
     //! --------------------------------------------------
     file<<theData.keys().length()<<endl;
-    //cout<<"postObject::write()->____number of keys in data: "<<theData.keys().length()<<"____"<<endl;
 
     for(QMap<GeometryTag,QList<QMap<int,double>>>::iterator it=theData.begin(); it!=theData.end(); ++it)
     {
@@ -215,7 +211,6 @@ void postObject::write(ofstream &file)
         //! write the number of components the result is defined by
         //! --------------------------------------------------------
         file<<l.size()<<endl;
-        //cout<<"postObject::write()->____number of components: "<<l.size()<<"____"<<endl;
 
         //! --------------
         //! write the tag
@@ -234,7 +229,6 @@ void postObject::write(ofstream &file)
             //! ----------------------------------------------------
             int L = res.size();
             file<<L<<endl;
-            //cout<<"postObject::write()->____writing the size of the result map____"<<L<<"____"<<endl;
 
             //! ---------------
             //! write the data
@@ -252,7 +246,6 @@ void postObject::write(ofstream &file)
     //! write the mesh: write the number of meshes
     //! -------------------------------------------
     int NbMeshes = theMeshes.size();
-    //cout<<"postObject::write()->____number of mesh objects: "<<NbMeshes<<"____"<<endl;
 
     for(QMap<GeometryTag,occHandle(MeshVS_Mesh)>::iterator it = theMeshes.begin(); it != theMeshes.end(); ++it)
     {
@@ -260,7 +253,6 @@ void postObject::write(ofstream &file)
         const occHandle(MeshVS_DataSource) &aMeshDS = aMeshVS->GetDataSource();
         if(aMeshDS.IsNull())
         {
-            //cout<<"postObject::write()->____cannot write the mesh____"<<endl;
             NbMeshes=0;
             break;
         }
@@ -290,18 +282,12 @@ void postObject::write(ofstream &file)
         {
         case TopAbs_SOLID:
         {
-            //cout<<"/---------------------------/"<<endl;
-            //cout<<"/   writing a volume mesh   /"<<endl;
-            //cout<<"/---------------------------/"<<endl;
             this->writeIntoStream(file,aMeshDS);
         }
             break;
 
         case TopAbs_FACE:
         {
-            //cout<<"/---------------------------/"<<endl;
-            //cout<<"/   writing a face mesh     /"<<endl;
-            //cout<<"/---------------------------/"<<endl;
             this->writeIntoStream(file,aMeshDS);
         }
             break;
@@ -334,13 +320,11 @@ postObject::postObject(ifstream &file)
     //! --------------
     int NbNameLines;
     file>>NbNameLines;
-    cout<<"postObject::read()->____reading number of lines: "<<NbNameLines<<"____"<<endl;
 
     for(int i=0; i<NbNameLines; i++)
     {
         std::string lineName;
         std::getline(file,lineName);
-        cout<<"postObject::read()->____"<<lineName<<"____"<<endl;
         name.append(QString::fromStdString(lineName)+"\n");
     }
 
@@ -349,7 +333,6 @@ postObject::postObject(ifstream &file)
     //! ----------------------------------------
     int NbLocs;
     file>>NbLocs;
-    cout<<"postObject::read()->____number of locations: "<<NbLocs<<"____"<<endl;
 
     //! ---------------------------------------
     //! read the scope: read the geometry tags
@@ -386,7 +369,6 @@ postObject::postObject(ifstream &file)
     //! --------------------------------------------------
     int NbBlocks;
     file>>NbBlocks;
-    //cout<<"postObject::read()->____number of outer keys: "<<NbBlocks<<"____"<<endl;
 
     for(int i=0; i<NbBlocks; i++)
     {
@@ -395,7 +377,6 @@ postObject::postObject(ifstream &file)
         //! -------------------------------------------------------
         int NbComponents;
         file>>NbComponents;
-        //cout<<"postObject::read()->____number of components within the data file: "<<NbComponents<<"____"<<endl;
 
         //! -------------
         //! read the tag
@@ -441,7 +422,6 @@ postObject::postObject(ifstream &file)
     //! -----------------------------------------
     int NbMeshes;
     file>>NbMeshes;
-    //cout<<"postObject::read()->____number of meshes "<<NbMeshes<<"____"<<endl;
 
     //! --------------
     //! read the mesh
@@ -561,7 +541,6 @@ void postObject::buildMeshIO(const mapOfMeshDataSources &aMapOfMeshDataSources,
         //! the new mesh (colored) mesh
         //! ----------------------------
         occHandle(MeshVS_Mesh) aColoredMesh;
-        //MeshTools::buildColoredMesh(curMeshDS,res,theMin,theMax,Nlevels,aColoredMesh,false);
 
         QMap<int,gp_Vec> displacementMap = myMapOfNodalDisplacements.value(loc);
         MeshTools::buildDeformedColoredMesh(curMeshDS,res,displacementMap,1.0,theMin,theMax,Nlevels,aColoredMesh,showMeshEdges);
@@ -571,9 +550,6 @@ void postObject::buildMeshIO(const mapOfMeshDataSources &aMapOfMeshDataSources,
     //! ---------------------------------
     //! create the color box with labels
     //! ---------------------------------
-    //cout<<"____"<<theMin<<"____"<<endl;
-    //cout<<"____"<<theMax<<"____"<<endl;
-
     graphicsTools::createColorBox(theMin, theMax, Nlevels, AISColorScale);
     TCollection_ExtendedString title(name.toStdString().c_str());
     AISColorScale->SetTitle(title);
@@ -629,7 +605,6 @@ std::pair<double,double> postObject::getMinMax(int component)
             if(aVal>=minmax.second) minmax.second = aVal;
         }
     }
-    cout<<"postObject::getMinMax()->____Min = "<<minmax.first<<"____Max = "<<minmax.second<<"____"<<endl;
     return minmax;
 }
 
@@ -661,7 +636,6 @@ void postObject::update(meshDataBase *mDB, int component)
         {
         case TopAbs_SOLID:
         {
-            cout<<"postObject::update()->____handling the \"SOLID\" case____"<<endl;
             topNr = loc.parentShapeNr;
             aMapOfMeshDS.insert(loc, mDB->ArrayOfMeshDS.value(topNr));
         }
@@ -669,7 +643,6 @@ void postObject::update(meshDataBase *mDB, int component)
 
         case TopAbs_FACE:
         {
-            cout<<"postObject::update()->____handling the \"FACE\" case____"<<endl;
             parentShapeNr = loc.parentShapeNr;
             topNr = loc.subTopNr;
             occHandle(MeshVS_DataSource) theMeshToInsert = mDB->ArrayOfMeshDSOnFaces.getValue(parentShapeNr,topNr);
@@ -679,7 +652,6 @@ void postObject::update(meshDataBase *mDB, int component)
 
         case TopAbs_EDGE:
         {
-            cout<<"postObject::update()->____handling the \"EDGE\" case____"<<endl;
             topNr = loc.subTopNr;
             parentShapeNr = loc.parentShapeNr;
             aMapOfMeshDS.insert(loc, mDB->ArrayOfMeshDSOnEdges.getValue(parentShapeNr,topNr));
@@ -687,7 +659,6 @@ void postObject::update(meshDataBase *mDB, int component)
             break;
 
         case TopAbs_VERTEX:
-            cout<<"postObject::update()->____handling the \"VERTEX\" case____"<<endl;
             //! to be implemented. To do ...
             break;
         }
@@ -885,8 +856,6 @@ bool postObject::readMeshFromStream(ifstream &stream, occHandle(MeshVS_DataSourc
     stream>>dim;
     stream>>NbNodes;
 
-    cout<<"postObject::readMeshFromStream()->____number of nodes: "<<NbNodes<<"____"<<endl;
-
     if(NbNodes==0) return false;
     if(dim == 3 && NbNodes<4) return false;
     if(dim ==2 && NbNodes<3) return false;
@@ -899,8 +868,6 @@ bool postObject::readMeshFromStream(ifstream &stream, occHandle(MeshVS_DataSourc
     {
         stream>>aNode.ID>>aNode.x>>aNode.y>>aNode.z;
         nodes.push_back(aNode);
-        //cout<<"postObject::readMeshFromStream()->____reading node ID: "<<aNode.ID<<"("<<
-        //      aNode.x<<", "<<aNode.y<<", "<<aNode.z<<")____"<<endl;
     }
 
     //! ----------------------------
@@ -908,7 +875,6 @@ bool postObject::readMeshFromStream(ifstream &stream, occHandle(MeshVS_DataSourc
     //! ----------------------------
     int NbElements;
     stream>>NbElements;
-    cout<<"postObject::readMeshFromStream()->____number of elements: "<<NbElements<<"____"<<endl;
     if(NbElements==0) return false;
 
     //! -----------------------------
