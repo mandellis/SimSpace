@@ -197,6 +197,8 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
                 cb->addItem("Uncoupled temperature displacement",data);
                 data.setValue(Property::analysisType_coupledTemperatureDisplacement);
                 cb->addItem("Coupled temperature displacement",data);
+                data.setValue(Property::analysisType_particlesInFields);
+                cb->addItem("Particles in fields");
             }
                 break;
             }
@@ -2336,7 +2338,7 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
                 //! ---------------------------------------------------------------------------
                 //! do not add the option "Normal to" in case of a "Force" (or "Remote force")
                 //! since physically it would be a "Pressure", which has it own nummerical
-                //! representation (CCX => surface defined by elements"
+                //! representation (CCX => surface defined by elements")
                 //! ---------------------------------------------------------------------------
                 if(type!=SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Force &&
                         type!=SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RemoteForce)
@@ -2772,6 +2774,16 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
             editor->setValidator(validator);
             return editor;
         }
+        //! --------------
+        //! "Temperature"
+        //! --------------
+        else if(propertyName =="Temperature")
+        {
+            QLineEdit *editor = new QLineEdit(parent);
+            QDoubleValidator *validator = new QDoubleValidator();
+            editor->setValidator(validator);
+            return editor;
+        }
         else
         {
             return 0;
@@ -2856,7 +2868,16 @@ void GeneralDelegate::setEditorData(QWidget *editor, const QModelIndex &index) c
          {
              switch(at)
              {
-             case Property::analysisType_thermal: cb->setCurrentIndex(0); break;
+             case Property::analysisType_thermal: cb->setCurrentIndex(1); break;
+             }
+         }
+             break;
+
+         case SimulationNodeClass::nodeType_particlesInFieldsAnalysis:
+         {
+             switch(at)
+             {
+             case Property::analysisType_thermal: cb->setCurrentIndex(6); break;
              }
          }
              break;
@@ -2870,6 +2891,7 @@ void GeneralDelegate::setEditorData(QWidget *editor, const QModelIndex &index) c
              case Property::analysisType_frequencyResponse: cb->setCurrentIndex(3); break;
              case Property::analysisType_uncoupledTemperatureDisplacement: cb->setCurrentIndex(4); break;
              case Property::analysisType_coupledTemperatureDisplacement: cb->setCurrentIndex(5); break;
+             case Property::analysisType_particlesInFields: cb->setCurrentIndex(6); break;
              }
          }
              break;
@@ -5100,6 +5122,16 @@ void GeneralDelegate::setEditorData(QWidget *editor, const QModelIndex &index) c
         lineEdit->setText(name);
         connect(editor,SIGNAL(returnPressed()),this, SLOT(commitAndCloseLineEdit()));
     }
+    //! --------------
+    //! "Temperature"
+    //! --------------
+    else if(propertyName =="Temperature")
+    {
+        QLineEdit *lineEdit = static_cast<QLineEdit*>(editor);
+        QString name = data.value<Property>().getData().toString();
+        lineEdit->setText(name);
+        connect(editor,SIGNAL(returnPressed()),this, SLOT(commitAndCloseLineEdit()));
+    }
 }
 
 //! -----------------------
@@ -6699,6 +6731,14 @@ void GeneralDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, c
             QLineEdit *lineEdit = static_cast<QLineEdit*>(editor);
             data.setValue(lineEdit->text());
         }
+        //! --------------
+        //! "Temperature"
+        //! --------------
+        else if(propertyName =="Temperature")
+        {
+            QLineEdit *lineEdit = static_cast<QLineEdit*>(editor);
+            data.setValue(lineEdit->text());
+        }
 
         theProp.setData(data);
         QVariant thePropVariant;
@@ -6965,6 +7005,8 @@ void GeneralDelegate::commitAndCloseDefineByControlComboBox()
     emit commitData(editor);
     emit closeEditor(editor);
     emit defineByChanged();
+
+    // graphic stuff
     switch(this->getCurrentNode()->getType())
     {
     case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Acceleration:

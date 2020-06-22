@@ -358,6 +358,7 @@ int mainTreeTools::calculateStartColumn(QExtendedStandardItem *anItem)
         case SimulationNodeClass::nodeType_thermalAnalysisConvection:
             delta = 1;
             break;
+        case SimulationNodeClass::nodeType_magneticField:
         case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Force:
         case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Moment:
         case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RemoteForce:
@@ -474,6 +475,7 @@ int mainTreeTools::calculateStartColumn(QTreeView *tree)
         case SimulationNodeClass::nodeType_thermalAnalysisConvection:
             delta = 1;
             break;
+        case SimulationNodeClass::nodeType_magneticField:
         case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Force:
         case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Moment:
         case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RemoteForce:

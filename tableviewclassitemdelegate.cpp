@@ -51,6 +51,7 @@ QWidget* tableViewClassItemDelegate::createEditor(QWidget *parent, const QStyleO
         editor->addItem("Frequency response",Property::analysisType_frequencyResponse);
         editor->addItem("Uncoupled temperature displacement",Property::analysisType_uncoupledTemperatureDisplacement);
         editor->addItem("Coupled temperature displacement",Property::analysisType_coupledTemperatureDisplacement);
+        editor->addItem("Particles in fields",Property::analysisType_particlesInFields);
         connect(editor,SIGNAL(currentIndexChanged(int)),this, SLOT(commitAndCloseComboBox()));
         return editor;
     }
@@ -146,6 +147,7 @@ void tableViewClassItemDelegate::setEditorData(QWidget *editor, const QModelInde
         case Property::analysisType_frequencyResponse: comboBox->setCurrentIndex(3); break;
         case Property::analysisType_uncoupledTemperatureDisplacement: comboBox->setCurrentIndex(4); break;
         case Property::analysisType_coupledTemperatureDisplacement: comboBox->setCurrentIndex(5); break;
+        case Property::analysisType_particlesInFields: comboBox->setCurrentIndex(6); break;
         }
     }
     if(strcmp(data.typeName(),"Property::modelChangeActivationStatus")==0)
@@ -231,6 +233,7 @@ void tableViewClassItemDelegate::setModelData(QWidget *editor, QAbstractItemMode
         case 3: data.setValue(Property::analysisType_frequencyResponse); break;
         case 4: data.setValue(Property::analysisType_uncoupledTemperatureDisplacement); break;
         case 5: data.setValue(Property::analysisType_coupledTemperatureDisplacement); break;
+        case 6: data.setValue(Property::analysisType_particlesInFields); break;
         }
     }
     if(strcmp(dataContent.typeName(),"Property::solverType")==0)

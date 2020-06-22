@@ -153,7 +153,6 @@ void SimulationNodeClass::createNodeModel()
                 //! the definition of the direction => global X axis direction by default
                 vec.append(1.0); vec.append(0.0); vec.append(0.0);
 
-                //QVariant data;
                 data.setValue(vec);
                 Property property_Direction("Direction",data,Property::PropertyGroup_Definition);
                 this->addProperty(property_Direction);
@@ -172,7 +171,6 @@ void SimulationNodeClass::createNodeModel()
                     //theLoadDefinition = loadDefinition_tabularData;
                     theLoadDefinition = Property::loadDefinition_constant;
                 }
-                //QVariant data;
                 data.setValue(theLoadDefinition);
                 Property property_magnitude("Magnitude",data,Property::PropertyGroup_Definition);
                 this->addProperty(property_magnitude);

@@ -246,6 +246,11 @@ public:
 
     enum loadType
     {
+        //! magnetic field
+        loadType_Bx,
+        loadType_By,
+        loadType_Bz,
+
         //! force and remote force
         loadType_forceX,
         loadType_forceY,
@@ -295,6 +300,11 @@ public:
         loadType_thermalPowerMagnitude,
         loadType_thermalConvectionFilmCoefficientMagnitude,
         loadType_thermalConvectionReferenceTemperatureMagnitude,
+
+        //! --------------------------------
+        //! particles in fields environment
+        //! --------------------------------
+        loadType_magneticFieldMagnitude,
 
         loadType_thermalConditionTemperature,
 

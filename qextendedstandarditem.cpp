@@ -154,6 +154,7 @@ QVariant QExtendedStandardItem::data(int role) const
             case Property::analysisType_frequencyResponse: data.setValue(QString("Frequency response")); break;
             case Property::analysisType_uncoupledTemperatureDisplacement: data.setValue(QString("Uncoupled temperature displacement")); break;
             case Property::analysisType_coupledTemperatureDisplacement: data.setValue(QString("Coupled temperature displacement")); break;
+            case Property::analysisType_particlesInFields: data.setValue(QString("Particles in fields")); break;
             }
             return data;
         }
@@ -998,16 +999,6 @@ QVariant QExtendedStandardItem::data(int role) const
             SimulationNodeClass::nodeType nodeType = this->getCurrentNode()->getType();
             switch(nodeType)
             {
-            case SimulationNodeClass::nodeType_magneticField:
-            {
-                int val = QStandardItem::data(Qt::UserRole).value<Property>().getData().toInt();
-                switch(val)
-                {
-                case 0: data.setValue(QString("Directions")); break;
-                case 1: data.setValue(QString("Vector")); break;
-                }
-            }
-                break;
             case SimulationNodeClass::nodeType_solutionThermalFlux:
             case SimulationNodeClass::nodeType_solutionThermalTemperature:
             case SimulationNodeClass::nodeType_solutionStructuralContact:

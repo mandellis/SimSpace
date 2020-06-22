@@ -383,7 +383,11 @@ QVariant CustomTableModel::data(const QModelIndex &index, int role) const
                 m_loadTypes.at(index.column())==Property::loadType_thermalConvectionReferenceTemperatureMagnitude ||
                 m_loadTypes.at(index.column())==Property::loadType_thermalFluxMagnitude ||
                 m_loadTypes.at(index.column())==Property::loadType_thermalFlowMagnitude ||
-                m_loadTypes.at(index.column())==Property::loadType_thermalPowerMagnitude)
+                m_loadTypes.at(index.column())==Property::loadType_thermalPowerMagnitude ||
+                m_loadTypes.at(index.column())==Property::loadType_magneticFieldMagnitude ||
+                m_loadTypes.at(index.column())==Property::loadType_Bx ||
+                m_loadTypes.at(index.column())==Property::loadType_By ||
+                m_loadTypes.at(index.column())==Property::loadType_Bz)
         {
             QString cellString = QString("%1").arg(data.toDouble());
             QVariant cellStringVariant;
@@ -432,6 +436,7 @@ QVariant CustomTableModel::data(const QModelIndex &index, int role) const
             case Property::analysisType_frequencyResponse: cellString = QString("Frequency response"); break;
             case Property::analysisType_uncoupledTemperatureDisplacement: cellString = QString("Uncoupled temperature displacement"); break;
             case Property::analysisType_coupledTemperatureDisplacement: cellString = QString("Temperature displacement"); break;
+            case Property::analysisType_particlesInFields: cellString = QString("Particles in fields"); break;
             }
             QVariant cellStringVariant;
             cellStringVariant.setValue(cellString);
@@ -507,6 +512,7 @@ QString CustomTableModel::getHeaderString(int section) const
     QString horizontalHeaderString = QString("");
     switch(m_loadTypes.at(section))
     {
+    case Property::loadType_magneticFieldMagnitude: horizontalHeaderString = "B"; break;
     case Property::loadType_temperatureMagnitude: horizontalHeaderString = "T"; break;
     case Property::loadType_thermalConvectionFilmCoefficientMagnitude: horizontalHeaderString = "Film coeff"; break;
     case Property::loadType_thermalConvectionReferenceTemperatureMagnitude: horizontalHeaderString = "Ref temperature"; break;
@@ -521,6 +527,9 @@ QString CustomTableModel::getHeaderString(int section) const
     case Property::loadType_forceX: horizontalHeaderString = "Fx"; break;
     case Property::loadType_forceY: horizontalHeaderString = "Fy"; break;
     case Property::loadType_forceZ: horizontalHeaderString = "Fz"; break;
+    case Property::loadType_Bx: horizontalHeaderString = "Bx"; break;
+    case Property::loadType_By: horizontalHeaderString = "By"; break;
+    case Property::loadType_Bz: horizontalHeaderString = "Bz"; break;
     case Property::loadType_forceMagnitude: horizontalHeaderString = "F"; break;
     case Property::loadType_rotationalVelocityX: horizontalHeaderString = "Rx"; break;
     case Property::loadType_rotationalVelocityY: horizontalHeaderString = "Ry"; break;

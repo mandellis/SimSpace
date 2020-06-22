@@ -487,6 +487,55 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
             }
                 break;
 
+            //! ---------------
+            //! Magnetic field
+            //! ---------------
+            case SimulationNodeClass::nodeType_magneticField:
+            {
+                emit requestHideAllResults();
+                emit requestUnhighlightBodies(true);
+                emit requestHideMeshes();
+                emit requestHideSlicedMeshes();
+                emit requestSetWorkingMode(2);
+                this->changeColor();
+
+                //! --------------
+                //! set the model
+                //! --------------
+                QModelIndex index_analysisSettings = this->getAnalysisSettingsItemFromCurrentItem()->index();
+                emit requestTabularData(index_analysisSettings);
+
+                //! ---------------------------------------------------------------------
+                //! show the first row with Time = 0, apart from the item "Model change"
+                //! ---------------------------------------------------------------------
+                if(theNodeType==SimulationNodeClass::nodeType_modelChange) emit requestHideFirstRow();
+                else emit requestShowFirstRow();
+
+                //! -----------------------------------------------------------
+                //! calculate the number of columns to show => in the table <=
+                //! -----------------------------------------------------------
+                QList<int> columnsToShow = this->calculateColumnsToShow(theNode);
+                if(columnsToShow.length()>=2)
+                {
+                    emit requestShowColumns(columnsToShow);
+
+                    //! ------------------------------------
+                    //! remove the column showing the times
+                    //! since here supports are handled
+                    //! ------------------------------------
+                    columnsToShow.removeFirst();
+                    CustomTableModel *tabData = index_analysisSettings.data(Qt::UserRole).value<SimulationNodeClass*>()->getTabularDataModel();
+                    emit requestShowGraph(tabData,columnsToShow);
+                }
+
+                bool isDone = markerBuilder::addMarker(this->getCurrentNode(), mySimulationDataBase);
+                if(isDone == true) this->displayMarker();
+            }
+                break;
+
+            //! ------------------------
+            //! Electrostatic potential
+            //! ------------------------
             case SimulationNodeClass::nodeType_electrostaticPotential:
             {
                 emit requestUnhighlightBodies(false);
@@ -967,8 +1016,6 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 //! calculate the number of columns to show => in the table <=
                 //! -----------------------------------------------------------
                 QList<int> columnsToShow = this->calculateColumnsToShow(theNode);
-
-                //QList<int> columnsToShow = mainTreeTools::getColumnsToRead(myTreeView);
                 if(columnsToShow.length()>=2)
                 {
                     emit requestShowColumns(columnsToShow);
@@ -1020,6 +1067,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 if(isDone == true) this->displayMarker();
             }
                 break;
+
 
             case SimulationNodeClass::nodeType_connection:
             {
@@ -3447,6 +3495,16 @@ void SimulationManager::createSimulationNode(SimulationNodeClass::nodeType type,
         item->setData(data,Qt::DisplayRole);
         data.setValue(aNode);
         item->setData(data,Qt::UserRole);
+
+        //! ------------------------------------
+        //! access the "Analysis settings" item
+        //! ------------------------------------
+        SimulationNodeClass *nodeAnalysisSettings = this->getAnalysisSettingsNodeFromCurrentItem();
+
+        load aLoad;
+        aLoad.setType(Property::loadType_magneticFieldMagnitude);
+        nodeAnalysisSettings->getTabularDataModel()->appendColumn(aLoad);
+
         markerBuilder::addMarker(this->getCurrentNode(),mySimulationDataBase);
         mainTreeTools::getCurrentSimulationRoot(myTreeView)->insertRow(this->getInsertionRow(),item);
     }
@@ -7711,6 +7769,17 @@ void SimulationManager::HandleTabularData()
             SimulationNodeClass::nodeType theNodeType = theCurNode->getType();
             switch(theNodeType)
             {
+            case SimulationNodeClass::nodeType_magneticField:
+                load_componentX.setType(Property::loadType_Bx);
+                load_componentY.setType(Property::loadType_By);
+                load_componentZ.setType(Property::loadType_Bz);
+                tabData->setLoadToInsert(load_componentX);
+                tabData->insertColumns(startColumn,1);
+                tabData->setLoadToInsert(load_componentY);
+                tabData->insertColumns(startColumn+1,1);
+                tabData->setLoadToInsert(load_componentZ);
+                tabData->insertColumns(startColumn+2,1);
+                break;
             case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Force:
             case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RemoteForce:
                 load_componentX.setType(Property::loadType_forceX);
@@ -7954,13 +8023,10 @@ void SimulationManager::HandleTabularData()
             }
             cout<<"SimulationManager::HandleTabularData()->____removing: "<<count<<" columns____"<<endl;
 
-            //tabData->removeColumns(startColumn, count, QModelIndex());
             if(count!=0)
             {
                 tabData->removeColumns(startColumn, count, QModelIndex());
             }
-            //cout<<"SimulationManager::HandleTabularData()->____number of columns after removal: "<<tabData->columnCount()<<"____"<<endl;
-            //cout<<"SimulationManager::HandleTabularData()->____start adding the magnitude____"<<endl;
 
             QVector<QVariant> values;
             load load_magnitude(values,Property::loadType_none);
@@ -7971,6 +8037,9 @@ void SimulationManager::HandleTabularData()
             SimulationNodeClass::nodeType theNodeType = theCurNode->getType();
             switch(theNodeType)
             {
+            case SimulationNodeClass::nodeType_magneticField:
+                load_magnitude.setType(Property::loadType_magneticFieldMagnitude);
+                break;
             case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Force:
             case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RemoteForce:
                 load_magnitude.setType(Property::loadType_forceMagnitude);
@@ -8339,6 +8408,9 @@ void SimulationManager::handleLoadMagnitudeDefinitionChanged(const QString& text
         break;
     case SimulationNodeClass::nodeType_thermalAnalysisThermalFlux:
         aLoadType = Property::loadType_thermalFluxMagnitude;
+        break;
+    case SimulationNodeClass::nodeType_magneticField:
+        aLoadType = Property::loadType_magneticFieldMagnitude;
         break;
     }
 

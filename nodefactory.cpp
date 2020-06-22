@@ -2552,16 +2552,12 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
         vecProp.push_back(prop_scope);
         vecProp.push_back(prop_tags);
 
-        data.setValue(0);
-        vecProp.push_back(Property("By",data,Property::PropertyGroup_Definition));
+        Property::defineBy theDefineby = Property::defineBy_vector;
+        data.setValue(theDefineby);
+        Property prop_defineBy("Define by",data,Property::PropertyGroup_Definition);
+        vecProp.push_back(prop_defineBy);
 
-        double Bx,By,Bz;
-        Bx = By = Bz = 0;
-        data.setValue(Bx);
-        vecProp.push_back(Property("Bx",data,Property::PropertyGroup_Definition));
-        vecProp.push_back(Property("By",data,Property::PropertyGroup_Definition));
-        vecProp.push_back(Property("Bz",data,Property::PropertyGroup_Definition));
-
+        //gilda
         //! under definition
         vecProp.push_back(prop_suppressed);
     }
