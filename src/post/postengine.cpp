@@ -506,6 +506,7 @@ postObject postEngine::buildPostObject(const QString &keyName,
     //! --------------------
     //! call the postEngine
     //! --------------------
+    cout<<"KeyName called for pObject"<<keyName.toStdString()<<endl;
     QMap<GeometryTag,QList<QMap<int,double>>> resMap = this->evaluateResult(keyName, requiredSubStepNb, requiredStepNb, vecLoc);
 
     //! ------------------------------------------------------------------------------------------------------------
