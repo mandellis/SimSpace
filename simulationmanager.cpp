@@ -10539,6 +10539,8 @@ void SimulationManager::callPostEngineEvaluateResult()
 
     if(curNode->isSolutionInformation())
     {
+        cout<<"SimulationManager::callPostEngineEvaluateResult()->____solutionInformation Item____"<<endl;
+
         //! -------------------------------------------
         //! the current node is "Solution information"
         //! jump over the first child (i=0)
@@ -10552,6 +10554,7 @@ void SimulationManager::callPostEngineEvaluateResult()
     }
     if(curNode->isSolution())
     {
+        cout<<"SimulationManager::callPostEngineEvaluateResult()->____solution Item____"<<endl;
         //! --------------------------------
         //! the current node is "Solution"
         //! jump over the first child (i=0)
@@ -10569,6 +10572,7 @@ void SimulationManager::callPostEngineEvaluateResult()
         //! the current item is a postprocessing item
         //! ------------------------------------------
         bool immediatelyDisplay = true;
+        cout<<"SimulationManager::callPostEngineEvaluateResult()->____postProcessing Item____"<<endl;
         this->callPostEngineEvaluateResult_private(curItem, immediatelyDisplay);
     }
 

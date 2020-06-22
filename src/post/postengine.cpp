@@ -363,7 +363,6 @@ QMap<GeometryTag,QList<QMap<int,double>>> postEngine::evaluateResult(const QStri
                     }
                     //! result
                     res<<resContPress<<resContFrictStress<<resContPenetration<<resContSliding;
-                    //cout<<"postEngine::evaluateResult()->____Number of components: "<<res.length()<<"____"<<endl;;
                 }
                     break;
                 }
@@ -384,7 +383,6 @@ QMap<GeometryTag,QList<QMap<int,double>>> postEngine::evaluateResult(const QStri
     }
 
     //! diagnostic function
-    //postEngine::plotDataSummary(resMap);
     return resMap;
 }
 
@@ -484,6 +482,12 @@ QString postEngine::colorBoxTitle(const QString &keyName, int component, int ste
         case 3: colorBoxTitle="Directional Force Z"; break;
         }
         break;
+    case TypeOfResult_EPS:
+        switch(component)
+        {
+        case 0: colorBoxTitle="Equivalent Plastic Strain"; break;
+        }
+        break;
     }
     return this->timeStamp().append("\n").append(colorBoxTitle).append(timeInfo).append("\n");
 }
@@ -558,7 +562,6 @@ postObject postEngine::buildPostObject(const QString &keyName,
 //! ------------------------------
 void postEngine::plotDataSummary(QMap<GeometryTag, QList<QMap<int,double>>> data)
 {
-    cout<<"postEngine::plotDataSummary()->____function called____"<<endl;
     if(!data.isEmpty())
     {
         QMap<GeometryTag,QList<QMap<int,double>>>::const_iterator anIt;
@@ -566,14 +569,6 @@ void postEngine::plotDataSummary(QMap<GeometryTag, QList<QMap<int,double>>> data
         {
             GeometryTag loc = anIt.key();
             QList<QMap<int,double>> l = anIt.value();
-
-            cout<<"-[1]---location ("<<loc.parentShapeNr<<", "<<loc.subTopNr<<")-----"<<endl;
-            cout<<"-[2]---number of components: "<<l.size()<<"----"<<endl;
-            for(int i=0; i<l.length(); i++)
-            {
-                cout<<"-["<<3+i<<"]---comp. "<<i+1<<": number of points: "<<l.first().size()<<"----"<<endl;
-            }
-            cout<<endl;
         }
     }
     else
@@ -592,11 +587,11 @@ QString postEngine::timeStamp()
     QDateTime dateTime;
     QString dateFormat = "dd/MM/yyyy";
     QString dateString = dateTime.currentDateTime().toString(dateFormat);
-    QString timeFormat = "hh:mm";
-    QString timeString = dateTime.currentDateTime().toString(timeFormat);
+    //QString timeFormat = "hh:mm";
+    //QString timeString = dateTime.currentDateTime().toString(timeFormat);
     QString timeStamp;
-    timeStamp.append("Date: ").append(dateString).append("\n").append("Time: ").append(timeString);
-
+    //timeStamp.append("Date: ").append(dateString).append("\n").append("Time: ").append(timeString);
+    timeStamp.append("Date: ").append(dateString);
     return timeStamp;
 }
 
@@ -646,44 +641,6 @@ void postEngine::updateResultScale(postObject &aPostObject, int scaleType, doubl
         break;
     }
 }
-/*
-//! -----------------------------------------
-//! function: getDTM
-//! details:  retrieve the discrete time map
-//! -----------------------------------------
-QMap<double,QVector<int>> postEngine::getDTM()
-{
-    cout<<"postEngine::getDTM()->____function called____"<<endl;
-    QMap<double,QVector<int>> dtm;
-
-    QString tmp = myResultsFilePath.split("/").last();
-    QString path = myResultsFilePath;
-    path.chop(tmp.length());
-
-    path += QString("ResultsData/discreteTimeMap.dat");
-    cout<<"postEngine::getDTM()->_____path:"<<path.toStdString()<<"_____"<<endl;
-
-    FILE *dtmfile = fopen(path.toStdString().c_str(),"r");
-    if(dtmfile!=NULL)
-    {
-        cout<<"____the discrete time map is valid____"<<endl;
-        for(;feof(dtmfile)==0;)
-        {
-            cout<<"____building a dtm line____"<<endl;
-            QVector<int> t;
-            double time;
-            int setNumber,step,subStep;
-            fscanf(dtmfile,"%lf%d%d%d", &time,&setNumber,&step,&subStep);
-            t.push_back(setNumber);
-            t.push_back(step);
-            t.push_back(subStep);
-            dtm.insert(time,t);
-        }
-        fclose(dtmfile);
-    }
-    return dtm;
-}
-*/
 
 //! ---------------------------------
 //! function: evaulateFatigueResults
@@ -770,10 +727,8 @@ postObject postEngine::evaluateFatigueResults(int type, QVector<GeometryTag> loc
                 case 9:
                 {
                     elasticModulusMedium = 1.76000000e+005;
-                    //elasticModulusMin = 1.7400000e+005;
                     altStress = 0.5*(mises+eps*elasticModulusMedium);
                     Y = log10(28.3*pow(10,3)*altStress/elasticModulusMedium);
-                    //cout<<"postEngine::evaluateResult()->____altStress  "<<altStress<<" Y  "<<Y<<endl;
 
                     r=35.9;
                     a=9.030556;
@@ -784,26 +739,18 @@ postObject postEngine::evaluateFatigueResults(int type, QVector<GeometryTag> loc
                     f=12.514054;
                     g=4.3290016;
                     h=0.60540862;
-                    //cout<<"postEngine::evaluateResult()->____10^Y  "<<pow(10,Y)<<endl;
 
                     if(pow(10,Y)>r) X = (a-b*Y)/(1-c*Y-d*Y*Y);
                     else  X = (-e+f*Y)/(1-g*Y+h*Y*Y);
-                    //cout<<"postEngine::evaluateResult()->____X  "<<X<<endl;
                 }
                     break;
                 }
                 double damage;
-                double min,max,min2;
-                min=3.14;
-                min2=1;
+                double min,max;
+                min=1;
                 max=8;
                 if(X>min && X<max) damage = nCycle/(pow(10,X));
-                else if(X>=min2 && X<=min) damage = nCycle/(pow(10,3.17));
-                else if(X<min2) damage = 0;
-                else if(X>=max) damage = 0;
-
-                //cout<<"postEngine::evaluateResult()->____damage  "<<damage<<endl;
-                //damageIndexData.insert(curPos,log10l(damage+1e-4));
+                else damage = 0;
                 damageIndexData.insert(curPos,damage);
             }
             damageIndex<<damageIndexData;
@@ -848,8 +795,6 @@ QMap<GeometryTag,QMap<int,QList<double>>> postEngine::readFatigueResults(int typ
     for(it = vecLoc.cbegin(); it!= vecLoc.cend(); ++it)
     {
         GeometryTag loc = *it;
-        //cout<<"postEngine::readFatigueResults()->____working on location tag: ("<<loc.parentShapeNr<<", "<<loc.subTopNr<<")____"<<endl;
-
         //! -------------------------------------------------------------------------
         //! node conversion map: (Calculix mesh nodeID,nodeID for MeshVS_DataSource)
         //! -------------------------------------------------------------------------
@@ -879,7 +824,6 @@ QMap<GeometryTag,QMap<int,QList<double>>> postEngine::readFatigueResults(int typ
             {
                 QString fileName = curDir.absolutePath()+"/"+entryList.at(k);
                 fileList.append(fileName);
-                //cout<<"adding file name: "<<entryList.at(k).toStdString()<<endl;
             }
         }
 
@@ -890,7 +834,6 @@ QMap<GeometryTag,QMap<int,QList<double>>> postEngine::readFatigueResults(int typ
         QMap<int,QList<double>> resMISES;
         for(int i=0; i<fileList.length(); i++)
         {
-            //cout<<"scanning file name: "<<fileList.at(i).toStdString()<<endl;
             QString filePath = fileList.at(i);
             ifstream curFile(filePath.toStdString());
 
@@ -904,9 +847,6 @@ QMap<GeometryTag,QMap<int,QList<double>>> postEngine::readFatigueResults(int typ
             std::getline(curFile,val);
             char tdata[32];
             sscanf(val.c_str(),"%s",tdata);
-
-            //QMap<double,QVector<int>> dtm = this->getDTM();
-            //QMap<double,QVector<int>> dtm = myDTM;
 
             int step,substep;
             postTools::getStepSubStepByTimeDTM(myDTM,times.at(n),step,substep);
