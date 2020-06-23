@@ -845,7 +845,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 //! -----------------------------------------------------------
                 //! calculate the number of columns to show => in the table <=
                 //! -----------------------------------------------------------
-                QList<int> columnsToShow = this->calculateColumnsToShow(theNode);
+                QList<int> columnsToShow = this->calculateColumnsToShow(/*theNode*/);
                 //QList<int> columnsToShow = mainTreeTools::getColumnsToRead(myTreeView);
                 if(columnsToShow.length()>=2) emit requestShowColumns(columnsToShow);
                 bool isDone = markerBuilder::addMarker(this->getCurrentNode(), mySimulationDataBase);
@@ -879,7 +879,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 //! -----------------------------------------------------------
                 //! calculate the number of columns to show => in the table <=
                 //! -----------------------------------------------------------
-                QList<int> columnsToShow = this->calculateColumnsToShow(theNode);
+                QList<int> columnsToShow = this->calculateColumnsToShow(/*theNode*/);
 
                 //QList<int> columnsToShow = mainTreeTools::getColumnsToRead(myTreeView);
                 if(columnsToShow.length()>=2)
@@ -921,7 +921,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 //! -----------------------------------------------------------
                 //! calculate the number of columns to show => in the table <=
                 //! -----------------------------------------------------------
-                QList<int> columnsToShow = this->calculateColumnsToShow(theNode);
+                QList<int> columnsToShow = this->calculateColumnsToShow(/*theNode*/);
                 //QList<int> columnsToShow = mainTreeTools::getColumnsToRead(myTreeView);
                 if(columnsToShow.length()>=2) emit requestShowColumns(columnsToShow);
                 bool isDone = markerBuilder::addMarker(this->getCurrentNode(), mySimulationDataBase);
@@ -963,7 +963,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 //! -----------------------------------------------------------
                 //! calculate the number of columns to show => in the table <=
                 //! -----------------------------------------------------------
-                QList<int> columnsToShow = this->calculateColumnsToShow(theNode);
+                QList<int> columnsToShow = this->calculateColumnsToShow(/*theNode*/);
 
                 //QList<int> columnsToShow = mainTreeTools::getColumnsToRead(myTreeView);
                 if(columnsToShow.length()>=2)
@@ -1002,7 +1002,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 emit requestHideFirstRow();
 
                 //! [3] columns of tha tabular data to show
-                QList<int> columnsToShow = this->calculateColumnsToShow(theNode);
+                QList<int> columnsToShow = this->calculateColumnsToShow(/*theNode*/);
                 //QList<int> columnsToShow = mainTreeTools::getColumnsToRead(myTreeView);
 
                 if(columnsToShow.length()>=2)
@@ -1170,8 +1170,9 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
 //! function: calculateColumnsToShow
 //! details:
 //! ---------------------------------
-QList<int> SimulationManager::calculateColumnsToShow(SimulationNodeClass *aNode)
+QList<int> SimulationManager::calculateColumnsToShow(/*SimulationNodeClass *aNode*/)
 {
+    /*
     cout<<"SimulationManager::calculateColumnsToShow()->____function called____"<<endl;
     int SC = mainTreeTools::calculateStartColumn(myTreeView);
 
@@ -1290,6 +1291,8 @@ QList<int> SimulationManager::calculateColumnsToShow(SimulationNodeClass *aNode)
     //! -------
     //! safety
     //! -------
+    */
+    QList<int> theColumnsToShow = mainTreeTools::getColumnsToRead(myTreeView);
     theColumnsToShow<<0<<1;
     return theColumnsToShow;
 }
@@ -7953,7 +7956,7 @@ void SimulationManager::HandleTabularData()
 
         emit requestTabularData(this->getAnalysisSettingsItemFromCurrentItem()->index());
 
-        QList<int> N = this->calculateColumnsToShow(theCurNode);
+        QList<int> N = this->calculateColumnsToShow(/*theCurNode*/);
         QList<int> N1 = mainTreeTools::getColumnsToRead(myTreeView);
 
         cout<<"\\--------------------------------------------------------\\"<<endl;
@@ -8484,7 +8487,7 @@ void SimulationManager::handleLoadXDefinitionChanged(const QString &textData)
         }
     }
 
-    QList<int> N = this->calculateColumnsToShow(theCurNode);
+    QList<int> N = this->calculateColumnsToShow(/*theCurNode*/);
     N.removeFirst();
 
     if(N.length()>2)
@@ -8701,7 +8704,7 @@ void SimulationManager::handleLoadYDefinitionChanged(const QString &textData)
         }
     }
 
-    QList<int> N = this->calculateColumnsToShow(theCurNode);
+    QList<int> N = this->calculateColumnsToShow(/*theCurNode*/);
     N.removeFirst();
 
     if(N.length()>2)
@@ -8944,7 +8947,7 @@ void SimulationManager::handleLoadZDefinitionChanged(const QString &textData)
         }
     }
 
-    QList<int> N = this->calculateColumnsToShow(theCurNode);
+    QList<int> N = this->calculateColumnsToShow(/*theCurNode*/);
     N.removeFirst();
 
     if(N.length()>2)
@@ -13098,6 +13101,11 @@ void SimulationManager::generateBoundaryConditionsMeshDS(bool computeDual)
             }
         }
     }
+
+    //! -----------------------------------
+    //! scan the rows of the geometry root
+    //! -----------------------------------
+
 }
 
 //! ---------------------------------------------------------

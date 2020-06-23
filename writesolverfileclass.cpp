@@ -229,7 +229,6 @@ bool writeSolverFileClass::perform()
                 ;
             }
                 break;
-
             case SimulationNodeClass::nodeType_structuralAnalysisBoltPretension:
             {
                 QString refNodeName = itemName+"_RN";
@@ -270,7 +269,6 @@ bool writeSolverFileClass::perform()
                 myInputFile<<boltAxis[0]<<", "<<boltAxis[1]<<","<<boltAxis[2]<<endl;
             }
                 break;
-
             case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Force:
             case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Moment:
             case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RemoteForce:
@@ -356,7 +354,6 @@ bool writeSolverFileClass::perform()
                 }
             }
                 break;
-
             case SimulationNodeClass::nodeType_structuralAnalysisBoundaryContidion_FixedSupport:
             case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Displacement:
             case SimulationNodeClass::nodeType_structuralAnalysisThermalCondition:
@@ -366,7 +363,6 @@ bool writeSolverFileClass::perform()
                 this->writeNodalSet(SetName,anIndexedMapOfFaceMeshDS);
             }
                 break;
-
             case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_FrictionlessSupport:
             case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_CylindricalSupport:
             {
@@ -465,7 +461,6 @@ bool writeSolverFileClass::perform()
                 myInputFile<<"*INCLUDE, INPUT="<<nsetName.split("/").last().toStdString()<<endl;
             }
                 break;
-
             case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Pressure:
             case SimulationNodeClass::nodeType_thermalAnalysisConvection:
             case SimulationNodeClass::nodeType_thermalAnalysisAdiabaticWall:
@@ -478,6 +473,40 @@ bool writeSolverFileClass::perform()
             default:
                 break;
             }
+        }
+    }
+
+    //! write point mass
+    //QStandardItem *theGeometryRoot=this->getTreeItem(SimulationNodeClass::nodeType_geometry);
+    for(int k=0; k<theGeometryRoot->rowCount();k++)
+    {
+        QStandardItem *theGeometryItem = theGeometryRoot->child(k,0);
+        SimulationNodeClass *theCurNode = theGeometryItem->data(Qt::UserRole).value<SimulationNodeClass*>();
+        Property::SuppressionStatus theNodeSS = theCurNode->getPropertyValue<Property::SuppressionStatus>("Suppressed");
+        if(theNodeSS==Property::SuppressionStatus_Active &&
+                theNodeType==SimulationNodeClass::nodeType_pointMass)
+        {
+            QString itemName = itemNameClearSpaces(theGeometryRoot->child(k,0)->data(Qt::DisplayRole).toString());
+            //this->writeElementSurface();    //TO DO DS is missing for point mass
+            QVector<GeometryTag> scope = theCurNode->getPropertyValue<QVector<GeometryTag>>("Tags");
+            double mass = theCurNode->getPropertyValue<double>("Mass");
+            double Jx = theCurNode->getPropertyValue<double>("Jx");
+            double Jy = theCurNode->getPropertyValue<double>("Jy");
+            double Jz = theCurNode->getPropertyValue<double>("Jz");
+            double x = theCurNode->getPropertyValue<double>("X coordinate");
+            double y = theCurNode->getPropertyValue<double>("Y coordinate");
+            double z = theCurNode->getPropertyValue<double>("Z coordinate");
+
+            myInputFile<<"*NODE,NSET="<<(QString("CM_")+itemName).toStdString()<<endl;
+            myInputFile<<++totalNumberOfNodes<<","<<x<<","<<y<<","<<z<<endl;
+            myInputFile<<"*ELEMENT, ELSET ="(QString("PM_")+itemName).toStdString()<<", TYPE=MASS"<<endl;
+            myInputFile<<totalNumberOfNodes<<endl;
+            myInputFile<<"*MASS, ELSET ="(QString("PM_")+itemName).toStdString()<<endl;
+            myInputFile<<mass<<endl;
+            myInputFile<<"*COUPLING,REF NODE="<<totalNumberOfNodes<<",SURFACE="<<itemName.toStdString()<<",CONSTRAINT NAME="<<itemName.toStdString()<<endl;
+            myInputFile<<"1,1"<<endl;
+            myInputFile<<"2,2"<<endl;
+            myInputFile<<"3,3"<<endl;
         }
     }
     //! update the progress
