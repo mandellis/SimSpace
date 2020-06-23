@@ -2992,22 +2992,20 @@ QExtendedStandardItem* writeSolverFileClass::getTreeItem(SimulationNodeClass::no
 //! function: ItemFromScope
 //! details:  for a given shape in a geometry item, return the item
 //! ----------------------------------------------------------------
-QExtendedStandardItem* writeSolverFileClass::ItemFromScope(const TopoDS_Shape &anItemShape)
+QExtendedStandardItem* writeSolverFileClass::ItemFromScope(const TopoDS_Shape &aShape)
 {
-    //! the "Geometry" item
-    QExtendedStandardItem *theGeometryRoot=static_cast<QExtendedStandardItem*>(this->getTreeItem(SimulationNodeClass::nodeType_geometry));
+    QStandardItem *theGeometryRoot=this->getTreeItem(SimulationNodeClass::nodeType_geometry);
     int N = theGeometryRoot->rowCount();
     for(int k=0; k<N;k++)
     {
-        QExtendedStandardItem *theGeometryItem = static_cast<QExtendedStandardItem*>(theGeometryRoot->child(k,0));
-        int mapIndex = theGeometryRoot->data(Qt::UserRole).value<SimulationNodeClass*>()->getPropertyValue<int>("Map index");
+        QStandardItem *aGeometryItem = theGeometryRoot->child(k,0);
+        SimulationNodeClass *aNode = aGeometryItem->data(Qt::UserRole).value<SimulationNodeClass*>();
+        if(aNode->getType()==SimulationNodeClass::nodeType_pointMass) continue;
+        int mapIndex = aNode->getPropertyValue<int>("Map index");
         TopoDS_Shape theShape = myDB->bodyMap.value(mapIndex);
-        if(theShape==anItemShape)
-        {
-            return theGeometryItem;
-        }
+        if(theShape==aShape) return static_cast<QExtendedStandardItem*>(aGeometryItem);
     }
-    return NULL;
+    return Q_NULLPTR;
 }
 
 //! ------------------------------------------

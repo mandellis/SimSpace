@@ -65,7 +65,8 @@ public:
         PropertyGroup_MeshDataSources,
         PropertyGroup_Identifier,
         PropertyGroup_CouplingTime,
-        PropertyGroup_Emitter
+        PropertyGroup_Emitter,
+        PropertyGroup_Position
     };
     Q_ENUM(PropertyGroup)
 

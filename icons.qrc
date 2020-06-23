@@ -159,5 +159,6 @@
         <file>icons/icon_graph scale.png</file>
         <file>icons/icon_a field.png</file>
         <file>icons/icon_electrostatic potential.png</file>
+        <file>icons/icon_point mass.png</file>
     </qresource>
 </RCC>

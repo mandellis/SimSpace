@@ -383,7 +383,10 @@ void SimulationNodeClass::addProperty(Property theProp, int position)
         if(position == -1) itemEmitter->appendRow(list);
         else itemEmitter->insertRow(position,list);
         break;
-
+    case Property::PropertyGroup_Position:
+        if(position == -1) itemPosition->appendRow(list);
+        else itemPosition->insertRow(position,list);
+        break;
     }
 }
 
@@ -520,6 +523,7 @@ SimulationNodeClass::nodeType SimulationNodeClass::getFamily()
     case nodeType_geometryBody:
     case nodeType_geometryPart:
     case nodeType_geometry:
+    case nodeType_pointMass:
     case nodeType_repairTool:
         RV = nodeType_geometry;
         break;
@@ -645,7 +649,7 @@ QExtendedStandardItem* SimulationNodeClass::getPropertyItem(const QString &prope
             }
         }
     }
-    //cout<<"SimulationNodeClass::getPropertyItem()->____Property key name \""<<propertyName.toStdString()<<"\" NOT found____"<<endl;
+    cout<<"SimulationNodeClass::getPropertyItem()->____Property key name \""<<propertyName.toStdString()<<"\" NOT found____"<<endl;
     return Q_NULLPTR;
 }
 
@@ -740,6 +744,8 @@ void SimulationNodeClass::createSeparators()
     itemCouplingTime->setData("Couplig time",Qt::DisplayRole);
     itemEmitter = new QExtendedStandardItem();
     itemEmitter->setData("Emitter",Qt::DisplayRole);
+    itemPosition = new QExtendedStandardItem();
+    itemPosition->setData("Position",Qt::DisplayRole);
 
     itemDefinition->setData("separator",Qt::UserRole+1);
     itemBoundingBox->setData("separator",Qt::UserRole+1);
@@ -782,6 +788,7 @@ void SimulationNodeClass::createSeparators()
     itemConvection->setData("separator",Qt::UserRole+1);
     itemCouplingTime->setData("separator",Qt::UserRole+1);
     itemEmitter->setData("separator",Qt::UserRole+1);
+    itemPosition->setData("separator",Qt::UserRole+1);
 
     //! ------------------------
     //! generate the separators
@@ -849,6 +856,13 @@ void SimulationNodeClass::createSeparators()
         myNodeRootItem->appendRow(itemHidden);
         myNodeRootItem->appendRow(itemGraphicObject);
         myNodeRootItem->appendRow(itemMeshDataSources);
+        break;
+
+    case nodeType_pointMass:
+        myNodeRootItem->appendRow(itemScope);
+        myNodeRootItem->appendRow(itemDefinition);
+        myNodeRootItem->appendRow(itemPosition);
+        myNodeRootItem->appendRow(itemGraphicObject);
         break;
 
     case nodeType_structuralAnalysisBoundaryCondition_ImportedTemperatureDistribution:

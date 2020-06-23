@@ -425,7 +425,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
             //! actually highlight
             //! -------------------
             switch(theNodeType)
-            {
+            {                
             case SimulationNodeClass::nodeType_geometryBody:
             {
                 //! ------------------------------------------------------------
@@ -717,6 +717,18 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 bool isDone = markerBuilder::addMarker(this->getCurrentNode(), mySimulationDataBase);
                 theNode->getModel()->blockSignals(false);   //! reconnect - unblock signals
 
+                if(isDone == true) this->displayMarker();
+            }
+                break;
+
+            case SimulationNodeClass::nodeType_pointMass:
+            {
+                emit requestSetWorkingMode(2);
+                emit requestHideAllResults();
+                emit requestHideSlicedMeshes();
+                theNode->getModel()->blockSignals(true);    //! avoids calling handleItemChange()
+                bool isDone = markerBuilder::addMarker(this->getCurrentNode(), mySimulationDataBase);
+                theNode->getModel()->blockSignals(false);   //! reconnect - unblock signals
                 if(isDone == true) this->displayMarker();
             }
                 break;
@@ -1397,14 +1409,17 @@ void SimulationManager::buildCustomMenu(const QModelIndex &modelIndex)
 
     SimulationNodeClass *node = modelIndex.data(Qt::UserRole).value<SimulationNodeClass*>();
     SimulationNodeClass::nodeType nodeType = node->getType();
-    cout<<"____"<<node->getName().toStdString()<<"____"<<endl;
     if(modelIndex.isValid())
     {
         switch(node->getFamily())
         {
         case SimulationNodeClass::nodeType_root: contextMenuBuilder::buildModelRootContextMenu(myContextMenu); break;
         case SimulationNodeClass::nodeType_import: contextMenuBuilder::buildImportContextMenu(myContextMenu,false,isEnabled); break;
-        case SimulationNodeClass::nodeType_geometry: contextMenuBuilder::buildGeometryContextMenu(myContextMenu,true,isEnabled); break;
+        case SimulationNodeClass::nodeType_geometry:
+        {
+            contextMenuBuilder::buildGeometryContextMenu(myContextMenu,true,isEnabled);
+        }
+            break;
         case SimulationNodeClass::nodeType_coordinateSystems: contextMenuBuilder::buildCoordinateSystemMenu(myContextMenu); break;
         case SimulationNodeClass::nodeType_remotePointRoot: contextMenuBuilder::buildRemotePointContextMenu(myContextMenu); break;
         case SimulationNodeClass::nodeType_namedSelection: contextMenuBuilder::buildNamedSelectionContextMenu(myContextMenu); break;
@@ -1443,13 +1458,8 @@ void SimulationManager::buildCustomMenu(const QModelIndex &modelIndex)
             contextMenuBuilder::buildStructuralSolutionContextMenu(myContextMenu);
             break;
 
-            //! ----------------------
-            //! thermal solution menu
-            //! ----------------------
         case SimulationNodeClass::nodeType_thermalAnalysisSolution: contextMenuBuilder::buildThermalResultsContextMenu(myContextMenu); break;
-
         case SimulationNodeClass::nodeType_postObject: contextMenuBuilder::buildPostObjectContextMenu(myContextMenu); break;
-
         case SimulationNodeClass::nodeType_combinedAnalysisSolution: contextMenuBuilder::buildCombinedAnalysisResultsContextMenu(myContextMenu,true,isEnabled); break;
         }
     }
@@ -1750,6 +1760,7 @@ void SimulationManager::handleItem(int type)
     cout<<"SimulationManager::handleItem()->____function called: action Nr: "<<type<<"_____"<<endl;
     switch(type)
     {
+    case 78: this->createSimulationNode(SimulationNodeClass::nodeType_pointMass); break;
     case 85:
     {
         SimulationNodeClass *curNode = myTreeView->currentIndex().data(Qt::UserRole).value<SimulationNodeClass*>();
@@ -3235,6 +3246,20 @@ void SimulationManager::createSimulationNode(SimulationNodeClass::nodeType type,
 
         mainTreeTools::getCurrentSimulationRoot(myTreeView)->insertRow(this->getInsertionRow(),item);
     }
+    //! -----------
+    //! POINT MASS
+    //! -----------
+    else if(type==SimulationNodeClass::nodeType_pointMass)
+    {
+        emit request2DBodySelectionMode(true);
+        aNode = nodeFactory::nodeFromScratch(type,mySimulationDataBase,myCTX);
+        aNode->setParent(this);
+        item->setData(aNode->getName(),Qt::DisplayRole);
+        QVariant data;
+        data.setValue(aNode);
+        item->setData(data,Qt::UserRole);
+        Geometry_RootItem->appendRow(item);
+    }
     //! -----------------------
     //! HANDLING MESH CONTROLS
     //! -----------------------
@@ -4715,27 +4740,19 @@ void SimulationManager::updateRemotePointAbsCoordinates()
         QExtendedStandardItem *item = (QExtendedStandardItem*)p;
         SimulationNodeClass *CS = item->data(Qt::UserRole).value<SimulationNodeClass*>();
 
-        //! warning: cannot use "SimulationNodeClass::getPropertyValue<>("")" here
-        double xP = curNode->getPropertyItem("X coordinate")->data(Qt::UserRole).value<Property>().getData().toDouble();
-        double yP = curNode->getPropertyItem("Y coordinate")->data(Qt::UserRole).value<Property>().getData().toDouble();
-        double zP = curNode->getPropertyItem("Z coordinate")->data(Qt::UserRole).value<Property>().getData().toDouble();
+        double xP = curNode->getPropertyValue<double>("X coordinate");
+        double yP = curNode->getPropertyValue<double>("Y coordinate");
+        double zP = curNode->getPropertyValue<double>("Z coordinate");
 
         if(CS->getType()!=SimulationNodeClass::nodeType_coordinateSystem_global)
         {
-            //! ----------------------------------------------------------------------------
-            //! the remote point is defined with respect to a system of reference different
-            //! from the "Global coordinate system"
-            //! ----------------------------------------------------------------------------
+            //! -------------------------------------------------------------------------------
+            //! the remote point is defined with respect to a user defined system of reference
+            //! -------------------------------------------------------------------------------
             QVector<double> CS_origin = CS->getPropertyValue<QVector<double>>("Base origin");
             QVector<double> X_axisData = CS->getPropertyValue<QVector<double>>("X axis data");
             QVector<double> Y_axisData = CS->getPropertyValue<QVector<double>>("Y axis data");
             QVector<double> Z_axisData = CS->getPropertyValue<QVector<double>>("Z axis data");
-
-            cout<<"SimulationManager::updateRemotePointAbsCoordinates()->____CS origin: ("<<CS_origin.at(0)<<", "<<CS_origin.at(1)<<", "<<CS_origin.at(2)<<")____"<<endl;
-            cout<<"SimulationManager::updateRemotePointAbsCoordinates()->____CS directional data____"<<endl;
-            cout<<"____("<<X_axisData.at(0)<<", "<<X_axisData.at(1)<<", "<<X_axisData.at(2)<<")____"<<endl;
-            cout<<"____("<<Y_axisData.at(0)<<", "<<Y_axisData.at(1)<<", "<<Y_axisData.at(2)<<")____"<<endl;
-            cout<<"____("<<Z_axisData.at(0)<<", "<<Z_axisData.at(1)<<", "<<Z_axisData.at(2)<<")____"<<endl;
 
             double xO = CS_origin.at(0);
             double yO = CS_origin.at(1);
@@ -4747,39 +4764,32 @@ void SimulationManager::updateRemotePointAbsCoordinates()
 
             QVariant data;
             data.setValue(xnew);
-            Property prop_Xcoord("X abs coordinate",data,Property::PropertyGroup_Scope);
-
+            curNode->replaceProperty("X abs coordinate",Property("X abs coordinate",data,Property::PropertyGroup_Scope));
             data.setValue(ynew);
-            Property prop_Ycoord("Y abs coordinate",data,Property::PropertyGroup_Scope);
-
+            curNode->replaceProperty("Y abs coordinate",Property("Y abs coordinate",data,Property::PropertyGroup_Scope));
             data.setValue(znew);
-            Property prop_Zcoord("Z abs coordinate",data,Property::PropertyGroup_Scope);
-
-            curNode->replaceProperty("X abs coordinate",prop_Xcoord);
-            curNode->replaceProperty("Y abs coordinate",prop_Ycoord);
-            curNode->replaceProperty("Z abs coordinate",prop_Zcoord);
+            curNode->replaceProperty("Z abs coordinate",Property("Z abs coordinate",data,Property::PropertyGroup_Scope));
         }
         else
         {
-            cout<<"SimulationManager::updateRemotePointAbsCoordinates()->____the remote point is defined into global CS system____"<<endl;
             //! ---------------------------------------------------------------------------
             //! the remote point is defined with respect to the "Global coordinate system"
             //! ---------------------------------------------------------------------------
             QVariant data;
             data.setValue(xP);
-            Property prop_Xcoord("X abs coordinate",data,Property::PropertyGroup_Scope);
-
+            curNode->replaceProperty("X abs coordinate",Property("X abs coordinate",data,Property::PropertyGroup_Scope));
             data.setValue(yP);
-            Property prop_Ycoord("Y abs coordinate",data,Property::PropertyGroup_Scope);
-
+            curNode->replaceProperty("Y abs coordinate",Property("Y abs coordinate",data,Property::PropertyGroup_Scope));
             data.setValue(zP);
-            Property prop_Zcoord("Z abs coordinate",data,Property::PropertyGroup_Scope);
-
-            curNode->replaceProperty("X abs coordinate",prop_Xcoord);
-            curNode->replaceProperty("Y abs coordinate",prop_Ycoord);
-            curNode->replaceProperty("Z abs coordinate",prop_Zcoord);
+            curNode->replaceProperty("Z abs coordinate",Property("Z abs coordinate",data,Property::PropertyGroup_Scope));
         }
-        //! ----
+
+        //! ------------------------------------------------------------
+        //! immediately update the position of the marker in the viewer
+        //! ------------------------------------------------------------
+        markerBuilder::addMarker(curNode,mySimulationDataBase);
+        emit requestHideAllMarkers(false);
+        this->displayMarker();
     }
 }
 
@@ -4828,6 +4838,19 @@ void SimulationManager::handleItemChange(QStandardItem *item)
 
     switch(family)
     {
+    case SimulationNodeClass::nodeType_geometry:
+    {
+        if(type==SimulationNodeClass::nodeType_pointMass)
+        {
+            if(propertyName=="X coordinate" || propertyName=="Y coordinate" || propertyName=="Z coordinate")
+            {
+                markerBuilder::addMarker(curNode,mySimulationDataBase);
+                emit requestHideAllMarkers(false);
+                this->displayMarker();
+            }
+        }
+    }
+        break;
     case SimulationNodeClass::nodeType_StructuralAnalysisSolution:
     case SimulationNodeClass::nodeType_thermalAnalysisSolution:
     case SimulationNodeClass::nodeType_postObject:
@@ -6419,11 +6442,11 @@ void SimulationManager::handleVisibilityChange(bool newIsVisible)
     else emit requestHideBody(ListOfBodyNumbers);
 }
 
-//! --------------------------------------------------------------------------//
-//! function: itemsFromSelection                                              //
-//! details:  for a given list of shapes return the list of the corresponging //
-//!           geometry items                                                  //
-//! --------------------------------------------------------------------------//
+//! --------------------------------------------------------------------------
+//! function: itemsFromSelection
+//! details:  for a given list of shapes return the list of the corresponging
+//!           geometry items
+//! --------------------------------------------------------------------------
 QList<QStandardItem*> SimulationManager::ItemListFromListOfShape(TopTools_ListOfShape *listOfShapes)
 {
     //!cout<<"SimulationManager::ItemListFromListOfShape()->____number of shapes to convert in items: "<<listOfShapes->Extent()<<"____"<<endl;
@@ -9459,13 +9482,13 @@ void SimulationManager::buildDataBaseFromDisk(const QString &fileName)
     //! -------------------------------
     //! build the simulation data base
     //! -------------------------------
-    //cout<<"SimulationManager::buildDataBaseFromDisk()->____rebuilding database from file: "<<fileName.toStdString()<<"____"<<endl;
+    cout<<"SimulationManager::buildDataBaseFromDisk()->____rebuilding database from file: "<<fileName.toStdString()<<"____"<<endl;
 
     //!geometryDataBase *aDB = new geometryDataBase(listOfNodes,this);
     //!meshDataBase *aDB = new meshDataBase(listOfNodes,this);
     simulationDataBase *aDB = new simulationDataBase(listOfNodes,fileName,this);
 
-    //cout<<"SimulationManager::buildDataBaseFromDisk->____data base rebuilt____"<<endl;
+    cout<<"SimulationManager::buildDataBaseFromDisk->____data base rebuilt____"<<endl;
 
     //! --------------------------
     //! initialize the tree model
@@ -9718,6 +9741,7 @@ void SimulationManager::buildDataBaseFromDisk(const QString &fileName)
     {
         QStandardItem *itemBody = itemGeometryRoot->child(i,0);
         QString bodyName = itemBody->data(Qt::DisplayRole).toString();
+        if(itemBody->data(Qt::UserRole).value<SimulationNodeClass*>()->getType()==SimulationNodeClass::nodeType_pointMass) continue;
         int mapIndex = itemBody->data(Qt::UserRole).value<SimulationNodeClass*>()->getPropertyValue<int>("Map index");
         mySimulationDataBase->MapOfBodyNames.insert(mapIndex,bodyName);
     }
@@ -9781,8 +9805,7 @@ void SimulationManager::updateNodeName()
         //! ----------------------------------------------
         QVariant data;
         data.setValue(itemName);
-        Property prop("Name",data,Property::PropertyGroup_Definition);
-        theNode->replaceProperty("Name",prop);
+        theNode->replaceProperty("Name",Property("Name",data,Property::PropertyGroup_Definition));
 
         //! ----------------------------------------------
         //! update the "array-style" part of the database
@@ -11789,6 +11812,7 @@ void SimulationManager::displayMarker()
             break;
 
         case SimulationNodeClass::nodeType_remotePoint:
+        case SimulationNodeClass::nodeType_pointMass:
             theMarker = curNode->getPropertyValue<AIS_SphereMarker_handle_reg>("Graphic object");
             break;
         }
@@ -11809,6 +11833,7 @@ void SimulationManager::buildMeshIO()
         for(int k=0; k<Geometry_RootItem->rowCount(); k++)
         {
             SimulationNodeClass *curNode = Geometry_RootItem->child(k)->data(Qt::UserRole).value<SimulationNodeClass*>();
+            if(curNode->getType()==SimulationNodeClass::nodeType_pointMass) continue;
             int mapIndex = curNode->getPropertyValue<int>("Map index");
             if(mapIndex==bodyIndex)
             {

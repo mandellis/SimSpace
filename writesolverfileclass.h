@@ -68,7 +68,7 @@ private:
     void writeElementSet(QVector<GeometryTag> vecLoc,QList<QString> &bodyNameList);
     void writeNodesAndElements(QString aName,QMap<int,QList<int>> &nodeListByBody);
 
-    QExtendedStandardItem *ItemFromScope(const TopoDS_Shape &anItemShape);
+    QExtendedStandardItem *ItemFromScope(const TopoDS_Shape &aShape);
     QExtendedStandardItem* getTreeItem(SimulationNodeClass::nodeType theNodeType);
 
     //! -----------------------------------------------------------

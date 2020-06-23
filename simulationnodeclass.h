@@ -115,6 +115,7 @@ public:
         nodeType_structuralAnalysisBoltPretension,
         nodeType_structuralAnalysisThermalCondition,
         nodeType_structuralAnalysisBoundaryCondition_ImportedTemperatureDistribution,
+        nodeType_pointMass,
         nodeType_mapper,                            //! mapper3D
         nodeType_importedBodyScalar,                //! imported scalar
         nodeType_modelChange,                       //! model change
@@ -278,6 +279,7 @@ private:
     QExtendedStandardItem *itemConvection;
     QExtendedStandardItem *itemCouplingTime;
     QExtendedStandardItem *itemEmitter;
+    QExtendedStandardItem *itemPosition;
 
     Property::loadDefinition old_componentX;
     Property::loadDefinition old_componentY;
