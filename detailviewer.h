@@ -320,6 +320,8 @@ public slots:
     void handleInterpolationAlgorithmChanged();
     void handleTransparencyChanged();
 
+    void handleTimeIncrementDefinitionChanged();
+
 signals:
 
     void requestChangeNodeSuppressionStatus(Property::SuppressionStatus newSuppressionStatus);

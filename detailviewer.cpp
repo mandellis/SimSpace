@@ -254,6 +254,8 @@ void DetailViewer::createConnections()
     //! Emitter
     //! --------
     connect(myGeneralDelegate,SIGNAL(EmitterStatusChanged()),this,SLOT(handleEmitterStatusChanged()));
+
+    connect(myGeneralDelegate,SIGNAL(timeIncrementDefinitionChanged()),this,SLOT(handleTimeIncrementDefinitionChanged()));
 }
 
 //! ----------------------
@@ -3259,7 +3261,8 @@ void DetailViewer::handleDefineByChanged()
             //! store old value before removing
             old_magnitude = itemMagnitude->data(Qt::UserRole).value<Property>().getData().value<Property::loadDefinition>();
             myCurNode->updateOldMagnitude(old_magnitude);
-            myCurNode->getModel()->removeRow(itemMagnitude->index().row(),itemMagnitude->parent()->index());
+            myCurNode->removeProperty("Magnitude");
+            //myCurNode->getModel()->removeRow(itemMagnitude->index().row(),itemMagnitude->parent()->index());
         }
         //! --------------------------------
         //! remove the direction if present
@@ -3270,7 +3273,8 @@ void DetailViewer::handleDefineByChanged()
             //! store the old values before removing
             old_direction = itemDirection->data(Qt::UserRole).value<Property>().getData().value<QVector<double>>();
             myCurNode->updateOldDirection(old_direction);
-            myCurNode->getModel()->removeRow(itemDirection->index().row(),itemDirection->parent()->index());
+            myCurNode->removeProperty("Direction");
+            //myCurNode->getModel()->removeRow(itemDirection->index().row(),itemDirection->parent()->index());
         }
         //! -----------------------------------
         //! add the CS selector if not present
@@ -3411,31 +3415,24 @@ void DetailViewer::handleAutoTimeSteppingChanged()
     //cout<<"DetailViewer::handleAutoTimeSteppingChanged()->____function called____"<<endl;
     QVariant data;
     Property::autoTimeStepping theAutoTimeStepping =  myCurNode->getPropertyValue<Property::autoTimeStepping>("Auto time stepping");
-    QExtendedStandardItem *item;
     int currentStepNumber = myCurNode->getPropertyValue<int>("Current step number");
-
     if(theAutoTimeStepping == Property::autoTimeStepping_ProgramControlled)
     {
         myCurNode->removeProperty("Definition");
 
+        //! -----------------------
         //! set the default values
-        QVector<int> N;
-        N.append(5); N.append(2); N.append(10); N.append(0);
+        //! -----------------------
+        QVector<int> N {5,2,10,0};
 
-        item = myCurNode->getPropertyItem("Number of substeps");
-        if(item!=Q_NULLPTR)
-        {
-            myCurNode->getModel()->removeRow(item->index().row(),item->index().parent());
-        }
-        item = myCurNode->getPropertyItem("Initial substeps");
-        if(item!=Q_NULLPTR)
-        {
-            myCurNode->getModel()->removeRow(item->index().row(),item->index().parent());
-            item = myCurNode->getPropertyItem("Minimum substeps");
-            myCurNode->getModel()->removeRow(item->index().row(),item->index().parent());
-            item = myCurNode->getPropertyItem("Maximum substeps");
-            myCurNode->getModel()->removeRow(item->index().row(),item->index().parent());
-        }
+        myCurNode->removeProperty("Number of substeps");
+        myCurNode->removeProperty("Initial substeps");
+        myCurNode->removeProperty("Minimum substeps");
+        myCurNode->removeProperty("Maximum substeps");
+        myCurNode->removeProperty("Initial time step");
+        myCurNode->removeProperty("Minimum time step");
+        myCurNode->removeProperty("Maximum time step");
+
         QVariant data;
         data.setValue(N);
         myCurNode->getTabularDataModel()->setDataRC(data,currentStepNumber,TABULAR_DATA_TIME_STEP_POLICY);
@@ -3449,28 +3446,51 @@ void DetailViewer::handleAutoTimeSteppingChanged()
         data.setValue(0);
         myCurNode->addProperty(Property("Definition",data,Property::PropertyGroup_StepControls));
 
-        item = myCurNode->getPropertyItem("Number of substeps");
-        if(item!=Q_NULLPTR)
-        {
-            myCurNode->getModel()->removeRow(item->index().row(),item->index().parent());
-        }
+        myCurNode->removeProperty("Number of substeps");
 
+        //! ----------------------
         //! read from the tabData
+        //! ----------------------
         CustomTableModel *tabData = myCurNode->getTabularDataModel();
         QVector<int> N = tabData->dataRC(currentStepNumber,3,Qt::EditRole).value<QVector<int>>();
 
-        QVariant data;
-        data.setValue(N[0]);
-        Property prop_NdivIni("Initial substeps",data,Property::PropertyGroup_StepControls);
-        myCurNode->addProperty(prop_NdivIni);
-        data.setValue(N[1]);
-        Property prop_NdivMin("Minimum substeps",data,Property::PropertyGroup_StepControls);
-        myCurNode->addProperty(prop_NdivMin);
-        data.setValue(N[2]);
-        Property prop_NdivMax("Maximum substeps",data,Property::PropertyGroup_StepControls);
-        myCurNode->addProperty(prop_NdivMax);
+        if(myCurNode->getPropertyValue<int>("Definition")==0)
+        {
+            //! -------------------------------------
+            //! definition by time step subdivisions
+            //! -------------------------------------
+            QVariant data;
+            data.setValue(N[0]);
+            Property prop_NdivIni("Initial substeps",data,Property::PropertyGroup_StepControls);
+            myCurNode->addProperty(prop_NdivIni);
+            data.setValue(N[1]);
+            Property prop_NdivMin("Minimum substeps",data,Property::PropertyGroup_StepControls);
+            myCurNode->addProperty(prop_NdivMin);
+            data.setValue(N[2]);
+            Property prop_NdivMax("Maximum substeps",data,Property::PropertyGroup_StepControls);
+            myCurNode->addProperty(prop_NdivMax);
+        }
+        else
+        {
+            //! -----------------------------
+            //! definition by time step size
+            //! -----------------------------
+            double stepEndTime = tabData->dataRC(currentStepNumber,TABULAR_DATA_STEP_END_TIME_COLUMN,Qt::EditRole).toDouble();
 
-        //! set the time step division policy
+            QVariant data;
+            data.setValue(stepEndTime/N[0]);
+            Property prop_initialTimeStep("Initial time step",data,Property::PropertyGroup_StepControls);
+            myCurNode->addProperty(prop_initialTimeStep);
+            data.setValue(stepEndTime/N[2]);
+            Property prop_minimumTimeStep("Minimum time step",data,Property::PropertyGroup_StepControls);
+            myCurNode->addProperty(prop_minimumTimeStep);
+            data.setValue(stepEndTime/N[1]);
+            Property prop_maximumTimeStep("Maximum time step",data,Property::PropertyGroup_StepControls);
+            myCurNode->addProperty(prop_maximumTimeStep);
+        }
+        //! -------------------------------------
+        //! update the time step division policy
+        //! -------------------------------------
         N.remove(3);
         N.push_back(1); //! "1" is for "ON"
         data.setValue(N);
@@ -3485,17 +3505,16 @@ void DetailViewer::handleAutoTimeSteppingChanged()
         data.setValue(0);
         myCurNode->addProperty(Property("Definition",data,Property::PropertyGroup_StepControls));
 
-        item = myCurNode->getPropertyItem("Initial substeps");
-        if(item!=Q_NULLPTR)
-        {
-            myCurNode->getModel()->removeRow(item->index().row(),item->index().parent());
-            item = myCurNode->getPropertyItem("Minimum substeps");
-            myCurNode->getModel()->removeRow(item->index().row(),item->index().parent());
-            item = myCurNode->getPropertyItem("Maximum substeps");
-            myCurNode->getModel()->removeRow(item->index().row(),item->index().parent());
-        }
+        myCurNode->removeProperty("Initial substeps");
+        myCurNode->removeProperty("Minimum substeps");
+        myCurNode->removeProperty("Maximum substeps");
+        myCurNode->removeProperty("Initial time step");
+        myCurNode->removeProperty("Minimum time step");
+        myCurNode->removeProperty("Maximum time step");
 
+        //! ----------------------
         //! read from the tabData
+        //! ----------------------
         CustomTableModel *tabData = myCurNode->getTabularDataModel();
         QVector<int> N = tabData->dataRC(currentStepNumber,3,Qt::EditRole).value<QVector<int>>();
 
@@ -3503,7 +3522,9 @@ void DetailViewer::handleAutoTimeSteppingChanged()
         Property prop_Ndiv("Number of substeps",data,Property::PropertyGroup_StepControls);
         myCurNode->addProperty(prop_Ndiv);
 
-        //! set the time step division policy
+        //! -------------------------------------
+        //! update the time step division policy
+        //! -------------------------------------
         N.remove(3);
         N.push_back(2); //! "1" is for "ON"
         data.setValue(N);
@@ -3511,14 +3532,74 @@ void DetailViewer::handleAutoTimeSteppingChanged()
     }
 }
 
-//! ----------------------------------
-//! function: handleTimeStepDivisione
+//! -----------------------------------------------
+//! function: handleTimeIncrementDefinitionChanged
 //! details:
-//! ----------------------------------
+//! -----------------------------------------------
+void DetailViewer::handleTimeIncrementDefinitionChanged()
+{
+    connectToSimulationManager(false);
+
+    int timeStepDefinedBy = myCurNode->getPropertyValue<int>("Definition");
+
+    //! --------------------------------------
+    //! current step number and step end time
+    //! --------------------------------------
+    int currentStepNumber = myCurNode->getPropertyValue<int>("Current step number");
+
+    //! -----------------------------------------
+    //! read from the table the current settings
+    //! -----------------------------------------
+    CustomTableModel *tabData = myCurNode->getTabularDataModel();
+    QVector<int> N = tabData->dataRC(currentStepNumber,TABULAR_DATA_TIME_STEP_POLICY,Qt::EditRole).value<QVector<int>>();
+    double stepEndTime = tabData->dataRC(currentStepNumber,TABULAR_DATA_STEP_END_TIME_COLUMN,Qt::EditRole).toDouble();
+
+    switch(timeStepDefinedBy)
+    {
+    case 0:
+    {
+        QVariant data;
+        myCurNode->removeProperty("Initial time step");
+        myCurNode->removeProperty("Minimum time step");
+        myCurNode->removeProperty("Maximum time step");
+        data.setValue(N[0]);
+        myCurNode->addProperty(Property("Initial substeps",data,Property::PropertyGroup_StepControls));
+        data.setValue(N[1]);
+        myCurNode->addProperty(Property("Minimum substeps",data,Property::PropertyGroup_StepControls));
+        data.setValue(N[2]);
+        myCurNode->addProperty(Property("Maximum substeps",data,Property::PropertyGroup_StepControls));
+    }
+        break;
+    case 1:
+    {
+        QVariant data;
+        myCurNode->removeProperty("Initial substeps");
+        myCurNode->removeProperty("Minimum substeps");
+        myCurNode->removeProperty("Maximum substeps");
+        double initialTimeStep = stepEndTime/N[1];
+        data.setValue(initialTimeStep);
+        myCurNode->addProperty(Property("Initial time step",data,Property::PropertyGroup_StepControls));
+        double minTimeStep = stepEndTime/N[2];
+        data.setValue(minTimeStep);
+        myCurNode->addProperty(Property("Minimum time step",data,Property::PropertyGroup_StepControls));
+        double maxTimeStep = stepEndTime/N[0];
+        data.setValue(maxTimeStep);
+        myCurNode->addProperty(Property("Maximum time step",data,Property::PropertyGroup_StepControls));
+    }
+        break;
+    }
+
+    connectToSimulationManager(true);
+}
+
+//! ---------------------------------
+//! function: handleTimeStepDivision
+//! details:
+//! ---------------------------------
 void DetailViewer::handleTimeDivisionChanged()
 {
-    int currentStepNumber = myCurNode->getPropertyItem("Current step number")->data(Qt::UserRole).value<Property>().getData().toInt();
-    Property::autoTimeStepping ats = myCurNode->getPropertyItem("Auto time stepping")->data(Qt::UserRole).value<Property>().getData().value<Property::autoTimeStepping>();
+    int currentStepNumber = myCurNode->getPropertyValue<int>("Current step number");
+    Property::autoTimeStepping ats = myCurNode->getPropertyValue<Property::autoTimeStepping>("Auto time stepping");
 
     int n0,n1,n2,n3;
 
@@ -3534,19 +3615,22 @@ void DetailViewer::handleTimeDivisionChanged()
         break;
     case Property::autoTimeStepping_ON:
     {
-        n0 = myCurNode->getPropertyItem("Initial substeps")->data(Qt::UserRole).value<Property>().getData().toInt();
-        n1 = myCurNode->getPropertyItem("Minimum substeps")->data(Qt::UserRole).value<Property>().getData().toInt();
-        n2 = myCurNode->getPropertyItem("Maximum substeps")->data(Qt::UserRole).value<Property>().getData().toInt();
+        n0 = myCurNode->getPropertyValue<int>("Initial substeps");
+        n1 = myCurNode->getPropertyValue<int>("Minimum substeps");
+        n2 = myCurNode->getPropertyValue<int>("Maximum substeps");
         n3 = 1;
     }
         break;
     case Property::autoTimeStepping_OFF:
-        n0 = myCurNode->getPropertyItem("Number of substeps")->data(Qt::UserRole).value<Property>().getData().toInt();
+    {
+        n0 = myCurNode->getPropertyValue<int>("Number of substeps");
         n1 = n2 = 0;
         n3 = 2;
+    }
         break;
     }
-    QVector<int> N; N.append(n0); N.append(n1); N.append(n2); N.append(n3);
+    //QVector<int> N; N.append(n0); N.append(n1); N.append(n2); N.append(n3);
+    QVector<int> N {n0, n1, n2, n3};
     QVariant data; data.setValue(N);
     myCurNode->getTabularDataModel()->setDataRC(data,currentStepNumber,3);
 }
