@@ -150,6 +150,17 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
         }
 #endif
 
+        //! ----------------------
+        //! "Jx" "Jy" "Jz" "Mass"
+        //! ----------------------
+        if(propertyName =="Jx" || propertyName =="Jy" || propertyName =="Jz" || propertyName =="Mass")
+        {
+            QLineEdit *le = new QLineEdit(parent);
+            QDoubleValidator *dval = new QDoubleValidator();
+            if(propertyName == "Mass") dval->setBottom(0.0);
+            le->setValidator(dval);
+            return le;
+        }
         //! -------------
         //! "Definition"
         //! -------------
@@ -2846,6 +2857,16 @@ void GeneralDelegate::setEditorData(QWidget *editor, const QModelIndex &index) c
     }
 #endif
 
+    //! ----------------------
+    //! "Jx" "Jy" "Jz" "Mass"
+    //! ----------------------
+    if(propertyName =="Jx" || propertyName =="Jy" || propertyName =="Jz" || propertyName =="Mass")
+    {
+        QLineEdit *le =static_cast<QLineEdit*>(editor);
+        double val = data.value<Property>().getData().toDouble();
+        le->setText(QString("%1").arg(val));
+        connect(le,SIGNAL(returnPressed()),this,SLOT(commitAndCloseLineEdit()));
+    }
     //! -------------
     //! "Definition"
     //! -------------
@@ -5213,6 +5234,15 @@ void GeneralDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, c
         }
 #endif
 
+        //! ----------------------
+        //! "Jx" "Jy" "Jz" "Mass"
+        //! ----------------------
+        if(propertyName =="Jx" || propertyName =="Jy" || propertyName =="Jz" || propertyName =="Mass")
+        {
+            QLineEdit *le =static_cast<QLineEdit*>(editor);
+            double val = le->text().toDouble();
+            data.setValue(val);
+        }
         //! -------------
         //! "Definition"
         //! -------------
