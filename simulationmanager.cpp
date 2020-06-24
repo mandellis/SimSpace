@@ -3287,6 +3287,20 @@ void SimulationManager::createSimulationNode(SimulationNodeClass::nodeType type,
 
         mainTreeTools::getCurrentSimulationRoot(myTreeView)->insertRow(this->getInsertionRow(),item);
     }
+    //! -----------
+    //! POINT MASS
+    //! -----------
+    else if(type==SimulationNodeClass::nodeType_pointMass)
+    {
+        emit request2DBodySelectionMode(true);
+        aNode = nodeFactory::nodeFromScratch(type,mySimulationDataBase,myCTX);
+        aNode->setParent(this);
+        item->setData(aNode->getName(),Qt::DisplayRole);
+        QVariant data;
+        data.setValue(aNode);
+        item->setData(data,Qt::UserRole);
+        Geometry_RootItem->appendRow(item);
+    }
     //! -----------------------
     //! HANDLING MESH CONTROLS
     //! -----------------------
