@@ -1439,10 +1439,6 @@ void SimulationManager::createContent()
 //! function: buildCustomMenu
 //! details:
 //! --------------------------
-//! --------------------------
-//! function: buildCustomMenu
-//! details:
-//! --------------------------
 void SimulationManager::buildCustomMenu(const QModelIndex &modelIndex)
 {
     //! ------------------------------
@@ -1453,59 +1449,58 @@ void SimulationManager::buildCustomMenu(const QModelIndex &modelIndex)
 
     SimulationNodeClass *node = modelIndex.data(Qt::UserRole).value<SimulationNodeClass*>();
     SimulationNodeClass::nodeType nodeType = node->getType();
-    if(modelIndex.isValid())
+    if(modelIndex.isValid()==false) return;
+
+    switch(node->getFamily())
     {
-        switch(node->getFamily())
-        {
-        case SimulationNodeClass::nodeType_root: contextMenuBuilder::buildModelRootContextMenu(myContextMenu); break;
-        case SimulationNodeClass::nodeType_import: contextMenuBuilder::buildImportContextMenu(myContextMenu,false,isEnabled); break;
-        case SimulationNodeClass::nodeType_geometry:
-        {
-            contextMenuBuilder::buildGeometryContextMenu(myContextMenu,true,isEnabled);
-        }
-            break;
-        case SimulationNodeClass::nodeType_coordinateSystems: contextMenuBuilder::buildCoordinateSystemMenu(myContextMenu); break;
-        case SimulationNodeClass::nodeType_remotePointRoot: contextMenuBuilder::buildRemotePointContextMenu(myContextMenu); break;
-        case SimulationNodeClass::nodeType_namedSelection: contextMenuBuilder::buildNamedSelectionContextMenu(myContextMenu); break;
+    case SimulationNodeClass::nodeType_root: contextMenuBuilder::buildModelRootContextMenu(myContextMenu); break;
+    case SimulationNodeClass::nodeType_import: contextMenuBuilder::buildImportContextMenu(myContextMenu,false,isEnabled); break;
+    case SimulationNodeClass::nodeType_geometry:
+    {
+        contextMenuBuilder::buildGeometryContextMenu(myContextMenu,true,isEnabled);
+    }
+        break;
+    case SimulationNodeClass::nodeType_coordinateSystems: contextMenuBuilder::buildCoordinateSystemMenu(myContextMenu); break;
+    case SimulationNodeClass::nodeType_remotePointRoot: contextMenuBuilder::buildRemotePointContextMenu(myContextMenu); break;
+    case SimulationNodeClass::nodeType_namedSelection: contextMenuBuilder::buildNamedSelectionContextMenu(myContextMenu); break;
 
-        case SimulationNodeClass::nodeType_connection:
-        case SimulationNodeClass::nodeType_connectionGroup:
-            contextMenuBuilder::buildContactContextMenu(myContextMenu);
-            break;
+    case SimulationNodeClass::nodeType_connection:
+    case SimulationNodeClass::nodeType_connectionGroup:
+        contextMenuBuilder::buildContactContextMenu(myContextMenu);
+        break;
 
-        case SimulationNodeClass::nodeType_meshControl:
-            contextMenuBuilder::buildMeshContextMenu(myContextMenu,true,isEnabled);
-            break;
+    case SimulationNodeClass::nodeType_meshControl:
+        contextMenuBuilder::buildMeshContextMenu(myContextMenu,true,isEnabled);
+        break;
 
-        case SimulationNodeClass::nodeType_structuralAnalysis:
-            contextMenuBuilder::buildStructuralAnalysisContextMenu(myContextMenu,true,isEnabled);
-            if(nodeType==SimulationNodeClass::nodeType_OpenFoamScalarData) break;
-            if(nodeType==SimulationNodeClass::nodeType_mapper) break;
-            break;
+    case SimulationNodeClass::nodeType_structuralAnalysis:
+        contextMenuBuilder::buildStructuralAnalysisContextMenu(myContextMenu,true,isEnabled);
+        if(nodeType==SimulationNodeClass::nodeType_OpenFoamScalarData) break;
+        if(nodeType==SimulationNodeClass::nodeType_mapper) break;
+        break;
 
-        case SimulationNodeClass::nodeType_combinedAnalysis:
-            contextMenuBuilder::buildStructuralAnalysisContextMenu(myContextMenu,false,isEnabled);
-            if(nodeType==SimulationNodeClass::nodeType_OpenFoamScalarData) break;
-            if(nodeType==SimulationNodeClass::nodeType_mapper) break;
-            contextMenuBuilder::buildThermalAnalysisContextMenu(myContextMenu,false,isEnabled);
-            break;
+    case SimulationNodeClass::nodeType_combinedAnalysis:
+        contextMenuBuilder::buildStructuralAnalysisContextMenu(myContextMenu,false,isEnabled);
+        if(nodeType==SimulationNodeClass::nodeType_OpenFoamScalarData) break;
+        if(nodeType==SimulationNodeClass::nodeType_mapper) break;
+        contextMenuBuilder::buildThermalAnalysisContextMenu(myContextMenu,false,isEnabled);
+        break;
 
-        case SimulationNodeClass::nodeType_particlesInFieldsAnalysis:
-            contextMenuBuilder::buildParticlesInFieldsContextMenu(myContextMenu,true,isEnabled);
-            break;
+    case SimulationNodeClass::nodeType_particlesInFieldsAnalysis:
+        contextMenuBuilder::buildParticlesInFieldsContextMenu(myContextMenu,true,isEnabled);
+        break;
 
-        case SimulationNodeClass::nodeType_thermalAnalysis:
-            contextMenuBuilder::buildThermalAnalysisContextMenu(myContextMenu,true,isEnabled);
-            break;
+    case SimulationNodeClass::nodeType_thermalAnalysis:
+        contextMenuBuilder::buildThermalAnalysisContextMenu(myContextMenu,true,isEnabled);
+        break;
 
-        case SimulationNodeClass::nodeType_StructuralAnalysisSolution:
-            contextMenuBuilder::buildStructuralSolutionContextMenu(myContextMenu);
-            break;
+    case SimulationNodeClass::nodeType_StructuralAnalysisSolution:
+        contextMenuBuilder::buildStructuralSolutionContextMenu(myContextMenu);
+        break;
 
-        case SimulationNodeClass::nodeType_thermalAnalysisSolution: contextMenuBuilder::buildThermalResultsContextMenu(myContextMenu); break;
-        case SimulationNodeClass::nodeType_postObject: contextMenuBuilder::buildPostObjectContextMenu(myContextMenu); break;
-        case SimulationNodeClass::nodeType_combinedAnalysisSolution: contextMenuBuilder::buildCombinedAnalysisResultsContextMenu(myContextMenu,true,isEnabled); break;
-        }
+    case SimulationNodeClass::nodeType_thermalAnalysisSolution: contextMenuBuilder::buildThermalResultsContextMenu(myContextMenu); break;
+    case SimulationNodeClass::nodeType_postObject: contextMenuBuilder::buildPostObjectContextMenu(myContextMenu); break;
+    case SimulationNodeClass::nodeType_combinedAnalysisSolution: contextMenuBuilder::buildCombinedAnalysisResultsContextMenu(myContextMenu,true,isEnabled); break;
     }
 }
 

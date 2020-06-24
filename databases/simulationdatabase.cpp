@@ -2920,7 +2920,7 @@ void simulationDataBase::createThermalAnalysisRootNode()
     props.append(property_q_alpha_0);
 
     //! First tolerance in case of non zero flux
-    double R_alpha_n = 123;
+    double R_alpha_n = 0.005;
     data.setValue(R_alpha_n);
     Property property_R_alpha_n("--R_alpha_n",data,Property::PropertyGroup_ConvergenceCriteria);
     props.append(property_R_alpha_n);

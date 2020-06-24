@@ -522,6 +522,7 @@ SimulationNodeClass::nodeType SimulationNodeClass::getFamily()
     case nodeType_geometryPart:
     case nodeType_geometry:
     case nodeType_pointMass:
+        RV = nodeType_geometry;
         break;
 
     case nodeType_repairTool:
