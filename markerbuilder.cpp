@@ -414,14 +414,46 @@ bool markerBuilder::addMarker(SimulationNodeClass *node, geometryDataBase *gDB)
     }
         break;
 
+        //! -----------
+        //! Point mass
+        //! -----------
+    case SimulationNodeClass::nodeType_pointMass:
+    {
+        //! -------------------------------
+        //! coordinate of the remote point
+        //! -------------------------------
+        double x = node->getPropertyValue<double>("X coordinate");
+        double y = node->getPropertyValue<double>("Y coordinate");
+        double z = node->getPropertyValue<double>("Z coordinate");
+
+        //! ---------------------
+        //! calculate the radius
+        //! ---------------------
+        double X,Y;
+        occPreGLWidget *viewPort = static_cast<occPreGLWidget*>(tools::getWidgetByName("maingwindow"));
+        viewPort->getView()->Size(X,Y);
+        double L = sqrt(X*Y);
+        double radius = L/100.0;
+
+        AIS_SphereMarker_handle_reg marker = markers::buildSphereMarker(gp_Pnt(x,y,z),radius);
+        QVariant data;
+        data.setValue(marker);
+        Property prop_marker("Graphic object",data,Property::PropertyGroup_GraphicObjects);
+
+        //! ---------------------------------------
+        //! add the graphic object if not existing
+        //! otherwise replace it
+        //! ---------------------------------------
+        if(node->getPropertyItem("Graphic object")==Q_NULLPTR) node->addProperty(prop_marker);
+        else node->replaceProperty("Graphic object",prop_marker);
+    }
+        break;
+
+        //! -------------
+        //! remote point
+        //! -------------
     case SimulationNodeClass::nodeType_remotePoint:
     {
-        //! -----------------------------------------------
-        //! nothing is present in "Geometry": return false
-        //! -----------------------------------------------
-        //const QVector<GeometryTag> &locs = node->getPropertyValue<QVector<GeometryTag>>("Geometry");
-        //if(locs.isEmpty()) return false;
-
         //! -------------------------------
         //! coordinate of the remote point
         //! -------------------------------
@@ -429,7 +461,7 @@ bool markerBuilder::addMarker(SimulationNodeClass *node, geometryDataBase *gDB)
         double y = node->getPropertyValue<double>("Y abs coordinate");
         double z = node->getPropertyValue<double>("Z abs coordinate");
 
-        cout<<"markerBuilder::addMarker()->____adding remote point marker at ("<<x<<", "<<y<<", "<<z<<")____"<<endl;
+        //cout<<"markerBuilder::addMarker()->____adding remote point marker at ("<<x<<", "<<y<<", "<<z<<")____"<<endl;
 
         //! ---------------------
         //! calculate the radius

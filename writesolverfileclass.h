@@ -50,6 +50,8 @@ private:
     //std::map<int, std::map<meshElement2D,std::vector<std::pair<int,std::string>>>> bigMap;
     std::map<int, std::map<meshElement2D,std::vector<std::pair<int,int>>>> bigMap;
 
+    int totalNumberOfNodes;
+    int totalNumberOfElements;
 
 private:
 
@@ -68,7 +70,7 @@ private:
     void writeElementSet(QVector<GeometryTag> vecLoc,QList<QString> &bodyNameList);
     void writeNodesAndElements(QString aName,QMap<int,QList<int>> &nodeListByBody);
 
-    QExtendedStandardItem *ItemFromScope(const TopoDS_Shape &anItemShape);
+    QExtendedStandardItem *ItemFromScope(const TopoDS_Shape &aShape);
     QExtendedStandardItem* getTreeItem(SimulationNodeClass::nodeType theNodeType);
 
     //! -----------------------------------------------------------

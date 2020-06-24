@@ -2890,7 +2890,7 @@ void occPreGLWidget::showBody(const TColStd_ListOfInteger &listOfBodies)
 //! -------------------------------------
 void occPreGLWidget::highlightBody(const QList<int> &listOfBodyNumbers)
 {
-    cout<<"occPreGLWidget::highlightBody()->____function called____"<<endl;
+    //cout<<"occPreGLWidget::highlightBody()->____function called____"<<endl;
     this->unhighlightBody(false);
 
     //! -----------------------------
@@ -2905,7 +2905,6 @@ void occPreGLWidget::highlightBody(const QList<int> &listOfBodyNumbers)
     for(QList<int>::const_iterator it = listOfBodyNumbers.cbegin(); it!=listOfBodyNumbers.cend(); ++it)
     {
         int bodyIndex = *it;
-        //const occHandle(AIS_Shape) &anAISShape = occHandle(AIS_Shape)::DownCast(myMapOfInteractiveShapes.at(bodyIndex));
         const occHandle(AIS_Shape) &anAISShape = occHandle(AIS_Shape)::DownCast(myMapOfInteractiveShapes.value(bodyIndex));
         occContext->HilightWithColor(anAISShape,highlightDrawer,false);
     }

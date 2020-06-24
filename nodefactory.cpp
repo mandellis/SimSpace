@@ -98,6 +98,36 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
 
     switch(type)
     {
+    case SimulationNodeClass::nodeType_pointMass:
+    {
+        name = "Point mass"; //bubi
+
+        //! ------------
+        //! under scope
+        //! ------------
+        vecProp.push_back(prop_scopingMethod);
+        vecProp.push_back(prop_scope);
+        vecProp.push_back(prop_tags);
+
+        //! ---------------
+        //! under position
+        //! ---------------
+        data.setValue(0.0);
+        vecProp.push_back(Property("X coordinate",data,Property::PropertyGroup_Position));
+        vecProp.push_back(Property("Y coordinate",data,Property::PropertyGroup_Position));
+        vecProp.push_back(Property("Z coordinate",data,Property::PropertyGroup_Position));
+
+        //! -----------------
+        //! under definition
+        //! -----------------
+        vecProp.push_back(prop_suppressed);
+
+        vecProp.push_back(Property("Mass",data,Property::PropertyGroup_Definition));
+        vecProp.push_back(Property("Jx",data,Property::PropertyGroup_Definition));
+        vecProp.push_back(Property("Jy",data,Property::PropertyGroup_Definition));
+        vecProp.push_back(Property("Jz",data,Property::PropertyGroup_Definition));
+    }
+        break;
     //! -------------------------
     //! temperature distribution
     //! -------------------------

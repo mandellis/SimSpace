@@ -3240,8 +3240,7 @@ void occGLWidget::setTransparency(bool isActive, bool updateViewer, double level
 //! ----------------------------------------------
 void occGLWidget::hideAllMarkers(bool updateViewer)
 {
-    cout<<"occGLWidget::hideAllMarkers()->____function called____"<<endl;
-
+    //cout<<"occGLWidget::hideAllMarkers()->____function called____"<<endl;
     occContext->CloseLocalContext(-1,false);
     AIS_ListOfInteractive theListOfIO;
     AIS_ListIteratorOfListOfInteractive it;
