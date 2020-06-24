@@ -1439,6 +1439,10 @@ void SimulationManager::createContent()
 //! function: buildCustomMenu
 //! details:
 //! --------------------------
+//! --------------------------
+//! function: buildCustomMenu
+//! details:
+//! --------------------------
 void SimulationManager::buildCustomMenu(const QModelIndex &modelIndex)
 {
     //! ------------------------------
@@ -1449,14 +1453,17 @@ void SimulationManager::buildCustomMenu(const QModelIndex &modelIndex)
 
     SimulationNodeClass *node = modelIndex.data(Qt::UserRole).value<SimulationNodeClass*>();
     SimulationNodeClass::nodeType nodeType = node->getType();
-    cout<<"____"<<node->getName().toStdString()<<"____"<<endl;
     if(modelIndex.isValid())
     {
         switch(node->getFamily())
         {
         case SimulationNodeClass::nodeType_root: contextMenuBuilder::buildModelRootContextMenu(myContextMenu); break;
         case SimulationNodeClass::nodeType_import: contextMenuBuilder::buildImportContextMenu(myContextMenu,false,isEnabled); break;
-        case SimulationNodeClass::nodeType_geometry: contextMenuBuilder::buildGeometryContextMenu(myContextMenu,true,isEnabled); break;
+        case SimulationNodeClass::nodeType_geometry:
+        {
+            contextMenuBuilder::buildGeometryContextMenu(myContextMenu,true,isEnabled);
+        }
+            break;
         case SimulationNodeClass::nodeType_coordinateSystems: contextMenuBuilder::buildCoordinateSystemMenu(myContextMenu); break;
         case SimulationNodeClass::nodeType_remotePointRoot: contextMenuBuilder::buildRemotePointContextMenu(myContextMenu); break;
         case SimulationNodeClass::nodeType_namedSelection: contextMenuBuilder::buildNamedSelectionContextMenu(myContextMenu); break;
@@ -1495,13 +1502,8 @@ void SimulationManager::buildCustomMenu(const QModelIndex &modelIndex)
             contextMenuBuilder::buildStructuralSolutionContextMenu(myContextMenu);
             break;
 
-            //! ----------------------
-            //! thermal solution menu
-            //! ----------------------
         case SimulationNodeClass::nodeType_thermalAnalysisSolution: contextMenuBuilder::buildThermalResultsContextMenu(myContextMenu); break;
-
         case SimulationNodeClass::nodeType_postObject: contextMenuBuilder::buildPostObjectContextMenu(myContextMenu); break;
-
         case SimulationNodeClass::nodeType_combinedAnalysisSolution: contextMenuBuilder::buildCombinedAnalysisResultsContextMenu(myContextMenu,true,isEnabled); break;
         }
     }
