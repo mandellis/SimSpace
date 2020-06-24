@@ -511,17 +511,30 @@ void contextMenuBuilder::buildNamedSelectionContextMenu(QMenu *contextMenu, bool
 //! -----------------------------------
 void contextMenuBuilder::buildGeometryContextMenu(QMenu *contextMenu, bool addCommonActions, bool isEnabled)
 {
+    if(isEnabled==false) return;
     SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
     SimulationNodeClass *node = sm->myTreeView->currentIndex().data(Qt::UserRole).value<SimulationNodeClass*>();
 
-    //! prevent "suppress/unsuppress" "delete" on roots and on the geometry body
+    //! -------------------------------------------------
+    //! an item under the geometry root has been clicked
+    //! -------------------------------------------------
     if(node->getType()!=node->getFamily())
     {
-        if(isEnabled)
-        {
-            QMenu *menuInsert = contextMenu->addMenu("Insert");
-            menuInsert->setIcon(QIcon(":/icons/icon_insert.png"));
+        QMenu *menuInsert = contextMenu->addMenu("Insert");
+        menuInsert->setIcon(QIcon(":/icons/icon_insert.png"));
 
+        //! -----------
+        //! Point mass
+        //! -----------
+        QAction *ActionInsertPointMass = menuInsert->addAction("Point mass");
+        ActionInsertPointMass->setIcon(QIcon(":/icons/icon_point mass.png"));
+        ActionInsertPointMass->setData(78);
+
+        //! add a separator
+        contextMenu->addSeparator();
+
+        if(node->getType()==SimulationNodeClass::nodeType_geometryBody)
+        {
             //! --------------------------
             //! action insert repair tool
             //! --------------------------
@@ -548,69 +561,81 @@ void contextMenuBuilder::buildGeometryContextMenu(QMenu *contextMenu, bool addCo
             QAction *ActionExportBREPFile = menuTools->addAction("Export BREP file");
             ActionExportBREPFile->setIcon(QIcon(":/icons/icon_export BREP.png"));
             ActionExportBREPFile->setData(77);
-
-            //! add separator
-            contextMenu->addSeparator();
         }
+
+        if(node->getType()==SimulationNodeClass::nodeType_pointMass) contextMenuBuilder::addActionDelete(contextMenu);
+
+        //! add separator
+        contextMenu->addSeparator();
 
         //! ------------------------------------------------------------
         //! the common actions are added also when something is running
         //! ------------------------------------------------------------
         if(addCommonActions)
         {
-            bool isVisible = node->getPropertyValue<bool>("Visible");
-            if(isVisible)
+            if(node->getType()!=SimulationNodeClass::nodeType_pointMass)
             {
-                //! -----
-                //! hide
-                //! -----
-                QAction *ActionHide = contextMenu->addAction("Hide");
-                ActionHide->setIcon(QIcon(":/icons/icon_lamp OFF.png"));
-                ActionHide->setData(63);
-
-                QAction *ActionHideAllOtherBodies = contextMenu->addAction("Hide all other bodies");
-                ActionHideAllOtherBodies->setIcon(QIcon(":/icons/icon_lamp OFF.png"));
-                ActionHideAllOtherBodies->setData(64);
-
-                //! ---------------------------------------------------------------------
-                //! a visible body has been clicked: if some body is not visible add the
-                //! action "Show all bodies
-                //! ---------------------------------------------------------------------
-                //! check if some body is hidden
-                QExtendedStandardItem *itemGeometryRoot = static_cast<QExtendedStandardItem*>(static_cast<QStandardItemModel*>(sm->myTreeView->model())
-                        ->itemFromIndex(sm->myTreeView->currentIndex().parent()));
-                int NbBodies = itemGeometryRoot->rowCount();
-                bool bodyHidden = false;
-                for(int i=0; i<NbBodies; i++)
+                bool isVisible = node->getPropertyValue<bool>("Visible");
+                if(isVisible)
                 {
-                    QExtendedStandardItem *theCurItem = static_cast<QExtendedStandardItem*>(itemGeometryRoot->child(i,0));
-                    SimulationNodeClass *theCurNode = theCurItem->data(Qt::UserRole).value<SimulationNodeClass*>();
-                    bool isVisible = theCurNode->getPropertyValue<bool>("Visible");
-                    if(!isVisible)
+                    //! -----
+                    //! hide
+                    //! -----
+                    QAction *ActionHide = contextMenu->addAction("Hide");
+                    ActionHide->setIcon(QIcon(":/icons/icon_lamp OFF.png"));
+                    ActionHide->setData(63);
+
+                    QAction *ActionHideAllOtherBodies = contextMenu->addAction("Hide all other bodies");
+                    ActionHideAllOtherBodies->setIcon(QIcon(":/icons/icon_lamp OFF.png"));
+                    ActionHideAllOtherBodies->setData(64);
+
+                    //! ---------------------------------------------------------------------
+                    //! a visible body has been clicked: if some body is not visible add the
+                    //! action "Show all bodies
+                    //! ---------------------------------------------------------------------
+                    //! check if some body is hidden
+                    QExtendedStandardItem *itemGeometryRoot = static_cast<QExtendedStandardItem*>(static_cast<QStandardItemModel*>(sm->myTreeView->model())
+                                                                                                  ->itemFromIndex(sm->myTreeView->currentIndex().parent()));
+                    int NbPointMasses = 0;
+                    for(int i=0; i<itemGeometryRoot->rowCount(); i++)
                     {
-                        bodyHidden = true;
-                        break;
+                        QStandardItem *item = itemGeometryRoot->child(i,0);
+                        SimulationNodeClass *aNode = item->data(Qt::UserRole).value<SimulationNodeClass*>();
+                        if(aNode->getType()==SimulationNodeClass::nodeType_pointMass) NbPointMasses++;
+                    }
+                    int NbBodies = itemGeometryRoot->rowCount()-NbPointMasses;
+                    bool bodyHidden = false;
+                    for(int i=0; i<NbBodies; i++)
+                    {
+                        QExtendedStandardItem *theCurItem = static_cast<QExtendedStandardItem*>(itemGeometryRoot->child(i,0));
+                        SimulationNodeClass *theCurNode = theCurItem->data(Qt::UserRole).value<SimulationNodeClass*>();
+                        bool isVisible = theCurNode->getPropertyValue<bool>("Visible");
+                        if(!isVisible)
+                        {
+                            bodyHidden = true;
+                            break;
+                        }
+                    }
+                    if(bodyHidden)
+                    {
+                        QAction *ActionShowAllBodies = contextMenu->addAction("Show all bodies");
+                        ActionShowAllBodies->setIcon(QIcon(":/icons/icon_lamp ON.png"));
+                        ActionShowAllBodies->setData(66);
                     }
                 }
-                if(bodyHidden)
+                else
                 {
+                    //! -----
+                    //! show
+                    //! -----
+                    QAction *ActionShow = contextMenu->addAction("Show body");
+                    ActionShow->setIcon(QIcon(":/icons/icon_lamp ON.png"));
+                    ActionShow->setData(65);
+
                     QAction *ActionShowAllBodies = contextMenu->addAction("Show all bodies");
                     ActionShowAllBodies->setIcon(QIcon(":/icons/icon_lamp ON.png"));
                     ActionShowAllBodies->setData(66);
                 }
-            }
-            else
-            {
-                //! -----
-                //! show
-                //! -----
-                QAction *ActionShow = contextMenu->addAction("Show body");
-                ActionShow->setIcon(QIcon(":/icons/icon_lamp ON.png"));
-                ActionShow->setData(65);
-
-                QAction *ActionShowAllBodies = contextMenu->addAction("Show all bodies");
-                ActionShowAllBodies->setIcon(QIcon(":/icons/icon_lamp ON.png"));
-                ActionShowAllBodies->setData(66);
             }
 
             //! add separator
@@ -621,7 +646,7 @@ void contextMenuBuilder::buildGeometryContextMenu(QMenu *contextMenu, bool addCo
             //! ----------------------------------------------
             int NbSelectedItems = sm->myTreeView->selectionModel()->selectedIndexes().length();
 
-            if(NbSelectedItems>1 && isEnabled==true)
+            if(NbSelectedItems>1)
             {
                 //! --------------
                 //! form new part
@@ -692,21 +717,10 @@ void contextMenuBuilder::buildGeometryContextMenu(QMenu *contextMenu, bool addCo
         }
     }
 
-    //! --------------------------------------
-    //! cannot rename is something is running
-    //! --------------------------------------
-    if(isEnabled)
-    {
-        //! action delete body
-        QAction *ActionDeleteBody = contextMenu->addAction("Delete body");
-        ActionDeleteBody->setIcon(QIcon(":/icons/icon_delete.png"));
-        ActionDeleteBody->setData(84);
-
-        contextMenu->addSeparator();
-
-        //! action rename - also the root can be renamed
-        contextMenuBuilder::addActionRename(contextMenu);
-    }
+    //! ---------------------------------------------
+    //! action rename - also the root can be renamed
+    //! ---------------------------------------------
+    contextMenuBuilder::addActionRename(contextMenu);
 }
 
 //! ------------------------------------
