@@ -161,5 +161,6 @@
         <file>icons/icon_electrostatic potential.png</file>
         <file>icons/icon_magnetic field.png</file>
         <file>icons/icon_point cloud.png</file>
+        <file>icons/icon_point mass.png</file>
     </qresource>
 </RCC>

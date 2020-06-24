@@ -2005,6 +2005,7 @@ void contextMenuBuilder::addActionCreateNamedSelection(QMenu *contextMenu)
 //!
 //! insert remote point root                    45
 //! insert remote point                         46
+//! insert point mass                           78
 //! insert coordinate system                    47
 //!
 //! flip contact                                48
@@ -2028,7 +2029,7 @@ void contextMenuBuilder::addActionCreateNamedSelection(QMenu *contextMenu)
 //! merge named selections                      88
 //! insert mesh element selection               87
 //! insert face sizing                          72
-//! inset prismatic layer                       75
+//! insert prismatic layer                      75
 //!
 //! insert imported body temperature dist       53
 //! insert initial stress                       80
@@ -2094,8 +2095,8 @@ void contextMenuBuilder::addActionCreateNamedSelection(QMenu *contextMenu)
 //! insert model change                        239
 //! run time step builder                     1000
 //!
-//! export step file                            77
-//! export BRep file                            78
+//! export step file                            76
+//! export BRep file                            77
 //!
 //! display sliced volume mesh                  85
 //! replicate on twin geometries                86
