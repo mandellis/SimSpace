@@ -117,6 +117,15 @@ QVariant QExtendedStandardItem::data(int role) const
 
         QVariant data;
 
+        //! ----------------------
+        //! "Mass" "Jx" "Jy" "Jz"
+        //! ----------------------
+        if(name =="Mass" || name =="Jx" || name =="Jy" || name == "Jz")
+        {
+            double val = QStandardItem::data(Qt::UserRole).value<Property>().getData().toDouble();
+            data.setValue(val);
+            return data;
+        }
         //! -----------------
         //! Convergence data
         //! -----------------
@@ -2456,6 +2465,7 @@ QIcon QExtendedStandardItem::getIcon(SimulationNodeClass::nodeType theNodeType) 
     case SimulationNodeClass::nodeType_solutionThermalFlux: return QIcon(":/icons/icon_thermal flux.png"); break;
     case SimulationNodeClass::nodeType_electrostaticPotential: return QIcon(":/icons/icon_electrostatic potential.png"); break;
     case SimulationNodeClass::nodeType_magneticField: return QIcon(":/icons/icon_magnetic field.png"); break;
+    case SimulationNodeClass::nodeType_pointMass: return QIcon(":/icons/icon_point mass.png"); break;
 
 #ifdef COSTAMP_VERSION
     case SimulationNodeClass::nodeType_timeStepBuilder: return QIcon(":/icons/icon_clock.png"); break;
