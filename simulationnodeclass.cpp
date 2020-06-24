@@ -521,6 +521,9 @@ SimulationNodeClass::nodeType SimulationNodeClass::getFamily()
     case nodeType_geometryBody:
     case nodeType_geometryPart:
     case nodeType_geometry:
+    case nodeType_pointMass:
+        break;
+
     case nodeType_repairTool:
         RV = nodeType_geometry;
         break;
@@ -855,6 +858,13 @@ void SimulationNodeClass::createSeparators()
         myNodeRootItem->appendRow(itemHidden);
         myNodeRootItem->appendRow(itemGraphicObject);
         myNodeRootItem->appendRow(itemMeshDataSources);
+        break;
+
+    case nodeType_pointMass:
+        myNodeRootItem->appendRow(itemScope);
+        myNodeRootItem->appendRow(itemDefinition);
+        myNodeRootItem->appendRow(itemPosition);
+        myNodeRootItem->appendRow(itemGraphicObject);
         break;
 
     case nodeType_structuralAnalysisBoundaryCondition_ImportedTemperatureDistribution:

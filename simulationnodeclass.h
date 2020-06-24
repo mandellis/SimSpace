@@ -63,6 +63,7 @@ public:
         nodeType_geometry,                      //! the family or the root node
         nodeType_geometryBody,                  //! a body
         nodeType_geometryPart,                  //! a part made of bodies
+        nodeType_pointMass,                     //! a point mass
         nodeType_repairTool,                    //! a repair tool
 
         //! -----------------
