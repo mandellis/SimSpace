@@ -1799,6 +1799,7 @@ void SimulationManager::handleItem(int type)
     cout<<"SimulationManager::handleItem()->____function called: action Nr: "<<type<<"_____"<<endl;
     switch(type)
     {
+    case 78: this->createSimulationNode(SimulationNodeClass::nodeType_pointMass); break;
     case 85:
     {
         SimulationNodeClass *curNode = myTreeView->currentIndex().data(Qt::UserRole).value<SimulationNodeClass*>();
