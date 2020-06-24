@@ -4834,27 +4834,19 @@ void SimulationManager::updateRemotePointAbsCoordinates()
         QExtendedStandardItem *item = (QExtendedStandardItem*)p;
         SimulationNodeClass *CS = item->data(Qt::UserRole).value<SimulationNodeClass*>();
 
-        //! warning: cannot use "SimulationNodeClass::getPropertyValue<>("")" here
-        double xP = curNode->getPropertyItem("X coordinate")->data(Qt::UserRole).value<Property>().getData().toDouble();
-        double yP = curNode->getPropertyItem("Y coordinate")->data(Qt::UserRole).value<Property>().getData().toDouble();
-        double zP = curNode->getPropertyItem("Z coordinate")->data(Qt::UserRole).value<Property>().getData().toDouble();
+        double xP = curNode->getPropertyValue<double>("X coordinate");
+        double yP = curNode->getPropertyValue<double>("Y coordinate");
+        double zP = curNode->getPropertyValue<double>("Z coordinate");
 
         if(CS->getType()!=SimulationNodeClass::nodeType_coordinateSystem_global)
         {
-            //! ----------------------------------------------------------------------------
-            //! the remote point is defined with respect to a system of reference different
-            //! from the "Global coordinate system"
-            //! ----------------------------------------------------------------------------
+            //! -------------------------------------------------------------------------------
+            //! the remote point is defined with respect to a user defined system of reference
+            //! -------------------------------------------------------------------------------
             QVector<double> CS_origin = CS->getPropertyValue<QVector<double>>("Base origin");
             QVector<double> X_axisData = CS->getPropertyValue<QVector<double>>("X axis data");
             QVector<double> Y_axisData = CS->getPropertyValue<QVector<double>>("Y axis data");
             QVector<double> Z_axisData = CS->getPropertyValue<QVector<double>>("Z axis data");
-
-            cout<<"SimulationManager::updateRemotePointAbsCoordinates()->____CS origin: ("<<CS_origin.at(0)<<", "<<CS_origin.at(1)<<", "<<CS_origin.at(2)<<")____"<<endl;
-            cout<<"SimulationManager::updateRemotePointAbsCoordinates()->____CS directional data____"<<endl;
-            cout<<"____("<<X_axisData.at(0)<<", "<<X_axisData.at(1)<<", "<<X_axisData.at(2)<<")____"<<endl;
-            cout<<"____("<<Y_axisData.at(0)<<", "<<Y_axisData.at(1)<<", "<<Y_axisData.at(2)<<")____"<<endl;
-            cout<<"____("<<Z_axisData.at(0)<<", "<<Z_axisData.at(1)<<", "<<Z_axisData.at(2)<<")____"<<endl;
 
             double xO = CS_origin.at(0);
             double yO = CS_origin.at(1);
@@ -4866,39 +4858,32 @@ void SimulationManager::updateRemotePointAbsCoordinates()
 
             QVariant data;
             data.setValue(xnew);
-            Property prop_Xcoord("X abs coordinate",data,Property::PropertyGroup_Scope);
-
+            curNode->replaceProperty("X abs coordinate",Property("X abs coordinate",data,Property::PropertyGroup_Scope));
             data.setValue(ynew);
-            Property prop_Ycoord("Y abs coordinate",data,Property::PropertyGroup_Scope);
-
+            curNode->replaceProperty("Y abs coordinate",Property("Y abs coordinate",data,Property::PropertyGroup_Scope));
             data.setValue(znew);
-            Property prop_Zcoord("Z abs coordinate",data,Property::PropertyGroup_Scope);
-
-            curNode->replaceProperty("X abs coordinate",prop_Xcoord);
-            curNode->replaceProperty("Y abs coordinate",prop_Ycoord);
-            curNode->replaceProperty("Z abs coordinate",prop_Zcoord);
+            curNode->replaceProperty("Z abs coordinate",Property("Z abs coordinate",data,Property::PropertyGroup_Scope));
         }
         else
         {
-            cout<<"SimulationManager::updateRemotePointAbsCoordinates()->____the remote point is defined into global CS system____"<<endl;
             //! ---------------------------------------------------------------------------
             //! the remote point is defined with respect to the "Global coordinate system"
             //! ---------------------------------------------------------------------------
             QVariant data;
             data.setValue(xP);
-            Property prop_Xcoord("X abs coordinate",data,Property::PropertyGroup_Scope);
-
+            curNode->replaceProperty("X abs coordinate",Property("X abs coordinate",data,Property::PropertyGroup_Scope));
             data.setValue(yP);
-            Property prop_Ycoord("Y abs coordinate",data,Property::PropertyGroup_Scope);
-
+            curNode->replaceProperty("Y abs coordinate",Property("Y abs coordinate",data,Property::PropertyGroup_Scope));
             data.setValue(zP);
-            Property prop_Zcoord("Z abs coordinate",data,Property::PropertyGroup_Scope);
-
-            curNode->replaceProperty("X abs coordinate",prop_Xcoord);
-            curNode->replaceProperty("Y abs coordinate",prop_Ycoord);
-            curNode->replaceProperty("Z abs coordinate",prop_Zcoord);
+            curNode->replaceProperty("Z abs coordinate",Property("Z abs coordinate",data,Property::PropertyGroup_Scope));
         }
-        //! ----
+
+        //! ------------------------------------------------------------
+        //! immediately update the position of the marker in the viewer
+        //! ------------------------------------------------------------
+        markerBuilder::addMarker(curNode,mySimulationDataBase);
+        emit requestHideAllMarkers(false);
+        this->displayMarker();
     }
 }
 
