@@ -31,10 +31,20 @@
 //! ----
 #include <utility>
 
+bool lineCounter(const std::string &filePath, int &count)
+{
+    FILE *fp = fopen(filePath.c_str(),"r");
+    if(fp==NULL) return false;
+    char c;
+    for (c = getc(fp); c != EOF; c = getc(fp)) if (c == '\n') count = count + 1;
+    return true;
+}
+
 //! -------------------------
 //! function: writeInputFile
 //! details:
 //! -------------------------
+#include "maintreetools.h"
 bool particlesInFieldsSolver::writeInputFile(simulationDataBase *sDB, QStandardItem *simulationRoot, const string &inputFilePath)
 {
     //! --------------
@@ -112,10 +122,11 @@ bool particlesInFieldsSolver::writeInputFile(simulationDataBase *sDB, QStandardI
     //! of emitter associated with the boundary condition
     //! -------------------------------------------------------------
     int NbEmitters = 0;
+    int NbParticlesPacks = 0;
     for(int n=1; n<simulationRoot->rowCount()-1; n++)
     {
-        QStandardItem *item = simulationRoot->child(n,0);
-        SimulationNodeClass *curNode = item->data(Qt::UserRole).value<SimulationNodeClass*>();
+        QStandardItem *curItem = simulationRoot->child(n,0);
+        SimulationNodeClass *curNode = curItem->data(Qt::UserRole).value<SimulationNodeClass*>();
         if(curNode->getPropertyItem("Emitter")!=Q_NULLPTR)
         {
             bool isEmitter = curNode->getPropertyValue<bool>("Emitter");
@@ -134,7 +145,16 @@ bool particlesInFieldsSolver::writeInputFile(simulationDataBase *sDB, QStandardI
             //! write the time behavior and the value
             //! --------------------------------------
             os<<"CONSTANT"<<endl;
-            double val = curNode->getPropertyValue<double>("Potential");
+
+            //! --------------------------------------
+            //! retrieve the "Analysis settings" node
+            //! and the tabular data
+            //! --------------------------------------
+            SimulationNodeClass *nodeAnalysisSettings = curItem->parent()->child(0,0)->data(Qt::UserRole).value<SimulationNodeClass*>();
+            CustomTableModel *tabularData = nodeAnalysisSettings->getTabularDataModel();
+            int lastRow = tabularData->rowCount()-1;
+            int col = (mainTreeTools::getColumnsToRead(static_cast<QExtendedStandardItem*>(curItem))).at(0);
+            double val = tabularData->dataRC(lastRow,col).toDouble();
             os<<val<<endl;
 
             //! -----------------------------------------
@@ -169,6 +189,11 @@ bool particlesInFieldsSolver::writeInputFile(simulationDataBase *sDB, QStandardI
                 case 4: os<<"QUAD"<<endl; os<<nodeIDs(1)<<"\t"<<nodeIDs(2)<<"\t"<<nodeIDs(3)<<"\t"<<nodeIDs(4)<<endl; break;
                 }
             }
+        }
+            break;
+        case SimulationNodeClass::nodeType_particlesInFieldsParticlePack:
+        {
+            NbParticlesPacks++;
         }
             break;
         }
@@ -253,21 +278,62 @@ bool particlesInFieldsSolver::writeInputFile(simulationDataBase *sDB, QStandardI
         }
     }
 
-/*
     //! ----------------
     //! particles packs
     //! ----------------
-    int NbParticlesPacks = 0;
+    os<<"NUMBEROFPARTICLESPACKS "<<NbParticlesPacks<<endl;
+
     for(int n=1; n<simulationRoot->rowCount()-1; n++)
     {
         QStandardItem *item = simulationRoot->child(n,0);
         SimulationNodeClass *curNode = item->data(Qt::UserRole).value<SimulationNodeClass*>();
-        if(curNode==SimulationNodeClass::nodeType_particlesPack) NbParticlesPacks++;
+        if(curNode->getType()==SimulationNodeClass::nodeType_particlesInFieldsParticlePack)
+        {
+            QString name = curNode->getPropertyValue<QString>("Name");
+            os<<"PARTICLESPACKNAME "<<name.toStdString()<<endl;
+
+            //! ----------------------------------------------
+            //! check if particles have a temperature defined
+            //! ----------------------------------------------
+            double T = curNode->getPropertyValue<double>("Temperature");
+
+            //! -----------------------------------------------
+            //! check the definition (by file or by interface)
+            //! -----------------------------------------------
+            int definition = curNode->getPropertyValue<int>("Definition");
+            switch(definition)
+            {
+            case 0:
+            {
+                QString particlesFileName = curNode->getPropertyValue<QString>("File path");
+                if(particlesFileName.isEmpty()) break;
+
+                int NbParticles = 0;
+                bool isDone = lineCounter(particlesFileName.toStdString(),NbParticles);
+                if(isDone == false) break;
+                os<<"NUMBER OF PARTICLES "<<NbParticles;
+                FILE *particlesFile = fopen(particlesFileName.toStdString().c_str(),"r");
+                if(particlesFile == NULL) break;
+
+                for(int i=0;i<NbParticles; i++)
+                {
+                    double x,y,z,vx,vy,vz,m,q,r;
+                    fscanf(particlesFile,"%lf%lf%lf%lf%lf%lf%lf%lf%lf",&x,&y,&x,&vx,&vy,&vz,&m,&q,&r);
+                    os<<x<<"\t"<<y<<"\t"<<z<<"\t"<<vx<<"\t"<<vy<<"\t"<<vz<<"\t"<<m<<"\t"<<q<<"\t"<<r<<endl;
+                }
+                fclose(particlesFile);
+            }
+                break;
+            case 1:
+            {
+
+            }
+                break;
+            }
+        }
     }
 
-    os<<"NUMBEROFPARTICLESPACKS "<<NbParticlesPacks<<endl;
 
-  */
 
     os.close();
     return true;

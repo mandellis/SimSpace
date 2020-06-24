@@ -538,10 +538,10 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
              editor->addItem("Contact pairs",1);
              return editor;
         }
-        //! -------------------
-        //! "Source file path"
-        //! -------------------
-        if(propertyName =="Source file path")
+        //! -------------------------------
+        //! "Source file path" "File path"
+        //! -------------------------------
+        if(propertyName =="Source file path" || propertyName =="File path")
         {
             QFileSelect *editor = new QFileSelect(QDir::currentPath(),parent);
             return editor;
@@ -3135,10 +3135,10 @@ void GeneralDelegate::setEditorData(QWidget *editor, const QModelIndex &index) c
         cb->setCurrentIndex(val);
         connect(cb,SIGNAL(currentIndexChanged(int)),this,SLOT(commitAndCloseItemType()));
     }
-    //! -------------------
-    //! "Source file path"
-    //! -------------------
-    if(propertyName == "Source file path")
+    //! -------------------------------
+    //! "Source file path" "File path"
+    //! -------------------------------
+    if(propertyName == "Source file path" || propertyName == "File path")
     {
         QFileSelect *fileSelect = static_cast<QFileSelect*>(editor);
         QString val = data.value<Property>().getData().toString();
@@ -5380,10 +5380,10 @@ void GeneralDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, c
              case 1: data.setValue(1); break;
              }
         }
-        //! --------------------
-        //!  "Source file path"
-        //! --------------------
-        if(propertyName =="Source file path")
+        //! --------------------------------
+        //!  "Source file path" "File path"
+        //! --------------------------------
+        if(propertyName =="Source file path" || propertyName == "File path")
         {
             QFileSelect *fileSelect = static_cast<QFileSelect*>(editor);
             QString val = fileSelect->getText();

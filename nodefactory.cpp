@@ -2607,12 +2607,15 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
         //! ------------------------------
         //! "Definition" "From file" => 0
         //! ------------------------------
+        data.setValue(QString(""));
+        vecProp.push_back(Property("Name",data,Property::PropertyGroup_Definition));
         data.setValue(0);
         vecProp.push_back(Property("Definition",data,Property::PropertyGroup_Definition));
         data.setValue(QString(""));
         vecProp.push_back(Property("File path",data,Property::PropertyGroup_Definition));
         data.setValue(300);
         vecProp.push_back(Property("Temperature",data,Property::PropertyGroup_Definition));
+
         /*
         //! -----------------------------
         //! "Definition" "Function" => 0
@@ -2632,7 +2635,7 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
 
         double radius = 0.1;
         data.setValue(radius);
-        vecProp.push_back(Property("Radius",radius,Property::PropertyGroup_Definition));
+        vecProp.push_back(Property("Radius",radius,P   roperty::PropertyGroup_Definition));
 
         data.setValue(300);
         vecProp.push_back(Property("Temperature",data,Property::PropertyGroup_Definition));

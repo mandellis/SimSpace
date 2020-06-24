@@ -162,5 +162,6 @@
         <file>icons/icon_magnetic field.png</file>
         <file>icons/icon_point cloud.png</file>
         <file>icons/icon_point mass.png</file>
+        <file>icons/icon_points.png</file>
     </qresource>
 </RCC>

@@ -426,7 +426,6 @@ QString postEngine::colorBoxTitle(const QString &keyName, int component, int ste
     case TypeOfResult_U:
         switch(component)
         {
-        //case 0: colorBoxTitle="Total displacement"; break;
         case 0: colorBoxTitle="Total displacement"; break;
         case 1: colorBoxTitle="Directional displacement X"; break;
         case 2: colorBoxTitle="Directional displacement Y"; break;

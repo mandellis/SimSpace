@@ -82,6 +82,7 @@ private:
         m.insert("FORC",TypeOfResult_F);
         m.insert("PE",TypeOfResult_EPS);
         m.insert("FLUX",TypeOfResult_HFL);
+        m.insert("CONTACT",TypeOfResult_CONT);
     }
 
 signals:

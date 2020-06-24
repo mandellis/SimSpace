@@ -2066,6 +2066,7 @@ void Ng_MeshVS_DataSource3D::writeIntoStream(ofstream &os)
         for(int i=1; i<NbNodes; i++) os<<nodeIDs(i)<<"\t";
         os<<nodeIDs(NbNodes)<<endl;
     }
+    cout<<"Ng_MeshVS_DataSource3D::writeIntoStream()->____exiting function____"<<endl;
 }
 
 //! -----------------------------------------

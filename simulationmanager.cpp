@@ -7634,8 +7634,8 @@ void SimulationManager::writeSolverInputFile()
     //! ----------------------
     if(curNode->getType()==SimulationNodeClass::nodeType_particlesInFieldsAnalysis)
     {
-        bool generateDual = false;
-        this->generateBoundaryConditionsMeshDS(generateDual);
+        //bool generateDual = false;
+        //this->generateBoundaryConditionsMeshDS(generateDual);
         particlesInFieldsSolver::writeInputFile(mySimulationDataBase,curItem,fileName.toStdString());
 
         //! --------------------------------------------
@@ -13039,7 +13039,8 @@ void SimulationManager::generateBoundaryConditionsMeshDS(bool computeDual)
         {
             if(nodeType == SimulationNodeClass::nodeType_mapper ||
                     nodeType == SimulationNodeClass::nodeType_modelChange ||
-                    nodeType == SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_ImportedTemperatureDistribution
+                    nodeType == SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_ImportedTemperatureDistribution ||
+                    nodeType == SimulationNodeClass::nodeType_particlesInFieldsParticlePack
         #ifdef COSTAMP_VERSION
                     || nodeType == SimulationNodeClass::nodeType_timeStepBuilder
         #endif
