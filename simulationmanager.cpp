@@ -12858,7 +12858,6 @@ void SimulationManager::generateBoundaryConditionsMeshDS(bool computeDual)
     IndexedMapOfMeshDataSources quelCheResta;
     if(computeDual==true)
     {
-        cout<<"____tag0-1____"<<endl;
         //! ---------------
         //! quel che resta
         //! ---------------
@@ -12867,15 +12866,10 @@ void SimulationManager::generateBoundaryConditionsMeshDS(bool computeDual)
             it != mySimulationDataBase->ArrayOfMeshDS2D.end(); it++)
         {
             int bodyIndex = it.key();
-            cout<<"____tag00____"<<endl;
             const occHandle(Ng_MeshVS_DataSource2D) &surfaceMesh = occHandle(Ng_MeshVS_DataSource2D)::DownCast(it.value());
-            cout<<"____tag01____"<<endl;
             const occHandle(Ng_MeshVS_DataSourceFace) &faceMesh = new Ng_MeshVS_DataSourceFace(surfaceMesh);
-            cout<<"____tag02____"<<endl;
             quelCheResta.insert(bodyIndex,faceMesh);
-            cout<<"____tag03____"<<endl;
         }
-        cout<<"____tag04____"<<endl;
     }
 
     //! --------------------------------------------
@@ -12888,7 +12882,6 @@ void SimulationManager::generateBoundaryConditionsMeshDS(bool computeDual)
     {
         QVector<GeometryTag> patchConformingTags;
         QVector<GeometryTag> nonPatchConformingTags;
-
         //! -------------------
         //! working on an item
         //! -------------------
@@ -13105,7 +13098,90 @@ void SimulationManager::generateBoundaryConditionsMeshDS(bool computeDual)
     //! -----------------------------------
     //! scan the rows of the geometry root
     //! -----------------------------------
+    for(int n=0; n<Geometry_RootItem->rowCount();n++)
+    {
+        QVector<GeometryTag> patchConformingTags;
+        QVector<GeometryTag> nonPatchConformingTags;
+        //! -------------------
+        //! working on an item
+        //! -------------------
+        QStandardItem *curItem = Geometry_RootItem->child(n,0);
+        SimulationNodeClass *curNode = curItem->data(Qt::UserRole).value<SimulationNodeClass*>();
+        SimulationNodeClass::nodeType nodeType = curNode->getType();
+        Property::SuppressionStatus isSuppressed = curNode->getPropertyValue<Property::SuppressionStatus>("Suppressed");
+        if(isSuppressed == Property::SuppressionStatus_Active)
+        {
+            if(nodeType == SimulationNodeClass::nodeType_pointMass)
+            {
+                const QVector<GeometryTag> &vecLoc = curNode->getPropertyValue<QVector<GeometryTag>>("Tags");
+                for(int i=0; i<vecLoc.size(); i++)
+                {
+                    int bodyIndex = vecLoc.at(i).parentShapeNr;
+                    bool isMeshDSExactOnBody = mapOfIsMeshDSExact.value(bodyIndex);
+                    if(isMeshDSExactOnBody) patchConformingTags<<vecLoc.at(i);
+                    else nonPatchConformingTags<<vecLoc.at(i);
+                }
+                //! --------------------------
+                //! work on exact datasources
+                //! --------------------------
+                aBuilder.setFaces(patchConformingTags);
+                IndexedMapOfMeshDataSources exactMeshDS;
+                aBuilder.perform2(exactMeshDS,true);
 
+                //! ----------------------------
+                //! work on inexact datasources
+                //! ----------------------------
+                aBuilder.setFaces(nonPatchConformingTags);
+                IndexedMapOfMeshDataSources inexactMeshDS;
+                aBuilder.perform2(inexactMeshDS,false);
+
+                //! --------------------------------------------------------
+                //! merge into a single map
+                //! details: in case of non patch conforming the DSbuilder
+                //! calcualte the exact DS on STL mesh,
+                //! KEEP the for on inexactMeshDS after the exact One
+                //! --------------------------------------------------------
+                IndexedMapOfMeshDataSources finalMapOfMeshDS;
+                for(IndexedMapOfMeshDataSources::iterator it = exactMeshDS.begin(); it!=exactMeshDS.end(); it++)
+                {
+                    int bodyIndex = it.key();
+                    occHandle(MeshVS_DataSource) aMeshDS = it.value();
+                    finalMapOfMeshDS.insert(bodyIndex,aMeshDS);
+                }
+                for(IndexedMapOfMeshDataSources::iterator it = inexactMeshDS.begin(); it!=inexactMeshDS.end(); it++)
+                {
+                    int bodyIndex = it.key();
+                    occHandle(MeshVS_DataSource) aMeshDS = it.value();
+                    finalMapOfMeshDS.insert(bodyIndex,aMeshDS);
+                }
+
+                //! ---------------------------------
+                //! put into the simulation database
+                //! substitute nrow ... to do ...
+                //! ---------------------------------
+                QVariant data;
+                data.setValue(finalMapOfMeshDS);
+                Property prop_meshDataSources("Mesh data sources",data,Property::PropertyGroup_MeshDataSources);
+                curNode->removeProperty("Mesh data sources");
+                curNode->addProperty(prop_meshDataSources);
+
+                //! ------------
+                //! subtraction
+                //! ------------
+                if(computeDual==true)
+                {
+                    for(IndexedMapOfMeshDataSources::iterator it=finalMapOfMeshDS.begin(); it!=finalMapOfMeshDS.end(); it++)
+                    {
+                        int bodyIndex = it.key();
+                        occHandle(Ng_MeshVS_DataSourceFace) A = occHandle(Ng_MeshVS_DataSourceFace)::DownCast(quelCheResta.value(bodyIndex));
+                        occHandle(Ng_MeshVS_DataSourceFace) B = occHandle(Ng_MeshVS_DataSourceFace)::DownCast(it.value());
+                        occHandle(Ng_MeshVS_DataSourceFace) C = new Ng_MeshVS_DataSourceFace(A,B);
+                        quelCheResta.insert(bodyIndex,C);
+                    }
+                }
+            }
+        }
+    }
 }
 
 //! ---------------------------------------------------------

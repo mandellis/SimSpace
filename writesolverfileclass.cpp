@@ -159,15 +159,21 @@ bool writeSolverFileClass::perform()
     //    QThread::msleep(500);
     //}
 
-    //! ----------------------
-    //! total number of nodes
-    //! ----------------------
-    int totalNumberOfNodes=0;
-    for(int i=1; i<=myDB->bodyMap.size(); i++)
+    //! -----------------------------------
+    //! total number of nodes and elements
+    //! -----------------------------------
+    int totalNumberOfNodes = 0;
+    int totalNumberOfElement = 0;
+    for(QMap<int,TopoDS_Shape>::iterator it = myDB->bodyMap.begin(); it!=myDB->bodyMap.end(); it++)
     {
-        if(!myDB->ArrayOfMeshDS.value(i).IsNull())
-            totalNumberOfNodes=totalNumberOfNodes+myDB->ArrayOfMeshDS.value(i)->GetAllNodes().Extent();
+        int k = it.key();
+        if(myDB->MapOfIsActive.value(k)==true)
+        {
+            totalNumberOfNodes = totalNumberOfNodes+myDB->ArrayOfMeshDS.value(k)->GetAllNodes().Extent();
+            totalNumberOfElement = totalNumberOfElement+myDB->ArrayOfMeshDS.value(k)->GetAllElements().Extent();
+        }
     }
+
 
     //! retrieve the type of simulation => unused for the moment <=
     SimulationNodeClass::nodeType theSimulationType = mySimulationRoot->data(Qt::UserRole).value<SimulationNodeClass*>()->getType();
@@ -477,17 +483,23 @@ bool writeSolverFileClass::perform()
     }
 
     //! write point mass
-    //QStandardItem *theGeometryRoot=this->getTreeItem(SimulationNodeClass::nodeType_geometry);
+    QStandardItem *theGeometryRoot=this->getTreeItem(SimulationNodeClass::nodeType_geometry);
     for(int k=0; k<theGeometryRoot->rowCount();k++)
     {
         QStandardItem *theGeometryItem = theGeometryRoot->child(k,0);
         SimulationNodeClass *theCurNode = theGeometryItem->data(Qt::UserRole).value<SimulationNodeClass*>();
         Property::SuppressionStatus theNodeSS = theCurNode->getPropertyValue<Property::SuppressionStatus>("Suppressed");
         if(theNodeSS==Property::SuppressionStatus_Active &&
-                theNodeType==SimulationNodeClass::nodeType_pointMass)
+                theCurNode->getType()==SimulationNodeClass::nodeType_pointMass)
         {
             QString itemName = itemNameClearSpaces(theGeometryRoot->child(k,0)->data(Qt::DisplayRole).toString());
-            //this->writeElementSurface();    //TO DO DS is missing for point mass
+
+            //! retrive the IndexedMapOfMeshDS of the BC
+            IndexedMapOfMeshDataSources anIndexedMapOfFaceMeshDS;
+            anIndexedMapOfFaceMeshDS = theCurNode->getPropertyValue<IndexedMapOfMeshDataSources>("Mesh data sources");
+
+            this->writeElementSurface(itemName,anIndexedMapOfFaceMeshDS);    //TO DO DS is missing for point mass
+
             QVector<GeometryTag> scope = theCurNode->getPropertyValue<QVector<GeometryTag>>("Tags");
             double mass = theCurNode->getPropertyValue<double>("Mass");
             double Jx = theCurNode->getPropertyValue<double>("Jx");
@@ -499,11 +511,12 @@ bool writeSolverFileClass::perform()
 
             myInputFile<<"*NODE,NSET="<<(QString("CM_")+itemName).toStdString()<<endl;
             myInputFile<<++totalNumberOfNodes<<","<<x<<","<<y<<","<<z<<endl;
-            myInputFile<<"*ELEMENT, ELSET ="(QString("PM_")+itemName).toStdString()<<", TYPE=MASS"<<endl;
-            myInputFile<<totalNumberOfNodes<<endl;
-            myInputFile<<"*MASS, ELSET ="(QString("PM_")+itemName).toStdString()<<endl;
+            myInputFile<<"*ELEMENT, ELSET ="<<(QString("PM_")+itemName).toStdString()<<", TYPE=MASS"<<endl;
+            myInputFile<<++totalNumberOfElement<<endl;
+            myInputFile<<"*MASS, ELSET ="<<(QString("PM_")+itemName).toStdString()<<endl;
             myInputFile<<mass<<endl;
             myInputFile<<"*COUPLING,REF NODE="<<totalNumberOfNodes<<",SURFACE="<<itemName.toStdString()<<",CONSTRAINT NAME="<<itemName.toStdString()<<endl;
+            myInputFile<<"*KINEMATIC"<<endl;
             myInputFile<<"1,1"<<endl;
             myInputFile<<"2,2"<<endl;
             myInputFile<<"3,3"<<endl;
@@ -516,7 +529,6 @@ bool writeSolverFileClass::perform()
     //! -------------------------------
     //! [2] read the connections group
     //! -------------------------------
-
     //! map for storage of master and slave name
     QMap<QString,pair<QString,QString>> contactMapName;
 
@@ -1270,14 +1282,14 @@ bool writeSolverFileClass::perform()
         myInputFile<<"*MATERIAL, Name="<<matName<<endl;
         myInputFile<<"*INCLUDE, INPUT="<<matIncludeFileAbsPosition.toStdString()<<endl;
     }
-    QStandardItem *theGeometryRoot=this->getTreeItem(SimulationNodeClass::nodeType_geometry);
+    //QStandardItem *theGeometryRoot=this->getTreeItem(SimulationNodeClass::nodeType_geometry);
     for(int k=0; k<theGeometryRoot->rowCount();k++)
     {
         QStandardItem *theGeometryItem = theGeometryRoot->child(k,0);
         SimulationNodeClass *theCurNode = theGeometryItem->data(Qt::UserRole).value<SimulationNodeClass*>();
         Property::SuppressionStatus theNodeSS = theCurNode->getPropertyValue<Property::SuppressionStatus>("Suppressed");
 
-        if(theNodeSS==Property::SuppressionStatus_Active)
+        if(theNodeSS==Property::SuppressionStatus_Active && theCurNode->getType()!=SimulationNodeClass::nodeType_pointMass)
         {
             int matNumber = theCurNode->getPropertyValue<int>("Assignment");
             std::string matName = vecMatNames.at(matNumber);
@@ -3245,7 +3257,6 @@ void writeSolverFileClass::writeGapElement(const IndexedMapOfMeshDataSources &an
     int totalElement = 0;
 
     for(QMap<int,TopoDS_Shape>::iterator it = myDB->bodyMap.begin(); it!=myDB->bodyMap.end(); it++)
-    //for(int k=1; k<=bodyEnd; k++)
     {
         int k = it.key();
         if(myDB->MapOfIsActive.value(k)==true)
@@ -3254,8 +3265,6 @@ void writeSolverFileClass::writeGapElement(const IndexedMapOfMeshDataSources &an
             totalElement = totalElement+myDB->ArrayOfMeshDS.value(k)->GetAllElements().Extent();
         }
     }
-    cout<<totalElement<<" , "<<totalNodes<<endl;
-
     QMap<std::pair<int,int>,QList<double>> gapInfo;
     int offset=0;
     for(QMap<int,opencascade::handle<MeshVS_DataSource>>::const_iterator it = anIndexedMapOfFaceMeshDS.cbegin(); it!= anIndexedMapOfFaceMeshDS.cend(); ++it)

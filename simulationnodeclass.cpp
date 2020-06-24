@@ -863,6 +863,7 @@ void SimulationNodeClass::createSeparators()
         myNodeRootItem->appendRow(itemDefinition);
         myNodeRootItem->appendRow(itemPosition);
         myNodeRootItem->appendRow(itemGraphicObject);
+        myNodeRootItem->appendRow(itemMeshDataSources);
         break;
 
     case nodeType_structuralAnalysisBoundaryCondition_ImportedTemperatureDistribution:

@@ -100,7 +100,7 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
     {
     case SimulationNodeClass::nodeType_pointMass:
     {
-        name = "Point mass";
+        name = "Point mass"; //bubi
 
         //! ------------
         //! under scope
