@@ -270,7 +270,6 @@ private:
     QExtendedStandardItem *itemColorBox;
     QExtendedStandardItem *itemDefeaturing;
     QExtendedStandardItem *itemMethod;
-    //QExtendedStandardItem *itemShrink;
     QExtendedStandardItem *itemSmoothing;
 
     QExtendedStandardItem *itemTetWild;
@@ -280,6 +279,7 @@ private:
     QExtendedStandardItem *itemConvection;
     QExtendedStandardItem *itemCouplingTime;
     QExtendedStandardItem *itemEmitter;
+    QExtendedStandardItem *itemPosition;
 
     Property::loadDefinition old_componentX;
     Property::loadDefinition old_componentY;
