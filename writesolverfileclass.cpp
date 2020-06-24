@@ -130,7 +130,7 @@ bool writeSolverFileClass::perform()
     //! ----------------------
     //! init the progress bar
     //! ----------------------
-    int Nevents = 6;
+    //int Nevents = 6;
     //if(myProgressIndicator!=Q_NULLPTR)
     //{
     //    QProgressEvent *e = new QProgressEvent(QProgressEvent_Init,0,Nevents,0,"Writing solver input file",
@@ -158,22 +158,6 @@ bool writeSolverFileClass::perform()
     //    QApplication::processEvents();
     //    QThread::msleep(500);
     //}
-
-    //! -----------------------------------
-    //! total number of nodes and elements
-    //! -----------------------------------
-    int totalNumberOfNodes = 0;
-    int totalNumberOfElement = 0;
-    for(QMap<int,TopoDS_Shape>::iterator it = myDB->bodyMap.begin(); it!=myDB->bodyMap.end(); it++)
-    {
-        int k = it.key();
-        if(myDB->MapOfIsActive.value(k)==true)
-        {
-            totalNumberOfNodes = totalNumberOfNodes+myDB->ArrayOfMeshDS.value(k)->GetAllNodes().Extent();
-            totalNumberOfElement = totalNumberOfElement+myDB->ArrayOfMeshDS.value(k)->GetAllElements().Extent();
-        }
-    }
-
 
     //! retrieve the type of simulation => unused for the moment <=
     SimulationNodeClass::nodeType theSimulationType = mySimulationRoot->data(Qt::UserRole).value<SimulationNodeClass*>()->getType();
@@ -493,14 +477,14 @@ bool writeSolverFileClass::perform()
                 theCurNode->getType()==SimulationNodeClass::nodeType_pointMass)
         {
             QString itemName = itemNameClearSpaces(theGeometryRoot->child(k,0)->data(Qt::DisplayRole).toString());
-
+            itemName.append("_").append(QString("%1").arg(k));
             //! retrive the IndexedMapOfMeshDS of the BC
             IndexedMapOfMeshDataSources anIndexedMapOfFaceMeshDS;
             anIndexedMapOfFaceMeshDS = theCurNode->getPropertyValue<IndexedMapOfMeshDataSources>("Mesh data sources");
 
             this->writeElementSurface(itemName,anIndexedMapOfFaceMeshDS);    //TO DO DS is missing for point mass
 
-            QVector<GeometryTag> scope = theCurNode->getPropertyValue<QVector<GeometryTag>>("Tags");
+            //QVector<GeometryTag> scope = theCurNode->getPropertyValue<QVector<GeometryTag>>("Tags");
             double mass = theCurNode->getPropertyValue<double>("Mass");
             double Jx = theCurNode->getPropertyValue<double>("Jx");
             double Jy = theCurNode->getPropertyValue<double>("Jy");
@@ -512,7 +496,7 @@ bool writeSolverFileClass::perform()
             myInputFile<<"*NODE,NSET="<<(QString("CM_")+itemName).toStdString()<<endl;
             myInputFile<<++totalNumberOfNodes<<","<<x<<","<<y<<","<<z<<endl;
             myInputFile<<"*ELEMENT, ELSET ="<<(QString("PM_")+itemName).toStdString()<<", TYPE=MASS"<<endl;
-            myInputFile<<++totalNumberOfElement<<endl;
+            myInputFile<<++totalNumberOfElements<<","<<totalNumberOfNodes<<endl;
             myInputFile<<"*MASS, ELSET ="<<(QString("PM_")+itemName).toStdString()<<endl;
             myInputFile<<mass<<endl;
             myInputFile<<"*COUPLING,REF NODE="<<totalNumberOfNodes<<",SURFACE="<<itemName.toStdString()<<",CONSTRAINT NAME="<<itemName.toStdString()<<endl;
@@ -2028,17 +2012,19 @@ bool writeSolverFileClass::perform()
                         {
                         case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Acceleration:
                         {
-                            //! -------------
+                            //! -----------------------------
                             //! Acceleration
-                            //! -------------
-
-                            QVector<GeometryTag> vecLoc = theCurNode->getPropertyValue<QVector<GeometryTag>>("Tags");
+                            //! details:
+                            //! treat acceleration as gravity
+                            //! ------------------------------
+                            //QVector<GeometryTag> vecLoc = theCurNode->getPropertyValue<QVector<GeometryTag>>("Tags");
                             myInputFile<<"*DLOAD"<<endl;
                             double loadValue = pow((pow(loadX_global,2)+pow(loadY_global,2)+pow(loadZ_global,2)),0.5);
                             double x,y,z;
                             x = loadX_global/loadValue;
                             y = loadY_global/loadValue;
                             z = loadZ_global/loadValue;
+                            /*
                             for(int i=0; i<vecLoc.size();i++)
                             {
                                 GeometryTag aLoc = vecLoc.at(i);
@@ -2046,6 +2032,26 @@ bool writeSolverFileClass::perform()
 
                                 //! retrieve the name of the body from the data base
                                 std::string bodyName = myDB->MapOfBodyNames.value(bodyIndex).toStdString();
+                                myInputFile<<"E"<<bodyName<<", GRAV, "<<loadValue<<" ,"<<x<<", "<<y<<", "<<z<<endl;
+                            }
+                            */
+                            for(int i=0; i<theGeometryRoot->rowCount();i++)
+                            {
+                                std::string bodyName;
+                                QStandardItem *aGeometryItem = theGeometryRoot->child(k,0);
+                                SimulationNodeClass *aNode = aGeometryItem->data(Qt::UserRole).value<SimulationNodeClass*>();
+                                if(aNode->getType()==SimulationNodeClass::nodeType_pointMass)
+                                {
+                                    QString bodyNameP = itemNameClearSpaces(theGeometryRoot->child(k,0)->data(Qt::DisplayRole).toString());
+                                    bodyNameP.append("_").append(QString("%1").arg(i));
+                                    bodyName = bodyNameP.toStdString();
+                                }
+                                else
+                                {
+                                    int mapIndex = aNode->getPropertyValue<int>("Map index");
+                                    //! retrieve the name of the body from the data base
+                                    bodyName = myDB->MapOfBodyNames.value(mapIndex).toStdString();
+                                }
                                 myInputFile<<"E"<<bodyName<<", GRAV, "<<loadValue<<" ,"<<x<<", "<<y<<", "<<z<<endl;
                             }
                         }
@@ -2205,9 +2211,10 @@ bool writeSolverFileClass::perform()
                                 break;
                             case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Acceleration:
                             {
-                                QVector<GeometryTag> vecLoc = theCurNode->getPropertyValue<QVector<GeometryTag>>("Tags");
+                                //QVector<GeometryTag> vecLoc = theCurNode->getPropertyValue<QVector<GeometryTag>>("Tags");
                                 myInputFile<<"*DLOAD"<<endl;
 
+                                /*
                                 for(int i=0; i<vecLoc.size();i++)
                                 {
                                     GeometryTag aLoc = vecLoc.at(i);
@@ -2215,6 +2222,26 @@ bool writeSolverFileClass::perform()
 
                                     //! retrieve the name of the body from the data base
                                     std::string bodyName = myDB->MapOfBodyNames.value(bodyIndex).toStdString();
+                                    myInputFile<<"E"<<bodyName<<", GRAV, "<<loadValue<<" ,"<<Xcomp<<", "<<Ycomp<<", "<<Zcomp<<endl;
+                                }
+                                */
+                                for(int i=0; i<theGeometryRoot->rowCount();i++)
+                                {
+                                    std::string bodyName;
+                                    QStandardItem *aGeometryItem = theGeometryRoot->child(k,0);
+                                    SimulationNodeClass *aNode = aGeometryItem->data(Qt::UserRole).value<SimulationNodeClass*>();
+                                    if(aNode->getType()==SimulationNodeClass::nodeType_pointMass)
+                                    {
+                                        QString bodyNameP = itemNameClearSpaces(theGeometryRoot->child(k,0)->data(Qt::DisplayRole).toString());
+                                        bodyNameP.append("_").append(QString("%1").arg(i));
+                                        bodyName = bodyNameP.toStdString();
+                                    }
+                                    else
+                                    {
+                                        int mapIndex = aNode->getPropertyValue<int>("Map index");
+                                        //! retrieve the name of the body from the data base
+                                        bodyName = myDB->MapOfBodyNames.value(mapIndex).toStdString();
+                                    }
                                     myInputFile<<"E"<<bodyName<<", GRAV, "<<loadValue<<" ,"<<Xcomp<<", "<<Ycomp<<", "<<Zcomp<<endl;
                                 }
                             }
@@ -2433,7 +2460,6 @@ void writeSolverFileClass::writeNodesAndElements(QString aName,QMap<int,QList<in
 
     //! increment in the number of the node
     int anIncrement = 0;
-    int TotalNodes;
     for(int bodyIndex = 1; bodyIndex<=Nb; bodyIndex++)
     {
         const occHandle(MeshVS_DataSource) &aMeshVS_DataSource =  myDB->ArrayOfMeshDS.value(bodyIndex);
@@ -2469,7 +2495,7 @@ void writeSolverFileClass::writeNodesAndElements(QString aName,QMap<int,QList<in
                 nodeListByBody.insert(bodyIndex,listOfNodes);
             }
             anIncrement = anIncrement+aNodes.Extent();
-            TotalNodes=anIncrement;
+            totalNumberOfNodes=anIncrement;
         }
     }
 
@@ -2846,14 +2872,16 @@ void writeSolverFileClass::writeNodesAndElements(QString aName,QMap<int,QList<in
             //! ---------------------------------------------
             anElementIncrement = anElementIncrement + Ntet4 + Ntet10 + Nhexa8 + Nhexa20 + Npyr5 + Npyr13 + Nprism6 + Nprism15;
             myMesh<<anElementIncrement<<endl;
+            totalNumberOfElements+=anElementIncrement;
             //! ---------------------------------------------
             //! increment the node number (assembly support)
             //! ---------------------------------------------
             aNodeIncrement = aNodeIncrement + aMeshVS_DataSource->GetAllNodes().Extent();
         }
     }
+    ++totalNumberOfElements;
     myMesh<<"*NSET, NSET=NALL, GENERATE"<<endl;
-    myMesh<<"1,"<<TotalNodes<<endl;
+    myMesh<<"1,"<<totalNumberOfNodes<<endl;
     myMesh.close();
     myInputFile<<"*INCLUDE, INPUT="<<MeshName.split("/").last().toStdString()<<endl;
 }
@@ -3253,18 +3281,7 @@ void writeSolverFileClass::writeGapElement(const IndexedMapOfMeshDataSources &an
     //! ----------------------------
     myGapuni<<"*NODE, NSET= N"<<setName.toStdString()<<endl;
     //int bodyEnd = myDB->bodyMap.end().key();
-    int totalNodes = 0;
-    int totalElement = 0;
 
-    for(QMap<int,TopoDS_Shape>::iterator it = myDB->bodyMap.begin(); it!=myDB->bodyMap.end(); it++)
-    {
-        int k = it.key();
-        if(myDB->MapOfIsActive.value(k)==true)
-        {
-            totalNodes = totalNodes+myDB->ArrayOfMeshDS.value(k)->GetAllNodes().Extent();
-            totalElement = totalElement+myDB->ArrayOfMeshDS.value(k)->GetAllElements().Extent();
-        }
-    }
     QMap<std::pair<int,int>,QList<double>> gapInfo;
     int offset=0;
     for(QMap<int,opencascade::handle<MeshVS_DataSource>>::const_iterator it = anIndexedMapOfFaceMeshDS.cbegin(); it!= anIndexedMapOfFaceMeshDS.cend(); ++it)
@@ -3285,7 +3302,7 @@ void writeSolverFileClass::writeGapElement(const IndexedMapOfMeshDataSources &an
 
         for(TColStd_MapIteratorOfPackedMapOfInteger anIter(theCurMeshDS->GetAllNodes()); anIter.More(); anIter.Next())
         {
-            totalNodes++;
+            totalNumberOfNodes++;
             Standard_Real aCoordsBuf[3];
             TColStd_Array1OfReal aCoords(*aCoordsBuf,1,3);
             Standard_Integer nbNodes;
@@ -3294,7 +3311,7 @@ void writeSolverFileClass::writeGapElement(const IndexedMapOfMeshDataSources &an
             std::pair<int,int> aNodePair;
             QList<double> curNormal = nodeNormals.value(anIter.Key());
             aNodePair.first = anIter.Key()+offset;
-            aNodePair.second=totalNodes;
+            aNodePair.second=totalNumberOfNodes;
 
             //aMeshVS_DataSource.GetGeom(anIter.Key(),Standard_False,aCoords,nbNodes,aType);
             theCurMeshDS->GetGeom(anIter.Key(),Standard_False,aCoords,nbNodes,aType);
@@ -3318,20 +3335,19 @@ void writeSolverFileClass::writeGapElement(const IndexedMapOfMeshDataSources &an
 
     for(QMap<std::pair<int,int>,QList<double>>::iterator it=gapInfo.begin();it!=gapInfo.end();it++)
     {
-        totalElement++;
+        totalNumberOfElements++;
         std::pair<int,int> aPair = it.key();
         QList<double> nodeNormal = it.value();
-        int elementNb=totalElement;
 
         //! write the gap element (connection btw faceMeshDS and the copied one)
-        myGapuni<<"*ELEMENT,TYPE = GAPUNI, ELSET= G"<<elementNb<<endl;
-        myGapuni<<elementNb<<", "<<aPair.first<<", "<<aPair.second<<endl;
+        myGapuni<<"*ELEMENT,TYPE = GAPUNI, ELSET= G"<<totalNumberOfElements<<endl;
+        myGapuni<<totalNumberOfElements<<", "<<aPair.first<<", "<<aPair.second<<endl;
 
         if(K==0.0) K=10e12;
         if(F==0.0) F=10e-5;
 
         //! write the 0 gap condition
-        myGapuni<<"*GAP, ELSET= G"<<elementNb<<endl;
+        myGapuni<<"*GAP, ELSET= G"<<totalNumberOfElements<<endl;
         myGapuni<<"0.0, "<<nodeNormal.at(0)<<", "<<nodeNormal.at(1)<<", "<<nodeNormal.at(2)<<",,"<<K<<","<<F<<endl;
     }
 }

@@ -50,6 +50,8 @@ private:
     //std::map<int, std::map<meshElement2D,std::vector<std::pair<int,std::string>>>> bigMap;
     std::map<int, std::map<meshElement2D,std::vector<std::pair<int,int>>>> bigMap;
 
+    int totalNumberOfNodes;
+    int totalNumberOfElements;
 
 private:
 
