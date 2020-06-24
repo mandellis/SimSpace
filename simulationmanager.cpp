@@ -563,13 +563,9 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 if(nodeTemperature->getPropertyItem("Post object")!=Q_NULLPTR)
                 {
                     postObject aPostObject = nodeTemperature->getPropertyValue<postObject>("Post object");
-                    cout<<"____tag00____"<<endl;
                     emit requestSetWorkingMode(3);
-                    cout<<"____tag01____"<<endl;
                     emit requestShowAllBodies();    //! check if wireframe... to do
-                    cout<<"____tag02____"<<endl;
                     emit requestDisplayResult(aPostObject);
-                    cout<<"____tag03____"<<endl;
                 }
                 else
                 {
@@ -752,6 +748,18 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 emit requestHideMeshes();
                 emit requestHideSlicedMeshes();
                 emit requestSetWorkingMode(2);
+            }
+                break;
+
+            case SimulationNodeClass::nodeType_pointMass:
+            {
+                emit requestSetWorkingMode(2);
+                emit requestHideAllResults();
+                emit requestHideSlicedMeshes();
+                theNode->getModel()->blockSignals(true);    //! avoids calling handleItemChange()
+                bool isDone = markerBuilder::addMarker(this->getCurrentNode(), mySimulationDataBase);
+                theNode->getModel()->blockSignals(false);   //! reconnect - unblock signals
+                if(isDone == true) this->displayMarker();
             }
                 break;
 
@@ -4939,6 +4947,20 @@ void SimulationManager::handleItemChange(QStandardItem *item)
 
     switch(family)
     {
+    case SimulationNodeClass::nodeType_geometry:
+    {
+        if(type==SimulationNodeClass::nodeType_pointMass)
+        {
+            if(propertyName=="X coordinate" || propertyName=="Y coordinate" || propertyName=="Z coordinate")
+            {
+                markerBuilder::addMarker(curNode,mySimulationDataBase);
+                emit requestHideAllMarkers(false);
+                this->displayMarker();
+            }
+        }
+    }
+        break;
+
     case SimulationNodeClass::nodeType_StructuralAnalysisSolution:
     case SimulationNodeClass::nodeType_thermalAnalysisSolution:
     case SimulationNodeClass::nodeType_postObject:
@@ -9883,6 +9905,7 @@ void SimulationManager::buildDataBaseFromDisk(const QString &fileName)
     {
         QStandardItem *itemBody = itemGeometryRoot->child(i,0);
         QString bodyName = itemBody->data(Qt::DisplayRole).toString();
+        if(itemBody->data(Qt::UserRole).value<SimulationNodeClass*>()->getType()==SimulationNodeClass::nodeType_pointMass) continue;
         int mapIndex = itemBody->data(Qt::UserRole).value<SimulationNodeClass*>()->getPropertyValue<int>("Map index");
         mySimulationDataBase->MapOfBodyNames.insert(mapIndex,bodyName);
     }
@@ -11950,6 +11973,7 @@ void SimulationManager::displayMarker()
             break;
 
         case SimulationNodeClass::nodeType_remotePoint:
+        case SimulationNodeClass::nodeType_pointMass:
             theMarker = curNode->getPropertyValue<AIS_SphereMarker_handle_reg>("Graphic object");
             break;
         }
@@ -11970,6 +11994,7 @@ void SimulationManager::buildMeshIO()
         for(int k=0; k<Geometry_RootItem->rowCount(); k++)
         {
             SimulationNodeClass *curNode = Geometry_RootItem->child(k)->data(Qt::UserRole).value<SimulationNodeClass*>();
+            if(curNode->getType()==SimulationNodeClass::nodeType_pointMass) continue;
             int mapIndex = curNode->getPropertyValue<int>("Map index");
             if(mapIndex==bodyIndex)
             {
