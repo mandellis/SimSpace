@@ -1886,7 +1886,11 @@ void MainWindow::startAnalysis()
     //! preliminary check: before starting, the project must be saved, since
     //! what follows works if myCurrentProjectName is not empty
     //! ---------------------------------------------------------------------
-    if(myCurrentProjectName.isEmpty()) QMessageBox::information(this, APPNAME,"Please, save project before run",QMessageBox::Ok);
+    if(myCurrentProjectName.isEmpty())
+    {
+        QMessageBox::information(this, APPNAME,"Please, save project before run",QMessageBox::Ok);
+        return;
+    }
 
     //! ---------------------------------------------------------
     //! retrieve the absolute path of the SolutionData directory
