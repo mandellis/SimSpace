@@ -534,10 +534,9 @@ void geometryDataBase::transferNames()
         {
             QStandardItem *item = GeometryRootItem->child(row,0);
             SimulationNodeClass *node = item->data(Qt::UserRole).value<SimulationNodeClass*>();
+            if(node->getType()==SimulationNodeClass::nodeType_pointMass) continue;
             int bodyIndex = node->getPropertyValue<int>("Map index");
-            //QExtendedStandardItem *item = static_cast<QExtendedStandardItem*> (GeometryRootItem->child(row,0));
 
-            //QString updatedName = QString("%1").arg(MapOfBodyNames.value(row+1));
             QString updatedName = QString("%1").arg(MapOfBodyNames.value(bodyIndex));
 
             //! -----------------------------------------------------------
@@ -1052,10 +1051,6 @@ geometryDataBase::geometryDataBase(const QList<SimulationNodeClass*> listOfNodes
             {
                 cout<<"geometryDataBase::geometryDataBase()->____bad data format in \"Source geometry\"____"<<endl;
             }
-            else
-            {
-                cout<<"geometryDataBase::geometryDataBase()->____can convert____"<<endl;
-            }
 
             TopoDS_Shape sourceGeometry = curNode->getPropertyValue<TopoDS_Shape>("Source geometry");
             if(!sourceGeometry.IsNull())
@@ -1111,6 +1106,23 @@ geometryDataBase::geometryDataBase(const QList<SimulationNodeClass*> listOfNodes
             geomItem->setData(data,Qt::UserRole);
             geomItem->setData(curNode->getName(),Qt::DisplayRole);
             GeometryRootItem->appendRow(geomItem);
+        }
+    }
+
+    //! ---------------------
+    //! "Point masses" items
+    //! ---------------------
+    for(int i=0; i<listOfNodes.length();i++)
+    {
+        SimulationNodeClass *curNode = listOfNodes.at(i);
+        if(curNode->getType()==SimulationNodeClass::nodeType_pointMass)
+        {
+            cout<<"____ADDING POINT MASS____"<<endl;
+            QExtendedStandardItem *pointMassItem= new QExtendedStandardItem();
+            data.setValue(curNode);
+            pointMassItem->setData(data,Qt::UserRole);
+            pointMassItem->setData(curNode->getName(),Qt::DisplayRole);
+            GeometryRootItem->appendRow(pointMassItem);
         }
     }
 
