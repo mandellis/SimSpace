@@ -32,6 +32,7 @@
 //! ---
 #include <QDateTime>
 #include <QMessageBox>
+#include <QDir>
 
 //! ----
 //! C++
@@ -2607,11 +2608,9 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
         //! ------------------------------
         //! "Definition" "From file" => 0
         //! ------------------------------
-        data.setValue(QString(""));
-        vecProp.push_back(Property("Name",data,Property::PropertyGroup_Definition));
         data.setValue(0);
         vecProp.push_back(Property("Definition",data,Property::PropertyGroup_Definition));
-        data.setValue(QString(""));
+        data.setValue(QDir::currentPath());
         vecProp.push_back(Property("File path",data,Property::PropertyGroup_Definition));
         data.setValue(300);
         vecProp.push_back(Property("Temperature",data,Property::PropertyGroup_Definition));

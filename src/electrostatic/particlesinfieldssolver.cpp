@@ -12,6 +12,7 @@
 #include <meshelementbycoords.h>
 #include "customtablemodel.h"
 #include "tabulardatacolumns.h"
+#include "maintreetools.h"
 
 //! ---
 //! Qt
@@ -31,12 +32,29 @@
 //! ----
 #include <utility>
 
-bool lineCounter(const std::string &filePath, int &count)
+//! ---------------------------
+//! function: readParticleFile
+//! details:
+//! ---------------------------
+bool readParticlesFile(const std::string &filePath, int *count, char *name, std::vector<particle> *particles)
 {
     FILE *fp = fopen(filePath.c_str(),"r");
-    if(fp==NULL) return false;
-    char c;
-    for (c = getc(fp); c != EOF; c = getc(fp)) if (c == '\n') count = count + 1;
+    if(fp==NULL)
+    {
+        *count = 0;
+        return false;
+    }
+
+    double x,y,z,vx,vy,vz,m,q,r;
+    fscanf(fp,"%s",name);
+    for(;feof(fp)==0;)
+    {
+        fscanf(fp,"%lf%lf%lf%lf%lf%lf%lf%lf%lf",&x,&y,&z,&vx,&vy,&vz,&m,&q,&r);
+        particles->push_back(particle(x,y,z,vx,vy,vz,m,q,r));
+        (*count)++;
+        cout<<"____"<<*count<<"____"<<endl;
+    }
+    fclose(fp);
     return true;
 }
 
@@ -44,7 +62,6 @@ bool lineCounter(const std::string &filePath, int &count)
 //! function: writeInputFile
 //! details:
 //! -------------------------
-#include "maintreetools.h"
 bool particlesInFieldsSolver::writeInputFile(simulationDataBase *sDB, QStandardItem *simulationRoot, const string &inputFilePath)
 {
     //! --------------
@@ -113,13 +130,20 @@ bool particlesInFieldsSolver::writeInputFile(simulationDataBase *sDB, QStandardI
     //! ----------------------------------------
     //! write the number of boundary conditions
     //! ----------------------------------------
-    int NbBC = simulationRoot->rowCount()-2;
+    int NbBC = 0;
+    for(int row = 1; row<simulationRoot->rowCount()-1; row++)
+    {
+        SimulationNodeClass* node = simulationRoot->child(row,0)->data(Qt::UserRole).value<SimulationNodeClass*>();
+        SimulationNodeClass::nodeType aType = node->getType();
+        if(aType!=SimulationNodeClass::nodeType_particlesInFieldsParticlePack) NbBC++;
+    }
     os<<"BOUNDARYCONDITIONSNUMBER "<<NbBC<<endl;
 
     //! -------------------------------------------------------------
     //! now scan the simulation root (start after "Analysis setting"
     //! and finish an item before "Solution"). Count also the number
-    //! of emitter associated with the boundary condition
+    //! of emitters associated with the boundary condition and the
+    //! number of particles packs
     //! -------------------------------------------------------------
     int NbEmitters = 0;
     int NbParticlesPacks = 0;
@@ -191,6 +215,7 @@ bool particlesInFieldsSolver::writeInputFile(simulationDataBase *sDB, QStandardI
             }
         }
             break;
+
         case SimulationNodeClass::nodeType_particlesInFieldsParticlePack:
         {
             NbParticlesPacks++;
@@ -198,6 +223,9 @@ bool particlesInFieldsSolver::writeInputFile(simulationDataBase *sDB, QStandardI
             break;
         }
     }
+
+    //cout<<"____"<<NbParticlesPacks<<"____"<<endl;
+    //exit(1);
 
     //! -----------------------------
     //! write the number of emitters
@@ -289,9 +317,6 @@ bool particlesInFieldsSolver::writeInputFile(simulationDataBase *sDB, QStandardI
         SimulationNodeClass *curNode = item->data(Qt::UserRole).value<SimulationNodeClass*>();
         if(curNode->getType()==SimulationNodeClass::nodeType_particlesInFieldsParticlePack)
         {
-            QString name = curNode->getPropertyValue<QString>("Name");
-            os<<"PARTICLESPACKNAME "<<name.toStdString()<<endl;
-
             //! ----------------------------------------------
             //! check if particles have a temperature defined
             //! ----------------------------------------------
@@ -305,35 +330,49 @@ bool particlesInFieldsSolver::writeInputFile(simulationDataBase *sDB, QStandardI
             {
             case 0:
             {
-                QString particlesFileName = curNode->getPropertyValue<QString>("File path");
+                const QString &particlesFileName = curNode->getPropertyValue<QString>("File path");
                 if(particlesFileName.isEmpty()) break;
 
+                //! ------------------------
+                //! read the particles file
+                //! ------------------------
                 int NbParticles = 0;
-                bool isDone = lineCounter(particlesFileName.toStdString(),NbParticles);
-                if(isDone == false) break;
-                os<<"NUMBER OF PARTICLES "<<NbParticles;
-                FILE *particlesFile = fopen(particlesFileName.toStdString().c_str(),"r");
-                if(particlesFile == NULL) break;
+                std::vector<particle> particles;
+                char particlesPackName[128];
+                bool isDone = readParticlesFile(particlesFileName.toStdString(),&NbParticles,particlesPackName,&particles);
 
-                for(int i=0;i<NbParticles; i++)
+                os<<"PARTICLESPACKNAME "<<particlesPackName<<endl;
+
+                //! -----------------------------------------------
+                //! in case of a sintax error in the particles set
+                //! number of particles to zero
+                //! -----------------------------------------------
+                if(isDone == false)
                 {
-                    double x,y,z,vx,vy,vz,m,q,r;
-                    fscanf(particlesFile,"%lf%lf%lf%lf%lf%lf%lf%lf%lf",&x,&y,&x,&vx,&vy,&vz,&m,&q,&r);
-                    os<<x<<"\t"<<y<<"\t"<<z<<"\t"<<vx<<"\t"<<vy<<"\t"<<vz<<"\t"<<m<<"\t"<<q<<"\t"<<r<<endl;
+                    NbParticles = 0;
+                    os<<"NUMBEROFPARTICLES "<<NbParticles<<endl;
+                    break;
                 }
-                fclose(particlesFile);
+
+                os<<"NUMBEROFPARTICLES "<<NbParticles<<endl;
+                for(std::vector<particle>::iterator it = particles.begin(); it!=particles.end(); it++)
+                {
+                    const particle &aparticle = *it;
+                    os<<aparticle.x[0]<<"\t"<<aparticle.x[1]<<"\t"<<aparticle.x[2]<<"\t"<<
+                        aparticle.v[0]<<"\t"<<aparticle.v[1]<<"\t"<<aparticle.v[2]<<"\t"<<
+                        aparticle.mass<<"\t"<<aparticle.q<<"\t"<<aparticle.R<<endl;
+                }
             }
                 break;
+
             case 1:
             {
-
+                ;
             }
                 break;
             }
         }
     }
-
-
 
     os.close();
     return true;
@@ -346,7 +385,8 @@ bool particlesInFieldsSolver::writeInputFile(simulationDataBase *sDB, QStandardI
 bool particlesInFieldsSolver::readInputFile(const std::string &inputFilePath,
                                             occHandle(Ng_MeshVS_DataSource3D) &volumeMesh,
                                             std::map<int,occHandle(Ng_MeshVS_DataSourceFace)> &allFacesMeshDSMap,
-                                            std::vector<particlesEmitter> &theEmitters)
+                                            std::vector<particlesEmitter> &theEmitters,
+                                            std::map<std::string,std::vector<particle>> &particlesPack)
 {
     //! --------------
     //! open a stream
@@ -513,6 +553,7 @@ bool particlesInFieldsSolver::readInputFile(const std::string &inputFilePath,
         {
             std::getline(is,val);
             cout<<val<<endl;
+
             if(strcmp(val.c_str(),"TRIG")==0)
             {
                 int V[3];
@@ -627,7 +668,7 @@ bool particlesInFieldsSolver::readInputFile(const std::string &inputFilePath,
         //! ---------------------
         //! for testing purposes
         //! ---------------------
-        aCompositeFaceDS->writeMesh(QString("D:/Work/WBtest/EmitterMesh_%1.txt").arg(i+1),2);
+        //aCompositeFaceDS->writeMesh(QString("D:/Work/WBtest/EmitterMesh_%1.txt").arg(i+1),2);
 
         //! read the header "INTENSITY"
         std::getline(is,val);
@@ -745,6 +786,47 @@ bool particlesInFieldsSolver::readInputFile(const std::string &inputFilePath,
         theEmitters.push_back(aParticleEmitter);
     }
 
+    //! -----------------------------------
+    //! read the number of particles packs
+    //! -----------------------------------
+    int NbParticlesPacks = 0;
+    std::getline(is,val);
+    char buf[128];
+    sscanf(val.c_str(),"%s%d",buf,&NbParticlesPacks);
+    cout<<val<<endl;
+
+    for(int i=0; i<NbParticlesPacks; i++)
+    {
+        //! ------------------------------------
+        //! read the name of the particles pack
+        //! ------------------------------------
+        std::getline(is,val);
+        char buf[128], name[128];
+        sscanf(val.c_str(),"%s%s",buf,name);
+        cout<<val<<endl;
+
+        //! -------------------------------------------------
+        //! read the number of particles of the current pack
+        //! -------------------------------------------------
+        int NbParticles = 0;
+        std::getline(is,val);
+        sscanf(val.c_str(),"%s%d",buf,&NbParticles);
+        cout<<val<<endl;
+
+        std::vector<particle> vecParticles;
+        for(int n=0; n<NbParticles; n++)
+        {
+            double x,y,z,vx,vy,vz,m,q,r;
+            std::getline(is,val);
+            cout<<val<<endl;
+            sscanf(val.c_str(),"%lf%lf%lf%lf%lf%lf%lf%lf%lf",&x,&y,&z,&vx,&vy,&vz,&m,&q,&r);
+            vecParticles.push_back(particle(x,y,z,vx,vy,vz,m,q,r));
+        }
+        std::pair<std::string,std::vector<particle>> apair;
+        apair.first = val;
+        apair.second = vecParticles;
+        particlesPack.insert(apair);
+    }
     return true;
 }
 
@@ -778,7 +860,8 @@ particlesInFieldsSolver::particlesInFieldsSolver(const string &inputFilePath)
     occHandle(Ng_MeshVS_DataSource3D) volumeMesh;
     std::map<int,occHandle(Ng_MeshVS_DataSourceFace)> allFacesMeshDS;
     std::vector<particlesEmitter> vecEmitters;
-    this->readInputFile(inputFilePath,volumeMesh,allFacesMeshDS,vecEmitters);
+    std::map<std::string,std::vector<particle>> particlesPacks;
+    this->readInputFile(inputFilePath,volumeMesh,allFacesMeshDS,vecEmitters,particlesPacks);
 
     //! -----------------------------------------------------------------
     //! - configure the domain mesh in Eigen format
@@ -804,10 +887,32 @@ particlesInFieldsSolver::particlesInFieldsSolver(const string &inputFilePath)
     for(int i=0; i<vecEmitters.size(); i++) myEmitters.push_back(vecEmitters[i]);
 
 
-    //! -----------------------------
-    //! init the number of particles
-    //! -----------------------------
-    myNbParticles = 0;
+    myParticlesPacks = std::make_shared<std::map<std::string,std::vector<particle>>>(particlesPacks);
+
+    int particlesNb = 0;
+    std::map<int,particle> indexedMapOfParticles;
+    for(std::map<std::string,std::vector<particle>>::iterator it = particlesPacks.begin(); it!=particlesPacks.end(); it++)
+    {
+        std::pair<std::string,std::vector<particle>> apair = *it;
+        std::string name = apair.first;
+        std::vector<particle> vecParticles = apair.second;
+
+        for(std::vector<particle>::iterator it1 = vecParticles.begin(); it1!=vecParticles.end(); it1++)
+        {
+            particle aparticle = *it1;
+            particlesNb++;
+            std::pair<int,particle> apair;
+            apair.first = particlesNb;
+            apair.second = aparticle;
+            indexedMapOfParticles.insert(apair);
+        }
+    }
+
+    //! ---------------------------------------------------
+    //! init the number of particles and the particles map
+    //! ---------------------------------------------------
+    myNbParticles = particlesNb;
+    myParticles1 = std::make_shared<std::map<int,particle>>(indexedMapOfParticles);
 }
 
 //! ----------------------
@@ -864,7 +969,7 @@ particlesInFieldsSolver::particlesInFieldsSolver(simulationDataBase *sDB, QStand
     SimulationNodeClass *nodeAnalysisSetting = mySimulationRoot->child(0,0)->data(Qt::UserRole).value<SimulationNodeClass*>();
 
     CustomTableModel *tabData = nodeAnalysisSetting->getTabularDataModel();
-    int lastTableRow = tabData->rowCount();
+    int lastTableRow = tabData->rowCount()-1;
     int col = TABULAR_DATA_STEP_END_TIME_COLUMN;
 
     myFinalTime = tabData->dataRC(lastTableRow,col).toDouble();
@@ -956,7 +1061,7 @@ void particlesInFieldsSolver::run()
     //! -----------------------------------------------------
     //! init the simulation time and the number of particles
     //! -----------------------------------------------------
-    myNbParticles = 0;
+    //myNbParticles = 0;
     double time = -myTimeStep;
     for(;;)
     {
@@ -980,12 +1085,12 @@ void particlesInFieldsSolver::run()
             for(int n=0; n<newParticles.size(); n++)
             {
                 myNbParticles++;
-                const particle &aP = newParticles[n];
-                std::shared_ptr<particle> aParticle(new particle(aP));
-                std::pair<int,std::shared_ptr<particle>> apair;
+                particle aParticle = newParticles[n];
+                //std::shared_ptr<particle> aParticle(new particle(aP));
+                std::pair<int,particle> apair;
                 apair.first= myNbParticles;
                 apair.second = aParticle;
-                myParticles.insert(apair);
+                myParticles1->insert(apair);
             }
         }
 
@@ -1028,13 +1133,13 @@ void particlesInFieldsSolver::computeChargeDensityAtNodes()
     //this->initChargeDensityAtNodes(0.0);
 
     Eigen::MatrixXd Q(1,3);
-    for(std::map<int,std::shared_ptr<particle>>::iterator it = myParticles.begin(); it!= myParticles.end(); it++)
+    for(std::map<int,particle>::iterator it = myParticles1->begin(); it!= myParticles1->end(); it++)
     {
-        std::pair<int,std::shared_ptr<particle>> apair = *it;
-        std::shared_ptr<particle> aParticle = apair.second;
-        double xP = aParticle->x[0];
-        double yP = aParticle->x[1];
-        double zP = aParticle->x[2];
+        std::pair<int,particle> apair = *it;
+        particle aParticle = apair.second;
+        double xP = aParticle.x[0];
+        double yP = aParticle.x[1];
+        double zP = aParticle.x[2];
 
         //! ---------------------------------------------------
         //! search for the tetrahedron the particle belongs to
@@ -1076,7 +1181,7 @@ void particlesInFieldsSolver::computeChargeDensityAtNodes()
             //! ---------------
             //! charge at node
             //! ---------------
-            charge(T(tetNumber,n)) += aParticle->q*r;
+            charge(T(tetNumber,n)) += aParticle.q*r;
         }
 
         //! --------------------------------------
@@ -1092,16 +1197,16 @@ void particlesInFieldsSolver::computeChargeDensityAtNodes()
 //! ------------------------
 void particlesInFieldsSolver::moveParticles()
 {
-    for(std::map<int,std::shared_ptr<particle>>::iterator it = myParticles.begin(); it!= myParticles.end(); it++)
+    for(std::map<int,particle>::iterator it = myParticles1->begin(); it!= myParticles1->end(); it++)
     {
-        std::pair<int,shared_ptr<particle>> apair = *it;
-        double x = apair.second->x[0];
-        double y = apair.second->x[1];
-        double z = apair.second->x[2];
+        std::pair<int,particle> apair = *it;
+        double x = apair.second.x[0];
+        double y = apair.second.x[1];
+        double z = apair.second.x[2];
 
-        double vx = apair.second->v[0];
-        double vy = apair.second->v[1];
-        double vz = apair.second->v[2];
+        double vx = apair.second.v[0];
+        double vy = apair.second.v[1];
+        double vz = apair.second.v[2];
 
         //! ------------
         //! Runge-Kutta

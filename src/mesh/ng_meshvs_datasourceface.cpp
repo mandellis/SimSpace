@@ -102,7 +102,7 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()
 //! ------------------------------------------------------
 Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const occHandle(Ng_MeshVS_DataSourceFace) &aFaceMesh)
 {
-    cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____cloning constructor called____"<<endl;
+    //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____cloning constructor called____"<<endl;
 
     //! -------------
     //! sanity check
@@ -2268,7 +2268,7 @@ Standard_EXPORT Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const QList<Q
 //! ---------------------------------------------------------------
 Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const QList<occHandle(Ng_MeshVS_DataSourceFace)> &faceDSList)
 {
-    cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list of "<<faceDSList.length()<<" face mesh data sources____"<<endl;
+    //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list of "<<faceDSList.length()<<" face mesh data sources____"<<endl;
 
     //! ------------------
     //! fill the node map
@@ -2337,14 +2337,14 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const QList<occHandle(Ng_Mesh
     myElemNormals = new TColStd_HArray2OfReal(1,myNumberOfElements,1,3);
     myElemNodes = new TColStd_HArray2OfInteger(1,myNumberOfElements,1,8);
 
-    cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list. Number of shared nodes: "<<NbSharedNodes<<"____"<<endl;
-    cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list. Number of nodes: "<<myNumberOfNodes<<"____"<<endl;
-    cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list. Number of elements: "<<myNumberOfElements<<"____"<<endl;
+    //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list. Number of shared nodes: "<<NbSharedNodes<<"____"<<endl;
+    //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list. Number of nodes: "<<myNumberOfNodes<<"____"<<endl;
+    //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list. Number of elements: "<<myNumberOfElements<<"____"<<endl;
 
     //! --------------------
     //! define the elements
     //! --------------------
-    cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list. Start defining the elements____"<<endl;
+    //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list. Start defining the elements____"<<endl;
 
     //! ----------------------------------------------------------------
     //! note: I can not use QList for defining "alreadyVisitedElements"
@@ -2412,13 +2412,13 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const QList<occHandle(Ng_Mesh
             }
         }
     }
-    cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____number of shared elements: "<<NbSharedElements<<"____"<<endl;
-    cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list. Elements defined____"<<endl;
+    //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____number of shared elements: "<<NbSharedElements<<"____"<<endl;
+    //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list. Elements defined____"<<endl;
 
     //! -----------------------------------------
     //! insert the coordinates of each mesh node
     //! -----------------------------------------
-    cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list. Start defining nodes____"<<endl;
+    //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list. Start defining nodes____"<<endl;
     int localNodeID = 0;
     TColStd_PackedMapOfInteger alreadyVisitedNodes;
     for(int i=0; i<faceDSList.length(); i++)
@@ -2446,13 +2446,13 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const QList<occHandle(Ng_Mesh
             myNodeCoords->SetValue(localNodeID,3,coords(3));
         }
     }
-    cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list. Nodes defined____"<<endl;
+    //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list. Nodes defined____"<<endl;
 
     //! --------------------------------
     //! compute the normals at elements
     //! --------------------------------
     this->computeNormalAtElements();
-    cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____exiting____"<<endl;
+    //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____exiting____"<<endl;
 }
 
 //! ------------------------------

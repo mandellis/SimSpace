@@ -338,6 +338,7 @@ int mainTreeTools::calculateStartColumn(QExtendedStandardItem *anItem)
         case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_FrictionlessSupport:
         case SimulationNodeClass::nodeType_structuralAnalysisBoundaryContidion_FixedSupport:
         case SimulationNodeClass::nodeType_thermalAnalysisAdiabaticWall:
+        case SimulationNodeClass::nodeType_particlesInFieldsParticlePack:
 #ifdef COSTAMP_VERSION
         case SimulationNodeClass::nodeType_timeStepBuilder:
 #endif

@@ -1387,6 +1387,25 @@ void contextMenuBuilder::buildParticlesInFieldsContextMenu(QMenu *contextMenu, b
     QAction *actionInsertParticlesPack = menuInsert->addAction("Particles pack");
     actionInsertParticlesPack->setIcon(QIcon(":/icons/icon_point cloud.png"));
     actionInsertParticlesPack->setData(303);
+
+    contextMenu->addSeparator();
+
+    //! -----------------
+    //! action duplicate
+    //! -----------------
+    contextMenuBuilder::addActionDuplicate(contextMenu);
+    contextMenu->addSeparator();
+
+    //! --------------
+    //! action delete
+    //! --------------
+    contextMenuBuilder::addActionDelete(contextMenu);
+    contextMenu->addSeparator();
+
+    //! --------------
+    //! action rename
+    //! --------------
+    contextMenuBuilder::addActionRename(contextMenu);
 }
 
 //! -------------------------------------

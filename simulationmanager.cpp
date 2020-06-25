@@ -7644,7 +7644,8 @@ void SimulationManager::writeSolverInputFile()
         occHandle(Ng_MeshVS_DataSource3D) volumeMesh;
         std::map<int,occHandle(Ng_MeshVS_DataSourceFace)> mapFaceMeshDS;
         std::vector<particlesEmitter> vecEmitters;
-        particlesInFieldsSolver::readInputFile(fileName.toStdString(),volumeMesh,mapFaceMeshDS,vecEmitters);
+        std::map<std::string,std::vector<particle>> particlesPacks;
+        particlesInFieldsSolver::readInputFile(fileName.toStdString(),volumeMesh,mapFaceMeshDS,vecEmitters,particlesPacks);
         volumeMesh->writeMesh("D:/Work/WBtest/volumeMesh.txt",3);
         for(std::map<int,occHandle(Ng_MeshVS_DataSourceFace)>::iterator it = mapFaceMeshDS.begin(); it!=mapFaceMeshDS.end(); it++)
         {

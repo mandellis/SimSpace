@@ -98,13 +98,15 @@ private:
 private:
 
     int myNbParticles;
-    std::map<int,std::shared_ptr<particle>> myParticles;
+    //std::map<int,std::shared_ptr<particle>> myParticles;
     std::shared_ptr<std::map<int,particle>> myParticles1;
+    std::shared_ptr<std::map<std::string,std::vector<particle>>> myParticlesPacks;
     double myFinalTime;
     double myTimeStep;
 
 private:
 
+    //bool readParticlesFile(const std::string &filePath, int &count, char *name, std::vector<particle> *particles)
     bool getCellOfAPoint(double x, double y, double z, int& tetNumber);
     void computeChargeDensityAtNodes();
     void computeElectricField();
@@ -123,7 +125,8 @@ public:
     static bool readInputFile(const std::string &inputFilePath,
                               occHandle(Ng_MeshVS_DataSource3D) &volumeMesh,
                               std::map<int,occHandle(Ng_MeshVS_DataSourceFace)> &allFacesMeshDSMap,
-                              std::vector<particlesEmitter> &theEmitters);
+                              std::vector<particlesEmitter> &theEmitters,
+                              std::map<std::string,std::vector<particle>> &particlesPack);
 
     static bool writeInputFile(simulationDataBase *sDB, QStandardItem *simulationRoot, const std::string &inputFilePath);
 };
