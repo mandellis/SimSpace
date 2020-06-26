@@ -34,12 +34,13 @@ PoissonSolver::PoissonSolver(const occHandle(Ng_MeshVS_DataSource3D) &occVolumeM
     //! ------------------------------
     int NbPoints = occVolumeMesh->GetAllNodes().Extent();
     V.resize(NbPoints,3);
+    all.resize(NbPoints);
     for(int row=1; row<=NbPoints; row++)
     {
         const std::vector<double> &P = occVolumeMesh->getNodeCoordinates(row);
         for(int col=1; col<=3; col++)
         {
-            V(row-1,col-1) = P[col];
+            V(row-1,col-1) = P[col-1];
             all(row-1) = row-1;
         }
     }

@@ -1250,6 +1250,9 @@ bool SimulationNodeClass::hasTabularData()
     case SimulationNodeClass::nodeType_thermalAnalysisThermalFlow:
     case SimulationNodeClass::nodeType_thermalAnalysisTemperature:
     case SimulationNodeClass::nodeType_thermalAnalysisThermalPower:
+
+    case SimulationNodeClass::nodeType_magneticField:
+    case SimulationNodeClass::nodeType_electrostaticPotential:
         return true;
         break;
     default:

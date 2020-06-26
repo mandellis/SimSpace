@@ -2301,10 +2301,10 @@ QVariant QExtendedStandardItem::data(int role) const
             data.setValue(val==0? QString("Off"):QString("On"));
             return data;
         }
-        //! ------------------------------------------------------------
-        //! "Initial time step" "Minimum time step" "Maximum time step"
-        //! ------------------------------------------------------------
-        else if(name =="Initial time step" || name =="Minimum time step" || name =="Maximum time step")
+        //! ------------------------------------------------------------------------
+        //! "Initial time step" "Minimum time step" "Maximum time step" "Time step"
+        //! ------------------------------------------------------------------------
+        else if(name =="Initial time step" || name =="Minimum time step" || name =="Maximum time step" || name =="Time step")
         {
             double val = QStandardItem::data(Qt::UserRole).value<Property>().getData().toDouble();
             data.setValue(QString("%1").arg(val,0,'g',3));

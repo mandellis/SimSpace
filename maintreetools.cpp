@@ -171,9 +171,9 @@ QList<int> mainTreeTools::getColumnsToRead(QExtendedStandardItem *anItem)
     SimulationNodeClass *aNode = currentIndex.data(Qt::UserRole).value<SimulationNodeClass*>();
     SimulationNodeClass::nodeType theType = aNode->getType();
 
-    //! ------------------------------------------------
-    //! these nodes do not have the "defineBy" property
-    //! ------------------------------------------------
+    //! ------------------------------------------
+    //! these nodes have the "defineBy" property
+    //! ------------------------------------------
     if(aNode->getPropertyItem("Define by")!=Q_NULLPTR)
     {
         if(theType == SimulationNodeClass::nodeType_structuralAnalysisBoltPretension)
@@ -332,9 +332,145 @@ int mainTreeTools::calculateStartColumn(QExtendedStandardItem *anItem)
 
         switch (curType)
         {
+            //! ---------------------
+            //! "0" columns in table
+            //! ---------------------
         case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_ImportedTemperatureDistribution:
         case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_CompressionOnlySupport:
         case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_CylindricalSupport:
+        case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_FrictionlessSupport:
+        case SimulationNodeClass::nodeType_structuralAnalysisBoundaryContidion_FixedSupport:
+        case SimulationNodeClass::nodeType_thermalAnalysisAdiabaticWall:
+        case SimulationNodeClass::nodeType_particlesInFieldsParticlePack:
+#ifdef COSTAMP_VERSION
+        case SimulationNodeClass::nodeType_timeStepBuilder:
+#endif
+        case SimulationNodeClass::nodeType_mapper:
+            delta = -1;
+            break;
+
+            //! --------------------
+            //! "1" column in table
+            //! --------------------
+        case SimulationNodeClass::nodeType_modelChange:
+        case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Pressure:
+        case SimulationNodeClass::nodeType_structuralAnalysisThermalCondition:
+        case SimulationNodeClass::nodeType_thermalAnalysisRadiation:
+        case SimulationNodeClass::nodeType_thermalAnalysisTemperature:
+        case SimulationNodeClass::nodeType_thermalAnalysisThermalFlow:
+        case SimulationNodeClass::nodeType_thermalAnalysisThermalPower:
+        case SimulationNodeClass::nodeType_thermalAnalysisThermalFlux:
+        case SimulationNodeClass::nodeType_electrostaticPotential:
+            delta = 0;
+            break;
+
+            //! ------------
+            //! "2" columns
+            //! ------------
+        case SimulationNodeClass::nodeType_thermalAnalysisConvection:
+            delta = 1;
+            break;
+
+            //! -------------------
+            //! "1" or "3" columns
+            //! -------------------
+        case SimulationNodeClass::nodeType_magneticField:
+        case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Force:
+        case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Moment:
+        case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RemoteForce:
+        case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Acceleration:
+            theDefineBy = curNode->getPropertyValue<Property::defineBy>("Define by");
+            if(theDefineBy==Property::defineBy_vector) delta = 0;
+            else delta = 2;
+            break;
+
+            //! -----------------------------------------------
+            //! always "3" columns in table: "bolt pretension"
+            //! -----------------------------------------------
+        case SimulationNodeClass::nodeType_structuralAnalysisBoltPretension:
+            delta = 2;
+            break;
+
+            //! ----------------------------------------------------------------
+            //! the "Displacement" and "Remote displacement" are special cases,
+            //! since their components could have the option "Free"
+            //! ----------------------------------------------------------------
+        case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Displacement:
+        case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RemoteDisplacement:
+        case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RemoteRotation:
+            theDefineBy = curNode->getPropertyValue<Property::defineBy>("Define by");
+            if(theDefineBy==Property::defineBy_vector) delta=0;
+            else
+            {
+                delta = 0;
+                int subDelta = 0;
+                Property::loadDefinition loadDefinitionXcomponent = curNode->getPropertyValue<Property::loadDefinition>("X component");
+                Property::loadDefinition loadDefinitionYcomponent = curNode->getPropertyValue<Property::loadDefinition>("Y component");
+                Property::loadDefinition loadDefinitionZcomponent = curNode->getPropertyValue<Property::loadDefinition>("Z component");
+                if(loadDefinitionXcomponent!=Property::loadDefinition_free)subDelta++;
+                if(loadDefinitionYcomponent!=Property::loadDefinition_free)subDelta++;
+                if(loadDefinitionZcomponent!=Property::loadDefinition_free)subDelta++;
+                delta = subDelta-1;
+            }
+            break;
+        }
+        offset = offset + delta;
+    }
+
+    //! --------------------------------------------------
+    //! number of columns defining the "Analysis setting"
+    //! --------------------------------------------------
+    int initNumberOfColumns = NUMBER_OF_COLUMNS_BEFORE_BC_DATA;
+    startColumn = (rrow+initNumberOfColumns)+offset;
+    return startColumn;
+}
+
+//! -------------------------------
+//! function: calculateStartColumn
+//! details:
+//! -------------------------------
+int mainTreeTools::calculateStartColumn(QTreeView *tree)
+{
+    //! -----------------
+    //! the start column
+    //! -----------------
+    int startColumn = 0;
+
+    QModelIndex currentIndex=tree->currentIndex();
+    QStandardItem *currentItem = static_cast<QStandardItemModel*>(tree->model())->itemFromIndex(currentIndex);
+    startColumn = mainTreeTools::calculateStartColumn(static_cast<QExtendedStandardItem*>(currentItem));
+    return startColumn;
+
+    /*
+    //! --------------------------------
+    //! the row of the item in the tree
+    //! --------------------------------
+    int rrow = currentIndex.row();
+
+    //! ----------------------------------
+    //! retrieve the simulation root item
+    //! ----------------------------------
+    QModelIndex index = currentIndex.parent();
+    QStandardItemModel *treeModel = static_cast<QStandardItemModel*>(tree->model());
+    QStandardItem* itemSimulationRoot = treeModel->itemFromIndex(index);
+
+    //! --------------------------------------------------------------------------------
+    //! the for cycle starts from the second item (the previous is "Analysis settings")
+    //! --------------------------------------------------------------------------------
+    int offset = 0;
+    for(int k=1; k<rrow; k++)
+    {
+        QStandardItem *curItem = itemSimulationRoot->child(k,0);
+        SimulationNodeClass *curNode = curItem->data(Qt::UserRole).value<SimulationNodeClass*>();
+        SimulationNodeClass::nodeType curType = curNode->getType();
+        Property::defineBy theDefineBy;
+        int delta = 0;
+
+        switch (curType)
+        {
+        case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_ImportedTemperatureDistribution:
+        case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_CylindricalSupport:
+        case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_CompressionOnlySupport:
         case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_FrictionlessSupport:
         case SimulationNodeClass::nodeType_structuralAnalysisBoundaryContidion_FixedSupport:
         case SimulationNodeClass::nodeType_thermalAnalysisAdiabaticWall:
@@ -410,124 +546,7 @@ int mainTreeTools::calculateStartColumn(QExtendedStandardItem *anItem)
     int initNumberOfColumns = NUMBER_OF_COLUMNS_BEFORE_BC_DATA;
     startColumn = (rrow+initNumberOfColumns)+offset;
     return startColumn;
-}
-
-//! -------------------------------
-//! function: calculateStartColumn
-//! details:
-//! -------------------------------
-int mainTreeTools::calculateStartColumn(QTreeView *tree)
-{
-    //! -----------------
-    //! the start column
-    //! -----------------
-    int startColumn = 0;
-
-    QModelIndex currentIndex=tree->currentIndex();
-
-    //! --------------------------------
-    //! the row of the item in the tree
-    //! --------------------------------
-    int rrow = currentIndex.row();
-
-    //! ----------------------------------
-    //! retrieve the simulation root item
-    //! ----------------------------------
-    QModelIndex index = currentIndex.parent();
-    QStandardItemModel *treeModel = static_cast<QStandardItemModel*>(tree->model());
-    QStandardItem* itemSimulationRoot = treeModel->itemFromIndex(index);
-
-    //! --------------------------------------------------------------------------------
-    //! the for cycle starts from the second item (the previous is "Analysis settings")
-    //! --------------------------------------------------------------------------------
-    int offset = 0;
-    for(int k=1; k<rrow; k++)
-    {
-        QStandardItem *curItem = itemSimulationRoot->child(k,0);
-        SimulationNodeClass *curNode = curItem->data(Qt::UserRole).value<SimulationNodeClass*>();
-        SimulationNodeClass::nodeType curType = curNode->getType();
-        Property::defineBy theDefineBy;
-        int delta = 0;
-
-        switch (curType)
-        {
-        case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_ImportedTemperatureDistribution:
-        case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_CylindricalSupport:
-        case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_CompressionOnlySupport:
-        case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_FrictionlessSupport:
-        case SimulationNodeClass::nodeType_structuralAnalysisBoundaryContidion_FixedSupport:
-        case SimulationNodeClass::nodeType_thermalAnalysisAdiabaticWall:
-#ifdef COSTAMP_VERSION
-        case SimulationNodeClass::nodeType_timeStepBuilder:
-#endif
-        case SimulationNodeClass::nodeType_mapper:
-            delta = -1;
-            break;
-
-        case SimulationNodeClass::nodeType_modelChange:
-        case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Pressure:
-        case SimulationNodeClass::nodeType_structuralAnalysisThermalCondition:
-        case SimulationNodeClass::nodeType_thermalAnalysisRadiation:
-        case SimulationNodeClass::nodeType_thermalAnalysisTemperature:
-        case SimulationNodeClass::nodeType_thermalAnalysisThermalFlow:
-        case SimulationNodeClass::nodeType_thermalAnalysisThermalPower:
-        case SimulationNodeClass::nodeType_thermalAnalysisThermalFlux:
-        case SimulationNodeClass::nodeType_electrostaticPotential:
-            delta = 0;
-            break;
-        case SimulationNodeClass::nodeType_thermalAnalysisConvection:
-            delta = 1;
-            break;
-        case SimulationNodeClass::nodeType_magneticField:
-        case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Force:
-        case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Moment:
-        case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RemoteForce:
-        case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Acceleration:
-            //! [...] add here other items supporting a vectorial definition
-            theDefineBy = curNode->getPropertyValue<Property::defineBy>("Define by");
-            if(theDefineBy==Property::defineBy_vector) delta = 0;
-            else delta = 2;
-            break;
-
-            //! ----------------
-            //! bolt pretension
-            //! ----------------
-        case SimulationNodeClass::nodeType_structuralAnalysisBoltPretension:
-            delta = 2;
-            break;
-
-            //! ----------------------------------------------------------------
-            //! the "Displacement" and "Remote displacement" are special cases,
-            //! since their components could have the option "Free"
-            //! ----------------------------------------------------------------
-        case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Displacement:
-        case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RemoteDisplacement:
-        case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RemoteRotation:
-            theDefineBy = curNode->getPropertyValue<Property::defineBy>("Define by");
-            if(theDefineBy==Property::defineBy_vector) delta=0;
-            else
-            {
-                delta = 0;
-                int subDelta = 0;
-                Property::loadDefinition loadDefinitionXcomponent = curNode->getPropertyValue<Property::loadDefinition>("X component");
-                Property::loadDefinition loadDefinitionYcomponent = curNode->getPropertyValue<Property::loadDefinition>("Y component");
-                Property::loadDefinition loadDefinitionZcomponent = curNode->getPropertyValue<Property::loadDefinition>("Z component");
-                if(loadDefinitionXcomponent!=Property::loadDefinition_free)subDelta++;
-                if(loadDefinitionYcomponent!=Property::loadDefinition_free)subDelta++;
-                if(loadDefinitionZcomponent!=Property::loadDefinition_free)subDelta++;
-                delta = subDelta-1;
-            }
-            break;
-        }
-        offset = offset + delta;
-    }
-
-    //! --------------------------------------------------
-    //! number of columns defining the "Analysis setting"
-    //! --------------------------------------------------
-    int initNumberOfColumns = NUMBER_OF_COLUMNS_BEFORE_BC_DATA;
-    startColumn = (rrow+initNumberOfColumns)+offset;
-    return startColumn;
+    */
 }
 
 //! -------------------------------

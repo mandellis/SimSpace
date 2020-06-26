@@ -7641,20 +7641,24 @@ void SimulationManager::writeSolverInputFile()
         //! --------------------------------------------
         //! test reading - diagnostic for file recovery
         //! --------------------------------------------
-        occHandle(Ng_MeshVS_DataSource3D) volumeMesh;
-        std::map<int,occHandle(Ng_MeshVS_DataSourceFace)> mapFaceMeshDS;
-        std::vector<particlesEmitter> vecEmitters;
-        std::map<std::string,std::vector<particle>> particlesPacks;
-        particlesInFieldsSolver::readInputFile(fileName.toStdString(),volumeMesh,mapFaceMeshDS,vecEmitters,particlesPacks);
-        volumeMesh->writeMesh("D:/Work/WBtest/volumeMesh.txt",3);
-        for(std::map<int,occHandle(Ng_MeshVS_DataSourceFace)>::iterator it = mapFaceMeshDS.begin(); it!=mapFaceMeshDS.end(); it++)
-        {
-            char name[128];
-            std::pair<int,occHandle(Ng_MeshVS_DataSourceFace)> apair = *it;
-            sprintf(name,"D:/Work/WBtest/faceMesh_%d_.txt",apair.first);
-            occHandle(Ng_MeshVS_DataSourceFace) aFaceMeshDS = apair.second;
-            aFaceMeshDS->writeMesh(QString::fromLatin1(name),2);
-        }
+        //occHandle(Ng_MeshVS_DataSource3D) volumeMesh;
+        //std::map<int,occHandle(Ng_MeshVS_DataSourceFace)> mapFaceMeshDS;
+        //std::vector<particlesEmitter> vecEmitters;
+        //std::map<std::string,std::vector<particle>> particlesPacks;
+        //particlesInFieldsSolver::readInputFile(fileName.toStdString(),volumeMesh,mapFaceMeshDS,vecEmitters,particlesPacks);
+
+        //volumeMesh->writeMesh("D:/Work/WBtest/volumeMesh.txt",3);
+        //for(std::map<int,occHandle(Ng_MeshVS_DataSourceFace)>::iterator it = mapFaceMeshDS.begin(); it!=mapFaceMeshDS.end(); it++)
+        //{
+        //    char name[128];
+        //    std::pair<int,occHandle(Ng_MeshVS_DataSourceFace)> apair = *it;
+        //    sprintf(name,"D:/Work/WBtest/faceMesh_%d_.txt",apair.first);
+        //    occHandle(Ng_MeshVS_DataSourceFace) aFaceMeshDS = apair.second;
+        //    aFaceMeshDS->writeMesh(QString::fromLatin1(name),2);
+        //}
+
+        particlesInFieldsSolver aParticlesInFieldsSolver(fileName.toStdString());
+        aParticlesInFieldsSolver.run();
         //! ---------------
         //! end diagnostic
         //! ---------------
@@ -7753,10 +7757,6 @@ void SimulationManager::HandleTabularData()
     //! ----------------------------------
     //! check if the data in table exsist
     //! ----------------------------------
-    //if(tabData->getColumn(startColumn).type()==Property::loadType_none)
-    //{
-    //    cerr<<"SimulationManager::HandleTabularData()->____corrupted data base____"<<endl;
-    //}
     if(1==2)
     {
         ;

@@ -350,7 +350,7 @@ simulationDataBase::simulationDataBase(const QList<SimulationNodeClass*> listOfN
         //! an analysis root has been found within the tree
         //! ------------------------------------------------
         QString analysisRootTimeTag = curSimulationNodeRoot->getPropertyValue<QString>("Time tag");
-        //cout<<"____ANALYSIS ROOT: "<<analysisRootTimeTag.toStdString()<<"____"<<endl;
+        cout<<"____ANALYSIS ROOT: "<<analysisRootTimeTag.toStdString()<<"____"<<endl;
 
         //! ---------------------------------------------------
         //! retrieve the nodes belonging to the current branch
@@ -374,9 +374,9 @@ simulationDataBase::simulationDataBase(const QList<SimulationNodeClass*> listOfN
                 it++;
                 continue;
             }
-            //cout<<"____NODE TO ATTACH FOUND____"<<endl;
-            //cout<<"____PARENT TIME TAG: "<<curParentTimeTag.toStdString()<<"____"<<endl;
-            //cout<<"____TIME TAG: "<<curTimeTag.toStdString()<<"____"<<endl;
+            cout<<"____NODE TO ATTACH FOUND____"<<endl;
+            cout<<"____PARENT TIME TAG: "<<curParentTimeTag.toStdString()<<"____"<<endl;
+            cout<<"____TIME TAG: "<<curTimeTag.toStdString()<<"____"<<endl;
 
             //! ------------------------------
             //! remove the node from the list
@@ -392,7 +392,7 @@ simulationDataBase::simulationDataBase(const QList<SimulationNodeClass*> listOfN
 
             timeTagToNodeMap.insert(element);
             vecKeys.push_back(curTimeTag.toULongLong());
-            //cout<<"____a check =>"<<curTimeTag.toULongLong()<<"____"<<endl;
+            cout<<"____a check =>"<<curTimeTag.toULongLong()<<"____"<<endl;
         }
         //! ---------------------------
         //! sort the map using the key
@@ -406,7 +406,7 @@ simulationDataBase::simulationDataBase(const QList<SimulationNodeClass*> listOfN
         {
             QString key = QString("%1").arg(vecKeys[n]);
 
-            //cout<<"____Attaching node with time tag: "<<key.toStdString()<<"____"<<endl;
+            cout<<"____Attaching node with time tag: "<<key.toStdString()<<"____"<<endl;
 
             std::map<QString,SimulationNodeClass*>::iterator mapit = timeTagToNodeMap.find(key);
             if(mapit!=timeTagToNodeMap.end())

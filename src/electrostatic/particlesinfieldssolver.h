@@ -98,8 +98,7 @@ private:
 private:
 
     int myNbParticles;
-    //std::map<int,std::shared_ptr<particle>> myParticles;
-    std::shared_ptr<std::map<int,particle>> myParticles1;
+    std::shared_ptr<std::map<int,particle>> myParticles;
     std::shared_ptr<std::map<std::string,std::vector<particle>>> myParticlesPacks;
     double myFinalTime;
     double myTimeStep;
@@ -116,9 +115,7 @@ private:
 
 private:
 
-    bool loadTimeInfo(ifstream &inputFileStream);
-    bool setUpDomainMesh(opencascade::handle<Ng_MeshVS_DataSource3D> volumeMesh);
-    int loadParticles(ifstream &inputFileStream);
+    bool setUpDomainMesh(const opencascade::handle<Ng_MeshVS_DataSource3D> &volumeMesh);
 
 public:
 

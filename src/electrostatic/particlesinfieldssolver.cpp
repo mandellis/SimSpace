@@ -52,7 +52,6 @@ bool readParticlesFile(const std::string &filePath, int *count, char *name, std:
         fscanf(fp,"%lf%lf%lf%lf%lf%lf%lf%lf%lf",&x,&y,&z,&vx,&vy,&vz,&m,&q,&r);
         particles->push_back(particle(x,y,z,vx,vy,vz,m,q,r));
         (*count)++;
-        cout<<"____"<<*count<<"____"<<endl;
     }
     fclose(fp);
     return true;
@@ -225,7 +224,9 @@ bool particlesInFieldsSolver::writeInputFile(simulationDataBase *sDB, QStandardI
     }
 
     //cout<<"____"<<NbParticlesPacks<<"____"<<endl;
-    //exit(1);
+
+
+
 
     //! -----------------------------
     //! write the number of emitters
@@ -830,7 +831,6 @@ bool particlesInFieldsSolver::readInputFile(const std::string &inputFilePath,
     return true;
 }
 
-
 //! -------------------------------------------------
 //! function: tetVol
 //! details:  return the determinant of a 4x4 matrix
@@ -868,7 +868,6 @@ particlesInFieldsSolver::particlesInFieldsSolver(const string &inputFilePath)
     //! - initialize AABB tree for point location
     //! - allocate space for density distribution and reset distribution
     //! - allocate the space for the electric field
-    //! - init the number of particles to zero
     //! - mass matrix and its inverse
     //! - gradient operator
     //! -----------------------------------------------------------------
@@ -877,6 +876,9 @@ particlesInFieldsSolver::particlesInFieldsSolver(const string &inputFilePath)
     //! --------------------------
     //! create the Poisson solver
     //! --------------------------
+    cout<<"@ -------------------------------------------"<<endl;
+    cout<<"@ - CREATING THE FIELD SOLVER                "<<endl;
+    cout<<"@ -------------------------------------------"<<endl;
     myPoissonSolver = std::make_shared<PoissonSolver>(volumeMesh);
     myPoissonSolver->definePatches(allFacesMeshDS);
     myPoissonSolver->initPotentialOnBoundary(0.0);
@@ -884,18 +886,26 @@ particlesInFieldsSolver::particlesInFieldsSolver(const string &inputFilePath)
     //! --------------------
     //! set up the emitters
     //! --------------------
+    cout<<"@ -------------------------------------------"<<endl;
+    cout<<"@ - CREATING THE EMITTERS                    "<<endl;
+    cout<<"@ -------------------------------------------"<<endl;
     for(int i=0; i<vecEmitters.size(); i++) myEmitters.push_back(vecEmitters[i]);
 
+    cout<<"@ - NUMBER OF EMITTERS: "<<myEmitters.size()<<endl;
 
-    myParticlesPacks = std::make_shared<std::map<std::string,std::vector<particle>>>(particlesPacks);
-
+    cout<<"@ -------------------------------------------"<<endl;
+    cout<<"@ - LOADING THE PARTICLES                    "<<endl;
+    cout<<"@ -------------------------------------------"<<endl;
     int particlesNb = 0;
     std::map<int,particle> indexedMapOfParticles;
+    unsigned int pp = 0;
     for(std::map<std::string,std::vector<particle>>::iterator it = particlesPacks.begin(); it!=particlesPacks.end(); it++)
     {
         std::pair<std::string,std::vector<particle>> apair = *it;
         std::string name = apair.first;
         std::vector<particle> vecParticles = apair.second;
+
+        cout<<"@ - LOADING PARTICLES PACK NR. "<< ++pp<<" \""<<name<<"\""<<endl;
 
         for(std::vector<particle>::iterator it1 = vecParticles.begin(); it1!=vecParticles.end(); it1++)
         {
@@ -912,7 +922,8 @@ particlesInFieldsSolver::particlesInFieldsSolver(const string &inputFilePath)
     //! init the number of particles and the particles map
     //! ---------------------------------------------------
     myNbParticles = particlesNb;
-    myParticles1 = std::make_shared<std::map<int,particle>>(indexedMapOfParticles);
+    myParticles = std::make_shared<std::map<int,particle>>(indexedMapOfParticles);
+    cout<<"@ - INITIAL NUMBER OF PARTICLES: "<<myNbParticles<<endl;
 }
 
 //! ----------------------
@@ -1054,25 +1065,29 @@ bool particlesInFieldsSolver::init(QStandardItem* simulationRoot)
 //! --------------
 void particlesInFieldsSolver::run()
 {
+    cout<<endl<<endl;
     cout<<"@ -------------------------------------"<<endl;
     cout<<"@ Simulation started @ time "<<this->getTimeStamp()<<endl;
     cout<<"@ -------------------------------------"<<endl;
 
-    //! -----------------------------------------------------
-    //! init the simulation time and the number of particles
-    //! -----------------------------------------------------
-    //myNbParticles = 0;
+    //! -----------
+    //! start loop
+    //! -----------
     double time = -myTimeStep;
+    int stepNr = 0;
     for(;;)
     {
-        if(time>myFinalTime)
+        if(time>=myFinalTime)
         {
             cout<<"@ -------------------------------"<<endl;
             cout<<"@ Simulation ended @ time "<<this->getTimeStamp()<<endl;
             cout<<"@ -------------------------------"<<endl;
+            break;
         }
-        break;
+
         time += myTimeStep;
+        stepNr++;
+        cout<<"@ SOLVING MODEL - STEP N. "<<stepNr<<" - TIME: "<<time<<endl;
 
         //! ---------------------------------------
         //! load the particles at the current time
@@ -1084,20 +1099,19 @@ void particlesInFieldsSolver::run()
             anEmitter.generateParticles(newParticles,time);
             for(int n=0; n<newParticles.size(); n++)
             {
-                myNbParticles++;
                 particle aParticle = newParticles[n];
-                //std::shared_ptr<particle> aParticle(new particle(aP));
                 std::pair<int,particle> apair;
                 apair.first= myNbParticles;
                 apair.second = aParticle;
-                myParticles1->insert(apair);
+                myParticles->insert(apair);
+                myNbParticles++;
             }
         }
 
         //! -------------------------
         //! compute density at nodes
         //! -------------------------
-        this->computeChargeDensityAtNodes();
+        //this->computeChargeDensityAtNodes();
 
         //! --------------------------------
         //! compute electrostatic potential
@@ -1108,12 +1122,10 @@ void particlesInFieldsSolver::run()
         //! compute electric field at particles position
         //! ---------------------------------------------
 
-
         //! ---------------
         //! move particles
         //! ---------------
-        this->moveParticles();
-
+        //this->moveParticles();
     }
 }
 
@@ -1133,7 +1145,7 @@ void particlesInFieldsSolver::computeChargeDensityAtNodes()
     //this->initChargeDensityAtNodes(0.0);
 
     Eigen::MatrixXd Q(1,3);
-    for(std::map<int,particle>::iterator it = myParticles1->begin(); it!= myParticles1->end(); it++)
+    for(std::map<int,particle>::iterator it = myParticles->begin(); it!= myParticles->end(); it++)
     {
         std::pair<int,particle> apair = *it;
         particle aParticle = apair.second;
@@ -1197,7 +1209,7 @@ void particlesInFieldsSolver::computeChargeDensityAtNodes()
 //! ------------------------
 void particlesInFieldsSolver::moveParticles()
 {
-    for(std::map<int,particle>::iterator it = myParticles1->begin(); it!= myParticles1->end(); it++)
+    for(std::map<int,particle>::iterator it = myParticles->begin(); it!= myParticles->end(); it++)
     {
         std::pair<int,particle> apair = *it;
         double x = apair.second.x[0];
@@ -1211,7 +1223,6 @@ void particlesInFieldsSolver::moveParticles()
         //! ------------
         //! Runge-Kutta
         //! ------------
-
     }
 }
 
@@ -1270,53 +1281,38 @@ std::string particlesInFieldsSolver::getTimeStamp()
     return timeStamp;
 }
 
-//! -----------------------
-//! function: loadTimeInfo
-//! details:
-//! -----------------------
-bool particlesInFieldsSolver::loadTimeInfo(ifstream &inputFileStream)
-{
-    std::string val;
-
-    //! header
-    std::getline(inputFileStream,val);
-    if(strcmp(val.c_str(),"Final time")!=0) return false;
-
-    //! final simulation time
-    inputFileStream>>myFinalTime;
-
-    //! header
-    std::getline(inputFileStream,val);
-    if(strcmp(val.c_str(),"Time step")!=0) return false;
-
-    //! time step size
-    inputFileStream>>myTimeStep;
-
-    return true;
-}
-
 //! --------------------------
 //! function: setUpDomainMesh
 //! details:
 //! --------------------------
-bool particlesInFieldsSolver::setUpDomainMesh(occHandle(Ng_MeshVS_DataSource3D) volumeMesh)
+bool particlesInFieldsSolver::setUpDomainMesh(const occHandle(Ng_MeshVS_DataSource3D) &volumeMesh)
 {
+    cout<<"@ -------------------------------------------"<<endl;
+    cout<<"@ - SETTING UP DOMAIN MESH                   "<<endl;
+    cout<<"@ -------------------------------------------"<<endl;
+
     //! ------------------------
     //! setup mesh: mesh points
     //! ------------------------
     int NbPoints = volumeMesh->GetAllNodes().Extent();
+    //cout<<"____number of points: "<<NbPoints<<"____"<<endl;
     V.resize(NbPoints,3);
     for(int row=1; row<=NbPoints; row++)
     {
         const std::vector<double> &P = volumeMesh->getNodeCoordinates(row);
-        for(int col=1; col<=3; col++) V(row-1,col-1) = P[col];
+        for(int col=1; col<=3; col++)
+            V(row-1,col-1) = P[col-1];
     }
+
+    cout<<"@ - INPUT VERTICES COORDINATES               "<<endl;
+    cout<< V <<endl;
 
     //! --------------
     //! mesh elements
     //! --------------
     int NbElements = volumeMesh->GetAllElements().Extent();
     T.resize(NbElements,4);
+    myVolumes.resize(NbElements);
     int NbNodes = -1, buf[4];
     TColStd_Array1OfInteger nodeIDs(*buf,1,4);
     TColStd_IndexedMapOfInteger nodesMap = volumeMesh->myNodesMap;
@@ -1339,9 +1335,14 @@ bool particlesInFieldsSolver::setUpDomainMesh(occHandle(Ng_MeshVS_DataSource3D) 
         myVolumes(row) = tetVol(P0.data(),P1.data(),P2.data(),P3.data());
     }
 
+    cout<<"@ - MESH ELEMENTS                            "<<endl;
+    cout<< T <<endl;
+
     //! ----------------------------------------
     //! initialize AABB tree for point location
     //! ----------------------------------------
+    cout<<"@ SETTING UP THE AABB TREE FOR POINT SEARCH  "<<endl;
+
     mySearchTree.init(V,T);
 
     //! ----------------------------------------
@@ -1357,45 +1358,23 @@ bool particlesInFieldsSolver::setUpDomainMesh(occHandle(Ng_MeshVS_DataSource3D) 
     myElectricField.resize(V.rows(),3);
     for(int i=0; i<V.rows(); i++) myElectricField(i,0) = myElectricField(i,1) = myElectricField(i,2) = 0.0;
 
-    //! -----------------------------
-    //! init the number of particles
-    //! -----------------------------
-    myNbParticles = 0;
-
     //! ----------------------------
     //! mass matrix and its inverse
     //! ----------------------------
+    cout<<"@ SETTING UP THE MASS MATRIX                 "<<endl;
     igl::massmatrix(V,T,igl::MASSMATRIX_TYPE_BARYCENTRIC, M);
+
+    cout<<"@ SETTING UP THE MASS MATRIX INVERSE         "<<endl;
     igl::invert_diag(M,Minv);
 
     //! ------------------
     //! gradient operator
     //! ------------------
+    cout<<"@ COMPUTING THE GRADIENT OPERATOR            "<<endl;
     igl::grad(V,T,G);
 
+    cout<<"@ -------------------------------------------"<<endl;
+    cout<<"@ - SETTING UP DOMAIN MESH DONE              "<<endl;
+    cout<<"@ -------------------------------------------"<<endl;
     return true;
-}
-
-//! -----------------------
-//! function: loadParticle
-//! details:
-//! -----------------------
-int particlesInFieldsSolver::loadParticles(ifstream &inputFileStream)
-{
-    int N;
-    inputFileStream>>N;
-    for(int n=1; n<=N; n++)
-    {
-        double x,y,z,vx,vy,vz,m,q,r;
-        std::string val;
-        std::getline(inputFileStream,val);
-        sscanf(val.c_str(),"%lf%lf%lf%lf%lf%lf%lf%lf%lf",&x,&y,&z,&vx,&vy,&vz,&m,&q,&r);
-        particle aParticle(x,y,z,vx,vy,m,q,r);
-        std::pair<int,particle> apair;
-        apair.first = 1;
-        apair.second = aParticle;
-        myParticles1->insert(apair);
-    }
-    myNbParticles++;
-    return N;
 }

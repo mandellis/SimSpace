@@ -517,7 +517,7 @@ QString CustomTableModel::getHeaderString(int section) const
     case Property::loadType_Bx: horizontalHeaderString = "Bx"; break;
     case Property::loadType_By: horizontalHeaderString = "By"; break;
     case Property::loadType_Bz: horizontalHeaderString = "Bz"; break;
-    case Property::loadType_electrostaticPotentialMagnitude: horizontalHeaderString = "E"; break;
+    case Property::loadType_electrostaticPotentialMagnitude: horizontalHeaderString = "Voltage"; break;
     case Property::loadType_temperatureMagnitude: horizontalHeaderString = "T"; break;
     case Property::loadType_thermalConvectionFilmCoefficientMagnitude: horizontalHeaderString = "Film coeff"; break;
     case Property::loadType_thermalConvectionReferenceTemperatureMagnitude: horizontalHeaderString = "Ref temperature"; break;
