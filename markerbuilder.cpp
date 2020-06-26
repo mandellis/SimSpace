@@ -142,6 +142,7 @@ bool markerBuilder::addMarker(SimulationNodeClass *node, geometryDataBase *gDB)
             const TopoDS_Shape &curShape = gDB->bodyMap.value(loc.parentShapeNr);
             theBuilder.Add(compound,curShape);
         }
+
         gp_Pnt CM = GeomToolsClass::getCenterOfMass(compound);
         //cout<<"____CM ("<<CM.X()<<", "<<CM.Y()<<", "<<CM.Z()<<")____"<<endl;
 
@@ -156,6 +157,7 @@ bool markerBuilder::addMarker(SimulationNodeClass *node, geometryDataBase *gDB)
         SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
         QTreeView *theTree = sm->myTreeView;
         QList<int> tableColumns = mainTreeTools::getColumnsToRead(theTree);
+
         SimulationNodeClass *nodeAnalysisSetting = sm->getAnalysisSettingsNodeFromCurrentItem();
         CustomTableModel *tabModel = nodeAnalysisSetting->getTabularDataModel();
         Property::defineBy defineBy = node->getPropertyValue<Property::defineBy>("Define by");
@@ -174,6 +176,8 @@ bool markerBuilder::addMarker(SimulationNodeClass *node, geometryDataBase *gDB)
             {
             case SimulationNodeClass::nodeType_coordinateSystem_global:
             {
+                cout<<"____"<<nodeCS->getName().toStdString()<<"____1____"<<endl;
+
                 QVector<double> XAxisData = nodeCS->getPropertyValue<QVector<double>>("X axis data");
                 QVector<double> YAxisData = nodeCS->getPropertyValue<QVector<double>>("Y axis data");
                 QVector<double> ZAxisData = nodeCS->getPropertyValue<QVector<double>>("Z axis data");
@@ -181,21 +185,31 @@ bool markerBuilder::addMarker(SimulationNodeClass *node, geometryDataBase *gDB)
                 directionalData.push_back(XAxisData);
                 directionalData.push_back(YAxisData);
                 directionalData.push_back(ZAxisData);
-             }
+            }
                 break;
 
             case SimulationNodeClass::nodeType_coordinateSystem:
+            {
+                cout<<"____"<<nodeCS->getName().toStdString()<<"____2____"<<endl;
+
+                if(nodeCS->getPropertyItem("Base directional data")==NULL) exit(1);
                 directionalData = nodeCS->getPropertyValue<QVector<QVector<double>>>("Base directional data");
+            }
                 break;
             }
+
+            cout<<"____tag014____"<<endl;
 
             double Xcomp_local = tabModel->dataRC(curStepNumber,tableColumns.at(0),Qt::EditRole).toDouble();
             double Ycomp_local = tabModel->dataRC(curStepNumber,tableColumns.at(1),Qt::EditRole).toDouble();
             double Zcomp_local = tabModel->dataRC(curStepNumber,tableColumns.at(2),Qt::EditRole).toDouble();
+            cout<<"____tag015____"<<endl;
 
             double Xcomp = Xcomp_local*directionalData.at(0).at(0)+Ycomp_local*directionalData.at(1).at(0)+Zcomp_local*directionalData.at(2).at(0);
             double Ycomp = Xcomp_local*directionalData.at(0).at(1)+Ycomp_local*directionalData.at(1).at(1)+Zcomp_local*directionalData.at(2).at(1);
             double Zcomp = Xcomp_local*directionalData.at(0).at(2)+Ycomp_local*directionalData.at(1).at(2)+Zcomp_local*directionalData.at(2).at(2);
+
+            cout<<"____tag016____"<<endl;
 
             //! ---------------------------------------------
             //! check if the acceleration module is not zero
@@ -207,6 +221,8 @@ bool markerBuilder::addMarker(SimulationNodeClass *node, geometryDataBase *gDB)
             }
             gp_Vec v(Xcomp,Ycomp,Zcomp);
             dir = gp_Dir(v);
+            cout<<"____tag017____"<<endl;
+
         }
             break;
 

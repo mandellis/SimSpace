@@ -3165,6 +3165,7 @@ void DetailViewer::handleDefineByChanged()
     //! block the node signals
     //! -----------------------
     myCurNode->getModel()->blockSignals(true);
+    //this->connectToSimulationManager(false);
 
     //! --------------------------------------------------------------
     //! additional switches are added/removed here, while the changes
@@ -3323,6 +3324,7 @@ void DetailViewer::handleDefineByChanged()
     //! unlock the node signals
     //! ------------------------
     myCurNode->getModel()->blockSignals(false);
+    //this->connectToSimulationManager(false);
 
     emit requestHandleTabularData();
 }

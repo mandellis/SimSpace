@@ -96,10 +96,10 @@ SimulationNodeClass::SimulationNodeClass(const QString &aName, const nodeType &a
     old_direction.push_back(1); old_direction.push_back(0); old_direction.push_back(0);
 }
 
-//!---------------------------------
-//! function: create the node model
+//!---------------------------
+//! function: createNodeModel
 //! details:
-//! --------------------------------
+//! --------------------------
 void SimulationNodeClass::createNodeModel()
 {
     //cout<<"SimulationNodeClass::createNodeModel()->____function called____"<<endl;
@@ -649,7 +649,7 @@ QExtendedStandardItem* SimulationNodeClass::getPropertyItem(const QString &prope
             }
         }
     }
-    cout<<"SimulationNodeClass::getPropertyItem()->____Property key name \""<<propertyName.toStdString()<<"\" NOT found____"<<endl;
+    //cout<<"SimulationNodeClass::getPropertyItem()->____Property key name \""<<propertyName.toStdString()<<"\" NOT found____"<<endl;
     return Q_NULLPTR;
 }
 

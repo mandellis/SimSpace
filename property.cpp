@@ -460,7 +460,16 @@ void Property::writeProperty(ofstream& out, const Property &prop)
         {
             cout<<"* PROPERTY DEFINED THROUGH \"DOUBLE VECTOR\""<<endl;
             QVector<QVector<double>> tensor2 = prop.getData().value<QVector<QVector<double>>>();
-            tools::writeTensor2<QVector<QVector<double>>>(tensor2,out);
+            //exit(1); //cesere
+            //tools::writeTensor2<QVector<QVector<double>>>(tensor2,out);
+            for(QVector<QVector<double>>::iterator it = tensor2.begin(); it!=tensor2.end(); it++)
+            {
+                const QVector<double> &vec = *it;
+                for(QVector<double>::const_iterator itt = vec.begin(); itt!=vec.end(); itt++)
+                {
+                    out<<*itt<<endl;
+                }
+            }
         }
         else if(prop.getData().canConvert<QVector<GeometryTag>>())
         {
@@ -805,9 +814,24 @@ void Property::readProperty(ifstream &in, Property &prop)
     }
     else if(propKeyName =="Base directional data")
     {
-        QVector<QVector<double>> tensor2 = tools::readTensor2<double>(in);
+        QVector<QVector<double>> tensor2;
+        for(int i=0; i<3; i++)
+        {
+            QVector<double> vec;
+            for(int j=0; j<3; j++)
+            {
+                double val;
+                in>>val;
+                vec.push_back(val);
+            }
+            tensor2.push_back(vec);
+        }
         data.setValue(tensor2);
         prop.setData(data);
+
+        //QVector<QVector<double>> tensor2 = tools::readTensor2<double>(in);
+        //data.setValue(tensor2);
+        //prop.setData(data);
     }
     else if(propKeyName=="Tags" || propKeyName =="Tags slave"
             || propKeyName =="Tags master" || propKeyName =="Boundary tags")
@@ -902,12 +926,12 @@ QMap<QString,QString> Property::propertyMap()
     myPropertyMap.insert("Z component","Property::loadDefinition");
     myPropertyMap.insert("Film coefficient","Property::loadDefinition");
     myPropertyMap.insert("Reference temperature","Property::loadDefinition");
-    myPropertyMap.insert("Offset X","Property::typeOfTransformation");
-    myPropertyMap.insert("Offset Y","Property::typeOfTransformation");
-    myPropertyMap.insert("Offset Z","Property::typeOfTransformation");
-    myPropertyMap.insert("Rotation X","Property::typeOfTransformation");
-    myPropertyMap.insert("Rotation Y","Property::typeOfTransformation");
-    myPropertyMap.insert("Rotation Z","Property::typeOfTransformation");
+    //myPropertyMap.insert("Offset X","Property::typeOfTransformation");
+    //myPropertyMap.insert("Offset Y","Property::typeOfTransformation");
+    //myPropertyMap.insert("Offset Z","Property::typeOfTransformation");
+    //myPropertyMap.insert("Rotation X","Property::typeOfTransformation");
+    //myPropertyMap.insert("Rotation Y","Property::typeOfTransformation");
+    //myPropertyMap.insert("Rotation Z","Property::typeOfTransformation");
     myPropertyMap.insert("Analysis type","Property::analysisType");
     myPropertyMap.insert("Static/Transient","Property::timeIntegration");
     return myPropertyMap;
