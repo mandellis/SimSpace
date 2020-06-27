@@ -944,26 +944,22 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 emit requestSetWorkingMode(2);
                 this->changeColor();
 
-                cout<<"____tag00____"<<endl;
                 //! --------------
                 //! set the model
                 //! --------------
                 QModelIndex index_analysisSettings = this->getAnalysisSettingsItemFromCurrentItem()->index();
                 emit requestTabularData(index_analysisSettings);
-                cout<<"____tag01____"<<endl;
 
                 //! ---------------------------------------------------------------------
                 //! show the first row with Time = 0, apart from the item "Model change"
                 //! ---------------------------------------------------------------------
                 if(theNodeType==SimulationNodeClass::nodeType_modelChange) emit requestHideFirstRow();
                 else emit requestShowFirstRow();
-                cout<<"____tag02____"<<endl;
 
                 //! -----------------------------------------------------------
                 //! calculate the number of columns to show => in the table <=
                 //! -----------------------------------------------------------
                 QList<int> columnsToShow = this->calculateColumnsToShow(/*theNode*/);
-                cout<<"____tag03____"<<endl;
 
                 //QList<int> columnsToShow = mainTreeTools::getColumnsToRead(myTreeView);
                 if(columnsToShow.length()>=2)
@@ -978,13 +974,9 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                     CustomTableModel *tabData = index_analysisSettings.data(Qt::UserRole).value<SimulationNodeClass*>()->getTabularDataModel();
                     emit requestShowGraph(tabData,columnsToShow);
                 }
-                cout<<"____tag04____"<<endl;
 
-                bool isDone = markerBuilder::addMarker(this->getCurrentNode(), mySimulationDataBase);
-                cout<<"____tag05____"<<endl;
-
-                if(isDone == true) this->displayMarker();
-                cout<<"____tag06____"<<endl;
+                //bool isDone = markerBuilder::addMarker(this->getCurrentNode(), mySimulationDataBase);
+                //if(isDone == true) this->displayMarker();
             }
                 break;
 
@@ -2893,7 +2885,7 @@ void SimulationManager::createSimulationNode(SimulationNodeClass::nodeType type,
         }
     }
     //! ---------------------------------
-    //! HANDLING COORDINATE SYSTEM NODES
+    //! HANDLING COORDINATE SYSTEM ITEMS
     //! ---------------------------------
     else if(type==SimulationNodeClass::nodeType_coordinateSystem)
     {
@@ -3235,8 +3227,8 @@ void SimulationManager::createSimulationNode(SimulationNodeClass::nodeType type,
         }
             break;
         }
-
-        markerBuilder::addMarker(this->getCurrentNode(),mySimulationDataBase);
+        //markerBuilder::addMarker(aNode,mySimulationDataBase);
+        //markerBuilder::addMarker(this->getCurrentNode(),mySimulationDataBase); //cesere
         mainTreeTools::getCurrentSimulationRoot(myTreeView)->insertRow(this->getInsertionRow(),item);
     }
     //! --------------------------

@@ -171,13 +171,14 @@ bool markerBuilder::addMarker(SimulationNodeClass *node, geometryDataBase *gDB)
 
             QStandardItem *itemCS = static_cast<QStandardItem*>(CS);
             SimulationNodeClass *nodeCS = itemCS->data(Qt::UserRole).value<SimulationNodeClass*>();
+            cout<<"____"<<nodeCS->getName().toStdString()<<"____"<<endl;
+            cout<<"____"<<nodeCS->type().toStdString()<<"____"<<endl;
+            cout<<nodeCS->getType()<<endl;
             QVector<QVector<double>> directionalData;
             switch(nodeCS->getType())
             {
             case SimulationNodeClass::nodeType_coordinateSystem_global:
             {
-                cout<<"____"<<nodeCS->getName().toStdString()<<"____1____"<<endl;
-
                 QVector<double> XAxisData = nodeCS->getPropertyValue<QVector<double>>("X axis data");
                 QVector<double> YAxisData = nodeCS->getPropertyValue<QVector<double>>("Y axis data");
                 QVector<double> ZAxisData = nodeCS->getPropertyValue<QVector<double>>("Z axis data");
@@ -185,13 +186,14 @@ bool markerBuilder::addMarker(SimulationNodeClass *node, geometryDataBase *gDB)
                 directionalData.push_back(XAxisData);
                 directionalData.push_back(YAxisData);
                 directionalData.push_back(ZAxisData);
+                cout<<XAxisData.at(0)<<" "<<XAxisData.at(1)<<" "<<XAxisData.at(2)<<endl;
+                cout<<YAxisData.at(0)<<" "<<YAxisData.at(1)<<" "<<YAxisData.at(2)<<endl;
+                cout<<ZAxisData.at(0)<<" "<<ZAxisData.at(1)<<" "<<ZAxisData.at(2)<<endl;
             }
                 break;
 
             case SimulationNodeClass::nodeType_coordinateSystem:
             {
-                cout<<"____"<<nodeCS->getName().toStdString()<<"____2____"<<endl;
-
                 if(nodeCS->getPropertyItem("Base directional data")==NULL) exit(1);
                 directionalData = nodeCS->getPropertyValue<QVector<QVector<double>>>("Base directional data");
             }
