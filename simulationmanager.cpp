@@ -975,8 +975,8 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                     emit requestShowGraph(tabData,columnsToShow);
                 }
 
-                //bool isDone = markerBuilder::addMarker(this->getCurrentNode(), mySimulationDataBase);
-                //if(isDone == true) this->displayMarker();
+                bool isDone = markerBuilder::addMarker(this->getCurrentNode(), mySimulationDataBase);
+                if(isDone == true) this->displayMarker();
             }
                 break;
 
@@ -1009,7 +1009,6 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 requestClearGraph();
 
                 bool isDone = markerBuilder::addMarker(this->getCurrentNode(), mySimulationDataBase);
-
                 if(isDone == true) this->displayMarker();
             }
                 break;
@@ -3227,8 +3226,8 @@ void SimulationManager::createSimulationNode(SimulationNodeClass::nodeType type,
         }
             break;
         }
-        //markerBuilder::addMarker(aNode,mySimulationDataBase);
-        //markerBuilder::addMarker(this->getCurrentNode(),mySimulationDataBase); //cesere
+        markerBuilder::addMarker(aNode,mySimulationDataBase);
+        markerBuilder::addMarker(this->getCurrentNode(),mySimulationDataBase);
         mainTreeTools::getCurrentSimulationRoot(myTreeView)->insertRow(this->getInsertionRow(),item);
     }
     //! --------------------------

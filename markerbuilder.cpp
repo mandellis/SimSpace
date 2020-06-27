@@ -40,6 +40,7 @@ bool markerBuilder::addMarker(SimulationNodeClass *node, geometryDataBase *gDB)
     SimulationNodeClass::nodeType nodeType = node->getType();
     switch(nodeType)
     {
+    /*
     case SimulationNodeClass::nodeType_structuralAnalysisBoltPretension:
     {
         //! -------------------------------------------
@@ -144,7 +145,6 @@ bool markerBuilder::addMarker(SimulationNodeClass *node, geometryDataBase *gDB)
         }
 
         gp_Pnt CM = GeomToolsClass::getCenterOfMass(compound);
-        //cout<<"____CM ("<<CM.X()<<", "<<CM.Y()<<", "<<CM.Z()<<")____"<<endl;
 
         //! -------------------------------------------
         //! retrieve the direction of the acceleration
@@ -200,18 +200,13 @@ bool markerBuilder::addMarker(SimulationNodeClass *node, geometryDataBase *gDB)
                 break;
             }
 
-            cout<<"____tag014____"<<endl;
-
             double Xcomp_local = tabModel->dataRC(curStepNumber,tableColumns.at(0),Qt::EditRole).toDouble();
             double Ycomp_local = tabModel->dataRC(curStepNumber,tableColumns.at(1),Qt::EditRole).toDouble();
             double Zcomp_local = tabModel->dataRC(curStepNumber,tableColumns.at(2),Qt::EditRole).toDouble();
-            cout<<"____tag015____"<<endl;
 
             double Xcomp = Xcomp_local*directionalData.at(0).at(0)+Ycomp_local*directionalData.at(1).at(0)+Zcomp_local*directionalData.at(2).at(0);
             double Ycomp = Xcomp_local*directionalData.at(0).at(1)+Ycomp_local*directionalData.at(1).at(1)+Zcomp_local*directionalData.at(2).at(1);
             double Zcomp = Xcomp_local*directionalData.at(0).at(2)+Ycomp_local*directionalData.at(1).at(2)+Zcomp_local*directionalData.at(2).at(2);
-
-            cout<<"____tag016____"<<endl;
 
             //! ---------------------------------------------
             //! check if the acceleration module is not zero
@@ -223,8 +218,6 @@ bool markerBuilder::addMarker(SimulationNodeClass *node, geometryDataBase *gDB)
             }
             gp_Vec v(Xcomp,Ycomp,Zcomp);
             dir = gp_Dir(v);
-            cout<<"____tag017____"<<endl;
-
         }
             break;
 
@@ -431,7 +424,7 @@ bool markerBuilder::addMarker(SimulationNodeClass *node, geometryDataBase *gDB)
         else node->replaceProperty("Graphic object",prop_marker);
     }
         break;
-
+*/
         //! -----------
         //! Point mass
         //! -----------
