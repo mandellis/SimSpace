@@ -790,7 +790,7 @@ void Property::readProperty(ifstream &in, Property &prop)
         cout<<"- value: "<<prop.getPropertyValue(enumName).toStdString()<<endl;
     }
     else if(propKeyName == "X axis data" || propKeyName == "Y axis data" || propKeyName == "Z axis data" ||
-            propKeyName == "Base origin" || propKeyName =="Direction")
+            propKeyName == "Base origin" || propKeyName =="Direction" || propKeyName =="Reference point")
     {
         QVector<double> vec = tools::readQVector<double>(in);
         data.setValue(vec);
@@ -901,12 +901,12 @@ QMap<QString,QString> Property::propertyMap()
     myPropertyMap.insert("Z component","Property::loadDefinition");
     myPropertyMap.insert("Film coefficient","Property::loadDefinition");
     myPropertyMap.insert("Reference temperature","Property::loadDefinition");
-    myPropertyMap.insert("Offset X","Property::typeOfTransformation");
-    myPropertyMap.insert("Offset Y","Property::typeOfTransformation");
-    myPropertyMap.insert("Offset Z","Property::typeOfTransformation");
-    myPropertyMap.insert("Rotation X","Property::typeOfTransformation");
-    myPropertyMap.insert("Rotation Y","Property::typeOfTransformation");
-    myPropertyMap.insert("Rotation Z","Property::typeOfTransformation");
+    //myPropertyMap.insert("Offset X","Property::typeOfTransformation");
+    //myPropertyMap.insert("Offset Y","Property::typeOfTransformation");
+    //myPropertyMap.insert("Offset Z","Property::typeOfTransformation");
+    //myPropertyMap.insert("Rotation X","Property::typeOfTransformation");
+    //myPropertyMap.insert("Rotation Y","Property::typeOfTransformation");
+    //myPropertyMap.insert("Rotation Z","Property::typeOfTransformation");
     myPropertyMap.insert("Analysis type","Property::analysisType");
     myPropertyMap.insert("Static/Transient","Property::timeIntegration");
     return myPropertyMap;
@@ -958,11 +958,6 @@ void Property::writeVoid(ofstream& outFile, void *p)
         for(int k=0; k<vecItem.size(); k++)
         {
             const Property &curProperty = vecItem.at(k)->data(Qt::UserRole).value<Property>();
-            //if(curProperty.getData().canConvert<postObject>())
-            //{
-            //    curProperty.getData().value<postObject>().write(outFile);
-            //    continue;
-            //}
             Property::writeProperty(outFile,curProperty);
         }
     }

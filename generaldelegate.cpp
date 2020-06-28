@@ -1983,7 +1983,10 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
         else if((propertyName =="Origin X" || propertyName =="Origin Y" || propertyName =="Origin Z") &&
                 (index.model()->parent(index).child(0,1)).data(Qt::UserRole).value<Property>().getData().value<Property::defineBy>()==Property::defineBy_globalCoordinates)
         {
-            //! return the editor for the coordinates of the origin only if "Define by" is "Global coordinates"
+            //! ----------------------------------------------------
+            //! return the editor for the coordinates of the origin
+            //! only if "Define by" is "Global coordinates"
+            //! ----------------------------------------------------
             QLineEdit *editor = new QLineEdit(parent);
             QDoubleValidator *doubleValidator = new QDoubleValidator();
             editor->setValidator(doubleValidator);

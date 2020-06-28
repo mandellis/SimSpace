@@ -136,7 +136,7 @@ void SimulationNodeClass::createNodeModel()
             //! this must be done here, since when reloading from disk a duplicated "Direction"
             //! and a duplicated "Magnitude" would be created
             //! --------------------------------------------------------------------------------
-            if(this->getPropertyItem("Direction")==Q_NULLPTR)
+            if(this->getPropertyItem("Direction")==Q_NULLPTR && myNodeType != SimulationNodeClass::nodeType_structuralAnalysisBoltPretension)
             {
                 //! ----------------------------------------------------------
                 //! The direction is identified by the three cosines
@@ -158,7 +158,7 @@ void SimulationNodeClass::createNodeModel()
                 this->addProperty(property_Direction);
             }
 
-            if(this->getPropertyItem("Magnitude")==Q_NULLPTR)
+            if(this->getPropertyItem("Magnitude")==Q_NULLPTR && myNodeType != SimulationNodeClass::nodeType_structuralAnalysisBoltPretension)
             {
                 //!cout<<"SimulationNodeClass::createNodeModel()->____adding 'Magnitude' for a 'Define by vector'____"<<endl;
                 Property::loadDefinition theLoadDefinition;

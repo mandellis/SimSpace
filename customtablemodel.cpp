@@ -57,25 +57,22 @@ CustomTableModel::CustomTableModel(const QVector<load> &vecLoads, bool addFirstR
 //! -------------------------------------
 void CustomTableModel::autoUpdateTable(QModelIndex topLeftIndex, QModelIndex /*bottomRightIndex*/)
 {
-    //cout<<"CustomTableModel::autoUpdateTable()->____function called____"<<endl;
     cout<<"CustomTableModel::autoUpdateTable()->____function called. Row: "<<topLeftIndex.row()<<" column: "<<topLeftIndex.column()<<"____"<<endl;
-
     if(strcmp(topLeftIndex.data(Qt::EditRole).typeName(),"Property::boltStatusDefinedBy")==0)
-    //if(strcmp(topLeftIndex.data(Qt::EditRole).typeName(),"Property::defineBy")==0)
     {
 
         Property::boltStatusDefinedBy boltStatusDefineBy = topLeftIndex.data(Qt::EditRole).value<Property::boltStatusDefinedBy>();
-        //Property::defineBy boltStatusDefineBy = topLeftIndex.data(Qt::EditRole).value<Property::defineBy>();
         QVariant value;
         int currentRow = topLeftIndex.row();
         int loadColumn = topLeftIndex.column()+1;
         int adjustmentColumn = topLeftIndex.column()+2;
+
         cerr<<"CustomTableModel::autoUpdateTable()->____{"<<topLeftIndex.column()<<", "<<loadColumn<<", "<<adjustmentColumn<<"}____"<<endl;
+
         QModelIndex indexAdjustment = this->createIndex(currentRow,adjustmentColumn);
 
         switch(boltStatusDefineBy)
         {
-        //case Property::defineBy_load:
         case Property::boltStatusDefinedBy_load:
         {
             cerr<<"CustomTableModel::autoUpdateTable()->____disabling adjustment, enablig load____"<<endl;
@@ -96,7 +93,6 @@ void CustomTableModel::autoUpdateTable(QModelIndex topLeftIndex, QModelIndex /*b
             break;
 
         case Property::boltStatusDefinedBy_adjustment:
-        //case Property::defineBy_adjustment:
         {
             cerr<<"CustomTableModel::autoUpdateTable()->____disabling load, enabling adjustment____"<<endl;
             //! -----------------------
@@ -117,8 +113,6 @@ void CustomTableModel::autoUpdateTable(QModelIndex topLeftIndex, QModelIndex /*b
 
         case Property::boltStatusDefinedBy_open:
         case Property::boltStatusDefinedBy_lock:
-        //case Property::defineBy_open:
-        //case Property::defineBy_lock:
         {
             cerr<<"CustomTableModel::autoUpdateTable()->____disabling load and adjustment____"<<endl;
             //! ----------------------------------

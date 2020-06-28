@@ -86,7 +86,7 @@ public:
     }
 
     //! hide item
-    void hideRow(const QString &propertyName, bool isHidden=true);
+    void setPropertyVisible(const QString &propertyName, bool isVisible=true);
 
     //! expand separator
     void expandSeparator(const QString &separatorName);

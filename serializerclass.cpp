@@ -110,6 +110,11 @@ void serializerClass::serialize(int n)
     //! ------------------------------------------------------------
     QVector<QExtendedStandardItem*> vecItem = node->getPropertyItems();
     int nprop = vecItem.size();
+    for(int k=0; k<vecItem.size(); k++)
+    {
+        const Property &theCurProperty = vecItem.at(k)->data(Qt::UserRole).value<Property>();
+        if(theCurProperty.getName()=="Graphic object") nprop--;
+    }
 
     //! -----------------------------------------------------------------
     //! write the number of properties (drive for the reading operation)
@@ -188,6 +193,7 @@ void serializerClass::serialize(int n)
             continue;
         }
         */
+        if(theCurProperty.getName()=="Graphic object") continue;
         Property::writeProperty(outFile,theCurProperty);
     }
 

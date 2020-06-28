@@ -40,6 +40,7 @@ bool markerBuilder::addMarker(SimulationNodeClass *node, geometryDataBase *gDB)
     SimulationNodeClass::nodeType nodeType = node->getType();
     switch(nodeType)
     {
+/*
     case SimulationNodeClass::nodeType_structuralAnalysisBoltPretension:
     {
         //! -------------------------------------------
@@ -413,7 +414,7 @@ bool markerBuilder::addMarker(SimulationNodeClass *node, geometryDataBase *gDB)
         else node->replaceProperty("Graphic object",prop_marker);
     }
         break;
-
+*/
         //! -----------
         //! Point mass
         //! -----------
@@ -483,6 +484,12 @@ bool markerBuilder::addMarker(SimulationNodeClass *node, geometryDataBase *gDB)
         //! ---------------------------------------
         if(node->getPropertyItem("Graphic object")==NULL) node->addProperty(prop_marker);
         else node->replaceProperty("Graphic object",prop_marker);
+    }
+        break;
+
+    default:
+    {
+        return false;
     }
         break;
     }

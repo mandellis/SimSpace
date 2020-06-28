@@ -122,7 +122,7 @@ QList<int> mainTreeTools::getColumnsToRead(QTreeView *tree)
         case SimulationNodeClass::nodeType_thermalAnalysisThermalFlow:
         case SimulationNodeClass::nodeType_thermalAnalysisThermalFlux:
         case SimulationNodeClass::nodeType_thermalAnalysisThermalPower:
-
+        case SimulationNodeClass::nodeType_electrostaticPotential:
         {
             theColumnsToShow<<SC;
         }
@@ -896,4 +896,74 @@ void mainTreeTools::getAllBoundaryConditionsTags(QTreeView *tree, int type, QVec
             }
         }
     }
+}
+
+//! -----------------------------------
+//! function: getAnalysisNodeFromIndex
+//! details:
+//! -----------------------------------
+SimulationNodeClass* mainTreeTools::getAnalysisSettingsNodeFromIndex(QModelIndex curIndex)
+{
+    if(curIndex.isValid()==false) return Q_NULLPTR;
+    SimulationNodeClass *nodeAnalysisSettings = Q_NULLPTR;
+
+    SimulationNodeClass *curNode = curIndex.data(Qt::UserRole).value<SimulationNodeClass*>();
+    if(curNode->isAnalysisRoot()) nodeAnalysisSettings = curIndex.child(0,0).data(Qt::UserRole).value<SimulationNodeClass*>();
+    if(curNode->isAnalysisSettings()) nodeAnalysisSettings = curIndex.data(Qt::UserRole).value<SimulationNodeClass*>();
+    if(curNode->isSimulationSetUpNode()) nodeAnalysisSettings = curIndex.parent().child(0,0).data(Qt::UserRole).value<SimulationNodeClass*>();
+    if(curNode->isSolution()) nodeAnalysisSettings = curIndex.parent().child(0,0).data(Qt::UserRole).value<SimulationNodeClass*>();
+    if(curNode->isSolutionInformation()) nodeAnalysisSettings = curIndex.parent().parent().child(0,0).data(Qt::UserRole).value<SimulationNodeClass*>();
+    if(curNode->isAnalysisResult()) nodeAnalysisSettings = curIndex.parent().parent().child(0,0).data(Qt::UserRole).value<SimulationNodeClass*>();
+    return nodeAnalysisSettings;
+}
+
+//! -------------------------------------------------
+//! function: getAnalysisSettingsNodeFromCurrentItem
+//! details:
+//! -------------------------------------------------
+QStandardItem* mainTreeTools::getAnalysisSettingsItemFromCurrentItem(QTreeView *treeView)
+{
+    cout<<"mainTreeTools::getAnalysisSettingsNodeFromCurrentItem()->____function called____"<<endl;
+
+    QModelIndex currentModelIndex = treeView->currentIndex();
+    QStandardItem *curItem = static_cast<QStandardItemModel*>(treeView->model())->itemFromIndex(currentModelIndex);
+    SimulationNodeClass *curNode = currentModelIndex.data(Qt::UserRole).value<SimulationNodeClass*>();
+
+    //! ----------------------------------------------
+    //! case 1: the current item is a simulation root
+    //! ----------------------------------------------
+    if(curNode->isAnalysisRoot())
+    {
+        QStandardItem *item = curItem->child(0,0);
+        return static_cast<QExtendedStandardItem*>(item);
+    }
+    //! ---------------------------------------------------------
+    //! case 2: the current item is a child of a simulation root
+    //! ---------------------------------------------------------
+    if(curNode->isSimulationSetUpNode() || curNode->isAnalysisSettings())
+    {
+        QStandardItem *item = curItem->parent()->child(0,0);
+        return static_cast<QExtendedStandardItem*>(item);
+    }
+
+    //! ---------------------------------------------------
+    //! case 3: the current item is a post processing item
+    //! ---------------------------------------------------
+    if(curNode->isAnalysisResult() || curNode->isSolutionInformation())
+    {
+        QStandardItem *item = curItem->parent()->parent()->child(0,0);
+        return static_cast<QExtendedStandardItem*>(item);
+    }
+    return Q_NULLPTR;
+}
+
+//! -------------------------------------------------
+//! function: getAnalysisSettingsItemFromCurrentItem
+//! details:
+//! -------------------------------------------------
+SimulationNodeClass* mainTreeTools::getAnalysisSettingsNodeFromCurrentItem(QTreeView *treeView)
+{
+    QStandardItem *item = mainTreeTools::getAnalysisSettingsItemFromCurrentItem(treeView);
+    SimulationNodeClass *node = item->data(Qt::UserRole).value<SimulationNodeClass*>();
+    return node;
 }

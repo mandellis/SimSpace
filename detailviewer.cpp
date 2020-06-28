@@ -392,9 +392,9 @@ void DetailViewer::setTheModel(const QModelIndex &anIndex)
         //! ------------------------------
         //! hide the absolute coordinates
         //! ------------------------------
-        this->hideRow("X abs coordinate",true);
-        this->hideRow("Y abs coordinate",true);
-        this->hideRow("Z abs coordinate",true);
+        this->setPropertyVisible("X abs coordinate",true);
+        this->setPropertyVisible("Y abs coordinate",true);
+        this->setPropertyVisible("Z abs coordinate",true);
         */
     }
         break;
@@ -568,7 +568,7 @@ void DetailViewer::setTheModel(const QModelIndex &anIndex)
         //! -------------------------
         //! hide the "Time tag" item
         //! -------------------------
-        //this->hideRow("Time tag");
+        //this->setPropertyVisible("Time tag");
 
         //! ------------------------------------
         //! hide "Tags master" and "Tags slave"
@@ -592,8 +592,8 @@ void DetailViewer::setTheModel(const QModelIndex &anIndex)
 
     case SimulationNodeClass::nodeType_meshPrismaticLayer:
     {
-        this->hideRow("Tags");
-        this->hideRow("Boundary tags");
+        this->setPropertyVisible("Tags");
+        this->setPropertyVisible("Boundary tags");
     }
         break;
     }
@@ -672,7 +672,7 @@ void DetailViewer::setTheModel(SimulationNodeClass* aNode)
     //! -------------------------
     //! hide the "Time tag" item
     //! -------------------------
-    //this->hideRow("Time tag");
+    //this->setPropertyVisible("Time tag");
 
     //! ------------------------------------
     //! hide "Tags master" and "Tags slave"
@@ -1688,33 +1688,19 @@ void DetailViewer::handleCurrentStepNumberChanged()
 //! -----------------------------------------------------------------------
 void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, QModelIndex bottomRightIndex, QVector<int> roles)
 {
-    //! ---------------
-    //! metodo critico
-    //! ---------------
     Q_UNUSED(roles)
     Q_UNUSED(bottomRightIndex)
 
     static int i;
     cout<<"DetailViewer::updateDetailViewerFromTabularData()->____function called "<<i++<<"____"<<endl;
 
-    CustomTableModel *tabularDataModel;
-
     //! --------------------------------------
     //! retrieve the "Analysis settings" node
     //! --------------------------------------
-    SimulationNodeClass *nodeAnalysisSettings = Q_NULLPTR;
-    if(myCurNode->isAnalysisRoot()) nodeAnalysisSettings = myCurModelIndex.child(0,0).data(Qt::UserRole).value<SimulationNodeClass*>();
-    if(myCurNode->isAnalysisSettings()) nodeAnalysisSettings = myCurModelIndex.data(Qt::UserRole).value<SimulationNodeClass*>();
-    if(myCurNode->isSimulationSetUpNode()) nodeAnalysisSettings = myCurModelIndex.parent().child(0,0).data(Qt::UserRole).value<SimulationNodeClass*>();
-    if(myCurNode->isSolution()) nodeAnalysisSettings = myCurModelIndex.parent().child(0,0).data(Qt::UserRole).value<SimulationNodeClass*>();
-    if(myCurNode->isSolutionInformation()) nodeAnalysisSettings = myCurModelIndex.parent().parent().child(0,0).data(Qt::UserRole).value<SimulationNodeClass*>();
-    if(myCurNode->isAnalysisResult()) nodeAnalysisSettings = myCurModelIndex.parent().parent().child(0,0).data(Qt::UserRole).value<SimulationNodeClass*>();
-
+    SimulationNodeClass *nodeAnalysisSettings = mainTreeTools::getAnalysisSettingsNodeFromIndex(myCurModelIndex);
     if(nodeAnalysisSettings==Q_NULLPTR)
     {
-        cout<<"@---------------------------------------------------------@"<<endl;
-        cout<<"@- Analysis settings not found- check interface behavior -@"<<endl;
-        cout<<"@---------------------------------------------------------@"<<endl;
+        cerr<<"DetailViewer::updateDetailViewerFromTabularData()->____Analysis settings not found: check interface behavior____"<<endl;
         return;
     }
 
@@ -1722,7 +1708,7 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
     //! retrieve the "Current step number"
     //! -----------------------------------
     int currentStepNumber = nodeAnalysisSettings->getPropertyValue<int>("Current step number");
-    tabularDataModel = nodeAnalysisSettings->getTabularDataModel();
+    CustomTableModel *tabularDataModel = tabularDataModel = nodeAnalysisSettings->getTabularDataModel();
 
     //! -------------------------------------------------------------------------------------------------------------------------
     //! Once changed, the node model emits the Qt signal "itemChanged()", which is connected with the SLOT "handleItemChange()".
@@ -1732,9 +1718,10 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
     //! after the changes have been applied, reconnect (this is done at the end [*])
     //! -------------------------------------------------------------------------------------------------------------------------
     SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
-    QStandardItemModel *nodeModel = myCurNode->getModel();
-    disconnect(nodeModel,SIGNAL(itemChanged(QStandardItem*)),sm,SLOT(handleItemChange(QStandardItem*)));
+    //QStandardItemModel *nodeModel = myCurNode->getModel();
+    //disconnect(nodeModel,SIGNAL(itemChanged(QStandardItem*)),sm,SLOT(handleItemChange(QStandardItem*)));
 
+    this->connectToSimulationManager(false);
     //myCurNode->getModel()->blockSignals(true);
 
     int row = topLeftIndex.row();
@@ -1754,38 +1741,24 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
             {
             case TABULAR_DATA_STEP_END_TIME_COLUMN:
             {
-                double stepEndTime = data.toDouble();
-                data.setValue(stepEndTime);
-                //myCurNode->removeProperty("Step end time");
-                //Property prop_stepEndTime("Step end time",data,Property::PropertyGroup_StepControls);
-                //myCurNode->addProperty(prop_stepEndTime,2);
                 myCurNode->replaceProperty("Step end time",Property("Step end time",data,Property::PropertyGroup_StepControls));
             }
                 break;
 
             case TABULAR_DATA_SOLVER_TYPE_COLUMN:
             {
-                Property::solverType theSolverType = data.value<Property::solverType>();
-                data.setValue(theSolverType);
-                //myCurNode->removeProperty("Solver type");
-                //Property prop_solverType("Solver type",data,Property::PropertyGroup_SolverControls);
-                //myCurNode->addProperty(prop_solverType,0);
                 myCurNode->replaceProperty("Solver type",Property("Solver type",data,Property::PropertyGroup_SolverControls));
             }
                 break;
 
             case TABULAR_DATA_ANALYSIS_TYPE_COLUMN:
             {
-                int analysisType = data.toInt();
-                data.setValue(analysisType);
                 myCurNode->replaceProperty("Analysis type",Property("Analysis type",data,Property::PropertyGroup_StepControls));
             }
                 break;
 
             case TABULAR_DATA_TIME_INTEGRATION_COLUMN:
             {
-                Property::timeIntegration timeIntegration = data.value<Property::timeIntegration>();
-                data.setValue(timeIntegration);
                 myCurNode->replaceProperty("Static/Transient",Property("Static/Transient",data,Property::PropertyGroup_StepControls));
             }
                 break;
@@ -1803,13 +1776,9 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
             int col_boltLoad = SC+1;
             int col_boltAdjustment = SC+2;
 
-            //cout<<"DetailViewer::updateDetailViewerFromTabularData()->____using data in columns {"<<SC<<", "<<SC+1<<", "<<SC+2<<"}____"<<endl;
             QVariant boltStatus = tabularDataModel->dataRC(row,col_boltStatus,Qt::EditRole);
-            //if(boltStatus.canConvert<Property::defineBy>()) exit(1);
             QVariant boltLoad = tabularDataModel->dataRC(row,col_boltLoad,Qt::EditRole);
-            //if(boltLoad.canConvert<Property::defineBy>()) exit(2);
             QVariant boltAdjustment = tabularDataModel->dataRC(row,col_boltAdjustment,Qt::EditRole);
-            //if(boltAdjustment.canConvert<Property::defineBy>()) exit(3);
 
             //! -----------------------------------
             //! define the property to be replaced
@@ -1825,43 +1794,33 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
             //! ----------------------------------------------------------------
             //! handle the visibility of the properties "Load" and "Adjustment"
             //! ----------------------------------------------------------------
-            QExtendedStandardItem *itemLoad = myCurNode->getPropertyItem("Load");
-            QModelIndex indexLoad = itemLoad->index();
-            QExtendedStandardItem *itemAdjustment = myCurNode->getPropertyItem("Adjustment");
-            QModelIndex indexAdjustment = itemAdjustment->index();
-
             switch(boltStatus.value<Property::boltStatusDefinedBy>())
-            //switch(boltStatus.value<Property::defineBy>())
             {
             case Property::boltStatusDefinedBy_load:
-            //case Property::defineBy_load:
             {
                 //! hide the control for the "Adjustment" property and show the control for the "Load" property
                 cout<<"DetailViewer::updateDetailViewerFromTabularData()->____bolt status defined by \"Load\"____"<<endl;
-                if(!this->isRowHidden(indexAdjustment.row(),indexAdjustment.parent())) this->setRowHidden(indexAdjustment.row(),indexAdjustment.parent(),true);
-                if(this->isRowHidden(indexLoad.row(),indexLoad.parent())) this->setRowHidden(indexLoad.row(),indexLoad.parent(),false);
+                this->setPropertyVisible("Load",true);
+                this->setPropertyVisible("Adjustment",false);
             }
                 break;
 
-            //case Property::defineBy_adjustment:
             case Property::boltStatusDefinedBy_adjustment:
             {
                 //! hide the control for the "Load" property and show the control for the "Adjustment" property
                 cout<<"DetailViewer::updateDetailViewerFromTabularData()->____bolt status defined by \"Adjustment\"____"<<endl;
-                if(this->isRowHidden(indexAdjustment.row(),indexAdjustment.parent())) this->setRowHidden(indexAdjustment.row(),indexAdjustment.parent(),false);
-                if(!this->isRowHidden(indexLoad.row(),indexLoad.parent())) this->setRowHidden(indexLoad.row(),indexLoad.parent(),true);
+                this->setPropertyVisible("Load",false);
+                this->setPropertyVisible("Adjustment",true);
             }
                 break;
 
-            //case Property::defineBy_open:
-            //case Property::defineBy_lock:
             case Property::boltStatusDefinedBy_open:
             case Property::boltStatusDefinedBy_lock:
             {
                 //! hide the controls for the "Load" and "Adjustment" properties
                 cout<<"DetailViewer::updateDetailViewerFromTabularData()->____bolt status defined by \"Open\" or \"Lock\"____"<<endl;
-                if(!this->isRowHidden(indexAdjustment.row(),indexAdjustment.parent())) this->setRowHidden(indexAdjustment.row(),indexAdjustment.parent(),true);
-                if(!this->isRowHidden(indexLoad.row(),indexLoad.parent())) this->setRowHidden(indexLoad.row(),indexLoad.parent(),true);
+                this->setPropertyVisible("Load",false);
+                this->setPropertyVisible("Adjustment",false);
             }
                 break;
             }
@@ -1904,8 +1863,7 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
             {
                 cout<<"____property defined by components: updating 3 values____"<<endl;
 
-                QList<QString> propNames;
-                propNames<<"X component"<<"Y component"<<"Z component";
+                QList<QString> propNames {"X component", "Y component", "Z component"};
                 for(int i=0; i<3; i++)
                 {
                     //! ----------------------------
@@ -1933,8 +1891,8 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
             //! ---------------------------------------------------------------------------
             //! the following for updating the marker when the data changes occur in table
             //! ---------------------------------------------------------------------------
-            if(nodeType==SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Moment) this->handleMomentChanged();
-            if(nodeType==SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Acceleration) this->handleAccelerationChanged();
+            //if(nodeType==SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Moment) this->handleMomentChanged();
+            //if(nodeType==SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Acceleration) this->handleAccelerationChanged();
             // add here the other cases...
         }
             break;
@@ -1944,23 +1902,13 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
         case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RemoteRotation:
         {
             cout<<"____function called for \"Displacement\"____"<<endl;
-            Property::defineBy theDefineBy = myCurNode->getPropertyItem("Define by")->data(Qt::UserRole).value<Property>().getData().value<Property::defineBy>();
+            Property::defineBy theDefineBy = myCurNode->getPropertyValue<Property::defineBy>("Define by");
             switch(theDefineBy)
             {
             case Property::defineBy_vector:
             case Property::defineBy_normal:
             {
                 cout<<"____property defined by direction: updating magnitude____"<<endl;
-
-                //! diagnostic - can be removed
-                SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
-                int col = mainTreeTools::calculateStartColumn(sm->myTreeView);
-
-                int row = currentStepNumber;
-                double magnitude = tabularDataModel->dataRC(row,col,Qt::EditRole).toDouble();
-                cout<<"____step nr: "<<row<<" tab col= "<<col<<" read val: "<<magnitude<<"____"<<endl;
-                //! end diagnostic
-
                 QVariant data;
                 data.setValue(Property::loadDefinition_tabularData);
                 Property prop_magnitude("Magnitude",data,Property::PropertyGroup_Definition);
@@ -1993,15 +1941,6 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
                     if(c1 == true) propertyName = "Y component";
                     if(c2 == true) propertyName = "Z component";
 
-                    //! diagnostic - can be removed
-                    //int col = sm->calculateStartColumn();
-                    SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
-                    int col = mainTreeTools::calculateStartColumn(sm->myTreeView);
-                    int row = currentStepNumber;
-                    double componentValue = tabularDataModel->dataRC(row,col,Qt::EditRole).toDouble();
-                    cout<<"____step nr: "<<row<<" tab col= "<<col<<" "<<propertyName.toStdString()<<" read val: "<<componentValue<<"____"<<endl;
-                    //! end diagnostic
-
                     QVariant data;
                     data.setValue(Property::loadDefinition_tabularData);
                     Property prop_displacementComponent(propertyName,data,Property::PropertyGroup_Definition);
@@ -2014,17 +1953,6 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
                 {
                     if(c0==true && c1==true && c2 == false)
                     {
-                        //! diagnostic - can be removed
-                        int row = currentStepNumber;
-                        //int col = sm->calculateStartColumn();
-                        SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
-                        int col = mainTreeTools::calculateStartColumn(sm->myTreeView);
-                        double componentValue1 = tabularDataModel->dataRC(row,col,Qt::EditRole).toDouble();
-                        double componentValue2 = tabularDataModel->dataRC(row,col+1,Qt::EditRole).toDouble();
-                        cout<<"____step nr: "<<row<<" tab col= "<<col<<" "<<" X component read val: "<<componentValue1<<"____"<<endl;
-                        cout<<"____step nr: "<<row<<" tab col= "<<col+1<<" "<<" Y component read val: "<<componentValue2<<"____"<<endl;
-                        //! end diagnostic
-
                         QVariant data;
                         data.setValue(Property::loadDefinition_tabularData);
                         Property prop_displacementComponentX("X component",data,Property::PropertyGroup_Definition);
@@ -2034,17 +1962,6 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
                     }
                     if(c0==true && c1==false && c2 == true)
                     {
-                        //! diagnostic - can be removed
-                        int row = currentStepNumber;
-                        //int col = sm->calculateStartColumn();
-                        SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));//bubi
-                        int col = mainTreeTools::calculateStartColumn(sm->myTreeView);
-                        double componentValue1 = tabularDataModel->dataRC(row,col,Qt::EditRole).toDouble();
-                        double componentValue2 = tabularDataModel->dataRC(row,col+1,Qt::EditRole).toDouble();
-                        cout<<"____step nr: "<<row<<" tab col= "<<col<<" "<<" X component read val: "<<componentValue1<<"____"<<endl;
-                        cout<<"____step nr: "<<row<<" tab col= "<<col+1<<" "<<" Z component read val: "<<componentValue2<<"____"<<endl;
-                        //! end diagnostic
-
                         QVariant data;
                         data.setValue(Property::loadDefinition_tabularData);
                         Property prop_displacementComponentX("X component",data,Property::PropertyGroup_Definition);
@@ -2054,17 +1971,6 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
                     }
                     if(c0==false && c1==true && c2 == true)
                     {
-                        //! diagnostic - can be removed
-                        int row = currentStepNumber;
-                        //int col = sm->calculateStartColumn();
-                        SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));//bubi
-                        int col = mainTreeTools::calculateStartColumn(sm->myTreeView);
-                        double componentValue1 = tabularDataModel->dataRC(row,col,Qt::EditRole).toDouble();
-                        double componentValue2 = tabularDataModel->dataRC(row,col+1,Qt::EditRole).toDouble();
-                        cout<<"____step nr: "<<row<<" tab col= "<<col<<" "<<" Y component read val: "<<componentValue1<<"____"<<endl;
-                        cout<<"____step nr: "<<row<<" tab col= "<<col+1<<" "<<" Z component read val: "<<componentValue2<<"____"<<endl;
-                        //! end diagnostic
-
                         QVariant data;
                         data.setValue(Property::loadDefinition_tabularData);
                         Property prop_displacementComponentY("Y component",data,Property::PropertyGroup_Definition);
@@ -2082,15 +1988,6 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
                     propNames<<"X component"<<"Y component"<<"Z component";
                     for(int i=0; i<3; i++)
                     {
-                        //! diagnostic - can be removed
-                        //int col = sm->calculateStartColumn()+i;
-                        SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));//bubi
-                        int col = mainTreeTools::calculateStartColumn(sm->myTreeView)+1;
-                        int row = currentStepNumber;
-                        double componentValue = tabularDataModel->dataRC(row,col,Qt::EditRole).toDouble();
-                        cout<<"____step nr: "<<row<<" tab col= "<<col<<" "<<propNames.at(i).toStdString()<<" read val: "<<componentValue<<"____"<<endl;
-                        //! end diagnostic
-
                         QVariant data;
                         data.setValue(Property::loadDefinition_tabularData);
                         QString propName = propNames.at(i);
@@ -2140,8 +2037,9 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
     //! -----------------
     //! [*] reconnection
     //! -----------------
-    connect(nodeModel,SIGNAL(itemChanged(QStandardItem*)),sm,SLOT(handleItemChange(QStandardItem*)));
+    //connect(nodeModel,SIGNAL(itemChanged(QStandardItem*)),sm,SLOT(handleItemChange(QStandardItem*)));
 
+    this->connectToSimulationManager(false);
     //myCurNode->getModel()->blockSignals(false);
 
     cout<<"DetailViewer::updateDetailViewerFromTabularData()->____exiting____"<<endl;
@@ -3168,7 +3066,7 @@ void DetailViewer::handleDefineByChanged()
     //! -----------------------
     //! block the node signals
     //! -----------------------
-    this->connectToSimulationManager(false);
+    this->connectToSimulationManager(false);    //cesere
     //myCurNode->getModel()->blockSignals(true);
 
     //! --------------------------------------------------------------
@@ -3262,7 +3160,6 @@ void DetailViewer::handleDefineByChanged()
             old_magnitude = itemMagnitude->data(Qt::UserRole).value<Property>().getData().value<Property::loadDefinition>();
             myCurNode->updateOldMagnitude(old_magnitude);
             myCurNode->removeProperty("Magnitude");
-            //myCurNode->getModel()->removeRow(itemMagnitude->index().row(),itemMagnitude->parent()->index());
         }
         //! --------------------------------
         //! remove the direction if present
@@ -3272,9 +3169,9 @@ void DetailViewer::handleDefineByChanged()
         {
             //! store the old values before removing
             old_direction = itemDirection->data(Qt::UserRole).value<Property>().getData().value<QVector<double>>();
+            cout<<"____old direction size: "<<old_direction.size()<<"____"<<endl;
             myCurNode->updateOldDirection(old_direction);
             myCurNode->removeProperty("Direction");
-            //myCurNode->getModel()->removeRow(itemDirection->index().row(),itemDirection->parent()->index());
         }
         //! -----------------------------------
         //! add the CS selector if not present
@@ -5261,21 +5158,21 @@ void DetailViewer::handleStoreResultsAtChanged()
     cout<<"____writing pair: ("<<flags1.at(0)<<", "<<flags1.at(1)<<")____"<<endl;
 }
 
-//! ----------------------------------------------------------------
-//! function: hideRow
-//! details:  hide the row of the model containing a given property
-//! ----------------------------------------------------------------
-void DetailViewer::hideRow(const QString &propertyName, bool isHidden)
+//! -----------------------------
+//! function: setPropertyVisible
+//! details:
+//! -----------------------------
+void DetailViewer::setPropertyVisible(const QString &propertyName, bool isVisible)
 {
+    bool isHidden = isVisible==true? false:true;
     QExtendedStandardItem *item = myCurNode->getPropertyItem(propertyName);
-    if(!this->isRowHidden(item->index().row(),item->parent()->index()))
-        this->setRowHidden(item->index().row(),item->parent()->index(),isHidden);
+    this->setRowHidden(item->index().row(),item->parent()->index(),isHidden);
 }
 
-//! ----------------------------
-//! function: expandSeparator()
-//! details:  expand separator
-//! ----------------------------
+//! --------------------------
+//! function: expandSeparator
+//! details:
+//! --------------------------
 void DetailViewer::expandSeparator(const QString &separatorName)
 {
     QStandardItemModel *nodeModel = myCurNode->getModel();
@@ -6926,7 +6823,6 @@ void DetailViewer::handleModelChangeActivationStatusChanged()
     //! retrieve the tabular data
     //! --------------------------
     SimulationNodeClass *nodeAnalysisSettings = sm->getAnalysisSettingsNodeFromCurrentItem();
-
     CustomTableModel *tabData = nodeAnalysisSettings->getTabularDataModel();
 
     //! --------------------------------------
