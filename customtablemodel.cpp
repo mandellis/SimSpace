@@ -1022,15 +1022,6 @@ bool CustomTableModel::appendColumn(const load &aLoad, const QModelIndex &parent
     return true;
 }
 
-//! ----------------------------------------------------------------
-//! function: -----
-//! details:
-//! ----------------------------------------------------------------
-void CustomTableModel::addMapping(QString color, QRect area)
-{
-    m_mapping.insertMulti(color, area);
-}
-
 //! --------------------
 //! function: getColumn
 //! details:

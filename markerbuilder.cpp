@@ -36,7 +36,7 @@
 //! ------------------------------------------------------------
 bool markerBuilder::addMarker(SimulationNodeClass *node, geometryDataBase *gDB)
 {
-    cout<<"markerBuilder::addMarker()->____function called____"<<endl;
+    //cout<<"markerBuilder::addMarker()->____function called____"<<endl;
     SimulationNodeClass::nodeType nodeType = node->getType();
     switch(nodeType)
     {

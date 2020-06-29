@@ -57,7 +57,7 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
                                                   const occHandle(AIS_InteractiveContext)& CTX,
                                                   QVariant addOptions)
 {
-    cout<<"nodeFactory::nodeFromScratch()->____function called____"<<endl;
+    //cout<<"nodeFactory::nodeFromScratch()->____function called____"<<endl;
 
     //! ---------------------
     //! vector of properties
@@ -2664,7 +2664,7 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
 //! -------------------------------------------
 SimulationNodeClass *nodeFactory::nodeFromFile(const QString &fileName)
 {
-    cout<<"nodeFactory::nodeFromFile->____function called____"<<endl;
+    //cout<<"nodeFactory::nodeFromFile->____function called____"<<endl;
     ifstream in;
     in.open(fileName.toStdString());
 

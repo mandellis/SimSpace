@@ -23,10 +23,10 @@ public:
 
     //static QList<int> getColumnsToRead1(QTreeView *tree);
     static int calculateStartColumn(QTreeView *tree);
-    static int calculateStartColumn(QExtendedStandardItem *anItem);
+    static int calculateStartColumn(QStandardItem *anItem);
 
     static QList<int> getColumnsToRead(QTreeView *tree);
-    static QList<int> getColumnsToRead(QExtendedStandardItem *anItem);
+    static QList<int> getColumnsToRead(QStandardItem *anItem);
 
     static QStandardItem* getCurrentSimulationRoot(QTreeView *treeView);
 

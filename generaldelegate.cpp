@@ -4041,9 +4041,9 @@ void GeneralDelegate::setEditorData(QWidget *editor, const QModelIndex &index) c
         cb->setCurrentIndex(val);
         connect(cb,SIGNAL(currentIndexChanged(int)),this,SLOT(commitAndCloseDOFswitchSelector()));
     }
-    //! ------------------------------------------------
-    //! "X component" "Y component " "Z component " ...
-    //! ------------------------------------------------
+    //! -------------------------------------------------
+    //! "X component " "Y component " "Z component " ...
+    //! -------------------------------------------------
     else if(propertyName == "X component " || propertyName == "Y component " || propertyName == "Z component " ||
             propertyName == "X rotation" || propertyName == "Y rotation" || propertyName == "Z rotation")
     {
@@ -6353,9 +6353,9 @@ void GeneralDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, c
             //! -----------
             switch(le->getLoadDefinition())
             {
-            case Property::loadDefinition_constant: cout<<"____constant____"<<endl; break;
-            case Property::loadDefinition_tabularData : cout<<"____tabular data____"<<endl; break;
-            case Property::loadDefinition_free: cout<<"____free____"<<endl; break;
+            case Property::loadDefinition_constant: cout<<"generalDelegate::setModelData()____constant____"<<endl; break;
+            case Property::loadDefinition_tabularData : cout<<"generalDelegate::setModelData()____tabular data____"<<endl; break;
+            case Property::loadDefinition_free: cout<<"generalDelegate::setModelData()____free____"<<endl; break;
             }
         }
         //! -------------

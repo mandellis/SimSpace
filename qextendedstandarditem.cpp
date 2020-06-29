@@ -116,7 +116,6 @@ QVariant QExtendedStandardItem::data(int role) const
         QString name1 = data(Qt::UserRole+1).toString();
 
         QVariant data;
-
         //! ----------------------
         //! "Mass" "Jx" "Jy" "Jz"
         //! ----------------------
@@ -1629,7 +1628,7 @@ QVariant QExtendedStandardItem::data(int role) const
             return data;
         }
         //! ------------------------------------------------------
-        //! "Magniture" "X component" "Y component" "Z component"
+        //! "Magnitude" "X component" "Y component" "Z component"
         //! ------------------------------------------------------
         else if(name =="Magnitude" || name =="X component" || name =="Y component" || name =="Z component")
         {

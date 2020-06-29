@@ -652,7 +652,7 @@ QExtendedStandardItem* SimulationNodeClass::getPropertyItem(const QString &prope
             }
         }
     }
-    //cout<<"SimulationNodeClass::getPropertyItem()->____Property key name \""<<propertyName.toStdString()<<"\" NOT found____"<<endl;
+    cerr<<"SimulationNodeClass::getPropertyItem()->____Property key name \""<<propertyName.toStdString()<<"\" NOT found____"<<endl;
     return Q_NULLPTR;
 }
 
@@ -1325,6 +1325,7 @@ bool SimulationNodeClass::isSimulationSetUpNode()
             myNodeType == SimulationNodeClass::nodeType_structuralAnalysisThermalCondition ||
             myNodeType == SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_ImportedTemperatureDistribution ||
             myNodeType == SimulationNodeClass::nodeType_importedBodyScalar ||
+            myNodeType == SimulationNodeClass::nodeType_modelChange ||
             myNodeType == SimulationNodeClass::nodeType_mapper)
         return true;
 
