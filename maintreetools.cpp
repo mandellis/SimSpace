@@ -32,9 +32,6 @@ QList<int> mainTreeTools::getColumnsToRead(QTreeView *tree)
 
     if(aNode->getPropertyItem("Define by")!=Q_NULLPTR)
     {
-        //! ------------------------------------
-        //! items with the "Define by" property
-        //! ------------------------------------
         if(theType == SimulationNodeClass::nodeType_structuralAnalysisBoltPretension)
         {
             theColumnsToShow<<SC<<SC+1<<SC+2;
@@ -45,6 +42,9 @@ QList<int> mainTreeTools::getColumnsToRead(QTreeView *tree)
         {
             Property::defineBy theDefineBy = aNode->getPropertyValue<Property::defineBy>("Define by");
 
+            //! ------------------------------------
+            //! items with the "Define by" property
+            //! ------------------------------------
             if(theDefineBy==Property::defineBy_components)
             {
                 SimulationNodeClass::nodeType theType = aNode->getType();
@@ -171,9 +171,9 @@ QList<int> mainTreeTools::getColumnsToRead(QExtendedStandardItem *anItem)
     SimulationNodeClass *aNode = currentIndex.data(Qt::UserRole).value<SimulationNodeClass*>();
     SimulationNodeClass::nodeType theType = aNode->getType();
 
-    //! ------------------------------------------------
-    //! these nodes do not have the "defineBy" property
-    //! ------------------------------------------------
+    //! ------------------------------------------
+    //! these nodes have the "Define by" property
+    //! ------------------------------------------
     if(aNode->getPropertyItem("Define by")!=Q_NULLPTR)
     {
         if(theType == SimulationNodeClass::nodeType_structuralAnalysisBoltPretension)
@@ -362,7 +362,6 @@ int mainTreeTools::calculateStartColumn(QExtendedStandardItem *anItem)
         case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Moment:
         case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RemoteForce:
         case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Acceleration:
-            //! [...] add here other items supporting a vectorial definition
             theDefineBy = curNode->getPropertyValue<Property::defineBy>("Define by");
             if(theDefineBy==Property::defineBy_vector) delta = 0;
             else delta = 2;
@@ -478,7 +477,6 @@ int mainTreeTools::calculateStartColumn(QTreeView *tree)
         case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Moment:
         case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RemoteForce:
         case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Acceleration:
-            //! [...] add here other items supporting a vectorial definition
             theDefineBy = curNode->getPropertyValue<Property::defineBy>("Define by");
             if(theDefineBy==Property::defineBy_vector) delta = 0;
             else delta = 2;

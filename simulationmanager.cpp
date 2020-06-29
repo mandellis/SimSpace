@@ -513,13 +513,9 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 if(nodeTemperature->getPropertyItem("Post object")!=Q_NULLPTR)
                 {
                     postObject aPostObject = nodeTemperature->getPropertyValue<postObject>("Post object");
-                    cout<<"____tag00____"<<endl;
                     emit requestSetWorkingMode(3);
-                    cout<<"____tag01____"<<endl;
                     emit requestShowAllBodies();    //! check if wireframe... to do
-                    cout<<"____tag02____"<<endl;
                     emit requestDisplayResult(aPostObject);
-                    cout<<"____tag03____"<<endl;
                 }
                 else
                 {
@@ -1013,7 +1009,6 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 requestClearGraph();
 
                 bool isDone = markerBuilder::addMarker(this->getCurrentNode(), mySimulationDataBase);
-
                 if(isDone == true) this->displayMarker();
             }
                 break;
@@ -2889,7 +2884,7 @@ void SimulationManager::createSimulationNode(SimulationNodeClass::nodeType type,
         }
     }
     //! ---------------------------------
-    //! HANDLING COORDINATE SYSTEM NODES
+    //! HANDLING COORDINATE SYSTEM ITEMS
     //! ---------------------------------
     else if(type==SimulationNodeClass::nodeType_coordinateSystem)
     {
@@ -3231,7 +3226,7 @@ void SimulationManager::createSimulationNode(SimulationNodeClass::nodeType type,
         }
             break;
         }
-
+        markerBuilder::addMarker(aNode,mySimulationDataBase);
         markerBuilder::addMarker(this->getCurrentNode(),mySimulationDataBase);
         mainTreeTools::getCurrentSimulationRoot(myTreeView)->insertRow(this->getInsertionRow(),item);
     }
@@ -7632,341 +7627,330 @@ void SimulationManager::HandleTabularData()
     //! ----------------------------------
     //! check if the data in table exsist
     //! ----------------------------------
-    //if(tabData->getColumn(startColumn).type()==Property::loadType_none)
-    //{
-    //    cerr<<"SimulationManager::HandleTabularData()->____corrupted data base____"<<endl;
-    //}
-    if(1==2)
+    if(theDefineBy==Property::defineBy_components)
     {
-        ;
-    }
-    else
-    {
-        if(theDefineBy==Property::defineBy_components)
+        //! -----------------------------------------------------------------------
+        //! remove the column for magnitude and add the columns for the components
+        //! -----------------------------------------------------------------------
+        tabData->removeColumns(startColumn, 1, QModelIndex());
+
+        QVector<QVariant> values;
+        QVariant data;
+        data.setValue(0.0);
+        for(int i=0; i<tabData->rowCount(); i++) values.push_back(data);
+        load load_componentX, load_componentY, load_componentZ;
+        load_componentX.setData(values);
+        load_componentY.setData(values);
+        load_componentZ.setData(values);
+
+        //! ---------------------------
+        //! establish the type of load
+        //! ---------------------------
+        SimulationNodeClass::nodeType theNodeType = theCurNode->getType();
+        switch(theNodeType)
         {
-            //! -----------------------------------------------------------------------
-            //! remove the column for magnitude and add the columns for the components
-            //! -----------------------------------------------------------------------
-            tabData->removeColumns(startColumn, 1, QModelIndex());
-
-            QVector<QVariant> values;
-            QVariant data;
-            data.setValue(0.0);
-            for(int i=0; i<tabData->rowCount(); i++) values.push_back(data);
-            load load_componentX, load_componentY, load_componentZ;
-            load_componentX.setData(values);
-            load_componentY.setData(values);
-            load_componentZ.setData(values);
-
-            //! ---------------------------
-            //! establish the type of load
-            //! ---------------------------
-            SimulationNodeClass::nodeType theNodeType = theCurNode->getType();
-            switch(theNodeType)
+        case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Force:
+        case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RemoteForce:
+            load_componentX.setType(Property::loadType_forceX);
+            load_componentY.setType(Property::loadType_forceY);
+            load_componentZ.setType(Property::loadType_forceZ);
+            tabData->setLoadToInsert(load_componentX);
+            tabData->insertColumns(startColumn,1);
+            tabData->setLoadToInsert(load_componentY);
+            tabData->insertColumns(startColumn+1,1);
+            tabData->setLoadToInsert(load_componentZ);
+            tabData->insertColumns(startColumn+2,1);
+            break;
+        case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Moment:
+            load_componentX.setType(Property::loadType_momentX);
+            load_componentY.setType(Property::loadType_momentY);
+            load_componentZ.setType(Property::loadType_momentZ);
+            tabData->setLoadToInsert(load_componentX);
+            tabData->insertColumns(startColumn,1);
+            tabData->setLoadToInsert(load_componentY);
+            tabData->insertColumns(startColumn+1,1);
+            tabData->setLoadToInsert(load_componentZ);
+            tabData->insertColumns(startColumn+2,1);
+            break;
+        case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Acceleration:
+            load_componentX.setType(Property::loadType_accelerationX);
+            load_componentY.setType(Property::loadType_accelerationY);
+            load_componentZ.setType(Property::loadType_accelerationZ);
+            tabData->setLoadToInsert(load_componentX);
+            tabData->insertColumns(startColumn,1);
+            tabData->setLoadToInsert(load_componentY);
+            tabData->insertColumns(startColumn+1,1);
+            tabData->setLoadToInsert(load_componentZ);
+            tabData->insertColumns(startColumn+2,1);
+            break;
+        case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RotationalVelocity:
+            load_componentX.setType(Property::loadType_rotationalVelocityX);
+            load_componentY.setType(Property::loadType_rotationalVelocityY);
+            load_componentZ.setType(Property::loadType_rotationalVelocityZ);
+            tabData->setLoadToInsert(load_componentX);
+            tabData->insertColumns(startColumn,1);
+            tabData->setLoadToInsert(load_componentY);
+            tabData->insertColumns(startColumn+1,1);
+            tabData->setLoadToInsert(load_componentZ);
+            tabData->insertColumns(startColumn+2,1);
+            break;
+        case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RemoteRotation:
+        {
+            bool b0, b1, b2;
+            b0 = theCurNode->getOldXLoadDefinition()!=Property::loadDefinition_free? true:false;
+            b1 = theCurNode->getOldYLoadDefinition()!=Property::loadDefinition_free? true:false;
+            b2 = theCurNode->getOldZLoadDefinition()!=Property::loadDefinition_free? true:false;
+            if((b0==true && b1==false && b2==false)||(b0==false && b1==true && b2==false)||(b0==false && b1==false && b2==true))
             {
-            case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Force:
-            case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RemoteForce:
-                load_componentX.setType(Property::loadType_forceX);
-                load_componentY.setType(Property::loadType_forceY);
-                load_componentZ.setType(Property::loadType_forceZ);
-                tabData->setLoadToInsert(load_componentX);
-                tabData->insertColumns(startColumn,1);
-                tabData->setLoadToInsert(load_componentY);
-                tabData->insertColumns(startColumn+1,1);
-                tabData->setLoadToInsert(load_componentZ);
-                tabData->insertColumns(startColumn+2,1);
-                break;
-            case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Moment:
-                load_componentX.setType(Property::loadType_momentX);
-                load_componentY.setType(Property::loadType_momentY);
-                load_componentZ.setType(Property::loadType_momentZ);
-                tabData->setLoadToInsert(load_componentX);
-                tabData->insertColumns(startColumn,1);
-                tabData->setLoadToInsert(load_componentY);
-                tabData->insertColumns(startColumn+1,1);
-                tabData->setLoadToInsert(load_componentZ);
-                tabData->insertColumns(startColumn+2,1);
-                break;
-            case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Acceleration:
-                load_componentX.setType(Property::loadType_accelerationX);
-                load_componentY.setType(Property::loadType_accelerationY);
-                load_componentZ.setType(Property::loadType_accelerationZ);
-                tabData->setLoadToInsert(load_componentX);
-                tabData->insertColumns(startColumn,1);
-                tabData->setLoadToInsert(load_componentY);
-                tabData->insertColumns(startColumn+1,1);
-                tabData->setLoadToInsert(load_componentZ);
-                tabData->insertColumns(startColumn+2,1);
-                break;
-            case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RotationalVelocity:
-                load_componentX.setType(Property::loadType_rotationalVelocityX);
-                load_componentY.setType(Property::loadType_rotationalVelocityY);
-                load_componentZ.setType(Property::loadType_rotationalVelocityZ);
-                tabData->setLoadToInsert(load_componentX);
-                tabData->insertColumns(startColumn,1);
-                tabData->setLoadToInsert(load_componentY);
-                tabData->insertColumns(startColumn+1,1);
-                tabData->setLoadToInsert(load_componentZ);
-                tabData->insertColumns(startColumn+2,1);
-                break;
-            case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RemoteRotation:
-            {
-                bool b0, b1, b2;
-                b0 = theCurNode->getOldXLoadDefinition()!=Property::loadDefinition_free? true:false;
-                b1 = theCurNode->getOldYLoadDefinition()!=Property::loadDefinition_free? true:false;
-                b2 = theCurNode->getOldZLoadDefinition()!=Property::loadDefinition_free? true:false;
-                if((b0==true && b1==false && b2==false)||(b0==false && b1==true && b2==false)||(b0==false && b1==false && b2==true))
+                //! -----------------------
+                //! add only one component
+                //! -----------------------
+                if(b0==true)    //! add "X component"
                 {
-                    //! -----------------------
-                    //! add only one component
-                    //! -----------------------
-                    if(b0==true)    //! add "X component"
-                    {
-                        load_componentX.setType(Property::loadType_remoteRotationX);
-                        tabData->setLoadToInsert(load_componentX);
-                        tabData->insertColumns(startColumn,1);
-                    }
-                    if(b1==true)    //! add "Y component"
-                    {
-                        load_componentY.setType(Property::loadType_remoteRotationY);
-                        tabData->setLoadToInsert(load_componentY);
-                        tabData->insertColumns(startColumn,1);
-                    }
-                    if(b2==true)    //! add "Z component"
-                    {
-                        load_componentZ.setType(Property::loadType_remoteRotationZ);
-                        tabData->setLoadToInsert(load_componentZ);
-                        tabData->insertColumns(startColumn,1);
-                    }
-                }
-                if((b0==true && b1 == true && b2==false)||(b0==false && b1 == true && b2==true)&&(b0==true && b1 == false && b2==true))
-                {
-                    //! -------------------
-                    //! add two components
-                    //! -------------------
-                    if(b0==true && b1 == true)  //! add "X component" and "Y component"
-                    {
-                        load_componentX.setType(Property::loadType_remoteRotationX);
-                        tabData->setLoadToInsert(load_componentX);
-                        tabData->insertColumns(startColumn,1);
-                        load_componentX.setType(Property::loadType_remoteRotationY);
-                        tabData->setLoadToInsert(load_componentX);
-                        tabData->insertColumns(startColumn+1,1);
-                    }
-                    if(b1==true && b2 == true)  //! add "Y component" and "Z component"
-                    {
-                        load_componentY.setType(Property::loadType_remoteRotationY);
-                        tabData->setLoadToInsert(load_componentY);
-                        tabData->insertColumns(startColumn,1);
-                        load_componentZ.setType(Property::loadType_remoteRotationZ);
-                        tabData->setLoadToInsert(load_componentZ);
-                        tabData->insertColumns(startColumn+1,1);
-                    }
-                    if(b0==true && b2 == true)  //! add "X component" and "Z component"
-                    {
-                        load_componentX.setType(Property::loadType_remoteRotationX);
-                        tabData->setLoadToInsert(load_componentX);
-                        tabData->insertColumns(startColumn,1);
-                        load_componentZ.setType(Property::loadType_remoteRotationZ);
-                        tabData->setLoadToInsert(load_componentZ);
-                        tabData->insertColumns(startColumn+1,1);
-                    }
-                }
-                if(b0==true && b1 == true && b2 == true)
-                {
-                    //! ---------------------
-                    //! add three components
-                    //! ---------------------
                     load_componentX.setType(Property::loadType_remoteRotationX);
                     tabData->setLoadToInsert(load_componentX);
                     tabData->insertColumns(startColumn,1);
+                }
+                if(b1==true)    //! add "Y component"
+                {
+                    load_componentY.setType(Property::loadType_remoteRotationY);
+                    tabData->setLoadToInsert(load_componentY);
+                    tabData->insertColumns(startColumn,1);
+                }
+                if(b2==true)    //! add "Z component"
+                {
+                    load_componentZ.setType(Property::loadType_remoteRotationZ);
+                    tabData->setLoadToInsert(load_componentZ);
+                    tabData->insertColumns(startColumn,1);
+                }
+            }
+            if((b0==true && b1 == true && b2==false)||(b0==false && b1 == true && b2==true)&&(b0==true && b1 == false && b2==true))
+            {
+                //! -------------------
+                //! add two components
+                //! -------------------
+                if(b0==true && b1 == true)  //! add "X component" and "Y component"
+                {
+                    load_componentX.setType(Property::loadType_remoteRotationX);
+                    tabData->setLoadToInsert(load_componentX);
+                    tabData->insertColumns(startColumn,1);
+                    load_componentX.setType(Property::loadType_remoteRotationY);
+                    tabData->setLoadToInsert(load_componentX);
+                    tabData->insertColumns(startColumn+1,1);
+                }
+                if(b1==true && b2 == true)  //! add "Y component" and "Z component"
+                {
                     load_componentY.setType(Property::loadType_remoteRotationY);
                     tabData->setLoadToInsert(load_componentY);
                     tabData->insertColumns(startColumn,1);
                     load_componentZ.setType(Property::loadType_remoteRotationZ);
                     tabData->setLoadToInsert(load_componentZ);
-                    tabData->insertColumns(startColumn+2,1);
+                    tabData->insertColumns(startColumn+1,1);
+                }
+                if(b0==true && b2 == true)  //! add "X component" and "Z component"
+                {
+                    load_componentX.setType(Property::loadType_remoteRotationX);
+                    tabData->setLoadToInsert(load_componentX);
+                    tabData->insertColumns(startColumn,1);
+                    load_componentZ.setType(Property::loadType_remoteRotationZ);
+                    tabData->setLoadToInsert(load_componentZ);
+                    tabData->insertColumns(startColumn+1,1);
                 }
             }
-                break;
-            case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Displacement:
-            case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RemoteDisplacement:
+            if(b0==true && b1 == true && b2 == true)
             {
-                bool b0, b1, b2;
-                b0 = theCurNode->getOldXLoadDefinition()!=Property::loadDefinition_free? true:false;
-                b1 = theCurNode->getOldYLoadDefinition()!=Property::loadDefinition_free? true:false;
-                b2 = theCurNode->getOldZLoadDefinition()!=Property::loadDefinition_free? true:false;
+                //! ---------------------
+                //! add three components
+                //! ---------------------
+                load_componentX.setType(Property::loadType_remoteRotationX);
+                tabData->setLoadToInsert(load_componentX);
+                tabData->insertColumns(startColumn,1);
+                load_componentY.setType(Property::loadType_remoteRotationY);
+                tabData->setLoadToInsert(load_componentY);
+                tabData->insertColumns(startColumn,1);
+                load_componentZ.setType(Property::loadType_remoteRotationZ);
+                tabData->setLoadToInsert(load_componentZ);
+                tabData->insertColumns(startColumn+2,1);
+            }
+        }
+            break;
+        case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Displacement:
+        case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RemoteDisplacement:
+        {
+            bool b0, b1, b2;
+            b0 = theCurNode->getOldXLoadDefinition()!=Property::loadDefinition_free? true:false;
+            b1 = theCurNode->getOldYLoadDefinition()!=Property::loadDefinition_free? true:false;
+            b2 = theCurNode->getOldZLoadDefinition()!=Property::loadDefinition_free? true:false;
 
-                if((b0==true && b1==false && b2==false)||(b0==false && b1==true && b2==false)||(b0==false && b1==false && b2==true))
+            if((b0==true && b1==false && b2==false)||(b0==false && b1==true && b2==false)||(b0==false && b1==false && b2==true))
+            {
+                //! -----------------------
+                //! add only one component
+                //! -----------------------
+                if(b0==true)    //! add "X component"
                 {
-                    //! -----------------------
-                    //! add only one component
-                    //! -----------------------
-                    if(b0==true)    //! add "X component"
-                    {
-                        load_componentX.setType(Property::loadType_displacementX);
-                        tabData->setLoadToInsert(load_componentX);
-                        tabData->insertColumns(startColumn,1);
-                    }
-                    if(b1==true)    //! add "Y component"
-                    {
-                        load_componentY.setType(Property::loadType_displacementY);
-                        tabData->setLoadToInsert(load_componentY);
-                        tabData->insertColumns(startColumn,1);
-                    }
-                    if(b2==true)    //! add "Z component"
-                    {
-                        load_componentZ.setType(Property::loadType_displacementZ);
-                        tabData->setLoadToInsert(load_componentZ);
-                        tabData->insertColumns(startColumn,1);
-                    }
-                }
-                if((b0==true && b1 == true && b2==false)||(b0==false && b1 == true && b2==true)&&(b0==true && b1 == false && b2==true))
-                {
-                    //! -------------------
-                    //! add two components
-                    //! -------------------
-                    if(b0==true && b1 == true)  //! add "X component" and "Y component"
-                    {
-                        load_componentX.setType(Property::loadType_displacementX);
-                        tabData->setLoadToInsert(load_componentX);
-                        tabData->insertColumns(startColumn,1);
-                        load_componentX.setType(Property::loadType_displacementY);
-                        tabData->setLoadToInsert(load_componentX);
-                        tabData->insertColumns(startColumn+1,1);
-                    }
-                    if(b1==true && b2 == true)  //! add "Y component" and "Z component"
-                    {
-                        load_componentY.setType(Property::loadType_displacementY);
-                        tabData->setLoadToInsert(load_componentY);
-                        tabData->insertColumns(startColumn,1);
-                        load_componentZ.setType(Property::loadType_displacementZ);
-                        tabData->setLoadToInsert(load_componentZ);
-                        tabData->insertColumns(startColumn+1,1);
-                    }
-                    if(b0==true && b2 == true)  //! add "X component" and "Z component"
-                    {
-                        load_componentX.setType(Property::loadType_displacementX);
-                        tabData->setLoadToInsert(load_componentX);
-                        tabData->insertColumns(startColumn,1);
-                        load_componentZ.setType(Property::loadType_displacementZ);
-                        tabData->setLoadToInsert(load_componentZ);
-                        tabData->insertColumns(startColumn+1,1);
-                    }
-                }
-                if(b0==true && b1 == true && b2 == true)
-                {
-                    //! ---------------------
-                    //! add three components
-                    //! ---------------------
                     load_componentX.setType(Property::loadType_displacementX);
                     tabData->setLoadToInsert(load_componentX);
                     tabData->insertColumns(startColumn,1);
+                }
+                if(b1==true)    //! add "Y component"
+                {
+                    load_componentY.setType(Property::loadType_displacementY);
+                    tabData->setLoadToInsert(load_componentY);
+                    tabData->insertColumns(startColumn,1);
+                }
+                if(b2==true)    //! add "Z component"
+                {
+                    load_componentZ.setType(Property::loadType_displacementZ);
+                    tabData->setLoadToInsert(load_componentZ);
+                    tabData->insertColumns(startColumn,1);
+                }
+            }
+            if((b0==true && b1 == true && b2==false)||(b0==false && b1 == true && b2==true)&&(b0==true && b1 == false && b2==true))
+            {
+                //! -------------------
+                //! add two components
+                //! -------------------
+                if(b0==true && b1 == true)  //! add "X component" and "Y component"
+                {
+                    load_componentX.setType(Property::loadType_displacementX);
+                    tabData->setLoadToInsert(load_componentX);
+                    tabData->insertColumns(startColumn,1);
+                    load_componentX.setType(Property::loadType_displacementY);
+                    tabData->setLoadToInsert(load_componentX);
+                    tabData->insertColumns(startColumn+1,1);
+                }
+                if(b1==true && b2 == true)  //! add "Y component" and "Z component"
+                {
                     load_componentY.setType(Property::loadType_displacementY);
                     tabData->setLoadToInsert(load_componentY);
                     tabData->insertColumns(startColumn,1);
                     load_componentZ.setType(Property::loadType_displacementZ);
                     tabData->setLoadToInsert(load_componentZ);
-                    tabData->insertColumns(startColumn+2,1);
+                    tabData->insertColumns(startColumn+1,1);
+                }
+                if(b0==true && b2 == true)  //! add "X component" and "Z component"
+                {
+                    load_componentX.setType(Property::loadType_displacementX);
+                    tabData->setLoadToInsert(load_componentX);
+                    tabData->insertColumns(startColumn,1);
+                    load_componentZ.setType(Property::loadType_displacementZ);
+                    tabData->setLoadToInsert(load_componentZ);
+                    tabData->insertColumns(startColumn+1,1);
                 }
             }
-                break;
+            if(b0==true && b1 == true && b2 == true)
+            {
+                //! ---------------------
+                //! add three components
+                //! ---------------------
+                load_componentX.setType(Property::loadType_displacementX);
+                tabData->setLoadToInsert(load_componentX);
+                tabData->insertColumns(startColumn,1);
+                load_componentY.setType(Property::loadType_displacementY);
+                tabData->setLoadToInsert(load_componentY);
+                tabData->insertColumns(startColumn,1);
+                load_componentZ.setType(Property::loadType_displacementZ);
+                tabData->setLoadToInsert(load_componentZ);
+                tabData->insertColumns(startColumn+2,1);
+            }
+        }
+            break;
+        }
+    }
+    else
+    {
+        cout<<"SimulationManager::HandleTabularData()->____switched to vector____"<<endl;
+        //! ---------------------------------------------------------------------------
+        //! theDefineBy==defineBy_vector
+        //! remove the columns for the components and add the column for the magnitude
+        //! ---------------------------------------------------------------------------
+        int count=0;
+        if(theCurNode->getType() == SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Displacement ||
+                theCurNode->getType() == SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RemoteDisplacement ||
+                theCurNode->getType() == SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RemoteRotation)
+        {
+            if(theCurNode->getOldXLoadDefinition()!=Property::loadDefinition_free)
+            {
+                count++;
+                cout<<"____found X component to be removed____"<<endl;
+            }
+            if(theCurNode->getOldYLoadDefinition()!=Property::loadDefinition_free)
+            {
+                count++;
+                cout<<"____found Y component to be removed____"<<endl;
+            }
+            if(theCurNode->getOldZLoadDefinition()!=Property::loadDefinition_free)
+            {
+                count++;
+                cout<<"____found Z component to be removed____"<<endl;
             }
         }
         else
         {
-            cout<<"SimulationManager::HandleTabularData()->____switched to vector____"<<endl;
-            //! ---------------------------------------------------------------------------
-            //! theDefineBy==defineBy_vector
-            //! remove the columns for the components and add the column for the magnitude
-            //! ---------------------------------------------------------------------------
-            int count=0;
-            if(theCurNode->getType() == SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Displacement ||
-                    theCurNode->getType() == SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RemoteDisplacement ||
-                    theCurNode->getType() == SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RemoteRotation)
-            {
-                if(theCurNode->getOldXLoadDefinition()!=Property::loadDefinition_free)
-                {
-                    count++;
-                    cout<<"____found X component to be removed____"<<endl;
-                }
-                if(theCurNode->getOldYLoadDefinition()!=Property::loadDefinition_free)
-                {
-                    count++;
-                    cout<<"____found Y component to be removed____"<<endl;
-                }
-                if(theCurNode->getOldZLoadDefinition()!=Property::loadDefinition_free)
-                {
-                    count++;
-                    cout<<"____found Z component to be removed____"<<endl;
-                }
-            }
-            else
-            {
-                count=3;
-            }
-            cout<<"SimulationManager::HandleTabularData()->____removing: "<<count<<" columns____"<<endl;
+            count=3;
+        }
+        cout<<"SimulationManager::HandleTabularData()->____removing: "<<count<<" columns____"<<endl;
 
-            //tabData->removeColumns(startColumn, count, QModelIndex());
-            if(count!=0)
-            {
-                tabData->removeColumns(startColumn, count, QModelIndex());
-            }
-            //cout<<"SimulationManager::HandleTabularData()->____number of columns after removal: "<<tabData->columnCount()<<"____"<<endl;
-            //cout<<"SimulationManager::HandleTabularData()->____start adding the magnitude____"<<endl;
+        //tabData->removeColumns(startColumn, count, QModelIndex());
+        if(count!=0)
+        {
+            tabData->removeColumns(startColumn, count, QModelIndex());
+        }
+        //cout<<"SimulationManager::HandleTabularData()->____number of columns after removal: "<<tabData->columnCount()<<"____"<<endl;
+        //cout<<"SimulationManager::HandleTabularData()->____start adding the magnitude____"<<endl;
 
-            QVector<QVariant> values;
-            load load_magnitude(values,Property::loadType_none);
+        QVector<QVariant> values;
+        load load_magnitude(values,Property::loadType_none);
 
-            //! ---------------------------
-            //! establish the type of load
-            //! ---------------------------
-            SimulationNodeClass::nodeType theNodeType = theCurNode->getType();
-            switch(theNodeType)
-            {
-            case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Force:
-            case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RemoteForce:
-                load_magnitude.setType(Property::loadType_forceMagnitude);
-                break;
-            case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Acceleration:
-                load_magnitude.setType(Property::loadType_accelerationMagnitude);
-                break;
-            case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RotationalVelocity:
-                load_magnitude.setType(Property::loadType_rotationalVelocityMagnitude);
-                break;
-            case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Moment:
-                load_magnitude.setType(Property::loadType_momentMagnitude);
-                break;
-            case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Displacement:
-            case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RemoteDisplacement:
-                load_magnitude.setType(Property::loadType_displacementMagnitude);
-                break;
-            case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RemoteRotation:
-                load_magnitude.setType(Property::loadType_remoteRotationMagnitude);
-                break;
-            }
-
-            tabData->setLoadToInsert(load_magnitude);
-
-            //! ---------------------------------------------------------
-            //! "Magnitude" => one single column inserted into the table
-            //! ---------------------------------------------------------
-            tabData->insertColumns(startColumn,1);
+        //! ---------------------------
+        //! establish the type of load
+        //! ---------------------------
+        SimulationNodeClass::nodeType theNodeType = theCurNode->getType();
+        switch(theNodeType)
+        {
+        case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Force:
+        case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RemoteForce:
+            load_magnitude.setType(Property::loadType_forceMagnitude);
+            break;
+        case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Acceleration:
+            load_magnitude.setType(Property::loadType_accelerationMagnitude);
+            break;
+        case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RotationalVelocity:
+            load_magnitude.setType(Property::loadType_rotationalVelocityMagnitude);
+            break;
+        case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Moment:
+            load_magnitude.setType(Property::loadType_momentMagnitude);
+            break;
+        case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Displacement:
+        case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RemoteDisplacement:
+            load_magnitude.setType(Property::loadType_displacementMagnitude);
+            break;
+        case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RemoteRotation:
+            load_magnitude.setType(Property::loadType_remoteRotationMagnitude);
+            break;
         }
 
-        emit requestTabularData(this->getAnalysisSettingsItemFromCurrentItem()->index());
+        tabData->setLoadToInsert(load_magnitude);
 
-        QList<int> N = this->calculateColumnsToShow(/*theCurNode*/);
-        QList<int> N1 = mainTreeTools::getColumnsToRead(myTreeView);
-
-        cout<<"\\--------------------------------------------------------\\"<<endl;
-        for(int n=0; n<N.length(); n++) cout<<"\\ N (by simmanager) = "<<N.at(n)<<endl;
-        for(int n=0; n<N1.length(); n++) cout<<"\\ N (by maintreetools) = "<<N1.at(n)<<endl;
-        cout<<"\\--------------------------------------------------------\\"<<endl;
-
-        N.removeFirst();
-        emit requestShowGraph(tabData,N);
+        //! ---------------------------------------------------------
+        //! "Magnitude" => one single column inserted into the table
+        //! ---------------------------------------------------------
+        tabData->insertColumns(startColumn,1);
     }
+
+    emit requestTabularData(this->getAnalysisSettingsItemFromCurrentItem()->index());
+
+    QList<int> N = this->calculateColumnsToShow(/*theCurNode*/);
+    QList<int> N1 = mainTreeTools::getColumnsToRead(myTreeView);
+
+    cout<<"\\--------------------------------------------------------\\"<<endl;
+    for(int n=0; n<N.length(); n++) cout<<"\\ N (by simmanager) = "<<N.at(n)<<endl;
+    for(int n=0; n<N1.length(); n++) cout<<"\\ N (by maintreetools) = "<<N1.at(n)<<endl;
+    cout<<"\\--------------------------------------------------------\\"<<endl;
+
+    N.removeFirst();
+    emit requestShowGraph(tabData,N);
 }
 
 //! ------------------------------------------------------------------------

@@ -612,9 +612,9 @@ void geometryDataBase::createCoordinateSystemsRoot()
     SimulationNodeClass *node = new SimulationNodeClass("Coordinate systems", SimulationNodeClass::nodeType_coordinateSystems, props, this);
     data.setValue(node);
 
-    //! --------------------------
-    //! creat and append the item
-    //! --------------------------
+    //! ---------------------------
+    //! create and append the item
+    //! ---------------------------
     CoordinateSystemsRootitem = new QExtendedStandardItem();
     CoordinateSystemsRootitem->setData(data,Qt::UserRole);
     CoordinateSystemsRootitem->setData("Coordinate systems",Qt::DisplayRole);

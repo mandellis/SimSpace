@@ -495,9 +495,10 @@ bool writeSolverFileClass::perform()
 
             myInputFile<<"*NODE,NSET="<<(QString("CM_")+itemName).toStdString()<<endl;
             myInputFile<<++totalNumberOfNodes<<","<<x<<","<<y<<","<<z<<endl;
-            myInputFile<<"*ELEMENT, ELSET ="<<(QString("PM_")+itemName).toStdString()<<", TYPE=MASS"<<endl;
+            myInputFile<<"*ELEMENT, ELSET ="<<(QString("E")+itemName).toStdString()<<", TYPE=MASS"<<endl;
             myInputFile<<++totalNumberOfElements<<","<<totalNumberOfNodes<<endl;
-            myInputFile<<"*MASS, ELSET ="<<(QString("PM_")+itemName).toStdString()<<endl;
+            myInputFile<<"*MASS, ELSET ="<<(QString("E"
+                                                    "")+itemName).toStdString()<<endl;
             myInputFile<<mass<<endl;
             myInputFile<<"*COUPLING,REF NODE="<<totalNumberOfNodes<<",SURFACE="<<itemName.toStdString()<<",CONSTRAINT NAME="<<itemName.toStdString()<<endl;
             myInputFile<<"*KINEMATIC"<<endl;
@@ -1933,7 +1934,7 @@ bool writeSolverFileClass::perform()
                     break;
                 default:
                 {
-                    QList<int> ColumnList = mainTreeTools::getColumnsToRead(theCurItem);                            ;
+                    QList<int> ColumnList = mainTreeTools::getColumnsToRead(theCurItem);
                     Property::defineBy theDefineBy = theCurNode->getPropertyValue<Property::defineBy>("Define by");
                     Property::ScopingMethod scopingMethod = theCurNode->getPropertyValue<Property::ScopingMethod>("Scoping method");
 
@@ -2213,7 +2214,6 @@ bool writeSolverFileClass::perform()
                             {
                                 //QVector<GeometryTag> vecLoc = theCurNode->getPropertyValue<QVector<GeometryTag>>("Tags");
                                 myInputFile<<"*DLOAD"<<endl;
-
                                 /*
                                 for(int i=0; i<vecLoc.size();i++)
                                 {
@@ -2228,11 +2228,11 @@ bool writeSolverFileClass::perform()
                                 for(int i=0; i<theGeometryRoot->rowCount();i++)
                                 {
                                     std::string bodyName;
-                                    QStandardItem *aGeometryItem = theGeometryRoot->child(k,0);
+                                    QStandardItem *aGeometryItem = theGeometryRoot->child(i,0);
                                     SimulationNodeClass *aNode = aGeometryItem->data(Qt::UserRole).value<SimulationNodeClass*>();
                                     if(aNode->getType()==SimulationNodeClass::nodeType_pointMass)
                                     {
-                                        QString bodyNameP = itemNameClearSpaces(theGeometryRoot->child(k,0)->data(Qt::DisplayRole).toString());
+                                        QString bodyNameP = itemNameClearSpaces(theGeometryRoot->child(i,0)->data(Qt::DisplayRole).toString());
                                         bodyNameP.append("_").append(QString("%1").arg(i));
                                         bodyName = bodyNameP.toStdString();
                                     }
@@ -2242,7 +2242,7 @@ bool writeSolverFileClass::perform()
                                         //! retrieve the name of the body from the data base
                                         bodyName = myDB->MapOfBodyNames.value(mapIndex).toStdString();
                                     }
-                                    myInputFile<<"E"<<bodyName<<", GRAV, "<<loadValue<<" ,"<<Xcomp<<", "<<Ycomp<<", "<<Zcomp<<endl;
+                                    myInputFile<<"E"<<bodyName<<", GRAV, "<<loadValue<<" ,"<<dirData.at(0)<<", "<<dirData.at(1)<<", "<<dirData.at(2)<<endl;
                                 }
                             }
                                 break;

@@ -126,8 +126,8 @@ public:
         nodeType_processParametersClosureForce,
 #endif
         nodeType_coordinateSystems,                 //! the family or the root node
-        nodeType_coordinateSystem,                  //! a coordinate system
-        nodeType_coordinateSystem_global,           //! the global coordinate system
+        nodeType_coordinateSystem,                  //! a coordinate system, 64
+        nodeType_coordinateSystem_global,           //! the global coordinate system, 65
 
         nodeType_StructuralAnalysisSolution,                        //! the family of the post-processing items
         nodeType_StructuralAnalysisSolutionInformation,             //! the solution information

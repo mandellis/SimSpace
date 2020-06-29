@@ -40,6 +40,7 @@ bool markerBuilder::addMarker(SimulationNodeClass *node, geometryDataBase *gDB)
     SimulationNodeClass::nodeType nodeType = node->getType();
     switch(nodeType)
     {
+    /*
     case SimulationNodeClass::nodeType_structuralAnalysisBoltPretension:
     {
         //! -------------------------------------------
@@ -142,8 +143,8 @@ bool markerBuilder::addMarker(SimulationNodeClass *node, geometryDataBase *gDB)
             const TopoDS_Shape &curShape = gDB->bodyMap.value(loc.parentShapeNr);
             theBuilder.Add(compound,curShape);
         }
+
         gp_Pnt CM = GeomToolsClass::getCenterOfMass(compound);
-        //cout<<"____CM ("<<CM.X()<<", "<<CM.Y()<<", "<<CM.Z()<<")____"<<endl;
 
         //! -------------------------------------------
         //! retrieve the direction of the acceleration
@@ -156,6 +157,7 @@ bool markerBuilder::addMarker(SimulationNodeClass *node, geometryDataBase *gDB)
         SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
         QTreeView *theTree = sm->myTreeView;
         QList<int> tableColumns = mainTreeTools::getColumnsToRead(theTree);
+
         SimulationNodeClass *nodeAnalysisSetting = sm->getAnalysisSettingsNodeFromCurrentItem();
         CustomTableModel *tabModel = nodeAnalysisSetting->getTabularDataModel();
         Property::defineBy defineBy = node->getPropertyValue<Property::defineBy>("Define by");
@@ -169,6 +171,9 @@ bool markerBuilder::addMarker(SimulationNodeClass *node, geometryDataBase *gDB)
 
             QStandardItem *itemCS = static_cast<QStandardItem*>(CS);
             SimulationNodeClass *nodeCS = itemCS->data(Qt::UserRole).value<SimulationNodeClass*>();
+            cout<<"____"<<nodeCS->getName().toStdString()<<"____"<<endl;
+            cout<<"____"<<nodeCS->type().toStdString()<<"____"<<endl;
+            cout<<nodeCS->getType()<<endl;
             QVector<QVector<double>> directionalData;
             switch(nodeCS->getType())
             {
@@ -181,11 +186,17 @@ bool markerBuilder::addMarker(SimulationNodeClass *node, geometryDataBase *gDB)
                 directionalData.push_back(XAxisData);
                 directionalData.push_back(YAxisData);
                 directionalData.push_back(ZAxisData);
-             }
+                cout<<XAxisData.at(0)<<" "<<XAxisData.at(1)<<" "<<XAxisData.at(2)<<endl;
+                cout<<YAxisData.at(0)<<" "<<YAxisData.at(1)<<" "<<YAxisData.at(2)<<endl;
+                cout<<ZAxisData.at(0)<<" "<<ZAxisData.at(1)<<" "<<ZAxisData.at(2)<<endl;
+            }
                 break;
 
             case SimulationNodeClass::nodeType_coordinateSystem:
+            {
+                if(nodeCS->getPropertyItem("Base directional data")==NULL) exit(1);
                 directionalData = nodeCS->getPropertyValue<QVector<QVector<double>>>("Base directional data");
+            }
                 break;
             }
 
@@ -413,7 +424,7 @@ bool markerBuilder::addMarker(SimulationNodeClass *node, geometryDataBase *gDB)
         else node->replaceProperty("Graphic object",prop_marker);
     }
         break;
-
+*/
         //! -----------
         //! Point mass
         //! -----------

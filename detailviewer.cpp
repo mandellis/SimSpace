@@ -390,9 +390,9 @@ void DetailViewer::setTheModel(const QModelIndex &anIndex)
         //! ------------------------------
         //! hide the absolute coordinates
         //! ------------------------------
-        this->hideRow("X abs coordinate",true);
-        this->hideRow("Y abs coordinate",true);
-        this->hideRow("Z abs coordinate",true);
+        this->setPropertyVisible("X abs coordinate",true);
+        this->setPropertyVisible("Y abs coordinate",true);
+        this->setPropertyVisible("Z abs coordinate",true);
         */
     }
         break;
@@ -566,7 +566,7 @@ void DetailViewer::setTheModel(const QModelIndex &anIndex)
         //! -------------------------
         //! hide the "Time tag" item
         //! -------------------------
-        //this->hideRow("Time tag");
+        //this->setPropertyVisible("Time tag");
 
         //! ------------------------------------
         //! hide "Tags master" and "Tags slave"
@@ -590,8 +590,8 @@ void DetailViewer::setTheModel(const QModelIndex &anIndex)
 
     case SimulationNodeClass::nodeType_meshPrismaticLayer:
     {
-        this->hideRow("Tags");
-        this->hideRow("Boundary tags");
+        this->setPropertyVisible("Tags");
+        this->setPropertyVisible("Boundary tags");
     }
         break;
     }
@@ -670,7 +670,7 @@ void DetailViewer::setTheModel(SimulationNodeClass* aNode)
     //! -------------------------
     //! hide the "Time tag" item
     //! -------------------------
-    //this->hideRow("Time tag");
+    //this->setPropertyVisible("Time tag");
 
     //! ------------------------------------
     //! hide "Tags master" and "Tags slave"
@@ -3165,6 +3165,7 @@ void DetailViewer::handleDefineByChanged()
     //! block the node signals
     //! -----------------------
     myCurNode->getModel()->blockSignals(true);
+    //this->connectToSimulationManager(false);
 
     //! --------------------------------------------------------------
     //! additional switches are added/removed here, while the changes
@@ -3323,6 +3324,7 @@ void DetailViewer::handleDefineByChanged()
     //! unlock the node signals
     //! ------------------------
     myCurNode->getModel()->blockSignals(false);
+    //this->connectToSimulationManager(false);
 
     emit requestHandleTabularData();
 }
@@ -3850,14 +3852,9 @@ void DetailViewer::handleBoltStatusDefinedByChanged()
     cout<<"DetailViewer::handleBoltStatusDefinedByChanged()->____function called____"<<endl;
     QExtendedStandardItem *itemDefineBy = myCurNode->getPropertyItem("Define by");
     Property::boltStatusDefinedBy boltDefineBy = itemDefineBy->data(Qt::UserRole).value<Property>().getData().value<Property::boltStatusDefinedBy>();
-    //Property::defineBy boltDefineBy = itemDefineBy->data(Qt::UserRole).value<Property>().getData().value<Property::defineBy>();
-
 
     QExtendedStandardItem *itemLoad = myCurNode->getPropertyItem("Load");
     QExtendedStandardItem *itemAdjustment = myCurNode->getPropertyItem("Adjustment");
-
-    QModelIndex indexLoad = itemLoad->index();
-    QModelIndex indexAdjustment = itemAdjustment->index();
 
     SimulationNodeClass* nodeAnalysisSettings = myCurModelIndex.parent().child(0,0).data(Qt::UserRole).value<SimulationNodeClass*>();
     int currentStepNumber = nodeAnalysisSettings->getPropertyItem("Current step number")->data(Qt::UserRole).value<Property>().getData().toInt();
@@ -3870,19 +3867,17 @@ void DetailViewer::handleBoltStatusDefinedByChanged()
 
     switch(boltDefineBy)
     {
-    //case Property::defineBy_load:
     case Property::boltStatusDefinedBy_load:
     {
         //! -----------------------------------------------
         //! show "Load" control, hide "Adjustment" control
         //! -----------------------------------------------
-        if(this->isRowHidden(indexLoad.row(),indexLoad.parent())) this->setRowHidden(indexLoad.row(),indexLoad.parent(),false);
-        if(!this->isRowHidden(indexAdjustment.row(),indexAdjustment.parent())) this->setRowHidden(indexAdjustment.row(),indexAdjustment.parent(),true);
+        this->setPropertyVisible("Load",true);
+        this->setPropertyVisible("Adjustment",false);
 
         //! -------------------------------------------------------
         //! enable "Load" and disable "Adjustment" in tabular data
         //! -------------------------------------------------------
-        //double boltLoad = myCurNode->getPropertyItem("Load")->data(Qt::UserRole).value<Property>().getData().toDouble();
         double boltLoad = 0.0;
         data.setValue(boltLoad);
         QModelIndex indexLoad = tabularDataModel->makeIndex(row,col+1);
@@ -3894,19 +3889,17 @@ void DetailViewer::handleBoltStatusDefinedByChanged()
     }
         break;
 
-    //case Property::defineBy_adjustment:
     case Property::boltStatusDefinedBy_adjustment:
     {
         //! -----------------------------------------------
         //! show "Adjustment" control, hide "Load" control
         //! -----------------------------------------------
-        if(!this->isRowHidden(indexLoad.row(),indexLoad.parent())) this->setRowHidden(indexLoad.row(),indexLoad.parent(),true);
-        if(this->isRowHidden(indexAdjustment.row(),indexAdjustment.parent())) this->setRowHidden(indexAdjustment.row(),indexAdjustment.parent(),false);
+        this->setPropertyVisible("Adjustment",true);
+        this->setPropertyVisible("Load",false);
 
         //! -------------------------------------------------------
         //! enable "Load" and disable "Adjustment" in tabular data
         //! -------------------------------------------------------
-        //double boltAdjustment = myCurNode->getPropertyItem("Adjustment")->data(Qt::UserRole).value<Property>().getData().toDouble();
         double boltAdjustment =0.0;
         data.setValue(boltAdjustment);
         QModelIndex indexAdjustment = tabularDataModel->makeIndex(row,col+2);
@@ -3918,16 +3911,14 @@ void DetailViewer::handleBoltStatusDefinedByChanged()
     }
         break;
 
-    //case Property::defineBy_open:
-    //case Property::defineBy_lock:
     case Property::boltStatusDefinedBy_open:
     case Property::boltStatusDefinedBy_lock:
     {
         //! --------------------------------------
         //! hide "Load" and "Adjustment" controls
         //! --------------------------------------
-        if(!this->isRowHidden(indexLoad.row(),indexLoad.parent())) this->setRowHidden(indexLoad.row(),indexLoad.parent(),true);
-        if(!this->isRowHidden(indexAdjustment.row(),indexAdjustment.parent())) this->setRowHidden(indexAdjustment.row(),indexAdjustment.parent(),true);
+        this->setPropertyVisible("Adjustment",false);
+        this->setPropertyVisible("Load",false);
 
         //! ------------------------------------------------
         //! disable "Load" and "Adjustment" in tabular data
@@ -5150,20 +5141,24 @@ void DetailViewer::handleStoreResultsAtChanged()
 }
 
 //! ----------------------------------------------------------------
-//! function: hideRow
+//! function: setPropertyVisible
 //! details:  hide the row of the model containing a given property
 //! ----------------------------------------------------------------
-void DetailViewer::hideRow(const QString &propertyName, bool isHidden)
+void DetailViewer::setPropertyVisible(const QString &propertyName, bool visible)
 {
     QExtendedStandardItem *item = myCurNode->getPropertyItem(propertyName);
-    if(!this->isRowHidden(item->index().row(),item->parent()->index()))
-        this->setRowHidden(item->index().row(),item->parent()->index(),isHidden);
+    if(item==Q_NULLPTR)
+    {
+        cerr<<"DetailViewer::setPropertyVisible()->____cannot make the property \""<<propertyName.toStdString()<<"\" "<<
+              (visible == true? "visible": "hidden")<<" since not present____"<<endl;
+    }
+    this->setRowHidden(item->index().row(),item->parent()->index(),visible);
 }
 
-//! ----------------------------
-//! function: expandSeparator()
-//! details:  expand separator
-//! ----------------------------
+//! ---------------------------
+//! function: expandSeparator
+//! details:
+//! ---------------------------
 void DetailViewer::expandSeparator(const QString &separatorName)
 {
     QStandardItemModel *nodeModel = myCurNode->getModel();
