@@ -1471,11 +1471,9 @@ void Ng_MeshVS_DataSourceFace::computeFreeMeshSegments()
     //! ------------------------------------
     QMultiMap<mesh::meshSegment,int> segmentToElement;
 
-    TColStd_PackedMapOfInteger eMap = this->GetAllElements();
-    TColStd_MapIteratorOfPackedMapOfInteger eIt;
-    for(eIt.Initialize(eMap);eIt.More();eIt.Next())
+    for(TColStd_MapIteratorOfPackedMapOfInteger it(this->GetAllElements());it.More();it.Next())
     {
-        int globalElementID = eIt.Key();
+        int globalElementID = it.Key();
         int localElementID = myElementsMap.FindIndex(globalElementID);
         int eType = myElemType->Value(localElementID);
         int NbNodes;
@@ -1505,7 +1503,7 @@ void Ng_MeshVS_DataSourceFace::computeFreeMeshSegments()
             //! ------------------------------------------------
             int NbElementSegments = NbNodes;
             for(int i=1; i<=NbElementSegments; i++)
-            {            
+            {
                 mesh::meshSegment aMeshSegment;
 
                 int firstIndex = (i-1)%NbNodes;
@@ -1523,20 +1521,20 @@ void Ng_MeshVS_DataSourceFace::computeFreeMeshSegments()
         }
             break;
 
-        case TRIG6: case QUAD8: //! MAYBE THIS IS NOT RIGHT... IMPLEMENT THE CORRECT VERSION. TO DO...
+        case TRIG6: case QUAD8:
         {
             //! ----------------------------------------------------------------
             //! TRIG6   {a,b,c,d,e,f} => {a,b,c}, {c,d,e}, {e,f,a}
             //! QUAD8   {a,b,c,d,e,f,g,h} => {a,b,c}, {c,d,e}, {e,f,g}, {g,h,a}
             //! ----------------------------------------------------------------
-            int NbElementSegments = nodeIDs.length()-2;
+            int NbElementSegments = NbNodes/2;
             for(int i=1; i<=NbElementSegments; i++)
             {
                 mesh::meshSegment aMeshSegment;
 
-                int firstIndex = (i-1)%NbNodes;
-                int secondIndex = (i)%NbNodes;
-                int thirdIndex = (i+1)%NbNodes;
+                int firstIndex = (2*i-2)%NbNodes;
+                int secondIndex = (2*i-1)%NbNodes;
+                int thirdIndex = (2*i)%NbNodes;
 
                 aMeshSegment.nodeIDs<<nodeIDs.at(firstIndex);
                 aMeshSegment.nodeIDs<<nodeIDs.at(secondIndex);
@@ -1563,7 +1561,6 @@ void Ng_MeshVS_DataSourceFace::computeFreeMeshSegments()
 
     for(int i=0; i<listOfKeys.length(); i++)
     {
-        //Ng_MeshVS_DataSourceFace::meshSegment aMeshSegment = listOfKeys.at(i);
         mesh::meshSegment aMeshSegment = listOfKeys.at(i);
         if(aMeshSegment == aMeshSegment_old) continue;
         aMeshSegment_old = aMeshSegment;
