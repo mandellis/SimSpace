@@ -543,7 +543,7 @@ Ng_MeshVS_DataSource2D::Ng_MeshVS_DataSource2D(const QString &faceFileName, cons
 //! ---------------------------------------------------------------------
 Ng_MeshVS_DataSource2D::Ng_MeshVS_DataSource2D(const opencascade::handle<Ng_MeshVS_DataSource3D> &a3DMeshVS_DataSource)
 {
-    //!cout<<"Ng_MeshVS_DataSource2D::Ng_MeshVS_DataSource2D()->____constructor from a volume mesh data source called____"<<endl;
+    cout<<"Ng_MeshVS_DataSource2D::Ng_MeshVS_DataSource2D()->____constructor from a volume mesh data source called____"<<endl;
     if(a3DMeshVS_DataSource->GetAllNodes().Extent()<3)
     {
         cout<<"Ng_MeshVS_DataSource2D::Ng_MeshVS_DataSource2D()->____constructor from a volume mesh: wrong number of nodes____"<<endl;

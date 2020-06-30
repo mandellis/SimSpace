@@ -1221,6 +1221,7 @@ void SimulationNodeClass::setType1(QString type)
     int index = mo.indexOfEnumerator("nodeType");
     QMetaEnum metaEnum = mo.enumerator(index);
     int value = metaEnum.keyToValue(qPrintable(type));
+    cout<<"____"<<value<<"____"<<endl; exit(1);
     myNodeType = static_cast<nodeType>(value);
 }
 

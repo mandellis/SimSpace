@@ -175,13 +175,14 @@ Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(const QList<meshElementByCoords> 
     }
 
     //! --------------------------------
-    //! elements topology - first order
+    //! elements topology
     //! TET, PYRAM, PRISM, HEXA
     //! --------------------------------
     this->CreatePyramidTopology(4);
     this->CreatePrismTopology(3);
     this->CreateTetTopology();
     this->CreateHexaTopology();
+    this->CreateTet10Topology();
 
     cout<<"Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D()->____constructor from a QList of meshElementByCoords: OK____"<<endl;
 }
@@ -2471,7 +2472,7 @@ std::vector<double> Ng_MeshVS_DataSource3D::getNodeCoordinates(int localNodeID)
 //! ------------------------------------------------------------------------------------
 void Ng_MeshVS_DataSource3D::buildCCXFaceToElementConnectivity(std::map<meshElement2D,std::vector<std::pair<int,int>>> &map)
 {
-    //cout<<"Ng_MeshVS_DataSource3D::buildCCXFaceToElementConnectivity()->____generating face to element connectivity data____"<<endl;
+    //cout<<"Ng_MeshVS_DataSource3D::buildCCXFaceToElementConnectivity()->____generating CCX face to element connectivity data____"<<endl;
 
     //! -----------------------------
     //! CCX faces of the TET element

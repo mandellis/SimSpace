@@ -645,7 +645,10 @@ void Property::readProperty(ifstream &in, Property &prop)
         SimulationNodeClass *node = new SimulationNodeClass(nodeName, SimulationNodeClass::nodeType_NULL, vecProp);
 
         if(propKeyName=="Named selection") node->setType(SimulationNodeClass::nodeType_namedSelectionGeometry);
-        else if(propKeyName=="Coordinate system") node->setType(SimulationNodeClass::nodeType_coordinateSystem);
+        else if(propKeyName=="Coordinate system")
+        {
+            node->setType(SimulationNodeClass::nodeType_coordinateSystem);
+        }
         else if(propKeyName=="Remote point") node->setType(SimulationNodeClass::nodeType_remotePoint);
         else if(propKeyName=="Boundary named selection") node->setType(SimulationNodeClass::nodeType_meshPrismaticLayer);
         else if(propKeyName=="Analysis")

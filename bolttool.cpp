@@ -31,15 +31,15 @@ boltTool::boltTool(const occHandle(Ng_MeshVS_DataSource3D) &aVolumeMeshDS):myVol
     ;
 }
 
-//! ------------------------------
-//! function: sliceMeshWithPlane1
+//! -----------------------------
+//! function: sliceMeshWithPlane
 //! details:
-//! ------------------------------
+//! -----------------------------
 bool boltTool::sliceMeshWithPlane(double a, double b, double c, double d,
                                   occHandle(MeshVS_DataSource) &slicedMeshDS,
                                   std::vector<std::pair<int,int>> &vecCCXFaceDefs)
 {
-    cout<<"boltTool::sliceMeshWithPlane1()->____function called____"<<endl;
+    cout<<"boltTool::sliceMeshWithPlane()->____function called____"<<endl;
 
     QList<meshElementByCoords> volumeElementsList;
 
@@ -57,7 +57,7 @@ bool boltTool::sliceMeshWithPlane(double a, double b, double c, double d,
         std::vector<polygon::Point> aPointCloud;
 
         int globalElementID = it.Key();
-        int NbNodes, nbuf[8];
+        int NbNodes, nbuf[20];
 
         TColStd_Array1OfInteger nodeIDs(*nbuf,1,20);
         myVolumeMesh->GetNodesByElement(globalElementID,nodeIDs,NbNodes);
@@ -95,9 +95,9 @@ bool boltTool::sliceMeshWithPlane(double a, double b, double c, double d,
         case 5: aVolumeMeshElement.type = PYRAM; break;
         case 6: aVolumeMeshElement.type = PRISM; break;
         case 8: aVolumeMeshElement.type = HEXA; break;
+        case 10: aVolumeMeshElement.type = TET10; break;
         }
-        //int NbPoints = -1;
-        bool intersect = polygon::testPolygonPlaneIntersection(aPointCloud,a,b,c,d/*,NbPoints*/);
+        bool intersect = polygon::testPolygonPlaneIntersection(aPointCloud,a,b,c,d);
         if(!intersect) continue;
 
         volumeElementsList<<aVolumeMeshElement;
@@ -106,16 +106,16 @@ bool boltTool::sliceMeshWithPlane(double a, double b, double c, double d,
 
     occHandle(Ng_MeshVS_DataSource3D) volumeSlicedMesh = new Ng_MeshVS_DataSource3D(volumeElementsList,false,false);
 
+    //! ----------------------------------------------
+    //! test: visualization of the sliced volume mesh
+    //! ----------------------------------------------
+    //slicedMeshDS = volumeSlicedMesh;
+
     //! ---------------------------
     //! build the CCX connectivity
     //! ---------------------------
     std::map<meshElement2D,std::vector<std::pair<int,int>>> CCXFaceConnectivity;
     volumeSlicedMesh->buildCCXFaceToElementConnectivity(CCXFaceConnectivity);
-
-    //! ----------------------------------------------
-    //! test: visualization of the sliced volume mesh
-    //! ----------------------------------------------
-    //slicedMeshDS = volumeSlicedMesh;
 
     //! -----------------------------------------------
     //! corresponding surface mesh
@@ -124,9 +124,9 @@ bool boltTool::sliceMeshWithPlane(double a, double b, double c, double d,
     volumeSlicedMesh->buildFaceToElementConnectivity();
     occHandle(Ng_MeshVS_DataSource2D) surfaceSlicedMesh = new Ng_MeshVS_DataSource2D(volumeSlicedMesh);
 
-    //! ----------------------------------------------
-    //! test: visualization of the sliced volume mesh
-    //! ----------------------------------------------
+    //! ------------------------------------------------------------------
+    //! test: visualization of the surface mesh of the sliced volume mesh
+    //! ------------------------------------------------------------------
     //slicedMeshDS = surfaceSlicedMesh;
 
     //! -----------------------------------------------------------------
@@ -158,6 +158,7 @@ bool boltTool::sliceMeshWithPlane(double a, double b, double c, double d,
         {
         case 3: aMeshElement2D.type = TRIG; break;
         case 4: aMeshElement2D.type = QUAD; break;
+        case 6: aMeshElement2D.type = TRIG6; break;
         }
         std::pair<meshElement2D,int> apair;
         apair.first = aMeshElement2D;
@@ -165,10 +166,13 @@ bool boltTool::sliceMeshWithPlane(double a, double b, double c, double d,
         serviceMap.insert(apair);
     }
 
-    //! -------------------------------------------------------------
-    //! "Two layer mesh": the surface mesh of the sliced volume mesh
-    //! withouth lateral surface elements
-    //! -------------------------------------------------------------
+    //! ------------------------------------------
+    //! "Two layer mesh" S2
+    //! S surface mesh of the whole volume
+    //! S1 surface mesh of the sliced volume mesh
+    //! Si = S intersection S1
+    //! S2 = S1 - Si
+    //! ------------------------------------------
     std::vector<meshElementByCoords> twoLayersMeshElements;
     for(TColStd_MapIteratorOfPackedMapOfInteger it(surfaceSlicedMesh->GetAllElements()); it.More(); it.Next())
     {
@@ -211,6 +215,12 @@ bool boltTool::sliceMeshWithPlane(double a, double b, double c, double d,
             aMeshElement.type = QUAD;
         }
             break;
+        case 6:
+        {
+            aMeshElement2D.type = TRIG6;
+            aMeshElement.type = TRIG6;
+        }
+            break;
         }
 
         //! ------------------------------------------------
@@ -228,6 +238,7 @@ bool boltTool::sliceMeshWithPlane(double a, double b, double c, double d,
     //! segment to element connectivity of the "two layers" face mesh
     //! --------------------------------------------------------------
     twoLayerMeshFaceDS->computeFreeMeshSegments();
+
     const QMap<mesh::meshSegment,QList<int>> &segmentToElement = twoLayerMeshFaceDS->mySegmentToElement;
 
     //! -------------------------------------------
@@ -240,7 +251,6 @@ bool boltTool::sliceMeshWithPlane(double a, double b, double c, double d,
     //! --------------------------------------
     int seed = 1;
     int globalElementID = twoLayerMeshFaceDS->myElementsMap.FindKey(seed);
-    //cout<<"____one element mesh. Global element ID: "<<globalElementID<<"____"<<endl;
 
     int NbNodes, nbuf[8];
     TColStd_Array1OfInteger nodeIDs(*nbuf,1,8);
@@ -258,6 +268,7 @@ bool boltTool::sliceMeshWithPlane(double a, double b, double c, double d,
     {
     case 3: aMeshElement.type = TRIG; break;
     case 4: aMeshElement.type = QUAD; break;
+    case 6: aMeshElement.type = TRIG6; break;
     }
 
     //! ---------------------------------------------------
@@ -298,7 +309,10 @@ bool boltTool::sliceMeshWithPlane(double a, double b, double c, double d,
             //! list of elements attached to a segment
             //! ---------------------------------------
             QList<int> attachedElements = segmentToElement.value(aSegment);
-            //cout<<"____exploring segment: ("<<aSegment.nodeIDs[0]<<", "<<aSegment.nodeIDs[1]<<")____"<<endl;
+            //if(aSegment.nodeIDs.size()==2)
+            //    cout<<"____exploring segment: ("<<aSegment.nodeIDs[0]<<", "<<aSegment.nodeIDs[1]<<")____"<<endl;
+            //else if(aSegment.nodeIDs.size()==3)
+            //    cout<<"____exploring segment: ("<<aSegment.nodeIDs[0]<<", "<<aSegment.nodeIDs[1]<<", "<<aSegment.nodeIDs[2]<<")____"<<endl;
             //cout<<"____number of attached elements: "<<attachedElements.length()<<"____"<<endl;
 
             //! --------------------------------------------------------
@@ -334,6 +348,7 @@ bool boltTool::sliceMeshWithPlane(double a, double b, double c, double d,
                 {
                 case 3: me.type = TRIG; break;
                 case 4: me.type = QUAD; break;
+                case 6: me.type = TRIG6; break;
                 }
 
                 //! ---------------------------------------------
@@ -383,6 +398,7 @@ bool boltTool::sliceMeshWithPlane(double a, double b, double c, double d,
         {
         case 3: aMeshElement2D.type = TRIG; break;
         case 4: aMeshElement2D.type = QUAD; break;
+        case 6: aMeshElement2D.type = TRIG6; break;
         }
 
         if(CCXFaceConnectivity.at(aMeshElement2D).size()!=1)
@@ -401,5 +417,6 @@ bool boltTool::sliceMeshWithPlane(double a, double b, double c, double d,
         vecCCXFaceDefs.push_back(*volumeMeshGlobalID_CCXFace);
         cout<<(*volumeMeshGlobalID_CCXFace).first<<", "<<(*volumeMeshGlobalID_CCXFace).second<<endl;
     }
+
     return true;
 }

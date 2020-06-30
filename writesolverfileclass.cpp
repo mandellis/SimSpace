@@ -252,9 +252,14 @@ bool writeSolverFileClass::perform()
                 else
                 {
                     QVector<double> baseOrigin = nodeCS->getPropertyValue<QVector<double>>("Base origin");
-                    for(int i=0; i<3; i++) origin.push_back(baseOrigin[i]);
+                    for(int i=0; i<3; i++)
+                    {
+                        cout<<"____bolt CS origin: "<<baseOrigin[i]<<"____"<<endl;
+                        origin.push_back(baseOrigin[i]);
+                    }
                     QVector<QVector<double>> baseDirectionalData = nodeCS->getPropertyValue<QVector<QVector<double>>>("Base directional data");
                     boltAxis = baseDirectionalData.at(2);
+                    cout<<"____bolt CS directional data: "<<baseDirectionalData[2][0]<<", "<<baseDirectionalData[2][1]<<", "<<baseDirectionalData[2][2]<<"____"<<endl;
                 }
                 myInputFile<<"*NODE, NSET = "<<refNodeName.toStdString()<<endl;
                 myInputFile<<++totalNumberOfNodes<<", "<<origin[0]<<", "<<origin[1]<<", "<<origin[2]<<endl;

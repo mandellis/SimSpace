@@ -12547,7 +12547,7 @@ void SimulationManager::displayFaceMesh(const occHandle(MeshVS_DataSource) &aMes
     aspect.SetColor(aColorName);
 
     meshIO->GetDrawer()->SetMaterial(MeshVS_DA_FrontMaterial,aspect);
-    meshIO->GetDrawer()->SetBoolean(MeshVS_DA_DisplayNodes,false);
+    meshIO->GetDrawer()->SetBoolean(MeshVS_DA_DisplayNodes,true);
     meshIO->GetDrawer()->SetBoolean(MeshVS_DA_ShowEdges,showMeshEdges);
     meshIO->GetDrawer()->SetColor(MeshVS_DA_EdgeColor,Quantity_NOC_BLACK);
     meshIO->SetDisplayMode(MeshVS_DMF_Shading);
