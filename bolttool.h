@@ -25,9 +25,6 @@ public:
     //! -----------------------------
     //! slice volume mesh with plane
     //! -----------------------------
-    //bool sliceMeshWithPlane(double a, double b, double c, double d,
-    //                        occHandle(MeshVS_DataSource) &slicedMeshDS,
-    //                        std::vector<std::pair<int,std::string>> &vecCCXFaceDefs);
     bool sliceMeshWithPlane(double a, double b, double c, double d,
                             occHandle(MeshVS_DataSource) &slicedMeshDS,
                             std::vector<std::pair<int,int>> &vecCCXFaceDefs);

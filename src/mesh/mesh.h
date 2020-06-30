@@ -86,10 +86,26 @@ struct meshSegment
 {
     QList<int> nodeIDs;
 
+    //! ------------
+    //! constructor
+    //! ------------
+    meshSegment (const std::vector<int> &IDs = std::vector<int>())
+    {
+        for(int i=0; i<IDs.size(); i++) nodeIDs<<IDs[i];
+    }
+
     //! -----
     //! sort
     //! -----
     inline void sort() { std::sort(nodeIDs.begin(), nodeIDs.end()); }
+
+    //! -----------------
+    //! copy constructor
+    //! -----------------
+    meshSegment (const meshSegment &rhs)
+    {
+        for(int i=0; i<rhs.nodeIDs.length(); i++) nodeIDs<<rhs.nodeIDs[i];
+    }
 
     //! -----------
     //! operator =
@@ -113,34 +129,6 @@ struct meshSegment
         std::sort(tmp1.begin(),tmp1.end());
         for(int i=0; i<NbNodes; i++) if(tmp[i]!=tmp1[i]) return false;
         return true;
-
-        /*
-        if(nodeIDs.length() == 2)
-        {
-            //! -------------------------
-            //! first order mesh segment
-            //! [a1,b1] == [a2,b2]
-            //! -------------------------
-            int a1 = nodeIDs.at(0);
-            int b1 = nodeIDs.at(1);
-            int a2 = rhs.nodeIDs.at(0);
-            int b2 = rhs.nodeIDs.at(1);
-            if((a1 == a2 && b1 == b2) || (a1 == b2 && b1 == a2)) return true;
-            return false;
-        }
-        else if(nodeIDs.length() == 3)
-        {
-            //! --------------------------
-            //! second order mesh segment
-            //! [a1,b1,c1] == [a2,b2,c2]
-            //! --------------------------
-            int a1 = nodeIDs.at(0); int b1 = nodeIDs.at(1); int c1 = nodeIDs.at(2);
-            int a2 = rhs.nodeIDs.at(0); int b2 = rhs.nodeIDs.at(1); int c2 = rhs.nodeIDs.at(2);
-            if((a1 == a2 && b1 == b2 && c1 == c2) || (a1 == c2 && b1 == b2 && c1 == a2))
-                return true;
-            return false;
-        }
-        */
     }
 
     //! -----------

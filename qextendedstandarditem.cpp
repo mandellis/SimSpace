@@ -1645,6 +1645,7 @@ QVariant QExtendedStandardItem::data(int role) const
                 data.setValue(QString(""));
                 return data;
             }
+            /*
             CustomTableModel *tabularDataModel = nodeAnalysisSettings->getTabularDataModel();
 
             //! -----------------------------------------------------------------
@@ -1710,10 +1711,11 @@ QVariant QExtendedStandardItem::data(int role) const
                     val = tabularDataModel->dataRC(row,col,Qt::EditRole).toDouble();
                 };
             }
+            */
             Property::loadDefinition theLoadDefinition = QStandardItem::data(Qt::UserRole).value<Property>().getData().value<Property::loadDefinition>();
             switch(theLoadDefinition)
             {
-            case Property::loadDefinition_constant: data.setValue(QString("%1 (ramped)").arg(val)); break;
+            case Property::loadDefinition_constant: data.setValue(QString("Ramped")); break;
             case Property::loadDefinition_tabularData: data.setValue(QString("Tabular data")); break;
             case Property::loadDefinition_free: data.setValue(QString("Free")); break;
             }
