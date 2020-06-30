@@ -371,9 +371,6 @@ MainWindow::MainWindow(QWidget *parent):QMainWindow(parent),ui(new Ui::MainWindo
     //! ------------------------------------------------------------
     //! 3rd) tab of "theCentralTagWidget": "myConvergenceDataChart"
     //! ------------------------------------------------------------
-    //myConvergenceDataChart = new ConvergenceDataChart(this);
-    //myConvergenceDataChart->setObjectName("ConvergenceDataChart");
-
     myConvergenceDataChart1 = new ConvergenceDataChart1(this);
     myConvergenceDataChart1->setObjectName("ConvergenceDataChart1");
 
@@ -403,9 +400,7 @@ MainWindow::MainWindow(QWidget *parent):QMainWindow(parent),ui(new Ui::MainWindo
     //! ---------------------------------------
     //! the hystogram for the mesh metric view
     //! ---------------------------------------
-    //cout<<"____tag00____"<<endl;
     //myHistogram = new QHistogram(this);
-    //cout<<"____tag01____"<<endl;
 
     /*
     //! ---------------------
@@ -2745,7 +2740,7 @@ void MainWindow::setUpConnections()
     connect(myDetailViewer,SIGNAL(requestDisplayTrihedron(QVector<double>,QVector<QVector<double>>,int)),
             myMainOCCViewer,SLOT(displayTrihedron(QVector<double>,QVector<QVector<double> >,int)));
 
-    connect(myDetailViewer,SIGNAL(requestHandleTabularData()),mySimulationManager,SLOT(HandleTabularData()));
+    connect(myDetailViewer,SIGNAL(requestModifyTabularData()),mySimulationManager,SLOT(ModifyTabularData()));
     connect(myDetailViewer,SIGNAL(requestHandleFilmCoefficientLoadDefinitionChanged(QString)),mySimulationManager,SLOT(handleFilmCoefficientLoadDefinitionChanged(QString)));
     connect(myDetailViewer,SIGNAL(requestHandleReferenceTemperatureLoadDefinitionChanged(QString)),mySimulationManager,SLOT(handleReferenceTemperatureLoadDefinitionChanged(QString)));
     connect(myDetailViewer,SIGNAL(requestHandleMagnitudeLoadDefinitionChanged(QString)),mySimulationManager,SLOT(handleLoadMagnitudeDefinitionChanged(QString)));

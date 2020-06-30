@@ -16,7 +16,8 @@
 //! ------------
 //! QCustomPlot
 //! ------------
-#include <QCustomPlot/qcp/qcustomplot.h>
+//#include <QCustomPlot/qcp/qcustomplot.h>
+#include <qcustomplot.h>
 
 //! --------------------------------
 //! function: ConvergenceDataChart1

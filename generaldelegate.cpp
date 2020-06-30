@@ -4740,7 +4740,6 @@ void GeneralDelegate::setEditorData(QWidget *editor, const QModelIndex &index) c
         }
         else
         {
-            cout<<"GeneralDelegate::setEditorData()->____set editor data for \"Bolt pretension\"____"<<endl;
             Property::defineBy value = data.value<Property>().getData().value<Property::defineBy>();
             QComboBox *comboBox = static_cast<QComboBox*>(editor);
             switch(value)
@@ -4749,13 +4748,6 @@ void GeneralDelegate::setEditorData(QWidget *editor, const QModelIndex &index) c
             case Property::boltStatusDefinedBy_adjustment: comboBox->setCurrentIndex(1); break;
             case Property::boltStatusDefinedBy_open: comboBox->setCurrentIndex(2); break;
             case Property::boltStatusDefinedBy_lock: comboBox->setCurrentIndex(3); break;
-
-            /*
-            case Property::defineBy_load: comboBox->setCurrentIndex(0); break;
-            case Property::defineBy_adjustment: comboBox->setCurrentIndex(1); break;
-            case Property::defineBy_open: comboBox->setCurrentIndex(2); break;
-            case Property::defineBy_lock: comboBox->setCurrentIndex(3); break;
-            */
             }
             connect(editor,SIGNAL(currentIndexChanged(int)),this, SLOT(commitAndCloseBoltStatusDefinedBy()));
         }
@@ -6519,13 +6511,6 @@ void GeneralDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, c
                 case 1: data.setValue(Property::boltStatusDefinedBy_adjustment); break;
                 case 2: data.setValue(Property::boltStatusDefinedBy_open); break;
                 case 3: data.setValue(Property::boltStatusDefinedBy_lock); break;
-
-                /*
-                case 0: data.setValue(Property::defineBy_load); break;
-                case 1: data.setValue(Property::defineBy_adjustment); break;
-                case 2: data.setValue(Property::defineBy_open); break;
-                case 3: data.setValue(Property::defineBy_lock); break;
-                */
                 }
             }
         }
@@ -7071,7 +7056,7 @@ void GeneralDelegate::commitAndCloseVisibilityComboBox()
 }
 
 //! ------------------------------------------------
-//! function: commitAndCloseComboBox of "Define by"
+//! function: commitAndCloseDefineByControlComboBox
 //! details:
 //! ------------------------------------------------
 void GeneralDelegate::commitAndCloseDefineByControlComboBox()
@@ -7731,11 +7716,10 @@ void GeneralDelegate::commitAndCloseComboBoxTypeOfSizing()
     emit closeEditor(editor);
 }
 
-//! -------------------------------------------------------------
+//! -----------------------------------------------------
 //! function: commitAndCloseStraightSidedElementsControl
-//! details:  control for the generation of super/iso-parametric
-//!           elements
-//! -------------------------------------------------------------
+//! details:
+//! -----------------------------------------------------
 void GeneralDelegate::commitAndCloseStraightSidedElementsControl()
 {
     QComboBox *editor = qobject_cast<QComboBox*>(sender());

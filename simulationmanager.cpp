@@ -885,7 +885,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                     emit requestShowColumns(columnsToShow);
 
                     //! hide the row with Time = 0
-                    emit requestHideFirstRow();
+                    //emit requestHideFirstRow();
                     emit requestClearGraph();
                 }
             }
@@ -4925,9 +4925,7 @@ void SimulationManager::handleItemChange(QStandardItem *item)
         cout<<"____clear the geometry data base____"<<endl;
         return;
     }
-
-    if(propertyName== "Tags" ||  propertyName== "Master tags" || propertyName =="Slave tags" || propertyName== "Boundary tags")
-        return;
+    if(propertyName== "Tags" ||  propertyName== "Master tags" || propertyName =="Slave tags" || propertyName== "Boundary tags") return;
 
     //! -------------------------
     //! simulation item and node
@@ -5554,6 +5552,7 @@ void SimulationManager::handleItemChange(QStandardItem *item)
         //! Remove/add rotational DOFs
         //! -----------------------------------------------------------------------
         if(propertyName=="Coupling") myDetailViewer->handleCouplingChanged();
+
         //! -------------------------------------------------------------------------------------
         //! "DOFs selection" from "Manual"/"Program controlled" to "Program controlled"/"Manual"
         //! Remove/add switches
@@ -7745,14 +7744,20 @@ void SimulationManager::resizeTabularData()
 }
 
 //! -----------------------------------------------------------------------
-//! function: HandleTabularData
+//! function: ModifyTabularData
 //! details:  handle the tabular data. This is done here because the class
 //!           has direct access to item "Analysis settings". Switches are
 //!           removed/added by the DetailViewer
 //! -----------------------------------------------------------------------
-void SimulationManager::HandleTabularData()
+void SimulationManager::ModifyTabularData()
 {
-    cout<<"SimulationManager::HandleTabularData()->____function called____"<<endl;
+    cout<<"SimulationManager::ModifyTabularData()->____function called____"<<endl;
+
+    TableWidget *tableWidget = static_cast<TableWidget*>(tools::getWidgetByName("messagesAndLoadsWidget"));
+    DetailViewer *detailViewer = static_cast<DetailViewer*>(tools::getWidgetByName("detailViewer"));
+    disconnect(tableWidget,SIGNAL(requestUpdateDetailViewer(QModelIndex,QModelIndex,QVector<int>)),
+               detailViewer,SLOT(updateDetailViewerFromTabularData(QModelIndex,QModelIndex,QVector<int>)));
+
     SimulationNodeClass *theCurNode = myTreeView->currentIndex().data(Qt::UserRole).value<SimulationNodeClass*>();
     Property::defineBy theDefineBy = theCurNode->getPropertyValue<Property::defineBy>("Define by");
 
@@ -8009,7 +8014,7 @@ void SimulationManager::HandleTabularData()
     }
     else
     {
-        cout<<"SimulationManager::HandleTabularData()->____switched to vector____"<<endl;
+        cout<<"SimulationManager::ModifyTabularData()->____switched to vector____"<<endl;
         //! ---------------------------------------------------------------------------
         //! theDefineBy==defineBy_vector
         //! remove the columns for the components and add the column for the magnitude
@@ -8027,7 +8032,7 @@ void SimulationManager::HandleTabularData()
         {
             count=3;
         }
-        cout<<"SimulationManager::HandleTabularData()->____removing: "<<count<<" columns____"<<endl;
+        cout<<"SimulationManager::ModifyTabularData()->____removing: "<<count<<" columns____"<<endl;
 
         if(count!=0)
         {
@@ -8037,7 +8042,9 @@ void SimulationManager::HandleTabularData()
         QVariant data;
         data.setValue(0.0);
         QVector<QVariant> values {data};
-        load load_magnitude(values,Property::loadType_none);
+        for(int i=0; i<tabData->rowCount(); i++) values.push_back(data);
+        load load_magnitude;
+        load_magnitude.setData(values);
 
         //! ---------------------------
         //! establish the type of load
@@ -8087,6 +8094,9 @@ void SimulationManager::HandleTabularData()
         emit requestShowGraph(tabData,N);
     }
     else requestClearGraph();
+
+    connect(tableWidget,SIGNAL(requestUpdateDetailViewer(QModelIndex,QModelIndex,QVector<int>)),
+            detailViewer,SLOT(updateDetailViewerFromTabularData(QModelIndex,QModelIndex,QVector<int>)));
 }
 
 //! ------------------------------------------------------------------------
@@ -12720,12 +12730,7 @@ void SimulationManager::setTheActiveAnalysisBranch()
 {
     static QStandardItem *theActiveAnalysis_old;
 
-    //! -----------------------------------
-    //! pointer to the standard item model
-    //! -----------------------------------
     QModelIndex theModelIndex = myTreeView->currentIndex();
-    //QStandardItemModel *theModel = static_cast<QStandardItemModel*>(myTreeView->model());
-
     QStandardItem *theCurrentItem = myModel->itemFromIndex(theModelIndex);
     SimulationNodeClass *theCurrentNode = theCurrentItem->data(Qt::UserRole).value<SimulationNodeClass*>();
 
@@ -12787,6 +12792,7 @@ void SimulationManager::setTheActiveAnalysisBranch()
         cout<<"@ the current analysis branch is: "<<myActiveAnalysisBranch->data(Qt::UserRole).value<SimulationNodeClass*>()->getName().toStdString()<<endl;
         cout<<"@ ------------------------------------------------------------@"<<endl;
     }
+    return;
 }
 
 //! ----------------------------------

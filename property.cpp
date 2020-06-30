@@ -1038,7 +1038,7 @@ void Property::readVoid(ifstream &in, QStandardItem *item)
     }
 
     SimulationNodeClass *aNode = new SimulationNodeClass(nodeName,SimulationNodeClass::nodeType_NULL,vecProp);
-    //item = new QExtendedStandardItem();
+    cerr<<nodeType.toStdString()<<endl;
     aNode->setType1(nodeType);
 
     QVariant data;

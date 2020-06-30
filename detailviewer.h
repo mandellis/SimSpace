@@ -342,7 +342,7 @@ signals:
     //! signal to be connected to the "myOccPreGLWidget" class
     void requestDisplayTrihedron(QVector<double>,QVector<QVector<double>>, int size=0);
 
-    void requestHandleTabularData();
+    void requestModifyTabularData();
     void requestHandleLoadDefinitionChanged();
     void requestHandleFilmCoefficientLoadDefinitionChanged(const QString& textData);
     void requestHandleReferenceTemperatureLoadDefinitionChanged(const QString &textData);

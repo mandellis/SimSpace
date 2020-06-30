@@ -637,11 +637,3 @@ LIBS += -L$$PWD/QCustomPlot/qcp/ -lqcustomplot2
 
 INCLUDEPATH += $$PWD/QCustomPlot/qcp
 DEPENDPATH += $$PWD/QCustomPlot/qcp
-
-# --------------
-# manifest file
-# --------------
-#win32:
-#{
-#QMAKE_POST_LINK += mt -nologo -manifest $$PWD/manifest.xml -outputresource:$$OUT_PWD/$$TARGET”.exe” $$escape_expand(\n\t)
-#}

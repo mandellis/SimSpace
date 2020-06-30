@@ -1689,10 +1689,15 @@ void DetailViewer::handleCurrentStepNumberChanged()
 void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, QModelIndex bottomRightIndex, QVector<int> roles)
 {
     Q_UNUSED(roles)
-    Q_UNUSED(bottomRightIndex)
+    //Q_UNUSED(bottomRightIndex)
 
     static int i;
     cout<<"DetailViewer::updateDetailViewerFromTabularData()->____function called "<<i++<<"____"<<endl;
+
+    //! -------------
+    //! generic data
+    //! -------------
+    QVariant data;
 
     //! --------------------------------------
     //! retrieve the "Analysis settings" node
@@ -1705,7 +1710,7 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
     }
 
     //! -----------------------------------
-    //! retrieve the "Current step number"
+    //! retrieve the "Current step number"%TYUR
     //! -----------------------------------
     int currentStepNumber = nodeAnalysisSettings->getPropertyValue<int>("Current step number");
     CustomTableModel *tabularDataModel = tabularDataModel = nodeAnalysisSettings->getTabularDataModel();
@@ -1713,7 +1718,7 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
     //! -------------------------------------------------------------------------------------------------------------------------
     //! Once changed, the node model emits the Qt signal "itemChanged()", which is connected with the SLOT "handleItemChange()".
     //! That SLOT function modifies the tabular data, putting into the table the values set by the DetailViewer controls.
-    //! Instead the function defined herer modifies the DetailViewer content (i.e. the node model) using the tabular data.
+    //! Instead the function defined here modifies the DetailViewer content (i.e. the node model) using the tabular data.
     //! In order to avoid the ping-pong effect first disconnect "itemChanged()" from "handleItemChange()", then,
     //! after the changes have been applied, reconnect (this is done at the end [*])
     //! -------------------------------------------------------------------------------------------------------------------------
@@ -1725,6 +1730,12 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
     //myCurNode->getModel()->blockSignals(true);
 
     int row = topLeftIndex.row();
+    int col = topLeftIndex.column();
+
+    cout<<"____top left  (row, col) = ("<<row<<", "<<col<<")____"<<endl;
+    cout<<"____btt right (row, col) = ("<<bottomRightIndex.row()<<", "<<bottomRightIndex.column()<<")____"<<endl;
+    cout<<"____current step number: "<<currentStepNumber<<"____"<<endl;
+
     if(row == currentStepNumber)
     {
         SimulationNodeClass::nodeType nodeType = myCurNode->getType();
@@ -1736,7 +1747,7 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
         case SimulationNodeClass::nodeType_particlesInFieldsAnalysis:
         {
             int column = topLeftIndex.column();
-            QVariant data = tabularDataModel->dataRC(row,column);
+            data = tabularDataModel->dataRC(row,column);
             switch(column)
             {
             case TABULAR_DATA_STEP_END_TIME_COLUMN:
@@ -1762,6 +1773,7 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
                 myCurNode->replaceProperty("Static/Transient",Property("Static/Transient",data,Property::PropertyGroup_StepControls));
             }
                 break;
+
             }
         }
             break;
@@ -1769,7 +1781,6 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
         case SimulationNodeClass::nodeType_structuralAnalysisBoltPretension:
         {
             cout<<"DetailViewer::updateDetailViewerFromTabularData()->____updating \"Bolt pretension\"____"<<endl;
-
             int SC = mainTreeTools::calculateStartColumn(sm->myTreeView);
 
             int col_boltStatus = SC;
@@ -1842,17 +1853,6 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
             case Property::defineBy_vector:
             {
                 cout<<"____property defined by direction: updating magnitude____"<<endl;
-
-                //! diagnostic - can be removed
-                SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
-                int col = mainTreeTools::calculateStartColumn(sm->myTreeView);
-
-                int row = currentStepNumber;
-                double magnitude = tabularDataModel->dataRC(row,col,Qt::EditRole).toDouble();
-                cout<<"____step nr: "<<row<<" tab col= "<<col<<" read val: "<<magnitude<<"____"<<endl;
-                //! end diagnostic
-
-                QVariant data;
                 data.setValue(Property::loadDefinition_tabularData);
                 Property prop_magnitude("Magnitude",data,Property::PropertyGroup_Definition);
                 myCurNode->replaceProperty("Magnitude",prop_magnitude);
@@ -1862,23 +1862,9 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
             case Property::defineBy_components:
             {
                 cout<<"____property defined by components: updating 3 values____"<<endl;
-
                 QList<QString> propNames {"X component", "Y component", "Z component"};
                 for(int i=0; i<3; i++)
                 {
-                    //! ----------------------------
-                    //! diagnostic - can be removed
-                    //! ----------------------------
-                    SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
-                    int col = mainTreeTools::calculateStartColumn(sm->myTreeView)+i;
-                    int row = currentStepNumber;
-                    double componentValue = tabularDataModel->dataRC(row,col,Qt::EditRole).toDouble();
-                    cout<<"____step nr: "<<row<<" tab col= "<<col<<" "<<propNames.at(i).toStdString()<<" read val: "<<componentValue<<"____"<<endl;
-                    //! ---------------
-                    //! end diagnostic
-                    //! ---------------
-
-                    QVariant data;
                     data.setValue(Property::loadDefinition_tabularData);
                     QString propName = propNames.at(i);
                     Property prop_component(propName,data,Property::PropertyGroup_Definition);
@@ -1909,7 +1895,6 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
             case Property::defineBy_normal:
             {
                 cout<<"____property defined by direction: updating magnitude____"<<endl;
-                QVariant data;
                 data.setValue(Property::loadDefinition_tabularData);
                 Property prop_magnitude("Magnitude",data,Property::PropertyGroup_Definition);
                 myCurNode->replaceProperty("Magnitude",prop_magnitude);
@@ -1941,7 +1926,6 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
                     if(c1 == true) propertyName = "Y component";
                     if(c2 == true) propertyName = "Z component";
 
-                    QVariant data;
                     data.setValue(Property::loadDefinition_tabularData);
                     Property prop_displacementComponent(propertyName,data,Property::PropertyGroup_Definition);
                     myCurNode->replaceProperty(propertyName,prop_displacementComponent);
@@ -1953,7 +1937,6 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
                 {
                     if(c0==true && c1==true && c2 == false)
                     {
-                        QVariant data;
                         data.setValue(Property::loadDefinition_tabularData);
                         Property prop_displacementComponentX("X component",data,Property::PropertyGroup_Definition);
                         myCurNode->replaceProperty("X component",prop_displacementComponentX);
@@ -1962,7 +1945,6 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
                     }
                     if(c0==true && c1==false && c2 == true)
                     {
-                        QVariant data;
                         data.setValue(Property::loadDefinition_tabularData);
                         Property prop_displacementComponentX("X component",data,Property::PropertyGroup_Definition);
                         myCurNode->replaceProperty("X component",prop_displacementComponentX);
@@ -1971,7 +1953,6 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
                     }
                     if(c0==false && c1==true && c2 == true)
                     {
-                        QVariant data;
                         data.setValue(Property::loadDefinition_tabularData);
                         Property prop_displacementComponentY("Y component",data,Property::PropertyGroup_Definition);
                         myCurNode->replaceProperty("Y component",prop_displacementComponentY);
@@ -2018,8 +1999,6 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
 
         case SimulationNodeClass::nodeType_modelChange:
         {
-            //cout<<"DetailViewer::updateDetailViewerFromTabularData()->____function called for \"Model change\"____"<<endl;
-
             SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
             int col = mainTreeTools::calculateStartColumn(sm->myTreeView);
             int row = currentStepNumber;
@@ -2033,6 +2012,11 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
             break;
         }
     }
+    //else
+    //{
+    //    cerr<<"DetailViewer::updateDetailViewerFromTabularData()->____error____"<<endl;
+        //exit(1000000);
+    //}
 
     //! -----------------
     //! [*] reconnection
@@ -3063,11 +3047,16 @@ void DetailViewer::handleDefineByChanged()
 {
     cout<<"DetailViewer::handleDefineByChanged()->____function called____"<<endl;
 
+    //! -------------
+    //! generic data
+    //! -------------
+    QVariant data;
+
     //! -----------------------
     //! block the node signals
     //! -----------------------
-    //this->connectToSimulationManager(false);    //cesere
-    myCurNode->getModel()->blockSignals(true);
+    this->connectToSimulationManager(false);
+    //myCurNode->getModel()->blockSignals(true);
 
     //! --------------------------------------------------------------
     //! additional switches are added/removed here, while the changes
@@ -3087,62 +3076,41 @@ void DetailViewer::handleDefineByChanged()
     {
         cout<<"DetailViewer::handleDefineByChanged()->____transition to vector: removing components and direction____"<<endl;
 
-        //! ----------------------------------
-        //! remove the components, if present
-        //! ----------------------------------
-        QExtendedStandardItem* itemXcomponent = myCurNode->getPropertyItem("X component");
-        if(itemXcomponent!=Q_NULLPTR)
-        {
-            old_componentX = myCurNode->getOldXLoadDefinition();
-            myCurNode->updateOldLoadDefinition(1,old_componentX);
-            myCurNode->removeProperty("X component");
-        }
-        QExtendedStandardItem* itemYcomponent = myCurNode->getPropertyItem("Y component");
-        if(itemYcomponent!=Q_NULLPTR)
-        {
-            old_componentY = myCurNode->getOldYLoadDefinition();
-            myCurNode->updateOldLoadDefinition(2,old_componentY);
-            myCurNode->removeProperty("Y component");
-        }
-        QExtendedStandardItem* itemZcomponent = myCurNode->getPropertyItem("Z component");
-        if(itemZcomponent!=Q_NULLPTR)
-        {
-            old_componentZ = myCurNode->getOldZLoadDefinition();
-            myCurNode->updateOldLoadDefinition(3,old_componentZ);
-            myCurNode->removeProperty("Z component");
-        }
+        //! ----------------------
+        //! remove the components
+        //! ----------------------
+        old_componentX = myCurNode->getOldXLoadDefinition();
+        old_componentY = myCurNode->getOldYLoadDefinition();
+        old_componentZ = myCurNode->getOldZLoadDefinition();
+
+        myCurNode->updateOldLoadDefinition(1,old_componentX);
+        myCurNode->updateOldLoadDefinition(2,old_componentY);
+        myCurNode->updateOldLoadDefinition(3,old_componentZ);
+
+        myCurNode->removeProperty("X component");
+        myCurNode->removeProperty("Y component");
+        myCurNode->removeProperty("Z component");
+
         //! ----------------------------------
         //! remove the CS selector if present
         //! ----------------------------------
-        QExtendedStandardItem *item_CS = myCurNode->getPropertyItem("Coordinate system");
-        if(item_CS!=Q_NULLPTR)
-        {
-            myCurNode->removeProperty("Coordinate system");
-        }
+        myCurNode->removeProperty("Coordinate system");
+
         //! ---------------------------------
         //! add the magnitude if not present
         //! ---------------------------------
-        QExtendedStandardItem *item_magnitude = myCurNode->getPropertyItem("Magnitude");
-        if(item_magnitude==Q_NULLPTR)
-        {
-            QVariant data;
-            old_magnitude = myCurNode->getOldMagnitude();
-            data.setValue(old_magnitude);
-            Property property_magnitude("Magnitude",data,Property::PropertyGroup_Definition);
-            myCurNode->addProperty(property_magnitude);
-        }
+        old_magnitude = myCurNode->getOldMagnitude();
+        data.setValue(old_magnitude);
+        Property property_magnitude("Magnitude",data,Property::PropertyGroup_Definition);
+        myCurNode->addProperty(property_magnitude);
+
         //! ---------------------------------
         //! add the direction if not present
         //! ---------------------------------
-        QExtendedStandardItem *item_direction = myCurNode->getPropertyItem("Direction");
-        if(item_direction==Q_NULLPTR)
-        {
-            QVariant data;
-            old_direction = myCurNode->getOldDirection();
-            data.setValue(old_direction);
-            Property property_vectorDirection("Direction",data,Property::PropertyGroup_Definition);
-            myCurNode->addProperty(property_vectorDirection);
-        }
+        old_direction = myCurNode->getOldDirection();
+        data.setValue(old_direction);
+        Property property_vectorDirection("Direction",data,Property::PropertyGroup_Definition);
+        myCurNode->addProperty(property_vectorDirection);
     }
         break;
 
@@ -3153,72 +3121,45 @@ void DetailViewer::handleDefineByChanged()
         //! --------------------------------
         //! remove the magnitude if present
         //! --------------------------------
-        QExtendedStandardItem* itemMagnitude = myCurNode->getPropertyItem("Magnitude");
-        if(itemMagnitude!=Q_NULLPTR)
-        {
-            //! store old value before removing
-            old_magnitude = itemMagnitude->data(Qt::UserRole).value<Property>().getData().value<Property::loadDefinition>();
-            myCurNode->updateOldMagnitude(old_magnitude);
-            myCurNode->removeProperty("Magnitude");
-        }
+        QStandardItem *itemMagnitude = myCurNode->getPropertyItem("Magnitude");
+        old_magnitude = itemMagnitude->data(Qt::UserRole).value<Property>().getData().value<Property::loadDefinition>();
+        myCurNode->updateOldMagnitude(old_magnitude);
+        myCurNode->removeProperty("Magnitude");
+
         //! --------------------------------
         //! remove the direction if present
         //! --------------------------------
-        QExtendedStandardItem *itemDirection = myCurNode->getPropertyItem("Direction");
-        if(itemDirection!=Q_NULLPTR)
-        {
-            //! store the old values before removing
-            old_direction = itemDirection->data(Qt::UserRole).value<Property>().getData().value<QVector<double>>();
-            cout<<"____old direction size: "<<old_direction.size()<<"____"<<endl;
-            myCurNode->updateOldDirection(old_direction);
-            myCurNode->removeProperty("Direction");
-        }
+        QStandardItem *itemDirection = myCurNode->getPropertyItem("Direction");
+        old_direction = itemDirection->data(Qt::UserRole).value<Property>().getData().value<QVector<double>>();
+        myCurNode->updateOldDirection(old_direction);
+        myCurNode->removeProperty("Direction");
+
         //! -----------------------------------
         //! add the CS selector if not present
         //! -----------------------------------
-        QExtendedStandardItem *item_CS = myCurNode->getPropertyItem("Coordinate system");
-        if(item_CS==Q_NULLPTR)
-        {
-            SimulationManager *theSimulationManager = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
+        SimulationManager *theSimulationManager = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
+        QExtendedStandardItem *itemCSroot = theSimulationManager->getTreeItem(SimulationNodeClass::nodeType_coordinateSystems);
+        QExtendedStandardItem *itemGlobalCS = static_cast<QExtendedStandardItem*>(itemCSroot->child(0,0));
+        void *itemGlobalCSvoid = (void*)itemGlobalCS;
+        data.setValue(itemGlobalCSvoid);
+        Property prop_coordinateSystem("Coordinate system",data,Property::PropertyGroup_Definition);
+        myCurNode->addProperty(prop_coordinateSystem,1);
 
-            QExtendedStandardItem *itemCSroot = theSimulationManager->getTreeItem(SimulationNodeClass::nodeType_coordinateSystems);
-            QExtendedStandardItem *itemGlobalCS = static_cast<QExtendedStandardItem*>(itemCSroot->child(0,0));
-            void *itemGlobalCSvoid = (void*)itemGlobalCS;
-            QVariant data;
-            data.setValue(itemGlobalCSvoid);
-            Property prop_coordinateSystem("Coordinate system",data,Property::PropertyGroup_Definition);
-            myCurNode->addProperty(prop_coordinateSystem,1);
-        }
         //! ----------------------------------
         //! add the components if not present
         //! ----------------------------------
-        QExtendedStandardItem *item_componentX = myCurNode->getPropertyItem("X component");
-        if(item_componentX==Q_NULLPTR)
-        {
-            QVariant data;
-            old_componentX = myCurNode->getOldXLoadDefinition();
-            data.setValue(old_componentX);
-            Property property_Xcomponent("X component",data,Property::PropertyGroup_Definition);
-            myCurNode->addProperty(property_Xcomponent);
-        }
-        QExtendedStandardItem *item_componentY = myCurNode->getPropertyItem("Y component");
-        if(item_componentY==Q_NULLPTR)
-        {
-            QVariant data;
-            old_componentY = myCurNode->getOldYLoadDefinition();
-            data.setValue(old_componentY);
-            Property property_Ycomponent("Y component",data,Property::PropertyGroup_Definition);
-            myCurNode->addProperty(property_Ycomponent);
-        }
-        QExtendedStandardItem *item_componentZ = myCurNode->getPropertyItem("Z component");
-        if(item_componentZ==Q_NULLPTR)
-        {
-            QVariant data;
-            old_componentZ = myCurNode->getOldZLoadDefinition();
-            data.setValue(old_componentZ);
-            Property property_Zcomponent("Z component",data,Property::PropertyGroup_Definition);
-            myCurNode->addProperty(property_Zcomponent);
-        }
+        old_componentX = myCurNode->getOldXLoadDefinition();
+        old_componentY = myCurNode->getOldYLoadDefinition();
+        old_componentZ = myCurNode->getOldZLoadDefinition();
+        data.setValue(old_componentX);
+        Property property_Xcomponent("X component",data,Property::PropertyGroup_Definition);
+        myCurNode->addProperty(property_Xcomponent);
+        data.setValue(old_componentY);
+        Property property_Ycomponent("Y component",data,Property::PropertyGroup_Definition);
+        myCurNode->addProperty(property_Ycomponent);
+        data.setValue(old_componentZ);
+        Property property_Zcomponent("Z component",data,Property::PropertyGroup_Definition);
+        myCurNode->addProperty(property_Zcomponent);
     }
         break;
     }
@@ -3226,10 +3167,15 @@ void DetailViewer::handleDefineByChanged()
     //! ------------------------
     //! unlock the node signals
     //! ------------------------
-    //this->connectToSimulationManager(true);
-    myCurNode->getModel()->blockSignals(false);
+    this->connectToSimulationManager(true);
+    //myCurNode->getModel()->blockSignals(false);
 
-    emit requestHandleTabularData();
+    //SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
+    //mainTreeTools::getAnalysisSettingsNodeFromCurrentItem(sm->myTreeView)->getTabularDataModel()->blockSignals(true);
+
+    emit requestModifyTabularData();
+
+    //mainTreeTools::getAnalysisSettingsNodeFromCurrentItem(sm->myTreeView)->getTabularDataModel()->blockSignals(false);
 }
 
 //! --------------------------------------

@@ -1632,88 +1632,10 @@ QVariant QExtendedStandardItem::data(int role) const
         //! ------------------------------------------------------
         else if(name =="Magnitude" || name =="X component" || name =="Y component" || name =="Z component")
         {
-            //! --------------------------
-            //! retrieve the tabular data
-            //! --------------------------
-            SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
-            SimulationNodeClass *nodeAnalysisSettings = sm->getActiveAnalysisBranch()->child(0,0)->data(Qt::UserRole).value<SimulationNodeClass*>();
-            if(nodeAnalysisSettings->isAnalysisSettings()==false)
-            {
-                cout<<"@-------------------------------------------------@"<<endl;
-                cout<<"@- Analysis settings not found - check interface -@"<<endl;
-                cout<<"@-------------------------------------------------@"<<endl;
-                data.setValue(QString(""));
-                return data;
-            }
-            CustomTableModel *tabularDataModel = nodeAnalysisSettings->getTabularDataModel();
-
-            //! -----------------------------------------------------------------
-            //! retrieve the numerical value of "Magnitude" of "X/Y/Z component"
-            //! at the current step number
-            //! -----------------------------------------------------------------
-            int row = nodeAnalysisSettings->getPropertyValue<int>("Current step number");
-            int SC = mainTreeTools::calculateStartColumn(sm->myTreeView);
-            int col;
-
-            double val;
-            if(name =="Magnitude")
-            {
-                col = SC;
-                val = tabularDataModel->dataRC(row,col,Qt::EditRole).toDouble();
-            }
-            else
-            {
-                SimulationNodeClass *curNode = this->getCurrentNode();
-                bool b0 = curNode->getPropertyValue<Property::loadDefinition>("X component")!=Property::loadDefinition_free? true:false;
-                bool b1 = curNode->getPropertyValue<Property::loadDefinition>("Y component")!=Property::loadDefinition_free? true:false;
-                bool b2 = curNode->getPropertyValue<Property::loadDefinition>("Z component")!=Property::loadDefinition_free? true:false;
-
-                //! --------------------------------------------
-                //! one column for the load component is active
-                //! --------------------------------------------
-                if((b0==true && b1==false && b2==false) || (b0==false && b1==true && b2==false) || (b0==false && b1==false &&b2 ==true))
-                {
-                    col = SC;
-                    val = tabularDataModel->dataRC(row,col,Qt::EditRole).toDouble();
-                }
-                //! -----------------------------------------------
-                //! two columns for the load components are active
-                //! (x,y) =>    (SC, SC+1)
-                //! -----------------------------------------------
-                if((b0==true && b1==true && b2 ==false) || (b0==true && b1==false && b2==true) || (b0==false && b1==true && b2==true))
-                {
-                    if(name =="X component")
-                    {
-                        col = SC;
-                        val = tabularDataModel->dataRC(row,col,Qt::EditRole).toDouble();
-                    }
-                    if(name =="Y component")
-                    {
-                        if(b0==false) col = SC;
-                        else col = SC+1;
-                        val = tabularDataModel->dataRC(row,col,Qt::EditRole).toDouble();
-                    }
-                    if(name =="Z component")
-                    {
-                        col = SC+1;
-                        val = tabularDataModel->dataRC(row,col,Qt::EditRole).toDouble();
-                    }
-                }
-                //! -------------------------------------------------
-                //! three columns for the load components are active
-                //! -------------------------------------------------
-                if(b0==true && b1==true && b2==true)
-                {
-                    if(name=="X component") col = SC;
-                    if(name=="Y component") col = SC+1;
-                    if(name=="Z component") col = SC+2;
-                    val = tabularDataModel->dataRC(row,col,Qt::EditRole).toDouble();
-                };
-            }
             Property::loadDefinition theLoadDefinition = QStandardItem::data(Qt::UserRole).value<Property>().getData().value<Property::loadDefinition>();
             switch(theLoadDefinition)
             {
-            case Property::loadDefinition_constant: data.setValue(QString("%1 (ramped)").arg(val)); break;
+            case Property::loadDefinition_constant: data.setValue(QString("Ramped")); break;
             case Property::loadDefinition_tabularData: data.setValue(QString("Tabular data")); break;
             case Property::loadDefinition_free: data.setValue(QString("Free")); break;
             }

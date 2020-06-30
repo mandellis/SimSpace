@@ -259,7 +259,7 @@ public slots:
     void resizeTabularData();
 
     //! handle tabular data
-    void HandleTabularData();
+    void ModifyTabularData();
 
     //! handle load definitions
     void handleFilmCoefficientLoadDefinitionChanged(const QString &textData);
