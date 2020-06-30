@@ -1284,6 +1284,8 @@ void SimulationNodeClass::addTimeTag()
 bool SimulationNodeClass::isSimulationSetUpNode()
 {
     if(myNodeType == SimulationNodeClass::nodeType_electrostaticPotential ||
+            myNodeType == SimulationNodeClass::nodeType_magneticField ||
+            myNodeType == SimulationNodeClass::nodeType_particlesInFieldsParticlePack ||
             myNodeType == SimulationNodeClass::nodeType_thermalAnalysisAdiabaticWall ||
             myNodeType == SimulationNodeClass::nodeType_thermalAnalysisConvection ||
             myNodeType == SimulationNodeClass::nodeType_thermalAnalysisRadiation ||

@@ -168,7 +168,9 @@ public:
         nodeType_particlesInFieldsAnalysisSettings,
         nodeType_particlesInFieldsSolution,
         nodeType_particlesInFieldsSolutionInformation,
-        nodeType_electrostaticPotential
+        nodeType_electrostaticPotential,
+        nodeType_magneticField,
+        nodeType_particlesInFieldsParticlePack
     };
 
     Q_ENUM(nodeType)
