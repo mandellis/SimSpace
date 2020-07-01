@@ -1952,7 +1952,7 @@ void MainWindow::setDoubleViewPortVisible(bool isVisible)
 //! ----------------------------------------------------------
 void MainWindow::setWorkingMode(int workingModeNumber)
 {
-    //cout<<"MainWindow::setWorkingMode()->____working mode: "<<workingModeNumber<<"____"<<endl;
+    cout<<"MainWindow::setWorkingMode()->____working mode: "<<workingModeNumber<<"____"<<endl;
     switch(workingModeNumber)
     {
     case 0:
@@ -2035,7 +2035,11 @@ void MainWindow::setWorkingMode(int workingModeNumber)
     //! ---------------------------------------
     //! set the working mode for the clip tool
     //! ---------------------------------------
+    cout<<"MainWindow::setWorkingMode()->____working mode: "<<workingModeNumber<<"____"<<endl;
+
     if(myClipTool!=Q_NULLPTR) myClipTool->setWorkingMode(workingModeNumber);
+    cout<<"MainWindow::setWorkingMode()->____working mode: "<<workingModeNumber<<"____"<<endl;
+
 }
 
 //! ------------------------------------------------------------

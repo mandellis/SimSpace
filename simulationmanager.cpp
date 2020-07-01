@@ -1043,7 +1043,6 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 emit requestHideSlicedMeshes();
                 //this->changeColor();
                 emit requestClearGraph();
-
                 //! -----------------------------------------
                 //! show the double view port - experimental
                 //! -----------------------------------------
