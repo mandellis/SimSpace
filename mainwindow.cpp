@@ -1942,11 +1942,8 @@ void MainWindow::startAnalysis()
 //! -----------------------------------
 void MainWindow::setDoubleViewPortVisible(bool isVisible)
 {
-    cout<<"tag00"<<endl;
     myDockableMasterViewPort->setVisible(isVisible);
     myDockableSlaveViewPort->setVisible(isVisible);
-    cout<<"tag01"<<endl;
-
 }
 
 //! ----------------------------------------------------------

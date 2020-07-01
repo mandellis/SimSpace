@@ -326,7 +326,7 @@ void occGLWidget::init()
     if (GetGraphicDriver().IsNull())
     {
         GetGraphicDriver() = new OpenGl_GraphicDriver(aDisplayConnection);
-        GetGraphicDriver()->EnableVBO(true);
+        GetGraphicDriver()->EnableVBO(false);
     }
 
     //! ----------------------
