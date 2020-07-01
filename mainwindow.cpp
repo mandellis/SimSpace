@@ -1865,7 +1865,7 @@ void MainWindow::setLowQualityDisplay()
 //! -------------------------------
 void MainWindow::writeSolverInputFile()
 {
-    ccout("MainWindow::writeSolverInputFile()->____function called____");
+    cout<<"MainWindow::writeSolverInputFile()->____function called____"<<endl;
     mySimulationManager->writeSolverInputFile();
 }
 
