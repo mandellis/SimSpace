@@ -23,10 +23,10 @@ public:
 
     //static QList<int> getColumnsToRead1(QTreeView *tree);
     static int calculateStartColumn(QTreeView *tree);
-    static int calculateStartColumn(QExtendedStandardItem *anItem);
+    static int calculateStartColumn(QStandardItem *anItem);
 
     static QList<int> getColumnsToRead(QTreeView *tree);
-    static QList<int> getColumnsToRead(QExtendedStandardItem *anItem);
+    static QList<int> getColumnsToRead(QStandardItem *anItem);
 
     static QStandardItem* getCurrentSimulationRoot(QTreeView *treeView);
 
@@ -45,6 +45,10 @@ public:
     //! type: 2 solid, 3 shell, 4 face, 5 wire, 6 edge, 7 vertex
     //! ----------------------------------------------------------
     static void getAllBoundaryConditionsTags(QTreeView *tree, int type=0, QVector<GeometryTag> &tags =QVector<GeometryTag>());
+
+    static SimulationNodeClass* getAnalysisSettingsNodeFromIndex(QModelIndex curIndex);
+    static QStandardItem* getAnalysisSettingsItemFromCurrentItem(QTreeView *treeView);
+    static SimulationNodeClass* getAnalysisSettingsNodeFromCurrentItem(QTreeView *treeView);
 };
 
 #endif // MAINTREETOOLS_H
