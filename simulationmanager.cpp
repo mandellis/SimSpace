@@ -1043,11 +1043,11 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 emit requestHideSlicedMeshes();
                 //this->changeColor();
                 emit requestClearGraph();
-
                 //! -----------------------------------------
                 //! show the double view port - experimental
                 //! -----------------------------------------
                 emit requestShowDoubleViewPort(true);
+                cout<<"____tagBUBI____"<<endl;
 
                 QVector<GeometryTag> vecLocM = theNode->getPropertyItem("Tags master")->data(Qt::UserRole).value<Property>().getData().value<QVector<GeometryTag>>();
                 QVector<GeometryTag> vecLocS = theNode->getPropertyItem("Tags slave")->data(Qt::UserRole).value<Property>().getData().value<QVector<GeometryTag>>();
