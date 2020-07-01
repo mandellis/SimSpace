@@ -888,7 +888,6 @@ void occGLWidget::onMouseMove(const int theFlags, QPoint thePoint)
             myXmax = x_cur;
             myYmax = y_cur;
 
-            //cesere
             //! --------------------------------
             //! retrieve the current clip plane
             //! --------------------------------

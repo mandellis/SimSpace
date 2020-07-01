@@ -3820,20 +3820,15 @@ void occPreGLWidget::addClipPlane(double A, double B, double C, double D, int ID
     //! add/replace the clip plane to the map
     //! --------------------------------------
     myMapOfClipPlanes.insert(ID,aClipPlane);
-    cout<<"____final number of clip planes: "<<myMapOfClipPlanes.size()<<"____"<<endl;
 
-    occHandle(AIS_Plane) anAISPlane;
-    if(!myMapOfHandlePlanes.contains(ID))
-    {
-        occHandle(Geom_Plane) aGeomPlane = new Geom_Plane(A,B,C,D);
-        anAISPlane = new AIS_Plane(aGeomPlane);
-        myMapOfHandlePlanes.insert(ID,anAISPlane);
-        occContext->Display(anAISPlane,AIS_Shaded);
-    }
-    else
-    {
-        occHandle(Geom_Plane) aGeomPlane = new Geom_Plane(A,B,C,D);
-    }
+    //! ---------------
+    //! graphic object
+    //! ---------------
+    occHandle(Geom_Plane) aGeomPlane = new Geom_Plane(A,B,C,D);
+    occHandle(AIS_Plane) anAISPlane = new AIS_Plane(aGeomPlane);
+    occContext->Erase(myMapOfHandlePlanes.value(ID),true);
+    myMapOfHandlePlanes.insert(ID,anAISPlane);
+    occContext->Display(anAISPlane,AIS_Shaded);
 }
 
 //! ----------------------------------------------------------
@@ -3938,11 +3933,12 @@ void occPreGLWidget::removeClipPlane(int ID)
     //! -------
     occView->Redraw();
 
-    //! -----------------------------------
-    //! remove the clip plane from the map
-    //! -----------------------------------
+    //! --------------------------------------------------------
+    //! remove the clip plane from the map and from the display
+    //! --------------------------------------------------------
+    occContext->Erase(myMapOfHandlePlanes.value(ID),true);
+    myMapOfHandlePlanes.remove(ID);
     myMapOfClipPlanes.remove(ID);
-    cout<<"____final number of clip planes: "<<myMapOfClipPlanes.size()<<"____"<<endl;
 }
 
 //! ------------------------------------------

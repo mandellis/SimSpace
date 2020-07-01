@@ -31,6 +31,32 @@
 #include <MeshVS_DrawerAttribute.hxx>
 #include <AIS_Plane.hxx>
 
+//! --------------------------
+//! function: mousePressEvent
+//! details:
+//! --------------------------
+void clipTool::mousePressEvent(QMouseEvent *event)
+{
+    if (event->button() == Qt::RightButton)
+    {
+        ;
+    }
+    if (event->button() == Qt::LeftButton)
+    {
+        QModelIndex index = indexAt(event->pos());
+        if(index.column()==1) edit(index);
+
+        QPoint pos = this->mapToGlobal(event->pos());
+        cout<<"@ ------------------------------- @"<<endl;
+        cout<<"@ - setting action3D plane drag - @"<<endl;
+        cout<<"@ ------------------------------- @"<<endl;
+        myOCCViewer->setAction3D_PlaneDrag();
+        cout<<"____("<<pos.x()<<", "<<pos.y()<<")____"<<endl;
+    }
+    QTableView::mousePressEvent(event);
+}
+
+
 //! ----------------------
 //! function: constructor
 //! details:
@@ -54,7 +80,7 @@ clipTool::clipTool(QWidget *parent):QTableView(parent),
     //! ----------------------
     //! enable mouse tracking
     //! ----------------------
-    this->setMouseTracking(true);
+    this->setMouseTracking(false);
 
     //! --------------------------
     //! create the internal model
@@ -97,7 +123,7 @@ clipTool::clipTool(QWidget *parent):QTableView(parent),
     //! ------------------------
     //! the table fits the view
     //! ------------------------
-    this->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    //this->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
 }
 
 //! --------------------------
@@ -106,7 +132,6 @@ clipTool::clipTool(QWidget *parent):QTableView(parent),
 //! --------------------------
 void clipTool::setMeshDataBase(meshDataBase *aMeshDataBase)
 {
-    //cout<<"clipTool::setMeshDataBase()->____function called____"<<endl;
     myMDB = aMeshDataBase;
 }
 
@@ -241,7 +266,7 @@ void clipTool::showContextMenu(QPoint aPoint)
     //! ---------------------------------------------------------------
     //! create the context menu only if coordinate systems are present
     //! ---------------------------------------------------------------
-    if(myCoordinateSystemRoot!=NULL)
+    if(myCoordinateSystemRoot!=Q_NULLPTR)
     {
         QPoint pos = this->mapToGlobal(aPoint);
         QMenu *ctxMenu= new QMenu(this);
@@ -261,7 +286,6 @@ void clipTool::showContextMenu(QPoint aPoint)
         }
 
         QAction* selectedItem = ctxMenu->exec(pos);
-
         if(selectedItem)
         {
             switch(selectedItem->data().toInt())
@@ -272,11 +296,11 @@ void clipTool::showContextMenu(QPoint aPoint)
                 emit clipPlaneAdded();
             }
                 break;
-
             case 1:
             {
                 this->removeItemFromTable();
                 emit clipPlaneRemoved();
+                myOCCViewer->setAction3D_Pan();
             }
                 break;
             }
@@ -417,8 +441,9 @@ void clipTool::addItemToTable()
     //! --------------------------------
     this->setSelectionMode(QAbstractItemView::SingleSelection);
     //this->setSelectionMode(QAbstractItemView::NoSelection);
-    this->resizeColumnsToContents();
-    this->resizeRowsToContents();
+
+    //this->resizeColumnsToContents();
+    //this->resizeRowsToContents();
 
     //this->horizontalHeader()->setStretchLastSection(true);
 }
@@ -468,7 +493,7 @@ void clipTool::updateCSDefinition()
     double B = coeffs.at(1);
     double C = coeffs.at(2);
     double D = coeffs.at(3);
-    data.setValue(QString("(%1, %2, %3, %4").arg(A).arg(B).arg(C).arg(D));
+    data.setValue(QString("(%1, %2, %3, %4)").arg(A).arg(B).arg(C).arg(D));
     internalModel->setData(indexPlaneCoeffs,data,Qt::DisplayRole);
 
     QModelIndex indexID = internalModel->index(this->currentIndex().row(),CLIPPLANE_ID_COLUMN);
@@ -484,7 +509,7 @@ void clipTool::updateCSDefinition()
 }
 
 //! ------------------------------------------------------------
-//! function: updateCSDataByExternalCSChange()
+//! function: updateCSDataByExternalCSChange
 //! details:  the definition of a coordinate system is changed:
 //!           update all the clipPlanes containing that CS
 //! ------------------------------------------------------------
@@ -503,16 +528,15 @@ void clipTool::updateCSDataByExternalCSChange(QStandardItem *theCurrentModifiedC
         QStandardItem *curItem = static_cast<QStandardItem*>(p);
         if(curItem == theCurrentModifiedCS)
         {
-            cerr<<"+++++++++++++++"<<endl;
             this->updateCSDefinition();
         }
     }
 }
 
-//! ---------------------------------------------------------------
+//! --------------------------------------------------------------
 //! function: getPlaneCoefficients
-//! details:  return the coefficients defining the plabne equation
-//! ---------------------------------------------------------------
+//! details:  return the coefficients defining the plane equation
+//! --------------------------------------------------------------
 QVector<double> clipTool::getPlaneCoefficients(QExtendedStandardItem *aCSItem)
 {
     //cout<<"clipTool::getPlaneCoefficients()->____function called____"<<endl;
@@ -581,11 +605,6 @@ QVector<double> clipTool::getPlaneCoefficients(QExtendedStandardItem *aCSItem)
     double A,B,C,D;
     plane.Coefficients(A,B,C,D);
     QVector<double> coeff{A,B,C,D};
-    //QVector<double> coeff;
-    //coeff.push_back(A);
-    //coeff.push_back(B);
-    //coeff.push_back(C);
-    //coeff.push_back(D);
     return coeff;
 }
 

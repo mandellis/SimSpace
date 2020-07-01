@@ -51,29 +51,7 @@ public:
 
 protected:
 
-    //! -------------------
-    //! handle right click
-    //! -------------------
-    virtual void mousePressEvent(QMouseEvent *event)
-    {
-        if (event->button() == Qt::RightButton)
-        {
-            myCurPoint = event->pos();
-        }
-        if (event->button() == Qt::LeftButton)
-        {
-            QModelIndex index = indexAt(event->pos());
-            if (index.column() == 1)
-            {
-                edit(index);
-            }
-        }
-        cout<<"____left button pressed____"<<endl;
-        myOCCViewer->setAction3D_PlaneDrag();
-
-        // pass on other buttons to base class
-        QTableView::mousePressEvent(event);
-    }
+    virtual void mousePressEvent(QMouseEvent *event);
 
 private slots:
 

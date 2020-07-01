@@ -8,7 +8,8 @@
 #include "writePLY.h"
 #include <vector>
 
-#include <igl/ply.h>
+//#include <igl/ply.h>
+#include <libigl/include/igl/ply.h>
 #include <vector>
 
 namespace
