@@ -645,15 +645,13 @@ public:
                 //! -------------------------------------------------
                 //! the polygon plane is parallel to the input plane
                 //! -------------------------------------------------
-                //NbPoints = 0;
                 return false;
             }
             else
             {
-                //! -----------------------------
-                //! the polygon lay on the plane
-                //! -----------------------------
-                //NbPoints = int(aPolygon.size());
+                //! ------------------------------
+                //! the polygon lays on the plane
+                //! ------------------------------
                 return true;
             }
         }
@@ -662,21 +660,28 @@ public:
         //! point plane distance
         //! ---------------------
         const polygon::Point &aP = aPolygon[0];
-        double d_old = (a*aP.x+b*aP.y+c*aP.z+d)/sqrt(a*a+b*b+c*c);
-        //int S = SIGN(d_old);
+
+        //double L = sqrt(a*a+b*b+c*c);
+        //double d_old = (a*aP.x+b*aP.y+c*aP.z+d)/L;
+        double d_old = (a*aP.x+b*aP.y+c*aP.z+d);
+
         for(int i=1; i<aPolygon.size(); i++)
         {
             const polygon::Point &aP = aPolygon[i];
-            double d_new = (a*aP.x+b*aP.y+c*aP.z+d)/sqrt(a*a+b*b+c*c);
-            //if(d_new==0) intersection = true;
+
+            //double d_new = (a*aP.x+b*aP.y+c*aP.z+d)/L;
+            double d_new = (a*aP.x+b*aP.y+c*aP.z+d);
 
             //! -----
             //! sign
             //! -----
-            if(SIGN(d_new)*SIGN(d_old)<1) intersection = true;
-            //S = S+SIGN(d_new);
+            if(d_new*d_old<=0)
+            //if(SIGN(d_new)*SIGN(d_old)<1)
+            {
+                intersection = true;
+                break;
+            }
         }
-        //NbPoints = fabs(S);
         return intersection;
     }
 };
