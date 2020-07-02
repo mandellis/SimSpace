@@ -637,7 +637,7 @@ void clipTool::updateCSTranslation(int curZ)
     //! this moves the plane and redraw the clipped view
     //! -------------------------------------------------
     cout<<"clipTool::updateCSTranslation()->____("<<coeffs.at(0)<<", "<<coeffs.at(1)<<", "<<coeffs.at(2)<<", "<<coeffs.at(3)<<")____"<<endl;
-    myOCCViewer->updateClipPlaneTranslation(ID,curZ,coeffs);
+    //myOCCViewer->updateClipPlaneTranslation(ID,curZ,coeffs);
 
     if(myMDB==NULL)
     {
@@ -687,6 +687,7 @@ void clipTool::updateCSTranslation(int curZ)
         //! build the interactive objects
         //! ------------------------------
         myOCCViewer->buildSlicedMeshIO(mySlicedMeshedDS);
+        myOCCViewer->updateClipPlaneTranslation(ID,curZ,coeffs);
     }
 }
 

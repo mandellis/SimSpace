@@ -92,6 +92,8 @@
 #include <AIS_KindOfInteractive.hxx>
 #include <Graphic3d_MaterialAspect.hxx>
 #include <Graphic3d_NameOfMaterial.hxx>
+#include <Bnd_Box.hxx>
+#include <BRepBndLib.hxx>
 
 static double rx = 0.0;
 static double ry = 0.0;
@@ -650,6 +652,7 @@ void occGLWidget::onLButtonDown(const int theFlags,const QPoint thePoint)
         cursor.setMask(mask);
         setCursor(cursor);
     }
+    /*
     //! experimental
     else if(myCurAction3D==CurAction3D_PlaneDrag)
     {
@@ -657,6 +660,7 @@ void occGLWidget::onLButtonDown(const int theFlags,const QPoint thePoint)
         occContext->Select(true);
         cout<<"____"<<occContext->SelectedInteractive()->get_type_name()<<"____"<<endl;
     }
+    */
 }
 
 //! -----------------------------
@@ -877,6 +881,7 @@ void occGLWidget::onMouseMove(const int theFlags, QPoint thePoint)
             drawRubberBand(myXmin, myYmin, x_cur, y_cur);
             break;
 
+            /*
             //! -------------
             //! experimental
             //! -------------
@@ -910,11 +915,10 @@ void occGLWidget::onMouseMove(const int theFlags, QPoint thePoint)
             occHandle(Geom_Plane) geomPlane = new Geom_Plane(a,b,c,d);
             myMapOfHandlePlanes.value(curClipPlaneID)->SetComponent(geomPlane);
             occContext->Redisplay(myMapOfHandlePlanes.value(curClipPlaneID),true,false);
-            //curClipPlane->SetEquation(aPlane);
-
             occView->Redraw();
         }
             break;
+            */
         }
 
         //! Handling current global selection modes multiple and single
@@ -3407,8 +3411,9 @@ Standard_Integer occGLWidget::getClipPlanesNbLimit()
 void occGLWidget::setClipPlaneOn(int ID, bool isOn)
 {
     const occHandle(Graphic3d_ClipPlane)& aClipPlane = myMapOfClipPlanes.value(ID);
-    //const occHandle(Graphic3d_ClipPlane)& aClipPlane = myMapOfClipPlanes.at(ID);
     aClipPlane->SetOn(isOn);
+    if(isOn == true) occContext->Display(myMapOfHandlePlanes.value(ID),-1,true,false);
+    else occContext->Remove(myMapOfHandlePlanes.value(ID),true);
     occView->Redraw();
 }
 
@@ -3499,4 +3504,38 @@ Standard_Boolean occGLWidget::ConvertToPlane(const Standard_Integer Xs,
         }
     }
     return Standard_False;
+}
+
+
+//! --------------------------------
+//! function: centerOfTheScene
+//! details:  centroid of the scene
+//! --------------------------------
+void occGLWidget::centerOfTheScene(double *C, double *width, bool onlyVisible)
+{
+    BRep_Builder aBuilder;
+    TopoDS_Compound aCompound;
+    aBuilder.MakeCompound(aCompound);
+
+    //! ---------------------------------------
+    //! put the displayed "Shapes" into a list
+    //! ---------------------------------------
+    AIS_ListOfInteractive l;
+    if(onlyVisible==true) occContext->ObjectsByDisplayStatus(AIS_KOI_Shape,0,AIS_DS_Displayed,l);
+    else occContext->ObjectsInside(l,AIS_KOI_Shape,0);
+    for(AIS_ListIteratorOfListOfInteractive it(l); it.More(); it.Next())
+    {
+        const occHandle(AIS_Shape) &curAISShape = occHandle(AIS_Shape)::DownCast(it.Value());
+        const TopoDS_Shape &curShape = curAISShape->Shape();
+        aBuilder.Add(aCompound,curShape);
+    }
+
+    double Xmin,Ymin,Zmin,Xmax,Ymax,Zmax;
+
+    Bnd_Box boundingBox;
+    BRepBndLib::Add(aCompound, boundingBox);
+    boundingBox.Get(Xmin,Ymin,Zmin,Xmax,Ymax,Zmax);
+
+    C[0] = (Xmax+Xmin)/2; C[1] = (Ymax+Ymin)/2; C[2] = (Zmax+Zmin)/2;
+    width[0] = Xmax-C[0]; width[1] = Ymax-C[1]; width[2] = Zmax-C[2];
 }

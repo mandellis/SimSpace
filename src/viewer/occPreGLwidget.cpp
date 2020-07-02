@@ -3750,7 +3750,12 @@ void occPreGLWidget::displayMesh(const occHandle(MeshVS_DataSource) &aMeshDS,
 //! ----------------------------------------------------------------------------------
 void occPreGLWidget::addClipPlane(double A, double B, double C, double D, int ID, bool isOn)
 {
-    cout<<"occPreGLWidget::addClipPlane()->____function called____"<<endl;
+    cout<<"occPreGLWidget::addClipPlane()->____function called____"<<endl;    
+
+    double center[3], width[3];
+    this->centerOfTheScene(center,width,true);
+    cout<<"____center ("<<center[0]<<", "<<center[1]<<", "<<center[2]<<")____"<<endl;
+    cout<<"____width ("<<width[0]<<", "<<width[1]<<", "<<width[2]<<")____"<<endl;
 
     //! ------------------------------------------------------------------
     //! add the clip plane only if it is not already contained in the map
@@ -3770,9 +3775,11 @@ void occPreGLWidget::addClipPlane(double A, double B, double C, double D, int ID
     //! ------------
     //! set capping
     //! ------------
-    bool cappingOn = false;
-    if(myCurWorkingMode == curWorkingMode_onModel || myCurWorkingMode == curWorkingMode_onContact) cappingOn = true;
-    aClipPlane->SetCapping(cappingOn);
+    //bool cappingOn = false;
+    //if(myCurWorkingMode == curWorkingMode_onModel || myCurWorkingMode == curWorkingMode_onContact) cappingOn = true;
+    //else cappingOn = false;
+    //aClipPlane->SetCapping(cappingOn);
+    aClipPlane->SetCapping(false);
 
     //! ---------------------------------------
     //! add the clip plane to the AIS_Shape(s)
@@ -3824,11 +3831,14 @@ void occPreGLWidget::addClipPlane(double A, double B, double C, double D, int ID
     //! ---------------
     //! graphic object
     //! ---------------
-    occHandle(Geom_Plane) aGeomPlane = new Geom_Plane(A,B,C,D);
+    double L = A*A+B*B+C*C;
+    gp_Dir N(A/L,B/L,C/L);
+    gp_Ax3 ax(gp_Pnt(center[0],center[1],center[2]),N);
+    occHandle(Geom_Plane) aGeomPlane = new Geom_Plane(ax);
     occHandle(AIS_Plane) anAISPlane = new AIS_Plane(aGeomPlane);
     occContext->Erase(myMapOfHandlePlanes.value(ID),true);
     myMapOfHandlePlanes.insert(ID,anAISPlane);
-    occContext->Display(anAISPlane,AIS_Shaded);
+    occContext->Display(anAISPlane,AIS_Shaded,-1,true,false);
 }
 
 //! ----------------------------------------------------------
@@ -3945,6 +3955,7 @@ void occPreGLWidget::removeClipPlane(int ID)
 //! function: updateClipPlaneTranslation
 //! details:  overrides the base class method
 //! ------------------------------------------
+#include <Geom_Axis2Placement.hxx>
 void occPreGLWidget::updateClipPlaneTranslation(int ID, int zVal, const QVector<double> &coeffs)
 {
     //cout<<"occGLWidget::updateClipPlaneTranslation()->____function called. ID: "<<ID<<" zVal: "<<zVal<<"____"<<endl;
@@ -3964,13 +3975,56 @@ void occPreGLWidget::updateClipPlaneTranslation(int ID, int zVal, const QVector<
 
     const occHandle(Graphic3d_ClipPlane) &curClipPlane = myMapOfClipPlanes.value(ID);
     curClipPlane->SetEquation(aPlane.Translated(translationVector));
+
+    //occHandle(Geom_Plane) aGeomPlane = new Geom_Plane(a,b,c,d);
+    //occHandle(AIS_Plane) anAISPlane = new AIS_Plane(aGeomPlane);
+
+    cout<<"____"<<translationVector.Coord(1)<<", "<<translationVector.Coord(2)<<", "<<translationVector.Coord(3)<<"____"<<endl;
+    //myMapOfHandlePlanes.value(ID)->SetCenter(gp_Pnt(translationVector.Coord(1),translationVector.Coord(2),translationVector.Coord(3)));
+
+    occHandle(Geom_Plane) aComponent;
+    gp_Pnt Pmin, Pmax, aCenter;
+    myMapOfHandlePlanes.value(ID)->PlaneAttributes(aComponent,aCenter,Pmin,Pmax);
+
+    //gp_Pnt pC(translationVector.Coord(1),translationVector.Coord(2),translationVector.Coord(3));
+    //myMapOfHandlePlanes.value(ID)->PlaneAttributes(aComponent,aCenter,Pmin,Pmax);
+
+    double xPmin = Pmin.X()+translationVector.X();
+    double yPmin = Pmin.Y()+translationVector.Y();
+    double zPmin = Pmin.Z()+translationVector.Z();
+
+    double xPmax = Pmax.X()+translationVector.X();
+    double yPmax = Pmax.Y()+translationVector.Y();
+    double zPmax = Pmax.Z()+translationVector.Z();
+
+    double xC = aCenter.X()+translationVector.X();
+    double yC = aCenter.Y()+translationVector.Y();
+    double zC = aCenter.Z()+translationVector.Z();
+
+    cout<<"____("<<xC<<", "<<yC<<", "<<zC<<")____"<<endl;
+    Pmin.SetX(xPmin); Pmin.SetY(yPmin); Pmin.SetZ(zPmin);
+    Pmax.SetX(xPmax); Pmax.SetY(yPmax); Pmax.SetZ(zPmax);
+    aCenter.SetX(xC); aCenter.SetY(yC); aCenter.SetZ(zC);
+
+    //! ---------------
+    //! graphic object
+    //! ---------------
+    gp_Ax3 ax(gp_Pnt(xC,yC,zC),translationDirection);
+    occHandle(Geom_Plane) aGeomPlane = new Geom_Plane(ax);
+    occHandle(AIS_Plane) anAISPlane = new AIS_Plane(aGeomPlane);
+    occContext->Erase(myMapOfHandlePlanes.value(ID),false);
+    myMapOfHandlePlanes.insert(ID,anAISPlane);
+
+    occContext->Display(anAISPlane,AIS_Shaded,-1,true,false);
+    occContext->UpdateCurrentViewer();
+
     occView->Redraw();
 }
 
-//! ----------------------------
+//! -----------------------------------------------------
 //! function: buildSlicedMeshIO
-//! details:
-//! ----------------------------
+//! details:  use the mesh context for displaying meshes
+//! -----------------------------------------------------
 void occPreGLWidget::buildSlicedMeshIO(const QMap<int,occHandle(MeshVS_DataSource)> &slicedMeshDS)
 {
     cout<<"occPreGLWidget::buildSlicedMeshIO()->____function called____"<<endl;
@@ -4000,7 +4054,7 @@ void occPreGLWidget::buildSlicedMeshIO(const QMap<int,occHandle(MeshVS_DataSourc
         meshIO->SetDisplayMode(MeshVS_DMF_Shading);
 
         mySlicedMeshesIO.insert(bodyIndex,meshIO);
-        occContext->Display(meshIO,true);
+        occMeshContext->Display(meshIO,true);
     }
     cout<<"occPreGLWidget::buildSlicedMeshIO()->____exiting function____"<<endl;
 }
@@ -4014,7 +4068,7 @@ void occPreGLWidget::eraseSlicedMeshes()
     bool updateViewer = false;
     for(QMap<int,occHandle(MeshVS_Mesh)>::iterator it=mySlicedMeshesIO.begin(); it!=mySlicedMeshesIO.end(); ++it)
     {
-        occContext->Erase(it.value(),updateViewer);
+        occMeshContext->Erase(it.value(),updateViewer);
     }
 }
 

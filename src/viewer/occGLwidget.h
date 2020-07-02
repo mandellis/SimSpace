@@ -146,6 +146,9 @@ public:
     //! get the current clip plane ID - experimental
     virtual int getCurrentClipPlaneID() {return myCurClipPlaneID; }
 
+    //! center of the scene
+    virtual void centerOfTheScene(double *C, double *width, bool onlyVisible=true);
+
     //! get clip planes Nb limit
     Standard_Integer getClipPlanesNbLimit();
 
