@@ -1067,7 +1067,7 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
             //! ---------------
             //! scoping method
             //! ---------------
-            data.setValue(Property::ScopingMethod_Automatic);
+            data.setValue(Property::ScopingMethod_GeometrySelection);
             Property prop_scopingMethod("Scoping method",data,Property::PropertyGroup_Scope);
             vecProp.push_back(prop_scopingMethod);
 
