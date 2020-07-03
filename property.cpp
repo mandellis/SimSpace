@@ -650,30 +650,67 @@ void Property::readProperty(ifstream &in, Property &prop)
             Property theProp;
             Property::readProperty(in,theProp);
             vecProp.push_back(theProp);
+            cout<<"----- READING PROPERTY: "<<theProp.getName().toStdString()<<endl;
         }
+        //cout<<"----- "<< vecProp.size()<<" PROPERTIES READ"<<endl;
 
-        SimulationNodeClass *node = new SimulationNodeClass(nodeName, SimulationNodeClass::nodeType_NULL, vecProp);
+        //SimulationNodeClass *node = new SimulationNodeClass(nodeName, SimulationNodeClass::nodeType_NULL, vecProp);
+        SimulationNodeClass *node;// = new SimulationNodeClass(nodeName, SimulationNodeClass::nodeType_NULL, vecProp);
 
-        if(propKeyName=="Named selection") node->setType(SimulationNodeClass::nodeType_namedSelectionGeometry);
-        else if(propKeyName=="Coordinate system") node->setType(SimulationNodeClass::nodeType_coordinateSystem);
-        else if(propKeyName=="Remote point") node->setType(SimulationNodeClass::nodeType_remotePoint);
-        else if(propKeyName=="Boundary named selection") node->setType(SimulationNodeClass::nodeType_meshPrismaticLayer);
+        if(propKeyName=="Named selection")
+        {
+            node = new SimulationNodeClass(nodeName, SimulationNodeClass::nodeType_namedSelectionGeometry, vecProp);
+            //node->setType(SimulationNodeClass::nodeType_namedSelectionGeometry);
+        }
+        else if(propKeyName=="Coordinate system")
+        {
+            if(nodeName == "Global coordinate system")
+            {
+                node = new SimulationNodeClass(nodeName, SimulationNodeClass::nodeType_coordinateSystem_global, vecProp);
+            }
+            else
+            {
+                node = new SimulationNodeClass(nodeName, SimulationNodeClass::nodeType_coordinateSystem, vecProp);
+            }
+            //node->setType(SimulationNodeClass::nodeType_coordinateSystem);
+        }
+        else if(propKeyName=="Remote point")
+        {
+            node = new SimulationNodeClass(nodeName, SimulationNodeClass::nodeType_remotePoint, vecProp);
+            //node->setType(SimulationNodeClass::nodeType_remotePoint);
+        }
+        else if(propKeyName=="Boundary named selection")
+        {
+            node = new SimulationNodeClass(nodeName, SimulationNodeClass::nodeType_meshPrismaticLayer, vecProp);
+            //node->setType(SimulationNodeClass::nodeType_meshPrismaticLayer);
+        }
         else if(propKeyName=="Analysis")
         {
-            node->setType(SimulationNodeClass::nodeType_thermalAnalysis);
+            node = new SimulationNodeClass(nodeName, SimulationNodeClass::nodeType_thermalAnalysis, vecProp);
             if(vecProp.size()==0) node->setType(SimulationNodeClass::nodeType_NULL);
+            //node->setType(SimulationNodeClass::nodeType_thermalAnalysis);
+            //if(vecProp.size()==0) node->setType(SimulationNodeClass::nodeType_NULL);
         }
         else if(propKeyName=="Imported body temperature")
         {
-            node->setType(SimulationNodeClass::nodeType_solutionThermalTemperature);
+            node = new SimulationNodeClass(nodeName, SimulationNodeClass::nodeType_solutionThermalTemperature, vecProp);
             if(vecProp.size()==0) node->setType(SimulationNodeClass::nodeType_NULL);
+            //node->setType(SimulationNodeClass::nodeType_solutionThermalTemperature);
+            //if(vecProp.size()==0) node->setType(SimulationNodeClass::nodeType_NULL);
         }
 
+        //! testing setType1()
+        //if(propKeyName=="Coordinate system")
+        //{
+        //    node->setType1("SimulationNodeClass::nodeType_coordinateSystem_global");
+        //}
+
         QExtendedStandardItem *item = new QExtendedStandardItem();
-        QVariant data;
+        //QVariant data;
         data.setValue(node);
         item->setData(data,Qt::UserRole);
-        item->setData(node->getName(),Qt::DisplayRole);
+        data.setValue(node->getName());
+        item->setData(data,Qt::DisplayRole);
         void *p = (void*)(item);
         data.setValue(p);
         prop.setData(data);
@@ -739,7 +776,7 @@ void Property::readProperty(ifstream &in, Property &prop)
         {
             double akey;
             in>>akey;
-            cout<<"____key: "<<akey<<"____"<<endl;
+            //cout<<"____key: "<<akey<<"____"<<endl;
 
             int NbValues;
             in>>NbValues;
@@ -750,7 +787,7 @@ void Property::readProperty(ifstream &in, Property &prop)
                 int val;
                 in>>val;
                 avalue.push_back(val);
-                cout<<"____val "<<i<<": "<<val<<"____"<<endl;
+                //cout<<"____val "<<i<<": "<<val<<"____"<<endl;
             }
             amap.insert(akey,avalue);
         }
@@ -814,24 +851,9 @@ void Property::readProperty(ifstream &in, Property &prop)
     }
     else if(propKeyName =="Base directional data")
     {
-        QVector<QVector<double>> tensor2;
-        for(int i=0; i<3; i++)
-        {
-            QVector<double> vec;
-            for(int j=0; j<3; j++)
-            {
-                double val;
-                in>>val;
-                vec.push_back(val);
-            }
-            tensor2.push_back(vec);
-        }
+        QVector<QVector<double>> tensor2 = tools::readTensor2<double>(in);
         data.setValue(tensor2);
         prop.setData(data);
-
-        //QVector<QVector<double>> tensor2 = tools::readTensor2<double>(in);
-        //data.setValue(tensor2);
-        //prop.setData(data);
     }
     else if(propKeyName=="Tags" || propKeyName =="Tags slave"
             || propKeyName =="Tags master" || propKeyName =="Boundary tags")
