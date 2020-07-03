@@ -654,7 +654,14 @@ void Property::readProperty(ifstream &in, Property &prop)
         }
         else if(propKeyName=="Coordinate system")
         {
-            node = new SimulationNodeClass(nodeName, SimulationNodeClass::nodeType_coordinateSystem, vecProp);
+            if(nodeName == "Global coordinate system")
+            {
+                node = new SimulationNodeClass(nodeName, SimulationNodeClass::nodeType_coordinateSystem_global, vecProp);
+            }
+            else
+            {
+                node = new SimulationNodeClass(nodeName, SimulationNodeClass::nodeType_coordinateSystem, vecProp);
+            }
             //node->setType(SimulationNodeClass::nodeType_coordinateSystem);
         }
         else if(propKeyName=="Remote point")
