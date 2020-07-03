@@ -440,7 +440,10 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
                       "F6NM_fatigue"<<
                       "F92_fatigue"<<
                       "A479_fatigue"<<
-                      "SA479_XM19_fatigue";
+                      "SA479_XM19_fatigue"<<
+                      "SA182-B8M_CL2"<<
+                      "SA182-F316"<<
+                      "SA352-LCB";
 
             QComboBox *cb = new QComboBox(parent);
             for(int index = 0; index<matNames.length(); index++)
