@@ -565,11 +565,7 @@ void DetailViewer::setTheModel(const QModelIndex &anIndex)
     case SimulationNodeClass::nodeType_connectionPair:
     case SimulationNodeClass::nodeType_connectionGroup:
     {
-        //! -------------------------
-        //! hide the "Time tag" item
-        //! -------------------------
-        //this->setPropertyVisible("Time tag");
-
+        /*
         //! ------------------------------------
         //! hide "Tags master" and "Tags slave"
         //! ------------------------------------
@@ -587,6 +583,7 @@ void DetailViewer::setTheModel(const QModelIndex &anIndex)
             QModelIndex separatorIndex = itemTagsSlave->parent()->index();
             this->setRowHidden(row,separatorIndex,true);
         }
+        */
     }
         break;
 

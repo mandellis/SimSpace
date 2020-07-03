@@ -52,7 +52,7 @@ nodeFactory::nodeFactory()
 //! function: nodeFromScratch
 //! details:  create a node from scratch
 //! -------------------------------------
-SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType type,
+SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType nodeType,
                                                   meshDataBase *mDB,
                                                   const occHandle(AIS_InteractiveContext)& CTX,
                                                   QVariant addOptions)
@@ -97,7 +97,7 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
     Property prop_scope("Geometry",data,Property::PropertyGroup_Scope);
     Property prop_tags("Tags",data,Property::PropertyGroup_Scope);
 
-    switch(type)
+    switch(nodeType)
     {
     case SimulationNodeClass::nodeType_pointMass:
     {
@@ -780,7 +780,7 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
     case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_CylindricalSupport:
     {
         //cout<<"nodeFactory::nodeFromScratch->____creating frictionless/fixed/cylindrical____"<<endl;
-        switch(type)
+        switch(nodeType)
         {
         case SimulationNodeClass::nodeType_structuralAnalysisBoundaryContidion_FixedSupport:
             name = "Fixed support";
@@ -1069,7 +1069,7 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
             //! ---------------
             //! scoping method
             //! ---------------
-            data.setValue(Property::ScopingMethod_Automatic);
+            data.setValue(Property::ScopingMethod_GeometrySelection);
             Property prop_scopingMethod("Scoping method",data,Property::PropertyGroup_Scope);
             vecProp.push_back(prop_scopingMethod);
 
@@ -1507,7 +1507,7 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
         //! -----------------
         //! generate a name
         //! -----------------
-        switch(type)
+        switch(nodeType)
         {
         case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Force: name = "Force"; break;
         case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RemoteForce: name = "Remote force"; break;
@@ -1523,18 +1523,18 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
         //! "Pressure" has only the option "Normal to"
         //! "Thermal condition" has not the property "Define by"
         //! -------------------------------------------------------
-        if(type == SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Force ||
-                type == SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RemoteForce ||
-                type == SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Moment ||
-                type == SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Acceleration ||
-                type == SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RotationalVelocity)
+        if(nodeType == SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Force ||
+                nodeType == SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RemoteForce ||
+                nodeType == SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Moment ||
+                nodeType == SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Acceleration ||
+                nodeType == SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RotationalVelocity)
         {
             Property::defineBy theDefineby = Property::defineBy_vector;
             data.setValue(theDefineby);
             Property prop_defineBy("Define by",data,Property::PropertyGroup_Definition);
             vecProp.push_back(prop_defineBy);
         }
-        else if(type == SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Pressure)
+        else if(nodeType == SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Pressure)
         {
             Property::defineBy theDefineby = Property::defineBy_normal;
             data.setValue(theDefineby);
@@ -1550,10 +1550,10 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
         //! -----------------------------------
         //! advanced properties for "Coupling"
         //! -----------------------------------
-        if(type == SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Force ||
-                type == SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RemoteForce ||
-                type == SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Moment ||
-                type == SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Moment)
+        if(nodeType == SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Force ||
+                nodeType == SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RemoteForce ||
+                nodeType == SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Moment ||
+                nodeType == SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Moment)
         {
             //! ---------------------------------------------------------
             //! Property "Coupling": "0" => kinematic "1" => distributed
@@ -1670,7 +1670,7 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
     case SimulationNodeClass::nodeType_thermalAnalysisThermalFlow:
     case SimulationNodeClass::nodeType_thermalAnalysisThermalPower:
     {
-        switch (type)
+        switch (nodeType)
         {
         case SimulationNodeClass::nodeType_thermalAnalysisTemperature: name ="Temperature"; break;
         case SimulationNodeClass::nodeType_thermalAnalysisThermalFlux: name ="Thermal flux"; break;
@@ -2648,7 +2648,7 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
     //! ----------------
     //! create the node
     //! ----------------
-    SimulationNodeClass *node = new SimulationNodeClass(name,type,vecProp);
+    SimulationNodeClass *node = new SimulationNodeClass(name,nodeType,vecProp);
 
     //! ---------------
     //! add a time tag

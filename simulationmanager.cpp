@@ -715,6 +715,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
 
             case SimulationNodeClass::nodeType_coordinateSystem_global:
             {
+                cout<<"____global coordinate system clicked____"<<endl;
                 emit requestHideAllResults();
                 emit requestUnhighlightBodies(Standard_True);
                 emit requestHideMeshes();
@@ -739,6 +740,8 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
 
             case SimulationNodeClass::nodeType_coordinateSystem:
             {
+                cout<<"____coordinate system clicked____"<<endl;
+
                 emit requestHideAllResults();
                 emit requestUnhighlightBodies(Standard_True);
                 emit requestHideMeshes();
@@ -755,6 +758,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 //! ---------------------------
                 //! show the coordinate system
                 //! ---------------------------
+
                 emit requestDisplayTrihedron(baseOrigin,baseDirectionalData);
             }
                 break;
@@ -1045,6 +1049,17 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
 
             case SimulationNodeClass::nodeType_structuralAnalysisBoltPretension:
             {
+                //! diagnostic
+                cout<<"@ --------------------------------------------"<<endl;
+                cout<<"@ - "<<theNode->type().toStdString()<<endl;
+
+                QStandardItem *itemCS = (QStandardItem*)(theNode->getPropertyValue<void*>("Coordinate system"));
+                SimulationNodeClass *nodeCS = itemCS->data(Qt::UserRole).value<SimulationNodeClass*>();
+                cout<<"@ - CS item name: "<<nodeCS->getName().toStdString()<<endl;
+                cout<<"@ - CS nb props: "<<nodeCS->getPropertyItems().size()<<endl;
+                cout<<"@ --------------------------------------------"<<endl;
+                //! end diagnostic
+
                 emit requestHideAllResults();
                 emit requestUnhighlightBodies(Standard_True);
                 emit requestHideMeshes();

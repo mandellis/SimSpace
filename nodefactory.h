@@ -33,7 +33,7 @@ public:
     //! ----------------
     //! create the node
     //! ----------------
-    static SimulationNodeClass* nodeFromScratch(SimulationNodeClass::nodeType type,
+    static SimulationNodeClass* nodeFromScratch(SimulationNodeClass::nodeType nodeType,
                                                 meshDataBase *mDB=NULL,
                                                 const occHandle(AIS_InteractiveContext)& CTX=NULL,
                                                 QVariant addOptions = QVariant());

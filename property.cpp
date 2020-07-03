@@ -640,33 +640,60 @@ void Property::readProperty(ifstream &in, Property &prop)
             Property theProp;
             Property::readProperty(in,theProp);
             vecProp.push_back(theProp);
+            cout<<"----- READING PROPERTY: "<<theProp.getName().toStdString()<<endl;
         }
+        cout<<"----- "<< vecProp.size()<<" PROPERTIES READ"<<endl;
 
-        SimulationNodeClass *node = new SimulationNodeClass(nodeName, SimulationNodeClass::nodeType_NULL, vecProp);
+        //SimulationNodeClass *node = new SimulationNodeClass(nodeName, SimulationNodeClass::nodeType_NULL, vecProp);
+        SimulationNodeClass *node;// = new SimulationNodeClass(nodeName, SimulationNodeClass::nodeType_NULL, vecProp);
 
-        if(propKeyName=="Named selection") node->setType(SimulationNodeClass::nodeType_namedSelectionGeometry);
+        if(propKeyName=="Named selection")
+        {
+            node = new SimulationNodeClass(nodeName, SimulationNodeClass::nodeType_namedSelectionGeometry, vecProp);
+            //node->setType(SimulationNodeClass::nodeType_namedSelectionGeometry);
+        }
         else if(propKeyName=="Coordinate system")
         {
-            node->setType(SimulationNodeClass::nodeType_coordinateSystem);
+            node = new SimulationNodeClass(nodeName, SimulationNodeClass::nodeType_coordinateSystem, vecProp);
+            //node->setType(SimulationNodeClass::nodeType_coordinateSystem);
         }
-        else if(propKeyName=="Remote point") node->setType(SimulationNodeClass::nodeType_remotePoint);
-        else if(propKeyName=="Boundary named selection") node->setType(SimulationNodeClass::nodeType_meshPrismaticLayer);
+        else if(propKeyName=="Remote point")
+        {
+            node = new SimulationNodeClass(nodeName, SimulationNodeClass::nodeType_remotePoint, vecProp);
+            //node->setType(SimulationNodeClass::nodeType_remotePoint);
+        }
+        else if(propKeyName=="Boundary named selection")
+        {
+            node = new SimulationNodeClass(nodeName, SimulationNodeClass::nodeType_meshPrismaticLayer, vecProp);
+            //node->setType(SimulationNodeClass::nodeType_meshPrismaticLayer);
+        }
         else if(propKeyName=="Analysis")
         {
-            node->setType(SimulationNodeClass::nodeType_thermalAnalysis);
+            node = new SimulationNodeClass(nodeName, SimulationNodeClass::nodeType_thermalAnalysis, vecProp);
             if(vecProp.size()==0) node->setType(SimulationNodeClass::nodeType_NULL);
+            //node->setType(SimulationNodeClass::nodeType_thermalAnalysis);
+            //if(vecProp.size()==0) node->setType(SimulationNodeClass::nodeType_NULL);
         }
         else if(propKeyName=="Imported body temperature")
         {
-            node->setType(SimulationNodeClass::nodeType_solutionThermalTemperature);
+            node = new SimulationNodeClass(nodeName, SimulationNodeClass::nodeType_solutionThermalTemperature, vecProp);
             if(vecProp.size()==0) node->setType(SimulationNodeClass::nodeType_NULL);
+            //node->setType(SimulationNodeClass::nodeType_solutionThermalTemperature);
+            //if(vecProp.size()==0) node->setType(SimulationNodeClass::nodeType_NULL);
         }
 
+        //! testing setType1()
+        //if(propKeyName=="Coordinate system")
+        //{
+        //    node->setType1("SimulationNodeClass::nodeType_coordinateSystem_global");
+        //}
+
         QExtendedStandardItem *item = new QExtendedStandardItem();
-        QVariant data;
+        //QVariant data;
         data.setValue(node);
         item->setData(data,Qt::UserRole);
-        item->setData(node->getName(),Qt::DisplayRole);
+        data.setValue(node->getName());
+        item->setData(data,Qt::DisplayRole);
         void *p = (void*)(item);
         data.setValue(p);
         prop.setData(data);
@@ -921,7 +948,9 @@ QMap<QString,QString> Property::propertyMap()
 //! --------------------
 void Property::writeVoid(ofstream& outFile, void *p)
 {
-    QExtendedStandardItem *aTreeItem = static_cast<QExtendedStandardItem*>(p);
+    //QExtendedStandardItem *aTreeItem = static_cast<QExtendedStandardItem*>(p);
+    QStandardItem *aTreeItem = static_cast<QStandardItem*>(p);
+
     SimulationNodeClass *aSimNode = aTreeItem->data(Qt::UserRole).value<SimulationNodeClass*>();
     SimulationNodeClass::nodeType theNode = aSimNode->getType();
 
@@ -1011,21 +1040,21 @@ void Property::readVoid(ifstream &in, QStandardItem *item)
 {
     cout<<"Property::readVoid()->____READING A QSTANDARDITEM____"<<endl;
 
-    //! ----------------------------------------------------------
-    //! read the node name (dual of "write the name of the node")
-    //! ----------------------------------------------------------
+    //! -------------------
+    //! read the node name
+    //! -------------------
     QString nodeName = tools::readQVariant(in).toString();
     cout<<"Property::readVoid()->____READING NODE: "<<nodeName.toStdString()<<"____"<<endl;
 
-    //! --------------------------------------------------
-    //! read the node type (dual of "write the nodeType")
-    //! --------------------------------------------------
+    //! -------------------
+    //! read the node type
+    //! -------------------
     QString nodeType = tools::readQVariant(in).toString();
     cout<<"Property::readVoid()->____NODE TYPE: "<<nodeType.toStdString()<<"____"<<endl;
 
-    //! -------------------------------------------------------------------------
-    //! read the number of properties (dual of "write the number of properties")
-    //! -------------------------------------------------------------------------
+    //! ------------------------------
+    //! read the number of properties
+    //! ------------------------------
     int nprop = tools::readQVariant(in).toInt();
     cout<<"Property::readVoid()->____NUMBER OF PROPERTIES TO READ: "<<nprop<<"____"<<endl;
 
