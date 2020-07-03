@@ -6748,7 +6748,6 @@ void SimulationManager::duplicateItem(QExtendedStandardItem *item)
         //! determine the number of columns to copy and append to the tabular data
         //! -----------------------------------------------------------------------
         int NbCol = mainTreeTools::getColumnsToRead(myTreeView).length();
-        //int columnToCopy = this->calculateStartColumn();
         int columnToCopy = mainTreeTools::calculateStartColumn(myTreeView);
 
         for(int i=0; i<NbCol; i++)
@@ -6761,12 +6760,12 @@ void SimulationManager::duplicateItem(QExtendedStandardItem *item)
     //! ---------------------
     //! replace the time tag
     //! ---------------------
-    theNewNode->getModel()->blockSignals(true);
+    disconnect(theNewNode->getModel(),SIGNAL(itemChanged(QStandardItem*)),this,SLOT(handleItemChange(QStandardItem*)));
     QString timeTag = QDateTime::currentDateTime().toString("yyyyMMddhhmmzzz");
     data.setValue(timeTag);
     Property prop_timeTag("Time tag",timeTag,Property::PropertyGroup_Identifier);
     theNewNode->replaceProperty("Time tag",prop_timeTag);
-    theNewNode->getModel()->blockSignals(false);
+    connect(theNewNode->getModel(),SIGNAL(itemChanged(QStandardItem*)),this,SLOT(handleItemChange(QStandardItem*)));
 
     //! ----------------
     //! attach the item
@@ -13043,6 +13042,7 @@ void SimulationManager::generateBoundaryConditionsMeshDS(bool computeDual)
         {
             if(nodeType == SimulationNodeClass::nodeType_mapper ||
                     nodeType == SimulationNodeClass::nodeType_modelChange ||
+                    nodeType == SimulationNodeClass::nodeType_structuralAnalysisBoltPretension ||
                     nodeType == SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_ImportedTemperatureDistribution ||
                     nodeType == SimulationNodeClass::nodeType_particlesInFieldsParticlePack
         #ifdef COSTAMP_VERSION
@@ -13078,12 +13078,12 @@ void SimulationManager::generateBoundaryConditionsMeshDS(bool computeDual)
                 IndexedMapOfMeshDataSources inexactMeshDS;
                 aBuilder.perform2(inexactMeshDS,false);
 
-                //! --------------------------------------------------------
+                //! -------------------------------------------------------
                 //! merge into a single map
                 //! details: in case of non patch conforming the DSbuilder
                 //! calcualte the exact DS on STL mesh,
                 //! KEEP the for on inexactMeshDS after the exact One
-                //! --------------------------------------------------------
+                //! -------------------------------------------------------
                 IndexedMapOfMeshDataSources finalMapOfMeshDS;
                 for(IndexedMapOfMeshDataSources::iterator it = exactMeshDS.begin(); it!=exactMeshDS.end(); it++)
                 {

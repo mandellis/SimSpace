@@ -394,9 +394,9 @@ simulationDataBase::simulationDataBase(const QList<SimulationNodeClass*> listOfN
             vecKeys.push_back(curTimeTag.toULongLong());
             cout<<"____a check =>"<<curTimeTag.toULongLong()<<"____"<<endl;
         }
-        //! ---------------------------
-        //! sort the map using the key
-        //! ---------------------------
+        //! -----------------------------------------------
+        //! sort the vector of time tags in integer format
+        //! -----------------------------------------------
         std::sort(vecKeys.begin(),vecKeys.end());
 
         //! -----------------------------
