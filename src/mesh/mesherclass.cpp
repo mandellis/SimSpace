@@ -866,6 +866,8 @@ void MesherClass::generateMesh()
                     int NbFaces = myMeshDB->MapOfBodyTopologyMap.value(bodyIndex).faceMap.Extent();
                     for(int faceNr = 1; faceNr<=NbFaces; faceNr++)
                     {
+                        if(myMeshDB->ArrayOfMeshDSOnFaces.getValue(bodyIndex,faceNr).IsNull()) continue;
+
                         occHandle(Ng_MeshVS_DataSourceFace) aFaceFirstOrderFaceMesh =
                                 occHandle(Ng_MeshVS_DataSourceFace)::DownCast(myMeshDB->ArrayOfMeshDSOnFaces.getValue(bodyIndex,faceNr));
                         occHandle(Ng_MeshVS_DataSourceFace) aSecondOrderFaceMesh =
