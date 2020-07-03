@@ -40,7 +40,6 @@ bool markerBuilder::addMarker(SimulationNodeClass *node, geometryDataBase *gDB)
     SimulationNodeClass::nodeType nodeType = node->getType();
     switch(nodeType)
     {
-    /*
     case SimulationNodeClass::nodeType_structuralAnalysisBoltPretension:
     {
         //! -------------------------------------------
@@ -320,9 +319,7 @@ bool markerBuilder::addMarker(SimulationNodeClass *node, geometryDataBase *gDB)
         CustomTableModel *tabModel = nodeAnalysisSetting->getTabularDataModel();
         Property::defineBy defineBy = node->getPropertyValue<Property::defineBy>("Define by");
 
-        cout<<"____tag02____"<<endl;
         int curStepNumber = nodeAnalysisSetting->getPropertyValue<int>("Current step number");
-        cout<<"____tag03____"<<endl;
 
         switch(defineBy)
         {
@@ -424,7 +421,7 @@ bool markerBuilder::addMarker(SimulationNodeClass *node, geometryDataBase *gDB)
         else node->replaceProperty("Graphic object",prop_marker);
     }
         break;
-*/
+
         //! -----------
         //! Point mass
         //! -----------

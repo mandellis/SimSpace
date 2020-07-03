@@ -460,16 +460,15 @@ void Property::writeProperty(ofstream& out, const Property &prop)
         {
             cout<<"* PROPERTY DEFINED THROUGH \"DOUBLE VECTOR\""<<endl;
             QVector<QVector<double>> tensor2 = prop.getData().value<QVector<QVector<double>>>();
-            //exit(1); //cesere
-            //tools::writeTensor2<QVector<QVector<double>>>(tensor2,out);
-            for(QVector<QVector<double>>::iterator it = tensor2.begin(); it!=tensor2.end(); it++)
-            {
-                const QVector<double> &vec = *it;
-                for(QVector<double>::const_iterator itt = vec.begin(); itt!=vec.end(); itt++)
-                {
-                    out<<*itt<<endl;
-                }
-            }
+            tools::writeTensor2<QVector<QVector<double>>>(tensor2,out);
+            //for(QVector<QVector<double>>::iterator it = tensor2.begin(); it!=tensor2.end(); it++)
+            //{
+            //    const QVector<double> &vec = *it;
+            //    for(QVector<double>::const_iterator itt = vec.begin(); itt!=vec.end(); itt++)
+            //    {
+            //        out<<*itt<<endl;
+            //    }
+            //}
         }
         else if(prop.getData().canConvert<QVector<GeometryTag>>())
         {
@@ -965,7 +964,8 @@ QMap<QString,QString> Property::propertyMap()
 //! --------------------
 void Property::writeVoid(ofstream& outFile, void *p)
 {
-    QExtendedStandardItem *aTreeItem = static_cast<QExtendedStandardItem*>(p);
+    //QExtendedStandardItem *aTreeItem = static_cast<QExtendedStandardItem*>(p);
+    QStandardItem *aTreeItem = static_cast<QStandardItem*>(p);
     SimulationNodeClass *aSimNode = aTreeItem->data(Qt::UserRole).value<SimulationNodeClass*>();
     SimulationNodeClass::nodeType theNode = aSimNode->getType();
 

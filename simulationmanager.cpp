@@ -6635,12 +6635,12 @@ void SimulationManager::duplicateItem(QExtendedStandardItem *item)
     //! ---------------------
     //! replace the time tag
     //! ---------------------
-    theNewNode->getModel()->blockSignals(true);
+    disconnect(theNewNode->getModel(),SIGNAL(itemChanged(QStandardItem*)),this,SLOT(handleItemChange(QStandardItem*)));
     QString timeTag = QDateTime::currentDateTime().toString("yyyyMMddhhmmzzz");
     data.setValue(timeTag);
     Property prop_timeTag("Time tag",timeTag,Property::PropertyGroup_Identifier);
     theNewNode->replaceProperty("Time tag",prop_timeTag);
-    theNewNode->getModel()->blockSignals(false);
+    connect(theNewNode->getModel(),SIGNAL(itemChanged(QStandardItem*)),this,SLOT(handleItemChange(QStandardItem*)));
 
     //! ----------------
     //! attach the item
