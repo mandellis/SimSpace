@@ -838,12 +838,8 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 emit requestTabularData(index_analysisSettings);
                 emit requestHideFirstRow();
 
-                //! -----------------------------------------------------------
-                //! calculate the number of columns to show => in the table <=
-                //! -----------------------------------------------------------
-                QList<int> columnsToShow = this->calculateColumnsToShow(/*theNode*/);
-                //QList<int> columnsToShow = mainTreeTools::getColumnsToRead(myTreeView);
-                if(columnsToShow.length()>=2) emit requestShowColumns(columnsToShow);
+                emit requestClearGraph();
+
                 bool isDone = markerBuilder::addMarker(this->getCurrentNode(), mySimulationDataBase);
                 if(isDone == true) this->displayMarker();
             }
@@ -875,9 +871,8 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 //! -----------------------------------------------------------
                 //! calculate the number of columns to show => in the table <=
                 //! -----------------------------------------------------------
-                QList<int> columnsToShow = this->calculateColumnsToShow(/*theNode*/);
-
-                //QList<int> columnsToShow = mainTreeTools::getColumnsToRead(myTreeView);
+                QList<int> columnsToShow;
+                columnsToShow << TABULAR_DATA_STEP_NUMBER_COLUMN << TABULAR_DATA_STEP_END_TIME_COLUMN << mainTreeTools::getColumnsToRead(myTreeView);
                 if(columnsToShow.length()>=2)
                 {
                     emit requestShowColumns(columnsToShow);
@@ -913,13 +908,8 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 QModelIndex index_analysisSettings = this->getAnalysisSettingsItemFromCurrentItem()->index();
                 emit requestTabularData(index_analysisSettings);
                 emit requestHideFirstRow();
+                emit requestClearGraph();
 
-                //! -----------------------------------------------------------
-                //! calculate the number of columns to show => in the table <=
-                //! -----------------------------------------------------------
-                QList<int> columnsToShow = this->calculateColumnsToShow(/*theNode*/);
-                //QList<int> columnsToShow = mainTreeTools::getColumnsToRead(myTreeView);
-                if(columnsToShow.length()>=2) emit requestShowColumns(columnsToShow);
                 bool isDone = markerBuilder::addMarker(this->getCurrentNode(), mySimulationDataBase);
                 if(isDone == true) this->displayMarker();
             }
@@ -959,16 +949,14 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 //! -----------------------------------------------------------
                 //! calculate the number of columns to show => in the table <=
                 //! -----------------------------------------------------------
-                QList<int> columnsToShow = this->calculateColumnsToShow(/*theNode*/);
-
-                //QList<int> columnsToShow = mainTreeTools::getColumnsToRead(myTreeView);
-                if(columnsToShow.length()>=2)
+                QList<int> columnsToShow;
+                columnsToShow << TABULAR_DATA_STEP_NUMBER_COLUMN << TABULAR_DATA_STEP_END_TIME_COLUMN << mainTreeTools::getColumnsToRead(myTreeView);
+                if(columnsToShow.length()>=3)
                 {
                     emit requestShowColumns(columnsToShow);
 
                     //! ------------------------------------
                     //! remove the column showing the times
-                    //! since here supports are handled
                     //! ------------------------------------
                     columnsToShow.removeFirst();
                     CustomTableModel *tabData = index_analysisSettings.data(Qt::UserRole).value<SimulationNodeClass*>()->getTabularDataModel();
@@ -997,15 +985,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 //! [2] hide the first row with Time = 0
                 emit requestHideFirstRow();
 
-                //! [3] columns of tha tabular data to show
-                QList<int> columnsToShow = this->calculateColumnsToShow(/*theNode*/);
-                //QList<int> columnsToShow = mainTreeTools::getColumnsToRead(myTreeView);
-
-                if(columnsToShow.length()>=2)
-                {
-                    emit requestShowColumns(columnsToShow);
-                    columnsToShow.removeFirst();
-                }
+                //! [3] clear graph
                 requestClearGraph();
 
                 bool isDone = markerBuilder::addMarker(this->getCurrentNode(), mySimulationDataBase);
@@ -3044,8 +3024,6 @@ void SimulationManager::createSimulationNode(SimulationNodeClass::nodeType type,
     else if(type==SimulationNodeClass::nodeType_structuralAnalysisBoltPretension)
     {
         QStandardItem *itemGlobalCS = this->getTreeItem(SimulationNodeClass::nodeType_coordinateSystem_global);
-        //cout<<"____"<<itemGlobalCS->data(Qt::DisplayRole).toString().toStdString()<<"____"<<endl;
-        //exit(1);
         QVariant addOptions;
         void *p = (void*)(itemGlobalCS);
         addOptions.setValue(p);
@@ -3065,8 +3043,7 @@ void SimulationManager::createSimulationNode(SimulationNodeClass::nodeType type,
         cout<<"SimulationManager::createSimulationNode()->____creating tabular data for bolt____"<<endl;
 
         QVector<QVariant> values;
-        data.setValue(Property::boltStatusDefinedBy_load); //! status of the bolt [enum]
-        //data.setValue(Property::defineBy_load); //! status of the bolt [enum]
+        data.setValue(Property::boltStatusDefinedBy_load);
         values.push_back(data);
         load loadBoltStatusDefinedBy(values,Property::loadType_boltStatusDefinedBy);
 
@@ -8209,7 +8186,6 @@ void SimulationManager::handleLoadMagnitudeDefinitionChanged(const QString& text
     TableWidget *tableWidget = static_cast<TableWidget*>(tools::getWidgetByName("messagesAndLoadsWidget"));
     DetailViewer *detailViewer = static_cast<DetailViewer*>(tools::getWidgetByName("detailViewer"));
     disconnect(tableWidget,SIGNAL(requestUpdateDetailViewer(QModelIndex,QModelIndex,QVector<int>)),detailViewer,SLOT(updateDetailViewerFromTabularData(QModelIndex,QModelIndex,QVector<int>)));
-    //disconnect(tableWidget,SIGNAL(requestUpdateDetailViewer(QModelIndex,QModelIndex,QVector<int>)),myDetailViewer,SLOT(updateDetailViewerFromTabularData(QModelIndex,QModelIndex,QVector<int>)));
 
     //! --------------------------
     //! retrieve the tabular data
@@ -8313,11 +8289,24 @@ void SimulationManager::handleLoadMagnitudeDefinitionChanged(const QString& text
         theCurNode->updateOldMagnitude(Property::loadDefinition_tabularData);
     }
 
+    QList<int> N;
+    N << TABULAR_DATA_STEP_END_TIME_COLUMN << mainTreeTools::getColumnsToRead(myTreeView);
+
+    if(N.length()>=2)
+    {
+        //! ------------------------------------------------
+        //! this means that at least a component is present
+        //! ------------------------------------------------
+        SimulationNodeClass *nodeAnalysisSettings = this->getAnalysisSettingsNodeFromCurrentItem();
+        CustomTableModel *tabData = nodeAnalysisSettings->getTabularDataModel();
+        emit requestShowGraph(tabData,N);
+    }
+    else requestClearGraph();
+
     //! ------------------------------
     //! see note [*] at the beginning
     //! ------------------------------
     connect(tableWidget,SIGNAL(requestUpdateDetailViewer(QModelIndex,QModelIndex,QVector<int>)),detailViewer,SLOT(updateDetailViewerFromTabularData(QModelIndex,QModelIndex,QVector<int>)));
-    //connect(tableWidget,SIGNAL(requestUpdateDetailViewer(QModelIndex,QModelIndex,QVector<int>)),myDetailViewer,SLOT(updateDetailViewerFromTabularData(QModelIndex,QModelIndex,QVector<int>)));
 }
 
 //! ---------------------------------------------------------------------
@@ -8334,7 +8323,6 @@ void SimulationManager::handleLoadXDefinitionChanged(const QString &textData)
     TableWidget *tableWidget = static_cast<TableWidget*>(tools::getWidgetByName("messagesAndLoadsWidget"));
     DetailViewer *detailViewer = static_cast<DetailViewer*>(tools::getWidgetByName("detailViewer"));
     disconnect(tableWidget,SIGNAL(requestUpdateDetailViewer(QModelIndex,QModelIndex,QVector<int>)),detailViewer,SLOT(updateDetailViewerFromTabularData(QModelIndex,QModelIndex,QVector<int>)));
-    //disconnect(tableWidget,SIGNAL(requestUpdateDetailViewer(QModelIndex,QModelIndex,QVector<int>)),myDetailViewer,SLOT(updateDetailViewerFromTabularData(QModelIndex,QModelIndex,QVector<int>)));
 
     //! --------------------------
     //! retrieve the tabular data
@@ -8470,10 +8458,10 @@ void SimulationManager::handleLoadXDefinitionChanged(const QString &textData)
         }
     }
 
-    QList<int> N = this->calculateColumnsToShow(/*theCurNode*/);
-    N.removeFirst();
+    QList<int> N;
+    N << TABULAR_DATA_STEP_END_TIME_COLUMN << mainTreeTools::getColumnsToRead(myTreeView);
 
-    if(N.length()>2)
+    if(N.length()>=2)
     {
         //! ------------------------------------------------
         //! this means that at least a component is present
@@ -8489,8 +8477,6 @@ void SimulationManager::handleLoadXDefinitionChanged(const QString &textData)
     //! ------------------------------
     connect(tableWidget,SIGNAL(requestUpdateDetailViewer(QModelIndex,QModelIndex,QVector<int>)),
             detailViewer,SLOT(updateDetailViewerFromTabularData(QModelIndex,QModelIndex,QVector<int>)));
-    //connect(tableWidget,SIGNAL(requestUpdateDetailViewer(QModelIndex,QModelIndex,QVector<int>)),
-    //        myDetailViewer,SLOT(updateDetailViewerFromTabularData(QModelIndex,QModelIndex,QVector<int>)));
 }
 
 //! -------------------------------------------------------------------------
@@ -8509,8 +8495,6 @@ void SimulationManager::handleLoadYDefinitionChanged(const QString &textData)
     DetailViewer *detailViewer = static_cast<DetailViewer*>(tools::getWidgetByName("detailViewer"));
     disconnect(tableWidget,SIGNAL(requestUpdateDetailViewer(QModelIndex,QModelIndex,QVector<int>)),
                detailViewer,SLOT(updateDetailViewerFromTabularData(QModelIndex,QModelIndex,QVector<int>)));
-    //disconnect(tableWidget,SIGNAL(requestUpdateDetailViewer(QModelIndex,QModelIndex,QVector<int>)),
-    //           myDetailViewer,SLOT(updateDetailViewerFromTabularData(QModelIndex,QModelIndex,QVector<int>)));
 
 
     SimulationNodeClass *theCurNode = myTreeView->currentIndex().data(Qt::UserRole).value<SimulationNodeClass*>();
@@ -8687,10 +8671,10 @@ void SimulationManager::handleLoadYDefinitionChanged(const QString &textData)
         }
     }
 
-    QList<int> N = this->calculateColumnsToShow(/*theCurNode*/);
-    N.removeFirst();
+    QList<int> N;
+    N << TABULAR_DATA_STEP_END_TIME_COLUMN << mainTreeTools::getColumnsToRead(myTreeView);
 
-    if(N.length()>2)
+    if(N.length()>=2)
     {
         //! ------------------------------------------------
         //! this means that at least a component is present
@@ -8706,8 +8690,6 @@ void SimulationManager::handleLoadYDefinitionChanged(const QString &textData)
     //! ------------------------------
     connect(tableWidget,SIGNAL(requestUpdateDetailViewer(QModelIndex,QModelIndex,QVector<int>)),
             detailViewer,SLOT(updateDetailViewerFromTabularData(QModelIndex,QModelIndex,QVector<int>)));
-    //connect(tableWidget,SIGNAL(requestUpdateDetailViewer(QModelIndex,QModelIndex,QVector<int>)),
-    //        myDetailViewer,SLOT(updateDetailViewerFromTabularData(QModelIndex,QModelIndex,QVector<int>)));
 }
 
 //! --------------------------------------------------------------------------
@@ -8726,8 +8708,6 @@ void SimulationManager::handleLoadZDefinitionChanged(const QString &textData)
     DetailViewer *detailViewer = static_cast<DetailViewer*>(tools::getWidgetByName("detailViewer"));
     disconnect(tableWidget,SIGNAL(requestUpdateDetailViewer(QModelIndex,QModelIndex,QVector<int>)),
                detailViewer,SLOT(updateDetailViewerFromTabularData(QModelIndex,QModelIndex,QVector<int>)));
-    //disconnect(tableWidget,SIGNAL(requestUpdateDetailViewer(QModelIndex,QModelIndex,QVector<int>)),
-    //           myDetailViewer,SLOT(updateDetailViewerFromTabularData(QModelIndex,QModelIndex,QVector<int>)));
 
     SimulationNodeClass *theCurNode = myTreeView->currentIndex().data(Qt::UserRole).value<SimulationNodeClass*>();
     if(theCurNode->getType()==SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Displacement  ||
@@ -8930,10 +8910,10 @@ void SimulationManager::handleLoadZDefinitionChanged(const QString &textData)
         }
     }
 
-    QList<int> N = this->calculateColumnsToShow(/*theCurNode*/);
-    N.removeFirst();
+    QList<int> N;
+    N << TABULAR_DATA_STEP_END_TIME_COLUMN << mainTreeTools::getColumnsToRead(myTreeView);
 
-    if(N.length()>2)
+    if(N.length()>=2)
     {
         //! ------------------------------------------------
         //! this means that at least a component is present
@@ -8942,15 +8922,13 @@ void SimulationManager::handleLoadZDefinitionChanged(const QString &textData)
         CustomTableModel *tabData = nodeAnalysisSettings->getTabularDataModel();
         emit requestShowGraph(tabData,N);
     }
-    else emit requestClearGraph();
+    else requestClearGraph();
 
     //! ------------------------------
     //! see note [*] at the beginning
     //! ------------------------------
     connect(tableWidget,SIGNAL(requestUpdateDetailViewer(QModelIndex,QModelIndex,QVector<int>)),
             detailViewer,SLOT(updateDetailViewerFromTabularData(QModelIndex,QModelIndex,QVector<int>)));
-    //connect(tableWidget,SIGNAL(requestUpdateDetailViewer(QModelIndex,QModelIndex,QVector<int>)),
-    //        myDetailViewer,SLOT(updateDetailViewerFromTabularData(QModelIndex,QModelIndex,QVector<int>)));
 }
 
 //! -------------------------------
@@ -11925,6 +11903,7 @@ void SimulationManager::renameItemBasedOnDefinition()
         case SimulationNodeClass::nodeType_thermalAnalysisThermalFlow: controlName = QString("Thermal flow"); break;
         case SimulationNodeClass::nodeType_thermalAnalysisThermalFlux: controlName = QString("Thermal flux"); break;
         case SimulationNodeClass::nodeType_thermalAnalysisConvection: controlName = QString("Convection"); break;
+        case SimulationNodeClass::nodeType_structuralAnalysisBoltPretension: controlName = QString("Bolt preload"); break;
         }
 
         //! -------------

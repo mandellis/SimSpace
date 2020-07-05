@@ -2233,9 +2233,9 @@ void Ng_MeshVS_DataSource3D::CreateTetTopology()
         TET4MeshData->ChangeValue(i).Append((i-1)%4);
         TET4MeshData->ChangeValue(i).Append(i%4);
         TET4MeshData->ChangeValue(i).Append((i+1)%4);
-        cout<<"++++++++++++++++++++++++++++"<<endl;
-        cout<<"+ "<<(i-1)%4<<" "<<i%4<<" "<<(i+1)%4<<endl;
-        cout<<"++++++++++++++++++++++++++++"<<endl;
+        //cout<<"++++++++++++++++++++++++++++"<<endl;
+        //cout<<"+ "<<(i-1)%4<<" "<<i%4<<" "<<(i+1)%4<<endl;
+        //cout<<"++++++++++++++++++++++++++++"<<endl;
     }
 }
 

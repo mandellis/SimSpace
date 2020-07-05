@@ -202,9 +202,12 @@ bool writeSolverFileClass::perform()
             //! append to the item name the number of the row
             QString SetName = itemName.append("_").append(QString("%1").arg(k));
 
-            //! retrive the IndexedMapOfMeshDS of the BC
+            //! ------------------------------------------------------------------------------
+            //! retrive the IndexedMapOfMeshDS of the BC - they do not exist in case of bolts
+            //! ------------------------------------------------------------------------------
             IndexedMapOfMeshDataSources anIndexedMapOfFaceMeshDS;
-            anIndexedMapOfFaceMeshDS = theItemNode->getPropertyValue<IndexedMapOfMeshDataSources>("Mesh data sources");
+            if(theNodeType!=SimulationNodeClass::nodeType_structuralAnalysisBoltPretension)
+                anIndexedMapOfFaceMeshDS = theItemNode->getPropertyValue<IndexedMapOfMeshDataSources>("Mesh data sources");
 
             switch(theNodeType)
             {
@@ -492,6 +495,11 @@ bool writeSolverFileClass::perform()
             double Jx = theCurNode->getPropertyValue<double>("Jx");
             double Jy = theCurNode->getPropertyValue<double>("Jy");
             double Jz = theCurNode->getPropertyValue<double>("Jz");
+
+            Q_UNUSED (Jx)
+            Q_UNUSED (Jy)
+            Q_UNUSED (Jz)
+
             double x = theCurNode->getPropertyValue<double>("X coordinate");
             double y = theCurNode->getPropertyValue<double>("Y coordinate");
             double z = theCurNode->getPropertyValue<double>("Z coordinate");

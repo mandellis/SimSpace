@@ -403,7 +403,7 @@ bool boltTool::sliceMeshWithPlane(double a, double b, double c, double d,
 
         if(CCXFaceConnectivity.at(aMeshElement2D).size()!=1)
         {
-            cerr<<"____nore than one volume element (i.e. 2) attached to the current face____"<<endl;
+            cerr<<"____more than one volume element (i.e. 2) attached to the current face____"<<endl;
             return false;
         }
         std::map<meshElement2D,std::vector<std::pair<int,int>>>::iterator it1 = CCXFaceConnectivity.find(aMeshElement2D);
@@ -415,7 +415,7 @@ bool boltTool::sliceMeshWithPlane(double a, double b, double c, double d,
         std::pair<int,int> *volumeMeshGlobalID_CCXFace = &CCXFaceConnectivity.at(aMeshElement2D).at(0);
         volumeMeshGlobalID_CCXFace->first = volumeSlicedMesh->myElementsMap.FindKey(volumeMeshGlobalID_CCXFace->first);
         vecCCXFaceDefs.push_back(*volumeMeshGlobalID_CCXFace);
-        cout<<(*volumeMeshGlobalID_CCXFace).first<<", "<<(*volumeMeshGlobalID_CCXFace).second<<endl;
+        //cout<<(*volumeMeshGlobalID_CCXFace).first<<", "<<(*volumeMeshGlobalID_CCXFace).second<<endl;
     }
 
     return true;

@@ -91,7 +91,7 @@ double contactParameters::calc_discretizedArea(const opencascade::handle<Ng_Mesh
             }
             elementArea = GeomToolsClass::polygon_area(points);
             A += elementArea;
-            cout<<"contactParameters::calc_discretizedArea()->____area_=  "<<A<<endl;
+            //cout<<"contactParameters::calc_discretizedArea()->____area_=  "<<A<<endl;
         }
     }
     return A;
