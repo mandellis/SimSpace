@@ -416,6 +416,10 @@ void mainTreeTools::resetSolutionInformation(SimulationNodeClass *nodeSolutionIn
     QMap<double,QVector<int>> amap;
     data.setValue(amap);
     nodeSolutionInformation->replaceProperty("Discrete time map",Property("Discrete time map",data,Property::PropertyGroup_Hidden));
+
+    QList<solutionInfo> solInfoList;
+    data.setValue(solInfoList);
+    nodeSolutionInformation->replaceProperty("Convergence data",Property("Convergence data",data,Property::PropertyGroup_Hidden));
     nodeSolutionInformation->getModel()->blockSignals(false);
 }
 
