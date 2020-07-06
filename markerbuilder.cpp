@@ -40,7 +40,6 @@ bool markerBuilder::addMarker(SimulationNodeClass *node, geometryDataBase *gDB)
     SimulationNodeClass::nodeType nodeType = node->getType();
     switch(nodeType)
     {
-/*
     case SimulationNodeClass::nodeType_structuralAnalysisBoltPretension:
     {
         //! -------------------------------------------
@@ -326,7 +325,7 @@ bool markerBuilder::addMarker(SimulationNodeClass *node, geometryDataBase *gDB)
             if(fabs(magnitude)<1e-6)
             {
                 cerr<<"____magnitude zero: returning false____"<<endl;
-                if(node->getPropertyItem("Graphic object")!=NULL) node->removeProperty("Graphic object");
+                if(node->getPropertyItem("Graphic object")!=Q_NULLPTR) node->removeProperty("Graphic object");
                 return false;
             }
             QVector<double> direction = node->getPropertyValue<QVector<double>>("Direction");
@@ -410,11 +409,11 @@ bool markerBuilder::addMarker(SimulationNodeClass *node, geometryDataBase *gDB)
         //! add the graphic object if not existing
         //! otherwise replace it
         //! ---------------------------------------
-        if(node->getPropertyItem("Graphic object")==NULL) node->addProperty(prop_marker);
+        if(node->getPropertyItem("Graphic object")==Q_NULLPTR) node->addProperty(prop_marker);
         else node->replaceProperty("Graphic object",prop_marker);
     }
         break;
-*/
+
         //! -----------
         //! Point mass
         //! -----------

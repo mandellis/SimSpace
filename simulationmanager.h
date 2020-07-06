@@ -509,7 +509,6 @@ private:
     //SimulationNodeClass* getAnalysisSettingsNodeFromCurrentItem() const;
     //QExtendedStandardItem *getAnalysisSettingsItemFromCurrentItem() const;
 
-    QList<int> calculateColumnsToShow(SimulationNodeClass *aNode);
     void duplicateItem(QExtendedStandardItem *item=Q_NULLPTR);
     void swapContact();
 

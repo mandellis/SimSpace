@@ -415,8 +415,7 @@ bool boltTool::sliceMeshWithPlane(double a, double b, double c, double d,
         std::pair<int,int> *volumeMeshGlobalID_CCXFace = &CCXFaceConnectivity.at(aMeshElement2D).at(0);
         volumeMeshGlobalID_CCXFace->first = volumeSlicedMesh->myElementsMap.FindKey(volumeMeshGlobalID_CCXFace->first);
         vecCCXFaceDefs.push_back(*volumeMeshGlobalID_CCXFace);
-        cout<<(*volumeMeshGlobalID_CCXFace).first<<", "<<(*volumeMeshGlobalID_CCXFace).second<<endl;
+        //cout<<(*volumeMeshGlobalID_CCXFace).first<<", "<<(*volumeMeshGlobalID_CCXFace).second<<endl;
     }
-
     return true;
 }

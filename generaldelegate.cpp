@@ -6416,8 +6416,7 @@ void GeneralDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, c
         else if(propertyName=="Coordinate system")
         {
             QComboBox *comboBox = static_cast<QComboBox*>(editor);
-            QVariant data1 = comboBox->currentData(Qt::UserRole);
-            data.setValue(data1);
+            data.setValue(comboBox->currentData(Qt::UserRole));
         }
         //! ---------------------------------------------
         //! "Named selection" "Boundary named selection"

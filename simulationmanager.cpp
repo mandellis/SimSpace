@@ -457,6 +457,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 emit requestSetWorkingMode(2);
                 emit requestHideAllResults();
                 emit requestHideSlicedMeshes();
+                emit requestHideFirstRow();
                 emit requestClearGraph();
                 this->changeColor();
             }
@@ -543,7 +544,6 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 //! -----------------------------------------------------------
                 //! calculate the number of columns to show => in the table <=
                 //! -----------------------------------------------------------
-                //QList<int> columnsToShow = this->calculateColumnsToShow(theNode);
                 QList<int> columnsToShow;
                 columnsToShow << TABULAR_DATA_STEP_END_TIME_COLUMN << mainTreeTools::getColumnsToRead(myTreeView);
                 if(columnsToShow.length()>=2) emit requestShowColumns(columnsToShow);
@@ -915,7 +915,6 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 //! -----------------------------------------------------------
                 //! calculate the number of columns to show => in the table <=
                 //! -----------------------------------------------------------
-                //QList<int> columnsToShow = this->calculateColumnsToShow(theNode);
                 QList<int> columnsToShow;
                 columnsToShow << TABULAR_DATA_STEP_END_TIME_COLUMN << mainTreeTools::getColumnsToRead(myTreeView);
                 if(columnsToShow.length()>=2) emit requestShowColumns(columnsToShow);
@@ -1240,135 +1239,6 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
         //! --------------------------------------
         emit requestUnhighlightBodies(true);
     }
-}
-
-//! ---------------------------------
-//! function: calculateColumnsToShow
-//! details:
-//! ---------------------------------
-QList<int> SimulationManager::calculateColumnsToShow(SimulationNodeClass *aNode)
-{
-    cout<<"SimulationManager::calculateColumnsToShow()->____function called____"<<endl;
-    int SC = mainTreeTools::calculateStartColumn(myTreeView);
-
-    QList<int> theColumnsToShow;
-    SimulationNodeClass::nodeType theType = aNode->getType();
-
-    if(theType== SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_CylindricalSupport ||
-            theType== SimulationNodeClass::nodeType_structuralAnalysisBoundaryContidion_FixedSupport ||
-            theType== SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_CompressionOnlySupport ||
-            theType== SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_FrictionlessSupport ||
-            theType== SimulationNodeClass::nodeType_thermalAnalysisAdiabaticWall ||
-            theType== SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_ImportedTemperatureDistribution ||
-            theType== SimulationNodeClass::nodeType_mapper)
-    {
-        theColumnsToShow<<0<<1;
-        return theColumnsToShow;
-    }
-
-    if(theType == SimulationNodeClass::nodeType_structuralAnalysisBoltPretension)
-    {
-        theColumnsToShow<<0<<SC<<SC+1<<SC+2;
-        return theColumnsToShow;
-    }
-
-    if(theType== SimulationNodeClass::nodeType_structuralAnalysisThermalCondition ||
-            theType== SimulationNodeClass::nodeType_modelChange ||
-            theType== SimulationNodeClass::nodeType_thermalAnalysisTemperature ||
-            theType== SimulationNodeClass::nodeType_thermalAnalysisThermalFlux ||
-            theType== SimulationNodeClass::nodeType_thermalAnalysisThermalFlow ||
-            theType== SimulationNodeClass::nodeType_thermalAnalysisThermalPower ||
-            theType== SimulationNodeClass::nodeType_electrostaticPotential)
-    {
-        theColumnsToShow<<0<<1<<SC;
-        return theColumnsToShow;
-    }
-
-    if(theType== SimulationNodeClass::nodeType_thermalAnalysisConvection)
-    {
-        theColumnsToShow<<0<<1<<SC<<SC+1;
-        return theColumnsToShow;
-    }
-
-    if(aNode->getPropertyItem("Define by")!=Q_NULLPTR)
-    {
-        Property::defineBy theDefineBy = aNode->getPropertyValue<Property::defineBy>("Define by");
-
-        if(theDefineBy==Property::defineBy_components)
-        {
-            SimulationNodeClass::nodeType theType = aNode->getType();
-
-            //! ------------------------------------------------------------------------------
-            //! the "Displacement"/"Remote displacement"/"Remote rotation" are special cases,
-            //! since they have the "free" option
-            //! ------------------------------------------------------------------------------
-            if(theType==SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Displacement ||
-                    theType==SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RemoteDisplacement ||
-                    theType==SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RemoteRotation)
-            {
-                //! ---------------------------------------------
-                //! show only the active displacement components
-                //! ---------------------------------------------
-                Property::loadDefinition theLoadDefinitionXcomponent = aNode->getPropertyValue<Property::loadDefinition>("X component");
-                Property::loadDefinition theLoadDefinitionYcomponent = aNode->getPropertyValue<Property::loadDefinition>("Y component");
-                Property::loadDefinition theLoadDefinitionZcomponent = aNode->getPropertyValue<Property::loadDefinition>("Z component");
-
-                bool b0,b1,b2;
-
-                if(theLoadDefinitionXcomponent!=Property::loadDefinition_free) b0=true; else b0=false;
-                if(theLoadDefinitionYcomponent!=Property::loadDefinition_free) b1=true; else b1=false;
-                if(theLoadDefinitionZcomponent!=Property::loadDefinition_free) b2=true; else b2=false;
-
-                if((b0 == true && b1 == false && b2 == false) ||
-                        (b0 == false && b1 == true && b2 == false) ||
-                        (b0 == false && b1 == false && b2 == true))
-                {
-                    theColumnsToShow<<0<<1<<SC;
-                }
-                if((b0 == true && b1 == true && b2 == false) ||
-                        (b0 == true && b1 == false && b2 == true) ||
-                        (b0 == false && b1 == true && b2 == true))
-                {
-                    theColumnsToShow<<0<<1<<SC<<SC+1;
-                }
-                if(b0 == true && b1 == true && b2 == true)
-                {
-                    theColumnsToShow<<0<<1<<SC<<SC+1<<SC+2;
-                }
-                if(b0 == false && b1 == false && b2 == false)
-                {
-                    theColumnsToShow<<0<<1;
-                }
-                //! ----------------------------
-                //! diagnostic - can be removed
-                //! ----------------------------
-                cout<<"SimulationManager::calculateColumnsToShow()->____columns to show: {";
-                int i; for(i=0;i<theColumnsToShow.length()-1;i++) cout<<theColumnsToShow.at(i)<<",";
-                cout<<theColumnsToShow.at(i)<<"}____"<<endl;
-            }
-            else
-            {
-                //! ---------------------------
-                //! show all the three columns
-                //! ---------------------------
-                theColumnsToShow<<0<<1<<SC<<SC+1<<SC+2;
-            }
-        }
-        else
-        {
-            //! ------------------------------------------
-            //! definition through a scalar (1 component)
-            //! ------------------------------------------
-            theColumnsToShow<<0<<1<<SC;
-        }
-        return theColumnsToShow;
-    }
-
-    //! -------
-    //! safety
-    //! -------
-    theColumnsToShow<<0<<1;
-    return theColumnsToShow;
 }
 
 //! ---------------------
@@ -12093,6 +11963,7 @@ void SimulationManager::renameItemBasedOnDefinition()
         case SimulationNodeClass::nodeType_thermalAnalysisThermalFlow: controlName = QString("Thermal flow"); break;
         case SimulationNodeClass::nodeType_thermalAnalysisThermalFlux: controlName = QString("Thermal flux"); break;
         case SimulationNodeClass::nodeType_thermalAnalysisConvection: controlName = QString("Convection"); break;
+        case SimulationNodeClass::nodeType_structuralAnalysisBoltPretension: controlName = QString("Bolt preload"); break;
         }
 
         //! -------------

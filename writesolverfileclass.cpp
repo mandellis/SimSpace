@@ -209,9 +209,12 @@ bool writeSolverFileClass::perform()
             //! append to the item name the number of the row
             QString SetName = itemName.append("_").append(QString("%1").arg(k));
 
+            //! -----------------------------------------
             //! retrive the IndexedMapOfMeshDS of the BC
+            //! -----------------------------------------
             IndexedMapOfMeshDataSources anIndexedMapOfFaceMeshDS;
-            anIndexedMapOfFaceMeshDS = theItemNode->getPropertyValue<IndexedMapOfMeshDataSources>("Mesh data sources");
+            if(theItemNode->getType()!=SimulationNodeClass::nodeType_structuralAnalysisBoltPretension)
+                anIndexedMapOfFaceMeshDS = theItemNode->getPropertyValue<IndexedMapOfMeshDataSources>("Mesh data sources");
 
             switch(theNodeType)
             {
