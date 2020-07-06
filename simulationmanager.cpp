@@ -10667,6 +10667,11 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
     //! ----------------------
     //! retrieve the location
     //! ----------------------
+    if(curNode->getPropertyItem("Tags")==Q_NULLPTR)
+    {
+        cerr<<"SimulationManager::callPostEngineEvaluateResult()->____empty scope of node: "<<curNode->type().toStdString()<<"____"<<endl;
+        return;
+    }
     QVector<GeometryTag> vecLoc = curNode->getPropertyValue<QVector<GeometryTag>>("Tags");
 
     //! ----------------------------------------------------------------

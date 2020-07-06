@@ -95,6 +95,9 @@ writeSolverFileClass::writeSolverFileClass(simulationDataBase *aDB, QExtendedSta
     vecMatNames.push_back("F92_fatigue");
     vecMatNames.push_back("A479_fatigue");
     vecMatNames.push_back("SA479_XM19_fatigue");
+    vecMatNames.push_back("SA182-B8M_CL2");
+    vecMatNames.push_back("SA182-F316");
+    vecMatNames.push_back("SA352-LCB");
 }
 
 
@@ -130,7 +133,7 @@ bool writeSolverFileClass::perform()
     //! ----------------------
     //! init the progress bar
     //! ----------------------
-    int Nevents = 6;
+    //int Nevents = 6;
     //if(myProgressIndicator!=Q_NULLPTR)
     //{
     //    QProgressEvent *e = new QProgressEvent(QProgressEvent_Init,0,Nevents,0,"Writing solver input file",
@@ -1648,14 +1651,14 @@ bool writeSolverFileClass::perform()
                     {
                         double loadValue = tabData->dataRC(i,ColumnList.at(2)).toDouble();
                         myInputFile<<"*BOUNDARY"<<endl;
-                        myInputFile<<RN.toStdString()<<","<<1<<","<<loadValue<<endl;
+                        myInputFile<<RN.toStdString()<<","<<1<<","<<1<<","<<loadValue<<endl;
                     }
                         break;
                     case Property::boltStatusDefinedBy_lock:
                     {
                         double loadValue = 0.0;
                         myInputFile<<"*BOUNDARY"<<endl;
-                        myInputFile<<RN.toStdString()<<","<<1<<","<<loadValue<<endl;
+                        myInputFile<<RN.toStdString()<<","<<1<<","<<1<<","<<loadValue<<endl;
                     }
                         break;
                     }

@@ -4470,14 +4470,6 @@ void GeneralDelegate::setEditorData(QWidget *editor, const QModelIndex &index) c
     {
         cout<<"Set editor data for \"Coordinate system\""<<endl;
 
-        //void *p = data.value<Property>().getData().value<void*>();
-        //QComboBox *comboBox = static_cast<QComboBox*>(editor);
-        //QVariant t;
-        //t.setValue(p);
-        //int index = comboBox->findData(t);
-        //if(index!=-1) comboBox->setCurrentIndex(index);
-        //else comboBox->setCurrentIndex(0);
-
         void *p = data.value<Property>().getData().value<void*>();
         QComboBox *comboBox = static_cast<QComboBox*>(editor);
         QStandardItem *item = (QStandardItem*)(p);
@@ -7129,10 +7121,10 @@ void GeneralDelegate::commitAndCloseNSSelector()
     emit scopeChanged();
 }
 
-//! --------------------------------------------------------------//
-//! function: commitAndCloseCSSelector                            //
-//! details:  close the coordinate system selector                //
-//! --------------------------------------------------------------//
+//! -----------------------------------
+//! function: commitAndCloseCSSelector
+//! details:
+//! -----------------------------------
 void GeneralDelegate::commitAndCloseCSSelector()
 {
     QComboBox *editor = qobject_cast<QComboBox *>(sender());

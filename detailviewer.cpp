@@ -5611,14 +5611,13 @@ void DetailViewer::updateBoudaryTags()
     }
 }
 
-//! ----------------------------------------------------
+//! ------------------------------
 //! function: handleBoltCSChanged
-//! details:  for the moment it changes the position of
-//!           the double marker
-//! ----------------------------------------------------
+//! details:
+//! ------------------------------
 void DetailViewer::handleBoltCSChanged()
 {
-    //cout<<"DetailViewer::handleBoltCSChanged()->____function called____"<<endl;
+    cout<<"DetailViewer::handleBoltCSChanged()->____function called____"<<endl;
     SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
     bool isDone = markerBuilder::addMarker(myCurNode,sm->getDataBase());
     if(isDone==true)
