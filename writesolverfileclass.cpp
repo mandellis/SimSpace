@@ -95,9 +95,9 @@ writeSolverFileClass::writeSolverFileClass(simulationDataBase *aDB, QExtendedSta
     vecMatNames.push_back("F92_fatigue");
     vecMatNames.push_back("A479_fatigue");
     vecMatNames.push_back("SA479_XM19_fatigue");
-    vecMatNames.push_back("SA182-B8M_CL2");
-    vecMatNames.push_back("SA182-F316");
-    vecMatNames.push_back("SA352-LCB");
+    //vecMatNames.push_back("SA182-B8M_CL2");
+    //vecMatNames.push_back("SA182-F316");
+    //vecMatNames.push_back("SA352-LCB");
 }
 
 
