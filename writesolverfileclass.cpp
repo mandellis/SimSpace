@@ -1647,7 +1647,8 @@ bool writeSolverFileClass::perform()
                     theNodeType!=SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_CylindricalSupport &&
                     theNodeType!=SimulationNodeClass::nodeType_structuralAnalysisBoundaryContidion_FixedSupport &&
                     theNodeType!=SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_FrictionlessSupport &&
-                    theNodeType!=SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_CompressionOnlySupport
+                    theNodeType!=SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_CompressionOnlySupport &&
+                    analysisType!=Property::analysisType_frequencyResponse
        #ifdef COSTAMP_VERSION
                && theNodeType!=SimulationNodeClass::nodeType_timeStepBuilder
        #endif
@@ -2130,13 +2131,15 @@ bool writeSolverFileClass::perform()
                         for(int p=0;p<ColumnList.length();p++)
                         {
                             double loadValue = tabData->dataRC(i,ColumnList.at(p)).toDouble();
+                            QString aName = SetName;
+                            aName.append(QString("_%1").arg(i));
                             switch(theNodeType)
                             {
                             //! ---------
                             //! Pressure
                             //! ---------
                             case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Pressure:
-                                this->writeDload(loadValue,SetName);
+                                this->writeDload(loadValue,aName);
                                 break;
                             case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Displacement:
                             case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RemoteDisplacement:
@@ -3102,10 +3105,11 @@ void writeSolverFileClass::writeDload(double aLoad, QString aName)
 
     QString extension=".dlo";
     QString extension1=".surf";
-
     //! this is the absolute path on the disk
     QString name = aName+extension;
-    QString setName = aName+extension1;
+    QString setName = aName;
+    setName.chop(2);
+    setName=setName+extension1;
 
     QString absFileName = myFileName.split("/").last();
     QString dirName = myFileName;
