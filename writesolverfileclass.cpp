@@ -1677,14 +1677,14 @@ bool writeSolverFileClass::perform()
                     {
                         double loadValue = tabData->dataRC(i,ColumnList.at(2)).toDouble();
                         myInputFile<<"*BOUNDARY"<<endl;
-                        myInputFile<<RN.toStdString()<<","<<1<<","<<loadValue<<endl;
+                        myInputFile<<RN.toStdString()<<","<<1<<","<<1<<","<<loadValue<<endl;
                     }
                         break;
                     case Property::boltStatusDefinedBy_lock:
                     {
                         double loadValue = 0.0;
                         myInputFile<<"*BOUNDARY"<<endl;
-                        myInputFile<<RN.toStdString()<<","<<1<<","<<loadValue<<endl;
+                        myInputFile<<RN.toStdString()<<","<<1<<","<<1<<","<<loadValue<<endl;
                     }
                         break;
                     }

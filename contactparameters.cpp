@@ -31,8 +31,10 @@ double contactParameters::calc_K(QList<occHandle(Ng_MeshVS_DataSourceFace)> mast
     //! search for E and nu for each body material
     //! to do ... here static for TWO materials
 
-    double E_1 = 200.0e5;
-    double E_2 = 200.0e5;
+    //double E_1 = 200.0e5;
+    //double E_2 = 200.0e5;
+    double E_1 = 2.000e;
+    double E_2 = 2.000e;
 
     double nu_1 = 0.3;
     double nu_2 = 0.3;
