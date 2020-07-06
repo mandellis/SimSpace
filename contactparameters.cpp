@@ -33,8 +33,8 @@ double contactParameters::calc_K(QList<occHandle(Ng_MeshVS_DataSourceFace)> mast
 
     //double E_1 = 200.0e5;
     //double E_2 = 200.0e5;
-    double E_1 = 2.000e;
-    double E_2 = 2.000e;
+    double E_1 = 2.000e5;
+    double E_2 = 2.000e5;
 
     double nu_1 = 0.3;
     double nu_2 = 0.3;
