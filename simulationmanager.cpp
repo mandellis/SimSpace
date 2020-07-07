@@ -10545,7 +10545,7 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
     if(type!=SimulationNodeClass::nodeType_solutionStructuralFatigueTool)
     {
         int component = curNode->getPropertyValue<int>("Type ");
-
+        int mode = 0;
         //! ---------------------------------------------
         //! a results is already present into the item
         //! build the mesh object from the internal data
@@ -10670,7 +10670,7 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
             //! the post object retrieves the mesh data sources from the simulation database
             //! and internally builds its own interactive mesh objects
             //! -----------------------------------------------------------------------------
-            aPostObject = myPostEngine->buildPostObject(keyName,component,subStepNb,stepNb,vecLoc);
+            aPostObject = myPostEngine->buildPostObject(keyName,component,subStepNb,stepNb,mode,vecLoc);
             aPostObject.update(static_cast<meshDataBase*>(mySimulationDataBase), component);
         }
 

@@ -293,6 +293,8 @@ bool FrdReader::readResults(ifstream &is, QString path/*, int &sb,int &st,double
             aResultFile.setf(ios::scientific);
             aResultFile.precision(EXPFORMAT_PRECISION);
 
+            if(isModal) aResultFile<<"MODAL "<<dval.at(4)<<endl;
+            else aResultFile<<"THERMOSTRUCTURAL "<<0<<endl;
             aResultFile<<"Time="<<t<<endl;
             aResultFile<<"Substep n="<<sb<<" Step n="<<st<<endl;
             aResultFile<<tdata<<endl;

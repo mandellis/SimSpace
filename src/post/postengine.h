@@ -103,6 +103,7 @@ public slots:
     QMap<GeometryTag,QList<QMap<int,double>>> evaluateResult(const QString &resultKeyName,
                                                              int requiredSubStepNb,
                                                              int requiredStepNb,
+                                                             int requiredMode,
                                                              const QVector<GeometryTag> &vecLoc);
 
     postObject evaluateFatigueResults(int type, QVector<GeometryTag> locs, const QList<double> &times, QMap<int,int> materialBodyMap, int nCycle);
@@ -112,6 +113,7 @@ public slots:
                                int component,
                                int requiredSubStepNb,
                                int requiredStepNb,
+                               int requiredMode,
                                const QVector<GeometryTag> &vecLoc);
 
 private:
