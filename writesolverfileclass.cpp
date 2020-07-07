@@ -1520,6 +1520,7 @@ bool writeSolverFileClass::perform()
             //! type of properties: SOLVER, STORAGE, GLOBAL and CYCMPC
             myInputFile<<endl;
             //! Number of eigenFrequency to compute
+            //myInputFile<<"5"<<endl;
             myInputFile<<"1"<<endl;
         }
             break;

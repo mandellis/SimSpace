@@ -207,6 +207,7 @@ bool FrdReader::readResults(ifstream &is, QString path/*, int &sb,int &st,double
 {
     cout<<"FrdReader::readResults()->____function called____"<<endl;
 
+    bool isModal=false;
     //! --------------------------------------------------------------------------------
     //! read 1st line  "1PSTEP    1(dataset n°)           1(substep n°)     1(step n°)"
     //! --------------------------------------------------------------------------------
@@ -229,7 +230,7 @@ bool FrdReader::readResults(ifstream &is, QString path/*, int &sb,int &st,double
     //! ----------------------------------------------
     //! read Frequency/modal (block before results)
     //!     1PGM                1.000000E+00
-    //!     1PGK                1.322220E+09
+    //!     1PGK                1.322220E+09  eigenmode
     //!     1PHID                         -1
     //!     1PSUBC                         0
     //!     1PMODE                         1
@@ -251,6 +252,7 @@ bool FrdReader::readResults(ifstream &is, QString path/*, int &sb,int &st,double
                 dval.push_back(e);
             }
             std::getline(is,val);
+            isModal=true;
         }
     }
     //! ------------------------------------------------------------------------------------------------------------------
@@ -258,8 +260,8 @@ bool FrdReader::readResults(ifstream &is, QString path/*, int &sb,int &st,double
     //! ------------------------------------------------------------------------------------------------------------------
     //std::getline(is,val);
     int nd,b1,b2,b3;
-    char ct[24];
-    if(sscanf(val.c_str(),"%s%d%lf%d%d%d%d",ct,&b1,&t,&nd,&b1,&b2,&b3)==7)
+    char ct[24],at[24];
+    if(sscanf(val.c_str(),"%s%d%lf%d%d%s%d",ct,&b1,&t,&nd,&b1,&at,&b3)==7)
     {
         //! ------------------------------------------------------------------------
         //! read 3rd line  "-4  DISP (type of data)       4 (n° of variables)    1 "
@@ -473,8 +475,8 @@ bool FrdReader::readResults(ifstream &is, QString path/*, int &sb,int &st,double
     }
     else
     {
-
-
+        cout<<"isModal = "<<isModal<<endl;
+        exit(100);
         //! error in reading 2-nd line
         //! consider using throw()
         return false;
