@@ -7408,11 +7408,9 @@ void SimulationManager::writeSolverInputFile()
     parameters.push_back((void*)(&fileName));
 
     inputFileGenerator* ifg = new inputFileGenerator(this);
+    QProgressIndicator *aProgressIndicator = static_cast<QProgressIndicator*>(tools::getWidgetByName("progressIndicator"));
+    ifg->setProgressIndicator(aProgressIndicator);
     ifg->setParameters(parameters);
-
-    //QWidget *piw = tools::getWidgetByName("progressIndicator");
-    //QProgressIndicator *progressIndicator = static_cast<QProgressIndicator*>(piw);
-    //ifg->setProgressIndicator(progressIndicator);
     ifg->start();
 }
 

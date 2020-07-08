@@ -108,6 +108,7 @@ bool inputFileGenerator::writeCCX()
     QExtendedStandardItem *simulationRootItem = static_cast<QExtendedStandardItem*>(myParameters[1]);
     writeSolverFileClass CCXInputGenerator(sDB,simulationRootItem);
 
+    CCXInputGenerator.setProgressIndicator(myProgressIndicator);
     CCXInputGenerator.setName(myInputFileName);
     bool isDone = CCXInputGenerator.perform();
     return isDone;

@@ -14,6 +14,7 @@
 #include <QPushButton>
 #include <QLabel>
 #include <QProcess>
+#include <QThread>
 
 //! ----------------
 //! system specific
@@ -274,7 +275,7 @@ bool QProgressIndicator::eventFilter(QObject *object, QEvent *event)
         //! ------------------------------------
         //! handling the secondary progress bar
         //! ------------------------------------
-        if(myProgressBar1!=NULL)
+        if(myProgressBar1!=Q_NULLPTR)
         {
             switch(e->action1())
             {
@@ -380,15 +381,18 @@ void QProgressIndicator::handleStopPressed()
         static_cast<TetgenMesher*>(myCurCallerObject)->getProcess()->kill();
     }
     if(myCurrentRunningTask == "Netgen rebuilding associativity" ||
-            myCurrentRunningTask =="Tetgen building face mesh datasources from disk" ||
-            myCurrentRunningTask =="MeshTools building PLC on disk" ||
-            myCurrentRunningTask =="Creating automatic connections" ||
-            myCurrentRunningTask =="Building prismatic mesh" ||
-            myCurrentRunningTask =="TetHex conversion" ||
-            myCurrentRunningTask =="Projecting mesh points on geometry")
+            myCurrentRunningTask == "Tetgen building face mesh datasources from disk" ||
+            myCurrentRunningTask == "MeshTools building PLC on disk" ||
+            myCurrentRunningTask == "Creating automatic connections" ||
+            myCurrentRunningTask == "Building prismatic mesh" ||
+            myCurrentRunningTask == "TetHex conversion" ||
+            myCurrentRunningTask == "Projecting mesh points on geometry" ||
+            myCurrentRunningTask == "Writing solver input file")
     {
         Global::status().code = 0;
     }
+
+    QThread::msleep(1500);
     this->hide();
 }
 
