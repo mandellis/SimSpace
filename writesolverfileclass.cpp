@@ -67,6 +67,9 @@ writeSolverFileClass::writeSolverFileClass(simulationDataBase *aDB, QExtendedSta
     //! the simulation data-base
     myDB = aDB;
 
+    //! init the progress indicator
+    myProgressIndicator = Q_NULLPTR;
+
     //! the simulation item root
     mySimulationRoot = aSimulationRoot;
 

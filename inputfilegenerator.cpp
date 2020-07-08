@@ -1,3 +1,6 @@
+//! ----------------
+//! custom includes
+//! ----------------
 #include "inputfilegenerator.h"
 #include <qprogressindicator.h>
 #include <qprogressevent.h>

@@ -49,6 +49,7 @@
 #include <QProcess>
 #endif
 
+class inputFileGenerator;
 class MeshingServer;
 class QStandardItemModel;
 class QStandardItem;
@@ -88,12 +89,14 @@ private:
     serializerClass *mySerializer;
     deserializerClass *myDeserializer;
     postEngine *myPostEngine;
+    inputFileGenerator* myInputFileGenerator;
 
     //! experimental
     CCXSolverManager *theCCXSolverManager;
 
     //! experimental
     FrdReader *myFrdReader;
+
 
     //! internal timer
     QTimer *myTimer;

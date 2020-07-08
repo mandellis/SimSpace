@@ -67,6 +67,8 @@
 #include "ccxsolvermessage.h"
 #include "ccxtools.h"
 
+#include "inputfilegenerator.h"
+
 //! ----
 //! C++
 //! ----
@@ -161,6 +163,8 @@ SimulationManager::SimulationManager(QWidget *parent): QWidget(parent)
     myPostEngine = new postEngine(this);
     QProgressIndicator *aProgressIndicator = static_cast<QProgressIndicator*>(tools::getWidgetByName("progressIndicator"));
     myMeshingServer = new MeshingServer(aProgressIndicator,this);
+    myInputFileGenerator = new inputFileGenerator(this);
+    myInputFileGenerator->setProgressIndicator(aProgressIndicator);
 
     //! -----------------
     //! status variables
@@ -213,8 +217,11 @@ SimulationManager::SimulationManager(const occHandle(AIS_InteractiveContext) &aC
     mySerializer = new serializerClass(this);
     myDeserializer = new deserializerClass(this);
     myPostEngine = new postEngine(this);
+
     QProgressIndicator *aProgressIndicator = static_cast<QProgressIndicator*>(tools::getWidgetByName("progressIndicator"));
     myMeshingServer = new MeshingServer(aProgressIndicator,this);
+    myInputFileGenerator = new inputFileGenerator(this);
+    myInputFileGenerator->setProgressIndicator(aProgressIndicator);
 
     myTimer = new QTimer(this);
 
@@ -7081,49 +7088,6 @@ bool SimulationManager::startAnalysis(const QString &projectDataDir)
     cout<<"SimulationManager::startAnalysis()->____solution data directory: "<<projectDataDir.toStdString()<<"____"<<endl;
 
     //! ---------------------------------------------------------------
-    //! check if all the bodies among the active ones have been meshed
-    //! ---------------------------------------------------------------
-    bool isMeshOk = true;
-    const QMap<int,TopoDS_Shape> &bodyMap = mySimulationDataBase->bodyMap;
-    for(QMap<int,TopoDS_Shape>::const_iterator it = bodyMap.cbegin(); it!=bodyMap.cend(); ++it)
-    {
-        int bodyIndex = it.key();
-        bool isActive = mySimulationDataBase->MapOfIsActive.value(bodyIndex);
-        if(isActive == false) continue;
-        const occHandle(MeshVS_DataSource) &aMeshDataSource = mySimulationDataBase->ArrayOfMeshDS.value(bodyIndex);
-        if(aMeshDataSource.IsNull())
-        {
-            isMeshOk = false;
-            break;
-        }
-    }
-    if(isMeshOk==false)
-    {
-        //! -----------------------------------
-        //! analysis not started: return false
-        //! -----------------------------------
-        QMessageBox::information(this,APPNAME,tr("Not all the bodies have been meshed\nThe simulation cannot be started"));
-        return false;
-    }
-
-    //! ----------------------------------
-    //! switch the tab of the main window
-    //! ----------------------------------
-    //emit requestSetActiveCentralTab("maingwindow");
-    emit requestSetActiveCentralTab("worksheetViewer");
-
-    //! ------------------------------------------------------------------------
-    //! we need to store the projectDataDir (..\..\<project name>_files) into
-    //! the model, since the method callPostEngineEvaluateResult() (action 204)
-    //! needs to know where the data are located on disk
-    //! ------------------------------------------------------------------------
-    QVariant data;
-    data.setValue(projectDataDir);
-    Property prop_projectFileDir("Project files dir",data,Property::PropertyGroup_Information);
-    data.setValue(prop_projectFileDir);
-    //...
-
-    //! ---------------------------------------------------------------
     //! retrieve the current item and check if it is a simulation root
     //! ---------------------------------------------------------------
     QModelIndex curIndex = myTreeView->currentIndex();
@@ -7138,6 +7102,40 @@ bool SimulationManager::startAnalysis(const QString &projectDataDir)
         return false;
     }
 
+    //! ---------------------------------------------------------------
+    //! check if all the bodies among the active ones have been meshed
+    //! ---------------------------------------------------------------
+    bool isMeshOk = false;
+    for(QMap<int,TopoDS_Shape>::const_iterator it = mySimulationDataBase->bodyMap.cbegin(); it!=mySimulationDataBase->bodyMap.cend(); ++it)
+    {
+        int bodyIndex = it.key();
+        if(mySimulationDataBase->MapOfIsActive.value(bodyIndex)==false) continue;
+        const occHandle(MeshVS_DataSource) &aMeshDataSource = mySimulationDataBase->ArrayOfMeshDS.value(bodyIndex);
+        if(aMeshDataSource.IsNull()==false) isMeshOk = true;
+    }
+    if(isMeshOk==false)
+    {
+        //! -----------------------------------
+        //! analysis not started: return false
+        //! -----------------------------------
+        QMessageBox::information(this,APPNAME,tr("Not all the bodies have been meshed\nThe simulation cannot be started"));
+        return false;
+    }
+
+    //! ----------------------------------
+    //! switch the tab of the main window
+    //! ----------------------------------
+    emit requestSetActiveCentralTab("worksheetViewer");
+
+    //! --------------------------------------------------------------------
+    //! store the projectDataDir (..\..\<project name>_files) into the tree
+    //! (the method callPostEngineEvaluateResult() (action 204) uses it)
+    //! --------------------------------------------------------------------
+    QVariant data;
+    data.setValue(projectDataDir);
+    Property prop_projectFileDir("Project files dir",data,Property::PropertyGroup_Information);
+    data.setValue(prop_projectFileDir);
+
     //! -----------------------------
     //! retrieve the "Solution" item
     //! -----------------------------
@@ -7149,23 +7147,21 @@ bool SimulationManager::startAnalysis(const QString &projectDataDir)
     SimulationNodeClass *nodeSolution = itemSolution->data(Qt::UserRole).value<SimulationNodeClass*>();
     SimulationNodeClass *nodeSolutionInformation = itemSolutionInformation->data(Qt::UserRole).value<SimulationNodeClass*>();
 
-    //! -------------------------------
-    //! clear the solution information
-    //! -------------------------------
-    mainTreeTools::resetSolutionInformation(nodeSolutionInformation);
-
     //! --------------------------------------------------------
     //! insert the "Project files dir" into the "Solution" item
     //! --------------------------------------------------------
     if(nodeSolution->getPropertyItem("Project files dir")!=Q_NULLPTR) nodeSolution->replaceProperty("Project files dir",prop_projectFileDir);
     else nodeSolution->addProperty(prop_projectFileDir,1);
 
+    //! -------------------------------
+    //! clear the solution information
+    //! -------------------------------
+    mainTreeTools::resetSolutionInformation(nodeSolutionInformation);
+
     //! ---------------------------
     //! read the number of threads
     //! ---------------------------
     int NbThreads = nodeAnalysisSettigs->getPropertyValue<int>("Number of threads");
-
-    cout<<"SimulationManager::startAnalysis()->____starting solution on "<<NbThreads<<" threads____"<<endl;
 
     //! ---------------------------------------------------------------------------------
     //! create the directory for the solution data
@@ -7178,6 +7174,13 @@ bool SimulationManager::startAnalysis(const QString &projectDataDir)
         curDir.mkdir(solutionDataDir);
         curDir.cd(solutionDataDir);
     }
+    //QDir aDir(solutionDataDir);
+    //if(aDir.exists()==false)
+    //{
+    //    cout<<"____"<<solutionDataDir.toStdString()<<"____"<<endl;
+    //    QMessageBox::critical(this,APPNAME,"Cannot start run: cannot create\n directory for analysis files",QMessageBox::Ok);
+    //    return false;
+    //}
     cout<<"SimulationManager::startAnalysis()->____\"SolutionData\" full path: "<<curDir.absolutePath().toStdString()<<"____"<<endl;
 
     //! ----------------------------
@@ -7193,13 +7196,14 @@ bool SimulationManager::startAnalysis(const QString &projectDataDir)
     //if(curAnalysisRootNode->getType()==SimulationNodeClass::nodeType_thermalAnalysis) generateDual = true;
     this->generateBoundaryConditionsMeshDS(generateDual);
 
-    //! ------------------
-    //! work on the stack
-    //! ------------------
+    //! ----------------------------------
+    //! work on the stack - single thread
+    //! ----------------------------------
     writeSolverFileClass inputFileGenerator(mySimulationDataBase,static_cast<QExtendedStandardItem*>(itemSimulationRoot));
+    QWidget *piw = tools::getWidgetByName("progressIndicator");
+    QProgressIndicator *aProgressIndicator = static_cast<QProgressIndicator*>(piw);
+    inputFileGenerator.setProgressIndicator(aProgressIndicator);
     inputFileGenerator.setName(fileName);
-
-    //! set the progress indicator ... to do ...
     bool isDone = inputFileGenerator.perform();
 
     //! ------------------------------------------
@@ -7377,7 +7381,6 @@ void SimulationManager::handleSolutionComponentChanged()
 //! function: writeSolverInputFile
 //! details:
 //! -------------------------------
-#include "inputfilegenerator.h"
 void SimulationManager::writeSolverInputFile()
 {
     QStandardItem *curItem = myModel->itemFromIndex(myTreeView->currentIndex());
@@ -7407,11 +7410,8 @@ void SimulationManager::writeSolverInputFile()
     parameters.push_back((void*)(QExtendedStandardItem*)(curItem));
     parameters.push_back((void*)(&fileName));
 
-    inputFileGenerator* ifg = new inputFileGenerator(this);
-    QProgressIndicator *aProgressIndicator = static_cast<QProgressIndicator*>(tools::getWidgetByName("progressIndicator"));
-    ifg->setProgressIndicator(aProgressIndicator);
-    ifg->setParameters(parameters);
-    ifg->start();
+    myInputFileGenerator->setParameters(parameters);
+    myInputFileGenerator->start();
 }
 
 //! --------------------------------------------------
@@ -11795,6 +11795,7 @@ void SimulationManager::renameItemBasedOnDefinition()
         case SimulationNodeClass::nodeType_thermalAnalysisThermalFlux: controlName = QString("Thermal flux"); break;
         case SimulationNodeClass::nodeType_thermalAnalysisConvection: controlName = QString("Convection"); break;
         case SimulationNodeClass::nodeType_structuralAnalysisBoltPretension: controlName = QString("Bolt preload"); break;
+        case SimulationNodeClass::nodeType_coordinateSystem: controlName = QString("Coordinate system"); break;
         }
 
         //! -------------
