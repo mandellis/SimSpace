@@ -7377,6 +7377,7 @@ void SimulationManager::handleSolutionComponentChanged()
 //! function: writeSolverInputFile
 //! details:
 //! -------------------------------
+#include "inputfilegenerator.h"
 void SimulationManager::writeSolverInputFile()
 {
     QStandardItem *curItem = myModel->itemFromIndex(myTreeView->currentIndex());
@@ -7396,12 +7397,23 @@ void SimulationManager::writeSolverInputFile()
     bool generateDual = false;
     if(curNode->getType()==SimulationNodeClass::nodeType_thermalAnalysis) generateDual = true;
     this->generateBoundaryConditionsMeshDS(generateDual);
-
     //this->createSimulationNode(SimulationNodeClass::nodeType_thermalAnalysisAdiabaticWall);
 
-    writeSolverFileClass theSolverWriter(mySimulationDataBase,(QExtendedStandardItem*)(curItem));
-    theSolverWriter.setName(fileName);
-    theSolverWriter.perform();
+    //! -----------------------
+    //! prepare the parameters
+    //! -----------------------
+    std::vector<void*> parameters;
+    parameters.push_back((void*)(mySimulationDataBase));
+    parameters.push_back((void*)(QExtendedStandardItem*)(curItem));
+    parameters.push_back((void*)(&fileName));
+
+    inputFileGenerator* ifg = new inputFileGenerator(this);
+    ifg->setParameters(parameters);
+
+    //QWidget *piw = tools::getWidgetByName("progressIndicator");
+    //QProgressIndicator *progressIndicator = static_cast<QProgressIndicator*>(piw);
+    //ifg->setProgressIndicator(progressIndicator);
+    ifg->start();
 }
 
 //! --------------------------------------------------

@@ -20,7 +20,7 @@
 CCXSolverManager::CCXSolverManager(const QString &inputFileName, QWidget *parent):QDialog(parent),
     myInputFile(inputFileName)
 {
-    cout<<"CCXSolverManager::CCXSolverManager()->____constructor called____"<<endl;
+    //cout<<"CCXSolverManager::CCXSolverManager()->____constructor called____"<<endl;
     cout<<"CCXSolverManager::CCXSolverManager()->____launching input file: "<<inputFileName.toStdString()<<"____"<<endl;
 
     //! ---------------------------
