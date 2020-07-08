@@ -653,7 +653,7 @@ bool writeSolverFileClass::perform()
                         //! ---------
                         //! 1st) row
                         //! ---------
-                        myInputFile<<"*TIE, POSITION TOLERANCE="<<C0<<", NAME="<<
+                        myInputFile<<"*TIE, ADJUST = NO, POSITION TOLERANCE="<<C0<<", NAME="<<
                                      itemNameClearSpaces((item->data(Qt::DisplayRole).toString().append("_%1").arg(n).append("%1").arg(k+1))).toStdString()<<endl;
                         //! ---------
                         //! 2nd) row
@@ -812,7 +812,7 @@ bool writeSolverFileClass::perform()
                         //! ---------
                         //! 1st) row
                         //! ---------
-                        myInputFile<<"*TIE, POSITION TOLERANCE="<<C0<<", NAME="<<
+                        myInputFile<<"*TIE, ADJUST=NO, POSITION TOLERANCE="<<C0<<", NAME="<<
                                      itemNameClearSpaces((item->data(Qt::DisplayRole).toString().append("_%1").arg(n).append("%1").arg(k+1))).toStdString()<<endl;
 
                         //! ---------
