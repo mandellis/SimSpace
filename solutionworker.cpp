@@ -237,8 +237,8 @@ void SolutionWorker::perform(int NbProcs)
             this->emitResultReady(9999);
             return;
         }
-        //program.append("\\ccx.exe");
-        program.append("\\ccx_215Pardiso.exe");
+        program.append("\\ccx.exe");
+        //program.append("\\ccx_215Pardiso.exe");
     }
 
     //! --------------------------
