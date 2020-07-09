@@ -64,6 +64,7 @@
 #include "generaldelegate.h"
 
 #include "qccxsolvermessageevent.h"
+#include "ccxsolvermanager1.h"
 #include "ccxsolvermessage.h"
 #include "ccxtools.h"
 
@@ -7082,7 +7083,6 @@ void SimulationManager::swapContact()
 //! function: startAnalysis
 //! details:
 //! ------------------------
-#include "ccxsolvermanager1.h"
 bool SimulationManager::startAnalysis(const QString &projectDataDir)
 {
     cout<<"SimulationManager::startAnalysis()->____function called: solution data directory: "<<projectDataDir.toStdString()<<"____"<<endl;
@@ -7098,9 +7098,9 @@ bool SimulationManager::startAnalysis(const QString &projectDataDir)
         return false;
     }
 
-    //! -------------------------------
-    //! check if all the active bodies
-    //! -------------------------------
+    //! ---------------------------------------
+    //! check if the active bodies have a mesh
+    //! ---------------------------------------
     bool isMeshOk = false;
     for(QMap<int,TopoDS_Shape>::const_iterator it = mySimulationDataBase->bodyMap.cbegin(); it!=mySimulationDataBase->bodyMap.cend(); ++it)
     {

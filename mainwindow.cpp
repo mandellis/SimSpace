@@ -568,6 +568,7 @@ void MainWindow::createDockWidgets()
     myDebugConsole->setObjectName("debugConsole");
     myDebugConsoleDock->setWidget(myDebugConsole);
     this->addDockWidget(Qt::RightDockWidgetArea,myDebugConsoleDock);
+    myDebugConsoleDock->setVisible(false);
 
     //! --------------------------------
     //! memory profiler dockable widget

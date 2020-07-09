@@ -183,8 +183,9 @@ bool writeSolverFileClass::perform()
         QThread::msleep(500);
     }
 
-
+    //! ----------------------------------
     //! a default name for the input file
+    //! ----------------------------------
     if(myFileName=="") myFileName ="input.inp";
 
     //! open the file and set current directory
@@ -197,22 +198,6 @@ bool writeSolverFileClass::perform()
     //! read the "Analysis settings" item
     SimulationNodeClass *nodeAnalysisSettings = mySimulationRoot->child(0,0)->data(Qt::UserRole).value<SimulationNodeClass*>();
     CustomTableModel *tabData = nodeAnalysisSettings->getTabularDataModel();
-
-    /*
-    //! ----------------------
-    //! init the progress bar
-    //! ----------------------
-    int done = 0;
-    int Nevents = 6;
-    if(myProgressIndicator!=Q_NULLPTR)
-    {
-        QProgressEvent *e = new QProgressEvent(QProgressEvent_Init,0,Nevents,0,"Writing solver input file",
-                                               QProgressEvent_None,-1,-1,-1,"Writing CCX input file");
-        QApplication::postEvent(myProgressIndicator,e);
-        QApplication::processEvents();
-        QThread::msleep(500);
-    }
-    */
 
     //! -------------------------
     //! write nodes and elements
@@ -597,7 +582,7 @@ bool writeSolverFileClass::perform()
     if(myProgressIndicator!=Q_NULLPTR)
     {
         done++;
-        QProgressEvent *e = new QProgressEvent(QProgressEvent_Update,0,Nevents-1,done,"Writing sets",
+        QProgressEvent *e = new QProgressEvent(QProgressEvent_Update,0,Nevents-1,done,"Sending boundary conditions",
                                                QProgressEvent_None,-1,-1,-1,"Writing CCX solver input file");
         QApplication::postEvent(myProgressIndicator,e);
         QApplication::processEvents();
@@ -614,14 +599,14 @@ bool writeSolverFileClass::perform()
     for(int n=0; n<theConnectionItem->rowCount(); n++)
     {
         //! the current connection group
-        QExtendedStandardItem *itemConnectionGroup = static_cast<QExtendedStandardItem*>(theConnectionItem->child(n,0));
+        QStandardItem *itemConnectionGroup = theConnectionItem->child(n,0);
 
         //! number of contacts under the current connection group
         int NbContactPairs = itemConnectionGroup->rowCount();
 
         for(int k=0; k<NbContactPairs; k++)
         {
-            QExtendedStandardItem *item = static_cast<QExtendedStandardItem*>(itemConnectionGroup->child(k,0));
+            QStandardItem *item = itemConnectionGroup->child(k,0);
             SimulationNodeClass *node = item->data(Qt::UserRole).value<SimulationNodeClass*>();
 
             Property::SuppressionStatus ss = node->getPropertyValue<Property::SuppressionStatus>("Suppressed");
@@ -652,8 +637,8 @@ bool writeSolverFileClass::perform()
                     QString mName=itemNameClearSpaces(item->data(Qt::DisplayRole).toString().append("_%1").arg(n).append("%1").arg(k+1).append("_ELEMENT_MASTER"));
                     this->writeElementSurface(mName,anIndexedMapOfFaceMeshDS_Master);
 
-                    masterSlaveName.first =QString("S_").append(name);
-                    masterSlaveName.second=mName;
+                    masterSlaveName.first = QString("S_").append(name);
+                    masterSlaveName.second= mName;
                 }
                     break;
 
@@ -684,8 +669,7 @@ bool writeSolverFileClass::perform()
     //! ------------------------------------------------------
     //! [3] write the "contact pair" headers: rescan the tree
     //! ------------------------------------------------------
-    //! total number of contact pair
-    int NtotCP = 0;
+    int NtotCP = 0;     // total number of contact pair
     for(int n=0; n<theConnectionItem->rowCount(); n++)
     {
         //! the current connection group
@@ -1100,9 +1084,6 @@ bool writeSolverFileClass::perform()
                     break;
                 }
             }
-            //! update the progress
-            //e = new QProgressEvent(QProgressEvent_Update,0,0,++done);
-            //QApplication::postEvent(mw,e);
         }
     }
 
@@ -2449,10 +2430,6 @@ bool writeSolverFileClass::perform()
         //! end output file settings
         //! -------------------------
         myInputFile<<"*END STEP"<<endl;
-
-        //! update the progress
-        //e = new QProgressEvent(QProgressEvent_Update,0,0,++done);
-        //QApplication::postEvent(mw,e);
     }
 
     cout<<"writeSolverFileClass::perform()->____INPUT FILE SUCCESSFULLY WRITTEN____"<<endl;

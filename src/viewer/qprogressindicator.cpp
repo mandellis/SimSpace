@@ -220,9 +220,11 @@ bool QProgressIndicator::eventFilter(QObject *object, QEvent *event)
             //! --------------------------------------------
             if(!myStopButton->isEnabled()) myStopButton->setEnabled(true);
 
+            myLabel->setText(e->getMessage());
+
             //! ----------------------------------------------
             //! set the range and set the progress to the min
-            //! --------<--------------------------------------
+            //! ----------------------------------------------
             myProgressBar->setRange(e->min(),e->max());
             myProgressBar->setValue(e->min());
         }

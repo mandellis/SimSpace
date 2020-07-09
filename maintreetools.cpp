@@ -35,7 +35,7 @@ QList<int> mainTreeTools::getColumnsToRead(QTreeView *tree)
 //! ---------------------------
 QList<int> mainTreeTools::getColumnsToRead(QStandardItem *anItem)
 {
-    cout<<"mainTreeTools::getColumnsToRead()->____function called____"<<endl;
+    //cout<<"mainTreeTools::getColumnsToRead()->____function called____"<<endl;
 
     QList<int> theColumnsToShow;
     int SC = mainTreeTools::calculateStartColumn(anItem);
@@ -151,9 +151,9 @@ QList<int> mainTreeTools::getColumnsToRead(QStandardItem *anItem)
     //! ----------------------------
     //! diagnostic - can be removed
     //! ----------------------------
-    cout<<"mainTreeTools::getColumnsToRead()->____columns to read: {";
-    int i; for(i=0;i<theColumnsToShow.length()-1;i++) cout<<theColumnsToShow.at(i)<<",";
-    cout<<theColumnsToShow.at(i)<<"}"<<endl;
+    //cout<<"mainTreeTools::getColumnsToRead()->____columns to read: {";
+    //int i; for(i=0;i<theColumnsToShow.length()-1;i++) cout<<theColumnsToShow.at(i)<<",";
+    //cout<<theColumnsToShow.at(i)<<"}"<<endl;
     //! ---------------
     //! end diagnostic
     //! ---------------
