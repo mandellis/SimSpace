@@ -7359,6 +7359,7 @@ void SimulationManager::writeSolverInputFile()
     cout<<"SimulationManager::writeSolverInputFile()->____writing input file for Analysis root: \""<<curNode->getName().toStdString()<<"\"____"<<endl;
     QString selectedFilter;
     QString fileName = QFileDialog::getSaveFileName(this,"Save solver input file",tools::getWorkingDir(),INP_FILES,&selectedFilter,0);
+    if(fileName.isEmpty()) return;
 
     //! ----------------------
     //! write the solver file
@@ -7380,7 +7381,7 @@ void SimulationManager::writeSolverInputFile()
     myInputFileGenerator->start();
 }
 
-//! --------------------------------------------------
+//! ---------------------------------------------------
 //! function: resizeTabularData
 //! details:  add or remove rows from the tabular data
 //! ---------------------------------------------------

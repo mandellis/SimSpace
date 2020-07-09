@@ -25,11 +25,11 @@ CCXconsoleToFile::CCXconsoleToFile()
 
 //! -----------------------------------------------------------------
 //! function: perform
-//! details:  return values - final read time (double)
+//! details:  return values    - final read time (double)
 //!                            - solution info (QList<solutionInfo)
 //!                            - simulation error (bool)
 //!           If a simulation error has occurred the final read time
-//!           is the previously converged one
+//!           is the last converged substep
 //! -----------------------------------------------------------------
 runTerminationData CCXconsoleToFile::perform(QString myTargetFileName,
                                              QString mySourceFileName,
@@ -42,8 +42,8 @@ runTerminationData CCXconsoleToFile::perform(QString myTargetFileName,
     //! ---------------
     //! target widgets
     //! ---------------
-    QWidget *targetWidgetSolverManager = tools::getWidgetByName("solverManager");
-    QWidget *targetWidgetSimulationManager= tools::getWidgetByName("simmanager");
+    //QWidget *targetWidgetSolverManager = tools::getWidgetByName("solverManager");
+    //QWidget *targetWidgetSimulationManager= tools::getWidgetByName("simmanager");
 
     //! ---------------
     //! open the files
@@ -242,6 +242,7 @@ runTerminationData CCXconsoleToFile::perform(QString myTargetFileName,
                                         if(sv.contains("divergence allowed"))
                                         {
                                             //cout<<"FOUND \"divergence allowed\""<<endl;
+                                            /*
                                             //! post an event "Divergence allowed"
                                             if(targetWidgetSimulationManager!=NULL)
                                             {
@@ -249,9 +250,11 @@ runTerminationData CCXconsoleToFile::perform(QString myTargetFileName,
                                                 QApplication::postEvent(targetWidgetSimulationManager,static_cast<QEvent*>(event));
                                                 QApplication::processEvents();
                                             }
+                                            */
                                         }
                                         else if(sv.contains("no convergence"))
                                         {
+                                            /*
                                             //! post an event "No convergence"
                                             if(targetWidgetSimulationManager!=NULL)
                                             {
@@ -259,6 +262,7 @@ runTerminationData CCXconsoleToFile::perform(QString myTargetFileName,
                                                 QApplication::postEvent(targetWidgetSimulationManager,static_cast<QEvent*>(event));
                                                 QApplication::processEvents();
                                             }
+                                            */
                                         }
                                     }
                                     else
@@ -271,7 +275,7 @@ runTerminationData CCXconsoleToFile::perform(QString myTargetFileName,
                                         lastConvergedTime = actualTotalTime;
                                         lastConvergedStepNumber = stepNumber;
                                         lastConvergedSubStepNumber = increment;
-
+                                        /*
                                         //! post an event "Sub step converged"
                                         if(targetWidgetSimulationManager!=NULL)
                                         {
@@ -279,6 +283,7 @@ runTerminationData CCXconsoleToFile::perform(QString myTargetFileName,
                                             QApplication::postEvent(targetWidgetSimulationManager,static_cast<QEvent*>(event));
                                             QApplication::processEvents();
                                         }
+                                        */
                                     }
                                     break;
                                 }
@@ -404,6 +409,7 @@ runTerminationData CCXconsoleToFile::perform(QString myTargetFileName,
     cout<<"- Last available substep: "<<rtd.lastAvailableSubStep<<endl;
     cout<<"------------------------------------------------------------------------------------------------------"<<endl;
 
+    /*
     //! ----------------------------------------------
     //! update the progress bar of the solver manager
     //! ----------------------------------------------
@@ -421,5 +427,6 @@ runTerminationData CCXconsoleToFile::perform(QString myTargetFileName,
             }
         }
     }
+    */
     return rtd;
 }

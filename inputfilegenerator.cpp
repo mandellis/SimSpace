@@ -17,6 +17,9 @@
 #include <simulationdatabase.h>
 #include "writesolverfileclass.h"
 
+//! ----
+//! C++
+//! ----
 #include <iostream>
 using namespace std;
 
@@ -54,7 +57,7 @@ void inputFileGenerator::setParameters(std::vector<void*> parameters)
 //! --------------
 void inputFileGenerator::run()
 {
-    //cout<<"inputFileGenerator::run()->____run called____"<<endl;
+    cout<<"inputFileGenerator::run()->____run called. Thread: "<<QThread::currentThreadId()<<"____"<<endl;
     bool isDone = false;
     int solverTarget = 0;
     switch(solverTarget)
@@ -64,7 +67,24 @@ void inputFileGenerator::run()
         //! ---------------------
         //! write CCX input file
         //! ---------------------
-        isDone = this->writeCCX();
+        //isDone = this->writeCCX();
+        cout<<"inputFileGenerator::writeCCX()->____function called. Thread: "<<QThread::currentThreadId()<<"____"<<endl;
+        if(myParameters.size() != 3) emit inputFileWritten(false);
+
+        //! -----------------------
+        //! unpack parameters:
+        //! - simulation data base
+        //! - simulation root
+        //! - file name
+        //! -----------------------
+        simulationDataBase *sDB = static_cast<simulationDataBase*>(myParameters[0]);
+        QExtendedStandardItem *simulationRootItem = static_cast<QExtendedStandardItem*>(myParameters[1]);
+        writeSolverFileClass CCXInputGenerator(sDB,simulationRootItem);
+
+        CCXInputGenerator.setProgressIndicator(myProgressIndicator);
+        CCXInputGenerator.setName(myInputFileName);
+        bool isDone = CCXInputGenerator.perform();
+        emit inputFileWritten(isDone);
     }
         break;
 
@@ -95,10 +115,7 @@ void inputFileGenerator::run()
 //! -------------------
 bool inputFileGenerator::writeCCX()
 {
-    using namespace std;
-
-    cout<<"inputFileGenerator::writeCCX()->____function called____"<<endl;
-
+    cout<<"inputFileGenerator::writeCCX()->____function called. Thread: "<<QThread::currentThreadId()<<"____"<<endl;
     if(myParameters.size() != 3) return false;
 
     //! -----------------------

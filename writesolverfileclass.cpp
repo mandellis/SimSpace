@@ -76,24 +76,7 @@ writeSolverFileClass::writeSolverFileClass(simulationDataBase *aDB, QExtendedSta
     //! set format
     myInputFile.setf(ios::scientific);
     myInputFile.precision(EXPFORMAT_PRECISION);
-    /*
-    for(QMap<int,TopoDS_Shape>::iterator it = myDB->bodyMap.begin(); it!=myDB->bodyMap.end(); it++)
-    {
-        int bodyIndex = it.key();
-        occHandle(Ng_MeshVS_DataSource3D) curVolumeMesh = occHandle(Ng_MeshVS_DataSource3D)::DownCast(myDB->ArrayOfMeshDS.value(bodyIndex));
 
-        std::map<meshElement2D,std::vector<std::pair<int,int>>> facesToElements;
-        curVolumeMesh->buildCCXFaceToElementConnectivity(facesToElements);
-
-        //! ------------------------------------------------------------
-        //! create the face to elements connectivity map, for each body
-        //! ------------------------------------------------------------
-        std::pair<int, std::map<meshElement2D,std::vector<std::pair<int,int>>>> p;
-        p.first = bodyIndex;
-        p.second = facesToElements;
-        bigMap.insert(p);
-    }
-    */
     vecMatNames.push_back("Structural_steel");
     vecMatNames.push_back("Bilinear_steel");
     vecMatNames.push_back("H11_fatigue");
@@ -127,6 +110,7 @@ bool writeSolverFileClass::perform()
     //! ----------------------
     //! init the progress bar
     //! ----------------------
+    int code = -1;
     int done = 0;
     int Nevents = 7;
     if(myProgressIndicator!=Q_NULLPTR)
@@ -140,7 +124,7 @@ bool writeSolverFileClass::perform()
                                                QProgressEvent_None,-1,-1,-1,"Writing CCX input file");
         QApplication::postEvent(myProgressIndicator,e);
         QApplication::processEvents();
-        QThread::msleep(1500);
+        QThread::msleep(1000);
     }
 
     //! ----------------------------
@@ -148,9 +132,11 @@ bool writeSolverFileClass::perform()
     //! ----------------------------
     for(QMap<int,TopoDS_Shape>::iterator it = myDB->bodyMap.begin(); it!=myDB->bodyMap.end(); it++)
     {
-        int code = Global::status().code;
+        code = Global::status().code;
         if(code==0)
         {
+            cout<<"writeSolverFileClass::perform()->____process stopped____"<<endl;
+            //exit(12);
             cout<<"writeSolverFileClass::perform()->____process stopped____"<<endl;
             return false;
         }
@@ -181,6 +167,14 @@ bool writeSolverFileClass::perform()
         QApplication::postEvent(myProgressIndicator,e);
         QApplication::processEvents();
         QThread::msleep(500);
+
+        code = Global::status().code;
+        if(code==0)
+        {
+            //exit(12);
+            cout<<"writeSolverFileClass::perform()->____process stopped____"<<endl;
+            return false;
+        }
     }
 
     //! ----------------------------------
@@ -216,6 +210,14 @@ bool writeSolverFileClass::perform()
         QApplication::postEvent(myProgressIndicator,e);
         QApplication::processEvents();
         QThread::msleep(500);
+
+        code = Global::status().code;
+        if(code==0)
+        {
+            //exit(12);
+            cout<<"writeSolverFileClass::perform()->____process stopped____"<<endl;
+            return false;
+        }
     }
 
     //! retrieve the type of simulation => unused for the moment <=
@@ -234,6 +236,13 @@ bool writeSolverFileClass::perform()
     //! --------------------------------------------
     for(int k=1; k<N-1; k++)
     {
+        code = Global::status().code;
+        if(code==0)
+        {
+            cout<<"writeSolverFileClass::perform()->____process stopped____"<<endl;
+            return false;
+        }
+
         QString itemName = itemNameClearSpaces(mySimulationRoot->child(k,0)->data(Qt::DisplayRole).toString());
         cout<<"writeSolverFileClass::perform()->____found Item of type____"<<itemName.toStdString()<<"___"<<endl;
 
@@ -533,6 +542,13 @@ bool writeSolverFileClass::perform()
     QStandardItem *theGeometryRoot=this->getTreeItem(SimulationNodeClass::nodeType_geometry);
     for(int k=0; k<theGeometryRoot->rowCount();k++)
     {
+        code = Global::status().code;
+        if(code==0)
+        {
+            cout<<"writeSolverFileClass::perform()->____process stopped____"<<endl;
+            return false;
+        }
+
         QStandardItem *theGeometryItem = theGeometryRoot->child(k,0);
         SimulationNodeClass *theCurNode = theGeometryItem->data(Qt::UserRole).value<SimulationNodeClass*>();
         Property::SuppressionStatus theNodeSS = theCurNode->getPropertyValue<Property::SuppressionStatus>("Suppressed");
@@ -587,6 +603,13 @@ bool writeSolverFileClass::perform()
         QApplication::postEvent(myProgressIndicator,e);
         QApplication::processEvents();
         QThread::msleep(500);
+
+        code = Global::status().code;
+        if(code==0)
+        {
+            cout<<"writeSolverFileClass::perform()->____process stopped____"<<endl;
+            return false;
+        }
     }
 
     //! -------------------------------
@@ -598,6 +621,13 @@ bool writeSolverFileClass::perform()
     QExtendedStandardItem *theConnectionItem = this->getTreeItem(SimulationNodeClass::nodeType_connection);
     for(int n=0; n<theConnectionItem->rowCount(); n++)
     {
+        code = Global::status().code;
+        if(code==0)
+        {
+            cout<<"writeSolverFileClass::perform()->____process stopped____"<<endl;
+            return false;
+        }
+
         //! the current connection group
         QStandardItem *itemConnectionGroup = theConnectionItem->child(n,0);
 
@@ -665,13 +695,19 @@ bool writeSolverFileClass::perform()
         }
     }
 
-
     //! ------------------------------------------------------
     //! [3] write the "contact pair" headers: rescan the tree
     //! ------------------------------------------------------
     int NtotCP = 0;     // total number of contact pair
     for(int n=0; n<theConnectionItem->rowCount(); n++)
     {
+        code = Global::status().code;
+        if(code==0)
+        {
+            cout<<"writeSolverFileClass::perform()->____process stopped____"<<endl;
+            return false;
+        }
+
         //! the current connection group
         QStandardItem *itemConnectionGroup = theConnectionItem->child(n,0);
 
@@ -1098,6 +1134,13 @@ bool writeSolverFileClass::perform()
         QApplication::postEvent(myProgressIndicator,e);
         QApplication::processEvents();
         QThread::msleep(500);
+
+        code = Global::status().code;
+        if(code==0)
+        {
+            cout<<"writeSolverFileClass::perform()->____process stopped____"<<endl;
+            return false;
+        }
     }
 
     //! ------------------------------------------------------------------------------------
@@ -1105,11 +1148,18 @@ bool writeSolverFileClass::perform()
     //! ------------------------------------------------------------------------------------
     for(int k=1; k<mySimulationRoot->rowCount()-1; k++)
     {
-        if(mySimulationRoot==Q_NULLPTR)
+        code = Global::status().code;
+        if(code==0)
         {
-            cerr<<"writeSolverFileClass::perform()->____the simulation root is NULL____"<<endl;
-            exit(100);
+            cout<<"writeSolverFileClass::perform()->____process stopped____"<<endl;
+            return false;
         }
+
+        //if(mySimulationRoot==Q_NULLPTR)
+        //{
+        //    cerr<<"writeSolverFileClass::perform()->____the simulation root is NULL____"<<endl;
+        //    exit(100);
+        //}
         QString itemName = itemNameClearSpaces(mySimulationRoot->child(k,0)->data(Qt::DisplayRole).toString());
 
         SimulationNodeClass *theCurNode = mySimulationRoot->child(k,0)->data(Qt::UserRole).value<SimulationNodeClass*>();
@@ -1322,6 +1372,13 @@ bool writeSolverFileClass::perform()
         QApplication::postEvent(myProgressIndicator,e);
         QApplication::processEvents();
         QThread::msleep(500);
+
+        code = Global::status().code;
+        if(code==0)
+        {
+            cout<<"writeSolverFileClass::perform()->____process stopped____"<<endl;
+            return false;
+        }
     }
 
     /*
@@ -1363,6 +1420,13 @@ bool writeSolverFileClass::perform()
 
     for(int k=0; k<theGeometryRoot->rowCount();k++)
     {
+        code = Global::status().code;
+        if(code==0)
+        {
+            cout<<"writeSolverFileClass::perform()->____process stopped____"<<endl;
+            return false;
+        }
+
         QStandardItem *theGeometryItem = theGeometryRoot->child(k,0);
         SimulationNodeClass *theCurNode = theGeometryItem->data(Qt::UserRole).value<SimulationNodeClass*>();
         Property::SuppressionStatus theNodeSS = theCurNode->getPropertyValue<Property::SuppressionStatus>("Suppressed");
@@ -1387,6 +1451,13 @@ bool writeSolverFileClass::perform()
         QApplication::postEvent(myProgressIndicator,e);
         QApplication::processEvents();
         QThread::msleep(500);
+
+        code = Global::status().code;
+        if(code==0)
+        {
+            cout<<"writeSolverFileClass::perform()->____process stopped____"<<endl;
+            return false;
+        }
     }
 
     //! ----------------------------
@@ -1396,6 +1467,9 @@ bool writeSolverFileClass::perform()
     bool initialTempDistr = false;
     for(int k=1; k<mySimulationRoot->rowCount()-1; k++)
     {
+        code = Global::status().code;
+        if(code==0) return;
+
         cout<<" - writing BC "<<mySimulationRoot->child(k,0)->data(Qt::DisplayRole).toString().toStdString()<<endl;
         //QString itemName = itemNameClearSpaces(mySimulationRoot->child(k,0)->data(Qt::DisplayRole).toString());
 
@@ -1454,6 +1528,13 @@ bool writeSolverFileClass::perform()
     bool initialTempDistr = false;
     for(int k=1; k<mySimulationRoot->rowCount()-1; k++)
     {
+        code = Global::status().code;
+        if(code==0)
+        {
+            cout<<"writeSolverFileClass::perform()->____process stopped____"<<endl;
+            return false;
+        }
+
         SimulationNodeClass *theCurNode = mySimulationRoot->child(k,0)->data(Qt::UserRole).value<SimulationNodeClass*>();
         SimulationNodeClass::nodeType theNodeType= theCurNode->getType();
 
@@ -1506,15 +1587,20 @@ bool writeSolverFileClass::perform()
         QApplication::postEvent(myProgressIndicator,e);
         QApplication::processEvents();
         QThread::msleep(500);
+
+        code = Global::status().code;
+        if(code==0)
+        {
+            cout<<"writeSolverFileClass::perform()->____process stopped____"<<endl;
+            return false;
+        }
     }
 
 
     //! ---------------
     //! write the STEP
     //! ---------------
-
-    //! consider to use the "Number of Step" property instead of tabData->rowCount()
-    //! tab with N=6 rows => [0],1,2,3,4,5
+    // consider using the "Number of Step" property instead of tabData->rowCount()
     bool NLgeom;
     if(mySimulationRoot->data(Qt::UserRole).value<SimulationNodeClass*>()->getType() != SimulationNodeClass::nodeType_thermalAnalysis)
         NLgeom = nodeAnalysisSettings->getPropertyValue<bool>("Large deflection");
@@ -1522,6 +1608,13 @@ bool writeSolverFileClass::perform()
     int NbSteps = tabData->rowCount()-1;
     for(int i=1;i<=NbSteps;i++)
     {
+        code = Global::status().code;
+        if(code==0)
+        {
+            cout<<"writeSolverFileClass::perform()->____process stopped____"<<endl;
+            return false;
+        }
+
         //Property::analysisType analysisType = nodeAnalysisSettings->getPropertyValue<Property::analysisType>("Analysis type");
         //Property::timeIntegration timeIntegration = nodeAnalysisSettings->getPropertyValue<Property::timeIntegration>("Static/Transient");
         Property::analysisType analysisType = tabData->dataRC(i,TABULAR_DATA_ANALYSIS_TYPE_COLUMN,Qt::EditRole).value<Property::analysisType>();
@@ -1734,6 +1827,13 @@ bool writeSolverFileClass::perform()
         //! --------------------
         for(int k=1; k<mySimulationRoot->rowCount()-1; k++)
         {
+            code = Global::status().code;
+            if(code==0)
+            {
+                cout<<"writeSolverFileClass::perform()->____process stopped____"<<endl;
+                return false;
+            }
+
             cout<<"writeSolverFileClass::perform()->_____writing "<<mySimulationRoot->child(k,0)->data(Qt::DisplayRole).toString().toStdString()<<endl;
             QString itemName = itemNameClearSpaces(mySimulationRoot->child(k,0)->data(Qt::DisplayRole).toString());
 
@@ -2365,7 +2465,6 @@ bool writeSolverFileClass::perform()
                 }
                     break;
                 }
-
             }
         }
 
