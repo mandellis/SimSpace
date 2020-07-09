@@ -12739,7 +12739,8 @@ void SimulationManager::generateBoundaryConditionsMeshDS(bool computeDual)
             if(nodeType == SimulationNodeClass::nodeType_mapper ||
                     nodeType == SimulationNodeClass::nodeType_modelChange ||
                     nodeType == SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_ImportedTemperatureDistribution ||
-                    nodeType == SimulationNodeClass::nodeType_structuralAnalysisBoltPretension
+                    nodeType == SimulationNodeClass::nodeType_structuralAnalysisBoltPretension ||
+                    nodeType == SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Acceleration
         #ifdef COSTAMP_VERSION
                     || nodeType == SimulationNodeClass::nodeType_timeStepBuilder
         #endif

@@ -477,8 +477,6 @@ bool FrdReader::readResults(ifstream &is, QString path/*, int &sb,int &st,double
     }
     else
     {
-        cout<<"isModal = "<<isModal<<endl;
-        exit(100);
         //! error in reading 2-nd line
         //! consider using throw()
         return false;
