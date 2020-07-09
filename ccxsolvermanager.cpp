@@ -13,24 +13,24 @@
 #include <QPushButton>
 #include <QMessageBox>
 
-//! ------------------------
-//! function: constructor I
+//! ----------------------
+//! function: constructor
 //! details:
-//! ------------------------
-CCXSolverManager::CCXSolverManager(const QString &inputFileName, QWidget *parent):QDialog(parent),
+//! ----------------------
+CCXSolverManager::CCXSolverManager(const QString &inputFileName, QWidget *parent):
+    QDialog(parent),
     myInputFile(inputFileName)
 {
-    //cout<<"CCXSolverManager::CCXSolverManager()->____constructor called____"<<endl;
-    cout<<"CCXSolverManager::CCXSolverManager()->____launching input file: "<<inputFileName.toStdString()<<"____"<<endl;
+    cout<<"CCXSolverManager::CCXSolverManager()->____constructor called. Input file: "<<inputFileName.toStdString()<<"____"<<endl;
 
     //! ---------------------------
     //! create the graphic content
     //! ---------------------------
     this->createContent();
 
-    //! ------------------------------------------------------
-    //! create the solution worker: do not specify the parent
-    //! ------------------------------------------------------
+    //! --------------------------------------------------
+    //! create the solution worker: do not set the parent
+    //! --------------------------------------------------
     SolutionWorker *theSolutionWorker = new SolutionWorker(myInputFile);
     theSolutionWorker->moveToThread(&workerThread);
 

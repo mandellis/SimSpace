@@ -7082,10 +7082,10 @@ void SimulationManager::swapContact()
 //! function: startAnalysis
 //! details:
 //! ------------------------
+#include "ccxsolvermanager1.h"
 bool SimulationManager::startAnalysis(const QString &projectDataDir)
 {
-    cout<<"SimulationManager::startAnalysis()->____function called____"<<endl;
-    cout<<"SimulationManager::startAnalysis()->____solution data directory: "<<projectDataDir.toStdString()<<"____"<<endl;
+    cout<<"SimulationManager::startAnalysis()->____function called: solution data directory: "<<projectDataDir.toStdString()<<"____"<<endl;
 
     //! ---------------------------------------------------------------
     //! retrieve the current item and check if it is a simulation root
@@ -7094,17 +7094,13 @@ bool SimulationManager::startAnalysis(const QString &projectDataDir)
     SimulationNodeClass *curAnalysisRootNode = curIndex.data(Qt::UserRole).value<SimulationNodeClass*>();
     if(curAnalysisRootNode->isAnalysisRoot()==false)
     {
-        //! ----------------------------------------
-        //! analysis not started: a simulation root
-        //! should be selected; return false
-        //! ----------------------------------------
         QMessageBox::information(this,APPNAME,tr("Please select an analysis root item"));
         return false;
     }
 
-    //! ---------------------------------------------------------------
-    //! check if all the bodies among the active ones have been meshed
-    //! ---------------------------------------------------------------
+    //! -------------------------------
+    //! check if all the active bodies
+    //! -------------------------------
     bool isMeshOk = false;
     for(QMap<int,TopoDS_Shape>::const_iterator it = mySimulationDataBase->bodyMap.cbegin(); it!=mySimulationDataBase->bodyMap.cend(); ++it)
     {
@@ -7115,9 +7111,6 @@ bool SimulationManager::startAnalysis(const QString &projectDataDir)
     }
     if(isMeshOk==false)
     {
-        //! -----------------------------------
-        //! analysis not started: return false
-        //! -----------------------------------
         QMessageBox::information(this,APPNAME,tr("Not all the bodies have been meshed\nThe simulation cannot be started"));
         return false;
     }
@@ -7171,16 +7164,14 @@ bool SimulationManager::startAnalysis(const QString &projectDataDir)
     QString solutionDataDir = QString("SolutionData_")+curAnalysisRootNode->getPropertyValue<QString>("Time tag");
     if(!curDir.cd(solutionDataDir))
     {
-        curDir.mkdir(solutionDataDir);
+        bool isDone = curDir.mkdir(solutionDataDir);
+        if(isDone == false)
+        {
+            QMessageBox::critical(this,APPNAME,"Cannot start run: cannot create\n directory for analysis files",QMessageBox::Ok);
+            return false;
+        }
         curDir.cd(solutionDataDir);
     }
-    //QDir aDir(solutionDataDir);
-    //if(aDir.exists()==false)
-    //{
-    //    cout<<"____"<<solutionDataDir.toStdString()<<"____"<<endl;
-    //    QMessageBox::critical(this,APPNAME,"Cannot start run: cannot create\n directory for analysis files",QMessageBox::Ok);
-    //    return false;
-    //}
     cout<<"SimulationManager::startAnalysis()->____\"SolutionData\" full path: "<<curDir.absolutePath().toStdString()<<"____"<<endl;
 
     //! ----------------------------
@@ -7206,86 +7197,52 @@ bool SimulationManager::startAnalysis(const QString &projectDataDir)
     inputFileGenerator.setName(fileName);
     bool isDone = inputFileGenerator.perform();
 
+    if(isDone == false) return false;
+
     //! ------------------------------------------
     //! enable the items with boundary conditions
     //! skip the "Solution" item (the last child)
     //! ------------------------------------------
     for(int i=0; i<itemSimulationRoot->rowCount()-1; i++) itemSimulationRoot->child(i,0)->setEnabled(true);
 
-    if(isDone)
-    {
-        //! ---------------------------------
-        //! retrieve the final analysis time
-        //! ---------------------------------
-        QStandardItem *itemAnalysisSettings = itemSimulationRoot->child(0,0);
-        SimulationNodeClass *nodeAnalysisSettings = itemAnalysisSettings->data(Qt::UserRole).value<SimulationNodeClass*>();
-        CustomTableModel *tabData = nodeAnalysisSettings->getTabularDataModel();
-        double endTime = tabData->dataRC(tabData->rowCount()-1,1).toDouble();
+    //! ---------------------------------
+    //! retrieve the final analysis time
+    //! ---------------------------------
+    SimulationNodeClass *nodeAnalysisSettings = itemAnalysisSettings->data(Qt::UserRole).value<SimulationNodeClass*>();
+    CustomTableModel *tabData = nodeAnalysisSettings->getTabularDataModel();
+    double endTime = tabData->dataRC(tabData->rowCount()-1,1).toDouble();
 
-        cout<<"SimulationManager::startAnalysis()->____required analysis end time: "<<endTime<<"____"<<endl;
+    cout<<"SimulationManager::startAnalysis()->____required analysis end time: "<<endTime<<"____"<<endl;
 
-        //! ------------------------
-        //! create a solver manager
-        //! ------------------------
-        CCXSolverManager *theCCXSolverManager = new CCXSolverManager(fileName,this);
-        theCCXSolverManager->setNbProcessors(NbThreads);
+    CCXSolverManager1 *CCXsm = new CCXSolverManager1(this);
+    disconnect(CCXsm,SIGNAL(CCXRunFinished()),this,SLOT(configureAndStartPostEngine()));
+    connect(CCXsm,SIGNAL(CCXRunFinished()),this,SLOT(configureAndStartPostEngine()));
+    CCXsm->setNbProcessors(NbThreads);
+    CCXsm->setInputFile(fileName);
+    CCXsm->start();
 
-        //! ------------------------------------------------------------------------------
-        //! signal - slot: when the solution is ready configure and start the post engine
-        //! ------------------------------------------------------------------------------
-        disconnect(theCCXSolverManager,SIGNAL(solutionReady(const QString&)),this,SLOT(configureAndStartPostEngine(const QString&)));
-        connect(theCCXSolverManager,SIGNAL(solutionReady(const QString&)),this,SLOT(configureAndStartPostEngine(const QString&)));
-        disconnect(theCCXSolverManager,SIGNAL(solutionReady()),this,SLOT(retrieveSolverInfo()));
-        connect(theCCXSolverManager,SIGNAL(solutionReady()),this,SLOT(retrieveSolverInfo()));
+    //! ---------------------------------------------------------
+    //! configure and start the internal timer
+    //! retrieve the update interval from "Solution information"
+    //! ---------------------------------------------------------
+    double updateInterval = nodeSolutionInformation->getPropertyValue<double>("Update interval");
+    int updateInterval_ms = int(updateInterval);
+    myTimer->setInterval(updateInterval_ms*1000);
+    disconnect(CCXsm,SIGNAL(CCXRunFinished()),myTimer,SLOT(stop()));
+    connect(CCXsm,SIGNAL(CCXRunFinished()),myTimer,SLOT(stop()));
+    myTimer->start();
 
-        //! ----------------------------------
-        //! send init event to solver manager
-        //! this will init the progress bar
-        //! ----------------------------------
-        QProgressEvent *e = new QProgressEvent(QProgressEvent_Init,0,int(endTime*100),0,"Starting solver");
-        QApplication::postEvent(theCCXSolverManager,e);
-        QApplication::processEvents();
+    //! ---------------------------------
+    //! set the current running analysis
+    //! ---------------------------------
+    myCurrentRunningAnalysis = itemSimulationRoot;
+    Global::status().curRunningAnalysis = itemSimulationRoot;
 
-        //! ------------------------------------------------------------------
-        //! start the solver manager - launch the solver on a separate thread
-        //! ------------------------------------------------------------------
-        cout<<"SimulationManager::startAnalysis()->____starting solver____"<<endl;
-        theCCXSolverManager->operate(NbThreads);
-        cout<<"SimulationManager::startAnalysis()->____solver started____"<<endl;
-
-        //! ---------------------------------
-        //! set the current running analysis
-        //! ---------------------------------
-        myCurrentRunningAnalysis = itemSimulationRoot;
-        cout<<"SimulationManager::startAnalysis()->____the current analysis root is \""<<myCurrentRunningAnalysis->data(Qt::UserRole).value<SimulationNodeClass*>()->getName().toStdString()<<"\"____"<<endl;
-        Global::status().curRunningAnalysis = itemSimulationRoot;
-
-        //! ---------------------------------------------------------
-        //! retrieve the update interval from "Solution information"
-        //! ---------------------------------------------------------
-        double updateInterval = nodeSolutionInformation->getPropertyValue<double>("Update interval");
-        cout<<"SimulationManager::startAnalysis()->____update interval: "<<updateInterval<<"____"<<endl;
-
-        //! ---------------------------------------
-        //! configure and start the internal timer
-        //! ---------------------------------------
-        int updateInterval_ms = int(updateInterval);
-        myTimer->setInterval(updateInterval_ms*1000);
-        disconnect(theCCXSolverManager,SIGNAL(stopTimer()),myTimer,SLOT(stop()));
-        connect(theCCXSolverManager,SIGNAL(stopTimer()),myTimer,SLOT(stop()));
-        myTimer->start();
-
-        //! ------------------------------
-        //! analysis started: return true
-        //! ------------------------------
-        this->deleteDataSourcesFromModel();
-        return true;
-    }
-
-    //! -----------------------------------
-    //! analysis not started: return false
-    //! ----------------------------------
-    return false;
+    //! --------------------------------------
+    //! clean the tree from mesh data sources
+    //! --------------------------------------
+    this->deleteDataSourcesFromModel();
+    return true;
 }
 
 
@@ -7311,7 +7268,7 @@ void SimulationManager::startPostEngine()
 //! function: configureAndStartPostEngine
 //! details:
 //! --------------------------------------
-void SimulationManager::configureAndStartPostEngine(const QString &whereIsSolution)
+void SimulationManager::configureAndStartPostEngine()
 {
     cout<<"SimulationManager::configureAndStartPostEngine()->____function called____"<<endl;
 
@@ -7329,7 +7286,16 @@ void SimulationManager::configureAndStartPostEngine(const QString &whereIsSoluti
     //! -------------
     //! set the name
     //! -------------
-    QString FRDfile = whereIsSolution+QString("/input.frd");    //to be changed (since it can be read from tree)
+    QStandardItem *itemSolution = myCurrentRunningAnalysis->child(myCurrentRunningAnalysis->rowCount()-1,0);
+    SimulationNodeClass *nodeSolution = itemSolution->data(Qt::UserRole).value<SimulationNodeClass*>();
+    QString solutionDirectory = nodeSolution->getPropertyValue<QString>("Project files dir")+"/SolutionData_"+nodeSolution->getPropertyValue<QString>("Parent time tag");
+
+    if(solutionDirectory.isEmpty()) return;
+
+    QString FRDfile = solutionDirectory+QString("/input.frd");
+
+    if(QFile(FRDfile).exists()==false) return;
+
     myPostEngine->setResultsFile(FRDfile);
 
     //! --------------------------------------------------------------------------------------
@@ -7354,10 +7320,10 @@ void SimulationManager::handleSolutionComponentChanged()
     cout<<"SimulationManager::handleSolutionComponentChanged()->____function called____"<<endl;
 
     QModelIndex index = myTreeView->currentIndex();
-    QExtendedStandardItem *curItem = static_cast<QExtendedStandardItem*>(static_cast<QStandardItemModel*>(myTreeView->model())->itemFromIndex(index));
+    QStandardItem *curItem = static_cast<QStandardItemModel*>(myTreeView->model())->itemFromIndex(index);
 
     SimulationNodeClass *curNode = curItem->data(Qt::UserRole).value<SimulationNodeClass*>();
-    QExtendedStandardItem *postObjectItem = curNode->getPropertyItem("Post object");
+    QStandardItem *postObjectItem = curNode->getPropertyItem("Post object");
     if(postObjectItem!=Q_NULLPTR)
     {
         cout<<"SimulationManager::handleSolutionComponentChanged()->____start updating post object and viewer____"<<endl;

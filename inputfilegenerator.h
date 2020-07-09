@@ -5,7 +5,6 @@
 #include <QThread>
 #include <vector>
 
-class QPushButton;
 class QProgressIndicator;
 
 class inputFileGenerator: public QThread

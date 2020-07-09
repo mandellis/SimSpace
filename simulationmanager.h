@@ -279,7 +279,7 @@ public slots:
     void startPostEngine();
 
     //! configure and start
-    void configureAndStartPostEngine(const QString &whereIsSolution);
+    void configureAndStartPostEngine();
 
     //! compute and display mesh metric
     void computeAndDisplayMeshMetric();
