@@ -42,15 +42,11 @@ runTerminationData CCXconsoleToFile::perform(QString myTargetFileName,
     cout<<"CCXconsoleToFile::perform()->____function called____"<<endl;
 
     //! ---------------
-    //! target widgets
-    //! ---------------
-    //QWidget *targetWidgetSolverManager = tools::getWidgetByName("solverManager");
-    //QWidget *targetWidgetSimulationManager= tools::getWidgetByName("simmanager");
-
-    //! ---------------
     //! open the files
     //! ---------------
     ifstream inputFile(mySourceFileName.toStdString());
+    if(inputFile.is_open()==false) return runTerminationData();
+
     ofstream outFile;
 
     bool writeOutputFile = (myTargetFileName.isEmpty() || myTargetFileName.isNull())? false:true;

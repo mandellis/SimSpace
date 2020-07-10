@@ -7227,12 +7227,18 @@ bool SimulationManager::startAnalysis(const QString &projectDataDir)
     CCXsm->setInputFile(fileName);
     CCXsm->setProgressIndicator(aProgressIndicator);
 
+    disconnect(CCXsm,SIGNAL(CCXRunFinished()),myTimer,SLOT(stop()));
+    connect(CCXsm,SIGNAL(CCXRunFinished()),myTimer,SLOT(stop()));
+
     disconnect(CCXsm,SIGNAL(CCXRunFinished()),this,SLOT(configureAndStartPostEngine()));
     connect(CCXsm,SIGNAL(CCXRunFinished()),this,SLOT(configureAndStartPostEngine()));
 
-    disconnect(CCXsm,SIGNAL(CCXRunFinished()),this,SLOT(retrieveSolverInfo()));
-    connect(CCXsm,SIGNAL(CCXRunFinished()),this,SLOT(retrieveSolverInfo()));
+    // gives some problems in case of "fast" analysis - hang on CCXConsoleToFile::perform()
+    //disconnect(CCXsm,SIGNAL(CCXRunFinished()),this,SLOT(retrieveSolverInfo()));
+    //connect(CCXsm,SIGNAL(CCXRunFinished()),this,SLOT(retrieveSolverInfo()));
 
+    disconnect(CCXsm,&CCXSolverManager1::CCXRunFinished,aProgressIndicator,&QProgressIndicator::hide);
+    connect(CCXsm,&CCXSolverManager1::CCXRunFinished,aProgressIndicator,&QProgressIndicator::hide);
     CCXsm->start();
 
     //! ---------------------------------------------------------
@@ -11019,10 +11025,10 @@ void SimulationManager::retrieveSolverInfo()
     //! ---------------------------------
     //! retrieve the final analysis time
     //! ---------------------------------
-    QStandardItem *itemAnalysisSettings = myCurrentRunningAnalysis->child(0,0);
-    SimulationNodeClass *nodeAnalysisSettings = itemAnalysisSettings->data(Qt::UserRole).value<SimulationNodeClass*>();
-    CustomTableModel *tabData = nodeAnalysisSettings->getTabularDataModel();
-    double endTime = tabData->dataRC(tabData->rowCount()-1,1).toDouble();
+    //QStandardItem *itemAnalysisSettings = myCurrentRunningAnalysis->child(0,0);
+    //SimulationNodeClass *nodeAnalysisSettings = itemAnalysisSettings->data(Qt::UserRole).value<SimulationNodeClass*>();
+    //CustomTableModel *tabData = nodeAnalysisSettings->getTabularDataModel();
+    //double endTime = tabData->dataRC(tabData->rowCount()-1,1).toDouble();
 
     //! --------------------------------------------------------------
     //! check if the source file "RawSolverOutput_copy.txt" is in use.
@@ -11051,19 +11057,9 @@ void SimulationManager::retrieveSolverInfo()
         //! update the progress bar
         //! ------------------------
         QProgressIndicator *aProgressIndicator = static_cast<QProgressIndicator*>(tools::getWidgetByName("progressIndicator"));
-        if(rtd.lastAvailableTime==endTime)
-        {
-            QProgressEvent *e = new QProgressEvent(QProgressEvent_Reset,-1,-1,-1,"",QProgressEvent_None,-1,-1,-1,"");
-            QApplication::postEvent(aProgressIndicator,e);
-            QApplication::processEvents();
-        }
-        else
-        {
-            //! close the progressBar
-            QProgressEvent *e = new QProgressEvent(QProgressEvent_Update,-1,-1,100.0*rtd.lastAvailableTime,"Running CCX",QProgressEvent_None,-1,-1,-1,"Running CCX");
-            QApplication::postEvent(aProgressIndicator,e);
-            QApplication::processEvents();
-        }
+        QProgressEvent *e = new QProgressEvent(QProgressEvent_Update,-1,-1,100.0*rtd.lastAvailableTime,"Running CCX",QProgressEvent_None,-1,-1,-1,"Running CCX");
+        QApplication::postEvent(aProgressIndicator,e);
+        QApplication::processEvents();
 
         //! ---------------------------------------
         //! put the convergence data into the item

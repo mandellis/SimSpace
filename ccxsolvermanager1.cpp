@@ -38,7 +38,7 @@ void CCXSolverManager1::setInputFile(const QString &inputFile)
 //! --------------------------
 void CCXSolverManager1::setNbProcessors(int NbProcessors)
 {
-    if(NbProcessors<1) NbProcessors = 1;
+    if(NbProcessors<1) NbProcessors = 2;
     myNbProcessors = NbProcessors;
 }
 

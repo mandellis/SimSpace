@@ -34,11 +34,6 @@ public:
                                       QList<solutionInfo> &listSolInfo,
                                       bool &simulationError,
                                       QProgressIndicator *aProgressIndicator=Q_NULLPTR);
-
-private:
-
-    //QString myTargetFileName;
-    //QString mySourceFileName;
 };
 
 #endif // CCXCONSOLETOFILE_H
