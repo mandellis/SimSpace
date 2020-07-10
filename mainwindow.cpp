@@ -2908,19 +2908,20 @@ void MainWindow::readResultsFile()
         cout<<"____<_files> directory: "<<files_dir.toStdString()<<"____"<<endl;
 
         //! ---------------------------------------------
-        //! check if the "SolutionData" directory exists
+        //! check if the "ResultsData" directory exists
         //! ---------------------------------------------
         QDir dir(files_dir);
 
         QString timeTag = curNode->getPropertyValue<QString>("Time tag");
         QString solutionDataDir = files_dir+"/"+QString("SolutionData_")+timeTag;
+        QString resultsDataDir = files_dir+"/"+QString("SolutionData_")+timeTag+"/"+QString("ResultsData");
 
-        cout<<"____solutionDataDir: "<<solutionDataDir.toStdString()<<"____"<<endl;
+        cout<<"____resultsDataDir: "<<resultsDataDir.toStdString()<<"____"<<endl;
 
-        QDir d(solutionDataDir);
+        QDir d(resultsDataDir);
         if(d.exists())
         {
-            int res = QMessageBox::warning(this,APPNAME,"Previous data for this simulation found.\n"
+            int res = QMessageBox::warning(this,APPNAME,"Previous results data for this simulation found.\n"
                                                         "Do you want to overwrite?",QMessageBox::Ok,QMessageBox::Cancel);
             if(res == QMessageBox::Cancel) return;
         }
@@ -2933,11 +2934,11 @@ void MainWindow::readResultsFile()
         //! --------------------------------------------------
         //! create a new directory within the <>_files folder
         //! --------------------------------------------------
-        if(!dir.cd(solutionDataDir))
+        if(!dir.cd(resultsDataDir))
         {
             cout<<"MainWindow::readResultsFile()->____the \"SolutionData\" does not exist: creating it____"<<endl;
-            dir.mkdir(solutionDataDir);
-            dir.cd(solutionDataDir);
+            dir.mkdir(resultsDataDir);
+            dir.cd(resultsDataDir);
         }
 
         mySimulationManager->readResultsFile(fileName, solutionDataDir);

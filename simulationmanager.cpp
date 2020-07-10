@@ -11439,7 +11439,7 @@ void SimulationManager::updatePostObjectScale(double scale)
 //! function: readResultsFile
 //! details:  read a results file
 //! ------------------------------
-void SimulationManager::readResultsFile(const QString &fileName, const QString &SolutionDataDir)
+void SimulationManager::readResultsFile(const QString &fileName, const QString &solutionDataDir)
 {
     cout<<"SimulationManager::readResultsFile()->____function called____"<<endl;
 
@@ -11464,7 +11464,7 @@ void SimulationManager::readResultsFile(const QString &fileName, const QString &
         //! copy the .frd file (fileName) into the "<project name>_files" directory
         //! ------------------------------------------------------------------------
         QFile frdFile(fileName);
-        QString copyOfFrdFile = SolutionDataDir+"/input.frd";
+        QString copyOfFrdFile = solutionDataDir+"/input.frd";
         frdFile.copy(copyOfFrdFile);
 
         //! -------------
