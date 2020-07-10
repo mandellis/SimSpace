@@ -938,7 +938,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 //! --------------
                 //! set the model
                 //! --------------
-                QModelIndex index_analysisSettings = this->getAnalysisSettingsItemFromCurrentItem()->index();
+                QModelIndex index_analysisSettings = mainTreeTools::getAnalysisSettingsItemFromCurrentItem(myTreeView)->index();
                 emit requestTabularData(index_analysisSettings);
 
                 //! ---------------------------------------------------------------------
@@ -961,6 +961,8 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                     //! ------------------------------------
                     columnsToShow.removeFirst();
                     CustomTableModel *tabData = index_analysisSettings.data(Qt::UserRole).value<SimulationNodeClass*>()->getTabularDataModel();
+                    cout<<"____"<<tabData->rowCount()<<", "<<tabData->columnCount()<<"____"<<endl;
+                    for(int k=0; k<columnsToShow.length(); k++) cout<<"____column: "<<columnsToShow[k]<<"____"<<endl;
                     emit requestShowGraph(tabData,columnsToShow);
                 }
 
@@ -3087,7 +3089,7 @@ void SimulationManager::createSimulationNode(SimulationNodeClass::nodeType type,
             break;
         }
         markerBuilder::addMarker(aNode,mySimulationDataBase);
-        markerBuilder::addMarker(this->getCurrentNode(),mySimulationDataBase);
+        //markerBuilder::addMarker(this->getCurrentNode(),mySimulationDataBase);
         mainTreeTools::getCurrentSimulationRoot(myTreeView)->insertRow(this->getInsertionRow(),item);
     }
     //! --------------------------

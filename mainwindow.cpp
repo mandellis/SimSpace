@@ -2152,10 +2152,10 @@ void MainWindow::startEditingScope()
     }
 }
 
-//! ----------------------------------
-//! function: startEditingMagnitude()
+//! --------------------------------
+//! function: startEditingMagnitude
 //! details:
-//! ----------------------------------
+//! --------------------------------
 void MainWindow::startEditingMagnitude()
 {
     //cout<<"MainWindow::startEditingMagnitude()->____function called____"<<endl;
@@ -2170,17 +2170,17 @@ void MainWindow::startEditingMagnitude()
     }
 }
 
-//! -----------------------------------
-//! function: startEditingXcomponent()
+//! ---------------------------------
+//! function: startEditingXcomponent
 //! details:
-//! -----------------------------------
+//! ---------------------------------
 void MainWindow::startEditingXcomponent()
 {
     //cout<<"MainWindow::startEditingXcomponent()->____function called____"<<endl;
     QModelIndex index = mySimulationManager->myTreeView->currentIndex();
     SimulationNodeClass* curNode = index.data(Qt::UserRole).value<SimulationNodeClass*>();
     QExtendedStandardItem *itemXcomponent = curNode->getPropertyItem("X component");
-    if(itemXcomponent!=NULL)
+    if(itemXcomponent!=Q_NULLPTR)
     {
         cout<<"MainWindow::startEditingMagnitude()->____start editing X component____"<<endl;
         index = itemXcomponent->index();
@@ -2188,20 +2188,20 @@ void MainWindow::startEditingXcomponent()
     }
 }
 
-//! ---------------------------------------------------------------- //
-//! function: addCoordinateSystemTranslationX()                      //
-//! details:  ask the detail viewer to add a X translation           //
-//! ---------------------------------------------------------------- //
+//! -------------------------------------------------------
+//! function: addCoordinateSystemTranslationX
+//! details:  ask the detail viewer to add a X translation
+//! -------------------------------------------------------
 void MainWindow::addCoordinateSystemTranslationX()
 {
     ccout("MainWindow::addCoordinateSystemTranslationX()->____function called____");
     myDetailViewer->addPropertyToNode("Offset X",Property::PropertyGroup_Transformations);
 }
 
-//! ---------------------------------------------------------------- //
-//! function: addCoordinateSystemTranslationY()                      //
-//! details:  ask the detail viewer to add a Y translation           //
-//! ---------------------------------------------------------------- //
+//! -------------------------------------------------------
+//! function: addCoordinateSystemTranslationY
+//! details:  ask the detail viewer to add a Y translation
+//! -------------------------------------------------------
 void MainWindow::addCoordinateSystemTranslationY()
 {
     ccout("MainWindow::addCoordinateSystemTranslationY()->____function called____");
