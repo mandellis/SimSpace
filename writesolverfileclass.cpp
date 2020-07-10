@@ -629,7 +629,7 @@ bool writeSolverFileClass::perform()
             {
                 Property::contactType theContactType = node->getPropertyValue<Property::contactType>("Type");
                 Property::contactBehavior theContactBehavior = node->getPropertyValue<Property::contactBehavior>("Behavior");
-                double K;
+                double K,KF;
 
                 switch(theContactBehavior)
                 {
@@ -707,12 +707,12 @@ bool writeSolverFileClass::perform()
                         case Property::overpressureFunction_linear:
                         {
                             double C0 = node->getPropertyValue<double>("C0");
-                            K = node->getPropertyValue<double>("K");
+                            KF = node->getPropertyValue<double>("K");
                             double sigmaInfty = node->getPropertyValue<double>("Sigma infty");
 
                             myInputFile<<"LINEAR"<<endl;
-                            if(K == 0.0)
-                            {
+                            if(K == 0.0) KF=1.0;
+                            //{
                                 QVector<GeometryTag> tagsMaster = node->getPropertyValue<QVector<GeometryTag>>("Tags master");
                                 QVector<GeometryTag> tagsSlave = node->getPropertyValue<QVector<GeometryTag>>("Tags slave");
 
@@ -737,7 +737,7 @@ bool writeSolverFileClass::perform()
                                     slaveFaces<<faceMesh;
                                 }
                                 K = contactParameters::calc_K(masterFaces,slaveFaces);
-                            }
+                            //}
                             if(sigmaInfty == 0.0)
                             {
                                 //! calculix suggest 0.25% of the maximum stress expected
@@ -749,7 +749,7 @@ bool writeSolverFileClass::perform()
                                 //! calculix default 10e-3
                                 C0 = 10.0e-3;
                             }
-                            myInputFile<<K<<", "<<sigmaInfty<<", "<<C0<<endl;
+                            myInputFile<<K*KF<<", "<<sigmaInfty<<", "<<C0<<endl;
                         }
                             break;
                         case Property::overpressureFunction_exponential:
@@ -770,7 +770,7 @@ bool writeSolverFileClass::perform()
                             lambda = node->getPropertyValue<double>("Lambda");
                             if(lambda == 0)
                             {
-                                lambda = K/20.0;
+                                lambda = K*KF/20.0;
                             }
                             //! ---------
                             //! 5th) row
@@ -869,9 +869,9 @@ bool writeSolverFileClass::perform()
                             //! in case of face to face behavior "Sigma infty" is irrelevant
                             //! in case of face to face behavior "C0 is irrelevant
 
-                            K = node->getPropertyValue<double>("K");
-                            if(K==0)
-                            {
+                            KF = node->getPropertyValue<double>("K");
+                            if(K==0) KF=1.0;
+                            //{
                                 QVector<GeometryTag> tagsMaster = node->getPropertyValue<QVector<GeometryTag>>("Tags master");
                                 QVector<GeometryTag> tagsSlave = node->getPropertyValue<QVector<GeometryTag>>("Tags slave");
 
@@ -896,8 +896,8 @@ bool writeSolverFileClass::perform()
                                     slaveFaces<<faceMesh;
                                 }
                                 K = contactParameters::calc_K(masterFaces,slaveFaces);
-                            }
-                            myInputFile<<K<<endl;
+                            //}
+                            myInputFile<<K*KF<<endl;
                         }
                             break;
 
@@ -920,7 +920,7 @@ bool writeSolverFileClass::perform()
 
                             if(lambda==0)
                             {
-                                lambda = K/20.0;
+                                lambda = K*KF/20.0;
                             }
                             //! ---------
                             //! 5th) row
@@ -970,9 +970,9 @@ bool writeSolverFileClass::perform()
                         //! in case of face to face behavior "Sigma infty" is irrelevant
                         //! in case of face to face behavior "C0 is irrelevant
 
-                        K = node->getPropertyValue<double>("K");
-                        if(K==0)
-                        {
+                        KF = node->getPropertyValue<double>("K");
+                        if(K==0) KF=1.0;
+                        //{
                             QVector<GeometryTag> tagsMaster = node->getPropertyValue<QVector<GeometryTag>>("Tags master");
                             QVector<GeometryTag> tagsSlave = node->getPropertyValue<QVector<GeometryTag>>("Tags slave");
 
@@ -997,8 +997,8 @@ bool writeSolverFileClass::perform()
                                 slaveFaces<<faceMesh;
                             }
                             K = contactParameters::calc_K(masterFaces,slaveFaces);
-                        }
-                        myInputFile<<K<<endl;
+                        //}
+                        myInputFile<<K*KF<<endl;
 
                         //! ----------------
                         //! GAP CONDUCTANCE
@@ -1012,7 +1012,7 @@ bool writeSolverFileClass::perform()
                         //! ---------
                         myInputFile<<"*FRICTION"<<endl;
 
-                        double lambda = K/20.0;
+                        double lambda = K*KF/20.0;
                         //! ---------
                         //! 6th) row
                         //! ---------
@@ -1630,7 +1630,7 @@ bool writeSolverFileClass::perform()
         myInputFile<<"0.001,";
         myInputFile<<"0.1,";
         myInputFile<<"100,";
-        myInputFile<<"45,"<<endl;
+        myInputFile<<"25,"<<endl;
 
         //! --------------------
         //! boundary conditions
