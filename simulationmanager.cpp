@@ -178,7 +178,6 @@ SimulationManager::SimulationManager(QWidget *parent): QWidget(parent)
     //! -----------------------------------------------------------------------------
     myTimer = new QTimer(this);
     connect(myTimer,SIGNAL(timeout()),this,SLOT(retrieveSolverInfo()));
-    //connect(theCCXSolverManager,SIGNAL(solutionReady()),myTimer,SLOT(stop()));
 
     //! -------------------------------------
     //! create an empty simulation data base
@@ -231,12 +230,6 @@ SimulationManager::SimulationManager(const occHandle(AIS_InteractiveContext) &aC
     //! -----------------
     myIsMeshingRunning = false;
     myIsCalculationRunning = false;
-
-    //! -----------------------------------------------------------------------------
-    //! stop the timer when the solution is ready (present or not, converged or not)
-    //! -----------------------------------------------------------------------------
-    //connect(myTimer,SIGNAL(timeout()),this,SLOT(retrieveSolverInfo()));
-    //connect(theCCXSolverManager,SIGNAL(solutionReady()),myTimer,SLOT(stop()));
 
     //! -----------------------------------
     //! init the current project directory
@@ -347,7 +340,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
             connect(aDummyNode->getModel(),SIGNAL(itemChanged(QStandardItem*)),this,SLOT(handleItemChange(QStandardItem*)));
             DetailViewer *detailViewer = static_cast<DetailViewer*>(tools::getWidgetByName("detailViewer"));
             detailViewer->setCurrentMultipleSelectionNode(aDummyNode); // set the current multiple selection node
-            detailViewer->setTheModel(aDummyNode); //gildotta
+            detailViewer->setTheModel(aDummyNode);
 
             return;
         }
@@ -7197,7 +7190,11 @@ bool SimulationManager::startAnalysis(const QString &projectDataDir)
     inputFileGenerator.setName(fileName);
     bool isDone = inputFileGenerator.perform();
 
-    if(isDone == false) return false;
+    if(isDone == false)
+    {
+        cout<<"SimulationManager::startAnalysis()->____input file not generated____"<<endl;
+        return false;
+    }
 
     //! ------------------------------------------
     //! enable the items with boundary conditions
@@ -7214,11 +7211,28 @@ bool SimulationManager::startAnalysis(const QString &projectDataDir)
 
     cout<<"SimulationManager::startAnalysis()->____required analysis end time: "<<endTime<<"____"<<endl;
 
+    //! ------------------------
+    //! update the progress bar
+    //! ------------------------
+    QProgressEvent *e = new QProgressEvent(QProgressEvent_Init,0,int(100.0*endTime),0,"Running CCX",QProgressEvent_None,-1,-1,-1,"Running CCX");
+    QApplication::postEvent(aProgressIndicator,e);
+    QApplication::processEvents();
+
+    //! ---------------------------------------------------------------------------------------
+    //! create the solver manager - put the progress indicator into the constructor. To do ...
+    //! ---------------------------------------------------------------------------------------
     CCXSolverManager1 *CCXsm = new CCXSolverManager1(this);
-    disconnect(CCXsm,SIGNAL(CCXRunFinished()),this,SLOT(configureAndStartPostEngine()));
-    connect(CCXsm,SIGNAL(CCXRunFinished()),this,SLOT(configureAndStartPostEngine()));
+
     CCXsm->setNbProcessors(NbThreads);
     CCXsm->setInputFile(fileName);
+    CCXsm->setProgressIndicator(aProgressIndicator);
+
+    disconnect(CCXsm,SIGNAL(CCXRunFinished()),this,SLOT(configureAndStartPostEngine()));
+    connect(CCXsm,SIGNAL(CCXRunFinished()),this,SLOT(configureAndStartPostEngine()));
+
+    disconnect(CCXsm,SIGNAL(CCXRunFinished()),this,SLOT(retrieveSolverInfo()));
+    connect(CCXsm,SIGNAL(CCXRunFinished()),this,SLOT(retrieveSolverInfo()));
+
     CCXsm->start();
 
     //! ---------------------------------------------------------
@@ -11002,6 +11016,14 @@ void SimulationManager::retrieveSolverInfo()
     QStandardItem *itemSolutionInformation = itemSolution->child(0,0);
     SimulationNodeClass *nodeSolutionInformation = itemSolutionInformation->data(Qt::UserRole).value<SimulationNodeClass*>();
 
+    //! ---------------------------------
+    //! retrieve the final analysis time
+    //! ---------------------------------
+    QStandardItem *itemAnalysisSettings = myCurrentRunningAnalysis->child(0,0);
+    SimulationNodeClass *nodeAnalysisSettings = itemAnalysisSettings->data(Qt::UserRole).value<SimulationNodeClass*>();
+    CustomTableModel *tabData = nodeAnalysisSettings->getTabularDataModel();
+    double endTime = tabData->dataRC(tabData->rowCount()-1,1).toDouble();
+
     //! --------------------------------------------------------------
     //! check if the source file "RawSolverOutput_copy.txt" is in use.
     //! If a lock file exists, the file is in use; if not the file
@@ -11013,10 +11035,7 @@ void SimulationManager::retrieveSolverInfo()
     if(!QFile::exists(lockFileName.toStdString().c_str()))
     {
         FILE *lockFile = fopen(lockFileName.toStdString().c_str(),"w");
-
         cout<<"SimulationManager::retrieveSolverInfo()->____lock file created____"<<endl;
-        cout<<"SimulationManager::retrieveSolverInfo()->____"<<targetFileName.toStdString()<<"____"<<endl;
-        cout<<"SimulationManager::retrieveSolverInfo()->____"<<sourceFileName.toStdString()<<"____"<<endl;
 
         QList<solutionInfo> solInfoList;
         bool simulationError;
@@ -11027,6 +11046,24 @@ void SimulationManager::retrieveSolverInfo()
         cout<<"@ last av substep: "<<rtd.lastAvailableSubStep<<endl;
         cout<<"@ last av time: "<<rtd.lastAvailableTime<<endl;
         cout<<"@ -----------------------------------------"<<endl;
+
+        //! ------------------------
+        //! update the progress bar
+        //! ------------------------
+        QProgressIndicator *aProgressIndicator = static_cast<QProgressIndicator*>(tools::getWidgetByName("progressIndicator"));
+        if(rtd.lastAvailableTime==endTime)
+        {
+            QProgressEvent *e = new QProgressEvent(QProgressEvent_Reset,-1,-1,-1,"",QProgressEvent_None,-1,-1,-1,"");
+            QApplication::postEvent(aProgressIndicator,e);
+            QApplication::processEvents();
+        }
+        else
+        {
+            //! close the progressBar
+            QProgressEvent *e = new QProgressEvent(QProgressEvent_Update,-1,-1,100.0*rtd.lastAvailableTime,"Running CCX",QProgressEvent_None,-1,-1,-1,"Running CCX");
+            QApplication::postEvent(aProgressIndicator,e);
+            QApplication::processEvents();
+        }
 
         //! ---------------------------------------
         //! put the convergence data into the item

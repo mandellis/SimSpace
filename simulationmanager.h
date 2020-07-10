@@ -606,7 +606,7 @@ private:
 
 private slots:
 
-    //! experimental - retrieve solver info
+    //! retrieve solver info
     void retrieveSolverInfo();
 
 #ifdef COSTAMP_VERSION

@@ -29,7 +29,7 @@ using namespace std;
 //! ----------------------
 inputFileGenerator::inputFileGenerator(QObject *parent):QThread(parent)
 {
-    ;
+    cout<<"inputFileGenerator::inputFileGeneratorn()->____function called. Thread: "<<QThread::currentThreadId()<<"____"<<endl;
 }
 
 //! -------------------------------
@@ -67,10 +67,22 @@ void inputFileGenerator::run()
         //! ---------------------
         //! write CCX input file
         //! ---------------------
-        //isDone = this->writeCCX();
-        cout<<"inputFileGenerator::writeCCX()->____function called. Thread: "<<QThread::currentThreadId()<<"____"<<endl;
+        isDone = this->writeCCX();
         if(myParameters.size() != 3) emit inputFileWritten(false);
 
+        /*
+         * run() should be executed in a thread different from the main one.
+         * (that's what we would like to do). From documentation it appears
+         * that a SLOT, defined in the class and called in within run() cannot
+         * be executed in the new thread, but will stand in the old. It appears
+         * also that, for obtaining this result, the SLOT should be defined in
+         * an independent object (a worker). Actually even if writeCCX() is defined
+         * outside run, its thread Id is different from the thread Id of the main
+         * thread. Output example:
+         *
+         * inputFileGenerator::inputFileGeneratorn()->____function called. Thread: 0000000000001D0C____
+         * inputFileGenerator::writeCCX()->____function called. Thread: 0000000000004EE8____
+         * /
         //! -----------------------
         //! unpack parameters:
         //! - simulation data base
@@ -85,6 +97,7 @@ void inputFileGenerator::run()
         CCXInputGenerator.setName(myInputFileName);
         bool isDone = CCXInputGenerator.perform();
         emit inputFileWritten(isDone);
+        */
     }
         break;
 

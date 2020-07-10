@@ -39,6 +39,8 @@ private:
 
 private slots:
 
+public slots:
+
 signals:
 
     void CCXRunFinished();

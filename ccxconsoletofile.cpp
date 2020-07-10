@@ -25,9 +25,10 @@ CCXconsoleToFile::CCXconsoleToFile()
 
 //! -----------------------------------------------------------------
 //! function: perform
-//! details:  return values    - final read time (double)
-//!                            - solution info (QList<solutionInfo)
-//!                            - simulation error (bool)
+//! details:  return values
+//!         - final read time (double)
+//!         - solution info (QList<solutionInfo)
+//!         - simulation error (bool)
 //!           If a simulation error has occurred the final read time
 //!           is the last converged substep
 //! -----------------------------------------------------------------
@@ -35,7 +36,8 @@ runTerminationData CCXconsoleToFile::perform(QString myTargetFileName,
                                              QString mySourceFileName,
                                              int analysisType,
                                              QList<solutionInfo> &listSolInfo,
-                                             bool &simulationError)
+                                             bool &simulationError,
+                                             QProgressIndicator *aProgressIndicator)
 {
     cout<<"CCXconsoleToFile::perform()->____function called____"<<endl;
 
@@ -97,7 +99,6 @@ runTerminationData CCXconsoleToFile::perform(QString myTargetFileName,
 
         if(sv.contains("increment") && sv.contains("attempt"))
         {
-            //ccout(QString::fromStdString(val));            //! increment <int> attempt <int>
             int attempt;
             int increment;
             sscanf(sv.toStdString().c_str()," increment %d attempt %d ",&increment,&attempt);
@@ -242,18 +243,30 @@ runTerminationData CCXconsoleToFile::perform(QString myTargetFileName,
                                         if(sv.contains("divergence allowed"))
                                         {
                                             //cout<<"FOUND \"divergence allowed\""<<endl;
-                                            /*
                                             //! post an event "Divergence allowed"
-                                            if(targetWidgetSimulationManager!=NULL)
+                                            if(aProgressIndicator!=Q_NULLPTR)
                                             {
-                                                QSimulationStatusEvent *event = new QSimulationStatusEvent(stepNumber,increment,actualTotalTime,0,"Divergence allowed");
-                                                QApplication::postEvent(targetWidgetSimulationManager,static_cast<QEvent*>(event));
+                                                QProgressEvent *e = new QProgressEvent(QProgressEvent_Update,0,100,0,"Divergence allowed",
+                                                                                       QProgressEvent_None,-1,-1,-1,"Running CCX");
+                                                QApplication::postEvent(aProgressIndicator,e);
                                                 QApplication::processEvents();
                                             }
-                                            */
+                                            //if(targetWidgetSimulationManager!=NULL)
+                                            //{
+                                            //    QSimulationStatusEvent *event = new QSimulationStatusEvent(stepNumber,increment,actualTotalTime,0,"Divergence allowed");
+                                            //    QApplication::postEvent(targetWidgetSimulationManager,static_cast<QEvent*>(event));
+                                            //    QApplication::processEvents();
+                                            //}
                                         }
                                         else if(sv.contains("no convergence"))
                                         {
+                                            if(aProgressIndicator!=Q_NULLPTR)
+                                            {
+                                                QProgressEvent *e = new QProgressEvent(QProgressEvent_Update,0,100,0,"No convergence",
+                                                                                       QProgressEvent_None,-1,-1,-1,"Running CCX");
+                                                QApplication::postEvent(aProgressIndicator,e);
+                                                QApplication::processEvents();
+                                            }
                                             /*
                                             //! post an event "No convergence"
                                             if(targetWidgetSimulationManager!=NULL)
@@ -275,15 +288,15 @@ runTerminationData CCXconsoleToFile::perform(QString myTargetFileName,
                                         lastConvergedTime = actualTotalTime;
                                         lastConvergedStepNumber = stepNumber;
                                         lastConvergedSubStepNumber = increment;
-                                        /*
+
                                         //! post an event "Sub step converged"
-                                        if(targetWidgetSimulationManager!=NULL)
+                                        if(aProgressIndicator!=Q_NULLPTR)
                                         {
-                                            QSimulationStatusEvent *event = new QSimulationStatusEvent(stepNumber,increment,actualTotalTime,1,"Converged");
-                                            QApplication::postEvent(targetWidgetSimulationManager,static_cast<QEvent*>(event));
+                                            QProgressEvent *e = new QProgressEvent(QProgressEvent_Update,0,100,0,"Converged",
+                                                                                   QProgressEvent_None,-1,-1,-1,"Running CCX");
+                                            QApplication::postEvent(aProgressIndicator,e);
                                             QApplication::processEvents();
                                         }
-                                        */
                                     }
                                     break;
                                 }
@@ -329,7 +342,6 @@ runTerminationData CCXconsoleToFile::perform(QString myTargetFileName,
     inputFile.close();
     if(writeOutputFile) outFile.close();
 
-    QSimulationStatusEvent *event;
     runTerminationData rtd;
     double lastAvailableTime, lastAvailableStepNumber, lastAvailableSubStepNumber;
 
@@ -349,8 +361,13 @@ runTerminationData CCXconsoleToFile::perform(QString myTargetFileName,
             rtd.lastAvailableStep = lastAvailableStepNumber;
             rtd.lastAvailableSubStep = lastAvailableSubStepNumber;
 
-            QString message("Solver failed to start");
-            event = new QSimulationStatusEvent(lastAvailableStepNumber,lastAvailableSubStepNumber,lastAvailableTime,0,message);
+            if(aProgressIndicator!=Q_NULLPTR)
+            {
+                QProgressEvent *e = new QProgressEvent(QProgressEvent_Reset,-1,-1,-1,"Solver failed to start",
+                                                       QProgressEvent_None,-1,-1,-1,"");
+                QApplication::postEvent(aProgressIndicator,e);
+                QApplication::processEvents();
+            }
         }
         else
         {
@@ -368,8 +385,13 @@ runTerminationData CCXconsoleToFile::perform(QString myTargetFileName,
                 rtd.lastAvailableStep = lastAvailableStepNumber;
                 rtd.lastAvailableSubStep = lastAvailableSubStepNumber;
 
-                QString message("Error at first time step");
-                event = new QSimulationStatusEvent(lastAvailableStepNumber,lastAvailableSubStepNumber,lastAvailableTime,0,message);
+                if(aProgressIndicator!=Q_NULLPTR)
+                {
+                    QProgressEvent *e = new QProgressEvent(QProgressEvent_Reset,-1,-1,-1,"Error at first time step",
+                                                           QProgressEvent_None,-1,-1,-1,"");
+                    QApplication::postEvent(aProgressIndicator,e);
+                    QApplication::processEvents();
+                }
             }
             else if(N>1)
             {
@@ -379,8 +401,13 @@ runTerminationData CCXconsoleToFile::perform(QString myTargetFileName,
                 lastAvailableStepNumber = lastConvergedStepNumber_Old;
                 lastAvailableSubStepNumber = lastConvergedSubStepNumber_Old;
 
-                QString message("unconverged solution");
-                event = new QSimulationStatusEvent(lastAvailableStepNumber,lastAvailableSubStepNumber,lastAvailableTime,0,message);
+                if(aProgressIndicator!=Q_NULLPTR)
+                {
+                    QProgressEvent *e = new QProgressEvent(QProgressEvent_Reset,-1,-1,-1,"Solver did not converge",
+                                                           QProgressEvent_None,-1,-1,-1,"");
+                    QApplication::postEvent(aProgressIndicator,e);
+                    QApplication::processEvents();
+                }
 
                 cout<<"SOLVER FAILED AT TIME: "<<lastAvailableTime<<endl;
                 cout<<"LAST AVAILABLE STEP NR. "<<lastAvailableStepNumber<<endl;
@@ -409,7 +436,6 @@ runTerminationData CCXconsoleToFile::perform(QString myTargetFileName,
     cout<<"- Last available substep: "<<rtd.lastAvailableSubStep<<endl;
     cout<<"------------------------------------------------------------------------------------------------------"<<endl;
 
-    /*
     //! ----------------------------------------------
     //! update the progress bar of the solver manager
     //! ----------------------------------------------
@@ -417,16 +443,15 @@ runTerminationData CCXconsoleToFile::perform(QString myTargetFileName,
     {
         if(listSolInfo.last().subStepConverged==true)
         {
-            cout<<"____Update solution manager progress bar____"<<endl;
-            int theProgress = int(100*listSolInfo.last().time);
-            if(targetWidgetSolverManager!=NULL)
+            if(aProgressIndicator!=Q_NULLPTR)
             {
-                QProgressEvent *e = new QProgressEvent(QProgressEvent_Update,-1,-1,theProgress,"Substep converged");
-                QApplication::postEvent(targetWidgetSolverManager,e);
+                int theProgress = int(100*listSolInfo.last().time);
+                QProgressEvent *e = new QProgressEvent(QProgressEvent_Update,-1,-1,theProgress,"Substep converged",
+                                                       QProgressEvent_None,-1,-1,-1,"Running CCX");
+                QApplication::postEvent(aProgressIndicator,e);
                 QApplication::processEvents();
             }
         }
     }
-    */
     return rtd;
 }

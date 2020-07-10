@@ -3,6 +3,7 @@
 //! ----------------
 #include "ccxsolvermanager1.h"
 #include "qprogressindicator.h"
+#include <qprogressevent.h>
 //#include <qccxsolvermessageevent.h>
 //#include <qconsoleevent.h>
 //#include <ccxsolvermessage.h>
@@ -59,15 +60,17 @@ void CCXSolverManager1::run()
     //! -----------------
     //! create a process
     //! -----------------
-    QProcess *process = new QProcess(this);
+    //QProcess *process = new QProcess(this);
+    QProcess process;
 
     //! --------------------------
     //! this send messages around
     //! --------------------------
     QString file = myInputFileName;
-    Worker aWorker(process,file);
-    connect(process,SIGNAL(readyReadStandardOutput()),&aWorker,SLOT(retrieveSolverData()));
-    connect(process,SIGNAL(finished(int)),&aWorker,SLOT(removeRawSolverData_copy()));
+    Worker aWorker(&process,file);
+    connect(&process,SIGNAL(readyReadStandardOutput()),&aWorker,SLOT(retrieveSolverData()));
+    connect(&process,SIGNAL(finished(int)),&aWorker,SLOT(removeRawSolverData_copy()));
+    connect(myProgressIndicator,SIGNAL(requestStopCCX()),&process,SLOT(kill()));
 
     //! ---------------------------------------
     //! calculix solver: program name and args
@@ -77,13 +80,21 @@ void CCXSolverManager1::run()
     if(CCX_uses_SPOOLES)
     {
         program = QString::fromLatin1(std::getenv("CCX_MT_SPOOLES"));
-        if(program.isEmpty()) emit CCXRunFinished();
+        if(program.isEmpty())
+        {
+            emit CCXRunFinished();
+            return;
+        }
         program.append("/ccx_2.16_spooles.exe");
     }
     else
     {
         program = QString::fromLatin1(std::getenv("CCX_MT_PARDISO"));
-        if(program.isEmpty()) emit CCXRunFinished();
+        if(program.isEmpty())
+        {
+            emit CCXRunFinished();
+            return;
+        }
         program.append("/ccx_215Pardiso.exe");
     }
 
@@ -111,10 +122,15 @@ void CCXSolverManager1::run()
     //! ----------------
     QProcessEnvironment processEnv;
     processEnv.insert("omp_num_threads",QString("%1").arg(myNbProcessors));
-    process->setWorkingDirectory(solutionDataDir);
-    process->setProcessEnvironment(processEnv);
-    process->start(program,CCXarguments);
-    process->waitForFinished(-1);
+    //process->setWorkingDirectory(solutionDataDir);
+    //process->setProcessEnvironment(processEnv);
+    //process->start(program,CCXarguments);
+    //process->waitForFinished(-1);
+
+    process.setWorkingDirectory(solutionDataDir);
+    process.setProcessEnvironment(processEnv);
+    process.start(program,CCXarguments);
+    process.waitForFinished(-1);
 
     //! -------------
     //! run finished

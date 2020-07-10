@@ -393,8 +393,13 @@ void QProgressIndicator::handleStopPressed()
     {
         Global::status().code = 0;
     }
+    if(myCurrentRunningTask == "Running CCX")
+    {
+        Global::status().code = 0;
+        emit requestStopCCX();
+    }
 
-    QThread::msleep(1000);
+    QThread::msleep(500);
     this->hide();
 }
 

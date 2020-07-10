@@ -107,10 +107,14 @@ void writeSolverFileClass::setProgressIndicator(QProgressIndicator *aProgressInd
 //! ------------------
 bool writeSolverFileClass::perform()
 {
+    //! -----------------------------------
+    //! reset the running status of global
+    //! -----------------------------------
+    Global::status().code = 1;
+
     //! ----------------------
     //! init the progress bar
     //! ----------------------
-    int code = -1;
     int done = 0;
     int Nevents = 7;
     if(myProgressIndicator!=Q_NULLPTR)
@@ -132,11 +136,8 @@ bool writeSolverFileClass::perform()
     //! ----------------------------
     for(QMap<int,TopoDS_Shape>::iterator it = myDB->bodyMap.begin(); it!=myDB->bodyMap.end(); it++)
     {
-        code = Global::status().code;
-        if(code==0)
+        if(Global::status().code==0)
         {
-            cout<<"writeSolverFileClass::perform()->____process stopped____"<<endl;
-            //exit(12);
             cout<<"writeSolverFileClass::perform()->____process stopped____"<<endl;
             return false;
         }
@@ -168,10 +169,8 @@ bool writeSolverFileClass::perform()
         QApplication::processEvents();
         QThread::msleep(500);
 
-        code = Global::status().code;
-        if(code==0)
+        if(Global::status().code==0)
         {
-            //exit(12);
             cout<<"writeSolverFileClass::perform()->____process stopped____"<<endl;
             return false;
         }
@@ -211,10 +210,8 @@ bool writeSolverFileClass::perform()
         QApplication::processEvents();
         QThread::msleep(500);
 
-        code = Global::status().code;
-        if(code==0)
+        if(Global::status().code==0)
         {
-            //exit(12);
             cout<<"writeSolverFileClass::perform()->____process stopped____"<<endl;
             return false;
         }
@@ -236,8 +233,7 @@ bool writeSolverFileClass::perform()
     //! --------------------------------------------
     for(int k=1; k<N-1; k++)
     {
-        code = Global::status().code;
-        if(code==0)
+        if(Global::status().code==0)
         {
             cout<<"writeSolverFileClass::perform()->____process stopped____"<<endl;
             return false;
@@ -542,8 +538,7 @@ bool writeSolverFileClass::perform()
     QStandardItem *theGeometryRoot=this->getTreeItem(SimulationNodeClass::nodeType_geometry);
     for(int k=0; k<theGeometryRoot->rowCount();k++)
     {
-        code = Global::status().code;
-        if(code==0)
+        if(Global::status().code==0)
         {
             cout<<"writeSolverFileClass::perform()->____process stopped____"<<endl;
             return false;
@@ -604,8 +599,7 @@ bool writeSolverFileClass::perform()
         QApplication::processEvents();
         QThread::msleep(500);
 
-        code = Global::status().code;
-        if(code==0)
+        if(Global::status().code==0)
         {
             cout<<"writeSolverFileClass::perform()->____process stopped____"<<endl;
             return false;
@@ -621,8 +615,7 @@ bool writeSolverFileClass::perform()
     QExtendedStandardItem *theConnectionItem = this->getTreeItem(SimulationNodeClass::nodeType_connection);
     for(int n=0; n<theConnectionItem->rowCount(); n++)
     {
-        code = Global::status().code;
-        if(code==0)
+        if(Global::status().code==0)
         {
             cout<<"writeSolverFileClass::perform()->____process stopped____"<<endl;
             return false;
@@ -701,8 +694,7 @@ bool writeSolverFileClass::perform()
     int NtotCP = 0;     // total number of contact pair
     for(int n=0; n<theConnectionItem->rowCount(); n++)
     {
-        code = Global::status().code;
-        if(code==0)
+        if(Global::status().code==0)
         {
             cout<<"writeSolverFileClass::perform()->____process stopped____"<<endl;
             return false;
@@ -1135,8 +1127,7 @@ bool writeSolverFileClass::perform()
         QApplication::processEvents();
         QThread::msleep(500);
 
-        code = Global::status().code;
-        if(code==0)
+        if(Global::status().code==0)
         {
             cout<<"writeSolverFileClass::perform()->____process stopped____"<<endl;
             return false;
@@ -1148,8 +1139,7 @@ bool writeSolverFileClass::perform()
     //! ------------------------------------------------------------------------------------
     for(int k=1; k<mySimulationRoot->rowCount()-1; k++)
     {
-        code = Global::status().code;
-        if(code==0)
+        if(Global::status().code==0)
         {
             cout<<"writeSolverFileClass::perform()->____process stopped____"<<endl;
             return false;
@@ -1373,8 +1363,7 @@ bool writeSolverFileClass::perform()
         QApplication::processEvents();
         QThread::msleep(500);
 
-        code = Global::status().code;
-        if(code==0)
+        if(Global::status().code==0)
         {
             cout<<"writeSolverFileClass::perform()->____process stopped____"<<endl;
             return false;
@@ -1420,8 +1409,7 @@ bool writeSolverFileClass::perform()
 
     for(int k=0; k<theGeometryRoot->rowCount();k++)
     {
-        code = Global::status().code;
-        if(code==0)
+        if(Global::status().code==0)
         {
             cout<<"writeSolverFileClass::perform()->____process stopped____"<<endl;
             return false;
@@ -1452,8 +1440,7 @@ bool writeSolverFileClass::perform()
         QApplication::processEvents();
         QThread::msleep(500);
 
-        code = Global::status().code;
-        if(code==0)
+        if(Global::status().code==0)
         {
             cout<<"writeSolverFileClass::perform()->____process stopped____"<<endl;
             return false;
@@ -1528,8 +1515,7 @@ bool writeSolverFileClass::perform()
     bool initialTempDistr = false;
     for(int k=1; k<mySimulationRoot->rowCount()-1; k++)
     {
-        code = Global::status().code;
-        if(code==0)
+        if(Global::status().code==0)
         {
             cout<<"writeSolverFileClass::perform()->____process stopped____"<<endl;
             return false;
@@ -1588,8 +1574,7 @@ bool writeSolverFileClass::perform()
         QApplication::processEvents();
         QThread::msleep(500);
 
-        code = Global::status().code;
-        if(code==0)
+        if(Global::status().code==0)
         {
             cout<<"writeSolverFileClass::perform()->____process stopped____"<<endl;
             return false;
@@ -1608,8 +1593,7 @@ bool writeSolverFileClass::perform()
     int NbSteps = tabData->rowCount()-1;
     for(int i=1;i<=NbSteps;i++)
     {
-        code = Global::status().code;
-        if(code==0)
+        if(Global::status().code==0)
         {
             cout<<"writeSolverFileClass::perform()->____process stopped____"<<endl;
             return false;
@@ -1827,8 +1811,7 @@ bool writeSolverFileClass::perform()
         //! --------------------
         for(int k=1; k<mySimulationRoot->rowCount()-1; k++)
         {
-            code = Global::status().code;
-            if(code==0)
+            if(Global::status().code==0)
             {
                 cout<<"writeSolverFileClass::perform()->____process stopped____"<<endl;
                 return false;
@@ -2578,10 +2561,7 @@ void writeSolverFileClass::writeElementSurface(QString SetName,
     //! -----------------------------------------------------------------------
     this->createElementSurface(theElementIDs,theFaceNumbers,anIndexedMapOfFaceMeshDS);
 
-    //! write the header for the SURFACE
-    //! cout<<"_____Writing surface having: "<<theElementIDs.size()<<" elements____"<<endl;
     myESurf<<"*SURFACE, NAME = "<<SetName.toStdString()<<endl;
-
     for(int k=0; k<theElementIDs.size(); k++)
     {
         myESurf<<theElementIDs[k]<<", S"<<theFaceNumbers[k]<<endl;
@@ -2693,22 +2673,20 @@ void writeSolverFileClass::writeNodesAndElements(QString aName,QMap<int,QList<in
                 //! retrieve the name of the body from the data base
                 std::string bodyName = myDB->MapOfBodyNames.value(bodyIndex).toStdString();
                 myMesh<<"*NODE, NSET= N"<<bodyName<<endl;
-                double aCoordsBuf[3];
-                TColStd_Array1OfReal aCoords(*aCoordsBuf,1,3);
-                Standard_Integer nbNodes;
+
+                double buf[3];
+                TColStd_Array1OfReal coords(*buf,1,3);
+                int nbNodes;
                 MeshVS_EntityType aType;
+
+                //! ----------------------------
+                //! write the nodes coordinates
+                //! ----------------------------
                 for (TColStd_MapIteratorOfPackedMapOfInteger anIter(aNodes); anIter.More();anIter.Next())
                 {
                     int globalNodeID = anIter.Key();
-                    if (!aMeshVS_DataSource->GetGeom(globalNodeID,Standard_False,aCoords,nbNodes,aType)) continue;
-                    double x_node = aCoordsBuf[0];
-                    double y_node = aCoordsBuf[1];
-                    double z_node = aCoordsBuf[2];
-
-                    //! ----------------------------
-                    //! write the nodes coordinates
-                    //! ----------------------------
-                    myMesh<<globalNodeID+anIncrement<<","<<x_node<<","<<y_node<<","<<z_node<<endl;
+                    if (!aMeshVS_DataSource->GetGeom(globalNodeID,false,coords,nbNodes,aType)) continue;
+                    myMesh<<globalNodeID+anIncrement<<","<<coords(1)<<","<<coords(2)<<","<<coords(3)<<endl;
                     listOfNodes<<globalNodeID+anIncrement;
                 }
                 nodeListByBody.insert(bodyIndex,listOfNodes);
@@ -2758,18 +2736,17 @@ void writeSolverFileClass::writeNodesAndElements(QString aName,QMap<int,QList<in
         //! -----------------------------------------------------------------------
         //! use the 3D mesh datasources (Ng_MeshVS_DataSource3D), as for the nodes
         //! -----------------------------------------------------------------------
-        const occHandle(MeshVS_DataSource) &aMeshVS_DataSource =  myDB->ArrayOfMeshDS.value(bodyIndex);
-        if(!aMeshVS_DataSource.IsNull())
+        const occHandle(MeshVS_DataSource) &aMeshDS =  myDB->ArrayOfMeshDS.value(bodyIndex);
+        if(!aMeshDS.IsNull())
         {
-            TColStd_PackedMapOfInteger mapOfElements = aMeshVS_DataSource->GetAllElements();
+            TColStd_PackedMapOfInteger mapOfElements = aMeshDS->GetAllElements();
             TColStd_MapIteratorOfPackedMapOfInteger anIter(mapOfElements);
-
             for(;anIter.More();anIter.Next())
             {
-                Standard_Integer globalElementID = anIter.Key();
+                int globalElementID = anIter.Key();
                 int NbNodes, aNodesBuf[20];
                 TColStd_Array1OfInteger nodeIDs(*aNodesBuf,1,20);
-                aMeshVS_DataSource->GetNodesByElement(globalElementID,nodeIDs,NbNodes);
+                aMeshDS->GetNodesByElement(globalElementID,nodeIDs,NbNodes);
 
                 //! get the element type
                 switch(NbNodes)
@@ -2815,6 +2792,7 @@ void writeSolverFileClass::writeNodesAndElements(QString aName,QMap<int,QList<in
 
             anIter.Initialize(mapOfElements);
             int ntet4 = 0;
+            int ntet10 = 0;
             int nprism6 = 0;
             int npyr5 = 0;
             int nhexa8 = 0;
@@ -2822,11 +2800,10 @@ void writeSolverFileClass::writeNodesAndElements(QString aName,QMap<int,QList<in
             for(int j=0;anIter.More();anIter.Next(),j++)
             {
                 if(j==mapOfElements.Extent()) break;
-                Standard_Integer aKey = anIter.Key();
-                int NbNodes;
-                Standard_Integer aNodesBuf[20];                     //! a 20 points buffer
+                int aKey = anIter.Key();
+                int NbNodes, aNodesBuf[20];                         //! a 20 points buffer
                 TColStd_Array1OfInteger nodeIDs(*aNodesBuf,1,20);   //! this holds up to second order hexa
-                aMeshVS_DataSource->GetNodesByElement(aKey,nodeIDs,NbNodes);
+                aMeshDS->GetNodesByElement(aKey,nodeIDs,NbNodes);
 
                 //! get the element type using the number of nodes
                 switch(NbNodes)
@@ -2835,7 +2812,7 @@ void writeSolverFileClass::writeNodesAndElements(QString aName,QMap<int,QList<in
                 {
                     //! a TET4 element has been found
                     arrayTet4[j-nprism6-npyr5][0]=aKey+anElementIncrement;
-                    for(int i=1; i<=4; i++) arrayTet4[j-nprism6-npyr5-nhexa8][i]=nodeIDs.Value(i)+aNodeIncrement;
+                    for(int i=1; i<=4; i++) arrayTet4[j-nprism6-npyr5-nhexa8-ntet10][i]=nodeIDs.Value(i)+aNodeIncrement;
                     ntet4++;
                 }
                     break;
@@ -2844,7 +2821,9 @@ void writeSolverFileClass::writeNodesAndElements(QString aName,QMap<int,QList<in
                 {
                     //! a TET10 element has been found
                     arrayTet10[j][0]=aKey+anElementIncrement;
-                    for(int i=1; i<=10; i++) arrayTet10[j][i]=nodeIDs.Value(i)+aNodeIncrement;
+                    //for(int i=1; i<=10; i++) arrayTet10[j][i]=nodeIDs.Value(i)+aNodeIncrement;
+                    for(int i=1; i<=10; i++) arrayTet10[j-ntet4-npyr5-nprism6-nhexa8][i]=nodeIDs.Value(i)+aNodeIncrement;
+                    ntet10++;
                 }
                     break;
 
@@ -2852,7 +2831,8 @@ void writeSolverFileClass::writeNodesAndElements(QString aName,QMap<int,QList<in
                 {
                     //! a PYR5 element has been found
                     arrayPyr5[j-ntet4-nprism6][0]=aKey+anElementIncrement;
-                    for(int i=1; i<=6; i++) arrayPyr5[j-ntet4-nprism6-nhexa8][i]=nodeIDs.Value(i)+aNodeIncrement;
+                    //for(int i=1; i<=6; i++) arrayPyr5[j-ntet4-nprism6-nhexa8][i]=nodeIDs.Value(i)+aNodeIncrement;
+                    for(int i=1; i<=6; i++) arrayPyr5[j-ntet4-nprism6-nhexa8-ntet10][i]=nodeIDs.Value(i)+aNodeIncrement;
                     npyr5++;
                 }
                     break;
@@ -2869,7 +2849,8 @@ void writeSolverFileClass::writeNodesAndElements(QString aName,QMap<int,QList<in
                 {
                     //! a HEXA8 element has been found
                     arrayHexa8[j][0]=aKey+anElementIncrement;
-                    for(int i=1; i<=8; i++) arrayHexa8[j-ntet4-nprism6-npyr5][i]=nodeIDs.Value(i)+aNodeIncrement;
+                    //for(int i=1; i<=8; i++) arrayHexa8[j-ntet4-nprism6-npyr5][i]=nodeIDs.Value(i)+aNodeIncrement;
+                    for(int i=1; i<=8; i++) arrayHexa8[j-ntet4-npyr5-nprism6-ntet10][i]=nodeIDs.Value(i)+aNodeIncrement;
                     nhexa8++;
                 }
                     break;
@@ -2886,7 +2867,8 @@ void writeSolverFileClass::writeNodesAndElements(QString aName,QMap<int,QList<in
                 {
                     //! a PRISM6 element has been found
                     arrayPrism6[j-ntet4-npyr5][0]=aKey+anElementIncrement;
-                    for(int i=1; i<=6; i++) arrayPrism6[j-ntet4-npyr5-nhexa8][i]=nodeIDs.Value(i)+aNodeIncrement;
+                    //for(int i=1; i<=6; i++) arrayPrism6[j-ntet4-npyr5-nhexa8][i]=nodeIDs.Value(i)+aNodeIncrement;
+                    for(int i=1; i<=6; i++) arrayPrism6[j-ntet4-npyr5-nhexa8-ntet10][i]=nodeIDs.Value(i)+aNodeIncrement;
                     nprism6++;
                 }
                     break;
@@ -3092,10 +3074,11 @@ void writeSolverFileClass::writeNodesAndElements(QString aName,QMap<int,QList<in
             anElementIncrement = anElementIncrement + Ntet4 + Ntet10 + Nhexa8 + Nhexa20 + Npyr5 + Npyr13 + Nprism6 + Nprism15;
             myMesh<<anElementIncrement<<endl;
             totalNumberOfElements+=anElementIncrement;
+
             //! ---------------------------------------------
             //! increment the node number (assembly support)
             //! ---------------------------------------------
-            aNodeIncrement = aNodeIncrement + aMeshVS_DataSource->GetAllNodes().Extent();
+            aNodeIncrement = aNodeIncrement + aMeshDS->GetAllNodes().Extent();
         }
     }
     ++totalNumberOfElements;

@@ -80,6 +80,7 @@ public slots:
 signals:
 
     void abortNetgenSTLPressed();
+    void requestStopCCX();
 };
 
 #endif // QPROGRESSINDICATOR_H
