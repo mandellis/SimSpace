@@ -961,8 +961,8 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                     //! ------------------------------------
                     columnsToShow.removeFirst();
                     CustomTableModel *tabData = index_analysisSettings.data(Qt::UserRole).value<SimulationNodeClass*>()->getTabularDataModel();
-                    cout<<"____"<<tabData->rowCount()<<", "<<tabData->columnCount()<<"____"<<endl;
-                    for(int k=0; k<columnsToShow.length(); k++) cout<<"____column: "<<columnsToShow[k]<<"____"<<endl;
+                    //cout<<"____"<<tabData->rowCount()<<", "<<tabData->columnCount()<<"____"<<endl;
+                    //for(int k=0; k<columnsToShow.length(); k++) cout<<"____column: "<<columnsToShow[k]<<"____"<<endl;
                     emit requestShowGraph(tabData,columnsToShow);
                 }
 

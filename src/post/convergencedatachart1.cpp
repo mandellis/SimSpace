@@ -39,7 +39,7 @@ ConvergenceDataChart1::ConvergenceDataChart1(QWidget *parent):QWidget(parent)
     myScaleType = scaleType::linear;
     myScaleType1 = scaleType::linear;
 
-    myLabelsFont = QFont("Helvetica",12);
+    myLabelsFont = QFont("Helvetica",10);
 
     //! --------
     //! actions
@@ -106,6 +106,10 @@ ConvergenceDataChart1::ConvergenceDataChart1(QWidget *parent):QWidget(parent)
     myChartView->rescaleAxes(true);
     myChartView->graph(0)->setPen(pen1);
     myChartView->graph(1)->setPen(pen2);
+    myChartView->graph(0)->setLineStyle(QCPGraph::lsLine);
+    myChartView->graph(1)->setLineStyle(QCPGraph::lsLine);
+    myChartView->graph(0)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle, 4));
+    myChartView->graph(1)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle, 4));
     myChartView->xAxis->setLabelFont(myLabelsFont);
     myChartView->yAxis->setLabelFont(myLabelsFont);
 
@@ -117,7 +121,6 @@ ConvergenceDataChart1::ConvergenceDataChart1(QWidget *parent):QWidget(parent)
     myChartView1->graph()->setPen(pen2);
     myChartView1->xAxis->setLabelFont(myLabelsFont);
     myChartView1->yAxis->setLabelFont(myLabelsFont);
-    //myChartView1->graph()->setLineStyle(QCPGraph::lineStyle());
 
     //! ------------------------
     //! font of the thick label
@@ -126,6 +129,8 @@ ConvergenceDataChart1::ConvergenceDataChart1(QWidget *parent):QWidget(parent)
     myChartView->yAxis->setTickLabelFont(myLabelsFont);
     myChartView1->xAxis->setTickLabelFont(myLabelsFont);
     myChartView1->yAxis->setTickLabelFont(myLabelsFont);
+    myChartView1->graph(0)->setLineStyle(QCPGraph::lsLine);
+    myChartView1->graph()->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle, 4));
 
     //! --------------
     //! hide the axes
