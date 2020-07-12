@@ -997,6 +997,12 @@ QVariant QExtendedStandardItem::data(int role) const
             data.setValue(QString::fromLatin1(v));
             return data;
         }
+        else if(name=="Mode number")
+        {
+            int val = QStandardItem::data(Qt::UserRole).value<Property>().getData().toInt();
+            data.setValue(val);
+            return data;
+        }
         else if(name=="Set number")
         {
             int val = QStandardItem::data(Qt::UserRole).value<Property>().getData().toInt();

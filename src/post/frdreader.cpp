@@ -236,21 +236,21 @@ bool FrdReader::readResults(ifstream &is, QString path/*, int &sb,int &st,double
     //!     1PMODE                         1
     //! -------------------------------------------------
     std::getline(is,val);
-    std::vector<double> dval;
-    double d;
+    double val1,eigenMode;
+    int val2,val3,modeNb;
     char cd[24];
-    if(sscanf(val.c_str(),"%s%lf",cd,&d)==2)
+    if(sscanf(val.c_str(),"%s%lf",cd,&val1)==2)
     {
         if(QString(cd) =="1PGM")
         {
-            dval.push_back(d);
-            for(int i=0;i<4;i++)
-            {
-                double e;
-                std::getline(is,val);
-                sscanf(val.c_str(),"%s%lf",cd,&e);
-                dval.push_back(e);
-            }
+            std::getline(is,val);
+            sscanf(val.c_str(),"%s%lf",cd,&eigenMode);
+            std::getline(is,val);
+            sscanf(val.c_str(),"%s%d",cd,&val2);
+            std::getline(is,val);
+            sscanf(val.c_str(),"%s%d",cd,&val3);
+            std::getline(is,val);
+            sscanf(val.c_str(),"%s%d",cd,&modeNb);
             std::getline(is,val);
             isModal=true;
         }
@@ -293,7 +293,7 @@ bool FrdReader::readResults(ifstream &is, QString path/*, int &sb,int &st,double
             aResultFile.setf(ios::scientific);
             aResultFile.precision(EXPFORMAT_PRECISION);
 
-            if(isModal) aResultFile<<"MODAL "<<dval.at(4)<<endl;
+            if(isModal) aResultFile<<"MODAL "<<modeNb<<endl;
             else aResultFile<<"THERMOSTRUCTURAL "<<0<<endl;
             aResultFile<<"Time="<<t<<endl;
             aResultFile<<"Substep n="<<sb<<" Step n="<<st<<endl;

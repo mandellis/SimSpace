@@ -154,8 +154,8 @@ QMap<GeometryTag,QList<QMap<int,double>>> postEngine::evaluateResult(const QStri
             std::string val;
             std::getline(curFile,val);
             char analysisType[24];
-            double mode;
-            sscanf(val.c_str(),"%s%lf",&analysisType,&mode);
+            int mode;
+            sscanf(val.c_str(),"%s%d",&analysisType,&mode);
 
             std::getline(curFile,val);
             double time;
@@ -169,8 +169,24 @@ QMap<GeometryTag,QList<QMap<int,double>>> postEngine::evaluateResult(const QStri
 
             //printf("File %s Time= %lf Substep n=%d Step n=%d\n",tdata,time,subStepNb,stepNb);
             //printf("compare to File %s Time= %lf Substep n=%d Step n=%d\n",resultKeyName.toStdString().c_str(),time,requiredSubStepNb,requiredStepNb);
+            bool eval=false;
 
-            if(strcmp(tdata,resultKeyName.toStdString().c_str())==0 && subStepNb==requiredSubStepNb && stepNb == requiredStepNb && mode == requiredMode)
+            switch (requiredMode) {
+            case 0:
+            {
+                if(strcmp(tdata,resultKeyName.toStdString().c_str())==0 && subStepNb==requiredSubStepNb && stepNb == requiredStepNb && mode == requiredMode)
+                    eval=true;
+            }
+                break;
+            default:
+            {
+                if(strcmp(tdata,resultKeyName.toStdString().c_str())==0 && mode == requiredMode)
+                    eval=true;
+            }
+                break;
+            }
+            //if(strcmp(tdata,resultKeyName.toStdString().c_str())==0 && subStepNb==requiredSubStepNb && stepNb == requiredStepNb && mode == requiredMode)
+            if(eval)
             {
                 //printf("file @ required time found\n");
                 TypeOfResult tor = m.value(tdata);

@@ -1396,6 +1396,17 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
             editor->setValidator(doubleValidator);
             return editor;
         }
+        //! ---------------
+        //! "Mode number"
+        //! ---------------
+        else if(propertyName =="Mode number")
+        {
+            QLineEdit *editor = new QLineEdit(parent);
+            QIntValidator *intValidator = new QIntValidator();
+            intValidator->setBottom(0);
+            editor->setValidator(intValidator);
+            return editor;
+        }
         //! ------------
         //! "Tolerance"
         //! ------------
@@ -3852,6 +3863,15 @@ void GeneralDelegate::setEditorData(QWidget *editor, const QModelIndex &index) c
         QLineEdit *le = static_cast<QLineEdit*>(editor);
         le->setText(QString("%1").arg(value));
     }
+    //! ---------------
+    //! "Mode number"
+    //! ---------------
+    else if(propertyName =="Mode number")
+    {
+        int value = data.value<Property>().getData().toInt();
+        QLineEdit *le = static_cast<QLineEdit*>(editor);
+        le->setText(QString("%1").arg(value));
+    }
     //! ------------------
     //! "Update interval"
     //! ------------------
@@ -5925,6 +5945,14 @@ void GeneralDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, c
         {
             QLineEdit *le = static_cast<QLineEdit*>(editor);
             data.setValue(le->text().toDouble());
+        }
+        //! ---------------
+        //! "Mode number"
+        //! ---------------
+        else if(propertyName=="Mode number")
+        {
+            QLineEdit *le = static_cast<QLineEdit*>(editor);
+            data.setValue(le->text().toInt());
         }
         //! ------------------
         //! "Update interval"

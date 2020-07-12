@@ -10545,7 +10545,7 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
     if(type!=SimulationNodeClass::nodeType_solutionStructuralFatigueTool)
     {
         int component = curNode->getPropertyValue<int>("Type ");
-        int mode = 0;
+        int mode = curNode->getPropertyValue<int>("Mode number");
         //! ---------------------------------------------
         //! a results is already present into the item
         //! build the mesh object from the internal data
