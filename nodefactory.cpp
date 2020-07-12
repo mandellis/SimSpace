@@ -356,6 +356,11 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
         Property prop_displayTime("Display time",data,Property::PropertyGroup_Definition);
         vecProp.push_back(prop_displayTime);
 
+        //! mode
+        data.setValue(0);
+        Property prop_modeNumber("Mode number",data,Property::PropertyGroup_Definition);
+        vecProp.push_back(prop_modeNumber);
+
         //! type of scale: "0" => "Autoscale"; "1" => "Custom"
         int typeOfScale = 0;
         data.setValue(typeOfScale);
@@ -438,7 +443,10 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
         Property prop_displayTime("Display time",data,Property::PropertyGroup_Definition);
         vecProp.push_back(prop_displayTime);
 
-        //! under definition
+        //! mode
+        data.setValue(0);
+        Property prop_modeNumber("Mode number",data,Property::PropertyGroup_Definition);
+        vecProp.push_back(prop_modeNumber);
         //Property prop_type("Type ",typeOfStress,Property::PropertyGroup_Definition);
         //vecProp.push_back(prop_type);
 
@@ -521,6 +529,11 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
         vecProp.push_back(prop_By);
         Property prop_displayTime("Display time",data,Property::PropertyGroup_Definition);
         vecProp.push_back(prop_displayTime);
+
+        //! mode
+        data.setValue(0);
+        Property prop_modeNumber("Mode number",data,Property::PropertyGroup_Definition);
+        vecProp.push_back(prop_modeNumber);
 
         //! type of scale: "0" => "Autoscale"; "1" => "Custom"
         int typeOfScale = 0;
@@ -2156,6 +2169,11 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
         Property prop_displayTime("Display time",data,Property::PropertyGroup_Definition);
         vecProp.push_back(prop_displayTime);
 
+        //! mode
+        data.setValue(0);
+        Property prop_modeNumber("Mode number",data,Property::PropertyGroup_Definition);
+        vecProp.push_back(prop_modeNumber);
+
         //! ---------------------------------------------------
         //! type of scale: "0" => "Autoscale"; "1" => "Custom"
         //! ---------------------------------------------------
@@ -2219,6 +2237,11 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
         vecProp.push_back(prop_By);
         Property prop_displayTime("Display time",data,Property::PropertyGroup_Definition);
         vecProp.push_back(prop_displayTime);
+
+        //! mode
+        data.setValue(0);
+        Property prop_modeNumber("Mode number",data,Property::PropertyGroup_Definition);
+        vecProp.push_back(prop_modeNumber);
 
         //! ---------------------------------------------------
         //! type of scale: "0" => "Autoscale"; "1" => "Custom"
@@ -2288,6 +2311,11 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
         Property prop_displayTime("Display time",data,Property::PropertyGroup_Definition);
         vecProp.push_back(prop_displayTime);
 
+        //! mode
+        data.setValue(0);
+        Property prop_modeNumber("Mode number",data,Property::PropertyGroup_Definition);
+        vecProp.push_back(prop_modeNumber);
+
         //! ---------------------------------------------------
         //! type of scale: "0" => "Autoscale"; "1" => "Custom"
         //! ---------------------------------------------------
@@ -2355,6 +2383,11 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
         vecProp.push_back(prop_By);
         Property prop_displayTime("Display time",data,Property::PropertyGroup_Definition);
         vecProp.push_back(prop_displayTime);
+
+        //! mode
+        data.setValue(0);
+        Property prop_modeNumber("Mode number",data,Property::PropertyGroup_Definition);
+        vecProp.push_back(prop_modeNumber);
 
         //! ---------------------------------------------------
         //! type of scale: "0" => "Autoscale"; "1" => "Custom"
@@ -2431,6 +2464,11 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
         Property prop_displayTime("Display time",data,Property::PropertyGroup_Definition);
         vecProp.push_back(prop_displayTime);
 
+        //! mode
+        data.setValue(0);
+        Property prop_modeNumber("Mode number",data,Property::PropertyGroup_Definition);
+        vecProp.push_back(prop_modeNumber);
+
         //! ---------------------------------------------------
         //! type of scale: "0" => "Autoscale"; "1" => "Custom"
         //! ---------------------------------------------------
@@ -2505,6 +2543,11 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
         vecProp.push_back(prop_By);
         Property prop_displayTime("Display time",data,Property::PropertyGroup_Definition);
         vecProp.push_back(prop_displayTime);
+
+        //! mode
+        data.setValue(0);
+        Property prop_modeNumber("Mode number",data,Property::PropertyGroup_Definition);
+        vecProp.push_back(prop_modeNumber);
 
         //! ---------------------------------------------------
         //! type of scale: "0" => "Autoscale"; "1" => "Custom"

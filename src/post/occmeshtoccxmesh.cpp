@@ -31,8 +31,8 @@ QMap<int,int> OCCMeshToCCXmesh::perform(GeometryTag loc, meshDataBase *mDB)
         //occHandle(MeshVS_DataSource) theCurMeshDS = mDB->ArrayOfMeshDS.value(bodyIndex);
         occHandle(Ng_MeshVS_DataSource3D) theCurMeshDS = occHandle(Ng_MeshVS_DataSource3D)::DownCast(mDB->ArrayOfMeshDS.value(bodyIndex));
         if(theCurMeshDS.IsNull()) cout<<"____INVALID MESH____"<<endl;
-        cout<<"____"<<theCurMeshDS->GetAllNodes().Extent()<<"____"<<endl;
-        cout<<"____"<<theCurMeshDS->GetAllElements().Extent()<<"____"<<endl;
+        //cout<<"____"<<theCurMeshDS->GetAllNodes().Extent()<<"____"<<endl;
+        //cout<<"____"<<theCurMeshDS->GetAllElements().Extent()<<"____"<<endl;
         TColStd_MapIteratorOfPackedMapOfInteger anIter;
         for(anIter.Initialize(theCurMeshDS->GetAllNodes()); anIter.More(); anIter.Next())
         {

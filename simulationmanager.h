@@ -577,7 +577,7 @@ public slots:
     void updatePostObjectScale(double scale);
 
     //! read results file
-    void readResultsFile(const QString &fileName, const QString &SolutionDataDir);
+    void readResultsFile(const QString &fileName, const QString &solutionDataDir);
 
     //! experimental
     void customMesherBuildFaceMesh(const TopoDS_Face &aFace);

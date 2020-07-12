@@ -10544,7 +10544,7 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
     if(type!=SimulationNodeClass::nodeType_solutionStructuralFatigueTool)
     {
         int component = curNode->getPropertyValue<int>("Type ");
-
+        int mode = curNode->getPropertyValue<int>("Mode number");
         //! ---------------------------------------------
         //! a results is already present into the item
         //! build the mesh object from the internal data
@@ -10669,7 +10669,7 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
             //! the post object retrieves the mesh data sources from the simulation database
             //! and internally builds its own interactive mesh objects
             //! -----------------------------------------------------------------------------
-            aPostObject = myPostEngine->buildPostObject(keyName,component,subStepNb,stepNb,vecLoc);
+            aPostObject = myPostEngine->buildPostObject(keyName,component,subStepNb,stepNb,mode,vecLoc);
             aPostObject.update(static_cast<meshDataBase*>(mySimulationDataBase), component);
         }
 
@@ -11451,7 +11451,7 @@ void SimulationManager::updatePostObjectScale(double scale)
 //! function: readResultsFile
 //! details:  read a results file
 //! ------------------------------
-void SimulationManager::readResultsFile(const QString &fileName, const QString &SolutionDataDir)
+void SimulationManager::readResultsFile(const QString &fileName, const QString &solutionDataDir)
 {
     cout<<"SimulationManager::readResultsFile()->____function called____"<<endl;
 
@@ -11476,7 +11476,7 @@ void SimulationManager::readResultsFile(const QString &fileName, const QString &
         //! copy the .frd file (fileName) into the "<project name>_files" directory
         //! ------------------------------------------------------------------------
         QFile frdFile(fileName);
-        QString copyOfFrdFile = SolutionDataDir+"/input.frd";
+        QString copyOfFrdFile = solutionDataDir+"/input.frd";
         frdFile.copy(copyOfFrdFile);
 
         //! -------------
@@ -12752,7 +12752,8 @@ void SimulationManager::generateBoundaryConditionsMeshDS(bool computeDual)
             if(nodeType == SimulationNodeClass::nodeType_mapper ||
                     nodeType == SimulationNodeClass::nodeType_modelChange ||
                     nodeType == SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_ImportedTemperatureDistribution ||
-                    nodeType == SimulationNodeClass::nodeType_structuralAnalysisBoltPretension
+                    nodeType == SimulationNodeClass::nodeType_structuralAnalysisBoltPretension ||
+                    nodeType == SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Acceleration
         #ifdef COSTAMP_VERSION
                     || nodeType == SimulationNodeClass::nodeType_timeStepBuilder
         #endif

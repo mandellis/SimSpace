@@ -81,6 +81,7 @@ void postEngine::setResultsFile(QString resultsFilePath)
 QMap<GeometryTag,QList<QMap<int,double>>> postEngine::evaluateResult(const QString &resultKeyName,
                                                                      int requiredSubStepNb,
                                                                      int requiredStepNb,
+                                                                     int requiredMode,
                                                                      const QVector<GeometryTag> &vecLoc)
 {
     cout<<"postEngine::evaluateResult()->____function called for variable: "<<resultKeyName.toStdString()<<"____"<<endl;
@@ -152,6 +153,11 @@ QMap<GeometryTag,QList<QMap<int,double>>> postEngine::evaluateResult(const QStri
             }
             std::string val;
             std::getline(curFile,val);
+            char analysisType[24];
+            int mode;
+            sscanf(val.c_str(),"%s%d",&analysisType,&mode);
+
+            std::getline(curFile,val);
             double time;
             sscanf(val.c_str(),"Time= %lf",&time);
             std::getline(curFile,val);
@@ -163,8 +169,24 @@ QMap<GeometryTag,QList<QMap<int,double>>> postEngine::evaluateResult(const QStri
 
             //printf("File %s Time= %lf Substep n=%d Step n=%d\n",tdata,time,subStepNb,stepNb);
             //printf("compare to File %s Time= %lf Substep n=%d Step n=%d\n",resultKeyName.toStdString().c_str(),time,requiredSubStepNb,requiredStepNb);
+            bool eval=false;
 
-            if(strcmp(tdata,resultKeyName.toStdString().c_str())==0 && subStepNb==requiredSubStepNb && stepNb == requiredStepNb)
+            switch (requiredMode) {
+            case 0:
+            {
+                if(strcmp(tdata,resultKeyName.toStdString().c_str())==0 && subStepNb==requiredSubStepNb && stepNb == requiredStepNb && mode == requiredMode)
+                    eval=true;
+            }
+                break;
+            default:
+            {
+                if(strcmp(tdata,resultKeyName.toStdString().c_str())==0 && mode == requiredMode)
+                    eval=true;
+            }
+                break;
+            }
+            //if(strcmp(tdata,resultKeyName.toStdString().c_str())==0 && subStepNb==requiredSubStepNb && stepNb == requiredStepNb && mode == requiredMode)
+            if(eval)
             {
                 //printf("file @ required time found\n");
                 TypeOfResult tor = m.value(tdata);
@@ -500,6 +522,7 @@ postObject postEngine::buildPostObject(const QString &keyName,
                                        int component,
                                        int requiredSubStepNb,
                                        int requiredStepNb,
+                                       int requiredMode,
                                        const QVector<GeometryTag> &vecLoc)
 {
     //! -------------------------
@@ -510,7 +533,7 @@ postObject postEngine::buildPostObject(const QString &keyName,
     //! --------------------
     //! call the postEngine
     //! --------------------
-    QMap<GeometryTag,QList<QMap<int,double>>> resMap = this->evaluateResult(keyName, requiredSubStepNb, requiredStepNb, vecLoc);
+    QMap<GeometryTag,QList<QMap<int,double>>> resMap = this->evaluateResult(keyName, requiredSubStepNb, requiredStepNb, requiredMode, vecLoc);
 
     //! ------------------------------------------------------------------------------------------------------------
     //! create the map of nodal vectorial displacements for the deformed mesh presentation. Here:
@@ -519,7 +542,7 @@ postObject postEngine::buildPostObject(const QString &keyName,
     //! ------------------------------------------------------------------------------------------------------------
     QMap<int,gp_Vec> displMap;
     QMap<GeometryTag,QMap<int,gp_Vec>> mapDisplMap;
-    QMap<GeometryTag,QList<QMap<int,double>>> nodalDisplacements = this->evaluateResult("DISP", requiredSubStepNb, requiredStepNb, vecLoc);
+    QMap<GeometryTag,QList<QMap<int,double>>> nodalDisplacements = this->evaluateResult("DISP", requiredSubStepNb, requiredStepNb,requiredMode, vecLoc);
 
     for(QMap<GeometryTag,QList<QMap<int,double>>>::iterator it = nodalDisplacements.begin(); it!=nodalDisplacements.end(); ++it)
     {
@@ -688,9 +711,9 @@ postObject postEngine::evaluateFatigueResults(int type, QVector<GeometryTag> loc
         postTools::getStepSubStepByTimeDTM(myDTM,times.last(),step,substep);
         QString tor_eps = m.key(TypeOfResult_EPS);
         QString tor_mises = m.key(TypeOfResult_S);
-
-        QMap<GeometryTag,QList<QMap<int,double>>> pe = this->evaluateResult(tor_eps,substep,step,locs);
-        QMap<GeometryTag,QList<QMap<int,double>>> stress = this->evaluateResult(tor_mises,substep,step,locs);
+        int mode =0;
+        QMap<GeometryTag,QList<QMap<int,double>>> pe = this->evaluateResult(tor_eps,substep,step,mode,locs);
+        QMap<GeometryTag,QList<QMap<int,double>>> stress = this->evaluateResult(tor_mises,substep,step,mode,locs);
 
         for(QVector<GeometryTag>::iterator it=locs.begin();it!=locs.end();it++)
         {

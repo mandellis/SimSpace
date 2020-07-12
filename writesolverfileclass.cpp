@@ -244,17 +244,17 @@ bool writeSolverFileClass::perform()
 
         SimulationNodeClass *theItemNode = mySimulationRoot->child(k,0)->data(Qt::UserRole).value<SimulationNodeClass*>();
         SimulationNodeClass::nodeType theNodeType = theItemNode->getType();
-
-        if(theNodeType==SimulationNodeClass::nodeType_mapper ||
-                theNodeType==SimulationNodeClass::nodeType_modelChange
+        if(theNodeType==SimulationNodeClass::nodeType_mapper
+                || theNodeType==SimulationNodeClass::nodeType_modelChange
                 || theNodeType==SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_ImportedTemperatureDistribution
+                || theNodeType==SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Acceleration
         #ifdef COSTAMP_VERSION
                 || theNodeType==SimulationNodeClass::nodeType_timeStepBuilder
         #endif
                 )
             continue;
-
         Property::SuppressionStatus theNodeSS = theItemNode->getPropertyValue<Property::SuppressionStatus>("Suppressed");
+
         if(theNodeSS==Property::SuppressionStatus_Active)
         {
             //! ---------------
@@ -269,7 +269,6 @@ bool writeSolverFileClass::perform()
             IndexedMapOfMeshDataSources anIndexedMapOfFaceMeshDS;
             if(theNodeType!=SimulationNodeClass::nodeType_structuralAnalysisBoltPretension)
                 anIndexedMapOfFaceMeshDS = theItemNode->getPropertyValue<IndexedMapOfMeshDataSources>("Mesh data sources");
-
             switch(theNodeType)
             {
             case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_CompressionOnlySupport:
@@ -283,6 +282,7 @@ bool writeSolverFileClass::perform()
                 break;
             case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Acceleration:
             {
+                cout<<"Acceleration"<<endl
                 ;
             }
                 break;
@@ -536,6 +536,7 @@ bool writeSolverFileClass::perform()
     //! write point mass
     //! -----------------
     QStandardItem *theGeometryRoot=this->getTreeItem(SimulationNodeClass::nodeType_geometry);
+    cout<<"writeSolverFileClass::perform()->____writing Point Mass___"<<endl;
     for(int k=0; k<theGeometryRoot->rowCount();k++)
     {
         if(Global::status().code==0)
@@ -718,7 +719,7 @@ bool writeSolverFileClass::perform()
             {
                 Property::contactType theContactType = node->getPropertyValue<Property::contactType>("Type");
                 Property::contactBehavior theContactBehavior = node->getPropertyValue<Property::contactBehavior>("Behavior");
-                double K;
+                double K,KF;
 
                 switch(theContactBehavior)
                 {
@@ -742,6 +743,7 @@ bool writeSolverFileClass::perform()
                         //! ---------
                         //! 1st) row
                         //! ---------
+                        //myInputFile<<"*TIE, ADJUST = NO, POSITION TOLERANCE="<<C0<<", NAME="<<
                         myInputFile<<"*TIE, POSITION TOLERANCE="<<C0<<", NAME="<<
                                      itemNameClearSpaces((item->data(Qt::DisplayRole).toString().append("_%1").arg(n).append("%1").arg(k+1))).toStdString()<<endl;
                         //! ---------
@@ -795,12 +797,12 @@ bool writeSolverFileClass::perform()
                         case Property::overpressureFunction_linear:
                         {
                             double C0 = node->getPropertyValue<double>("C0");
-                            K = node->getPropertyValue<double>("K");
+                            KF = node->getPropertyValue<double>("K");
                             double sigmaInfty = node->getPropertyValue<double>("Sigma infty");
 
                             myInputFile<<"LINEAR"<<endl;
-                            if(K == 0.0)
-                            {
+                            if(K == 0.0) KF=1.0;
+                            //{
                                 QVector<GeometryTag> tagsMaster = node->getPropertyValue<QVector<GeometryTag>>("Tags master");
                                 QVector<GeometryTag> tagsSlave = node->getPropertyValue<QVector<GeometryTag>>("Tags slave");
 
@@ -825,7 +827,7 @@ bool writeSolverFileClass::perform()
                                     slaveFaces<<faceMesh;
                                 }
                                 K = contactParameters::calc_K(masterFaces,slaveFaces);
-                            }
+                            //}
                             if(sigmaInfty == 0.0)
                             {
                                 //! calculix suggest 0.25% of the maximum stress expected
@@ -837,7 +839,7 @@ bool writeSolverFileClass::perform()
                                 //! calculix default 10e-3
                                 C0 = 10.0e-3;
                             }
-                            myInputFile<<K<<", "<<sigmaInfty<<", "<<C0<<endl;
+                            myInputFile<<K*KF<<", "<<sigmaInfty<<", "<<C0<<endl;
                         }
                             break;
                         case Property::overpressureFunction_exponential:
@@ -858,7 +860,7 @@ bool writeSolverFileClass::perform()
                             lambda = node->getPropertyValue<double>("Lambda");
                             if(lambda == 0)
                             {
-                                lambda = K/20.0;
+                                lambda = K*KF/20.0;
                             }
                             //! ---------
                             //! 5th) row
@@ -901,6 +903,7 @@ bool writeSolverFileClass::perform()
                         //! ---------
                         //! 1st) row
                         //! ---------
+                        //myInputFile<<"*TIE, ADJUST=NO, POSITION TOLERANCE="<<C0<<", NAME="<<
                         myInputFile<<"*TIE, POSITION TOLERANCE="<<C0<<", NAME="<<
                                      itemNameClearSpaces((item->data(Qt::DisplayRole).toString().append("_%1").arg(n).append("%1").arg(k+1))).toStdString()<<endl;
 
@@ -957,9 +960,9 @@ bool writeSolverFileClass::perform()
                             //! in case of face to face behavior "Sigma infty" is irrelevant
                             //! in case of face to face behavior "C0 is irrelevant
 
-                            K = node->getPropertyValue<double>("K");
-                            if(K==0)
-                            {
+                            KF = node->getPropertyValue<double>("K");
+                            if(K==0) KF=1.0;
+                            //{
                                 QVector<GeometryTag> tagsMaster = node->getPropertyValue<QVector<GeometryTag>>("Tags master");
                                 QVector<GeometryTag> tagsSlave = node->getPropertyValue<QVector<GeometryTag>>("Tags slave");
 
@@ -984,8 +987,8 @@ bool writeSolverFileClass::perform()
                                     slaveFaces<<faceMesh;
                                 }
                                 K = contactParameters::calc_K(masterFaces,slaveFaces);
-                            }
-                            myInputFile<<K<<endl;
+                            //}
+                            myInputFile<<K*KF<<endl;
                         }
                             break;
 
@@ -1008,7 +1011,7 @@ bool writeSolverFileClass::perform()
 
                             if(lambda==0)
                             {
-                                lambda = K/20.0;
+                                lambda = K*KF/20.0;
                             }
                             //! ---------
                             //! 5th) row
@@ -1058,9 +1061,9 @@ bool writeSolverFileClass::perform()
                         //! in case of face to face behavior "Sigma infty" is irrelevant
                         //! in case of face to face behavior "C0 is irrelevant
 
-                        K = node->getPropertyValue<double>("K");
-                        if(K==0)
-                        {
+                        KF = node->getPropertyValue<double>("K");
+                        if(K==0) KF=1.0;
+                        //{
                             QVector<GeometryTag> tagsMaster = node->getPropertyValue<QVector<GeometryTag>>("Tags master");
                             QVector<GeometryTag> tagsSlave = node->getPropertyValue<QVector<GeometryTag>>("Tags slave");
 
@@ -1085,8 +1088,8 @@ bool writeSolverFileClass::perform()
                                 slaveFaces<<faceMesh;
                             }
                             K = contactParameters::calc_K(masterFaces,slaveFaces);
-                        }
-                        myInputFile<<K<<endl;
+                        //}
+                        myInputFile<<K*KF<<endl;
 
                         //! ----------------
                         //! GAP CONDUCTANCE
@@ -1100,7 +1103,7 @@ bool writeSolverFileClass::perform()
                         //! ---------
                         myInputFile<<"*FRICTION"<<endl;
 
-                        double lambda = K/20.0;
+                        double lambda = K*KF/20.0;
                         //! ---------
                         //! 6th) row
                         //! ---------
@@ -1696,6 +1699,7 @@ bool writeSolverFileClass::perform()
             //! type of properties: SOLVER, STORAGE, GLOBAL and CYCMPC
             myInputFile<<endl;
             //! Number of eigenFrequency to compute
+            //myInputFile<<"5"<<endl;
             myInputFile<<"1"<<endl;
         }
             break;
@@ -1804,7 +1808,7 @@ bool writeSolverFileClass::perform()
         myInputFile<<"0.001,";
         myInputFile<<"0.1,";
         myInputFile<<"100,";
-        myInputFile<<"45,"<<endl;
+        myInputFile<<"25,"<<endl;
 
         //! --------------------
         //! boundary conditions
@@ -1830,7 +1834,7 @@ bool writeSolverFileClass::perform()
                     theNodeType!=SimulationNodeClass::nodeType_structuralAnalysisBoundaryContidion_FixedSupport &&
                     theNodeType!=SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_FrictionlessSupport &&
                     theNodeType!=SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_CompressionOnlySupport &&
-                    analysisType!=Property::analysisType_frequencyResponse
+                    analysisType!=Property::analysisType_modal
        #ifdef COSTAMP_VERSION
                && theNodeType!=SimulationNodeClass::nodeType_timeStepBuilder
        #endif
@@ -2233,21 +2237,26 @@ bool writeSolverFileClass::perform()
                             for(int i=0; i<theGeometryRoot->rowCount();i++)
                             {
                                 std::string bodyName;
-                                QStandardItem *aGeometryItem = theGeometryRoot->child(k,0);
+                                QStandardItem *aGeometryItem = theGeometryRoot->child(i,0);
                                 SimulationNodeClass *aNode = aGeometryItem->data(Qt::UserRole).value<SimulationNodeClass*>();
-                                if(aNode->getType()==SimulationNodeClass::nodeType_pointMass)
+                                Property::SuppressionStatus aNodeSS = aNode->getPropertyValue<Property::SuppressionStatus>("Suppressed");
+
+                                if(aNodeSS==Property::SuppressionStatus_Active)
                                 {
-                                    QString bodyNameP = itemNameClearSpaces(theGeometryRoot->child(k,0)->data(Qt::DisplayRole).toString());
-                                    bodyNameP.append("_").append(QString("%1").arg(i));
-                                    bodyName = bodyNameP.toStdString();
+                                    if(aNode->getType()==SimulationNodeClass::nodeType_pointMass)
+                                    {
+                                        QString bodyNameP = itemNameClearSpaces(theGeometryRoot->child(i,0)->data(Qt::DisplayRole).toString());
+                                        bodyNameP.append("_").append(QString("%1").arg(i));
+                                        bodyName = bodyNameP.toStdString();
+                                    }
+                                    else
+                                    {
+                                        //! retrieve the name of the body from the data base
+                                        int mapIndex = aNode->getPropertyValue<int>("Map index");
+                                        bodyName = myDB->MapOfBodyNames.value(mapIndex).toStdString();
+                                    }
+                                    myInputFile<<"E"<<bodyName<<", GRAV, "<<loadValue<<" ,"<<x<<", "<<y<<", "<<z<<endl;
                                 }
-                                else
-                                {
-                                    int mapIndex = aNode->getPropertyValue<int>("Map index");
-                                    //! retrieve the name of the body from the data base
-                                    bodyName = myDB->MapOfBodyNames.value(mapIndex).toStdString();
-                                }
-                                myInputFile<<"E"<<bodyName<<", GRAV, "<<loadValue<<" ,"<<x<<", "<<y<<", "<<z<<endl;
                             }
                         }
                             break;
