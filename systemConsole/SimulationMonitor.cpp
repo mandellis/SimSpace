@@ -5,7 +5,7 @@
 #include "qprogressevent.h"
 #include "qconsoleevent.h"
 #include "tools.h"
-#include "ccxconsoletofile.h"
+//#include "ccxconsoletofile.h"
 #include "ccout.h"
 
 //! ---

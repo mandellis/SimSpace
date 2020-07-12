@@ -180,7 +180,9 @@ SOURCES += main.cpp\
     src/electrostatic/poissonsolver.cpp \
     src/electrostatic/particlesinfieldssolver.cpp \
     src/electrostatic/particlesemitter.cpp \
-    src/mesh/meshnodesrenumberingtool.cpp
+    src/mesh/meshnodesrenumberingtool.cpp \
+    inputfilegenerator.cpp \
+    ccxsolvermanager1.cpp
 
 HEADERS  += mainwindow.h \
     actions3d.h \
@@ -411,7 +413,9 @@ HEADERS  += mainwindow.h \
     src/electrostatic/particlesinfieldssolver.h \
     src/electrostatic/particlesemitter.h \
     src/mesh/renumberingtool.h \
-    src/mesh/meshnodesrenumberingtool.h
+    src/mesh/meshnodesrenumberingtool.h \
+    inputfilegenerator.h \
+    ccxsolvermanager1.h
 
 FORMS    += mainwindow.ui
 

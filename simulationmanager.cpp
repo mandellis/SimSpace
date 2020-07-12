@@ -64,8 +64,11 @@
 #include "generaldelegate.h"
 
 #include "qccxsolvermessageevent.h"
+#include "ccxsolvermanager1.h"
 #include "ccxsolvermessage.h"
 #include "ccxtools.h"
+
+#include "inputfilegenerator.h"
 
 //! ----
 //! C++
@@ -161,6 +164,8 @@ SimulationManager::SimulationManager(QWidget *parent): QWidget(parent)
     myPostEngine = new postEngine(this);
     QProgressIndicator *aProgressIndicator = static_cast<QProgressIndicator*>(tools::getWidgetByName("progressIndicator"));
     myMeshingServer = new MeshingServer(aProgressIndicator,this);
+    myInputFileGenerator = new inputFileGenerator(this);
+    myInputFileGenerator->setProgressIndicator(aProgressIndicator);
 
     //! -----------------
     //! status variables
@@ -173,7 +178,6 @@ SimulationManager::SimulationManager(QWidget *parent): QWidget(parent)
     //! -----------------------------------------------------------------------------
     myTimer = new QTimer(this);
     connect(myTimer,SIGNAL(timeout()),this,SLOT(retrieveSolverInfo()));
-    //connect(theCCXSolverManager,SIGNAL(solutionReady()),myTimer,SLOT(stop()));
 
     //! -------------------------------------
     //! create an empty simulation data base
@@ -213,8 +217,11 @@ SimulationManager::SimulationManager(const occHandle(AIS_InteractiveContext) &aC
     mySerializer = new serializerClass(this);
     myDeserializer = new deserializerClass(this);
     myPostEngine = new postEngine(this);
+
     QProgressIndicator *aProgressIndicator = static_cast<QProgressIndicator*>(tools::getWidgetByName("progressIndicator"));
     myMeshingServer = new MeshingServer(aProgressIndicator,this);
+    myInputFileGenerator = new inputFileGenerator(this);
+    myInputFileGenerator->setProgressIndicator(aProgressIndicator);
 
     myTimer = new QTimer(this);
 
@@ -223,12 +230,6 @@ SimulationManager::SimulationManager(const occHandle(AIS_InteractiveContext) &aC
     //! -----------------
     myIsMeshingRunning = false;
     myIsCalculationRunning = false;
-
-    //! -----------------------------------------------------------------------------
-    //! stop the timer when the solution is ready (present or not, converged or not)
-    //! -----------------------------------------------------------------------------
-    //connect(myTimer,SIGNAL(timeout()),this,SLOT(retrieveSolverInfo()));
-    //connect(theCCXSolverManager,SIGNAL(solutionReady()),myTimer,SLOT(stop()));
 
     //! -----------------------------------
     //! init the current project directory
@@ -339,7 +340,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
             connect(aDummyNode->getModel(),SIGNAL(itemChanged(QStandardItem*)),this,SLOT(handleItemChange(QStandardItem*)));
             DetailViewer *detailViewer = static_cast<DetailViewer*>(tools::getWidgetByName("detailViewer"));
             detailViewer->setCurrentMultipleSelectionNode(aDummyNode); // set the current multiple selection node
-            detailViewer->setTheModel(aDummyNode); //gildotta
+            detailViewer->setTheModel(aDummyNode);
 
             return;
         }
@@ -937,7 +938,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 //! --------------
                 //! set the model
                 //! --------------
-                QModelIndex index_analysisSettings = this->getAnalysisSettingsItemFromCurrentItem()->index();
+                QModelIndex index_analysisSettings = mainTreeTools::getAnalysisSettingsItemFromCurrentItem(myTreeView)->index();
                 emit requestTabularData(index_analysisSettings);
 
                 //! ---------------------------------------------------------------------
@@ -960,6 +961,8 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                     //! ------------------------------------
                     columnsToShow.removeFirst();
                     CustomTableModel *tabData = index_analysisSettings.data(Qt::UserRole).value<SimulationNodeClass*>()->getTabularDataModel();
+                    //cout<<"____"<<tabData->rowCount()<<", "<<tabData->columnCount()<<"____"<<endl;
+                    //for(int k=0; k<columnsToShow.length(); k++) cout<<"____column: "<<columnsToShow[k]<<"____"<<endl;
                     emit requestShowGraph(tabData,columnsToShow);
                 }
 
@@ -3086,7 +3089,7 @@ void SimulationManager::createSimulationNode(SimulationNodeClass::nodeType type,
             break;
         }
         markerBuilder::addMarker(aNode,mySimulationDataBase);
-        markerBuilder::addMarker(this->getCurrentNode(),mySimulationDataBase);
+        //markerBuilder::addMarker(this->getCurrentNode(),mySimulationDataBase);
         mainTreeTools::getCurrentSimulationRoot(myTreeView)->insertRow(this->getInsertionRow(),item);
     }
     //! --------------------------
@@ -7077,51 +7080,7 @@ void SimulationManager::swapContact()
 //! ------------------------
 bool SimulationManager::startAnalysis(const QString &projectDataDir)
 {
-    cout<<"SimulationManager::startAnalysis()->____function called____"<<endl;
-    cout<<"SimulationManager::startAnalysis()->____solution data directory: "<<projectDataDir.toStdString()<<"____"<<endl;
-
-    //! ---------------------------------------------------------------
-    //! check if all the bodies among the active ones have been meshed
-    //! ---------------------------------------------------------------
-    bool isMeshOk = true;
-    const QMap<int,TopoDS_Shape> &bodyMap = mySimulationDataBase->bodyMap;
-    for(QMap<int,TopoDS_Shape>::const_iterator it = bodyMap.cbegin(); it!=bodyMap.cend(); ++it)
-    {
-        int bodyIndex = it.key();
-        bool isActive = mySimulationDataBase->MapOfIsActive.value(bodyIndex);
-        if(isActive == false) continue;
-        const occHandle(MeshVS_DataSource) &aMeshDataSource = mySimulationDataBase->ArrayOfMeshDS.value(bodyIndex);
-        if(aMeshDataSource.IsNull())
-        {
-            isMeshOk = false;
-            break;
-        }
-    }
-    if(isMeshOk==false)
-    {
-        //! -----------------------------------
-        //! analysis not started: return false
-        //! -----------------------------------
-        QMessageBox::information(this,APPNAME,tr("Not all the bodies have been meshed\nThe simulation cannot be started"));
-        return false;
-    }
-
-    //! ----------------------------------
-    //! switch the tab of the main window
-    //! ----------------------------------
-    //emit requestSetActiveCentralTab("maingwindow");
-    emit requestSetActiveCentralTab("worksheetViewer");
-
-    //! ------------------------------------------------------------------------
-    //! we need to store the projectDataDir (..\..\<project name>_files) into
-    //! the model, since the method callPostEngineEvaluateResult() (action 204)
-    //! needs to know where the data are located on disk
-    //! ------------------------------------------------------------------------
-    QVariant data;
-    data.setValue(projectDataDir);
-    Property prop_projectFileDir("Project files dir",data,Property::PropertyGroup_Information);
-    data.setValue(prop_projectFileDir);
-    //...
+    cout<<"SimulationManager::startAnalysis()->____function called: solution data directory: "<<projectDataDir.toStdString()<<"____"<<endl;
 
     //! ---------------------------------------------------------------
     //! retrieve the current item and check if it is a simulation root
@@ -7130,13 +7089,40 @@ bool SimulationManager::startAnalysis(const QString &projectDataDir)
     SimulationNodeClass *curAnalysisRootNode = curIndex.data(Qt::UserRole).value<SimulationNodeClass*>();
     if(curAnalysisRootNode->isAnalysisRoot()==false)
     {
-        //! ----------------------------------------
-        //! analysis not started: a simulation root
-        //! should be selected; return false
-        //! ----------------------------------------
         QMessageBox::information(this,APPNAME,tr("Please select an analysis root item"));
         return false;
     }
+
+    //! ---------------------------------------
+    //! check if the active bodies have a mesh
+    //! ---------------------------------------
+    bool isMeshOk = false;
+    for(QMap<int,TopoDS_Shape>::const_iterator it = mySimulationDataBase->bodyMap.cbegin(); it!=mySimulationDataBase->bodyMap.cend(); ++it)
+    {
+        int bodyIndex = it.key();
+        if(mySimulationDataBase->MapOfIsActive.value(bodyIndex)==false) continue;
+        const occHandle(MeshVS_DataSource) &aMeshDataSource = mySimulationDataBase->ArrayOfMeshDS.value(bodyIndex);
+        if(aMeshDataSource.IsNull()==false) isMeshOk = true;
+    }
+    if(isMeshOk==false)
+    {
+        QMessageBox::information(this,APPNAME,tr("Not all the bodies have been meshed\nThe simulation cannot be started"));
+        return false;
+    }
+
+    //! ----------------------------------
+    //! switch the tab of the main window
+    //! ----------------------------------
+    emit requestSetActiveCentralTab("worksheetViewer");
+
+    //! --------------------------------------------------------------------
+    //! store the projectDataDir (..\..\<project name>_files) into the tree
+    //! (the method callPostEngineEvaluateResult() (action 204) uses it)
+    //! --------------------------------------------------------------------
+    QVariant data;
+    data.setValue(projectDataDir);
+    Property prop_projectFileDir("Project files dir",data,Property::PropertyGroup_Information);
+    data.setValue(prop_projectFileDir);
 
     //! -----------------------------
     //! retrieve the "Solution" item
@@ -7149,23 +7135,21 @@ bool SimulationManager::startAnalysis(const QString &projectDataDir)
     SimulationNodeClass *nodeSolution = itemSolution->data(Qt::UserRole).value<SimulationNodeClass*>();
     SimulationNodeClass *nodeSolutionInformation = itemSolutionInformation->data(Qt::UserRole).value<SimulationNodeClass*>();
 
-    //! -------------------------------
-    //! clear the solution information
-    //! -------------------------------
-    mainTreeTools::resetSolutionInformation(nodeSolutionInformation);
-
     //! --------------------------------------------------------
     //! insert the "Project files dir" into the "Solution" item
     //! --------------------------------------------------------
     if(nodeSolution->getPropertyItem("Project files dir")!=Q_NULLPTR) nodeSolution->replaceProperty("Project files dir",prop_projectFileDir);
     else nodeSolution->addProperty(prop_projectFileDir,1);
 
+    //! -------------------------------
+    //! clear the solution information
+    //! -------------------------------
+    mainTreeTools::resetSolutionInformation(nodeSolutionInformation);
+
     //! ---------------------------
     //! read the number of threads
     //! ---------------------------
     int NbThreads = nodeAnalysisSettigs->getPropertyValue<int>("Number of threads");
-
-    cout<<"SimulationManager::startAnalysis()->____starting solution on "<<NbThreads<<" threads____"<<endl;
 
     //! ---------------------------------------------------------------------------------
     //! create the directory for the solution data
@@ -7175,7 +7159,12 @@ bool SimulationManager::startAnalysis(const QString &projectDataDir)
     QString solutionDataDir = QString("SolutionData_")+curAnalysisRootNode->getPropertyValue<QString>("Time tag");
     if(!curDir.cd(solutionDataDir))
     {
-        curDir.mkdir(solutionDataDir);
+        bool isDone = curDir.mkdir(solutionDataDir);
+        if(isDone == false)
+        {
+            QMessageBox::critical(this,APPNAME,"Cannot start run: cannot create\n directory for analysis files",QMessageBox::Ok);
+            return false;
+        }
         curDir.cd(solutionDataDir);
     }
     cout<<"SimulationManager::startAnalysis()->____\"SolutionData\" full path: "<<curDir.absolutePath().toStdString()<<"____"<<endl;
@@ -7193,14 +7182,21 @@ bool SimulationManager::startAnalysis(const QString &projectDataDir)
     //if(curAnalysisRootNode->getType()==SimulationNodeClass::nodeType_thermalAnalysis) generateDual = true;
     this->generateBoundaryConditionsMeshDS(generateDual);
 
-    //! ------------------
-    //! work on the stack
-    //! ------------------
+    //! ----------------------------------
+    //! work on the stack - single thread
+    //! ----------------------------------
     writeSolverFileClass inputFileGenerator(mySimulationDataBase,static_cast<QExtendedStandardItem*>(itemSimulationRoot));
+    QWidget *piw = tools::getWidgetByName("progressIndicator");
+    QProgressIndicator *aProgressIndicator = static_cast<QProgressIndicator*>(piw);
+    inputFileGenerator.setProgressIndicator(aProgressIndicator);
     inputFileGenerator.setName(fileName);
-
-    //! set the progress indicator ... to do ...
     bool isDone = inputFileGenerator.perform();
+
+    if(isDone == false)
+    {
+        cout<<"SimulationManager::startAnalysis()->____input file not generated____"<<endl;
+        return false;
+    }
 
     //! ------------------------------------------
     //! enable the items with boundary conditions
@@ -7208,80 +7204,67 @@ bool SimulationManager::startAnalysis(const QString &projectDataDir)
     //! ------------------------------------------
     for(int i=0; i<itemSimulationRoot->rowCount()-1; i++) itemSimulationRoot->child(i,0)->setEnabled(true);
 
-    if(isDone)
-    {
-        //! ---------------------------------
-        //! retrieve the final analysis time
-        //! ---------------------------------
-        QStandardItem *itemAnalysisSettings = itemSimulationRoot->child(0,0);
-        SimulationNodeClass *nodeAnalysisSettings = itemAnalysisSettings->data(Qt::UserRole).value<SimulationNodeClass*>();
-        CustomTableModel *tabData = nodeAnalysisSettings->getTabularDataModel();
-        double endTime = tabData->dataRC(tabData->rowCount()-1,1).toDouble();
+    //! ---------------------------------
+    //! retrieve the final analysis time
+    //! ---------------------------------
+    SimulationNodeClass *nodeAnalysisSettings = itemAnalysisSettings->data(Qt::UserRole).value<SimulationNodeClass*>();
+    CustomTableModel *tabData = nodeAnalysisSettings->getTabularDataModel();
+    double endTime = tabData->dataRC(tabData->rowCount()-1,1).toDouble();
 
-        cout<<"SimulationManager::startAnalysis()->____required analysis end time: "<<endTime<<"____"<<endl;
+    cout<<"SimulationManager::startAnalysis()->____required analysis end time: "<<endTime<<"____"<<endl;
 
-        //! ------------------------
-        //! create a solver manager
-        //! ------------------------
-        CCXSolverManager *theCCXSolverManager = new CCXSolverManager(fileName,this);
-        theCCXSolverManager->setNbProcessors(NbThreads);
+    //! ------------------------
+    //! update the progress bar
+    //! ------------------------
+    QProgressEvent *e = new QProgressEvent(QProgressEvent_Init,0,int(100.0*endTime),0,"Running CCX",QProgressEvent_None,-1,-1,-1,"Running CCX");
+    QApplication::postEvent(aProgressIndicator,e);
+    QApplication::processEvents();
 
-        //! ------------------------------------------------------------------------------
-        //! signal - slot: when the solution is ready configure and start the post engine
-        //! ------------------------------------------------------------------------------
-        disconnect(theCCXSolverManager,SIGNAL(solutionReady(const QString&)),this,SLOT(configureAndStartPostEngine(const QString&)));
-        connect(theCCXSolverManager,SIGNAL(solutionReady(const QString&)),this,SLOT(configureAndStartPostEngine(const QString&)));
-        disconnect(theCCXSolverManager,SIGNAL(solutionReady()),this,SLOT(retrieveSolverInfo()));
-        connect(theCCXSolverManager,SIGNAL(solutionReady()),this,SLOT(retrieveSolverInfo()));
+    //! ---------------------------------------------------------------------------------------
+    //! create the solver manager - put the progress indicator into the constructor. To do ...
+    //! ---------------------------------------------------------------------------------------
+    CCXSolverManager1 *CCXsm = new CCXSolverManager1(this);
 
-        //! ----------------------------------
-        //! send init event to solver manager
-        //! this will init the progress bar
-        //! ----------------------------------
-        QProgressEvent *e = new QProgressEvent(QProgressEvent_Init,0,int(endTime*100),0,"Starting solver");
-        QApplication::postEvent(theCCXSolverManager,e);
-        QApplication::processEvents();
+    CCXsm->setNbProcessors(NbThreads);
+    CCXsm->setInputFile(fileName);
+    CCXsm->setProgressIndicator(aProgressIndicator);
 
-        //! ------------------------------------------------------------------
-        //! start the solver manager - launch the solver on a separate thread
-        //! ------------------------------------------------------------------
-        cout<<"SimulationManager::startAnalysis()->____starting solver____"<<endl;
-        theCCXSolverManager->operate(NbThreads);
-        cout<<"SimulationManager::startAnalysis()->____solver started____"<<endl;
+    disconnect(CCXsm,SIGNAL(CCXRunFinished()),myTimer,SLOT(stop()));
+    connect(CCXsm,SIGNAL(CCXRunFinished()),myTimer,SLOT(stop()));
 
-        //! ---------------------------------
-        //! set the current running analysis
-        //! ---------------------------------
-        myCurrentRunningAnalysis = itemSimulationRoot;
-        cout<<"SimulationManager::startAnalysis()->____the current analysis root is \""<<myCurrentRunningAnalysis->data(Qt::UserRole).value<SimulationNodeClass*>()->getName().toStdString()<<"\"____"<<endl;
-        Global::status().curRunningAnalysis = itemSimulationRoot;
+    disconnect(CCXsm,SIGNAL(CCXRunFinished()),this,SLOT(configureAndStartPostEngine()));
+    connect(CCXsm,SIGNAL(CCXRunFinished()),this,SLOT(configureAndStartPostEngine()));
 
-        //! ---------------------------------------------------------
-        //! retrieve the update interval from "Solution information"
-        //! ---------------------------------------------------------
-        double updateInterval = nodeSolutionInformation->getPropertyValue<double>("Update interval");
-        cout<<"SimulationManager::startAnalysis()->____update interval: "<<updateInterval<<"____"<<endl;
+    // gives some problems in case of "fast" analysis - hang on CCXConsoleToFile::perform()
+    //disconnect(CCXsm,SIGNAL(CCXRunFinished()),this,SLOT(retrieveSolverInfo()));
+    //connect(CCXsm,SIGNAL(CCXRunFinished()),this,SLOT(retrieveSolverInfo()));
 
-        //! ---------------------------------------
-        //! configure and start the internal timer
-        //! ---------------------------------------
-        int updateInterval_ms = int(updateInterval);
-        myTimer->setInterval(updateInterval_ms*1000);
-        disconnect(theCCXSolverManager,SIGNAL(stopTimer()),myTimer,SLOT(stop()));
-        connect(theCCXSolverManager,SIGNAL(stopTimer()),myTimer,SLOT(stop()));
-        myTimer->start();
+    disconnect(CCXsm,&CCXSolverManager1::CCXRunFinished,aProgressIndicator,&QProgressIndicator::hide);
+    connect(CCXsm,&CCXSolverManager1::CCXRunFinished,aProgressIndicator,&QProgressIndicator::hide);
+    CCXsm->start();
 
-        //! ------------------------------
-        //! analysis started: return true
-        //! ------------------------------
-        this->deleteDataSourcesFromModel();
-        return true;
-    }
+    //! ---------------------------------------------------------
+    //! configure and start the internal timer
+    //! retrieve the update interval from "Solution information"
+    //! ---------------------------------------------------------
+    double updateInterval = nodeSolutionInformation->getPropertyValue<double>("Update interval");
+    int updateInterval_ms = int(updateInterval);
+    myTimer->setInterval(updateInterval_ms*1000);
+    disconnect(CCXsm,SIGNAL(CCXRunFinished()),myTimer,SLOT(stop()));
+    connect(CCXsm,SIGNAL(CCXRunFinished()),myTimer,SLOT(stop()));
+    myTimer->start();
 
-    //! -----------------------------------
-    //! analysis not started: return false
-    //! ----------------------------------
-    return false;
+    //! ---------------------------------
+    //! set the current running analysis
+    //! ---------------------------------
+    myCurrentRunningAnalysis = itemSimulationRoot;
+    Global::status().curRunningAnalysis = itemSimulationRoot;
+
+    //! --------------------------------------
+    //! clean the tree from mesh data sources
+    //! --------------------------------------
+    this->deleteDataSourcesFromModel();
+    return true;
 }
 
 
@@ -7307,7 +7290,7 @@ void SimulationManager::startPostEngine()
 //! function: configureAndStartPostEngine
 //! details:
 //! --------------------------------------
-void SimulationManager::configureAndStartPostEngine(const QString &whereIsSolution)
+void SimulationManager::configureAndStartPostEngine()
 {
     cout<<"SimulationManager::configureAndStartPostEngine()->____function called____"<<endl;
 
@@ -7325,7 +7308,16 @@ void SimulationManager::configureAndStartPostEngine(const QString &whereIsSoluti
     //! -------------
     //! set the name
     //! -------------
-    QString FRDfile = whereIsSolution+QString("/input.frd");    //to be changed (since it can be read from tree)
+    QStandardItem *itemSolution = myCurrentRunningAnalysis->child(myCurrentRunningAnalysis->rowCount()-1,0);
+    SimulationNodeClass *nodeSolution = itemSolution->data(Qt::UserRole).value<SimulationNodeClass*>();
+    QString solutionDirectory = nodeSolution->getPropertyValue<QString>("Project files dir")+"/SolutionData_"+nodeSolution->getPropertyValue<QString>("Parent time tag");
+
+    if(solutionDirectory.isEmpty()) return;
+
+    QString FRDfile = solutionDirectory+QString("/input.frd");
+
+    if(QFile(FRDfile).exists()==false) return;
+
     myPostEngine->setResultsFile(FRDfile);
 
     //! --------------------------------------------------------------------------------------
@@ -7350,10 +7342,10 @@ void SimulationManager::handleSolutionComponentChanged()
     cout<<"SimulationManager::handleSolutionComponentChanged()->____function called____"<<endl;
 
     QModelIndex index = myTreeView->currentIndex();
-    QExtendedStandardItem *curItem = static_cast<QExtendedStandardItem*>(static_cast<QStandardItemModel*>(myTreeView->model())->itemFromIndex(index));
+    QStandardItem *curItem = static_cast<QStandardItemModel*>(myTreeView->model())->itemFromIndex(index);
 
     SimulationNodeClass *curNode = curItem->data(Qt::UserRole).value<SimulationNodeClass*>();
-    QExtendedStandardItem *postObjectItem = curNode->getPropertyItem("Post object");
+    QStandardItem *postObjectItem = curNode->getPropertyItem("Post object");
     if(postObjectItem!=Q_NULLPTR)
     {
         cout<<"SimulationManager::handleSolutionComponentChanged()->____start updating post object and viewer____"<<endl;
@@ -7389,6 +7381,7 @@ void SimulationManager::writeSolverInputFile()
     cout<<"SimulationManager::writeSolverInputFile()->____writing input file for Analysis root: \""<<curNode->getName().toStdString()<<"\"____"<<endl;
     QString selectedFilter;
     QString fileName = QFileDialog::getSaveFileName(this,"Save solver input file",tools::getWorkingDir(),INP_FILES,&selectedFilter,0);
+    if(fileName.isEmpty()) return;
 
     //! ----------------------
     //! write the solver file
@@ -7396,15 +7389,21 @@ void SimulationManager::writeSolverInputFile()
     bool generateDual = false;
     if(curNode->getType()==SimulationNodeClass::nodeType_thermalAnalysis) generateDual = true;
     this->generateBoundaryConditionsMeshDS(generateDual);
-
     //this->createSimulationNode(SimulationNodeClass::nodeType_thermalAnalysisAdiabaticWall);
 
-    writeSolverFileClass theSolverWriter(mySimulationDataBase,(QExtendedStandardItem*)(curItem));
-    theSolverWriter.setName(fileName);
-    theSolverWriter.perform();
+    //! -----------------------
+    //! prepare the parameters
+    //! -----------------------
+    std::vector<void*> parameters;
+    parameters.push_back((void*)(mySimulationDataBase));
+    parameters.push_back((void*)(QExtendedStandardItem*)(curItem));
+    parameters.push_back((void*)(&fileName));
+
+    myInputFileGenerator->setParameters(parameters);
+    myInputFileGenerator->start();
 }
 
-//! --------------------------------------------------
+//! ---------------------------------------------------
 //! function: resizeTabularData
 //! details:  add or remove rows from the tabular data
 //! ---------------------------------------------------
@@ -11025,6 +11024,14 @@ void SimulationManager::retrieveSolverInfo()
     QStandardItem *itemSolutionInformation = itemSolution->child(0,0);
     SimulationNodeClass *nodeSolutionInformation = itemSolutionInformation->data(Qt::UserRole).value<SimulationNodeClass*>();
 
+    //! ---------------------------------
+    //! retrieve the final analysis time
+    //! ---------------------------------
+    //QStandardItem *itemAnalysisSettings = myCurrentRunningAnalysis->child(0,0);
+    //SimulationNodeClass *nodeAnalysisSettings = itemAnalysisSettings->data(Qt::UserRole).value<SimulationNodeClass*>();
+    //CustomTableModel *tabData = nodeAnalysisSettings->getTabularDataModel();
+    //double endTime = tabData->dataRC(tabData->rowCount()-1,1).toDouble();
+
     //! --------------------------------------------------------------
     //! check if the source file "RawSolverOutput_copy.txt" is in use.
     //! If a lock file exists, the file is in use; if not the file
@@ -11036,10 +11043,7 @@ void SimulationManager::retrieveSolverInfo()
     if(!QFile::exists(lockFileName.toStdString().c_str()))
     {
         FILE *lockFile = fopen(lockFileName.toStdString().c_str(),"w");
-
         cout<<"SimulationManager::retrieveSolverInfo()->____lock file created____"<<endl;
-        cout<<"SimulationManager::retrieveSolverInfo()->____"<<targetFileName.toStdString()<<"____"<<endl;
-        cout<<"SimulationManager::retrieveSolverInfo()->____"<<sourceFileName.toStdString()<<"____"<<endl;
 
         QList<solutionInfo> solInfoList;
         bool simulationError;
@@ -11050,6 +11054,14 @@ void SimulationManager::retrieveSolverInfo()
         cout<<"@ last av substep: "<<rtd.lastAvailableSubStep<<endl;
         cout<<"@ last av time: "<<rtd.lastAvailableTime<<endl;
         cout<<"@ -----------------------------------------"<<endl;
+
+        //! ------------------------
+        //! update the progress bar
+        //! ------------------------
+        QProgressIndicator *aProgressIndicator = static_cast<QProgressIndicator*>(tools::getWidgetByName("progressIndicator"));
+        QProgressEvent *e = new QProgressEvent(QProgressEvent_Update,-1,-1,100.0*rtd.lastAvailableTime,"Running CCX",QProgressEvent_None,-1,-1,-1,"Running CCX");
+        QApplication::postEvent(aProgressIndicator,e);
+        QApplication::processEvents();
 
         //! ---------------------------------------
         //! put the convergence data into the item
@@ -11785,6 +11797,7 @@ void SimulationManager::renameItemBasedOnDefinition()
         case SimulationNodeClass::nodeType_thermalAnalysisThermalFlux: controlName = QString("Thermal flux"); break;
         case SimulationNodeClass::nodeType_thermalAnalysisConvection: controlName = QString("Convection"); break;
         case SimulationNodeClass::nodeType_structuralAnalysisBoltPretension: controlName = QString("Bolt preload"); break;
+        case SimulationNodeClass::nodeType_coordinateSystem: controlName = QString("Coordinate system"); break;
         }
 
         //! -------------
