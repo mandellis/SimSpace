@@ -183,17 +183,17 @@ bool writeSolverFileClass::perform()
 
         SimulationNodeClass *theItemNode = mySimulationRoot->child(k,0)->data(Qt::UserRole).value<SimulationNodeClass*>();
         SimulationNodeClass::nodeType theNodeType = theItemNode->getType();
-
-        if(theNodeType==SimulationNodeClass::nodeType_mapper ||
-                theNodeType==SimulationNodeClass::nodeType_modelChange
+        if(theNodeType==SimulationNodeClass::nodeType_mapper
+                || theNodeType==SimulationNodeClass::nodeType_modelChange
                 || theNodeType==SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_ImportedTemperatureDistribution
+                || theNodeType==SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Acceleration
         #ifdef COSTAMP_VERSION
                 || theNodeType==SimulationNodeClass::nodeType_timeStepBuilder
         #endif
                 )
             continue;
-
         Property::SuppressionStatus theNodeSS = theItemNode->getPropertyValue<Property::SuppressionStatus>("Suppressed");
+
         if(theNodeSS==Property::SuppressionStatus_Active)
         {
             //! ---------------
@@ -208,7 +208,6 @@ bool writeSolverFileClass::perform()
             IndexedMapOfMeshDataSources anIndexedMapOfFaceMeshDS;
             if(theNodeType!=SimulationNodeClass::nodeType_structuralAnalysisBoltPretension)
                 anIndexedMapOfFaceMeshDS = theItemNode->getPropertyValue<IndexedMapOfMeshDataSources>("Mesh data sources");
-
             switch(theNodeType)
             {
             case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_CompressionOnlySupport:
@@ -222,6 +221,7 @@ bool writeSolverFileClass::perform()
                 break;
             case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Acceleration:
             {
+                cout<<"Acceleration"<<endl
                 ;
             }
                 break;
@@ -474,6 +474,7 @@ bool writeSolverFileClass::perform()
 
     //! write point mass
     QStandardItem *theGeometryRoot=this->getTreeItem(SimulationNodeClass::nodeType_geometry);
+    cout<<"writeSolverFileClass::perform()->____writing Point Mass___"<<endl;
     for(int k=0; k<theGeometryRoot->rowCount();k++)
     {
         QStandardItem *theGeometryItem = theGeometryRoot->child(k,0);
@@ -1651,7 +1652,7 @@ bool writeSolverFileClass::perform()
                     theNodeType!=SimulationNodeClass::nodeType_structuralAnalysisBoundaryContidion_FixedSupport &&
                     theNodeType!=SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_FrictionlessSupport &&
                     theNodeType!=SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_CompressionOnlySupport &&
-                    analysisType!=Property::analysisType_frequencyResponse
+                    analysisType!=Property::analysisType_modal
        #ifdef COSTAMP_VERSION
                && theNodeType!=SimulationNodeClass::nodeType_timeStepBuilder
        #endif
@@ -2054,21 +2055,26 @@ bool writeSolverFileClass::perform()
                             for(int i=0; i<theGeometryRoot->rowCount();i++)
                             {
                                 std::string bodyName;
-                                QStandardItem *aGeometryItem = theGeometryRoot->child(k,0);
+                                QStandardItem *aGeometryItem = theGeometryRoot->child(i,0);
                                 SimulationNodeClass *aNode = aGeometryItem->data(Qt::UserRole).value<SimulationNodeClass*>();
-                                if(aNode->getType()==SimulationNodeClass::nodeType_pointMass)
+                                Property::SuppressionStatus aNodeSS = aNode->getPropertyValue<Property::SuppressionStatus>("Suppressed");
+
+                                if(aNodeSS==Property::SuppressionStatus_Active)
                                 {
-                                    QString bodyNameP = itemNameClearSpaces(theGeometryRoot->child(k,0)->data(Qt::DisplayRole).toString());
-                                    bodyNameP.append("_").append(QString("%1").arg(i));
-                                    bodyName = bodyNameP.toStdString();
+                                    if(aNode->getType()==SimulationNodeClass::nodeType_pointMass)
+                                    {
+                                        QString bodyNameP = itemNameClearSpaces(theGeometryRoot->child(i,0)->data(Qt::DisplayRole).toString());
+                                        bodyNameP.append("_").append(QString("%1").arg(i));
+                                        bodyName = bodyNameP.toStdString();
+                                    }
+                                    else
+                                    {
+                                        //! retrieve the name of the body from the data base
+                                        int mapIndex = aNode->getPropertyValue<int>("Map index");
+                                        bodyName = myDB->MapOfBodyNames.value(mapIndex).toStdString();
+                                    }
+                                    myInputFile<<"E"<<bodyName<<", GRAV, "<<loadValue<<" ,"<<x<<", "<<y<<", "<<z<<endl;
                                 }
-                                else
-                                {
-                                    int mapIndex = aNode->getPropertyValue<int>("Map index");
-                                    //! retrieve the name of the body from the data base
-                                    bodyName = myDB->MapOfBodyNames.value(mapIndex).toStdString();
-                                }
-                                myInputFile<<"E"<<bodyName<<", GRAV, "<<loadValue<<" ,"<<x<<", "<<y<<", "<<z<<endl;
                             }
                         }
                             break;
