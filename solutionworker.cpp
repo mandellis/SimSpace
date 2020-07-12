@@ -66,8 +66,7 @@ SolutionWorker::SolutionWorker(const QString &inputFileName, QObject *parent):
     //myTimer->start();
     //connect(myTimer,SIGNAL(timeout()),this,SLOT(retrieveSolverData()));
     connect(shellProcess,SIGNAL(readyReadStandardOutput()),this,SLOT(retrieveSolverData()));
-
-    //shellProcess->waitForFinished(-1);
+    shellProcess->waitForFinished(-1);
 }
 
 //! ---------------------
@@ -77,6 +76,18 @@ SolutionWorker::SolutionWorker(const QString &inputFileName, QObject *parent):
 SolutionWorker::~SolutionWorker()
 {
     cout<<"SolutionWorker::~SolutionWorker()->____DESTRUCTOR CALLED____"<<endl;
+
+    //! -------------------------------------------------------------------------
+    //! delete RawSolverData_copy.txt (this must be done in case of a CCX error)
+    //! -------------------------------------------------------------------------
+    QString rawSolverDataFileName_copy = myInputFileName;
+
+    int nbchar = rawSolverDataFileName_copy.split("/").last().length();
+
+    rawSolverDataFileName_copy.chop(nbchar);
+    rawSolverDataFileName_copy.append("RawSolverOutput_copy.txt");
+
+    QFile::remove(rawSolverDataFileName_copy);
 }
 
 //! --------------------
@@ -97,7 +108,7 @@ void copy_file(const char* srce_file, const char* dest_file)
 //! -----------------------------------------------------------
 void SolutionWorker::retrieveSolverData()
 {
-    cout<<"SolutionWorker::retrieveSolverData()->____function called on input file: "<<myInputFileName.toStdString()<<"____"<<endl;
+    //cout<<"SolutionWorker::retrieveSolverData()->____function called on input file: "<<myInputFileName.toStdString()<<"____"<<endl;
 
     QString textBlock = shellProcess->readAllStandardOutput();
     messages.append(textBlock);
@@ -270,18 +281,18 @@ void SolutionWorker::perform(int NbProcs)
     shellProcess->start(program,CCXarguments);
     shellProcess->waitForFinished(-1);
 
-    QTimer *internalTimer = new QTimer(this);
-    internalTimer->setInterval(10000);
-    internalTimer->start();
-    connect(internalTimer,SIGNAL(timeout()),this,SLOT(sendEnter()));
+    //QTimer *internalTimer = new QTimer(this);
+    //internalTimer->setInterval(1000);
+    //internalTimer->start();
+    //connect(internalTimer,SIGNAL(timeout()),this,SLOT(sendEnter()));
 }
 
-void SolutionWorker::sendEnter()
-{
-    cout<<"SolutionWorker::sendEnter()->____sending enter____"<<endl;
-    QByteArray command("\n");
-    shellProcess->write(command);
-}
+//void SolutionWorker::sendEnter()
+//{
+//    cout<<"SolutionWorker::sendEnter()->____sending enter____"<<endl;
+//    QByteArray command("\n");
+//    shellProcess->write(command);
+//}
 
 //! --------------------------
 //! function: emitResultReady

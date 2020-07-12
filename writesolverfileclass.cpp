@@ -21,6 +21,11 @@
 #include <facedatasourcebuilder.h>
 #include <bolttool.h>
 
+//! -------
+//! global
+//! -------
+#include "global.h"
+
 //! ---
 //! Qt
 //! ---
@@ -62,29 +67,15 @@ writeSolverFileClass::writeSolverFileClass(simulationDataBase *aDB, QExtendedSta
     //! the simulation data-base
     myDB = aDB;
 
+    //! init the progress indicator
+    myProgressIndicator = Q_NULLPTR;
+
     //! the simulation item root
     mySimulationRoot = aSimulationRoot;
 
     //! set format
     myInputFile.setf(ios::scientific);
     myInputFile.precision(EXPFORMAT_PRECISION);
-
-    for(QMap<int,TopoDS_Shape>::iterator it = myDB->bodyMap.begin(); it!=myDB->bodyMap.end(); it++)
-    {
-        int bodyIndex = it.key();
-        occHandle(Ng_MeshVS_DataSource3D) curVolumeMesh = occHandle(Ng_MeshVS_DataSource3D)::DownCast(myDB->ArrayOfMeshDS.value(bodyIndex));
-
-        std::map<meshElement2D,std::vector<std::pair<int,int>>> facesToElements;
-        curVolumeMesh->buildCCXFaceToElementConnectivity(facesToElements);
-
-        //! ------------------------------------------------------------
-        //! create the face to elements connectivity map, for each body
-        //! ------------------------------------------------------------
-        std::pair<int, std::map<meshElement2D,std::vector<std::pair<int,int>>>> p;
-        p.first = bodyIndex;
-        p.second = facesToElements;
-        bigMap.insert(p);
-    }
 
     vecMatNames.push_back("Structural_steel");
     vecMatNames.push_back("Bilinear_steel");
@@ -116,7 +107,78 @@ void writeSolverFileClass::setProgressIndicator(QProgressIndicator *aProgressInd
 //! ------------------
 bool writeSolverFileClass::perform()
 {
+    //! -----------------------------------
+    //! reset the running status of global
+    //! -----------------------------------
+    Global::status().code = 1;
+
+    //! ----------------------
+    //! init the progress bar
+    //! ----------------------
+    int done = 0;
+    int Nevents = 7;
+    if(myProgressIndicator!=Q_NULLPTR)
+    {
+        //! ---------------------------------
+        //! hide the additional progress bar
+        //! ---------------------------------
+        myProgressIndicator->setSecondaryBarVisible(false);
+
+        QProgressEvent *e = new QProgressEvent(QProgressEvent_Init,0,Nevents,0,"Writing solver input file",
+                                               QProgressEvent_None,-1,-1,-1,"Writing CCX input file");
+        QApplication::postEvent(myProgressIndicator,e);
+        QApplication::processEvents();
+        QThread::msleep(1000);
+    }
+
+    //! ----------------------------
+    //! build the connectivity maps
+    //! ----------------------------
+    for(QMap<int,TopoDS_Shape>::iterator it = myDB->bodyMap.begin(); it!=myDB->bodyMap.end(); it++)
+    {
+        if(Global::status().code==0)
+        {
+            cout<<"writeSolverFileClass::perform()->____process stopped____"<<endl;
+            return false;
+        }
+
+        int bodyIndex = it.key();
+        occHandle(Ng_MeshVS_DataSource3D) curVolumeMesh = occHandle(Ng_MeshVS_DataSource3D)::DownCast(myDB->ArrayOfMeshDS.value(bodyIndex));
+
+        std::map<meshElement2D,std::vector<std::pair<int,int>>> facesToElements;
+        curVolumeMesh->buildCCXFaceToElementConnectivity(facesToElements);
+
+        //! ------------------------------------------------------------
+        //! create the face to elements connectivity map, for each body
+        //! ------------------------------------------------------------
+        std::pair<int, std::map<meshElement2D,std::vector<std::pair<int,int>>>> p;
+        p.first = bodyIndex;
+        p.second = facesToElements;
+        bigMap.insert(p);
+    }
+
+    //! --------------------
+    //! update the progress
+    //! --------------------
+    if(myProgressIndicator!=Q_NULLPTR)
+    {
+        done++;
+        QProgressEvent *e = new QProgressEvent(QProgressEvent_Update,0,Nevents-1,done,"Connectivity maps generated",
+                                               QProgressEvent_None,-1,-1,-1,"Writing CCX solver input file");
+        QApplication::postEvent(myProgressIndicator,e);
+        QApplication::processEvents();
+        QThread::msleep(500);
+
+        if(Global::status().code==0)
+        {
+            cout<<"writeSolverFileClass::perform()->____process stopped____"<<endl;
+            return false;
+        }
+    }
+
+    //! ----------------------------------
     //! a default name for the input file
+    //! ----------------------------------
     if(myFileName=="") myFileName ="input.inp";
 
     //! open the file and set current directory
@@ -130,19 +192,6 @@ bool writeSolverFileClass::perform()
     SimulationNodeClass *nodeAnalysisSettings = mySimulationRoot->child(0,0)->data(Qt::UserRole).value<SimulationNodeClass*>();
     CustomTableModel *tabData = nodeAnalysisSettings->getTabularDataModel();
 
-    //! ----------------------
-    //! init the progress bar
-    //! ----------------------
-    //int Nevents = 6;
-    //if(myProgressIndicator!=Q_NULLPTR)
-    //{
-    //    QProgressEvent *e = new QProgressEvent(QProgressEvent_Init,0,Nevents,0,"Writing solver input file",
-    //                                           QProgressEvent_None,-1,-1,-1,"Writing CCX solver input file");
-    //    QApplication::postEvent(myProgressIndicator,e);
-    //    QApplication::processEvents();
-    //    QThread::msleep(500);
-    //}
-
     //! -------------------------
     //! write nodes and elements
     //! -------------------------
@@ -152,15 +201,21 @@ bool writeSolverFileClass::perform()
     //! --------------------
     //! update the progress
     //! --------------------
-    //if(myProgressIndicator!=Q_NULLPTR)
-    //{
-    //    Nevents++;
-    //    QProgressEvent *e = new QProgressEvent(QProgressEvent_Init,0,Nevents,0,"Nodes written",
-    //                                           QProgressEvent_None,-1,-1,-1,"Writing CCX solver input file");
-    //    QApplication::postEvent(myProgressIndicator,e);
-    //    QApplication::processEvents();
-    //    QThread::msleep(500);
-    //}
+    if(myProgressIndicator!=Q_NULLPTR)
+    {
+        done++;
+        QProgressEvent *e = new QProgressEvent(QProgressEvent_Update,0,Nevents-1,done,"Sending nodes and elements",
+                                               QProgressEvent_None,-1,-1,-1,"Writing CCX solver input file");
+        QApplication::postEvent(myProgressIndicator,e);
+        QApplication::processEvents();
+        QThread::msleep(500);
+
+        if(Global::status().code==0)
+        {
+            cout<<"writeSolverFileClass::perform()->____process stopped____"<<endl;
+            return false;
+        }
+    }
 
     //! retrieve the type of simulation => unused for the moment <=
     SimulationNodeClass::nodeType theSimulationType = mySimulationRoot->data(Qt::UserRole).value<SimulationNodeClass*>()->getType();
@@ -178,6 +233,12 @@ bool writeSolverFileClass::perform()
     //! --------------------------------------------
     for(int k=1; k<N-1; k++)
     {
+        if(Global::status().code==0)
+        {
+            cout<<"writeSolverFileClass::perform()->____process stopped____"<<endl;
+            return false;
+        }
+
         QString itemName = itemNameClearSpaces(mySimulationRoot->child(k,0)->data(Qt::DisplayRole).toString());
         cout<<"writeSolverFileClass::perform()->____found Item of type____"<<itemName.toStdString()<<"___"<<endl;
 
@@ -386,8 +447,8 @@ bool writeSolverFileClass::perform()
                         if(myDB->MapOfIsActive.value(k)==true)
                             offset = offset+myDB->ArrayOfMeshDS.value(k)->GetAllNodes().Extent();
                     }
-                    Standard_Real aCoordsBuf[3];
-                    TColStd_Array1OfReal aCoords(*aCoordsBuf,1,3);
+                    double buf[3];
+                    TColStd_Array1OfReal aCoords(*buf,1,3);
                     Standard_Integer nbNodes;
                     MeshVS_EntityType aType;
 
@@ -396,11 +457,10 @@ bool writeSolverFileClass::perform()
                         Standard_Integer globalNodeID = anIter.Key();
                         QList<double> nodeNormal = nodeNormals.value(globalNodeID);
 
-                        if (!faceMeshDS->GetGeom(globalNodeID,Standard_False,aCoords,nbNodes,aType))
-                            continue;
-                        Standard_Real x = aCoordsBuf[0];
-                        Standard_Real y = aCoordsBuf[1];
-                        Standard_Real z = aCoordsBuf[2];
+                        if(!faceMeshDS->GetGeom(globalNodeID,Standard_False,aCoords,nbNodes,aType)) continue;
+                        Standard_Real x = aCoords(1);
+                        Standard_Real y = aCoords(2);
+                        Standard_Real z = aCoords(3);
 
                         //! tangent plane equation ax+by+cz+d=0   z=-(d+ax+by)/c
                         double a = nodeNormal.at(0);
@@ -472,11 +532,19 @@ bool writeSolverFileClass::perform()
         }
     }
 
+    //! -----------------
     //! write point mass
+    //! -----------------
     QStandardItem *theGeometryRoot=this->getTreeItem(SimulationNodeClass::nodeType_geometry);
     cout<<"writeSolverFileClass::perform()->____writing Point Mass___"<<endl;
     for(int k=0; k<theGeometryRoot->rowCount();k++)
     {
+        if(Global::status().code==0)
+        {
+            cout<<"writeSolverFileClass::perform()->____process stopped____"<<endl;
+            return false;
+        }
+
         QStandardItem *theGeometryItem = theGeometryRoot->child(k,0);
         SimulationNodeClass *theCurNode = theGeometryItem->data(Qt::UserRole).value<SimulationNodeClass*>();
         Property::SuppressionStatus theNodeSS = theCurNode->getPropertyValue<Property::SuppressionStatus>("Suppressed");
@@ -519,9 +587,25 @@ bool writeSolverFileClass::perform()
             myInputFile<<"3,3"<<endl;
         }
     }
+
+    //! --------------------
     //! update the progress
-    //e = new QProgressEvent(QProgressEvent_Update,0,0,++done);
-    //QApplication::postEvent(mw,e);
+    //! --------------------
+    if(myProgressIndicator!=Q_NULLPTR)
+    {
+        done++;
+        QProgressEvent *e = new QProgressEvent(QProgressEvent_Update,0,Nevents-1,done,"Sending boundary conditions",
+                                               QProgressEvent_None,-1,-1,-1,"Writing CCX solver input file");
+        QApplication::postEvent(myProgressIndicator,e);
+        QApplication::processEvents();
+        QThread::msleep(500);
+
+        if(Global::status().code==0)
+        {
+            cout<<"writeSolverFileClass::perform()->____process stopped____"<<endl;
+            return false;
+        }
+    }
 
     //! -------------------------------
     //! [2] read the connections group
@@ -532,15 +616,21 @@ bool writeSolverFileClass::perform()
     QExtendedStandardItem *theConnectionItem = this->getTreeItem(SimulationNodeClass::nodeType_connection);
     for(int n=0; n<theConnectionItem->rowCount(); n++)
     {
+        if(Global::status().code==0)
+        {
+            cout<<"writeSolverFileClass::perform()->____process stopped____"<<endl;
+            return false;
+        }
+
         //! the current connection group
-        QExtendedStandardItem *itemConnectionGroup = static_cast<QExtendedStandardItem*>(theConnectionItem->child(n,0));
+        QStandardItem *itemConnectionGroup = theConnectionItem->child(n,0);
 
         //! number of contacts under the current connection group
         int NbContactPairs = itemConnectionGroup->rowCount();
 
         for(int k=0; k<NbContactPairs; k++)
         {
-            QExtendedStandardItem *item = static_cast<QExtendedStandardItem*>(itemConnectionGroup->child(k,0));
+            QStandardItem *item = itemConnectionGroup->child(k,0);
             SimulationNodeClass *node = item->data(Qt::UserRole).value<SimulationNodeClass*>();
 
             Property::SuppressionStatus ss = node->getPropertyValue<Property::SuppressionStatus>("Suppressed");
@@ -571,8 +661,8 @@ bool writeSolverFileClass::perform()
                     QString mName=itemNameClearSpaces(item->data(Qt::DisplayRole).toString().append("_%1").arg(n).append("%1").arg(k+1).append("_ELEMENT_MASTER"));
                     this->writeElementSurface(mName,anIndexedMapOfFaceMeshDS_Master);
 
-                    masterSlaveName.first =QString("S_").append(name);
-                    masterSlaveName.second=mName;
+                    masterSlaveName.first = QString("S_").append(name);
+                    masterSlaveName.second= mName;
                 }
                     break;
 
@@ -599,21 +689,20 @@ bool writeSolverFileClass::perform()
         }
     }
 
-    //! update the progress
-    //e = new QProgressEvent(QProgressEvent_Update,0,0,++done);
-    //QApplication::postEvent(mw,e);
-
     //! ------------------------------------------------------
     //! [3] write the "contact pair" headers: rescan the tree
     //! ------------------------------------------------------
-
-    //! total number of contact pair: this is written into
-    //! the console output for information/diagnostic
-    int NtotCP = 0;
+    int NtotCP = 0;     // total number of contact pair
     for(int n=0; n<theConnectionItem->rowCount(); n++)
     {
+        if(Global::status().code==0)
+        {
+            cout<<"writeSolverFileClass::perform()->____process stopped____"<<endl;
+            return false;
+        }
+
         //! the current connection group
-        QExtendedStandardItem *itemConnectionGroup = static_cast<QExtendedStandardItem*>(theConnectionItem->child(n,0));
+        QStandardItem *itemConnectionGroup = theConnectionItem->child(n,0);
 
         //! number of contacts under the current connection group
         int NbContactPairs = itemConnectionGroup->rowCount();
@@ -623,7 +712,7 @@ bool writeSolverFileClass::perform()
 
         for(int k=0; k<NbContactPairs; k++)
         {
-            QExtendedStandardItem *item = static_cast<QExtendedStandardItem*>(itemConnectionGroup->child(k,0));
+            QStandardItem *item = itemConnectionGroup->child(k,0);
             SimulationNodeClass *node = item->data(Qt::UserRole).value<SimulationNodeClass*>();
             Property::SuppressionStatus ss = node->getPropertyValue<Property::SuppressionStatus>("Suppressed");
             if(ss==Property::SuppressionStatus_Active)
@@ -1026,21 +1115,44 @@ bool writeSolverFileClass::perform()
                     break;
                 }
             }
-            //! update the progress
-            //e = new QProgressEvent(QProgressEvent_Update,0,0,++done);
-            //QApplication::postEvent(mw,e);
         }
     }
+
+    //! --------------------
+    //! update the progress
+    //! --------------------
+    if(myProgressIndicator!=Q_NULLPTR)
+    {
+        done++;
+        QProgressEvent *e = new QProgressEvent(QProgressEvent_Update,0,Nevents-1,done,"Sending contacts",
+                                               QProgressEvent_None,-1,-1,-1,"Writing CCX solver input file");
+        QApplication::postEvent(myProgressIndicator,e);
+        QApplication::processEvents();
+        QThread::msleep(500);
+
+        if(Global::status().code==0)
+        {
+            cout<<"writeSolverFileClass::perform()->____process stopped____"<<endl;
+            return false;
+        }
+    }
+
     //! ------------------------------------------------------------------------------------
     //! [4] write the "boundary" headers: rescan the tree starting from "Static structural"
     //! ------------------------------------------------------------------------------------
     for(int k=1; k<mySimulationRoot->rowCount()-1; k++)
     {
-        if(mySimulationRoot==Q_NULLPTR)
+        if(Global::status().code==0)
         {
-            cerr<<"writeSolverFileClass::perform()->____the simulation root is NULL____"<<endl;
-            exit(100);
+            cout<<"writeSolverFileClass::perform()->____process stopped____"<<endl;
+            return false;
         }
+
+        //if(mySimulationRoot==Q_NULLPTR)
+        //{
+        //    cerr<<"writeSolverFileClass::perform()->____the simulation root is NULL____"<<endl;
+        //    exit(100);
+        //}
         QString itemName = itemNameClearSpaces(mySimulationRoot->child(k,0)->data(Qt::DisplayRole).toString());
 
         SimulationNodeClass *theCurNode = mySimulationRoot->child(k,0)->data(Qt::UserRole).value<SimulationNodeClass*>();
@@ -1242,8 +1354,24 @@ bool writeSolverFileClass::perform()
         }
     }
 
-    //e = new QProgressEvent(QProgressEvent_Update,0,0,++done);
-    //QApplication::postEvent(mw,e);
+    //! --------------------
+    //! update the progress
+    //! --------------------
+    if(myProgressIndicator!=Q_NULLPTR)
+    {
+        done++;
+        QProgressEvent *e = new QProgressEvent(QProgressEvent_Update,0,Nevents-1,done,"Sending boundary conditions",
+                                               QProgressEvent_None,-1,-1,-1,"Writing CCX solver input file");
+        QApplication::postEvent(myProgressIndicator,e);
+        QApplication::processEvents();
+        QThread::msleep(500);
+
+        if(Global::status().code==0)
+        {
+            cout<<"writeSolverFileClass::perform()->____process stopped____"<<endl;
+            return false;
+        }
+    }
 
     /*
     //! ----------------------------------
@@ -1281,9 +1409,15 @@ bool writeSolverFileClass::perform()
         myInputFile<<"*MATERIAL, Name="<<matName<<endl;
         myInputFile<<"*INCLUDE, INPUT="<<matIncludeFileAbsPosition.toStdString()<<endl;
     }
-    //QStandardItem *theGeometryRoot=this->getTreeItem(SimulationNodeClass::nodeType_geometry);
+
     for(int k=0; k<theGeometryRoot->rowCount();k++)
     {
+        if(Global::status().code==0)
+        {
+            cout<<"writeSolverFileClass::perform()->____process stopped____"<<endl;
+            return false;
+        }
+
         QStandardItem *theGeometryItem = theGeometryRoot->child(k,0);
         SimulationNodeClass *theCurNode = theGeometryItem->data(Qt::UserRole).value<SimulationNodeClass*>();
         Property::SuppressionStatus theNodeSS = theCurNode->getPropertyValue<Property::SuppressionStatus>("Suppressed");
@@ -1297,9 +1431,24 @@ bool writeSolverFileClass::perform()
         }
     }
 
+    //! --------------------
     //! update the progress
-    //e = new QProgressEvent(QProgressEvent_Update,0,0,++done);
-    //QApplication::postEvent(mw,e);
+    //! --------------------
+    if(myProgressIndicator!=Q_NULLPTR)
+    {
+        done++;
+        QProgressEvent *e = new QProgressEvent(QProgressEvent_Update,0,Nevents-1,done,"Sending materials",
+                                               QProgressEvent_None,-1,-1,-1,"Writing CCX solver input file");
+        QApplication::postEvent(myProgressIndicator,e);
+        QApplication::processEvents();
+        QThread::msleep(500);
+
+        if(Global::status().code==0)
+        {
+            cout<<"writeSolverFileClass::perform()->____process stopped____"<<endl;
+            return false;
+        }
+    }
 
     //! ----------------------------
     //! [6] write initial condition
@@ -1308,6 +1457,9 @@ bool writeSolverFileClass::perform()
     bool initialTempDistr = false;
     for(int k=1; k<mySimulationRoot->rowCount()-1; k++)
     {
+        code = Global::status().code;
+        if(code==0) return;
+
         cout<<" - writing BC "<<mySimulationRoot->child(k,0)->data(Qt::DisplayRole).toString().toStdString()<<endl;
         //QString itemName = itemNameClearSpaces(mySimulationRoot->child(k,0)->data(Qt::DisplayRole).toString());
 
@@ -1366,6 +1518,12 @@ bool writeSolverFileClass::perform()
     bool initialTempDistr = false;
     for(int k=1; k<mySimulationRoot->rowCount()-1; k++)
     {
+        if(Global::status().code==0)
+        {
+            cout<<"writeSolverFileClass::perform()->____process stopped____"<<endl;
+            return false;
+        }
+
         SimulationNodeClass *theCurNode = mySimulationRoot->child(k,0)->data(Qt::UserRole).value<SimulationNodeClass*>();
         SimulationNodeClass::nodeType theNodeType= theCurNode->getType();
 
@@ -1410,15 +1568,27 @@ bool writeSolverFileClass::perform()
     //! --------------------
     //! update the progress
     //! --------------------
-    //e = new QProgressEvent(QProgressEvent_Update,0,0,++done);
-    //QApplication::postEvent(mw,e);
+    if(myProgressIndicator!=Q_NULLPTR)
+    {
+        done++;
+        QProgressEvent *e = new QProgressEvent(QProgressEvent_Update,0,Nevents-1,done,"Sending temperatures",
+                                               QProgressEvent_None,-1,-1,-1,"Writing CCX solver input file");
+        QApplication::postEvent(myProgressIndicator,e);
+        QApplication::processEvents();
+        QThread::msleep(500);
+
+        if(Global::status().code==0)
+        {
+            cout<<"writeSolverFileClass::perform()->____process stopped____"<<endl;
+            return false;
+        }
+    }
+
 
     //! ---------------
     //! write the STEP
     //! ---------------
-
-    //! consider to use the "Number of Step" property instead of tabData->rowCount()
-    //! tab with N=6 rows => [0],1,2,3,4,5
+    // consider using the "Number of Step" property instead of tabData->rowCount()
     bool NLgeom;
     if(mySimulationRoot->data(Qt::UserRole).value<SimulationNodeClass*>()->getType() != SimulationNodeClass::nodeType_thermalAnalysis)
         NLgeom = nodeAnalysisSettings->getPropertyValue<bool>("Large deflection");
@@ -1426,6 +1596,12 @@ bool writeSolverFileClass::perform()
     int NbSteps = tabData->rowCount()-1;
     for(int i=1;i<=NbSteps;i++)
     {
+        if(Global::status().code==0)
+        {
+            cout<<"writeSolverFileClass::perform()->____process stopped____"<<endl;
+            return false;
+        }
+
         //Property::analysisType analysisType = nodeAnalysisSettings->getPropertyValue<Property::analysisType>("Analysis type");
         //Property::timeIntegration timeIntegration = nodeAnalysisSettings->getPropertyValue<Property::timeIntegration>("Static/Transient");
         Property::analysisType analysisType = tabData->dataRC(i,TABULAR_DATA_ANALYSIS_TYPE_COLUMN,Qt::EditRole).value<Property::analysisType>();
@@ -1639,6 +1815,12 @@ bool writeSolverFileClass::perform()
         //! --------------------
         for(int k=1; k<mySimulationRoot->rowCount()-1; k++)
         {
+            if(Global::status().code==0)
+            {
+                cout<<"writeSolverFileClass::perform()->____process stopped____"<<endl;
+                return false;
+            }
+
             cout<<"writeSolverFileClass::perform()->_____writing "<<mySimulationRoot->child(k,0)->data(Qt::DisplayRole).toString().toStdString()<<endl;
             QString itemName = itemNameClearSpaces(mySimulationRoot->child(k,0)->data(Qt::DisplayRole).toString());
 
@@ -2275,7 +2457,6 @@ bool writeSolverFileClass::perform()
                 }
                     break;
                 }
-
             }
         }
 
@@ -2340,16 +2521,23 @@ bool writeSolverFileClass::perform()
         //! end output file settings
         //! -------------------------
         myInputFile<<"*END STEP"<<endl;
-
-        //! update the progress
-        //e = new QProgressEvent(QProgressEvent_Update,0,0,++done);
-        //QApplication::postEvent(mw,e);
     }
 
     cout<<"writeSolverFileClass::perform()->____INPUT FILE SUCCESSFULLY WRITTEN____"<<endl;
 
-    //e = new QProgressEvent(QProgressEvent_Reset);
-    //QApplication::postEvent(mw,e);
+    //! --------------------
+    //! update the progress
+    //! --------------------
+    if(myProgressIndicator!=Q_NULLPTR)
+    {
+        done++;
+        QProgressEvent *e = new QProgressEvent(QProgressEvent_Reset,-1,-1,-1,"",
+                                               QProgressEvent_Reset,-1,-1,-1,"");
+        QApplication::postEvent(myProgressIndicator,e);
+        QApplication::processEvents();
+        QThread::msleep(500);
+    }
+
     myInputFile.close();
     return true;
 }
@@ -2382,10 +2570,7 @@ void writeSolverFileClass::writeElementSurface(QString SetName,
     //! -----------------------------------------------------------------------
     this->createElementSurface(theElementIDs,theFaceNumbers,anIndexedMapOfFaceMeshDS);
 
-    //! write the header for the SURFACE
-    //! cout<<"_____Writing surface having: "<<theElementIDs.size()<<" elements____"<<endl;
     myESurf<<"*SURFACE, NAME = "<<SetName.toStdString()<<endl;
-
     for(int k=0; k<theElementIDs.size(); k++)
     {
         myESurf<<theElementIDs[k]<<", S"<<theFaceNumbers[k]<<endl;
@@ -2497,22 +2682,20 @@ void writeSolverFileClass::writeNodesAndElements(QString aName,QMap<int,QList<in
                 //! retrieve the name of the body from the data base
                 std::string bodyName = myDB->MapOfBodyNames.value(bodyIndex).toStdString();
                 myMesh<<"*NODE, NSET= N"<<bodyName<<endl;
-                double aCoordsBuf[3];
-                TColStd_Array1OfReal aCoords(*aCoordsBuf,1,3);
-                Standard_Integer nbNodes;
+
+                double buf[3];
+                TColStd_Array1OfReal coords(*buf,1,3);
+                int nbNodes;
                 MeshVS_EntityType aType;
+
+                //! ----------------------------
+                //! write the nodes coordinates
+                //! ----------------------------
                 for (TColStd_MapIteratorOfPackedMapOfInteger anIter(aNodes); anIter.More();anIter.Next())
                 {
                     int globalNodeID = anIter.Key();
-                    if (!aMeshVS_DataSource->GetGeom(globalNodeID,Standard_False,aCoords,nbNodes,aType)) continue;
-                    double x_node = aCoordsBuf[0];
-                    double y_node = aCoordsBuf[1];
-                    double z_node = aCoordsBuf[2];
-
-                    //! ----------------------------
-                    //! write the nodes coordinates
-                    //! ----------------------------
-                    myMesh<<globalNodeID+anIncrement<<","<<x_node<<","<<y_node<<","<<z_node<<endl;
+                    if (!aMeshVS_DataSource->GetGeom(globalNodeID,false,coords,nbNodes,aType)) continue;
+                    myMesh<<globalNodeID+anIncrement<<","<<coords(1)<<","<<coords(2)<<","<<coords(3)<<endl;
                     listOfNodes<<globalNodeID+anIncrement;
                 }
                 nodeListByBody.insert(bodyIndex,listOfNodes);
@@ -2562,18 +2745,17 @@ void writeSolverFileClass::writeNodesAndElements(QString aName,QMap<int,QList<in
         //! -----------------------------------------------------------------------
         //! use the 3D mesh datasources (Ng_MeshVS_DataSource3D), as for the nodes
         //! -----------------------------------------------------------------------
-        const occHandle(MeshVS_DataSource) &aMeshVS_DataSource =  myDB->ArrayOfMeshDS.value(bodyIndex);
-        if(!aMeshVS_DataSource.IsNull())
+        const occHandle(MeshVS_DataSource) &aMeshDS =  myDB->ArrayOfMeshDS.value(bodyIndex);
+        if(!aMeshDS.IsNull())
         {
-            TColStd_PackedMapOfInteger mapOfElements = aMeshVS_DataSource->GetAllElements();
+            TColStd_PackedMapOfInteger mapOfElements = aMeshDS->GetAllElements();
             TColStd_MapIteratorOfPackedMapOfInteger anIter(mapOfElements);
-
             for(;anIter.More();anIter.Next())
             {
-                Standard_Integer globalElementID = anIter.Key();
+                int globalElementID = anIter.Key();
                 int NbNodes, aNodesBuf[20];
                 TColStd_Array1OfInteger nodeIDs(*aNodesBuf,1,20);
-                aMeshVS_DataSource->GetNodesByElement(globalElementID,nodeIDs,NbNodes);
+                aMeshDS->GetNodesByElement(globalElementID,nodeIDs,NbNodes);
 
                 //! get the element type
                 switch(NbNodes)
@@ -2619,6 +2801,7 @@ void writeSolverFileClass::writeNodesAndElements(QString aName,QMap<int,QList<in
 
             anIter.Initialize(mapOfElements);
             int ntet4 = 0;
+            int ntet10 = 0;
             int nprism6 = 0;
             int npyr5 = 0;
             int nhexa8 = 0;
@@ -2626,11 +2809,10 @@ void writeSolverFileClass::writeNodesAndElements(QString aName,QMap<int,QList<in
             for(int j=0;anIter.More();anIter.Next(),j++)
             {
                 if(j==mapOfElements.Extent()) break;
-                Standard_Integer aKey = anIter.Key();
-                int NbNodes;
-                Standard_Integer aNodesBuf[20];                     //! a 20 points buffer
+                int aKey = anIter.Key();
+                int NbNodes, aNodesBuf[20];                         //! a 20 points buffer
                 TColStd_Array1OfInteger nodeIDs(*aNodesBuf,1,20);   //! this holds up to second order hexa
-                aMeshVS_DataSource->GetNodesByElement(aKey,nodeIDs,NbNodes);
+                aMeshDS->GetNodesByElement(aKey,nodeIDs,NbNodes);
 
                 //! get the element type using the number of nodes
                 switch(NbNodes)
@@ -2639,7 +2821,7 @@ void writeSolverFileClass::writeNodesAndElements(QString aName,QMap<int,QList<in
                 {
                     //! a TET4 element has been found
                     arrayTet4[j-nprism6-npyr5][0]=aKey+anElementIncrement;
-                    for(int i=1; i<=4; i++) arrayTet4[j-nprism6-npyr5-nhexa8][i]=nodeIDs.Value(i)+aNodeIncrement;
+                    for(int i=1; i<=4; i++) arrayTet4[j-nprism6-npyr5-nhexa8-ntet10][i]=nodeIDs.Value(i)+aNodeIncrement;
                     ntet4++;
                 }
                     break;
@@ -2648,7 +2830,9 @@ void writeSolverFileClass::writeNodesAndElements(QString aName,QMap<int,QList<in
                 {
                     //! a TET10 element has been found
                     arrayTet10[j][0]=aKey+anElementIncrement;
-                    for(int i=1; i<=10; i++) arrayTet10[j][i]=nodeIDs.Value(i)+aNodeIncrement;
+                    //for(int i=1; i<=10; i++) arrayTet10[j][i]=nodeIDs.Value(i)+aNodeIncrement;
+                    for(int i=1; i<=10; i++) arrayTet10[j-ntet4-npyr5-nprism6-nhexa8][i]=nodeIDs.Value(i)+aNodeIncrement;
+                    ntet10++;
                 }
                     break;
 
@@ -2656,7 +2840,8 @@ void writeSolverFileClass::writeNodesAndElements(QString aName,QMap<int,QList<in
                 {
                     //! a PYR5 element has been found
                     arrayPyr5[j-ntet4-nprism6][0]=aKey+anElementIncrement;
-                    for(int i=1; i<=6; i++) arrayPyr5[j-ntet4-nprism6-nhexa8][i]=nodeIDs.Value(i)+aNodeIncrement;
+                    //for(int i=1; i<=6; i++) arrayPyr5[j-ntet4-nprism6-nhexa8][i]=nodeIDs.Value(i)+aNodeIncrement;
+                    for(int i=1; i<=6; i++) arrayPyr5[j-ntet4-nprism6-nhexa8-ntet10][i]=nodeIDs.Value(i)+aNodeIncrement;
                     npyr5++;
                 }
                     break;
@@ -2673,7 +2858,8 @@ void writeSolverFileClass::writeNodesAndElements(QString aName,QMap<int,QList<in
                 {
                     //! a HEXA8 element has been found
                     arrayHexa8[j][0]=aKey+anElementIncrement;
-                    for(int i=1; i<=8; i++) arrayHexa8[j-ntet4-nprism6-npyr5][i]=nodeIDs.Value(i)+aNodeIncrement;
+                    //for(int i=1; i<=8; i++) arrayHexa8[j-ntet4-nprism6-npyr5][i]=nodeIDs.Value(i)+aNodeIncrement;
+                    for(int i=1; i<=8; i++) arrayHexa8[j-ntet4-npyr5-nprism6-ntet10][i]=nodeIDs.Value(i)+aNodeIncrement;
                     nhexa8++;
                 }
                     break;
@@ -2690,7 +2876,8 @@ void writeSolverFileClass::writeNodesAndElements(QString aName,QMap<int,QList<in
                 {
                     //! a PRISM6 element has been found
                     arrayPrism6[j-ntet4-npyr5][0]=aKey+anElementIncrement;
-                    for(int i=1; i<=6; i++) arrayPrism6[j-ntet4-npyr5-nhexa8][i]=nodeIDs.Value(i)+aNodeIncrement;
+                    //for(int i=1; i<=6; i++) arrayPrism6[j-ntet4-npyr5-nhexa8][i]=nodeIDs.Value(i)+aNodeIncrement;
+                    for(int i=1; i<=6; i++) arrayPrism6[j-ntet4-npyr5-nhexa8-ntet10][i]=nodeIDs.Value(i)+aNodeIncrement;
                     nprism6++;
                 }
                     break;
@@ -2896,10 +3083,11 @@ void writeSolverFileClass::writeNodesAndElements(QString aName,QMap<int,QList<in
             anElementIncrement = anElementIncrement + Ntet4 + Ntet10 + Nhexa8 + Nhexa20 + Npyr5 + Npyr13 + Nprism6 + Nprism15;
             myMesh<<anElementIncrement<<endl;
             totalNumberOfElements+=anElementIncrement;
+
             //! ---------------------------------------------
             //! increment the node number (assembly support)
             //! ---------------------------------------------
-            aNodeIncrement = aNodeIncrement + aMeshVS_DataSource->GetAllNodes().Extent();
+            aNodeIncrement = aNodeIncrement + aMeshDS->GetAllNodes().Extent();
         }
     }
     ++totalNumberOfElements;

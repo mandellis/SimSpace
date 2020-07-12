@@ -191,10 +191,6 @@ public:
         defineBy_normal,
         defineBy_geometrySelection,         //! for coordinate systems
         defineBy_globalCoordinates,         //! for coordinate systems
-        //defineBy_load,                     //! for bolt pretension
-        //defineBy_adjustment,               //! for bolt pretension
-        //defineBy_open,                     //! for bolt pretension
-        //defineBy_lock                      //! for bolt pretension
     } db;
     Q_ENUM(defineBy)
 
@@ -323,9 +319,9 @@ public:
         loadType_time,
         loadType_none,
 
-        loadType_boltStatusDefinedBy,
-        loadType_boltForce,
-        loadType_boltAdjustment,
+        loadType_boltStatusDefinedBy,   //! data in the first column in table for bolt
+        loadType_boltForce,             //! data in the second column in table for bolt
+        loadType_boltAdjustment,        //! data in the third column in table for bolt
 
         loadType_modelChange,
 
@@ -336,6 +332,18 @@ public:
         loadType_timeIntegration
     } lt;
     Q_ENUM(loadType)
+
+    // -------------
+    // experimental
+    // -------------
+    enum boltDefineBy
+    {
+        boltDefineBy_load,                     //! for bolt pretension
+        boltDefinedBy_adjustment,              //! for bolt pretension
+        boltDefineBy_open,                     //! for bolt pretension
+        boltDefineBy_lock                      //! for bolt pretension
+    } bdf;
+    Q_ENUM(boltDefineBy)
 
     enum loadDefinition
     {

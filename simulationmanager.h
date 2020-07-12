@@ -49,6 +49,7 @@
 #include <QProcess>
 #endif
 
+class inputFileGenerator;
 class MeshingServer;
 class QStandardItemModel;
 class QStandardItem;
@@ -88,12 +89,14 @@ private:
     serializerClass *mySerializer;
     deserializerClass *myDeserializer;
     postEngine *myPostEngine;
+    inputFileGenerator* myInputFileGenerator;
 
     //! experimental
     CCXSolverManager *theCCXSolverManager;
 
     //! experimental
     FrdReader *myFrdReader;
+
 
     //! internal timer
     QTimer *myTimer;
@@ -276,7 +279,7 @@ public slots:
     void startPostEngine();
 
     //! configure and start
-    void configureAndStartPostEngine(const QString &whereIsSolution);
+    void configureAndStartPostEngine();
 
     //! compute and display mesh metric
     void computeAndDisplayMeshMetric();
@@ -603,7 +606,7 @@ private:
 
 private slots:
 
-    //! experimental - retrieve solver info
+    //! retrieve solver info
     void retrieveSolverInfo();
 
 #ifdef COSTAMP_VERSION

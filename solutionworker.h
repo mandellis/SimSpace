@@ -59,7 +59,7 @@ private:
 
 private slots:
 
-    void sendEnter();
+    //void sendEnter();
 
 public slots:
 

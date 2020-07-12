@@ -100,6 +100,7 @@ void Property::init(const QVariant &data)
     if(data.canConvert<modelChangeActivationStatus>()) mcas = data.value<modelChangeActivationStatus>();
     if(data.canConvert<analysisType>()) ant = data.value<analysisType>();
     if(data.canConvert<timeIntegration>()) ti = data.value<timeIntegration>();
+    if(data.canConvert<boltStatusDefinedBy>()) bs = data.value<boltStatusDefinedBy>();
 }
 
 //! -------------------
@@ -327,6 +328,11 @@ void Property::setPropertyValue(const QString &enumName, const QString &thePrope
     {
         ant = static_cast<analysisType>(value);
         data.setValue(ant);
+    }
+    if(QString(metaEnum.name())=="loadDefinition")
+    {
+        ld = static_cast<loadDefinition>(value);
+        data.setValue(ld);
     }
     this->setData(data);
 }
@@ -705,7 +711,6 @@ void Property::readProperty(ifstream &in, Property &prop)
         //}
 
         QExtendedStandardItem *item = new QExtendedStandardItem();
-        //QVariant data;
         data.setValue(node);
         item->setData(data,Qt::UserRole);
         data.setValue(node->getName());
@@ -831,6 +836,7 @@ void Property::readProperty(ifstream &in, Property &prop)
         QString enumName = Property::propertyMap().value(propKeyName);
         cout<<"- enumName: "<<enumName.toStdString()<<endl;
         QString thePropertyValue = tools::readQVariant(in).toString();
+        cout<<"- read from disk: "<<thePropertyValue.toStdString()<<endl;
         prop.setPropertyValue(enumName,thePropertyValue);
         cout<<"- keyName: "<<propKeyName.toStdString()<<endl;
         cout<<"- value: "<<prop.getPropertyValue(enumName).toStdString()<<endl;
