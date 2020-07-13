@@ -4961,7 +4961,7 @@ void DetailViewer::updateCutBackFactors()
 void DetailViewer::updateLineSearch()
 {
     cout<<"DetailViewer::updateLineSearch()->____function called____"<<endl;
-    int  N = myCurNode->getPropertyItem("Line search")->data(Qt::UserRole).value<Property>().getData().toInt();
+    int  N = myCurNode->getPropertyItem("Current step number")->data(Qt::UserRole).value<Property>().getData().toInt();
     CustomTableModel *tabModel = myCurNode->getTabularDataModel();
 
     //! -----------------------
