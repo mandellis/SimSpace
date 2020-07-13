@@ -42,7 +42,7 @@
 
 #define GIL_FILES "Simulation data (*.gil)"
 #define NODE_FILES "Node file (*.node)"
-#define APPNAME "Thermo-structural SE 64bit OCC7.3.0"
+#define APPNAME "SimSpace - Simulation Environment"
 
 #define TRANSPARENCY_IN_WORKING_MODE_MODEL 0.0
 #define TRANSPARENCY_IN_WORKING_MODE_MESH 0.8
