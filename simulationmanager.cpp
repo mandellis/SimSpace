@@ -6485,7 +6485,6 @@ void SimulationManager::duplicateItem(QExtendedStandardItem *item)
         //! determine the number of columns to copy and append to the tabular data
         //! -----------------------------------------------------------------------
         int NbCol = mainTreeTools::getColumnsToRead(myTreeView).length();
-        //int columnToCopy = this->calculateStartColumn();
         int columnToCopy = mainTreeTools::calculateStartColumn(myTreeView);
 
         for(int i=0; i<NbCol; i++)
