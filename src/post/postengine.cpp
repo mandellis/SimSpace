@@ -551,7 +551,7 @@ postObject postEngine::buildPostObject(const QString &keyName,
     //! ------------------------------------------------------------------------------------------------------------
     QMap<int,gp_Vec> displMap;
     QMap<GeometryTag,QMap<int,gp_Vec>> mapDisplMap;
-    QMap<GeometryTag,QList<QMap<int,double>>> nodalDisplacements = this->evaluateResult("DISP", requiredSubStepNb, requiredStepNb,requiredMode, vecLoc);
+    QMap<GeometryTag,QList<QMap<int,double>>> nodalDisplacements = this->evaluateResult("DISP", requiredSubStepNb, requiredStepNb,requiredMode, vecLoc, time);
 
     for(QMap<GeometryTag,QList<QMap<int,double>>>::iterator it = nodalDisplacements.begin(); it!=nodalDisplacements.end(); ++it)
     {
@@ -716,13 +716,13 @@ postObject postEngine::evaluateFatigueResults(int type, QVector<GeometryTag> loc
         int step,substep;
         //QMap<double,QVector<int>> dtm= getDTM();
         //QMap<double,QVector<int>> dtm = myDTM;
-
+        double requiredTime;
         postTools::getStepSubStepByTimeDTM(myDTM,times.last(),step,substep);
         QString tor_eps = m.key(TypeOfResult_EPS);
         QString tor_mises = m.key(TypeOfResult_S);
         int mode =0;
-        QMap<GeometryTag,QList<QMap<int,double>>> pe = this->evaluateResult(tor_eps,substep,step,mode,locs);
-        QMap<GeometryTag,QList<QMap<int,double>>> stress = this->evaluateResult(tor_mises,substep,step,mode,locs);
+        QMap<GeometryTag,QList<QMap<int,double>>> pe = this->evaluateResult(tor_eps,substep,step,mode,locs,requiredTime);
+        QMap<GeometryTag,QList<QMap<int,double>>> stress = this->evaluateResult(tor_mises,substep,step,mode,locs,requiredTime);
 
         for(QVector<GeometryTag>::iterator it=locs.begin();it!=locs.end();it++)
         {
@@ -795,7 +795,7 @@ postObject postEngine::evaluateFatigueResults(int type, QVector<GeometryTag> loc
     //! -----------------------
     //! create the post object
     //! -----------------------
-    QString label = this->colorBoxTitle("Damage",0,1,1);
+    QString label = this->colorBoxTitle("Damage",0,1,1,0);
     postObject aPostObject(fatigueResults,locs,label);
     //postObject aPostObject(fatigueResults,locs);
     return aPostObject;
