@@ -10908,6 +10908,15 @@ bool SimulationManager::eventFilter(QObject *object, QEvent *event)
                      data.setValue(timeinfo);
                      nodeSolutionInformation->replaceProperty("Discrete time map",Property("Discrete time map",data,Property::PropertyGroup_Hidden));
                  }
+                 else
+                 {
+                     QVector<int> init;
+                     double ini=0.0;
+                     init<<0.0<<0.0<<0.0;
+                     timeinfo.insert(ini,init);
+                     data.setValue(timeinfo);
+                     nodeSolutionInformation->replaceProperty("Discrete time map",Property("Discrete time map",data,Property::PropertyGroup_Hidden));
+                 }
              }
         }
 

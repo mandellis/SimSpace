@@ -86,9 +86,9 @@ writeSolverFileClass::writeSolverFileClass(simulationDataBase *aDB, QExtendedSta
     vecMatNames.push_back("F92_fatigue");
     vecMatNames.push_back("A479_fatigue");
     vecMatNames.push_back("SA479_XM19_fatigue");
-    //vecMatNames.push_back("SA182-B8M_CL2");
-    //vecMatNames.push_back("SA182-F316");
-    //vecMatNames.push_back("SA352-LCB");
+    vecMatNames.push_back("SA182-B8M_CL2");
+    vecMatNames.push_back("SA182-F316");
+    vecMatNames.push_back("SA352-LCB");
 }
 
 
@@ -801,7 +801,7 @@ bool writeSolverFileClass::perform()
                             double sigmaInfty = node->getPropertyValue<double>("Sigma infty");
 
                             myInputFile<<"LINEAR"<<endl;
-                            if(K == 0.0) KF=1.0;
+                            if(KF == 0) KF=1;
                             //{
                                 QVector<GeometryTag> tagsMaster = node->getPropertyValue<QVector<GeometryTag>>("Tags master");
                                 QVector<GeometryTag> tagsSlave = node->getPropertyValue<QVector<GeometryTag>>("Tags slave");
@@ -961,12 +961,12 @@ bool writeSolverFileClass::perform()
                             //! in case of face to face behavior "C0 is irrelevant
 
                             KF = node->getPropertyValue<double>("K");
-                            if(K==0) KF=1.0;
+                            if(KF==0) KF=1.0;
                             //{
-                                QVector<GeometryTag> tagsMaster = node->getPropertyValue<QVector<GeometryTag>>("Tags master");
-                                QVector<GeometryTag> tagsSlave = node->getPropertyValue<QVector<GeometryTag>>("Tags slave");
+                            QVector<GeometryTag> tagsMaster = node->getPropertyValue<QVector<GeometryTag>>("Tags master");
+                            QVector<GeometryTag> tagsSlave = node->getPropertyValue<QVector<GeometryTag>>("Tags slave");
 
-                                QList<occHandle(Ng_MeshVS_DataSourceFace)> masterFaces,slaveFaces;
+                            QList<occHandle(Ng_MeshVS_DataSourceFace)> masterFaces,slaveFaces;
 
                                 for(QVector<GeometryTag>::iterator it = tagsMaster.begin(); it!= tagsMaster.end(); ++it)
                                 {
@@ -1625,8 +1625,11 @@ bool writeSolverFileClass::perform()
             break;
         case Property::analysisType_modal:
         {
-            //! Perturbation has to be active is a previous static step is present
-            myInputFile<<"*STEP, PERTURBATION"<<endl;
+            if(i==1)
+                myInputFile<<"*STEP"<<endl;
+            else
+                //! Perturbation has to be active is a previous static step is present
+                myInputFile<<"*STEP, PERTURBATION"<<endl;
             myInputFile<<"*FREQUENCY,";
         }
             break;
@@ -1699,8 +1702,8 @@ bool writeSolverFileClass::perform()
             //! type of properties: SOLVER, STORAGE, GLOBAL and CYCMPC
             myInputFile<<endl;
             //! Number of eigenFrequency to compute
-            //myInputFile<<"5"<<endl;
-            myInputFile<<"1"<<endl;
+            myInputFile<<"2"<<endl;
+            //myInputFile<<"1"<<endl;
         }
             break;
         case Property::analysisType_frequencyResponse:

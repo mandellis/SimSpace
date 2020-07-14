@@ -82,7 +82,8 @@ QMap<GeometryTag,QList<QMap<int,double>>> postEngine::evaluateResult(const QStri
                                                                      int requiredSubStepNb,
                                                                      int requiredStepNb,
                                                                      int requiredMode,
-                                                                     const QVector<GeometryTag> &vecLoc)
+                                                                     const QVector<GeometryTag> &vecLoc,
+                                                                     double &requiredTime)
 {
     cout<<"postEngine::evaluateResult()->____function called for variable: "<<resultKeyName.toStdString()<<"____"<<endl;
     cout<<"postEngine::evaluateResult()->____on Nr: "<<vecLoc.length()<<" locations____"<<endl;
@@ -175,13 +176,19 @@ QMap<GeometryTag,QList<QMap<int,double>>> postEngine::evaluateResult(const QStri
             case 0:
             {
                 if(strcmp(tdata,resultKeyName.toStdString().c_str())==0 && subStepNb==requiredSubStepNb && stepNb == requiredStepNb && mode == requiredMode)
+                {
+                    requiredTime = time;
                     eval=true;
+                }
             }
                 break;
             default:
             {
                 if(strcmp(tdata,resultKeyName.toStdString().c_str())==0 && mode == requiredMode)
+                {
+                    requiredTime = time;
                     eval=true;
+                }
             }
                 break;
             }
@@ -413,9 +420,10 @@ QMap<GeometryTag,QList<QMap<int,double>>> postEngine::evaluateResult(const QStri
 //! details:  build a title for the colorbox according to the
 //!           type of result
 //! ----------------------------------------------------------
-QString postEngine::colorBoxTitle(const QString &keyName, int component, int step, int subStep)
+QString postEngine::colorBoxTitle(const QString &keyName, int component, int step, int subStep,double time)
 {
-    QString timeInfo = QString("\nStep %1\nSubstep %2").arg(step).arg(subStep);
+    QString timeInfo = QString("\nTime %1\nStep %2").arg(time).arg(step);
+    //QString timeInfo = QString("\nStep %1\nSub Step %2").arg(step).arg(subStep);
 
     QString colorBoxTitle;
 
@@ -525,15 +533,16 @@ postObject postEngine::buildPostObject(const QString &keyName,
                                        int requiredMode,
                                        const QVector<GeometryTag> &vecLoc)
 {
-    //! -------------------------
-    //! build the colorBox title
-    //! -------------------------
-    QString aColorBoxTitle = this->colorBoxTitle(keyName, component, requiredStepNb, requiredSubStepNb);
-
+    double time;
     //! --------------------
     //! call the postEngine
     //! --------------------
-    QMap<GeometryTag,QList<QMap<int,double>>> resMap = this->evaluateResult(keyName, requiredSubStepNb, requiredStepNb, requiredMode, vecLoc);
+    QMap<GeometryTag,QList<QMap<int,double>>> resMap = this->evaluateResult(keyName, requiredSubStepNb, requiredStepNb, requiredMode, vecLoc, time);
+
+    //! -------------------------
+    //! build the colorBox title
+    //! -------------------------
+    QString aColorBoxTitle = this->colorBoxTitle(keyName, component, requiredStepNb, requiredSubStepNb, time);
 
     //! ------------------------------------------------------------------------------------------------------------
     //! create the map of nodal vectorial displacements for the deformed mesh presentation. Here:
@@ -542,7 +551,7 @@ postObject postEngine::buildPostObject(const QString &keyName,
     //! ------------------------------------------------------------------------------------------------------------
     QMap<int,gp_Vec> displMap;
     QMap<GeometryTag,QMap<int,gp_Vec>> mapDisplMap;
-    QMap<GeometryTag,QList<QMap<int,double>>> nodalDisplacements = this->evaluateResult("DISP", requiredSubStepNb, requiredStepNb,requiredMode, vecLoc);
+    QMap<GeometryTag,QList<QMap<int,double>>> nodalDisplacements = this->evaluateResult("DISP", requiredSubStepNb, requiredStepNb,requiredMode, vecLoc, time);
 
     for(QMap<GeometryTag,QList<QMap<int,double>>>::iterator it = nodalDisplacements.begin(); it!=nodalDisplacements.end(); ++it)
     {
@@ -707,13 +716,13 @@ postObject postEngine::evaluateFatigueResults(int type, QVector<GeometryTag> loc
         int step,substep;
         //QMap<double,QVector<int>> dtm= getDTM();
         //QMap<double,QVector<int>> dtm = myDTM;
-
+        double requiredTime;
         postTools::getStepSubStepByTimeDTM(myDTM,times.last(),step,substep);
         QString tor_eps = m.key(TypeOfResult_EPS);
         QString tor_mises = m.key(TypeOfResult_S);
         int mode =0;
-        QMap<GeometryTag,QList<QMap<int,double>>> pe = this->evaluateResult(tor_eps,substep,step,mode,locs);
-        QMap<GeometryTag,QList<QMap<int,double>>> stress = this->evaluateResult(tor_mises,substep,step,mode,locs);
+        QMap<GeometryTag,QList<QMap<int,double>>> pe = this->evaluateResult(tor_eps,substep,step,mode,locs,requiredTime);
+        QMap<GeometryTag,QList<QMap<int,double>>> stress = this->evaluateResult(tor_mises,substep,step,mode,locs,requiredTime);
 
         for(QVector<GeometryTag>::iterator it=locs.begin();it!=locs.end();it++)
         {
@@ -786,7 +795,7 @@ postObject postEngine::evaluateFatigueResults(int type, QVector<GeometryTag> loc
     //! -----------------------
     //! create the post object
     //! -----------------------
-    QString label = this->colorBoxTitle("Damage",0,1,1);
+    QString label = this->colorBoxTitle("Damage",0,1,1,0);
     postObject aPostObject(fatigueResults,locs,label);
     //postObject aPostObject(fatigueResults,locs);
     return aPostObject;

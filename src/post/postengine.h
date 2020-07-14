@@ -104,7 +104,8 @@ public slots:
                                                              int requiredSubStepNb,
                                                              int requiredStepNb,
                                                              int requiredMode,
-                                                             const QVector<GeometryTag> &vecLoc);
+                                                             const QVector<GeometryTag> &vecLoc,
+                                                             double &requiredTime);
 
     postObject evaluateFatigueResults(int type, QVector<GeometryTag> locs, const QList<double> &times, QMap<int,int> materialBodyMap, int nCycle);
     //postObject evaluateFatigueResults1(int type, QVector<GeometryTag> locs, const QList<double> &times, QMap<int,int> materialBodyMap, int nCycle);
@@ -119,7 +120,7 @@ public slots:
 private:
 
     //! create a string title for the colorbox, carrying the type of data
-    QString colorBoxTitle(const QString &keyName, int component, int step, int subStep);
+    QString colorBoxTitle(const QString &keyName, int component, int step, int subStep, double time);
 
     //! time stamp
     QString timeStamp();
