@@ -22,6 +22,11 @@
 #include "myenumvariables.h"
 #include "property.h"
 
+//! ----
+//! C++
+//! ----
+#include <string>
+
 class QStandardItemModel;
 class QStandardItem;
 class load;
@@ -387,6 +392,9 @@ public:
 
     //! is solution information
     bool isSolutionInformation();
+
+    //! generate time string
+    std::string SimulationNodeClass::generateTimeString();
 };
 
 Q_DECLARE_METATYPE(SimulationNodeClass)

@@ -15,6 +15,11 @@
 #include <QStandardItemModel>
 #include <QThread>
 
+//! ----
+//! C++
+//! ----
+#include <chrono>
+
 //!--------------------------------------------------------------//
 //! function: constructor I /'ìtrrrrèpì985                                      //
 //! details:  tahnks to Gilda for comments above                 //
@@ -183,7 +188,7 @@ void SimulationNodeClass::createNodeModel()
             cout<<"____a load defined by components has been created____"<<endl;
         }
         else if(theDefineBy==Property::defineBy_normal)
-        {      
+        {
             cout<<"____a pressure has been created: only \"Normal to\" is shown____"<<endl;
         }
     }
@@ -966,7 +971,7 @@ void SimulationNodeClass::createSeparators()
         //! ------------
     case nodeType_connection:
         myNodeRootItem->appendRow(itemAutoDetection);
-        myNodeRootItem->appendRow(itemTransparency);     
+        myNodeRootItem->appendRow(itemTransparency);
         break;
 
     case nodeType_connectionGroup:
@@ -1260,6 +1265,33 @@ bool SimulationNodeClass::isAnalysisRoot()
     return false;
 }
 
+//! -----------------------------
+//! function: generateTimeString
+//! details:  monothonic timer
+//! -----------------------------
+std::string SimulationNodeClass::generateTimeString()
+{
+    using namespace std::chrono;
+
+    // get current time
+    auto now = system_clock::now();
+
+    // get number of milliseconds for the current second
+    // (remainder after division into seconds)
+    auto ms = duration_cast<milliseconds>(now.time_since_epoch()) % 1000;
+
+    // convert to std::time_t in order to convert to std::tm (broken time)
+    auto timer = system_clock::to_time_t(now);
+
+    // convert to broken time
+    std::tm bt = *std::localtime(&timer);
+
+    std::ostringstream oss;
+    oss << std::put_time(&bt, "%Y%m%d%H%M%S"); // HH:MM:SS
+    oss << std::setfill('0') << std::setw(3) << ms.count();
+    return oss.str();
+}
+
 //! ---------------------
 //! function: addTimeTag
 //! details:
@@ -1270,9 +1302,8 @@ void SimulationNodeClass::addTimeTag()
     //! Time tag - wait 5 ms
     //! ---------------------
     QThread::msleep(5);
-    QString timeTag = QDateTime::currentDateTime().toString("yyyyMMddhhmmzzz");
     QVariant data;
-    data.setValue(timeTag);
+    data.setValue(QString::fromStdString(generateTimeString()));
     Property prop_timeTag("Time tag",data,Property::PropertyGroup_Identifier);
     this->addProperty(prop_timeTag);
 }
