@@ -1714,6 +1714,7 @@ bool writeSolverFileClass::perform()
         }
             break;
         }
+        myInputFile<<"*RESTART, WRITE, FREQUENCY=1"<<endl;
 
         //! -----------------------------------------------------
         //! control parameters: time incrementation - first line

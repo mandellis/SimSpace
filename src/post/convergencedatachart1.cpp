@@ -302,6 +302,7 @@ void ConvergenceDataChart1::plotConvergenceData(const QList<solutionInfo> &solut
     //! ---------------------------------------
     if(solutionInfoList.isEmpty()) return;
     int NbData = solutionInfoList.length();
+    cout<<"ConvergenceDataChart1::plotConvergenceData()->____tag00____"<<endl;
 
     //! ---------------
     //! top panel data
@@ -324,6 +325,7 @@ void ConvergenceDataChart1::plotConvergenceData(const QList<solutionInfo> &solut
         Y1_top.push_back(solutionInfoList.at(i).largestResidual);
         Y2_top.push_back(solutionInfoList.at(i).average);
     }
+    cout<<"ConvergenceDataChart1::plotConvergenceData()->____tag01____"<<endl;
 
     //! -------
     //! labels
@@ -338,6 +340,7 @@ void ConvergenceDataChart1::plotConvergenceData(const QList<solutionInfo> &solut
     myChartView->graph(0)->setData(X_top,Y1_top);
     myChartView->graph(1)->setData(X_top,Y2_top);
     myChartView->rescaleAxes(true);
+    cout<<"ConvergenceDataChart1::plotConvergenceData()->____tag03____"<<endl;
 
     //! --------
     //! scale Y
@@ -356,6 +359,7 @@ void ConvergenceDataChart1::plotConvergenceData(const QList<solutionInfo> &solut
         X_bottom.push_back(solutionInfoList.at(i).globalIterationNb);
         Y1_bottom.push_back(solutionInfoList.at(i).time);
     }
+    cout<<"ConvergenceDataChart1::plotConvergenceData()->____tag04____"<<endl;
 
     //! -------
     //! labels
@@ -365,10 +369,19 @@ void ConvergenceDataChart1::plotConvergenceData(const QList<solutionInfo> &solut
     yLabel1 = "Total time";
 
     myChartView1->graph(0)->setData(X_bottom,Y1_bottom);
+    cout<<"ConvergenceDataChart1::plotConvergenceData()->____tag05____"<<endl;
+
     myChartView1->rescaleAxes(true);
+    cout<<"ConvergenceDataChart1::plotConvergenceData()->____tag06____"<<endl;
+
     myChartView1->xAxis->setLabel(xLabel1);
+    cout<<"ConvergenceDataChart1::plotConvergenceData()->____tag07____"<<endl;
+
     myChartView1->yAxis->setLabel(yLabel1);
+    cout<<"ConvergenceDataChart1::plotConvergenceData()->____tag08____"<<endl;
+
     myChartView1->replot();
+    cout<<"ConvergenceDataChart1::plotConvergenceData()->____tag09____"<<endl;
 }
 
 //! ---------------------

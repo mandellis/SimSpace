@@ -11462,6 +11462,14 @@ void SimulationManager::updatePostObjectScale(double scale)
 void SimulationManager::readResultsFile(const QString &fileName, const QString &solutionDataDir)
 {
     cout<<"SimulationManager::readResultsFile()->____function called____"<<endl;
+    //! -----------------------------------------
+    //! retrieve the "Solution information" item
+    //! -----------------------------------------
+    QStandardItem *itemSolution = myCurrentRunningAnalysis->child(myCurrentRunningAnalysis->rowCount()-1,0);
+    SimulationNodeClass *nodeSolution = itemSolution->data(Qt::UserRole).value<SimulationNodeClass*>();
+    QStandardItem *itemSolutionInformation = myCurrentRunningAnalysis->child(myCurrentRunningAnalysis->rowCount()-1,0)->child(0,0);
+    SimulationNodeClass *nodeSolutionInformation = itemSolutionInformation->data(Qt::UserRole).value<SimulationNodeClass*>();
+    QVariant data;
 
     //! -------------------------------------------
     //! check if the model mesh has been generated
@@ -11479,7 +11487,35 @@ void SimulationManager::readResultsFile(const QString &fileName, const QString &
     }
     if(meshOK == true)
     {
-        cout<<"SimulationManager::readResultsFile()->____the mesh is OK____"<<endl;
+        //cout<<"SimulationManager::readResultsFile()->____the mesh is OK____"<<endl;
+        //! -------------------
+        //! read the .sta file
+        //! -------------------
+        QString projectFilesDir = nodeSolution->getPropertyValue<QString>("Project files dir");
+        QString timeTag = nodeSolution->getPropertyValue<QString>("Parent time tag");
+        QString stafile = projectFilesDir+"/SolutionData_"+timeTag+"/input.sta";
+        QFile f(stafile);
+        if(f.exists())
+        {
+            //cout<<"____.STA FILE FOUND: \""<<stafile.toStdString()<<"\"____"<<endl;
+            QMap<double,QVector<int>> timeinfo;
+            bool isDone = CCXTools::readsta(stafile,timeinfo);
+            if(isDone)
+            {
+                data.setValue(timeinfo);
+                nodeSolutionInformation->replaceProperty("Discrete time map",Property("Discrete time map",data,Property::PropertyGroup_Hidden));
+            }
+            else
+            {
+                QVector<int> init;
+                double ini=0.0;
+                init<<0.0<<0.0<<0.0;
+                timeinfo.insert(ini,init);
+                data.setValue(timeinfo);
+                nodeSolutionInformation->replaceProperty("Discrete time map",Property("Discrete time map",data,Property::PropertyGroup_Hidden));
+            }
+        }
+
         //! ------------------------------------------------------------------------
         //! copy the .frd file (fileName) into the "<project name>_files" directory
         //! ------------------------------------------------------------------------
