@@ -1614,7 +1614,6 @@ bool writeSolverFileClass::perform()
             else myInputFile<<"*STEP, NLGEOM = NO"<<endl;
             if(timeIntegration==Property::timeIntegration_steadyState) myInputFile<<"*STATIC, ";
             else myInputFile<<"*DYNAMIC, ";
-            myInputFile<<"*RESTART, WRITE, FREQUENCY=1"<<endl;
         }
             break;
         case Property::analysisType_thermal:
@@ -1715,6 +1714,7 @@ bool writeSolverFileClass::perform()
         }
             break;
         }
+        myInputFile<<"*RESTART, WRITE, FREQUENCY=1"<<endl;
 
         //! -----------------------------------------------------
         //! control parameters: time incrementation - first line

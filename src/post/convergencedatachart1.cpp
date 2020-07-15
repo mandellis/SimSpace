@@ -369,12 +369,19 @@ void ConvergenceDataChart1::plotConvergenceData(const QList<solutionInfo> &solut
     yLabel1 = "Total time";
 
     myChartView1->graph(0)->setData(X_bottom,Y1_bottom);
-    myChartView1->rescaleAxes(true);
-    myChartView1->xAxis->setLabel(xLabel1);
-    myChartView1->yAxis->setLabel(yLabel1);
-    myChartView1->replot();
     cout<<"ConvergenceDataChart1::plotConvergenceData()->____tag05____"<<endl;
 
+    myChartView1->rescaleAxes(true);
+    cout<<"ConvergenceDataChart1::plotConvergenceData()->____tag06____"<<endl;
+
+    myChartView1->xAxis->setLabel(xLabel1);
+    cout<<"ConvergenceDataChart1::plotConvergenceData()->____tag07____"<<endl;
+
+    myChartView1->yAxis->setLabel(yLabel1);
+    cout<<"ConvergenceDataChart1::plotConvergenceData()->____tag08____"<<endl;
+
+    myChartView1->replot();
+    cout<<"ConvergenceDataChart1::plotConvergenceData()->____tag09____"<<endl;
 }
 
 //! ---------------------
