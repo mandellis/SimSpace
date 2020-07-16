@@ -336,14 +336,14 @@ public:
     // -------------
     // experimental
     // -------------
-    enum boltDefineBy
-    {
-        boltDefineBy_load,                     //! for bolt pretension
-        boltDefinedBy_adjustment,              //! for bolt pretension
-        boltDefineBy_open,                     //! for bolt pretension
-        boltDefineBy_lock                      //! for bolt pretension
-    } bdf;
-    Q_ENUM(boltDefineBy)
+    //enum boltDefineBy
+    //{
+    //    boltDefineBy_load,                     //! for bolt pretension
+    //    boltDefinedBy_adjustment,              //! for bolt pretension
+    //    boltDefineBy_open,                     //! for bolt pretension
+    //    boltDefineBy_lock                      //! for bolt pretension
+    //} bdf;
+    //Q_ENUM(boltDefineBy)
 
     enum loadDefinition
     {

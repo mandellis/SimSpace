@@ -211,6 +211,7 @@ void Property::setPropertyValue(const QString &enumName, const QString &thePrope
 
     if(QString(metaEnum.name())=="boltStatusDefinedBy")
     {
+        exit(100);
         bs = static_cast<boltStatusDefinedBy>(value);
         data.setValue(bs);
     }
@@ -960,6 +961,7 @@ QMap<QString,QString> Property::propertyMap()
     //myPropertyMap.insert("Rotation Z","Property::typeOfTransformation");
     myPropertyMap.insert("Analysis type","Property::analysisType");
     myPropertyMap.insert("Static/Transient","Property::timeIntegration");
+    myPropertyMap.insert("Bolt status","Property::boltStatusDefinedBy");
     return myPropertyMap;
 }
 

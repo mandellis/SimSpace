@@ -1848,26 +1848,30 @@ QVariant QExtendedStandardItem::data(int role) const
             }
             return data;
         }
+        else if (name =="Bolt status")
+        {
+            switch(QStandardItem::data(Qt::UserRole).value<Property>().getData().value<Property::boltStatusDefinedBy>())
+            {
+            case Property::boltStatusDefinedBy_load: data.setValue(QString("Load")); break;
+            case Property::boltStatusDefinedBy_adjustment: data.setValue(QString("Adjustment")); break;
+            case Property::boltStatusDefinedBy_open: data.setValue(QString("Open")); break;
+            case Property::boltStatusDefinedBy_lock: data.setValue(QString("Lock")); break;
+            }
+            return data;
+        }
         else if (name =="Define by")
         {
+            /*
             switch(this->getCurrentNode()->getType())
             {
             case SimulationNodeClass::nodeType_structuralAnalysisBoltPretension:
                 //switch(QStandardItem::data(Qt::UserRole).value<Property>().getData().value<Property::boltStatusDefinedBy>())
                 switch(QStandardItem::data(Qt::UserRole).value<Property>().getData().value<Property::defineBy>())
                 {
-
                 case Property::boltStatusDefinedBy_load: data.setValue(QString("Load")); break;
                 case Property::boltStatusDefinedBy_adjustment: data.setValue(QString("Adjustment")); break;
                 case Property::boltStatusDefinedBy_open: data.setValue(QString("Open")); break;
                 case Property::boltStatusDefinedBy_lock: data.setValue(QString("Lock")); break;
-
-                /*
-                case Property::defineBy_load: data.setValue(QString("Load")); break;
-                case Property::defineBy_adjustment: data.setValue(QString("Adjustment")); break;
-                case Property::defineBy_open: data.setValue(QString("Open")); break;
-                case Property::defineBy_lock: data.setValue(QString("Lock")); break;
-                */
                 }
                 break;
             default:
@@ -1878,6 +1882,13 @@ QVariant QExtendedStandardItem::data(int role) const
                 case Property::defineBy_normal: data.setValue(QString("Normal to")); break;
                 }
                 break;
+            }
+            */
+            switch(QStandardItem::data(Qt::UserRole).value<Property>().getData().value<Property::defineBy>())
+            {
+            case Property::defineBy_components: data.setValue(QString("Components")); break;
+            case Property::defineBy_vector: data.setValue(QString("Vector")); break;
+            case Property::defineBy_normal: data.setValue(QString("Normal to")); break;
             }
             return data;
         }

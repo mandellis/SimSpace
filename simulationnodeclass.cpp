@@ -654,7 +654,7 @@ QExtendedStandardItem* SimulationNodeClass::getPropertyItem(const QString &prope
             }
         }
     }
-    //cout<<"SimulationNodeClass::getPropertyItem()->____Property key name \""<<propertyName.toStdString()<<"\" NOT found____"<<endl;
+    cout<<"SimulationNodeClass::getPropertyItem()->____Property key name \""<<propertyName.toStdString()<<"\" NOT found____"<<endl;
     return Q_NULLPTR;
 }
 

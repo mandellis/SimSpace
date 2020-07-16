@@ -890,8 +890,7 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
         vecProp.push_back(prop_coordinateSystem);
 
         data.setValue(Property::boltStatusDefinedBy_load);
-        //data.setValue(Property::defineBy_load);
-        Property prop_defineBy("Define by",data,Property::PropertyGroup_Definition);
+        Property prop_defineBy("Bolt status",data,Property::PropertyGroup_Definition);
         vecProp.push_back(prop_defineBy);
 
         data.setValue(0.0);

@@ -429,12 +429,10 @@ void DetailViewer::setTheModel(const QModelIndex &anIndex)
         QExtendedStandardItem *itemAdjustment = myCurNode->getPropertyItem("Adjustment");
         QModelIndex indexAdjustment = itemAdjustment->index();
 
-        Property::defineBy boltStatusDefinedBy = myCurNode->getPropertyValue<Property::defineBy>("Define by");
-        //Property::boltStatusDefinedBy boltStatusDefinedBy = myCurNode->getPropertyItem("Define by")->data(Qt::UserRole).value<Property>().getData().value<Property::boltStatusDefinedBy>();
+        Property::boltStatusDefinedBy boltStatusDefinedBy = myCurNode->getPropertyValue<Property::boltStatusDefinedBy>("Bolt status");
 
         switch(boltStatusDefinedBy)
         {
-        //case Property::defineBy_load:
         case Property::boltStatusDefinedBy_load:
         {
 
@@ -462,7 +460,6 @@ void DetailViewer::setTheModel(const QModelIndex &anIndex)
             break;
 
         case Property::boltStatusDefinedBy_adjustment:
-        //case Property::defineBy_adjustment:
         {
             this->setRowHidden(indexLoad.row(),indexLoad.parent(),true);
             this->setRowHidden(indexAdjustment.row(),indexAdjustment.parent(),false);
@@ -489,8 +486,6 @@ void DetailViewer::setTheModel(const QModelIndex &anIndex)
 
         case Property::boltStatusDefinedBy_open:
         case Property::boltStatusDefinedBy_lock:
-        //case Property::defineBy_open:
-        //case Property::defineBy_lock:
         {
             //! -----------------------------------------------------------
             //! both the "Load" and "Adjustment" controls must be disabled
@@ -1808,11 +1803,11 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
             //! -----------------------------------
             //! define the property to be replaced
             //! -----------------------------------
-            Property prop_boltStatus("Define by",boltStatus,Property::PropertyGroup_Definition);
+            Property prop_boltStatus("Bolt status",boltStatus,Property::PropertyGroup_Definition);
             Property prop_boltLoad("Load",boltLoad,Property::PropertyGroup_Definition);
             Property prop_boltAdjustment("Adjustment",boltAdjustment,Property::PropertyGroup_Definition);
 
-            myCurNode->replaceProperty("Define by",prop_boltStatus);
+            myCurNode->replaceProperty("Bolt status",prop_boltStatus);
             myCurNode->replaceProperty("Load",prop_boltLoad);
             myCurNode->replaceProperty("Adjustment",prop_boltAdjustment);
 
@@ -1825,10 +1820,8 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
             QModelIndex indexAdjustment = itemAdjustment->index();
 
             switch(boltStatus.value<Property::boltStatusDefinedBy>())
-            //switch(boltStatus.value<Property::defineBy>())
             {
             case Property::boltStatusDefinedBy_load:
-            //case Property::defineBy_load:
             {
                 //! hide the control for the "Adjustment" property and show the control for the "Load" property
                 cout<<"DetailViewer::updateDetailViewerFromTabularData()->____bolt status defined by \"Load\"____"<<endl;
@@ -1837,7 +1830,6 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
             }
                 break;
 
-            //case Property::defineBy_adjustment:
             case Property::boltStatusDefinedBy_adjustment:
             {
                 //! hide the control for the "Load" property and show the control for the "Adjustment" property
@@ -3850,11 +3842,11 @@ void DetailViewer::handleTypeOfSizingChanged()
 void DetailViewer::handleBoltStatusDefinedByChanged()
 {
     cout<<"DetailViewer::handleBoltStatusDefinedByChanged()->____function called____"<<endl;
-    QExtendedStandardItem *itemDefineBy = myCurNode->getPropertyItem("Define by");
+    QExtendedStandardItem *itemDefineBy = myCurNode->getPropertyItem("Bolt status");
     Property::boltStatusDefinedBy boltDefineBy = itemDefineBy->data(Qt::UserRole).value<Property>().getData().value<Property::boltStatusDefinedBy>();
 
-    QExtendedStandardItem *itemLoad = myCurNode->getPropertyItem("Load");
-    QExtendedStandardItem *itemAdjustment = myCurNode->getPropertyItem("Adjustment");
+    //QExtendedStandardItem *itemLoad = myCurNode->getPropertyItem("Load");
+    //QExtendedStandardItem *itemAdjustment = myCurNode->getPropertyItem("Adjustment");
 
     SimulationNodeClass* nodeAnalysisSettings = myCurModelIndex.parent().child(0,0).data(Qt::UserRole).value<SimulationNodeClass*>();
     int currentStepNumber = nodeAnalysisSettings->getPropertyItem("Current step number")->data(Qt::UserRole).value<Property>().getData().toInt();

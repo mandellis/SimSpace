@@ -2335,6 +2335,26 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
             connect(editor,SIGNAL(editingFinished()),this,SLOT(commitAndCloseDirectionSelector()));
             return editor;
         }
+        //! --------------
+        //! "Bolt status"
+        //! --------------
+        else if(propertyName =="Bolt status")
+        {
+            QComboBox *editor = new QComboBox(parent);
+            editor->clear();
+            QVariant data;
+
+            data.setValue(Property::boltStatusDefinedBy_load);
+            editor->addItem("Load",data);
+            data.setValue(Property::boltStatusDefinedBy_adjustment);
+            editor->addItem("Adjustment",data);
+            data.setValue(Property::boltStatusDefinedBy_open);
+            editor->addItem("Open");
+            data.setValue(Property::boltStatusDefinedBy_lock);
+            editor->addItem("Lock");
+
+            return editor;
+        }
         //! ------------
         //! "Define by"
         //! ------------
@@ -2366,6 +2386,7 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
                 }
                 return editor;
             }
+            /*
             if(type==SimulationNodeClass::nodeType_structuralAnalysisBoltPretension)
             {
                 QComboBox *editor = new QComboBox(parent);
@@ -2381,18 +2402,9 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
                 data.setValue(Property::boltStatusDefinedBy_lock);
                 editor->addItem("Lock");
 
-                /*
-                data.setValue(Property::defineBy_load);
-                editor->addItem("Load",data);
-                data.setValue(Property::defineBy_adjustment);
-                editor->addItem("Adjustment",data);
-                data.setValue(Property::defineBy_open);
-                editor->addItem("Open");
-                data.setValue(Property::defineBy_lock);
-                editor->addItem("Lock");
-                */
                 return editor;
             }
+            */
             return 0;
         }
         //! -------------
@@ -4672,6 +4684,23 @@ void GeneralDelegate::setEditorData(QWidget *editor, const QModelIndex &index) c
             connect(editor,SIGNAL(currentIndexChanged(int)),SLOT(commitAndCloseNSSelector()));
         }
     }
+    //! --------------
+    //! "Bolt status"
+    //! --------------
+    else if(propertyName =="Bolt status")
+    {
+        cout<<"GeneralDelegate::setEditorData()->____set editor data for \"Bolt pretension\"____"<<endl;
+        Property::defineBy value = data.value<Property>().getData().value<Property::defineBy>();
+        QComboBox *comboBox = static_cast<QComboBox*>(editor);
+        switch(value)
+        {
+        case Property::boltStatusDefinedBy_load: comboBox->setCurrentIndex(0); break;
+        case Property::boltStatusDefinedBy_adjustment: comboBox->setCurrentIndex(1); break;
+        case Property::boltStatusDefinedBy_open: comboBox->setCurrentIndex(2); break;
+        case Property::boltStatusDefinedBy_lock: comboBox->setCurrentIndex(3); break;
+        }
+        connect(editor,SIGNAL(currentIndexChanged(int)),this, SLOT(commitAndCloseBoltStatusDefinedBy()));
+    }
     //! ------------
     //! "Define by"
     //! ------------
@@ -4692,6 +4721,7 @@ void GeneralDelegate::setEditorData(QWidget *editor, const QModelIndex &index) c
             }
             connect(editor,SIGNAL(currentIndexChanged(int)),this, SLOT(commitAndCloseDefineByControlComboBox()));
         }
+        /*
         else
         {
             cout<<"GeneralDelegate::setEditorData()->____set editor data for \"Bolt pretension\"____"<<endl;
@@ -4703,16 +4733,10 @@ void GeneralDelegate::setEditorData(QWidget *editor, const QModelIndex &index) c
             case Property::boltStatusDefinedBy_adjustment: comboBox->setCurrentIndex(1); break;
             case Property::boltStatusDefinedBy_open: comboBox->setCurrentIndex(2); break;
             case Property::boltStatusDefinedBy_lock: comboBox->setCurrentIndex(3); break;
-
-            /*
-            case Property::defineBy_load: comboBox->setCurrentIndex(0); break;
-            case Property::defineBy_adjustment: comboBox->setCurrentIndex(1); break;
-            case Property::defineBy_open: comboBox->setCurrentIndex(2); break;
-            case Property::defineBy_lock: comboBox->setCurrentIndex(3); break;
-            */
             }
             connect(editor,SIGNAL(currentIndexChanged(int)),this, SLOT(commitAndCloseBoltStatusDefinedBy()));
         }
+        */
     }
     //! --------------------
     //! "Load" "Adjustment"
@@ -6433,6 +6457,20 @@ void GeneralDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, c
             case 1: data.setValue(Property::defineBy_globalCoordinates); break;
             }
         }
+        //! --------------
+        //! "Bolt status"
+        //! --------------
+        else if(propertyName =="Bolt status")
+        {
+            QComboBox *comboBox = static_cast<QComboBox*>(editor);
+            switch(comboBox->currentIndex())
+            {
+            case 0: data.setValue(Property::boltStatusDefinedBy_load); break;
+            case 1: data.setValue(Property::boltStatusDefinedBy_adjustment); break;
+            case 2: data.setValue(Property::boltStatusDefinedBy_open); break;
+            case 3: data.setValue(Property::boltStatusDefinedBy_lock); break;
+            }
+        }
         //! ------------
         //! "Define by"
         //! ------------
@@ -6451,6 +6489,7 @@ void GeneralDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, c
                 case 2: data.setValue(Property::defineBy_normal); break;
                 }
             }
+            /*
             else
             {
                 QComboBox *comboBox = static_cast<QComboBox*>(editor);
@@ -6460,15 +6499,9 @@ void GeneralDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, c
                 case 1: data.setValue(Property::boltStatusDefinedBy_adjustment); break;
                 case 2: data.setValue(Property::boltStatusDefinedBy_open); break;
                 case 3: data.setValue(Property::boltStatusDefinedBy_lock); break;
-
-                /*
-                case 0: data.setValue(Property::defineBy_load); break;
-                case 1: data.setValue(Property::defineBy_adjustment); break;
-                case 2: data.setValue(Property::defineBy_open); break;
-                case 3: data.setValue(Property::defineBy_lock); break;
-                */
                 }
             }
+            */
         }
         else if(propertyName =="Load" || propertyName =="Adjustment" || propertyName=="Ambient" || propertyName=="Diffuse" || propertyName =="Specular")
         {
@@ -7076,10 +7109,10 @@ void GeneralDelegate::commitAndCloseNSSelector()
     emit scopeChanged();
 }
 
-//! --------------------------------------------------------------//
-//! function: commitAndCloseCSSelector                            //
-//! details:  close the coordinate system selector                //
-//! --------------------------------------------------------------//
+//! -----------------------------------------------
+//! function: commitAndCloseCSSelector
+//! details:  close the coordinate system selector
+//! -----------------------------------------------
 void GeneralDelegate::commitAndCloseCSSelector()
 {
     QComboBox *editor = qobject_cast<QComboBox *>(sender());
