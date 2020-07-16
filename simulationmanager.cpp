@@ -21,7 +21,7 @@
 #include "tools.h"
 #include "openfoamreader.h"
 #include "contextmenubuilder.h"
-#include "ccxsolvermanager.h"
+//#include "ccxsolvermanager.h"
 #include "ccxconsoletofile.h"
 #include "meshingserver.h"
 #include "postengine.h"
@@ -3029,6 +3029,9 @@ void SimulationManager::createSimulationNode(SimulationNodeClass::nodeType type,
         //! the default constructor load::load() inits a load of type "loadType_none"
         //! --------------------------------------------------------------------------
         load aLoad;
+        data.setValue(0.0);
+        QVector<QVariant> vecData{data};
+        aLoad.setData(vecData);
         switch(type)
         {
         case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Moment:
@@ -3079,7 +3082,7 @@ void SimulationManager::createSimulationNode(SimulationNodeClass::nodeType type,
             //! modify the tabular data in Analysis settings
             //! column of data containing the environment temperature
             //! --------------------------------------------------------
-            QVector<QVariant> vecData;
+            vecData.clear();
             data.setValue(Tenv_default);
             vecData.push_back(data);
             aLoad.setType(Property::loadType_thermalConditionTemperature);
@@ -3089,7 +3092,6 @@ void SimulationManager::createSimulationNode(SimulationNodeClass::nodeType type,
             break;
         }
         markerBuilder::addMarker(aNode,mySimulationDataBase);
-        //markerBuilder::addMarker(this->getCurrentNode(),mySimulationDataBase);
         mainTreeTools::getCurrentSimulationRoot(myTreeView)->insertRow(this->getInsertionRow(),item);
     }
     //! --------------------------

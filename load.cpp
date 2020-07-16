@@ -282,7 +282,7 @@ load load::readLoad(std::ifstream &in)
         QVector<double> vecDouble = tools::readQVector<double>(in);
         for(int i=0; i<vecDouble.size();i++)
         {
-            cout<<"____"<<type.toStdString()<<"_____value: "<<vecDouble[i]<<"____"<<endl;
+            //cout<<"____"<<type.toStdString()<<"_____value: "<<vecDouble[i]<<"____"<<endl;
             data.setValue(vecDouble.at(i));
             vecVariant.push_back(data);
         }

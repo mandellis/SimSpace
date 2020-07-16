@@ -348,7 +348,6 @@ void Property::setPropertyValue(const QString &enumName, const QString &thePrope
 void Property::writeProperty(ofstream& out, const Property &prop)
 {
     cout<<"Property::writeProperty->____writing property: "<<prop.getName().toStdString()<<"____"<<endl;
-    //const QMultiMap<QString,QString> &thePropertyMap = Property::propertyMap();
     const QMap<QString,QString> &thePropertyMap = Property::propertyMap();
 
     //! -------------------

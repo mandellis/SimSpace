@@ -4,9 +4,6 @@
 #include "ccxsolvermanager1.h"
 #include "qprogressindicator.h"
 #include <qprogressevent.h>
-//#include <qccxsolvermessageevent.h>
-//#include <qconsoleevent.h>
-//#include <ccxsolvermessage.h>
 
 //! ---
 //! Qt
@@ -60,7 +57,6 @@ void CCXSolverManager1::run()
     //! -----------------
     //! create a process
     //! -----------------
-    //QProcess *process = new QProcess(this);
     QProcess process;
 
     //! --------------------------
@@ -95,8 +91,8 @@ void CCXSolverManager1::run()
             emit CCXRunFinished();
             return;
         }
-        //program.append("/ccx_215Pardiso.exe");
-        program.append("/ccx.exe");
+        program.append("/ccx_215Pardiso.exe");
+        //program.append("/ccx.exe");
     }
 
     //! --------------------------
@@ -123,10 +119,6 @@ void CCXSolverManager1::run()
     //! ----------------
     QProcessEnvironment processEnv;
     processEnv.insert("omp_num_threads",QString("%1").arg(myNbProcessors));
-    //process->setWorkingDirectory(solutionDataDir);
-    //process->setProcessEnvironment(processEnv);
-    //process->start(program,CCXarguments);
-    //process->waitForFinished(-1);
 
     process.setWorkingDirectory(solutionDataDir);
     process.setProcessEnvironment(processEnv);
