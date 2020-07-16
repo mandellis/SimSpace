@@ -1874,7 +1874,7 @@ bool writeSolverFileClass::perform()
                     case Property::boltStatusDefinedBy_lock:
                     {
                         double loadValue = 0.0;
-                        myInputFile<<"*BOUNDARY"<<endl;
+                        myInputFile<<"*BOUNDARY,FIXED"<<endl;
                         myInputFile<<RN.toStdString()<<","<<1<<","<<3<<","<<loadValue<<endl;
                     }
                         break;
