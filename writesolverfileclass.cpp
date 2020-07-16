@@ -1875,7 +1875,7 @@ bool writeSolverFileClass::perform()
                     {
                         double loadValue = 0.0;
                         myInputFile<<"*BOUNDARY"<<endl;
-                        myInputFile<<RN.toStdString()<<","<<1<<","<<1<<","<<loadValue<<endl;
+                        myInputFile<<RN.toStdString()<<","<<1<<","<<3<<","<<loadValue<<endl;
                     }
                         break;
                     }
