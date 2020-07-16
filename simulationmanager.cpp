@@ -21,7 +21,7 @@
 #include "tools.h"
 #include "openfoamreader.h"
 #include "contextmenubuilder.h"
-#include "ccxsolvermanager.h"
+//#include "ccxsolvermanager.h"
 #include "ccxconsoletofile.h"
 #include "meshingserver.h"
 #include "postengine.h"
