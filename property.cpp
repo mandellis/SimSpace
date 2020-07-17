@@ -819,6 +819,7 @@ void Property::readProperty(ifstream &in, Property &prop)
             propKeyName == "Tangential" ||
             propKeyName == "Define by" ||
             propKeyName == "Define by " ||
+            propKeyName == "Bolt status" ||
             propKeyName == "Type" ||
             propKeyName == "Behavior" ||
             propKeyName == "Formulation" ||
@@ -960,6 +961,7 @@ QMap<QString,QString> Property::propertyMap()
     //myPropertyMap.insert("Rotation Z","Property::typeOfTransformation");
     myPropertyMap.insert("Analysis type","Property::analysisType");
     myPropertyMap.insert("Static/Transient","Property::timeIntegration");
+    myPropertyMap.insert("Bolt status","Property::boltStatusDefinedBy");
     return myPropertyMap;
 }
 

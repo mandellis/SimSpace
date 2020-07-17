@@ -65,7 +65,6 @@ void CustomTableModel::autoUpdateTable(QModelIndex topLeftIndex, QModelIndex /*b
     {
 
         Property::boltStatusDefinedBy boltStatusDefineBy = topLeftIndex.data(Qt::EditRole).value<Property::boltStatusDefinedBy>();
-        //Property::defineBy boltStatusDefineBy = topLeftIndex.data(Qt::EditRole).value<Property::defineBy>();
         QVariant value;
         int currentRow = topLeftIndex.row();
         int loadColumn = topLeftIndex.column()+1;
@@ -75,7 +74,6 @@ void CustomTableModel::autoUpdateTable(QModelIndex topLeftIndex, QModelIndex /*b
 
         switch(boltStatusDefineBy)
         {
-        //case Property::defineBy_load:
         case Property::boltStatusDefinedBy_load:
         {
             cerr<<"CustomTableModel::autoUpdateTable()->____disabling adjustment, enablig load____"<<endl;
@@ -96,7 +94,6 @@ void CustomTableModel::autoUpdateTable(QModelIndex topLeftIndex, QModelIndex /*b
             break;
 
         case Property::boltStatusDefinedBy_adjustment:
-        //case Property::defineBy_adjustment:
         {
             cerr<<"CustomTableModel::autoUpdateTable()->____disabling load, enabling adjustment____"<<endl;
             //! -----------------------
@@ -117,8 +114,6 @@ void CustomTableModel::autoUpdateTable(QModelIndex topLeftIndex, QModelIndex /*b
 
         case Property::boltStatusDefinedBy_open:
         case Property::boltStatusDefinedBy_lock:
-        //case Property::defineBy_open:
-        //case Property::defineBy_lock:
         {
             cerr<<"CustomTableModel::autoUpdateTable()->____disabling load and adjustment____"<<endl;
             //! ----------------------------------
@@ -335,19 +330,11 @@ QVariant CustomTableModel::data(const QModelIndex &index, int role) const
         {
             QString cellString;
             switch(data.value<Property::boltStatusDefinedBy>())
-            //switch(data.value<Property::defineBy>())
             {
             case Property::boltStatusDefinedBy_load: cellString="Load"; break;
             case Property::boltStatusDefinedBy_adjustment: cellString="Adjustment"; break;
             case Property::boltStatusDefinedBy_open: cellString="Open"; break;
             case Property::boltStatusDefinedBy_lock: cellString="Lock"; break;
-
-            /*
-            case Property::defineBy_load: cellString="Load"; break;
-            case Property::defineBy_adjustment: cellString="Adjustment"; break;
-            case Property::defineBy_open: cellString="Open"; break;
-            case Property::defineBy_lock: cellString="Lock"; break;
-            */
             }
             QVariant cellStringVariant;
             cellStringVariant.setValue(cellString);
@@ -390,9 +377,53 @@ QVariant CustomTableModel::data(const QModelIndex &index, int role) const
             cellStringVariant.setValue(cellString);
             return cellStringVariant;
         }
-        else if(m_loadTypes.at(index.column())==Property::loadType_boltForce ||
-                m_loadTypes.at(index.column())==Property::loadType_boltAdjustment)
+        else if(m_loadTypes.at(index.column())==Property::loadType_boltForce)
         {
+            //! ----------------------
+            //! check the bolt status
+            //! ----------------------
+            QVariant data1 = m_data[index.row()]->at(index.column()-1);
+            Property::boltStatusDefinedBy boltStatus = data1.value<Property::boltStatusDefinedBy>();
+            if(boltStatus==Property::boltStatusDefinedBy_lock || boltStatus==Property::boltStatusDefinedBy_open)
+            {
+                QString cellString = "N/A";
+                QVariant cellStringVariant;
+                cellStringVariant.setValue(cellString);
+                return cellStringVariant;
+            }
+            if(boltStatus==Property::boltStatusDefinedBy_adjustment)
+            {
+                QString cellString = "N/A";
+                QVariant cellStringVariant;
+                cellStringVariant.setValue(cellString);
+                return cellStringVariant;
+            }
+            QString cellString = data.toString();
+            QVariant cellStringVariant;
+            cellStringVariant.setValue(cellString);
+            return cellStringVariant;
+        }
+        else if(m_loadTypes.at(index.column())==Property::loadType_boltAdjustment)
+        {
+            //! ----------------------
+            //! check the bolt status
+            //! ----------------------
+            QVariant data1 = m_data[index.row()]->at(index.column()-2);
+            Property::boltStatusDefinedBy boltStatus = data1.value<Property::boltStatusDefinedBy>();
+            if(boltStatus==Property::boltStatusDefinedBy_lock || boltStatus==Property::boltStatusDefinedBy_open)
+            {
+                QString cellString = "N/A";
+                QVariant cellStringVariant;
+                cellStringVariant.setValue(cellString);
+                return cellStringVariant;
+            }
+            if(boltStatus==Property::boltStatusDefinedBy_load)
+            {
+                QString cellString = "N/A";
+                QVariant cellStringVariant;
+                cellStringVariant.setValue(cellString);
+                return cellStringVariant;
+            }
             QString cellString = data.toString();
             QVariant cellStringVariant;
             cellStringVariant.setValue(cellString);
@@ -544,7 +575,7 @@ QString CustomTableModel::getHeaderString(int section) const
     case Property::loadType_solverType: horizontalHeaderString ="Solver type"; break;
     case Property::loadType_autoTimeStepping: horizontalHeaderString ="Time stepping policy"; break;
     case Property::loadType_thermalConditionTemperature: horizontalHeaderString ="T [K]"; break;
-    case Property::loadType_boltStatusDefinedBy: horizontalHeaderString = "Define by"; break;
+    case Property::loadType_boltStatusDefinedBy: horizontalHeaderString = "Bolt status"; break;
     case Property::loadType_boltForce: horizontalHeaderString = "Force"; break;
     case Property::loadType_boltAdjustment: horizontalHeaderString = "Adjustment"; break;
     case Property::loadType_fieldParameters: horizontalHeaderString = "Field parameters"; break;
@@ -767,6 +798,8 @@ Qt::ItemFlags CustomTableModel::flags(const QModelIndex &index) const
         if(index.data(Qt::EditRole).canConvert<QString>())
         {
             if(index.data(Qt::EditRole).toString()=="N/A")
+                return QAbstractItemModel::flags(index) | Qt::ItemIsSelectable;
+            if(index.data(Qt::DisplayRole).toString()=="N/A")
                 return QAbstractItemModel::flags(index) | Qt::ItemIsSelectable;
         }
         return QAbstractItemModel::flags(index) | Qt::ItemIsEditable;
