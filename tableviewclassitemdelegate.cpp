@@ -93,17 +93,6 @@ QWidget* tableViewClassItemDelegate::createEditor(QWidget *parent, const QStyleO
         editor->addItem("Open",data);
         data.setValue(Property::boltStatusDefinedBy_lock);
         editor->addItem("Lock",data);
-
-        /*
-        data.setValue(Property::defineBy_load);
-        editor->addItem("Load",data);
-        data.setValue(Property::defineBy_adjustment);
-        editor->addItem("Adjustment",data);
-        data.setValue(Property::defineBy_open);
-        editor->addItem("Open",data);
-        data.setValue(Property::defineBy_lock);
-        editor->addItem("Lock",data);
-        */
         return editor;
     }
     if(strcmp(data.typeName(),"double")==0)
@@ -173,7 +162,6 @@ void tableViewClassItemDelegate::setEditorData(QWidget *editor, const QModelInde
     if(strcmp(data.typeName(),"Property::boltStatusDefinedBy")==0)
     {
         Property::boltStatusDefinedBy value = data.value<Property::boltStatusDefinedBy>();
-        //Property::defineBy value = data.value<Property::defineBy>();
 
         QComboBox *comboBox = static_cast<QComboBox*>(editor);
         switch(value)
@@ -182,12 +170,6 @@ void tableViewClassItemDelegate::setEditorData(QWidget *editor, const QModelInde
         case Property::boltStatusDefinedBy_adjustment: comboBox->setCurrentIndex(1); break;
         case Property::boltStatusDefinedBy_open: comboBox->setCurrentIndex(2); break;
         case Property::boltStatusDefinedBy_lock: comboBox->setCurrentIndex(3); break;
-        /*
-        case Property::defineBy_load: comboBox->setCurrentIndex(0); break;
-        case Property::defineBy_adjustment: comboBox->setCurrentIndex(1); break;
-        case Property::defineBy_open: comboBox->setCurrentIndex(2); break;
-        case Property::defineBy_lock: comboBox->setCurrentIndex(3); break;
-        */
         }
         connect(editor,SIGNAL(currentIndexChanged(int)),this, SLOT(commitAndCloseBoltStatusDefineBy()));
     }
@@ -262,12 +244,6 @@ void tableViewClassItemDelegate::setModelData(QWidget *editor, QAbstractItemMode
         case 1: data.setValue(Property::boltStatusDefinedBy_adjustment); break;
         case 2: data.setValue(Property::boltStatusDefinedBy_open); break;
         case 3: data.setValue(Property::boltStatusDefinedBy_lock); break;
-        /*
-        case 0: data.setValue(Property::defineBy_load); break;
-        case 1: data.setValue(Property::defineBy_adjustment); break;
-        case 2: data.setValue(Property::defineBy_open); break;
-        case 3: data.setValue(Property::defineBy_lock); break;
-        */
         }
     }
     if(strcmp(dataContent.typeName(),"double")==0)

@@ -164,7 +164,14 @@ void load::write(std::ofstream &out) const
 
         //! build the vector and write it
         QVector<int> vecInt;
-        for(int i=0;i<myValues.size();i++) vecInt.push_back(myValues.at(i).toInt());
+        for(int i=0;i<myValues.size();i++)
+        {
+            if(myLoadType == Property::loadType_boltStatusDefinedBy)
+            {
+                cout<<"____bolt status: "<<myValues.at(i).toInt()<<endl;
+            }
+            vecInt.push_back(myValues.at(i).toInt());
+        }
         tools::writeQVector2<int>(vecInt,out);
     }
         break;
@@ -303,9 +310,18 @@ load load::readLoad(std::ifstream &in)
         for(int i=0; i<vecInt.size();i++)
         {
             int val = vecInt.at(i);
+            if(loadType == "loadType_boltStatusDefinedBy")
+            {
+                cout<<"_____reading bolt type: "<<val<<"____"<<endl;
+                Property::boltStatusDefinedBy boltStatus = static_cast<Property::boltStatusDefinedBy>(val);
+                data.setValue(boltStatus);
+                vecVariant.push_back(data);
+                continue;
+            }
             Property::loadType lt = static_cast<Property::loadType>(val);
             data.setValue(lt);
             vecVariant.push_back(data);
+
         }
     }
     else if(loadType == "loadType_autoTimeStepping" ||

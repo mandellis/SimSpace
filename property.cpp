@@ -211,7 +211,6 @@ void Property::setPropertyValue(const QString &enumName, const QString &thePrope
 
     if(QString(metaEnum.name())=="boltStatusDefinedBy")
     {
-        exit(100);
         bs = static_cast<boltStatusDefinedBy>(value);
         data.setValue(bs);
     }
@@ -820,6 +819,7 @@ void Property::readProperty(ifstream &in, Property &prop)
             propKeyName == "Tangential" ||
             propKeyName == "Define by" ||
             propKeyName == "Define by " ||
+            propKeyName == "Bolt status" ||
             propKeyName == "Type" ||
             propKeyName == "Behavior" ||
             propKeyName == "Formulation" ||

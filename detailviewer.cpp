@@ -1705,9 +1705,9 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
 
     if(nodeAnalysisSettings==Q_NULLPTR)
     {
-        cout<<"@---------------------------------------------------------@"<<endl;
-        cout<<"@- Analysis settings not found- check interface behavior -@"<<endl;
-        cout<<"@---------------------------------------------------------@"<<endl;
+        cerr<<"@---------------------------------------------------------@"<<endl;
+        cerr<<"@- Analysis settings not found- check interface behavior -@"<<endl;
+        cerr<<"@---------------------------------------------------------@"<<endl;
         return;
     }
 
@@ -1745,9 +1745,6 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
             {
                 double stepEndTime = data.toDouble();
                 data.setValue(stepEndTime);
-                //myCurNode->removeProperty("Step end time");
-                //Property prop_stepEndTime("Step end time",data,Property::PropertyGroup_StepControls);
-                //myCurNode->addProperty(prop_stepEndTime,2);
                 myCurNode->replaceProperty("Step end time",Property("Step end time",data,Property::PropertyGroup_StepControls));
             }
                 break;
@@ -1756,9 +1753,6 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
             {
                 Property::solverType theSolverType = data.value<Property::solverType>();
                 data.setValue(theSolverType);
-                //myCurNode->removeProperty("Solver type");
-                //Property prop_solverType("Solver type",data,Property::PropertyGroup_SolverControls);
-                //myCurNode->addProperty(prop_solverType,0);
                 myCurNode->replaceProperty("Solver type",Property("Solver type",data,Property::PropertyGroup_SolverControls));
             }
                 break;
@@ -1839,8 +1833,6 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
             }
                 break;
 
-            //case Property::defineBy_open:
-            //case Property::defineBy_lock:
             case Property::boltStatusDefinedBy_open:
             case Property::boltStatusDefinedBy_lock:
             {
@@ -3944,7 +3936,7 @@ void DetailViewer::handleBoltLoadChanged()
     //! --------------------------------------
     SimulationNodeClass *nodeAnalysisSettings = myCurModelIndex.parent().child(0,0).data(Qt::UserRole).value<SimulationNodeClass*>();
 
-    int currentTimeStep = nodeAnalysisSettings->getPropertyItem("Current step number")->data(Qt::UserRole).value<Property>().getData().toInt();
+    int currentTimeStep = nodeAnalysisSettings->getPropertyValue<int>("Current step number");
     CustomTableModel *tabularDataModel = nodeAnalysisSettings->getTabularDataModel();
 
     int row = currentTimeStep;
