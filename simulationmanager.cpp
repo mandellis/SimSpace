@@ -11467,9 +11467,11 @@ void SimulationManager::readResultsFile(const QString &fileName, const QString &
     //! -----------------------------------------
     //! retrieve the "Solution information" item
     //! -----------------------------------------
-    QStandardItem *itemSolution = myCurrentRunningAnalysis->child(myCurrentRunningAnalysis->rowCount()-1,0);
+    QStandardItem *itemCurrentRoot =myModel->itemFromIndex(myTreeView->currentIndex());
+    //(QStandardItemModel*)(myTreeView->model())->itemFromIndex(myTreeView->currentIndex());
+    QStandardItem *itemSolution = itemCurrentRoot->child(itemCurrentRoot->rowCount()-1,0);
     SimulationNodeClass *nodeSolution = itemSolution->data(Qt::UserRole).value<SimulationNodeClass*>();
-    QStandardItem *itemSolutionInformation = myCurrentRunningAnalysis->child(myCurrentRunningAnalysis->rowCount()-1,0)->child(0,0);
+    QStandardItem *itemSolutionInformation = itemCurrentRoot->child(itemCurrentRoot->rowCount()-1,0)->child(0,0);
     SimulationNodeClass *nodeSolutionInformation = itemSolutionInformation->data(Qt::UserRole).value<SimulationNodeClass*>();
     QVariant data;
 
