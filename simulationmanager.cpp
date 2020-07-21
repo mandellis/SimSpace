@@ -569,6 +569,8 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
             case SimulationNodeClass::nodeType_solutionStructuralEquivalentPlasticStrain:
             case SimulationNodeClass::nodeType_solutionStructuralContact:
             case SimulationNodeClass::nodeType_solutionStructuralFatigueTool:
+            case SimulationNodeClass::nodeType_solutionStructuralGamma:
+            case SimulationNodeClass::nodeType_solutionStructuralReactionForce:
             {
                 //! ---------------------------------------------------------------------
                 //! hide the meshes: keep the bodies in wireframe mode for the selection
@@ -2649,7 +2651,9 @@ void SimulationManager::createSimulationNode(SimulationNodeClass::nodeType type,
             type ==SimulationNodeClass::nodeType_solutionStructuralStress ||
             type ==SimulationNodeClass::nodeType_solutionStructuralFatigueTool ||
             type ==SimulationNodeClass::nodeType_solutionStructuralNodalForces ||
-            type ==SimulationNodeClass::nodeType_solutionStructuralContact)
+            type ==SimulationNodeClass::nodeType_solutionStructuralContact  ||
+            type ==SimulationNodeClass::nodeType_solutionStructuralGamma  ||
+            type ==SimulationNodeClass::nodeType_solutionStructuralReactionForce)
     {
         aNode = nodeFactory::nodeFromScratch(type,mySimulationDataBase, myCTX, addOptions);
         aNode->setParent(this);
