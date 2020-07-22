@@ -177,24 +177,22 @@ private:
     int myNumberOfElements;
     int myNumberOfNodes;
 
-    //! ---------------------------------------
-    //! topological definition of the elements
-    //! ---------------------------------------
+    //! ------------------
+    //! elements topology
+    //! ------------------
+    occHandle(MeshVS_HArray1OfSequenceOfInteger) TRIGMeshData;
+    occHandle(MeshVS_HArray1OfSequenceOfInteger) QUADMeshData;
+    occHandle(MeshVS_HArray1OfSequenceOfInteger) TRIG6MeshData;
+    occHandle(MeshVS_HArray1OfSequenceOfInteger) QUAD8MeshData;
     occHandle(MeshVS_HArray1OfSequenceOfInteger) TET4MeshData;
     occHandle(MeshVS_HArray1OfSequenceOfInteger) TET10MeshData;
     occHandle(MeshVS_HArray1OfSequenceOfInteger) HEXA8MeshData;
-
-    //occHandle(MeshVS_HArray1OfSequenceOfInteger) HEXA20MeshData;
+    occHandle(MeshVS_HArray1OfSequenceOfInteger) HEXA20MeshData;
     occHandle(MeshVS_HArray1OfSequenceOfInteger) PRISM6MeshData;
-    //occHandle(MeshVS_HArray1OfSequenceOfInteger) PRISM15MeshData;
+    occHandle(MeshVS_HArray1OfSequenceOfInteger) PRISM15MeshData;
     occHandle(MeshVS_HArray1OfSequenceOfInteger) PYRAM5MeshData;
-    //occHandle(MeshVS_HArray1OfSequenceOfInteger) PYRAM13MeshData;
-
-    void CreatePrismTopology(int NbBasePoints);
-    void CreatePyramidTopology(int NbBasePoints);
-    void CreateTetTopology();
-    void CreateTet10Topology();
-    void CreateHexaTopology();
+    occHandle(MeshVS_HArray1OfSequenceOfInteger) PYRAM13MeshData;
+    void buildElementsTopology();
 
     QTime clock();
 

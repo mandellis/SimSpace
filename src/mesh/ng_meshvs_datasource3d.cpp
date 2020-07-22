@@ -174,15 +174,10 @@ Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(const QList<meshElementByCoords> 
         }
     }
 
-    //! --------------------------------
+    //! ------------------
     //! elements topology
-    //! TET, PYRAM, PRISM, HEXA
-    //! --------------------------------
-    this->CreatePyramidTopology(4);
-    this->CreatePrismTopology(3);
-    this->CreateTetTopology();
-    this->CreateHexaTopology();
-    this->CreateTet10Topology();
+    //! ------------------
+    this->buildElementsTopology();
 
     cout<<"Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D()->____constructor from a QList of meshElementByCoords: OK____"<<endl;
 }
@@ -258,15 +253,10 @@ Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(const std::vector<mesh::meshEleme
     }
     //fclose(f1);
 
-    //! ---------------------------------
+    //! ------------------
     //! elements topology
-    //! second order elements: to do ...
-    //! ---------------------------------
-    this->CreateTetTopology();
-    this->CreateHexaTopology();
-    this->CreatePrismTopology(3);
-    this->CreatePyramidTopology(4);
-    this->CreateTet10Topology();
+    //! ------------------
+    this->buildElementsTopology();
 
     cout<<"Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D()->____from vector of mesh points and mesh elements: OK____"<<endl;
 }
@@ -347,11 +337,10 @@ Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(const std::string &fileName)
         }
     }
 
-    this->CreateTetTopology();
-    this->CreateTet10Topology();
-    this->CreateHexaTopology();
-    this->CreatePyramidTopology(4);
-    this->CreatePrismTopology(3);
+    //! ------------------
+    //! elements topology
+    //! ------------------
+    this->buildElementsTopology();
 
     //! -------------
     //! connectivity
@@ -449,30 +438,10 @@ Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(Ng_Mesh *aMesh)
         }
     }
 
-    //! ---------------------------------------------
-    //! topology definition: first order tetrahedron
-    //! ---------------------------------------------
-    this->CreateTetTopology();
-
-    //! ----------------------------------------------
-    //! topology definition: second order tetrahedron
-    //! ----------------------------------------------
-    int TET10_Faces[4][6]={{3,8,2,9,4,10},
-                           {1,7,4,9,2,5},
-                           {1,5,2,8,3,6},
-                           {3,10,4,7,1,6}};
-
-    TET10MeshData = new MeshVS_HArray1OfSequenceOfInteger(1,4);
-    for(int i=0;i<4;i++)
-    {
-        TColStd_SequenceOfInteger faceNodes;
-        for(int k=0;k<6;k++)
-        {
-            Standard_Integer node = TET10_Faces[i][k]-1;
-            faceNodes.Append(node);
-        }
-        TET10MeshData->SetValue(i+1,faceNodes);
-    }
+    //! ------------------
+    //! elements topology
+    //! ------------------
+    this->buildElementsTopology();
 
     //! -----------------------------
     //! face to element connectivity
@@ -528,6 +497,12 @@ Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(const tetgenio &aMesh)
         myElemType->SetValue(i,TET);
     }
 
+    //! ------------------
+    //! elements topology
+    //! ------------------
+    this->buildElementsTopology();
+
+    /*
     //! -------------------------------------------
     //! topological information
     //! sequence of nodes for the 3D visualization
@@ -538,38 +513,16 @@ Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(const tetgenio &aMesh)
     //! Face 4: 3-4-1
     //! -------------------------------------------
     TET4MeshData = new MeshVS_HArray1OfSequenceOfInteger(1,4);
-
     TColStd_SequenceOfInteger face1, face2, face3, face4;
     face1.Append(0); face1.Append(1); face1.Append(3);
     face2.Append(0); face2.Append(2); face2.Append(1);
     face3.Append(1); face3.Append(2); face3.Append(3);
     face4.Append(3); face4.Append(2); face4.Append(0);
-
     TET4MeshData->SetValue(1,face1);
     TET4MeshData->SetValue(2,face2);
     TET4MeshData->SetValue(3,face3);
     TET4MeshData->SetValue(4,face4);
-
-    //! -------------------------------------------
-    //! sequence of nodes for the 3D visualization
-    //! 2nd order tet: definition of the faces
-    //! Face 1: 0-6-1-8-3-5
-    //! Face 2: 0-9-2-7-4-6
-    //! Face 3: 1-7-2-4-3-8
-    //! Face 4: 3-4-2-9-0-5
-    //! -------------------------------------------
-    TET10MeshData = new MeshVS_HArray1OfSequenceOfInteger(1,4);
-
-    face1.Clear(); face2.Clear(); face3.Clear(); face4.Clear();
-    face1.Append(0); face1.Append(6); face1.Append(1); face1.Append(8); face1.Append(3); face1.Append(5);
-    face2.Append(0); face2.Append(9); face2.Append(2); face2.Append(7); face2.Append(4); face2.Append(6);
-    face3.Append(1); face3.Append(7); face3.Append(2); face3.Append(4); face3.Append(3); face3.Append(8);
-    face4.Append(3); face4.Append(4); face4.Append(2); face4.Append(9); face4.Append(0); face4.Append(5);
-
-    TET10MeshData->SetValue(1,face1);
-    TET10MeshData->SetValue(2,face2);
-    TET10MeshData->SetValue(3,face3);
-    TET10MeshData->SetValue(4,face4);
+    */
 }
 
 //! ----------------------------------------------
@@ -1077,20 +1030,10 @@ Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(const occHandle(Ng_MeshVS_DataSou
         }
     }
 
-    //! --------------------------------
-    //! elements topology - first order
-    //! TET, PYRAM, PRISM, HEXA
-    //! --------------------------------
-    this->CreateTetTopology();
-    this->CreatePyramidTopology(4);
-    this->CreatePrismTopology(3);
-    this->CreateHexaTopology();
-
-    //! ---------------------------------
-    //! elements topology - second order
-    //! TET10, PYRAM13, PRISM15, HEXA20
-    //! ---------------------------------
-    // to do...
+    //! ------------------
+    //! elements topology
+    //! ------------------
+    this->buildElementsTopology();
 
     clock();
 }
@@ -1137,7 +1080,7 @@ Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(const Eigen::MatrixXd &V, const E
     //! -----------------
     //! element topology
     //! -----------------
-    this->CreateTetTopology();
+    this->buildElementsTopology();
 }
 
 //! --------------------------------------------------------------
@@ -1154,13 +1097,21 @@ Standard_Boolean Ng_MeshVS_DataSource3D::Get3DGeom(const Standard_Integer theID,
     {
         switch(myElemType->Value(localElementID))
         {
-        case TET: theNbNodes=4; theData=TET4MeshData; break;
+        //! -----------------
+        //! Surface elements
+        //! -----------------
+        case TRIG: theNbNodes = 3; theData = TRIGMeshData; break;
+        case QUAD: theNbNodes = 4;  theData = QUADMeshData; break;
+        case TRIG6: theNbNodes = 6; theData = TRIG6MeshData; break;
+        case QUAD8: theNbNodes = 8; theData = QUAD8MeshData; break;
+        //! ----------------
+        //! Volume elements
+        //! ----------------
+        case TET: theNbNodes = 4; theData = TET4MeshData; break;
         case HEXA: theNbNodes = 8; theData = HEXA8MeshData; break;
         case PRISM: theNbNodes = 6; theData = PRISM6MeshData; break;
         case PYRAM: theNbNodes = 5; theData = PYRAM5MeshData; break;
-
-        //! second order to do...
-        case TET10: theNbNodes=10; theData= TET10MeshData; break;
+        case TET10: theNbNodes = 10; theData= TET10MeshData; break;
         }
         return true;
     }
@@ -2106,9 +2057,9 @@ void Ng_MeshVS_DataSource3D::buildFaceToElementConnectivity()
         //! second order elements
         //! ----------------------
         case TET10: topology = TET10MeshData; NbFaces = 4; break;
-        //case HEXA20: topology = HEXA20MeshData; NbFaces = 6; break;
-        //case PRISM15: topology = PRISM15MeshData; NbFaces = 5; break;
-        //case PYRAM13: topology = PYRAM13MeshData; NbFaces = 5; break;
+        case HEXA20: topology = HEXA20MeshData; NbFaces = 6; break;
+        case PRISM15: topology = PRISM15MeshData; NbFaces = 5; break;
+        case PYRAM13: topology = PYRAM13MeshData; NbFaces = 5; break;
         }
 
         for(int f=1; f<=NbFaces; f++)
@@ -2164,87 +2115,98 @@ void Ng_MeshVS_DataSource3D::buildFaceToElementConnectivity()
     }
 }
 
-//! ----------------------------------------------------------------------------------------
-//! function: createPyramidTopology
-//! details:  create the topology of a first order pyramid with a base made of NbBasePoints
-//! ----------------------------------------------------------------------------------------
-void Ng_MeshVS_DataSource3D::CreatePyramidTopology(int NbBasePoints)
-{
-    occHandle(MeshVS_HArray1OfSequenceOfInteger) result;
-    if(NbBasePoints>=3)
-    {
-        result = new MeshVS_HArray1OfSequenceOfInteger(1,NbBasePoints+1);
-        for(int i=1; i<=NbBasePoints; i++)
-        {
-            result->ChangeValue(1).Prepend(i);
-            result->ChangeValue(1+i).Append(0);
-            result->ChangeValue(1+i).Append(i);
-            result->ChangeValue(1+i).Append(i%NbBasePoints+1);
-        }
-    }
-    PYRAM5MeshData = result;
-}
-
-//! ---------------------------------------------------------------------------------
-//! function: CreatePrismTopology
-//! details:  create the topology of a first order prism with a base of NbBasePoints
-//! ---------------------------------------------------------------------------------
-void Ng_MeshVS_DataSource3D::CreatePrismTopology(int NbBasePoints)
-{
-    int Nseq = 0;
-    if(NbBasePoints==3) Nseq = 5;
-    PRISM6MeshData = new MeshVS_HArray1OfSequenceOfInteger(1,Nseq);
-    if(NbBasePoints>=3)
-    {
-        PRISM6MeshData = new MeshVS_HArray1OfSequenceOfInteger(1,NbBasePoints+2);
-        int i, next;
-        for(i=0; i<NbBasePoints; i++)
-        {
-            PRISM6MeshData->ChangeValue(1).Prepend(i);
-            PRISM6MeshData->ChangeValue(2).Append(i+NbBasePoints);
-            PRISM6MeshData->ChangeValue(3+i).Prepend(i);
-            PRISM6MeshData->ChangeValue(3+i).Prepend(i+NbBasePoints);
-            next = (i+1)%NbBasePoints;
-            PRISM6MeshData->ChangeValue(3+i).Prepend(next+NbBasePoints);
-            PRISM6MeshData->ChangeValue(3+i).Prepend(next);
-        }
-    }
-
-    /*
-    for(int k=1; k<=NbBasePoints+1; k++) //cesere
-    {
-        cout<<"--------------------"<<endl;
-        for(int i=1; i<=PRISM6MeshData->Value(k).Length(); i++)
-            cout<<PRISM6MeshData->Value(k).Value(i)<<endl;
-        cout<<"--------------------"<<endl;
-    }
-    */
-}
-
-//! ----------------------------
-//! function: CreateTetTopology
+//! --------------------------------
+//! function: buildElementsTopology
 //! details:
-//! ----------------------------
-void Ng_MeshVS_DataSource3D::CreateTetTopology()
+//! --------------------------------
+void Ng_MeshVS_DataSource3D::buildElementsTopology()
 {
+    //! ----------------
+    //! Linear triangle
+    //! ----------------
+    TRIGMeshData = new MeshVS_HArray1OfSequenceOfInteger(1,1);
+    TRIGMeshData->ChangeValue(1).Append(0);
+    TRIGMeshData->ChangeValue(1).Append(1);
+    TRIGMeshData->ChangeValue(1).Append(2);
+
+    //! ------------------
+    //! Linear quadrangle
+    //! ------------------
+    QUADMeshData = new MeshVS_HArray1OfSequenceOfInteger(1,1);
+    QUADMeshData->ChangeValue(1).Append(0);
+    QUADMeshData->ChangeValue(1).Append(1);
+    QUADMeshData->ChangeValue(1).Append(2);
+    QUADMeshData->ChangeValue(1).Append(3);
+
+    //! -------------------
+    //! Quadratic triangle
+    //! -------------------
+    TRIG6MeshData = new MeshVS_HArray1OfSequenceOfInteger(1,1);
+    TRIG6MeshData->ChangeValue(1).Append(0);
+    TRIG6MeshData->ChangeValue(1).Append(3);
+    TRIG6MeshData->ChangeValue(1).Append(1);
+    TRIG6MeshData->ChangeValue(1).Append(4);
+    TRIG6MeshData->ChangeValue(1).Append(2);
+    TRIG6MeshData->ChangeValue(1).Append(5);
+
+    //! ---------------------
+    //! Quadratic quadrangle
+    //! ---------------------
+    QUAD8MeshData = new MeshVS_HArray1OfSequenceOfInteger(1,1);
+    QUAD8MeshData->ChangeValue(1).Append(0);
+    QUAD8MeshData->ChangeValue(1).Append(4);
+    QUAD8MeshData->ChangeValue(1).Append(1);
+    QUAD8MeshData->ChangeValue(1).Append(5);
+    QUAD8MeshData->ChangeValue(1).Append(2);
+    QUAD8MeshData->ChangeValue(1).Append(6);
+    QUAD8MeshData->ChangeValue(1).Append(3);
+    QUAD8MeshData->ChangeValue(1).Append(7);
+
+    //! -------------------
+    //! Linear tetrahedron
+    //! -------------------
     TET4MeshData = new MeshVS_HArray1OfSequenceOfInteger(1,4);
     for(int i=1;i<=4;i++)
     {
         TET4MeshData->ChangeValue(i).Append((i-1)%4);
         TET4MeshData->ChangeValue(i).Append(i%4);
         TET4MeshData->ChangeValue(i).Append((i+1)%4);
-        //cout<<"++++++++++++++++++++++++++++"<<endl;
-        //cout<<"+ "<<(i-1)%4<<" "<<i%4<<" "<<(i+1)%4<<endl;
-        //cout<<"++++++++++++++++++++++++++++"<<endl;
     }
-}
 
-//! -----------------------------
-//! function: CreateHexaTopology
-//! details:
-//! -----------------------------
-void Ng_MeshVS_DataSource3D::CreateHexaTopology()
-{
+    //! ---------------
+    //! Linear pyramid
+    //! ---------------
+    int NbBasePoints = 4;
+    PYRAM5MeshData = new MeshVS_HArray1OfSequenceOfInteger(1,NbBasePoints+1);
+    for(int i=1; i<=NbBasePoints; i++)
+    {
+        PYRAM5MeshData->ChangeValue(1).Prepend(i);
+        PYRAM5MeshData->ChangeValue(1+i).Append(0);
+        PYRAM5MeshData->ChangeValue(1+i).Append(i);
+        PYRAM5MeshData->ChangeValue(1+i).Append(i%NbBasePoints+1);
+    }
+
+    //! -------------
+    //! Linear prism
+    //! -------------
+    NbBasePoints = 3;
+    int Nseq = NbBasePoints + 2;
+    PRISM6MeshData = new MeshVS_HArray1OfSequenceOfInteger(1,Nseq);
+    int i, next;
+    for(i=0; i<NbBasePoints; i++)
+    {
+        PRISM6MeshData->ChangeValue(1).Prepend(i);
+        PRISM6MeshData->ChangeValue(2).Append(i+NbBasePoints);
+        PRISM6MeshData->ChangeValue(3+i).Prepend(i);
+        PRISM6MeshData->ChangeValue(3+i).Prepend(i+NbBasePoints);
+        next = (i+1)%NbBasePoints;
+        PRISM6MeshData->ChangeValue(3+i).Prepend(next+NbBasePoints);
+        PRISM6MeshData->ChangeValue(3+i).Prepend(next);
+    }
+
+    //! ------------------
+    //! Linear hexahedron
+    //! ------------------
     HEXA8MeshData = new MeshVS_HArray1OfSequenceOfInteger(1,6);
     HEXA8MeshData->ChangeValue(1).Append(3); HEXA8MeshData->ChangeValue(1).Append(2); HEXA8MeshData->ChangeValue(1).Append(1); HEXA8MeshData->ChangeValue(1).Append(0);
     HEXA8MeshData->ChangeValue(2).Append(4); HEXA8MeshData->ChangeValue(2).Append(5); HEXA8MeshData->ChangeValue(2).Append(6); HEXA8MeshData->ChangeValue(2).Append(7);
@@ -2252,6 +2214,18 @@ void Ng_MeshVS_DataSource3D::CreateHexaTopology()
     HEXA8MeshData->ChangeValue(4).Append(2); HEXA8MeshData->ChangeValue(4).Append(6); HEXA8MeshData->ChangeValue(4).Append(5); HEXA8MeshData->ChangeValue(4).Append(1);
     HEXA8MeshData->ChangeValue(5).Append(3); HEXA8MeshData->ChangeValue(5).Append(7); HEXA8MeshData->ChangeValue(5).Append(6); HEXA8MeshData->ChangeValue(5).Append(2);
     HEXA8MeshData->ChangeValue(6).Append(0); HEXA8MeshData->ChangeValue(6).Append(4); HEXA8MeshData->ChangeValue(6).Append(7); HEXA8MeshData->ChangeValue(6).Append(3);
+
+    //! ----------------------
+    //! Quadratic tetrahedron
+    //! ----------------------
+    const int mask[4][6] = {{0,4,1,5,2,6},{1,5,2,7,3,8},{0,6,2,7,3,9},{1,8,3,9,0,4}};
+    TET10MeshData = new MeshVS_HArray1OfSequenceOfInteger(1,4);
+    TColStd_SequenceOfInteger face[4];
+    for(int f=0; f<4; f++)
+    {
+        for(int j=0; j<6; j++) face[f].Append(mask[f][j]);
+        TET10MeshData->SetValue(f+1,face[f]);
+    }
 }
 
 //! ----------------------------------
@@ -3154,29 +3128,6 @@ void Ng_MeshVS_DataSource3D::renumberNodes(const std::map<std::size_t,int> &mapC
     }
 }
 
-//! ------------------------------
-//! function: createTet10Topology
-//! details:
-//! ------------------------------
-void Ng_MeshVS_DataSource3D::CreateTet10Topology()
-{
-    const int mask[4][6] =
-    {
-        {0,4,1,5,2,6},
-        {1,5,2,7,3,8},
-        {0,6,2,7,3,9},
-        {1,8,3,9,0,4}
-    };
-
-    TET10MeshData = new MeshVS_HArray1OfSequenceOfInteger(1,4);
-    TColStd_SequenceOfInteger face[4];
-    for(int f=0; f<4; f++)
-    {
-        for(int j=0; j<6; j++) face[f].Append(mask[f][j]);
-        TET10MeshData->SetValue(f+1,face[f]);
-    }
-}
-
 //! ------------------------------------------------------------------
 //! function: buildTolerantPoints
 //! details:  return the vector of all the mesh points with tolerance
@@ -3422,5 +3373,5 @@ Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(const occHandle(Ng_MeshVS_DataSou
     //! --------------------
     //! create the topology
     //! --------------------
-    this->CreateTet10Topology();
+    this->buildElementsTopology();
 }

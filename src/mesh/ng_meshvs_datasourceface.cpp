@@ -4792,3 +4792,117 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const occHandle(Ng_MeshVS_Dat
     //! ---------------------------
     //this->computeNormalAtElements();
 }
+
+
+//! --------------------------------
+//! function: buildElementsTopology
+//! details:
+//! --------------------------------
+void Ng_MeshVS_DataSourceFace::buildElementsTopology()
+{
+    //! ----------------
+    //! Linear triangle
+    //! ----------------
+    TRIGMeshData = new MeshVS_HArray1OfSequenceOfInteger(1,1);
+    TRIGMeshData->ChangeValue(1).Append(0);
+    TRIGMeshData->ChangeValue(1).Append(1);
+    TRIGMeshData->ChangeValue(1).Append(2);
+
+    //! ------------------
+    //! Linear quadrangle
+    //! ------------------
+    QUADMeshData = new MeshVS_HArray1OfSequenceOfInteger(1,1);
+    QUADMeshData->ChangeValue(1).Append(0);
+    QUADMeshData->ChangeValue(1).Append(1);
+    QUADMeshData->ChangeValue(1).Append(2);
+    QUADMeshData->ChangeValue(1).Append(3);
+
+    //! -------------------
+    //! Quadratic triangle
+    //! -------------------
+    TRIG6MeshData = new MeshVS_HArray1OfSequenceOfInteger(1,1);
+    TRIG6MeshData->ChangeValue(1).Append(0);
+    TRIG6MeshData->ChangeValue(1).Append(3);
+    TRIG6MeshData->ChangeValue(1).Append(1);
+    TRIG6MeshData->ChangeValue(1).Append(4);
+    TRIG6MeshData->ChangeValue(1).Append(2);
+    TRIG6MeshData->ChangeValue(1).Append(5);
+
+    //! ---------------------
+    //! Quadratic quadrangle
+    //! ---------------------
+    QUAD8MeshData = new MeshVS_HArray1OfSequenceOfInteger(1,1);
+    QUAD8MeshData->ChangeValue(1).Append(0);
+    QUAD8MeshData->ChangeValue(1).Append(4);
+    QUAD8MeshData->ChangeValue(1).Append(1);
+    QUAD8MeshData->ChangeValue(1).Append(5);
+    QUAD8MeshData->ChangeValue(1).Append(2);
+    QUAD8MeshData->ChangeValue(1).Append(6);
+    QUAD8MeshData->ChangeValue(1).Append(3);
+    QUAD8MeshData->ChangeValue(1).Append(7);
+
+    //! -------------------
+    //! Linear tetrahedron
+    //! -------------------
+    TET4MeshData = new MeshVS_HArray1OfSequenceOfInteger(1,4);
+    for(int i=1;i<=4;i++)
+    {
+        TET4MeshData->ChangeValue(i).Append((i-1)%4);
+        TET4MeshData->ChangeValue(i).Append(i%4);
+        TET4MeshData->ChangeValue(i).Append((i+1)%4);
+    }
+
+    //! ---------------
+    //! Linear pyramid
+    //! ---------------
+    int NbBasePoints = 4;
+    PYRAM5MeshData = new MeshVS_HArray1OfSequenceOfInteger(1,NbBasePoints+1);
+    for(int i=1; i<=NbBasePoints; i++)
+    {
+        PYRAM5MeshData->ChangeValue(1).Prepend(i);
+        PYRAM5MeshData->ChangeValue(1+i).Append(0);
+        PYRAM5MeshData->ChangeValue(1+i).Append(i);
+        PYRAM5MeshData->ChangeValue(1+i).Append(i%NbBasePoints+1);
+    }
+
+    //! -------------
+    //! Linear prism
+    //! -------------
+    NbBasePoints = 3;
+    int Nseq = NbBasePoints + 2;
+    PRISM6MeshData = new MeshVS_HArray1OfSequenceOfInteger(1,Nseq);
+    int i, next;
+    for(i=0; i<NbBasePoints; i++)
+    {
+        PRISM6MeshData->ChangeValue(1).Prepend(i);
+        PRISM6MeshData->ChangeValue(2).Append(i+NbBasePoints);
+        PRISM6MeshData->ChangeValue(3+i).Prepend(i);
+        PRISM6MeshData->ChangeValue(3+i).Prepend(i+NbBasePoints);
+        next = (i+1)%NbBasePoints;
+        PRISM6MeshData->ChangeValue(3+i).Prepend(next+NbBasePoints);
+        PRISM6MeshData->ChangeValue(3+i).Prepend(next);
+    }
+
+    //! ------------------
+    //! Linear hexahedron
+    //! ------------------
+    HEXA8MeshData = new MeshVS_HArray1OfSequenceOfInteger(1,6);
+    HEXA8MeshData->ChangeValue(1).Append(3); HEXA8MeshData->ChangeValue(1).Append(2); HEXA8MeshData->ChangeValue(1).Append(1); HEXA8MeshData->ChangeValue(1).Append(0);
+    HEXA8MeshData->ChangeValue(2).Append(4); HEXA8MeshData->ChangeValue(2).Append(5); HEXA8MeshData->ChangeValue(2).Append(6); HEXA8MeshData->ChangeValue(2).Append(7);
+    HEXA8MeshData->ChangeValue(3).Append(1); HEXA8MeshData->ChangeValue(3).Append(5); HEXA8MeshData->ChangeValue(3).Append(4); HEXA8MeshData->ChangeValue(3).Append(0);
+    HEXA8MeshData->ChangeValue(4).Append(2); HEXA8MeshData->ChangeValue(4).Append(6); HEXA8MeshData->ChangeValue(4).Append(5); HEXA8MeshData->ChangeValue(4).Append(1);
+    HEXA8MeshData->ChangeValue(5).Append(3); HEXA8MeshData->ChangeValue(5).Append(7); HEXA8MeshData->ChangeValue(5).Append(6); HEXA8MeshData->ChangeValue(5).Append(2);
+    HEXA8MeshData->ChangeValue(6).Append(0); HEXA8MeshData->ChangeValue(6).Append(4); HEXA8MeshData->ChangeValue(6).Append(7); HEXA8MeshData->ChangeValue(6).Append(3);
+
+    //! ----------------------
+    //! Quadratic tetrahedron
+    //! ----------------------
+    const int mask[4][6] = {{0,4,1,5,2,6},{1,5,2,7,3,8},{0,6,2,7,3,9},{1,8,3,9,0,4}};
+    TET10MeshData = new MeshVS_HArray1OfSequenceOfInteger(1,4);
+    TColStd_SequenceOfInteger face[4];
+    for(int f=0; f<4; f++)
+    {
+        for(int j=0; j<6; j++) face[f].Append(mask[f][j]);
+        TET10MeshData->SetValue(f+1,face[f]);
+    }
+}

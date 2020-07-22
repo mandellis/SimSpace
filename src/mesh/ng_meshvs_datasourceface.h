@@ -379,10 +379,22 @@ public:
     std::shared_ptr<std::vector<int>> myMidSideNodes;
     void getMidSideNodes(std::vector<int> *midSideNodes) { midSideNodes=myMidSideNodes.get(); }
 
-    //! ------------------------------------
-    //! for storing scalar/vectors at nodes
-    //! ------------------------------------
-    timeHistoryOfDistributions myTimeHistoryOfDistributions;
+    //! ------------------
+    //! elements topology
+    //! ------------------
+    occHandle(MeshVS_HArray1OfSequenceOfInteger) TRIGMeshData;
+    occHandle(MeshVS_HArray1OfSequenceOfInteger) QUADMeshData;
+    occHandle(MeshVS_HArray1OfSequenceOfInteger) TRIG6MeshData;
+    occHandle(MeshVS_HArray1OfSequenceOfInteger) QUAD8MeshData;
+    occHandle(MeshVS_HArray1OfSequenceOfInteger) TET4MeshData;
+    occHandle(MeshVS_HArray1OfSequenceOfInteger) TET10MeshData;
+    occHandle(MeshVS_HArray1OfSequenceOfInteger) HEXA8MeshData;
+    occHandle(MeshVS_HArray1OfSequenceOfInteger) HEXA20MeshData;
+    occHandle(MeshVS_HArray1OfSequenceOfInteger) PRISM6MeshData;
+    occHandle(MeshVS_HArray1OfSequenceOfInteger) PRISM15MeshData;
+    occHandle(MeshVS_HArray1OfSequenceOfInteger) PYRAM5MeshData;
+    occHandle(MeshVS_HArray1OfSequenceOfInteger) PYRAM13MeshData;
+    void buildElementsTopology();
 };
 
 DEFINE_STANDARD_HANDLE(Ng_MeshVS_DataSourceFace, MeshVS_DataSource)

@@ -1269,7 +1269,7 @@ bool SimulationNodeClass::isAnalysisRoot()
 //! function: generateTimeString
 //! details:  monothonic timer
 //! -----------------------------
-SimulationNodeClass::generateTimeString()
+std::string SimulationNodeClass::generateTimeString()
 {
     using namespace std::chrono;
 
