@@ -1269,7 +1269,7 @@ bool SimulationNodeClass::isAnalysisRoot()
 //! function: generateTimeString
 //! details:  monothonic timer
 //! -----------------------------
-std::string SimulationNodeClass::generateTimeString()
+SimulationNodeClass::generateTimeString()
 {
     using namespace std::chrono;
 
@@ -1303,7 +1303,7 @@ void SimulationNodeClass::addTimeTag()
     //! ---------------------
     QThread::msleep(5);
     QVariant data;
-    data.setValue(QString::fromStdString(generateTimeString()));
+    data.setValue(QString::fromStdString(SimulationNodeClass::generateTimeString()));
     Property prop_timeTag("Time tag",data,Property::PropertyGroup_Identifier);
     this->addProperty(prop_timeTag);
 }
