@@ -743,8 +743,8 @@ bool writeSolverFileClass::perform()
                         //! ---------
                         //! 1st) row
                         //! ---------
-                        myInputFile<<"*TIE, ADJUST = NO, POSITION TOLERANCE="<<C0<<", NAME="<<
-                        //myInputFile<<"*TIE, POSITION TOLERANCE="<<C0<<", NAME="<<
+                        //myInputFile<<"*TIE, ADJUST = NO, POSITION TOLERANCE="<<C0<<", NAME="<<
+                        myInputFile<<"*TIE, POSITION TOLERANCE="<<C0<<", NAME="<<
                                      itemNameClearSpaces((item->data(Qt::DisplayRole).toString().append("_%1").arg(n).append("%1").arg(k+1))).toStdString()<<endl;
                         //! ---------
                         //! 2nd) row
@@ -903,8 +903,8 @@ bool writeSolverFileClass::perform()
                         //! ---------
                         //! 1st) row
                         //! ---------
-                        myInputFile<<"*TIE, ADJUST=NO, POSITION TOLERANCE="<<C0<<", NAME="<<
-                        //myInputFile<<"*TIE, POSITION TOLERANCE="<<C0<<", NAME="<<
+                        //myInputFile<<"*TIE, ADJUST=NO, POSITION TOLERANCE="<<C0<<", NAME="<<
+                        myInputFile<<"*TIE, POSITION TOLERANCE="<<C0<<", NAME="<<
                                      itemNameClearSpaces((item->data(Qt::DisplayRole).toString().append("_%1").arg(n).append("%1").arg(k+1))).toStdString()<<endl;
 
                         //! ---------
@@ -2221,13 +2221,16 @@ bool writeSolverFileClass::perform()
                             //! treat acceleration as gravity
                             //! ------------------------------
                             //QVector<GeometryTag> vecLoc = theCurNode->getPropertyValue<QVector<GeometryTag>>("Tags");
-                            myInputFile<<"*DLOAD"<<endl;
                             double loadValue = pow((pow(loadX_global,2)+pow(loadY_global,2)+pow(loadZ_global,2)),0.5);
-                            double x,y,z;
-                            x = loadX_global/loadValue;
-                            y = loadY_global/loadValue;
-                            z = loadZ_global/loadValue;
-                            /*
+                            if(loadValue!=0.0)
+                            {
+                                myInputFile<<"*DLOAD"<<endl;
+
+                                double x,y,z;
+                                x = loadX_global/loadValue;
+                                y = loadY_global/loadValue;
+                                z = loadZ_global/loadValue;
+                                /*
                             for(int i=0; i<vecLoc.size();i++)
                             {
                                 GeometryTag aLoc = vecLoc.at(i);
@@ -2238,28 +2241,29 @@ bool writeSolverFileClass::perform()
                                 myInputFile<<"E"<<bodyName<<", GRAV, "<<loadValue<<" ,"<<x<<", "<<y<<", "<<z<<endl;
                             }
                             */
-                            for(int i=0; i<theGeometryRoot->rowCount();i++)
-                            {
-                                std::string bodyName;
-                                QStandardItem *aGeometryItem = theGeometryRoot->child(i,0);
-                                SimulationNodeClass *aNode = aGeometryItem->data(Qt::UserRole).value<SimulationNodeClass*>();
-                                Property::SuppressionStatus aNodeSS = aNode->getPropertyValue<Property::SuppressionStatus>("Suppressed");
-
-                                if(aNodeSS==Property::SuppressionStatus_Active)
+                                for(int i=0; i<theGeometryRoot->rowCount();i++)
                                 {
-                                    if(aNode->getType()==SimulationNodeClass::nodeType_pointMass)
+                                    std::string bodyName;
+                                    QStandardItem *aGeometryItem = theGeometryRoot->child(i,0);
+                                    SimulationNodeClass *aNode = aGeometryItem->data(Qt::UserRole).value<SimulationNodeClass*>();
+                                    Property::SuppressionStatus aNodeSS = aNode->getPropertyValue<Property::SuppressionStatus>("Suppressed");
+
+                                    if(aNodeSS==Property::SuppressionStatus_Active)
                                     {
-                                        QString bodyNameP = itemNameClearSpaces(theGeometryRoot->child(i,0)->data(Qt::DisplayRole).toString());
-                                        bodyNameP.append("_").append(QString("%1").arg(i));
-                                        bodyName = bodyNameP.toStdString();
+                                        if(aNode->getType()==SimulationNodeClass::nodeType_pointMass)
+                                        {
+                                            QString bodyNameP = itemNameClearSpaces(theGeometryRoot->child(i,0)->data(Qt::DisplayRole).toString());
+                                            bodyNameP.append("_").append(QString("%1").arg(i));
+                                            bodyName = bodyNameP.toStdString();
+                                        }
+                                        else
+                                        {
+                                            //! retrieve the name of the body from the data base
+                                            int mapIndex = aNode->getPropertyValue<int>("Map index");
+                                            bodyName = myDB->MapOfBodyNames.value(mapIndex).toStdString();
+                                        }
+                                        myInputFile<<"E"<<bodyName<<", GRAV, "<<loadValue<<" ,"<<x<<", "<<y<<", "<<z<<endl;
                                     }
-                                    else
-                                    {
-                                        //! retrieve the name of the body from the data base
-                                        int mapIndex = aNode->getPropertyValue<int>("Map index");
-                                        bodyName = myDB->MapOfBodyNames.value(mapIndex).toStdString();
-                                    }
-                                    myInputFile<<"E"<<bodyName<<", GRAV, "<<loadValue<<" ,"<<x<<", "<<y<<", "<<z<<endl;
                                 }
                             }
                         }
@@ -2899,7 +2903,6 @@ void writeSolverFileClass::writeNodesAndElements(QString aName,QMap<int,QList<in
             //! retrieve the name of the body from the data base
             //! -------------------------------------------------
             std::string bodyName = myDB->MapOfBodyNames.value(bodyIndex).toStdString();
-
             //! ------------------------------------------------------------------------------------
             //! When writing element, add them to a multi-map
             //! The first index of the multimap (the Key) is the element number (elementID)

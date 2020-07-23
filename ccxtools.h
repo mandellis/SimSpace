@@ -88,7 +88,7 @@ bool readsta(const QString &path, QMap<double, QVector<int>> &timeinfo)
     //cout<<"set: "<<setnr<<" step: "<<a1<<" substep: "<<a2<<" total time: "<<f1<<endl;
 
     QVector<int> s{setnr,a1_old,a2_old};
-    timeinfo.insert(f1,s);
+    timeinfo.insert(f1+f3,s);   //check if is correct to add f3 at the end
 
     fclose(f);
 

@@ -178,6 +178,7 @@ runTerminationData CCXconsoleToFile::perform(QString myTargetFileName,
                             double average;
                             if(analysisType==0) sscanf(val.c_str()," average force= %lf",&average);
                             if(analysisType==1) sscanf(val.c_str()," average flux= %lf",&average);
+                            if(analysisType==2) sscanf(val.c_str()," average force= %lf",&average);
 
                             if(writeOutputFile) outFile<<average<<"\t";    //! [7] write the largest residual force <double>
                             aSolutionInfo.average = average;
@@ -192,6 +193,7 @@ runTerminationData CCXconsoleToFile::perform(QString myTargetFileName,
                             double largestRes;
                             if(analysisType==0) sscanf(val.c_str()," largest residual force= %lf in node %d and dof %d",&largestRes,&node,&dof);
                             if(analysisType==1) sscanf(val.c_str()," largest residual flux= %lf in node %d and dof %d",&largestRes,&node,&dof);
+                            if(analysisType==2) sscanf(val.c_str()," largest residual force= %lf in node %d and dof %d",&largestRes,&node,&dof);
 
                             if(writeOutputFile) outFile<<largestRes<<"\t";       //! [8] write the largest residual force/flux <double>
                             aSolutionInfo.largestResidual = largestRes;
@@ -202,6 +204,7 @@ runTerminationData CCXconsoleToFile::perform(QString myTargetFileName,
                             double largestDOFlIncrement;
                             if(analysisType==0) sscanf(val.c_str()," largest increment of disp=%lf",&largestDOFlIncrement);
                             if(analysisType==1) sscanf(val.c_str()," largest increment of temp=%lf",&largestDOFlIncrement);
+                            if(analysisType==2) sscanf(val.c_str()," largest increment of disp=%lf",&largestDOFlIncrement);
 
                             if(writeOutputFile) outFile<<largestDOFlIncrement<<"\t";       //! [9] largest increment of DOF (displacement/temperature)
                             aSolutionInfo.largestDOFIncrement = largestDOFlIncrement;
@@ -212,6 +215,7 @@ runTerminationData CCXconsoleToFile::perform(QString myTargetFileName,
                             double largestDOFCorrection;
                             if(analysisType==0) sscanf(val.c_str()," largest correction to disp= %lf in node %d and dof %d",&largestDOFCorrection,&node,&dof);
                             if(analysisType==1) sscanf(val.c_str()," largest correction to temp= %lf in node %d and dof %d",&largestDOFCorrection,&node,&dof);
+                            if(analysisType==2) sscanf(val.c_str()," largest correction to disp= %lf in node %d and dof %d",&largestDOFCorrection,&node,&dof);
 
                             if(writeOutputFile) outFile<<largestDOFCorrection<<"\t";       //! [10]    largest correction to DOF (displacement/temperature)
                             aSolutionInfo.largestDOFCorrection = largestDOFCorrection;

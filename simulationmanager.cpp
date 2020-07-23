@@ -11021,6 +11021,7 @@ void SimulationManager::retrieveSolverInfo()
     {
     case SimulationNodeClass::nodeType_structuralAnalysis: analysisType = 0; break;
     case SimulationNodeClass::nodeType_thermalAnalysis: analysisType = 1; break;
+    case SimulationNodeClass::nodeType_combinedAnalysis: analysisType = 2; break;
     }
 
     //! ------------------------------------------------------
