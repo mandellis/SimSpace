@@ -267,11 +267,6 @@ public:
     //! get segments of element
     //! ------------------------
     std::vector<mesh::meshSegment> getSegmentsOfElement(int elementID, bool isLocal);
-
-    //! ------------------------------------
-    //! for storing scalar/vectors at nodes
-    //! ------------------------------------
-    timeHistoryOfDistributions myTimeHistoryOfDistributions;
 };
 
 DEFINE_STANDARD_HANDLE(Ng_MeshVS_DataSource3D, MeshVS_DataSource)

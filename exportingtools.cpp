@@ -5,6 +5,9 @@
 #include "ng_meshvs_datasource1d.h"
 #include "ng_meshvs_datasourceface.h"
 #include "meshtools.h"
+#include "simulationnodeclass.h"
+#include "postobject.h"
+#include "geometrytag.h"
 
 //! ---
 //! Qt
@@ -31,11 +34,17 @@
 #include <NCollection_Array1.hxx>
 #include <STEPCAFControl_Writer.hxx>
 #include <IFSelect_ReturnStatus.hxx>
+#include <MeshVS_Mesh.hxx>
+#include <TColStd_PackedMapOfInteger.hxx>
+#include <TColStd_MapIteratorOfPackedMapOfInteger.hxx>
+#include <TColStd_Array1OfReal.hxx>
+#include <MeshVS_EntityType.hxx>
 
 //! ----
 //! C++
 //! ----
 using namespace std;
+#include <fstream>
 
 exportingTools::exportingTools()
 {
@@ -257,11 +266,10 @@ void exportingTools::exportSTL(const occHandle(AIS_InteractiveContext) &theCTX, 
     }
 }
 
-//! ---------------------------------------------------------------- //
-//! function: exportCloud                                            //
-//! details:  write the nodes coordinates of the mesh of the         //
-//!           selected entities - now working with faces and edges   //
-//! ---------------------------------------------------------------- //
+//! ----------------------
+//! function: exportCloud
+//! details:
+//! ----------------------
 void exportingTools::exportCloud(const occHandle(AIS_InteractiveContext) &theCTX, meshDataBase *theDB)
 {
     //cout<<"occPreGLWidget::exportCloud()->____function called____"<<endl;
@@ -378,4 +386,73 @@ bool exportingTools::exportSTEP(const TopoDS_Compound &aComp)
         else return false;
     }
     return false;
+}
+
+//! -----------------------
+//! function: exportResult
+//! details:
+//! -----------------------
+#include <MeshVS_DeformedDataSource.hxx>
+void exportingTools::exportNodalResult(SimulationNodeClass *aNode, const std::string &fileName)
+{
+    if(aNode->isAnalysisResult()==false) return;
+
+    //! -----------------------------------
+    //! data and meshes within post object
+    //! -----------------------------------
+    postObject *aPostObject = &(aNode->getPropertyValue<postObject>("Post object"));
+    const QMap<GeometryTag,QList<QMap<int,double>>> &data = aPostObject->getData();
+    const QMap<GeometryTag,opencascade::handle<MeshVS_Mesh>> &meshes = aPostObject->getColoredMeshes();
+
+    switch(aNode->getType())
+    {
+    case SimulationNodeClass::nodeType_solutionStructuralNodalDisplacement:
+    {
+        //cout<<"____exporting displacements____"<<endl;
+        std::ofstream fout;
+        fout.open(fileName);
+        fout<<"#x\ty\tz\ttot\tdx\tdy\tdz"<<endl;
+        for(QMap<GeometryTag,QList<QMap<int,double>>>::const_iterator it = data.cbegin(); it!=data.cend(); it++)
+        {
+            const GeometryTag &aTag = it.key();
+            const QList<QMap<int,double>> &aRes = it.value();   // contains components
+            const occHandle(MeshVS_Mesh) &aMeshVS = meshes.value(aTag);
+
+            const occHandle(MeshVS_DataSource) &aMeshDS= aMeshVS->GetDataSource();
+            if(aMeshDS.IsNull()) exit(100);
+            MeshVS_DeformedDataSource* aMeshDS_def = (MeshVS_DeformedDataSource*)(aMeshDS.get());
+            const occHandle(MeshVS_DataSource) &aMeshDS_nonDef = aMeshDS_def->GetNonDeformedDataSource();
+
+            TColStd_MapIteratorOfPackedMapOfInteger itnodes = aMeshDS_nonDef->GetAllNodes();
+            for(int localNodeID = 1; localNodeID<=aMeshDS_nonDef->GetAllNodes().Extent(); localNodeID++, itnodes.Next())
+            {
+                int globalNodeID = itnodes.Key();
+                int NbNodes = -1;
+                double b[3];
+                TColStd_Array1OfReal coords(*b,1,3);
+                MeshVS_EntityType eType;
+                if(!aMeshDS_nonDef->GetGeom(globalNodeID,false,coords,NbNodes,eType)) continue;
+
+                //! ---------------------------------------
+                //! write coordinates and component values
+                //! ---------------------------------------
+                fout<<coords(1)<<"\t"<<coords(2)<<"\t"<<coords(3)<<"\t";
+                for(int component = 0; component<aRes.length()-1; component++)
+                {
+                    double aVal = aRes.at(component).value(globalNodeID);
+                    fout<<aVal<<"\t";
+                }
+                double aVal = aRes.at(aRes.length()-1).value(globalNodeID);
+                fout<<aVal<<endl;
+            }
+        }
+        fout.close();
+    }
+        break;
+    default:
+    {
+        ;
+    }
+        break;
+    }
 }

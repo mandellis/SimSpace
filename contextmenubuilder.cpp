@@ -1675,6 +1675,13 @@ void contextMenuBuilder::buildStructuralSolutionContextMenu(QMenu *contextMenu, 
     //! add separator
     contextMenu->addSeparator();
 
+    QAction *ActionExport = contextMenu->addAction("Export");
+    ActionExport->setIcon(QIcon(":/icons/icon_exporting tools.png"));
+    ActionExport->setData(109);
+
+    //! add separator
+    contextMenu->addSeparator();
+
     contextMenuBuilder::addActionCreateNamedSelection(contextMenu);
 }
 
@@ -1762,6 +1769,11 @@ void contextMenuBuilder::buildThermalResultsContextMenu(QMenu *contextMenu, bool
     //! add separator
     contextMenu->addSeparator();
 
+    QAction *ActionExport = contextMenu->addAction("Export");
+    ActionExport->setIcon(QIcon(":/icons/icon_exporting tools.png"));
+    ActionExport->setData(109);
+
+    //! add separator
     contextMenuBuilder::addActionCreateNamedSelection(contextMenu);
 
     /*
@@ -2082,6 +2094,7 @@ void contextMenuBuilder::addActionCreateNamedSelection(QMenu *contextMenu)
 //!
 //! export step file                            76
 //! export BRep file                            77
+//! export (result)                            109
 //!
 //! display sliced volume mesh                  85
 //! replicate on twin geometries                86

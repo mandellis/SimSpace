@@ -740,7 +740,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 bool areMeshNodeVisible = meshRootNode->getPropertyValue<bool>("Show mesh nodes");
                 emit requestShowMeshes(areMeshNodeVisible);
                 this->changeColor();
-                this->requestClearGraph();
+                emit requestClearGraph();
             }
                 break;
 
@@ -901,15 +901,18 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 emit requestHideSlicedMeshes();
                 emit requestSetWorkingMode(2);
                 this->changeColor();
-                emit requestClearGraph();
 
                 //! --------------
                 //! set the model
                 //! --------------
-                QModelIndex index_analysisSettings = this->getAnalysisSettingsItemFromCurrentItem()->index();
+                QModelIndex index_analysisSettings = mainTreeTools::getAnalysisSettingsItemFromCurrentItem(myTreeView)->index();
                 emit requestTabularData(index_analysisSettings);
                 emit requestHideFirstRow();
                 emit requestClearGraph();
+
+                QList<int> columnsToShow;
+                columnsToShow << TABULAR_DATA_STEP_NUMBER_COLUMN << TABULAR_DATA_STEP_END_TIME_COLUMN;
+                emit requestShowColumns(columnsToShow);
 
                 bool isDone = markerBuilder::addMarker(this->getCurrentNode(), mySimulationDataBase);
                 if(isDone == true) this->displayMarker();
@@ -1064,7 +1067,6 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 //! -------------------------------------------
                 //! hide all the bodies from the two viewports
                 //! -------------------------------------------
-                //TopTools_IndexedMapOfShape shapeMap = mySimulationDataBase->bodyMap;
                 QMap<int,TopoDS_Shape> shapeMap = mySimulationDataBase->bodyMap;
                 TColStd_ListOfInteger allBodies;
 
@@ -2008,6 +2010,30 @@ void SimulationManager::handleItem(int type)
         data.setValue(tags);
         namedSelectionNode->replaceProperty("Geometry",Property("Geometry",data,Property::PropertyGroup_Scope));
         namedSelectionNode->replaceProperty("Tags",Property("Tags",data,Property::PropertyGroup_Scope));
+    }
+        break;
+        //! export a result
+    case 109:
+    {
+        cout<<"____case 109 selected____"<<endl;
+        SimulationNodeClass *curNode = myTreeView->currentIndex().data(Qt::UserRole).value<SimulationNodeClass*>();
+        if(curNode->getPropertyItem("Post object")==Q_NULLPTR) return;
+
+        //! ----------------------------------------
+        //! get a defaul folder position for saving
+        //! ----------------------------------------
+        QStandardItem *itemSimulationRoot = mainTreeTools::getCurrentSimulationRoot(myTreeView);
+        QStandardItem *itemSolution = itemSimulationRoot->child(itemSimulationRoot->rowCount()-1);
+        SimulationNodeClass *nodeSolution = itemSolution->data(Qt::UserRole).value<SimulationNodeClass*>();
+        QString directoryForSaving = nodeSolution->getPropertyValue<QString>("Project files dir");
+        if(directoryForSaving.isEmpty()) directoryForSaving = tools::getWorkingDir();
+
+        QString selectedFilter;
+        QString fileName = QFileDialog::getSaveFileName(this,"Export file as ",directoryForSaving,".txt",&selectedFilter,0);
+        fileName += selectedFilter;
+        if(fileName.isEmpty()) return;
+        //cout<<"____"<<fileName.toStdString()<<"____"<<endl;
+        exportingTools::exportNodalResult(curNode,fileName.toStdString());
     }
         break;
     case 54:

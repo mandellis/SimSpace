@@ -187,11 +187,6 @@ public:
     //! ---------------------------------------
     std::vector<double> getNodeCoordinates(int localNodeID);
 
-    //! ------------------------------------
-    //! for storing scalar/vectors at nodes
-    //! ------------------------------------
-    timeHistoryOfDistributions myTimeHistoryOfDistributions;
-
     //! ----------------------
     //! build tolerant points
     //! ----------------------

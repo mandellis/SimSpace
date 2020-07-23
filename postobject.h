@@ -130,11 +130,6 @@ private:
     //! ---------
     QMap<GeometryTag,QList<QMap<int,double>>> theData;
 
-    //! -------------
-    //! the data 2.0
-    //! -------------
-    timeHistoryOfDistributions myTimeHistoryOfDistributions;
-
     //! -------------------------------------
     //! MeshVS_Mesh objects (colored meshes)
     //! -------------------------------------
