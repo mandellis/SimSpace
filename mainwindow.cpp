@@ -2622,11 +2622,11 @@ void MainWindow::setUpConnections()
     connect(myMainOCCViewer,SIGNAL(statusBarMessage(QString)),statusLabel,SLOT(setText(QString)));
     connect(myMainOCCViewer,SIGNAL(viewModeChanged(CurDisplayMode)),this,SLOT(checkViewModeItem(CurDisplayMode)));
     connect(this,SIGNAL(requestExtendSelectionToAdjacent()),myMainOCCViewer,SLOT(extendSelectionToAjacent()));
-
-    //! ------------------------------------------------------------------------------
     //! synchronize the checkmark of the menu action and the visibility of the widget
     //! ------------------------------------------------------------------------------
     connect(actionShowGraphViewer,SIGNAL(triggered(bool)),myTabularDataViewerDock,SLOT(setVisible(bool)));
+
+    //! ------------------------------------------------------------------------------
     connect(myTabularDataViewerDock,SIGNAL(visibilityChanged(bool)),actionShowGraphViewer,SLOT(setChecked(bool)));
 
     //! ------------------------------------------------------------------------------
