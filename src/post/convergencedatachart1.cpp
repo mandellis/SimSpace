@@ -323,6 +323,8 @@ void ConvergenceDataChart1::plotConvergenceData(const QList<solutionInfo> &solut
         X_top.push_back(solutionInfoList.at(i).globalIterationNb);
         Y1_top.push_back(solutionInfoList.at(i).largestResidual);
         Y2_top.push_back(solutionInfoList.at(i).average);
+        cout<<"global_iter "<<solutionInfoList.at(i).globalIterationNb<<" residual "<<
+              solutionInfoList.at(i).largestResidual<<" average "<<solutionInfoList.at(i).average<<endl;
     }
 
     //! -------

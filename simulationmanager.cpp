@@ -570,6 +570,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
             case SimulationNodeClass::nodeType_solutionStructuralContact:
             case SimulationNodeClass::nodeType_solutionStructuralFatigueTool:
             case SimulationNodeClass::nodeType_solutionStructuralGamma:
+            case SimulationNodeClass::nodeType_solutionStructuralNodalForces:
             case SimulationNodeClass::nodeType_solutionStructuralReactionForce:
             {
                 //! ---------------------------------------------------------------------
@@ -10905,12 +10906,13 @@ bool SimulationManager::eventFilter(QObject *object, QEvent *event)
              QFile f(stafile);
              if(f.exists())
              {
-                 //cout<<"____.STA FILE FOUND: \""<<stafile.toStdString()<<"\"____"<<endl;
+                 cout<<"____.STA FILE FOUND: \""<<stafile.toStdString()<<"\"____"<<endl;
                  QMap<double,QVector<int>> timeinfo;
                  bool isDone = CCXTools::readsta(stafile,timeinfo);
                  if(isDone)
                  {
                      data.setValue(timeinfo);
+                     cout<<timeinfo.firstKey()<<endl;
                      nodeSolutionInformation->replaceProperty("Discrete time map",Property("Discrete time map",data,Property::PropertyGroup_Hidden));
                  }
                  else
