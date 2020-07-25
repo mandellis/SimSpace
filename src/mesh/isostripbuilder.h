@@ -11,7 +11,10 @@
 //! custom includes
 //! ----------------
 #include "occhandle.h"
+#include "hash_c.h"
 #include <isostrip.h>
+#include <meshelementbycoords.h>
+#include <mesh.h>
 
 //! ----
 //! C++
@@ -23,6 +26,9 @@
 //! ----
 #include <TColStd_MapIteratorOfPackedMapOfInteger.hxx>
 
+//! ------
+//! point
+//! ------
 struct point
 {
     double x,y,z;
@@ -31,6 +37,14 @@ struct point
     point(const point &aP) { x = aP.x; y = aP.y; z = aP.z; val = aP.val; }
     point operator =(const point &aP) { x = aP.x; y = aP.y; z = aP.z; val = aP.val; return *this;}
     bool operator == (const point &aP) { if(x == aP.x && y == aP.y && z == aP.z) return true; return false; }
+    bool operator < (const point &aP)
+    {
+        std::size_t seed1, seed2; seed1=seed2=0;
+        hash_c<double>(seed1,x); hash_c<double>(seed1,y); hash_c<double>(seed1,z);
+        hash_c<double>(seed2,aP.x); hash_c<double>(seed2,aP.y); hash_c<double>(seed2,aP.z);
+        if(seed1<seed2) return true;
+        else return false;
+    }
 };
 
 
@@ -59,7 +73,7 @@ private:
 
 private:
 
-    void classifyNodes(QMap<int, int> &nodeToIsoStrip);
+    void classifyNodes(QMap<int, int> &pointToIsoStrip);
     void pointCoord(double *c, int globalNodeID);
 
 signals:
@@ -68,11 +82,22 @@ public slots:
 
 };
 
-//! -----------------
+//! ---------------------------------------
 //! class: faceTable
-//! -----------------
-#include <meshelementbycoords.h>
-#include <mesh.h>
+//!                      D(300)     C(50)
+//!  (0) [0-100]          ____________
+//!  (1) [100-200]       |            |
+//!  (2) [200-300]       |            |
+//!  (3) [300-400]       |            |
+//!                       ------------
+//!   | 0 | 1 | 2 | 3 |  A(50)      B(100)
+//!   -----------------
+//!   | A | B | D | D |
+//!   | B |   |   |   |
+//!   | C |   |   |   |
+//!   |   |   |   |   |
+//!
+//! ---------------------------------------
 class faceTable: public std::vector<std::vector<point>>
 {
 
@@ -107,7 +132,6 @@ public:
         if(pos == points->end()) return;
         points->insert(pos+1,theValue);
     }
-
 
     //! ----------------------
     //! function: getElements

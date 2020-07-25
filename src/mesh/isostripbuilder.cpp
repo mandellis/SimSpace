@@ -84,9 +84,12 @@ bool isoStripBuilder::perform()
     //! ---------------------------------------------------------
     //! classify the nodes according to the isostrip definitions
     //! ---------------------------------------------------------
-    QMap<int,int> nodeToIsoStrip;
-    this->classifyNodes(nodeToIsoStrip);
+    QMap<int,int> pointToIsoStrip;
+    this->classifyNodes(pointToIsoStrip);
 
+    //! -------------------------------------------------------------
+    //! iterate over the elements and over the faces of each element
+    //! -------------------------------------------------------------
     TColStd_MapIteratorOfPackedMapOfInteger it(myMeshDS->GetAllElements());
     int NbElements = myMeshDS->GetAllElements().Extent();
     for(int localElementID = 1; localElementID<=NbElements; localElementID++,it.Next())
@@ -105,9 +108,9 @@ bool isoStripBuilder::perform()
             faceTable aFaceTable;
             aFaceTable.resize(myNbStrips);
 
-            //! ----------------------------------------
-            //! the sequence of nodes defining the face
-            //! ----------------------------------------
+            //! --------------------------------------------------
+            //! put the existing nodes of the face into the table
+            //! --------------------------------------------------
             TColStd_SequenceOfInteger aSeq = topology->Value(f);
             for(int i = 0; i<NbNodes; i++)
             {
@@ -116,7 +119,7 @@ bool isoStripBuilder::perform()
                 //! -------------------------------------
                 int index1 = aSeq.Value(i%NbNodes)+1;
                 int globalNodeID1 = nodeIDs(index1);
-                const QList<int> &isoStripOf1 = nodeToIsoStrip.values(globalNodeID1);
+                const QList<int> &isoStripOf1 = pointToIsoStrip.values(globalNodeID1);
                 int maxIsoStrip1 = -1e10;
                 int minIsoStrip1 = 1e10;
                 for(int i=0; i<isoStripOf1.length(); i++)
@@ -135,7 +138,7 @@ bool isoStripBuilder::perform()
                 //! --------------------------------------
                 int index2 = aSeq.Value((i+1)%NbNodes)+1;
                 int globalNodeID2 = nodeIDs(index2);
-                const QList<int> &isoStripOf2 = nodeToIsoStrip.values(globalNodeID2);
+                const QList<int> &isoStripOf2 = pointToIsoStrip.values(globalNodeID2);
                 int maxIsoStrip2 = -1e10;
                 int minIsoStrip2 = 1e10;
                 for(int i=0; i<isoStripOf2.length(); i++)
@@ -145,6 +148,41 @@ bool isoStripBuilder::perform()
                     this->pointCoord(c,globalNodeID2);
                     point aP(c[0],c[1],c[2],myValues->value(globalNodeID2));
                     aFaceTable[curIsoStripNb].push_back(aP);
+                    if(curIsoStripNb<=minIsoStrip2) minIsoStrip2 = curIsoStripNb;
+                    if(curIsoStripNb>=maxIsoStrip2) maxIsoStrip2 = curIsoStripNb;
+                }
+            }
+
+            //! ------------------------------
+            //! scan the segments of the face
+            //! ------------------------------
+            for(int i = 0; i<NbNodes; i++)
+            {
+                //! recompute ...
+                int index1 = aSeq.Value(i%NbNodes)+1;
+                int globalNodeID1 = nodeIDs(index1);
+
+                const QList<int> &isoStripOf1 = pointToIsoStrip.values(globalNodeID1);
+                int maxIsoStrip1 = -1e10;
+                int minIsoStrip1 = 1e10;
+                for(int i=0; i<isoStripOf1.length(); i++)
+                {
+                    int curIsoStripNb = isoStripOf1.at(i);
+                    if(curIsoStripNb<=minIsoStrip1) minIsoStrip1 = curIsoStripNb;
+                    if(curIsoStripNb>=maxIsoStrip1) maxIsoStrip1 = curIsoStripNb;
+                }
+
+                //! recompute ...
+                int index2 = aSeq.Value((i+1)%NbNodes)+1;
+                int globalNodeID2 = nodeIDs(index2);
+
+                const QList<int> &isoStripOf2 = pointToIsoStrip.values(globalNodeID2);
+                int maxIsoStrip2 = -1e10;
+                int minIsoStrip2 = 1e10;
+
+                for(int i=0; i<isoStripOf2.length(); i++)
+                {
+                    int curIsoStripNb = isoStripOf2.at(i);
                     if(curIsoStripNb<=minIsoStrip2) minIsoStrip2 = curIsoStripNb;
                     if(curIsoStripNb>=maxIsoStrip2) maxIsoStrip2 = curIsoStripNb;
                 }
@@ -179,18 +217,28 @@ bool isoStripBuilder::perform()
                 }
                 else
                 {
-                    int deltaStrip = maxIsoStrip2 - minIsoStrip1;
-                    //if(deltaStrip==0) continue;
-                    //for(int k=1; k<=abs(deltaStrip); k++)
-                    //{
-                    //    int newStripIndex = minIsoStrip1-k;
-                    //
-                    //}
+                    int deltaStrip = minIsoStrip1 - maxIsoStrip2;
+                    if(deltaStrip==0) continue;
+                    for(int k=1; k<=abs(deltaStrip); k++)
+                    {
+                        int startIndex = maxIsoStrip2;
+                        int newStripIndex = startIndex+k;
+                        double newPointValue = myIsoStrips->at(newStripIndex).vmin;
+                        double t = (newPointValue-valueOfPoint2)/(valueOfPoint1-valueOfPoint2);
+                        double P1[3], P2[3];
+                        this->pointCoord(P1,globalNodeID2);
+                        this->pointCoord(P2,globalNodeID1);
+                        double xP = P1[0] + t * (P2[0]-P1[0]);
+                        double yP = P1[1] + t * (P2[1]-P1[1]);
+                        double zP = P1[2] + t * (P2[2]-P1[2]);
+                        point aP(xP,yP,zP,newPointValue);
+                        aFaceTable.insertAfter(startIndex,sP,aP);
+                        aFaceTable.insertBefore(startIndex+1,sP,aP);
+                        sP = aP;
+                    }
                 }
-
             }
         }
-
     }
     return true;
 }
@@ -216,7 +264,7 @@ void isoStripBuilder::pointCoord(double *c, int globalNodeID)
 //! function: classifyNodes
 //! details:
 //! ------------------------
-void isoStripBuilder::classifyNodes(QMap<int,int> &nodeToIsoStrip)
+void isoStripBuilder::classifyNodes(QMap<int,int> &pointToIsoStrip)
 {
     TColStd_MapIteratorOfPackedMapOfInteger it(myMeshDS->GetAllNodes());
     int NbNodes = myMeshDS->GetAllNodes().Extent();
@@ -227,7 +275,7 @@ void isoStripBuilder::classifyNodes(QMap<int,int> &nodeToIsoStrip)
         for(int isoStripNb = 0; isoStripNb<myIsoStrips->size(); isoStripNb++)
         {
             isoStrip curIsoStrip = myIsoStrips->at(isoStripNb);
-            if(curIsoStrip.contains(val)) nodeToIsoStrip.insertMulti(globalNodeID,isoStripNb);
+            if(curIsoStrip.contains(val)) pointToIsoStrip.insertMulti(globalNodeID,isoStripNb);
         }
     }
 }
