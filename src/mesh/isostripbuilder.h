@@ -137,7 +137,7 @@ public:
     //! function: getElements
     //! details:
     //! ----------------------
-    void getElements(std::vector<meshElementByCoords> theElements)
+    void getElements(std::vector<meshElementByCoords> theElements) const
     {
         for(int coln = 0; coln <this->size(); coln++)
         {

@@ -81,6 +81,8 @@ bool isoStripBuilder::perform()
         return false;
     }
 
+    std::vector<faceTable> vecFaces;
+
     //! ---------------------------------------------------------
     //! classify the nodes according to the isostrip definitions
     //! ---------------------------------------------------------
@@ -238,8 +240,28 @@ bool isoStripBuilder::perform()
                     }
                 }
             }
+
+            //! ------------------------
+            //! pile up the face tables
+            //! ------------------------
+            vecFaces.push_back(aFaceTable);
         }
     }
+
+    //! ----------------------------------------
+    //! process face tables - done outside
+    //! (it could be done inside the for cycle)
+    //! ----------------------------------------
+    std::vector<meshElementByCoords> vecMeshElements;
+    for(std::vector<faceTable>::iterator it = vecFaces.begin(); it!=vecFaces.end(); it++)
+    {
+        const faceTable &t = *it;
+        std::vector<meshElementByCoords> vecMeshElementsOfFace;
+        t.getElements(vecMeshElementsOfFace);
+        for(int i=0; vecMeshElementsOfFace.size(); i++)
+            vecMeshElements.push_back(vecMeshElementsOfFace[i]);
+    }
+
     return true;
 }
 
