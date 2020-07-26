@@ -1,6 +1,22 @@
 #ifndef ISOSTRIP_H
 #define ISOSTRIP_H
 
+//! ------
+//! point
+//! ------
+struct isoStripPoint
+{
+    double x,y,z;
+    double val;
+    isoStripPoint(double ax=0, double ay=0, double az=0, double aVal = 0) { x = ax; y = ay; z = az; val = aVal; }
+    isoStripPoint(const isoStripPoint &aP) { x = aP.x; y = aP.y; z = aP.z; val = aP.val; }
+    isoStripPoint operator =(const isoStripPoint &aP) { x = aP.x; y = aP.y; z = aP.z; val = aP.val; return *this;}
+    bool operator == (const isoStripPoint &aP) { if(x == aP.x && y == aP.y && z == aP.z) return true; return false; }
+};
+
+//! ---------
+//! isostrip
+//! ---------
 struct isoStrip
 {
     double vmin,vmax;

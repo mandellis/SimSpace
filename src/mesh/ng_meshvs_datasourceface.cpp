@@ -173,6 +173,11 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const occHandle(Ng_MeshVS_Dat
     //! compute the normal at elements
     //! -------------------------------
     this->computeNormalAtElements();
+
+    //! ------------------------
+    //! build elements topology
+    //! ------------------------
+    this->buildElementsTopology();
 }
 
 //! ----------------------------------------------
@@ -260,7 +265,10 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const std::vector<mesh::meshE
     //! ----------------------------
     this->computeNormalAtElements();
 
-    //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____exiting constructor____"<<endl;
+    //! ------------------------
+    //! build elements topology
+    //! ------------------------
+    this->buildElementsTopology();
 }
 
 //! -----------------------------------------------
@@ -360,12 +368,24 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const std::string &fileName)
                 myElemNodes->SetValue(i,k+1,globalNodeID);
             }
             break;
+        case QUAD8:
+            for(int k=0; k<anElement.theNodeIDs.size(); k++)
+            {
+                int globalNodeID = anElement.theNodeIDs.at(k);
+                myElemNodes->SetValue(i,k+1,globalNodeID);
+            }
+            break;
         }
     }
     //! ----------------------------
     //! compute normals at elements
     //! ----------------------------
     this->computeNormalAtElements();
+
+    //! ------------------------
+    //! build elements topology
+    //! ------------------------
+    this->buildElementsTopology();
 }
 
 //! ----------------------------------------------
@@ -581,6 +601,11 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(Ng_Mesh *aMesh, int faceNr)
     //! compute normals at elements
     //! ----------------------------
     this->computeNormalAtElements();
+
+    //! ------------------------
+    //! build elements topology
+    //! ------------------------
+    this->buildElementsTopology();
 }
 
 //! ------------------------------------------
@@ -680,7 +705,6 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(tetgenio *aMesh,int faceNr)
     //! the face elements are defined through global mesh numbering
     //! "i" here is a local numbering
     //! ------------------------------------------------------------
-    //const int C[3]{0,2,1};
     for(int i=1; i<=myNumberOfElements; i++)
     {
         myElemType->SetValue(i,TRIG);
@@ -691,9 +715,7 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(tetgenio *aMesh,int faceNr)
         int elementID = myElementsMap.FindKey(i);
         for(int k=0; k<3; k++)
         {
-            //int k1 = C[k];
             int globalNodeID = aMesh->trifacelist[3*(elementID-1)+k];
-            //myElemNodes->SetValue(i,k1+1,globalNodeID);
             myElemNodes->SetValue(i,k+1,globalNodeID);
         }
     }
@@ -771,6 +793,11 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const occHandle(StlMesh_Mesh)
             myElemNormals->SetValue(i,3,nz);
         }
     }
+
+    //! ------------------------
+    //! build elements topology
+    //! ------------------------
+    this->buildElementsTopology();
 }
 
 //! ----------------------------
@@ -825,6 +852,11 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const occHandle(StlMesh_Mesh)
         myElemNormals->SetValue(i,2,ny);
         myElemNormals->SetValue(i,3,nz);
     }
+
+    //! ------------------------
+    //! build elements topology
+    //! ------------------------
+    this->buildElementsTopology();
 }
 
 //! ---------------------------------
@@ -1180,7 +1212,6 @@ bool Ng_MeshVS_DataSourceFace::readMesh(const QString &meshFileName,
         //! close the file
         //! ---------------
         fclose(filein);
-        //cout<<"Ng_MeshVS_DataSourceFace::readMesh()->____successfully exiting____"<<endl;
         return true;
     }
     else return false;
@@ -1253,6 +1284,11 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const QList<mesh::meshPoint> 
     //! compute normal at elements
     //! ---------------------------
     this->computeNormalAtElements();
+
+    //! ------------------------
+    //! build elements topology
+    //! ------------------------
+    this->buildElementsTopology();
 }
 
 //! ---------------------------------------------
@@ -2099,8 +2135,17 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const QString &faceFileName,
         myNodeCoords->SetValue(localNodeID,2,y);
         myNodeCoords->SetValue(localNodeID,3,z);
     }
+
+    //! -------------------
+    //! normal at elements
+    //! -------------------
     this->computeNormalAtElements();
     //this->computeNormalAtNodes();         //! correct - not working
+
+    //! ------------------------
+    //! build elements topology
+    //! ------------------------
+    this->buildElementsTopology();
 }
 
 
@@ -2252,9 +2297,18 @@ Standard_EXPORT Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const QList<Q
         myNodeCoords->SetValue(localNodeID,3,z);
     }
 
+    //! -------------------
+    //! normal at elements
+    //! -------------------
     this->computeNormalAtElements();
     this->computeNormalAtNodes();
     this->computeFreeMeshSegments();
+
+    //! ------------------------
+    //! build elements topology
+    //! ------------------------
+    this->buildElementsTopology();
+
     cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from Tetgen files (using lists) exiting____"<<endl;
 }
 
@@ -2449,6 +2503,12 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const QList<occHandle(Ng_Mesh
     //! compute the normals at elements
     //! --------------------------------
     this->computeNormalAtElements();
+
+    //! ------------------------
+    //! build elements topology
+    //! ------------------------
+    this->buildElementsTopology();
+
     cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____exiting____"<<endl;
 }
 
@@ -2674,6 +2734,11 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const QString &nodeFileName, 
     //! compute the normals at elements
     //! --------------------------------
     this->computeNormalAtElements();
+
+    //! ------------------------
+    //! build elements topology
+    //! ------------------------
+    this->buildElementsTopology();
 }
 
 //! ------------------------------
@@ -2730,6 +2795,11 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const Eigen::MatrixXd &V, con
     //! compute the normal at each triangle
     //! ------------------------------------
     this->computeNormalAtElements();
+
+    //! ------------------------
+    //! build elements topology
+    //! ------------------------
+    this->buildElementsTopology();
 }
 
 /*
@@ -3278,6 +3348,11 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const TopoDS_Face &aFace,
     //! compute normal at elements
     //! ---------------------------
     this->computeNormalAtElements();
+
+    //! ------------------------
+    //! build elements topology
+    //! ------------------------
+    this->buildElementsTopology();
 }
 
 //! -----------------------------
@@ -3430,7 +3505,11 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const occHandle(Ng_MeshVS_Dat
     //! compute normal at elements
     //! ---------------------------
     this->computeNormalAtElements();
-    cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor done____"<<endl;
+
+    //! ------------------------
+    //! build elements topology
+    //! ------------------------
+    this->buildElementsTopology();
 }
 
 //! ----------------------------------------------------
@@ -3642,6 +3721,11 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const TopoDS_Shape &shape, in
         myNodes.Add(nodeID);
         myNodesMap.Add(nodeID);
     }
+
+    //! ------------------------
+    //! build elements topology
+    //! ------------------------
+    this->buildElementsTopology();
 }
 
 //! ------------------------
@@ -3783,7 +3867,7 @@ void Ng_MeshVS_DataSourceFace::setNodeNormal(int globalNodeID, double *n)
 //! ------------------------------------------------------------------
 Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const std::vector<meshElementByCoords> &meshElements, bool autoRenumberElements, bool autoRenumberNodes)
 {
-    //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor called____"<<endl;
+    cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor called____"<<endl;
 
     //! -------------
     //! sanity check
@@ -3791,6 +3875,7 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const std::vector<meshElement
     if(meshElements.size()==0) return;
 
     myNumberOfElements = int(meshElements.size());
+    cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____number of elements: "<<myNumberOfElements<<"____"<<endl;
 
     myElemType = new TColStd_HArray1OfInteger(1,myNumberOfElements);
     myElemNodes = new TColStd_HArray2OfInteger(1,myNumberOfElements,1,8);
@@ -3817,19 +3902,17 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const std::vector<meshElement
             int globalElementID = aMeshElement.ID;
             myElements.Add(globalElementID);
             myElementsMap.Add(globalElementID);
-            //cout<<"____tag01 local element ID: "<<localElementID<<"____"<<endl;
-            //cout<<"____tag01 global element ID: "<<globalElementID<<"____"<<endl;
         }
 
         int NbPoints = aMeshElement.pointList.length();
-        //cout<<"____tag01 NbPoints: "<<NbPoints<<endl;
-        //if(NbPoints!=3) exit(1);
 
         switch(NbPoints)
         {
         case 3: myElemType->SetValue(localElementID,TRIG); break;
         case 6: myElemType->SetValue(localElementID,TRIG6); break;
+        case 5: myElemType->SetValue(localElementID,PENTA); break;
         case 4: myElemType->SetValue(localElementID,QUAD); break;
+        case 7: myElemType->SetValue(localElementID,EPTA); break;
         case 8: myElemType->SetValue(localElementID,QUAD8); break;
         }
 
@@ -3870,8 +3953,6 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const std::vector<meshElement
         }
         else
         {
-            //cout<<"____tag02____"<<endl;
-
             //! ---------------------------------------
             //! label the nodes using their own labels
             //! ---------------------------------------
@@ -3886,7 +3967,6 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const std::vector<meshElement
 
                 if(!myNodes.Contains(aPoint.ID))
                 {
-                    //cout<<"____tag02 labelling point using: "<<aPoint.ID<<"____"<<endl;
                     myNodes.Add(aPoint.ID);
                     myNodesMap.Add(aPoint.ID);
                 }
@@ -3895,26 +3975,30 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const std::vector<meshElement
         }
     }
 
+    cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____elements and nodes added____"<<endl;
+
     myNumberOfNodes = myNodes.Extent();
-    //cout<<"____number of nodes: "<<myNumberOfNodes<<"____"<<endl;
+    cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____number of nodes: "<<myNumberOfNodes<<"____"<<endl;
+
     myNodeCoords = new TColStd_HArray2OfReal(1,myNumberOfNodes,1,3);
 
     for(int i=1; i<=myNumberOfNodes; i++)
     {
-        //cout<<"____tag02____"<<endl;
         mesh::meshPoint aMeshPoint = vecMeshPoints[i-1];
         myNodeCoords->SetValue(i,1,aMeshPoint.x);
         myNodeCoords->SetValue(i,2,aMeshPoint.y);
         myNodeCoords->SetValue(i,3,aMeshPoint.z);
     }
-    //cout<<"____tag03____"<<endl;
-
-    //cout<<"____vector of mesh points size: "<<vecMeshPoints.size()<<"____"<<endl;
 
     //! ---------------------------
     //! compute normal at elements
     //! ---------------------------
     this->computeNormalAtElements();
+
+    //! ------------------------
+    //! build elements topology
+    //! ------------------------
+    this->buildElementsTopology();
 }
 
 
@@ -4349,6 +4433,11 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(ifstream &stream)
     //! compute normal at elements
     //! ---------------------------
     this->computeNormalAtElements();
+
+    //! ------------------------
+    //! build elements topology
+    //! ------------------------
+    this->buildElementsTopology();
 }
 
 //! ---------------------------------------------------------------------
@@ -4439,6 +4528,11 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const opencascade::handle<Ng_
     //! compute the normals at elements
     //! --------------------------------
     this->computeNormalAtElements();
+
+    //! ------------------------
+    //! build elements topology
+    //! ------------------------
+    this->buildElementsTopology();
 }
 
 //! -------------------------------
@@ -4689,6 +4783,11 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const occHandle(Ng_MeshVS_Dat
     //! compute normals at elements
     //! ----------------------------
     this->computeNormalAtElements();
+
+    //! ------------------------
+    //! build elements topology
+    //! ------------------------
+    this->buildElementsTopology();
 }
 
 
@@ -4791,6 +4890,11 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const occHandle(Ng_MeshVS_Dat
     //! compute normal at elements
     //! ---------------------------
     //this->computeNormalAtElements();
+
+    //! ------------------------
+    //! build elements topology
+    //! ------------------------
+    this->buildElementsTopology();
 }
 
 

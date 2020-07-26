@@ -74,7 +74,6 @@ postObject::postObject(const QMap<GeometryTag, QList<QMap<int, double>>> &resMap
     name = QString();
     theMeshes = QMap<GeometryTag,opencascade::handle<MeshVS_Mesh>>();
     mySolutionDataComponent = 0;
-    myShowSolidMeshAsSurface = true;
     myMax = 100;
     myMin = -100;
     myIsAutoscale = true;
@@ -96,7 +95,6 @@ postObject::postObject(const QMap<GeometryTag,QList<QMap<int,double>>> &resMap, 
     name = QString();
     theMeshes = QMap<GeometryTag,opencascade::handle<MeshVS_Mesh>>();
     mySolutionDataComponent = 0;
-    myShowSolidMeshAsSurface = true;
     myMax = 100;
     myMin = -100;
     myIsAutoscale = true;
@@ -469,6 +467,7 @@ void postObject::resetMeshes()
     this->theMeshes.clear();
 }
 
+/* old working code - trying to replace
 //! ---------------------------------------------------
 //! function: buildMeshIO
 //! details:  build the colored mesh and the color box
@@ -545,6 +544,11 @@ void postObject::buildMeshIO(const mapOfMeshDataSources &aMapOfMeshDataSources,
         QMap<int,gp_Vec> displacementMap = myMapOfNodalDisplacements.value(loc);
         MeshTools::buildDeformedColoredMesh(curMeshDS,res,displacementMap,1.0,theMin,theMax,Nlevels,aColoredMesh,showMeshEdges);
         theMeshes.insert(loc,aColoredMesh);
+
+        //! -------------
+        //! experimental
+        //! -------------
+
     }
 
     //! ---------------------------------
@@ -564,6 +568,165 @@ void postObject::buildMeshIO(const mapOfMeshDataSources &aMapOfMeshDataSources,
     myNbLevels = Nlevels;
     myShowSolidMeshAsSurface = showSolidMeshAsSurface;
 }
+*/
+
+//! ---------------------------------------------------
+//! function: buildMeshIO
+//! details:  build the colored mesh and the color box
+//! ---------------------------------------------------
+#include "isostripbuilder.h"
+#include "isostrip.h"
+#include <MeshVS_ElementalColorPrsBuilder.hxx>
+//#define ISOSTRIP
+void postObject::buildMeshIO(const mapOfMeshDataSources &aMapOfMeshDataSources,
+                             double min, double max,
+                             int Nlevels,
+                             bool autoscale,
+                             int component,
+                             bool showMeshEdges)
+{
+    cout<<"postObject::buildMeshIO()->____function called____"<<endl;
+
+    //! -----------------------------------
+    //! this parameter should be connected
+    //! -----------------------------------
+    bool showSolidMeshAsSurface = false;
+
+    //! -----------------
+    //! the data content
+    //! -----------------
+    double theMin, theMax;
+    QMap<GeometryTag,QList<QMap<int,double>>>::const_iterator it = theData.cbegin();
+    for(mapOfMeshDataSources::const_iterator anIt = aMapOfMeshDataSources.begin(); anIt!= aMapOfMeshDataSources.cend() && it!= theData.cend(); ++anIt, ++it)
+    {
+        const GeometryTag &loc = anIt.key();
+        occHandle(MeshVS_DataSource) curMeshDS;
+
+        //! -------------------------------------------------------
+        //! if the current shape on which results are defined
+        //! is a solid, it means that a volume mesh for that solid
+        //! is defined: generate the interactive object according
+        //! to the value of the flag "showSolidMeshAsSurface"
+        //! -------------------------------------------------------
+        if(loc.subShapeType == TopAbs_SOLID && showSolidMeshAsSurface == true)
+        {
+            const occHandle(Ng_MeshVS_DataSource3D) &volumeMeshDS = occHandle(Ng_MeshVS_DataSource3D)::DownCast(anIt.value());
+
+            //! ------------------------------------------------------------------
+            //! generate the surface mesh topologically - to be changed
+            //! (I mean access the mesh data base directly... to do, if possible,
+            //! since this object does not have access to the mesh data base)
+            //! ------------------------------------------------------------------
+            if(volumeMeshDS->myFaceToElements.size()==0) volumeMeshDS->buildFaceToElementConnectivity();
+            curMeshDS = new Ng_MeshVS_DataSource2D(volumeMeshDS);
+        }
+        else
+        {
+            curMeshDS = anIt.value();
+        }
+        const QList<QMap<int, double>> &listOfRes = theData.value(loc);
+        const QMap<int, double> &res = listOfRes.at(component);
+
+        //! -----------------------------
+        //! min and max for the colorbox
+        //! -----------------------------
+        if(autoscale)
+        {
+            std::pair<double,double> minmax = this->getMinMax(component);
+            theMin = minmax.first;
+            theMax = minmax.second;
+        }
+        else
+        {
+            theMin = min;
+            theMax = max;
+        }
+
+#ifndef ISOSTRIP
+        //! ----------------------------
+        //! the new mesh (colored) mesh
+        //! ----------------------------
+        occHandle(MeshVS_Mesh) aColoredMesh;
+        QMap<int,gp_Vec> displacementMap = myMapOfNodalDisplacements.value(loc);
+        MeshTools::buildDeformedColoredMesh(curMeshDS,res,displacementMap,1.0,theMin,theMax,Nlevels,aColoredMesh,showMeshEdges);
+        theMeshes.insert(loc,aColoredMesh);
+#endif
+#ifdef ISOSTRIP
+        //! -------------------
+        //! begin experimental
+        //! -------------------
+        cout<<"@ ----------------------"<<endl;
+        cout<<"@ - preparing isostrips "<<endl;
+        std::vector<isoStrip> vecIsoStrip;
+        double delta = (theMax-theMin)/Nlevels;
+        for(int n = 0; n<Nlevels; n++)
+        {
+            double ys = n*delta;
+            double ye = ys + delta;
+            isoStrip anIsoStrip(ys,ye);
+            vecIsoStrip.push_back(anIsoStrip);
+            cout<<"@ - "<<ys<<"\t"<<ye<<endl;
+        }
+        cout<<"@ ----------------------"<<endl;
+
+        isoStripBuilder anIsoStripBuilder;
+        anIsoStripBuilder.setMeshDataSource(curMeshDS);
+        anIsoStripBuilder.setValues(res);
+        anIsoStripBuilder.setIsoStrips(vecIsoStrip);
+
+        //! --------
+        //! testing
+        //! --------
+        std::vector<meshElementByCoords> allElements;
+        bool isDone = anIsoStripBuilder.perform(allElements);
+        Q_UNUSED (isDone)
+
+        occHandle(Ng_MeshVS_DataSourceFace) finalMesh = new Ng_MeshVS_DataSourceFace(allElements,true,true);
+
+        cout<<"@ --------------------------"<<endl;
+        cout<<"@ - overall strip mesh"<<endl;
+        cout<<"@ - elements: "<<finalMesh->GetAllElements().Extent()<<endl;
+        cout<<"@ - nodes: "<<finalMesh->GetAllNodes().Extent()<<endl;
+        cout<<"@ --------------------------"<<endl;
+
+        occHandle(MeshVS_Mesh) aColoredMesh = new MeshVS_Mesh();
+        aColoredMesh->SetDataSource(finalMesh);
+        occHandle(MeshVS_ElementalColorPrsBuilder) aPrsBuilder = new MeshVS_ElementalColorPrsBuilder(aColoredMesh);
+        for(TColStd_MapIteratorOfPackedMapOfInteger it(finalMesh->GetAllElements()); it.More(); it.Next())
+        {
+            int hue = 230;
+            Quantity_Color aColor(hue,1.0,1.0,Quantity_TOC_HLS);
+            aPrsBuilder->SetColor1(it.Key(),aColor);
+        }
+        aColoredMesh->AddBuilder(aPrsBuilder);
+        aColoredMesh->GetDrawer()->SetBoolean(MeshVS_DA_DisplayNodes, Standard_False);
+        aColoredMesh->GetDrawer()->SetColor(MeshVS_DA_EdgeColor,Quantity_NOC_BLACK);
+        aColoredMesh->GetDrawer()->SetBoolean(MeshVS_DA_ShowEdges, true);
+        theMeshes.insert(loc,aColoredMesh);
+        //! -----------------
+        //! end experimental
+        //! -----------------
+#endif
+    }
+
+    //! ---------------------------------
+    //! create the color box with labels
+    //! ---------------------------------
+    graphicsTools::createColorBox(theMin, theMax, Nlevels, AISColorScale);
+    TCollection_ExtendedString title(name.toStdString().c_str());
+    AISColorScale->SetTitle(title);
+
+    //! ------------------------
+    //! set the private members
+    //! ------------------------
+    mySolutionDataComponent = component;
+    myIsAutoscale = autoscale;
+    myMin = theMin;
+    myMax = theMax;
+    myNbLevels = Nlevels;
+    myShowSolidMeshAsSurface = showSolidMeshAsSurface;
+}
+
 
 //! -------------------------------------------
 //! function: getMinMax

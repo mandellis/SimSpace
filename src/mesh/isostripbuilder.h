@@ -15,6 +15,7 @@
 #include <isostrip.h>
 #include <meshelementbycoords.h>
 #include <mesh.h>
+#include <ng_meshvs_datasourceface.h>
 
 //! ----
 //! C++
@@ -25,62 +26,6 @@
 //! OCC
 //! ----
 #include <TColStd_MapIteratorOfPackedMapOfInteger.hxx>
-
-//! ------
-//! point
-//! ------
-struct point
-{
-    double x,y,z;
-    double val;
-    point(double ax=0, double ay=0, double az=0, double aVal = 0) { x = ax; y = ay; z = az; val = aVal; }
-    point(const point &aP) { x = aP.x; y = aP.y; z = aP.z; val = aP.val; }
-    point operator =(const point &aP) { x = aP.x; y = aP.y; z = aP.z; val = aP.val; return *this;}
-    bool operator == (const point &aP) { if(x == aP.x && y == aP.y && z == aP.z) return true; return false; }
-    bool operator < (const point &aP)
-    {
-        std::size_t seed1, seed2; seed1=seed2=0;
-        hash_c<double>(seed1,x); hash_c<double>(seed1,y); hash_c<double>(seed1,z);
-        hash_c<double>(seed2,aP.x); hash_c<double>(seed2,aP.y); hash_c<double>(seed2,aP.z);
-        if(seed1<seed2) return true;
-        else return false;
-    }
-};
-
-
-class MeshVS_DataSource;
-class isoStripBuilder : public QObject
-{
-    Q_OBJECT
-
-public:
-
-    explicit isoStripBuilder(const occHandle(MeshVS_DataSource) &aMeshDS = occHandle(MeshVS_DataSource)(),
-                             int NbStrips = 5,
-                             QObject *parent = 0);
-    void setMeshDataSource(const occHandle(MeshVS_DataSource) &aMeshDS);
-    void setNbStrip(int NbStrips);
-    void setValues(QMap<int,double> *values);
-    void setIsoStrips(std::vector<isoStrip> *theIsoStrips);
-    bool perform();
-
-private:
-
-    occHandle(MeshVS_DataSource) myMeshDS;
-    int myNbStrips;
-    QMap<int,double> *myValues;
-    std::vector<isoStrip> *myIsoStrips;
-
-private:
-
-    void classifyNodes(QMap<int, int> &pointToIsoStrip);
-    void pointCoord(double *c, int globalNodeID);
-
-signals:
-
-public slots:
-
-};
 
 //! ---------------------------------------
 //! class: faceTable
@@ -98,7 +43,7 @@ public slots:
 //!   |   |   |   |   |
 //!
 //! ---------------------------------------
-class faceTable: public std::vector<std::vector<point>>
+class faceTable: public std::vector<std::vector<isoStripPoint>>
 {
 
 public:
@@ -107,16 +52,16 @@ public:
     //! function: col
     //! details:
     //! --------------
-    std::vector<point> col(int aCol) { return this->at(aCol); }
+    std::vector<isoStripPoint> col(int aCol) { return this->at(aCol); }
 
     //! -----------------------
     //! function: insertBefore
     //! details:
     //! -----------------------
-    void insertBefore(int aCol, const point &thePoint, const point &theValue)
+    void insertBefore(int aCol, const isoStripPoint &thePoint, const isoStripPoint &theValue)
     {
-        std::vector<point> *points = &(this->at(aCol));
-        std::vector<point>::iterator pos = std::find(points->begin(), points->end(), thePoint);
+        std::vector<isoStripPoint> *points = &(this->at(aCol));
+        std::vector<isoStripPoint>::iterator pos = std::find(points->begin(), points->end(), thePoint);
         if(pos == points->end()) return;
         points->insert(pos,theValue);
     }
@@ -125,10 +70,10 @@ public:
     //! function: insertAfter
     //! details:
     //! ----------------------
-    void insertAfter(int aCol, const point &thePoint, const point &theValue)
+    void insertAfter(int aCol, const isoStripPoint &thePoint, const isoStripPoint &theValue)
     {
-        std::vector<point> *points = &(this->at(aCol));
-        std::vector<point>::iterator pos = std::find(points->begin(), points->end(), thePoint);
+        std::vector<isoStripPoint> *points = &(this->at(aCol));
+        std::vector<isoStripPoint>::iterator pos = std::find(points->begin(), points->end(), thePoint);
         if(pos == points->end()) return;
         points->insert(pos+1,theValue);
     }
@@ -137,27 +82,122 @@ public:
     //! function: getElements
     //! details:
     //! ----------------------
-    void getElements(std::vector<meshElementByCoords> theElements) const
+    void getElements(std::vector<meshElementByCoords> &theElements) const
     {
         for(int coln = 0; coln <this->size(); coln++)
         {
             meshElementByCoords anElement;
-            const std::vector<point> &faceElement = this->at(coln);
+            const std::vector<isoStripPoint> &faceElement = this->at(coln);
             switch(faceElement.size())
             {
-            case 3: anElement.type = TRIG; break;
-            case 4: anElement.type = QUAD; break;
-            case 6: anElement.type = TRIG6; break;
-            //case 6: anElement.type = HEXAG; break;    // require the definition of another type of element
+            case 3:
+            {
+                cout<<"____INSERTING TRIG____"<<endl;
+                anElement.type = TRIG;
+            }
+                break;
+            case 4:
+            {
+                cout<<"____INSERTING QUAD____"<<endl;
+                anElement.type = QUAD;
+            }
+                break;
+            case 5:
+            {
+                cout<<"____INSERTING PENTA____"<<endl;
+                anElement.type = PENTA;
+            }
+                break;
+            case 6:
+            {
+                cout<<"____INSERTING TRIG6____"<<endl;
+                anElement.type = TRIG6;
+            }
+                break;
+            case 7:
+            {
+                cout<<"____INSERTING EPTA____"<<endl;
+                anElement.type = EPTA;
+            }
+                break;
+            case 8:
+            {
+                cout<<"____INSERTING QUAD8____"<<endl;
+                anElement.type = QUAD8;
+            }
+                break;
+            default:
+            {
+                cout<<"____INSERTING NON STANDARD: NUMBER OF NODES: "<<faceElement.size()<<"____"<<endl;
+                exit(99999999);
+            }
+                break;
             }
             for(int i = 0; i<faceElement.size(); i++)
             {
-                const point &aPoint = faceElement.at(i);
+                const isoStripPoint &aPoint = faceElement[i];
                 anElement.pointList<<mesh::meshPoint(aPoint.x,aPoint.y,aPoint.z);
             }
             theElements.push_back(anElement);
         }
     }
+
+    //! ------------------------------
+    //! function: getElementsOfColumn
+    //! details:
+    //! ------------------------------
+    void getElementOfColumn(int col, meshElementByCoords &theElement) const
+    {
+        if(col<0 || col>this->size()-1) return;
+
+        const std::vector<isoStripPoint> &faceElement = this->at(col);
+        switch(faceElement.size())
+        {
+        case 3: theElement.type = TRIG; break;
+        case 4: theElement.type = QUAD; break;
+        case 6: theElement.type = TRIG6; break;
+        //case 6: theElement.type = HEXAG; break;    // require the definition of another type of element
+        }
+        for(int i = 0; i<faceElement.size(); i++)
+        {
+            const isoStripPoint &aPoint = faceElement[i];
+            theElement.pointList<<mesh::meshPoint(aPoint.x,aPoint.y,aPoint.z);
+        }
+    }
+};
+
+
+
+class MeshVS_DataSource;
+class isoStripBuilder : public QObject
+{
+    Q_OBJECT
+
+public:
+
+    explicit isoStripBuilder(const occHandle(MeshVS_DataSource) &aMeshDS = occHandle(MeshVS_DataSource)(),
+                             QObject *parent = 0);
+    void setMeshDataSource(const occHandle(MeshVS_DataSource) &aMeshDS);
+    void setNbStrip(int NbStrips);
+    void setValues(const QMap<int,double> &values);
+    void setIsoStrips(const std::vector<isoStrip> &theIsoStrips);
+    bool perform(std::vector<meshElementByCoords> &vecMeshElements);
+    void getAllElements(const std::vector<faceTable> &vecFaces, std::vector<meshElementByCoords> &vecMeshElements);
+
+
+private:
+
+    occHandle(MeshVS_DataSource) myMeshDS;
+    QMap<int,double> myValues;
+    std::vector<isoStrip> myIsoStrips;
+
+private:
+
+    void classifyNodes(QMap<int, int> &pointToIsoStrip);
+    void pointCoord(double *c, int globalNodeID);
+
+private:
+
 };
 
 #endif // ISOSTRIPBUILDER_H

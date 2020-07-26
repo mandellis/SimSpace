@@ -501,28 +501,6 @@ Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(const tetgenio &aMesh)
     //! elements topology
     //! ------------------
     this->buildElementsTopology();
-
-    /*
-    //! -------------------------------------------
-    //! topological information
-    //! sequence of nodes for the 3D visualization
-    //! 1st order tet: definition of the faces
-    //! Face 1: 1-2-3
-    //! Face 2: 1-3-2
-    //! Face 3: 2-4-3
-    //! Face 4: 3-4-1
-    //! -------------------------------------------
-    TET4MeshData = new MeshVS_HArray1OfSequenceOfInteger(1,4);
-    TColStd_SequenceOfInteger face1, face2, face3, face4;
-    face1.Append(0); face1.Append(1); face1.Append(3);
-    face2.Append(0); face2.Append(2); face2.Append(1);
-    face3.Append(1); face3.Append(2); face3.Append(3);
-    face4.Append(3); face4.Append(2); face4.Append(0);
-    TET4MeshData->SetValue(1,face1);
-    TET4MeshData->SetValue(2,face2);
-    TET4MeshData->SetValue(3,face3);
-    TET4MeshData->SetValue(4,face4);
-    */
 }
 
 //! ----------------------------------------------

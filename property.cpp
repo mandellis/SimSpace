@@ -466,14 +466,6 @@ void Property::writeProperty(ofstream& out, const Property &prop)
             cout<<"* PROPERTY DEFINED THROUGH \"DOUBLE VECTOR\""<<endl;
             QVector<QVector<double>> tensor2 = prop.getData().value<QVector<QVector<double>>>();
             tools::writeTensor2<QVector<QVector<double>>>(tensor2,out);
-            //for(QVector<QVector<double>>::iterator it = tensor2.begin(); it!=tensor2.end(); it++)
-            //{
-            //    const QVector<double> &vec = *it;
-            //    for(QVector<double>::const_iterator itt = vec.begin(); itt!=vec.end(); itt++)
-            //    {
-            //        out<<*itt<<endl;
-            //    }
-            //}
         }
         else if(prop.getData().canConvert<QVector<GeometryTag>>())
         {

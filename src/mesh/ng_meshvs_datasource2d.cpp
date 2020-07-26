@@ -134,6 +134,11 @@ Ng_MeshVS_DataSource2D::Ng_MeshVS_DataSource2D(const std::string &fileName)
     //! compute normal elements
     //! ------------------------
     this->computeNormalAtElements();
+
+    //! ------------------------
+    //! build elements topology
+    //! ------------------------
+    this->buildElementsTopology();
 }
 
 //! -------------------------------------------------
@@ -224,6 +229,11 @@ Ng_MeshVS_DataSource2D::Ng_MeshVS_DataSource2D(Ng_Mesh *aMesh)
     //! compute the normal at elements
     //! -------------------------------
     this->computeNormalAtElements();
+
+    //! ------------------------
+    //! build elements topology
+    //! ------------------------
+    this->buildElementsTopology();
 }
 
 //! ------------------------------------
@@ -380,6 +390,11 @@ Ng_MeshVS_DataSource2D::Ng_MeshVS_DataSource2D(const tetgenio &aMesh)
     //! compute normal at elements
     //! ---------------------------
     this->computeNormalAtElements();
+
+    //! ------------------------
+    //! build elements topology
+    //! ------------------------
+    this->buildElementsTopology();
 }
 
 //! ---------------------------------------------------------------
@@ -534,6 +549,11 @@ Ng_MeshVS_DataSource2D::Ng_MeshVS_DataSource2D(const QString &faceFileName, cons
     //! compute normal at elements
     //! ---------------------------
     this->computeNormalAtElements();
+
+    //! ------------------------
+    //! build elements topology
+    //! ------------------------
+    this->buildElementsTopology();
 }
 
 //! ---------------------------------------------------------------------
@@ -631,6 +651,11 @@ Ng_MeshVS_DataSource2D::Ng_MeshVS_DataSource2D(const opencascade::handle<Ng_Mesh
     //! compute the normals at elements
     //! --------------------------------
     this->computeNormalAtElements();
+
+    //! ------------------------
+    //! build elements topology
+    //! ------------------------
+    this->buildElementsTopology();
 }
 
 //! ----------------------------
@@ -689,6 +714,11 @@ Ng_MeshVS_DataSource2D::Ng_MeshVS_DataSource2D(const occHandle(StlMesh_Mesh) &aM
         myElemNormals->SetValue(i,2,ny);
         myElemNormals->SetValue(i,3,nz);
     }
+
+    //! ------------------------
+    //! build elements topology
+    //! ------------------------
+    this->buildElementsTopology();
 }
 
 //! ----------------------------------------------
@@ -757,12 +787,6 @@ Ng_MeshVS_DataSource2D::Ng_MeshVS_DataSource2D(const std::vector<mesh::meshEleme
         myElemType->SetValue(i,type);
         //if(type==TRIG) cout<<"____element type \"TRIG\" set____"<<endl;
 
-        //! -----------------------------------
-        //! set the inverse transformation [?]
-        //! -----------------------------------
-        //int MTRIG3_I[3]={1,2,3};
-        //int MTRIG6_I[6]={1,3,5,4,6,2};
-
         //! -----------------------------
         //! set the nodes of the element
         //! -----------------------------
@@ -772,7 +796,6 @@ Ng_MeshVS_DataSource2D::Ng_MeshVS_DataSource2D(const std::vector<mesh::meshEleme
             for(int k=0; k<anElement.theNodeIDs.size(); k++)
             {
                 int globalNodeID = anElement.theNodeIDs.at(k);
-                //int pos = MTRIG3_I[k];
                 myElemNodes->SetValue(i,k+1,globalNodeID);
             }
             break;
@@ -782,6 +805,11 @@ Ng_MeshVS_DataSource2D::Ng_MeshVS_DataSource2D(const std::vector<mesh::meshEleme
     //! compute normals at elements
     //! ----------------------------
     this->computeNormalAtElements();
+
+    //! ------------------------
+    //! build elements topology
+    //! ------------------------
+    this->buildElementsTopology();
 }
 
 
