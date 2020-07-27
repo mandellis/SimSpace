@@ -2329,6 +2329,18 @@ void SimulationManager::handleItem(int type)
     case 234: this->createSimulationNode(SimulationNodeClass::nodeType_solutionStructuralContact,2); break;
     case 235: this->createSimulationNode(SimulationNodeClass::nodeType_solutionStructuralContact,3); break;
 
+    //! ------------------------------------------------------------------
+    //! 246 -> insert total "Reaction forces"
+    //! directional nodal forces (option "1" => "x" direction by default)
+    //! ------------------------------------------------------------------
+    case 246: this->createSimulationNode(SimulationNodeClass::nodeType_solutionStructuralReactionForce,0); break;
+    case 247: this->createSimulationNode(SimulationNodeClass::nodeType_solutionStructuralReactionForce,1); break;
+
+    //! ------------------------------------------------------------------
+    //! 245 -> insert total "Gamma"
+    //! ------------------------------------------------------------------
+    case 245: this->createSimulationNode(SimulationNodeClass::nodeType_solutionStructuralGamma); break;
+
     //! -----------------
     //! evaluate results
     //! -----------------

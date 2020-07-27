@@ -1416,6 +1416,7 @@ void contextMenuBuilder::buildStructuralSolutionContextMenu(QMenu *contextMenu, 
 
     QMenu *subMenuNodalDisplacement = menuInsert->addMenu("Deformation");
     QMenu *subMenuStress = menuInsert->addMenu("Stress");
+    QMenu *subMenuGamma = menuInsert->addMenu("Gamma");
 
     //! add a separator
     menuInsert->addSeparator();
@@ -1455,6 +1456,28 @@ void contextMenuBuilder::buildStructuralSolutionContextMenu(QMenu *contextMenu, 
     //! ----------------------
     QMenu *subMenuNodalForces =menuInsert->addMenu("Nodal forces");
     subMenuNodalForces->setIcon(QIcon(":/icons/icon_nodal force.png"));
+    QMenu *subMenuReactionForce =menuInsert->addMenu("ReactionForce");
+    subMenuReactionForce->setIcon(QIcon(":/icons/icon_nodal force.png"));
+
+
+    //! ----------------------
+    //! sub menu reaction forces
+    //! ----------------------
+    QAction *ActionInsertReactionForce = subMenuReactionForce->addAction("Total reaction force");
+    ActionInsertReactionForce->setIcon(QIcon(":/icons/icon_nodal force.png"));
+    ActionInsertReactionForce->setData(246);
+
+    QAction *ActionInsertDirectionReactionForce = subMenuReactionForce->addAction("Directional reaction force");
+    ActionInsertDirectionReactionForce->setIcon(QIcon(":/icons/icon_nodal force.png"));
+    ActionInsertDirectionReactionForce->setData(247);
+
+    //! ----------------------
+    //! sub menu reaction forces
+    //! ----------------------
+    QAction *ActionInsertGamma = subMenuGamma->addAction("Gamma");
+    ActionInsertGamma->setIcon(QIcon(":/icons/icon_gamma.png"));
+    ActionInsertGamma->setData(245);
+
 
     //! ----------------------------
     //! sub menu nodal displacement
@@ -1466,6 +1489,7 @@ void contextMenuBuilder::buildStructuralSolutionContextMenu(QMenu *contextMenu, 
     QAction *ActionInsertDirectionalDisplacement = subMenuNodalDisplacement->addAction("Directional");
     ActionInsertDirectionalDisplacement->setIcon(QIcon(":/icons/icon_deformation.png"));
     ActionInsertDirectionalDisplacement->setData(206);
+
 
     //! ----------------
     //! sub menu stress
@@ -2067,6 +2091,11 @@ void contextMenuBuilder::addActionCreateNamedSelection(QMenu *contextMenu)
 //! insert contact frictional stress           233
 //! insert contact penetration                 234
 //! insert contact sliding                     235
+//!
+//! insert Gamma solution                      245
+//! insert total reaction force                246
+//! inesrt directional reaction force          247
+
 //!
 //! insert temperature (thermal solution)      240
 //! inset thermal flux (thermal solution)      241
