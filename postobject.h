@@ -266,6 +266,18 @@ private:
 
     void writeIntoStream(ofstream &os, const opencascade::handle<MeshVS_DataSource> &aMeshDS);
     bool readMeshFromStream(ifstream &stream, occHandle(MeshVS_DataSource) &aMeshDS);
+
+    //! -------
+    //! helper
+    //! -------
+    int hueFromValue(int theValue,int theMin,int theMax)
+    {
+        int aMinLimit (0), aMaxLimit (230);
+        int aHue = aMaxLimit;
+        if (theMin!=theMax) aHue = (int)(aMaxLimit -(aMaxLimit-aMinLimit)*(theValue-theMin)/(theMax - theMin));
+        aHue = std::min (std::max (aMinLimit, aHue), aMaxLimit);
+        return aHue;
+    }
 };
 
 Q_DECLARE_METATYPE(postObject)

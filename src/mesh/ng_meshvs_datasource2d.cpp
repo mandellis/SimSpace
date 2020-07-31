@@ -832,10 +832,12 @@ Standard_Boolean Ng_MeshVS_DataSource2D::GetGeom(const Standard_Integer ID,
             Type = MeshVS_ET_Face;
             switch(myElemType->Value(localElementID))
             {
-            case(TRIG): NbNodes=3; break;
-            case(QUAD): NbNodes=4; break;
-            case(TRIG6): NbNodes=6; break;
-            case(QUAD8): NbNodes=8; break;
+            case TRIG: NbNodes=3; break;
+            case QUAD: NbNodes=4; break;
+            case PENTA: NbNodes=5; break;
+            case TRIG6: NbNodes=6; break;
+            case EPTA: NbNodes=7; break;
+            case QUAD8: NbNodes=8; break;
             }
 
             for(int i=1, k=1; i<=NbNodes; i++)
@@ -1487,8 +1489,8 @@ void Ng_MeshVS_DataSource2D::computeNormalAtElements()
         int globalElementID = it.Key();
         int localElementID = myElementsMap.FindIndex(globalElementID);
         int NbNodes;
-        double buf[24];
-        TColStd_Array1OfReal coords(*buf,1,24);
+        double buf[30];
+        TColStd_Array1OfReal coords(*buf,1,30);
         MeshVS_EntityType type;
         this->GetGeom(globalElementID,true,coords,NbNodes,type);
         for(int i=0; i<NbNodes; i++)

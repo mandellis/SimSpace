@@ -576,8 +576,9 @@ void postObject::buildMeshIO(const mapOfMeshDataSources &aMapOfMeshDataSources,
 //! ---------------------------------------------------
 #include "isostripbuilder.h"
 #include "isostrip.h"
+#include <MeshVS_MeshPrsBuilder.hxx>
 #include <MeshVS_ElementalColorPrsBuilder.hxx>
-//#define ISOSTRIP
+#define ISOSTRIP
 void postObject::buildMeshIO(const mapOfMeshDataSources &aMapOfMeshDataSources,
                              double min, double max,
                              int Nlevels,
@@ -681,6 +682,7 @@ void postObject::buildMeshIO(const mapOfMeshDataSources &aMapOfMeshDataSources,
         bool isDone = anIsoStripBuilder.perform(allElements);
         Q_UNUSED (isDone)
 
+
         occHandle(Ng_MeshVS_DataSourceFace) finalMesh = new Ng_MeshVS_DataSourceFace(allElements,true,true);
 
         cout<<"@ --------------------------"<<endl;
@@ -689,19 +691,47 @@ void postObject::buildMeshIO(const mapOfMeshDataSources &aMapOfMeshDataSources,
         cout<<"@ - nodes: "<<finalMesh->GetAllNodes().Extent()<<endl;
         cout<<"@ --------------------------"<<endl;
 
+        /*
         occHandle(MeshVS_Mesh) aColoredMesh = new MeshVS_Mesh();
         aColoredMesh->SetDataSource(finalMesh);
-        occHandle(MeshVS_ElementalColorPrsBuilder) aPrsBuilder = new MeshVS_ElementalColorPrsBuilder(aColoredMesh);
-        for(TColStd_MapIteratorOfPackedMapOfInteger it(finalMesh->GetAllElements()); it.More(); it.Next())
+
+        //! create and add the presentation builder
+        occHandle(MeshVS_MeshPrsBuilder) aBuilder = new MeshVS_MeshPrsBuilder(aColoredMesh);
+        aColoredMesh->AddBuilder(aBuilder,false);
+
+        //! cosmetic for displaying the face mesh
+        Graphic3d_MaterialAspect anAspect(Graphic3d_NOM_GOLD);
+        anAspect.SetColor(Quantity_NOC_RED);
+
+        aColoredMesh->GetDrawer()->SetMaterial(MeshVS_DA_FrontMaterial,anAspect);
+        aColoredMesh->GetDrawer()->SetBoolean(MeshVS_DA_DisplayNodes,true);
+        aColoredMesh->GetDrawer()->SetBoolean(MeshVS_DA_ShowEdges,true);
+        aColoredMesh->GetDrawer()->SetColor(MeshVS_DA_EdgeColor,Quantity_NOC_BLACK);
+        aColoredMesh->SetDisplayMode(MeshVS_DMF_Shading);
+        */
+
+        occHandle(MeshVS_Mesh) aColoredMesh = new MeshVS_Mesh();
+        aColoredMesh->SetDataSource(finalMesh);
+
+        occHandle(MeshVS_ElementalColorPrsBuilder) aPrsBuilder = new MeshVS_ElementalColorPrsBuilder(aColoredMesh, MeshVS_DMF_ElementalColorDataPrs | MeshVS_DMF_OCCMask);
+
+        int n = 0;
+        for(TColStd_MapIteratorOfPackedMapOfInteger it(finalMesh->GetAllElements()); it.More(); it.Next(), n++)
         {
-            int hue = 230;
+            int isoStripNb = allElements.at(n).ID;
+            //isoStrip anIsoStrip = vecIsoStrip.at(isoStripNb);
+            //double val = anIsoStrip.vmin;
+
+            int hue = this->hueFromValue(isoStripNb,0,vecIsoStrip.size()-1);
             Quantity_Color aColor(hue,1.0,1.0,Quantity_TOC_HLS);
             aPrsBuilder->SetColor1(it.Key(),aColor);
         }
         aColoredMesh->AddBuilder(aPrsBuilder);
+        aColoredMesh->GetDrawer()->SetBoolean(MeshVS_DMF_Shading, Standard_True);
         aColoredMesh->GetDrawer()->SetBoolean(MeshVS_DA_DisplayNodes, Standard_False);
         aColoredMesh->GetDrawer()->SetColor(MeshVS_DA_EdgeColor,Quantity_NOC_BLACK);
-        aColoredMesh->GetDrawer()->SetBoolean(MeshVS_DA_ShowEdges, true);
+        aColoredMesh->GetDrawer()->SetBoolean(MeshVS_DA_ShowEdges, showMeshEdges);
+
         theMeshes.insert(loc,aColoredMesh);
         //! -----------------
         //! end experimental

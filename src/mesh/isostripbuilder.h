@@ -21,6 +21,7 @@
 //! C++
 //! ----
 #include <vector>
+#include <algorithm>
 
 //! ----
 //! OCC
@@ -43,8 +44,12 @@
 //!   |   |   |   |   |
 //!
 //! ---------------------------------------
-class faceTable: public std::vector<std::vector<isoStripPoint>>
+class faceTable
 {
+
+private:
+
+    std::map<int,std::vector<isoStripPoint>> mdata;
 
 public:
 
@@ -52,91 +57,151 @@ public:
     //! function: col
     //! details:
     //! --------------
-    std::vector<isoStripPoint> col(int aCol) { return this->at(aCol); }
+    //std::vector<isoStripPoint> col(int aCol) { return this->value(aCol,std::vector<isoStripPoint>()); }
+
+    //! -----------------------------------------------
+    //! append a value at the end of a specific column
+    //! -----------------------------------------------
+    void appendAtCol(int aCol, const isoStripPoint &theValue)
+    {
+        std::map<int,std::vector<isoStripPoint>>::iterator it = mdata.find(aCol);
+        if(it==mdata.end())
+        {
+            std::vector<isoStripPoint> v{theValue};
+            std::pair<int,std::vector<isoStripPoint>> apair;
+            apair.first = aCol;
+            apair.second = v;
+            mdata.insert(apair);
+        }
+        else
+        {
+            (*it).second.push_back(theValue);
+        }
+    }
 
     //! -----------------------
     //! function: insertBefore
     //! details:
     //! -----------------------
-    void insertBefore(int aCol, const isoStripPoint &thePoint, const isoStripPoint &theValue)
+    bool insertBefore(int aCol, const isoStripPoint &thePoint, const isoStripPoint &theValue)
     {
-        std::vector<isoStripPoint> *points = &(this->at(aCol));
-        std::vector<isoStripPoint>::iterator pos = std::find(points->begin(), points->end(), thePoint);
-        if(pos == points->end()) return;
-        points->insert(pos,theValue);
+        std::map<int,std::vector<isoStripPoint>>::iterator it = mdata.find(aCol);
+        if(it==mdata.end()) return false;
+
+        std::vector<isoStripPoint>::iterator it_ = std::find((*it).second.begin(),(*it).second.end(),thePoint);
+
+        /*
+        //! ----------------------------
+        //! diagnostic - can be removed
+        //! ----------------------------
+        cout<<"faceTable::insertBefore()->____searching for point ("<<thePoint.x<<", "<<thePoint.y<<", "<<thePoint.z<<")____"<<endl;
+        for(std::vector<isoStripPoint>::iterator it1= (*it).second.begin(); it1 != (*it).second.end(); it1++)
+        {
+            const isoStripPoint &aP = *it1;
+            cout<<"faceTable::insertBefore()->____available point ("<<aP.x<<", "<<aP.y<<", "<<aP.z<<")____"<<endl;
+        }
+        //! ---------------
+        //! end diagnostic
+        //! ---------------
+        */
+
+        if(it_==(*it).second.end())
+        {
+            return false;
+        }
+        else
+        {
+            (*it).second.insert(it_,theValue);
+            return true;
+        }
     }
 
     //! ----------------------
     //! function: insertAfter
     //! details:
     //! ----------------------
-    void insertAfter(int aCol, const isoStripPoint &thePoint, const isoStripPoint &theValue)
+    bool insertAfter(int aCol, const isoStripPoint &thePoint, const isoStripPoint &theValue)
     {
-        std::vector<isoStripPoint> *points = &(this->at(aCol));
-        std::vector<isoStripPoint>::iterator pos = std::find(points->begin(), points->end(), thePoint);
-        if(pos == points->end()) return;
-        points->insert(pos+1,theValue);
+        std::map<int,std::vector<isoStripPoint>>::iterator it = mdata.find(aCol);
+        if(it==mdata.end()) return false;
+
+        std::vector<isoStripPoint>::iterator it_ = std::find((*it).second.begin(),(*it).second.end(),thePoint);
+
+        //! ----------------------------
+        //! diagnostic - can be removed
+        //! ----------------------------
+        //cout<<"faceTable::insertAfter()->____searching for point ("<<thePoint.x<<", "<<thePoint.y<<", "<<thePoint.z<<")____"<<endl;
+        //for(std::vector<isoStripPoint>::iterator it1= (*it).second.begin(); it1 != (*it).second.end(); it1++)
+        //{
+            //const isoStripPoint &aP = *it1;
+            //cout<<"faceTable::insertAfter()->____available point ("<<aP.x<<", "<<aP.y<<", "<<aP.z<<")____"<<endl;
+        //}
+        //! ---------------
+        //! end diagnostic
+        //! ---------------
+
+        if(it_==(*it).second.end())
+        {
+            return false;
+        }
+        else
+        {
+            (*it).second.insert(it_+1,theValue);
+            return true;
+        }
     }
 
-    //! ----------------------
+    //! ----------------------------------------------------------------------------------------------
     //! function: getElements
-    //! details:
-    //! ----------------------
+    //! details:  when building the mesh data sources the automatic renumbering of nodes is activated
+    //!           so the field meshElementByCoords.ID is left free for storing the isostrip number
+    //! ----------------------------------------------------------------------------------------------
     void getElements(std::vector<meshElementByCoords> &theElements) const
     {
-        for(int coln = 0; coln <this->size(); coln++)
+        for(std::map<int,std::vector<isoStripPoint>>::const_iterator it = mdata.cbegin(); it!=mdata.cend(); it++)
         {
+            std::pair<int,std::vector<isoStripPoint>> apair = *it;
+            int col = apair.first;
+            const std::vector<isoStripPoint> &points = apair.second;
             meshElementByCoords anElement;
-            const std::vector<isoStripPoint> &faceElement = this->at(coln);
-            switch(faceElement.size())
+            switch(points.size())
             {
             case 3:
             {
-                cout<<"____INSERTING TRIG____"<<endl;
+                //cout<<"#____INSERTING TRIG____"<<endl; anElement.type = TRIG;
                 anElement.type = TRIG;
+                anElement.ID = col;
+                //for(int i=0;i<points.size(); i++)
+                //{
+                //    const isoStripPoint &P = points[i];
+                //    cout<<P.x<<"\t"<<P.y<<"\t"<<P.z<<endl;
+                //}
+                /*continue; */
             }
                 break;
             case 4:
             {
-                cout<<"____INSERTING QUAD____"<<endl;
+                //cout<<"#____INSERTING QUAD____"<<endl;
+                //for(int i=0;i<points.size(); i++)
+                //{
+                //    const isoStripPoint &P = points[i];
+                //    cout<<P.x<<"\t"<<P.y<<"\t"<<P.z<<endl;
+                //}
                 anElement.type = QUAD;
+                anElement.ID = col;
+                /*continue; */
             }
                 break;
-            case 5:
-            {
-                cout<<"____INSERTING PENTA____"<<endl;
-                anElement.type = PENTA;
+            case 5: { /*cout<<"____INSERTING PENTA____"<<endl; */ anElement.type = PENTA; anElement.ID = col; /*continue; */} break;
+            case 6: { /* cout<<"____INSERTING TRIG6____"<<endl; */ anElement.type = TRIG6; anElement.ID = col; /*continue; */} break;
+            case 7: { /* cout<<"____INSERTING EPTA____"<<endl; */ anElement.type = EPTA; anElement.ID = col; /*continue; */} break;
+            case 8: { /* cout<<"____INSERTING QUAD8____"<<endl; */ anElement.type = QUAD8; anElement.ID = col; /*continue; */} break;
+            default: { cout<<"____INSERTING NON STANDARD: NUMBER OF NODES: "<<points.size()<<"____"<<endl; continue; exit(99999999); } break;
             }
-                break;
-            case 6:
+            for(int i=0;i<points.size(); i++)
             {
-                cout<<"____INSERTING TRIG6____"<<endl;
-                anElement.type = TRIG6;
-            }
-                break;
-            case 7:
-            {
-                cout<<"____INSERTING EPTA____"<<endl;
-                anElement.type = EPTA;
-            }
-                break;
-            case 8:
-            {
-                cout<<"____INSERTING QUAD8____"<<endl;
-                anElement.type = QUAD8;
-            }
-                break;
-            default:
-            {
-                cout<<"____INSERTING NON STANDARD: NUMBER OF NODES: "<<faceElement.size()<<"____"<<endl;
-                exit(99999999);
-            }
-                break;
-            }
-            for(int i = 0; i<faceElement.size(); i++)
-            {
-                const isoStripPoint &aPoint = faceElement[i];
-                anElement.pointList<<mesh::meshPoint(aPoint.x,aPoint.y,aPoint.z);
+                const isoStripPoint &P = points[i];
+                anElement.pointList<<mesh::meshPoint(P.x,P.y,P.z);
             }
             theElements.push_back(anElement);
         }
@@ -148,25 +213,25 @@ public:
     //! ------------------------------
     void getElementOfColumn(int col, meshElementByCoords &theElement) const
     {
-        if(col<0 || col>this->size()-1) return;
-
-        const std::vector<isoStripPoint> &faceElement = this->at(col);
-        switch(faceElement.size())
+        std::map<int,std::vector<isoStripPoint>>::const_iterator it = mdata.find(col);
+        if(it==mdata.end()) return;
+        const std::vector<isoStripPoint> &points = (*it).second;
+        switch(points.size())
         {
         case 3: theElement.type = TRIG; break;
         case 4: theElement.type = QUAD; break;
+        case 5: theElement.type = PENTA; break;
         case 6: theElement.type = TRIG6; break;
-        //case 6: theElement.type = HEXAG; break;    // require the definition of another type of element
+        case 7: theElement.type = EPTA; break;
+        case 8: theElement.type = QUAD8; break;
         }
-        for(int i = 0; i<faceElement.size(); i++)
+        for(int i = 0; i<points.size(); i++)
         {
-            const isoStripPoint &aPoint = faceElement[i];
+            const isoStripPoint &aPoint = points[i];
             theElement.pointList<<mesh::meshPoint(aPoint.x,aPoint.y,aPoint.z);
         }
     }
 };
-
-
 
 class MeshVS_DataSource;
 class isoStripBuilder : public QObject
@@ -182,8 +247,8 @@ public:
     void setValues(const QMap<int,double> &values);
     void setIsoStrips(const std::vector<isoStrip> &theIsoStrips);
     bool perform(std::vector<meshElementByCoords> &vecMeshElements);
-    void getAllElements(const std::vector<faceTable> &vecFaces, std::vector<meshElementByCoords> &vecMeshElements);
-
+    void getAllElements(const std::vector<faceTable> &vecFaceTables, std::vector<meshElementByCoords> &vecMeshElements);
+    void getIsoStripElements(const std::vector<faceTable> &vecFaceTables, std::multimap<int, meshElementByCoords> &meshElementsByIsoStripNb);
 
 private:
 

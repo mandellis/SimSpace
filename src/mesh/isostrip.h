@@ -11,7 +11,7 @@ struct isoStripPoint
     isoStripPoint(double ax=0, double ay=0, double az=0, double aVal = 0) { x = ax; y = ay; z = az; val = aVal; }
     isoStripPoint(const isoStripPoint &aP) { x = aP.x; y = aP.y; z = aP.z; val = aP.val; }
     isoStripPoint operator =(const isoStripPoint &aP) { x = aP.x; y = aP.y; z = aP.z; val = aP.val; return *this;}
-    bool operator == (const isoStripPoint &aP) { if(x == aP.x && y == aP.y && z == aP.z) return true; return false; }
+    bool operator == (const isoStripPoint &aP) const { if(x == aP.x && y == aP.y && z == aP.z) return true; return false; }
 };
 
 //! ---------
@@ -28,7 +28,7 @@ struct isoStrip
     bool operator < (const isoStrip &rhs) const { if(center()<rhs.center()) return true; return false; }
     double center() const {return 0.5*(vmin+vmax);}
     double width() const {return vmax-vmin;}
-    bool contains(double x) const { if (x>=vmin && x<=vmax) return true; return false; }
+    bool contains(double v) const { if (v>=vmin && v<=vmax) return true; return false; }
 };
 
 #endif // ISOSTRIP_H

@@ -467,8 +467,8 @@ bool writeSolverFileClass::perform()
                         double b = nodeNormal.at(1);
                         double c = nodeNormal.at(2);
                         double d = -(a*x+b*y+c*z);
-                        double delta;
-                        delta=1;
+                        double delta = 1.0;
+                        //delta=1;
 
                         double p1_x,p1_y,p1_z,p2_x,p2_y,p2_z;
 

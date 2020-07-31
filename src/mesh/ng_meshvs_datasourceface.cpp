@@ -878,10 +878,12 @@ Standard_Boolean Ng_MeshVS_DataSourceFace::GetGeom(const Standard_Integer ID,
             Type = MeshVS_ET_Face;
             switch(myElemType->Value(localElementID))
             {
-            case(TRIG): NbNodes=3; break;
-            case(QUAD): NbNodes=4; break;
-            case(TRIG6): NbNodes=6; break;
-            case(QUAD8): NbNodes=8; break;
+            case TRIG: NbNodes=3; break;
+            case QUAD: NbNodes=4; break;
+            case PENTA: NbNodes=5; break;
+            case TRIG6: NbNodes=6; break;
+            case EPTA: NbNodes=7; break;
+            case QUAD8: NbNodes=8; break;
             }
 
             for(int i=1, k=1; i<=NbNodes; i++)
@@ -1648,52 +1650,9 @@ void Ng_MeshVS_DataSourceFace::computeFreeMeshSegments()
 //! function: computeNormalAtElements
 //! details:
 //! ----------------------------------
-#define USE_POLYGON
 void Ng_MeshVS_DataSourceFace::computeNormalAtElements()
 {
-    //cout<<"Ng_MeshVS_DataSourceFace::computeNormalAtElements()->____function called____"<<endl;
-
-#ifndef USE_POLYGON
-    //! -----------------------------------------------------
-    //! calculate the normal vector for each surface element
-    //! for the moment this method handle triangles
-    //! -----------------------------------------------------
-    for(TColStd_MapIteratorOfPackedMapOfInteger it(myElements); it.More(); it.Next())
-    {
-        int globalElementID = it.Key();
-        int localElementID = myElementsMap.FindIndex(globalElementID);
-
-        double x[3],y[3],z[3];
-        double nx,ny,nz,L;
-        for(int n=1; n<=3; n++)
-        {
-            int globalNodeID = myElemNodes->Value(localElementID,n);
-            int localNodeID = myNodesMap.FindIndex(globalNodeID);
-            x[n-1] = myNodeCoords->Value(localNodeID,1);
-            y[n-1] = myNodeCoords->Value(localNodeID,2);
-            z[n-1] = myNodeCoords->Value(localNodeID,3);
-        }
-
-        //! ----------------------
-        //!   i       j       k
-        //! x1-x0   y1-y0   z1-z0
-        //! x2-x0   y2-y0   z2-z0
-        //! ----------------------
-        nx=(y[1]-y[0])*(z[2]-z[0])-(z[1]-z[0])*(y[2]-y[0]);
-        ny=(z[1]-z[0])*(x[2]-x[0])-(x[1]-x[0])*(z[2]-z[0]);
-        nz=(x[1]-x[0])*(y[2]-y[0])-(y[1]-y[0])*(x[2]-x[0]);
-
-        L = sqrt(pow(nx,2)+pow(ny,2)+pow(nz,2));
-        if(L<1e-20) nx=ny=nz=0.0;
-        else { nx=nx/L; ny=ny/L; nz=nz/L; }
-
-        myElemNormals->SetValue(localElementID,1,nx);
-        myElemNormals->SetValue(localElementID,2,ny);
-        myElemNormals->SetValue(localElementID,3,nz);
-    }
-#endif
-#ifdef USE_POLYGON
-
+    cout<<"Ng_MeshVS_DataSourceFace::computeNormalAtElements()->____function called____"<<endl;
     for(TColStd_MapIteratorOfPackedMapOfInteger it(myElements); it.More(); it.Next())
     {
         std::vector<polygon::Point> aPolygon;
@@ -1701,13 +1660,19 @@ void Ng_MeshVS_DataSourceFace::computeNormalAtElements()
         int globalElementID = it.Key();
         int localElementID = myElementsMap.FindIndex(globalElementID);
 
-        //cout<<"@____(global element ID, local element ID) = ("<<globalElementID<<", "<<localElementID<<")____"<<endl;
+        cout<<"@____(global element ID, local element ID) = ("<<globalElementID<<", "<<localElementID<<")____"<<endl;
 
         int NbNodes;
-        double buf[24];
-        TColStd_Array1OfReal coords(*buf,1,24);
+        double buf[30];
+        TColStd_Array1OfReal coords(*buf,1,30);
         MeshVS_EntityType type;
         bool isDone = this->GetGeom(globalElementID,true,coords,NbNodes,type);
+        cout<<"____NbNodes: "<<NbNodes<<"____"<<endl;
+        if(NbNodes<3)
+        {
+            cerr<<"Ng_MeshVS_DataSourceFace::computeNormalAtElements()->____wrong number of nodes (<3)____"<<endl;
+            exit(1);
+        }
         Q_UNUSED(isDone)
 
         for(int i=0; i<NbNodes; i++)
@@ -1720,13 +1685,12 @@ void Ng_MeshVS_DataSourceFace::computeNormalAtElements()
             aPolygon.push_back(aPoint);
             //cout<<"@____("<<x<<", "<<y<<", "<<z<<")____"<<endl;
         }
-        std::vector<double> n = polygon::getNormal(aPolygon);
+        const std::vector<double> &n = polygon::getNormal(aPolygon);
         //cout<<"@____normal ("<<n[0]<<", "<<n[1]<<", "<<n[2]<<")____"<<endl;
         myElemNormals->SetValue(localElementID,1,n[0]);
         myElemNormals->SetValue(localElementID,2,n[1]);
         myElemNormals->SetValue(localElementID,3,n[2]);
     }
-#endif
 }
 
 //! -------------------------------------------------------------------
@@ -3867,7 +3831,7 @@ void Ng_MeshVS_DataSourceFace::setNodeNormal(int globalNodeID, double *n)
 //! ------------------------------------------------------------------
 Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const std::vector<meshElementByCoords> &meshElements, bool autoRenumberElements, bool autoRenumberNodes)
 {
-    cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor called____"<<endl;
+    //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor called____"<<endl;
 
     //! -------------
     //! sanity check
@@ -3878,7 +3842,7 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const std::vector<meshElement
     cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____number of elements: "<<myNumberOfElements<<"____"<<endl;
 
     myElemType = new TColStd_HArray1OfInteger(1,myNumberOfElements);
-    myElemNodes = new TColStd_HArray2OfInteger(1,myNumberOfElements,1,8);
+    myElemNodes = new TColStd_HArray2OfInteger(1,myNumberOfElements,1,10);
     myElemNormals = new TColStd_HArray2OfReal(1,myNumberOfElements,1,3);
 
     std::vector<mesh::meshPoint> vecMeshPoints;
@@ -3975,10 +3939,10 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const std::vector<meshElement
         }
     }
 
-    cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____elements and nodes added____"<<endl;
+    //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____elements and nodes added____"<<endl;
 
     myNumberOfNodes = myNodes.Extent();
-    cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____number of nodes: "<<myNumberOfNodes<<"____"<<endl;
+    //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____number of nodes: "<<myNumberOfNodes<<"____"<<endl;
 
     myNodeCoords = new TColStd_HArray2OfReal(1,myNumberOfNodes,1,3);
 
