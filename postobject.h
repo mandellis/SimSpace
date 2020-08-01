@@ -134,6 +134,7 @@ private:
     //! MeshVS_Mesh objects (colored meshes)
     //! -------------------------------------
     QMap<GeometryTag,occHandle(MeshVS_Mesh)> theMeshes;
+    QMap<GeometryTag,occHandle(MeshVS_DataSource)> theMeshDataSources;
 
     //! ----------------
     //! the color scale
@@ -167,17 +168,6 @@ private:
     //! deformation scale
     //! ------------------
     double myScale;
-
-    //! --------------------
-    //! automin and automax
-    //! --------------------
-    //double myAutoMin;
-    //double myAutoMax;
-
-    //! -------------
-    //! autoNbLevels
-    //! -------------
-    //int myAutoNbLevels;
 
 private:
 

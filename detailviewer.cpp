@@ -5184,7 +5184,8 @@ void DetailViewer::handleColorBoxScaleChanged()
     //! --------------
     //! block signals
     //! --------------
-    //myCurNode->getModel()->blockSignals(true);
+    SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
+    disconnect(myCurNode->getModel(),SIGNAL(itemChanged(QStandardItem*)),sm,SLOT(handleItemChange(QStandardItem*)));
 
     static int firstCall;
     firstCall++;
@@ -5223,6 +5224,7 @@ void DetailViewer::handleColorBoxScaleChanged()
         //! ---------------------------------------------------
         if(min>max) min = max-0.10*min;
         if(max<min) max = min+0.10*max;
+        if(max==min) min = max-0.10*max;
         QVariant data;
         data.setValue(min);
         Property prop_min("Min",data,Property::PropertyGroup_ColorBox);
@@ -5239,7 +5241,7 @@ void DetailViewer::handleColorBoxScaleChanged()
     //! ----------------
     //! unblock signals
     //! ----------------
-    //myCurNode->getModel()->blockSignals(false);
+    connect(myCurNode->getModel(),SIGNAL(itemChanged(QStandardItem*)),sm,SLOT(handleItemChange(QStandardItem*)));
 }
 
 //! -----------------------------------------------------------

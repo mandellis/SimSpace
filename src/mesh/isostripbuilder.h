@@ -166,36 +166,12 @@ public:
             meshElementByCoords anElement;
             switch(points.size())
             {
-            case 3:
-            {
-                //cout<<"#____INSERTING TRIG____"<<endl; anElement.type = TRIG;
-                anElement.type = TRIG;
-                anElement.ID = col;
-                //for(int i=0;i<points.size(); i++)
-                //{
-                //    const isoStripPoint &P = points[i];
-                //    cout<<P.x<<"\t"<<P.y<<"\t"<<P.z<<endl;
-                //}
-                /*continue; */
-            }
-                break;
-            case 4:
-            {
-                //cout<<"#____INSERTING QUAD____"<<endl;
-                //for(int i=0;i<points.size(); i++)
-                //{
-                //    const isoStripPoint &P = points[i];
-                //    cout<<P.x<<"\t"<<P.y<<"\t"<<P.z<<endl;
-                //}
-                anElement.type = QUAD;
-                anElement.ID = col;
-                /*continue; */
-            }
-                break;
-            case 5: { /*cout<<"____INSERTING PENTA____"<<endl; */ anElement.type = PENTA; anElement.ID = col; /*continue; */} break;
-            case 6: { /* cout<<"____INSERTING TRIG6____"<<endl; */ anElement.type = TRIG6; anElement.ID = col; /*continue; */} break;
-            case 7: { /* cout<<"____INSERTING EPTA____"<<endl; */ anElement.type = EPTA; anElement.ID = col; /*continue; */} break;
-            case 8: { /* cout<<"____INSERTING QUAD8____"<<endl; */ anElement.type = QUAD8; anElement.ID = col; /*continue; */} break;
+            case 3: { anElement.type = TRIG; anElement.ID = col; /*continue; */ } break;
+            case 4: { anElement.type = QUAD; anElement.ID = col; /*continue; */ } break;
+            case 5: { anElement.type = PENTA; anElement.ID = col; /*continue; */} break;
+            case 6: { anElement.type = TRIG6; anElement.ID = col; /*continue; */} break;
+            case 7: { anElement.type = EPTA; anElement.ID = col; /*continue; */} break;
+            case 8: { anElement.type = QUAD8; anElement.ID = col; /*continue; */} break;
             default: { cout<<"____INSERTING NON STANDARD: NUMBER OF NODES: "<<points.size()<<"____"<<endl; continue; exit(99999999); } break;
             }
             for(int i=0;i<points.size(); i++)

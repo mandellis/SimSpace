@@ -186,6 +186,11 @@ public:
     //! -------------------------------------
     Standard_EXPORT Ng_MeshVS_DataSourceFace(const occHandle(Ng_MeshVS_DataSourceFace) &aMesh, int order);
 
+    //! -----------------------------------------------------------------------
+    //! constructor: a mesh from another mesh with nodal displacements applied
+    //! -----------------------------------------------------------------------
+    Standard_EXPORT Ng_MeshVS_DataSourceFace(const occHandle(Ng_MeshVS_DataSource3D) &aMesh, const QMap<int,gp_Vec> &displacements);
+
     //! -------------------------------
     //! constructor: meshDSA - meshDSB
     //! -------------------------------

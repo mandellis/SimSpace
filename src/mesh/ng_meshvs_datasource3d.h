@@ -100,6 +100,10 @@ public:
     //! constructor XI - make a n-th order mesh
     Standard_EXPORT Ng_MeshVS_DataSource3D(const occHandle(Ng_MeshVS_DataSource3D) &aMesh, int order);
 
+
+    //! constructor X - a mesh from another mesh with nodal displacements applied
+    Standard_EXPORT Ng_MeshVS_DataSource3D(const occHandle(Ng_MeshVS_DataSource3D) &aMesh, const QMap<int,gp_Vec> &displacements);
+
     Standard_EXPORT virtual Standard_Boolean GetGeom (const Standard_Integer ID,
                                                       const Standard_Boolean IsElement,
                                                       TColStd_Array1OfReal& Coords,

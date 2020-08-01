@@ -120,7 +120,7 @@ public slots:
 private:
 
     //! create a string title for the colorbox, carrying the type of data
-    QString colorBoxTitle(const QString &keyName, int component, int step, int subStep, double time);
+    QString resultName(const QString &keyName, int component, int step, int subStep, double time);
 
     //! time stamp
     QString timeStamp();

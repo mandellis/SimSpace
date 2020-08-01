@@ -2186,3 +2186,78 @@ void Ng_MeshVS_DataSource2D::buildElementsTopology()
         TET10MeshData->SetValue(f+1,face[f]);
     }
 }
+
+//! ----------------------
+//! function: constructor
+//! details:
+//! ----------------------
+Ng_MeshVS_DataSource2D::Ng_MeshVS_DataSource2D(const occHandle(Ng_MeshVS_DataSource3D) &aMesh, const QMap<int,gp_Vec> &displacements)
+{
+    myNumberOfElements = aMesh->GetAllElements().Extent();
+    myNumberOfNodes = aMesh->GetAllNodes().Extent();
+
+    //! ---------------------------
+    //! maps of nodes and elements
+    //! ---------------------------
+    myElements = aMesh->GetAllElements();
+    myElementsMap = aMesh->myNodesMap;
+    myNodes = aMesh->GetAllNodes();
+    myNodesMap = aMesh->myNodesMap;
+
+    myElemType = new TColStd_HArray1OfInteger(1,myNumberOfElements);
+    myNodeCoords = new TColStd_HArray2OfReal(1,myNumberOfNodes,1,3);
+    myElemNodes = new TColStd_HArray2OfInteger(1,myNumberOfElements,1,20);
+
+    //! ----------------------------------
+    //! elements definition through nodes
+    //! ----------------------------------
+    int localElementID = 0;
+    int NbNodes, b[20];
+    TColStd_Array1OfInteger nodeIDs(*b,1,20);
+    for(TColStd_MapIteratorOfPackedMapOfInteger it(aMesh->GetAllElements()); it.More(); it.Next())
+    {
+        localElementID++;
+        int globalElementID = it.Key();
+        aMesh->GetNodesByElement(globalElementID,nodeIDs,NbNodes);
+        for(int c=1; c<=NbNodes; c++) myElemNodes->SetValue(localElementID,c,nodeIDs(c));
+
+        ElemType eType;
+        aMesh->GetElementType(eType,globalElementID,false);
+        myElemType->SetValue(localElementID,eType);
+    }
+
+    //! -----------------
+    //! node coordinates
+    //! -----------------
+    double a[3];
+    TColStd_Array1OfReal coords(*a,1,3);
+    MeshVS_EntityType aType;
+    int localNodeID = 0;
+    for(TColStd_MapIteratorOfPackedMapOfInteger it(aMesh->GetAllNodes()); it.More(); it.Next())
+    {
+        localNodeID ++;
+        int globalNodeID = it.Key();
+        aMesh->GetGeom(globalNodeID,false,coords,NbNodes,aType);
+        const gp_Vec &d = displacements.value(globalNodeID);
+        for(int c=0; c<NbNodes; c++)
+        {
+            int s = 3*c;
+            double x = coords(s+1) + d.X();
+            double y = coords(s+2) + d.Y();
+            double z = coords(s+3) + d.Z();
+            myNodeCoords->SetValue(localNodeID,s+1,x);
+            myNodeCoords->SetValue(localNodeID,s+2,y);
+            myNodeCoords->SetValue(localNodeID,s+3,z);
+        }
+    }
+
+    //! ---------------------------
+    //! compute normal at elements
+    //! ---------------------------
+    this->computeNormalAtElements();
+
+    //! ------------------
+    //! elements topology
+    //! ------------------
+    this->buildElementsTopology();
+}

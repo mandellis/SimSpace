@@ -21,7 +21,7 @@ struct isoStrip
 {
     double vmin,vmax;
 
-    isoStrip(double avmin = 0, double avmax = 100):vmin(avmin),vmax(avmax){;}
+    isoStrip(double avmin = -100, double avmax = 100):vmin(avmin),vmax(avmax){;}
     isoStrip(const isoStrip &rhs) {vmin = rhs.vmin; vmax = rhs.vmax; }
     bool operator == (isoStrip &rhs) { if(vmin==rhs.vmin && vmax==rhs.vmax) return true; return false; }
     isoStrip operator = (const isoStrip &rhs) {vmin=rhs.vmin; vmax=rhs.vmax; return *this; }

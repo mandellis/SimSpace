@@ -1652,7 +1652,7 @@ void Ng_MeshVS_DataSourceFace::computeFreeMeshSegments()
 //! ----------------------------------
 void Ng_MeshVS_DataSourceFace::computeNormalAtElements()
 {
-    cout<<"Ng_MeshVS_DataSourceFace::computeNormalAtElements()->____function called____"<<endl;
+    //cout<<"Ng_MeshVS_DataSourceFace::computeNormalAtElements()->____function called____"<<endl;
     for(TColStd_MapIteratorOfPackedMapOfInteger it(myElements); it.More(); it.Next())
     {
         std::vector<polygon::Point> aPolygon;
@@ -1660,19 +1660,13 @@ void Ng_MeshVS_DataSourceFace::computeNormalAtElements()
         int globalElementID = it.Key();
         int localElementID = myElementsMap.FindIndex(globalElementID);
 
-        cout<<"@____(global element ID, local element ID) = ("<<globalElementID<<", "<<localElementID<<")____"<<endl;
+        //cout<<"@____(global element ID, local element ID) = ("<<globalElementID<<", "<<localElementID<<")____"<<endl;
 
         int NbNodes;
         double buf[30];
         TColStd_Array1OfReal coords(*buf,1,30);
         MeshVS_EntityType type;
         bool isDone = this->GetGeom(globalElementID,true,coords,NbNodes,type);
-        cout<<"____NbNodes: "<<NbNodes<<"____"<<endl;
-        if(NbNodes<3)
-        {
-            cerr<<"Ng_MeshVS_DataSourceFace::computeNormalAtElements()->____wrong number of nodes (<3)____"<<endl;
-            exit(1);
-        }
         Q_UNUSED(isDone)
 
         for(int i=0; i<NbNodes; i++)
@@ -1683,10 +1677,8 @@ void Ng_MeshVS_DataSourceFace::computeNormalAtElements()
             double z = coords(s+3);
             polygon::Point aPoint(x,y,z);
             aPolygon.push_back(aPoint);
-            //cout<<"@____("<<x<<", "<<y<<", "<<z<<")____"<<endl;
         }
         const std::vector<double> &n = polygon::getNormal(aPolygon);
-        //cout<<"@____normal ("<<n[0]<<", "<<n[1]<<", "<<n[2]<<")____"<<endl;
         myElemNormals->SetValue(localElementID,1,n[0]);
         myElemNormals->SetValue(localElementID,2,n[1]);
         myElemNormals->SetValue(localElementID,3,n[2]);
@@ -4973,4 +4965,80 @@ void Ng_MeshVS_DataSourceFace::buildElementsTopology()
         for(int j=0; j<6; j++) face[f].Append(mask[f][j]);
         TET10MeshData->SetValue(f+1,face[f]);
     }
+}
+
+
+//! ----------------------
+//! function: constructor
+//! details:
+//! ----------------------
+Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const occHandle(Ng_MeshVS_DataSource3D) &aMesh, const QMap<int,gp_Vec> &displacements)
+{
+    myNumberOfElements = aMesh->GetAllElements().Extent();
+    myNumberOfNodes = aMesh->GetAllNodes().Extent();
+
+    //! ---------------------------
+    //! maps of nodes and elements
+    //! ---------------------------
+    myElements = aMesh->GetAllElements();
+    myElementsMap = aMesh->myNodesMap;
+    myNodes = aMesh->GetAllNodes();
+    myNodesMap = aMesh->myNodesMap;
+
+    myElemType = new TColStd_HArray1OfInteger(1,myNumberOfElements);
+    myNodeCoords = new TColStd_HArray2OfReal(1,myNumberOfNodes,1,3);
+    myElemNodes = new TColStd_HArray2OfInteger(1,myNumberOfElements,1,20);
+
+    //! ----------------------------------
+    //! elements definition through nodes
+    //! ----------------------------------
+    int localElementID = 0;
+    int NbNodes, b[20];
+    TColStd_Array1OfInteger nodeIDs(*b,1,20);
+    for(TColStd_MapIteratorOfPackedMapOfInteger it(aMesh->GetAllElements()); it.More(); it.Next())
+    {
+        localElementID++;
+        int globalElementID = it.Key();
+        aMesh->GetNodesByElement(globalElementID,nodeIDs,NbNodes);
+        for(int c=1; c<=NbNodes; c++) myElemNodes->SetValue(localElementID,c,nodeIDs(c));
+
+        ElemType eType;
+        aMesh->GetElementType(eType,globalElementID,false);
+        myElemType->SetValue(localElementID,eType);
+    }
+
+    //! -----------------
+    //! node coordinates
+    //! -----------------
+    double a[3];
+    TColStd_Array1OfReal coords(*a,1,3);
+    MeshVS_EntityType aType;
+    int localNodeID = 0;
+    for(TColStd_MapIteratorOfPackedMapOfInteger it(aMesh->GetAllNodes()); it.More(); it.Next())
+    {
+        localNodeID ++;
+        int globalNodeID = it.Key();
+        aMesh->GetGeom(globalNodeID,false,coords,NbNodes,aType);
+        const gp_Vec &d = displacements.value(globalNodeID);
+        for(int c=0; c<NbNodes; c++)
+        {
+            int s = 3*c;
+            double x = coords(s+1) + d.X();
+            double y = coords(s+2) + d.Y();
+            double z = coords(s+3) + d.Z();
+            myNodeCoords->SetValue(localNodeID,s+1,x);
+            myNodeCoords->SetValue(localNodeID,s+2,y);
+            myNodeCoords->SetValue(localNodeID,s+3,z);
+        }
+    }
+
+    //! ---------------------------
+    //! compute normal at elements
+    //! ---------------------------
+    this->computeNormalAtElements();
+
+    //! ------------------
+    //! elements topology
+    //! ------------------
+    this->buildElementsTopology();
 }

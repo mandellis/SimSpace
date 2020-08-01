@@ -416,21 +416,22 @@ QMap<GeometryTag,QList<QMap<int,double>>> postEngine::evaluateResult(const QStri
 }
 
 //! ----------------------------------------------------------
-//! function: colorBoxTitle
+//! function: resultName
 //! details:  build a title for the colorbox according to the
 //!           type of result
 //! ----------------------------------------------------------
-QString postEngine::colorBoxTitle(const QString &keyName, int component, int step, int subStep,double time)
+QString postEngine::resultName(const QString &keyName, int component, int step, int subStep,double time)
 {
-    QString timeInfo = QString("\nTime %1\nStep %2").arg(time).arg(step);
+    //QString timeInfo = QString("\nTime %1\nStep %2").arg(time).arg(step);
     //QString timeInfo = QString("\nStep %1\nSub Step %2").arg(step).arg(subStep);
+    QString timeInfo = QString("\nTime %1\nStep %2\nSub Step %3").arg(time).arg(step).arg(subStep);
 
-    QString colorBoxTitle;
+    QString resultName;
 
     if(keyName =="Damage")
     {
-        colorBoxTitle = keyName;
-        return colorBoxTitle.append("\n");
+        resultName = keyName;
+        return resultName.append("\n");
     }
 
     TypeOfResult tor = m.value(keyName);
@@ -439,87 +440,87 @@ QString postEngine::colorBoxTitle(const QString &keyName, int component, int ste
     case TypeOfResult_HFL:
         switch(component)
         {
-        case 0: colorBoxTitle="Thermal flux"; break;
+        case 0: resultName="Thermal flux"; break;
         }
         break;
     case TypeOfResult_CONT:
         switch(component)
         {
-        case 0: colorBoxTitle="Contact pressure"; break;
-        case 1: colorBoxTitle="Frictional stress"; break;
-        case 2: colorBoxTitle="Contact penetration"; break;
-        case 3: colorBoxTitle="Contact sliding"; break;
+        case 0: resultName="Contact pressure"; break;
+        case 1: resultName="Frictional stress"; break;
+        case 2: resultName="Contact penetration"; break;
+        case 3: resultName="Contact sliding"; break;
         }
         break;
     case TypeOfResult_U:
         switch(component)
         {
-        //case 0: colorBoxTitle="Total displacement"; break;
-        case 0: colorBoxTitle="Total displacement"; break;
-        case 1: colorBoxTitle="Directional displacement X"; break;
-        case 2: colorBoxTitle="Directional displacement Y"; break;
-        case 3: colorBoxTitle="Directional displacement Z"; break;
+        //case 0: resultName="Total displacement"; break;
+        case 0: resultName="Total displacement"; break;
+        case 1: resultName="Directional displacement X"; break;
+        case 2: resultName="Directional displacement Y"; break;
+        case 3: resultName="Directional displacement Z"; break;
         }
         break;
     case TypeOfResult_S:
         switch(component)
         {
-        case 0: colorBoxTitle="Equivalent stress"; break;
-        case 1: colorBoxTitle = "Stress intensity"; break;
-        case 2: colorBoxTitle = "Maximum principal stress"; break;
-        case 3: colorBoxTitle = "Middle principal stress"; break;
-        case 4: colorBoxTitle = "Minimum principal stress"; break;
-        case 5: colorBoxTitle = "Normal stress X"; break;
-        case 6: colorBoxTitle = "Normal stress Y"; break;
-        case 7: colorBoxTitle = "Normal stres Z"; break;
-        case 9: colorBoxTitle = "Shear stress XY"; break;
-        case 10: colorBoxTitle = "Shear stress YZ"; break;
-        case 11: colorBoxTitle = "Shear stress ZX"; break;
+        case 0: resultName="Equivalent stress"; break;
+        case 1: resultName = "Stress intensity"; break;
+        case 2: resultName = "Maximum principal stress"; break;
+        case 3: resultName = "Middle principal stress"; break;
+        case 4: resultName = "Minimum principal stress"; break;
+        case 5: resultName = "Normal stress X"; break;
+        case 6: resultName = "Normal stress Y"; break;
+        case 7: resultName = "Normal stres Z"; break;
+        case 9: resultName = "Shear stress XY"; break;
+        case 10: resultName = "Shear stress YZ"; break;
+        case 11: resultName = "Shear stress ZX"; break;
         }
         break;
     case TypeOfResult_TOSTRAIN:
         switch(component)
         {
-        case 0: colorBoxTitle="Equivalent strain"; break;
-        case 1: colorBoxTitle = "Strain intensity"; break;
-        case 2: colorBoxTitle = "Maximum principal strain"; break;
-        case 3: colorBoxTitle = "Middle principal strain"; break;
-        case 4: colorBoxTitle = "Minimum principal strain"; break;
+        case 0: resultName="Equivalent strain"; break;
+        case 1: resultName = "Strain intensity"; break;
+        case 2: resultName = "Maximum principal strain"; break;
+        case 3: resultName = "Middle principal strain"; break;
+        case 4: resultName = "Minimum principal strain"; break;
         }
         break;
     case TypeOfResult_MESTRAIN:
         switch(component)
         {
-        case 0: colorBoxTitle="Equivalent strain"; break;
-        case 1: colorBoxTitle = "Strain intensity"; break;
-        case 2: colorBoxTitle = "Maximum principal strain"; break;
-        case 3: colorBoxTitle = "Middle principal strain"; break;
-        case 4: colorBoxTitle = "Minimum principal strain"; break;
+        case 0: resultName="Equivalent strain"; break;
+        case 1: resultName = "Strain intensity"; break;
+        case 2: resultName = "Maximum principal strain"; break;
+        case 3: resultName = "Middle principal strain"; break;
+        case 4: resultName = "Minimum principal strain"; break;
         }
         break;
     case TypeOfResult_NT:
         switch(component)
         {
-        case 0: colorBoxTitle = "Temperature"; break;
+        case 0: resultName = "Temperature"; break;
         }
         break;
     case TypeOfResult_F:
         switch(component)
         {
-        case 0: colorBoxTitle="Total force"; break;
-        case 1: colorBoxTitle="Directional Force X"; break;
-        case 2: colorBoxTitle="Directional Force Y"; break;
-        case 3: colorBoxTitle="Directional Force Z"; break;
+        case 0: resultName="Total force"; break;
+        case 1: resultName="Directional Force X"; break;
+        case 2: resultName="Directional Force Y"; break;
+        case 3: resultName="Directional Force Z"; break;
         }
         break;
     case TypeOfResult_EPS:
         switch(component)
         {
-        case 0: colorBoxTitle="Equivalent Plastic Strain"; break;
+        case 0: resultName="Equivalent Plastic Strain"; break;
         }
         break;
     }
-    return this->timeStamp().append("\n").append(colorBoxTitle).append(timeInfo).append("\n");
+    return this->timeStamp().append("\n").append(resultName).append(timeInfo).append("\n");
 }
 
 //! --------------------------
@@ -534,6 +535,7 @@ postObject postEngine::buildPostObject(const QString &keyName,
                                        const QVector<GeometryTag> &vecLoc)
 {
     double time;
+
     //! --------------------
     //! call the postEngine
     //! --------------------
@@ -542,7 +544,7 @@ postObject postEngine::buildPostObject(const QString &keyName,
     //! -------------------------
     //! build the colorBox title
     //! -------------------------
-    QString aColorBoxTitle = this->colorBoxTitle(keyName, component, requiredStepNb, requiredSubStepNb, time);
+    QString aresultName = this->resultName(keyName, component, requiredStepNb, requiredSubStepNb, time);
 
     //! ------------------------------------------------------------------------------------------------------------
     //! create the map of nodal vectorial displacements for the deformed mesh presentation. Here:
@@ -584,7 +586,7 @@ postObject postEngine::buildPostObject(const QString &keyName,
     //! if the underlying mesh is a volume mesh
     //! ----------------------------------------------------------------
     bool showSolidMeshAsSurface = Global::status().isVolumeMeshShownAsSurface;
-    postObject aPostObject(resMap,vecLoc,mapDisplMap,aColorBoxTitle,showSolidMeshAsSurface);
+    postObject aPostObject(resMap,vecLoc,mapDisplMap,aresultName,showSolidMeshAsSurface);
     return aPostObject;
 }
 
@@ -795,7 +797,7 @@ postObject postEngine::evaluateFatigueResults(int type, QVector<GeometryTag> loc
     //! -----------------------
     //! create the post object
     //! -----------------------
-    QString label = this->colorBoxTitle("Damage",0,1,1,0);
+    QString label = this->resultName("Damage",0,1,1,0);
     postObject aPostObject(fatigueResults,locs,label);
     //postObject aPostObject(fatigueResults,locs);
     return aPostObject;
@@ -1112,7 +1114,7 @@ postObject postEngine::evaluateFatigueResults(int type, QVector<GeometryTag> loc
     //! -----------------------
     //! create the post object
     //! -----------------------
-    QString label = this->colorBoxTitle("Damage",0,1,1);
+    QString label = this->resultName("Damage",0,1,1);
     postObject aPostObject(fatigueResults,locs,label);
     //postObject aPostObject(fatigueResults,locs);
     return aPostObject;

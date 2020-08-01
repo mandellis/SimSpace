@@ -5,7 +5,7 @@
 #include "graphicstools.h"
 #include "meshtools.h"
 #include <meshdatabase.h>
-#include "ccout.h"
+//#include "ccout.h"
 #include <ng_meshvs_datasource3d.h>
 #include <ng_meshvs_deformeddatasource2d.h>
 
@@ -33,13 +33,6 @@ using namespace std;
 //! -------
 #include <Windows.h>
 
-/*
-___postObject();
-___postObject(const QMap<int, QMap<int, double> > &resMap);
-___postObject(const QMap<int,QMap<int,double>> &resMap, const QVector<GeometryTag> &aVecLoc);
-___postObject(const QMap<int,QMap<int,double>> &resMap, const QVector<GeometryTag> &aVecLoc, const QString &aName);
-*/
-
 //! ----------------------
 //! function: constructor
 //! details:  default
@@ -50,7 +43,8 @@ postObject::postObject()
     theData = QMap<GeometryTag,QList<QMap<int,double>>>();
     vecLoc = QVector<GeometryTag>();
     name = QString();
-    theMeshes = QMap<GeometryTag,opencascade::handle<MeshVS_Mesh>>();
+    theMeshes = QMap<GeometryTag,occHandle(MeshVS_Mesh)>();
+    theMeshDataSources = QMap<GeometryTag,occHandle(MeshVS_DataSource)>();
     mySolutionDataComponent = 0;
     myShowSolidMeshAsSurface = true;
     myMax = 100;
@@ -72,7 +66,8 @@ postObject::postObject(const QMap<GeometryTag, QList<QMap<int, double>>> &resMap
     //! empty
     vecLoc = QVector<GeometryTag>();
     name = QString();
-    theMeshes = QMap<GeometryTag,opencascade::handle<MeshVS_Mesh>>();
+    theMeshes = QMap<GeometryTag,occHandle(MeshVS_Mesh)>();
+    theMeshDataSources = QMap<GeometryTag,occHandle(MeshVS_DataSource)>();
     mySolutionDataComponent = 0;
     myMax = 100;
     myMin = -100;
@@ -93,7 +88,8 @@ postObject::postObject(const QMap<GeometryTag,QList<QMap<int,double>>> &resMap, 
 
     //! empty
     name = QString();
-    theMeshes = QMap<GeometryTag,opencascade::handle<MeshVS_Mesh>>();
+    theMeshes = QMap<GeometryTag,occHandle(MeshVS_Mesh)>();
+    theMeshDataSources = QMap<GeometryTag,occHandle(MeshVS_DataSource)>();
     mySolutionDataComponent = 0;
     myMax = 100;
     myMin = -100;
@@ -114,7 +110,8 @@ postObject::postObject(const QMap<GeometryTag,QList<QMap<int,double>>> &resMap,
     theData = resMap;
     vecLoc = aVecLoc;
     name = aName;
-    theMeshes = QMap<GeometryTag,opencascade::handle<MeshVS_Mesh>>();
+    theMeshes = QMap<GeometryTag,occHandle(MeshVS_Mesh)>();
+    theMeshDataSources = QMap<GeometryTag,occHandle(MeshVS_DataSource)>();
     mySolutionDataComponent = 0;
     myMax = 100;
     myMin = -100;
@@ -139,7 +136,8 @@ postObject::postObject(const QMap<GeometryTag,QList<QMap<int,double>>> &resMap,
     name = aName;
     myMapOfNodalDisplacements = mapOfMapOfNodalDiplacements;
     myScale = 1.0;  // initial scale "true scale"
-    theMeshes = QMap<GeometryTag,opencascade::handle<MeshVS_Mesh>>();
+    theMeshes = QMap<GeometryTag,occHandle(MeshVS_Mesh)>();
+    theMeshDataSources = QMap<GeometryTag,occHandle(MeshVS_DataSource)>();
     mySolutionDataComponent = 0;
     myShowSolidMeshAsSurface = aShowSolidMeshAsSurface;
     myMax = 100;
@@ -653,89 +651,11 @@ void postObject::buildMeshIO(const mapOfMeshDataSources &aMapOfMeshDataSources,
         theMeshes.insert(loc,aColoredMesh);
 #endif
 #ifdef ISOSTRIP
-        //! -------------------
-        //! begin experimental
-        //! -------------------
-        cout<<"@ ----------------------"<<endl;
-        cout<<"@ - preparing isostrips "<<endl;
-        std::vector<isoStrip> vecIsoStrip;
-        double delta = (theMax-theMin)/Nlevels;
-        for(int n = 0; n<Nlevels; n++)
-        {
-            double ys = n*delta;
-            double ye = ys + delta;
-            isoStrip anIsoStrip(ys,ye);
-            vecIsoStrip.push_back(anIsoStrip);
-            cout<<"@ - "<<ys<<"\t"<<ye<<endl;
-        }
-        cout<<"@ ----------------------"<<endl;
 
-        isoStripBuilder anIsoStripBuilder;
-        anIsoStripBuilder.setMeshDataSource(curMeshDS);
-        anIsoStripBuilder.setValues(res);
-        anIsoStripBuilder.setIsoStrips(vecIsoStrip);
-
-        //! --------
-        //! testing
-        //! --------
-        std::vector<meshElementByCoords> allElements;
-        bool isDone = anIsoStripBuilder.perform(allElements);
-        Q_UNUSED (isDone)
-
-
-        occHandle(Ng_MeshVS_DataSourceFace) finalMesh = new Ng_MeshVS_DataSourceFace(allElements,true,true);
-
-        cout<<"@ --------------------------"<<endl;
-        cout<<"@ - overall strip mesh"<<endl;
-        cout<<"@ - elements: "<<finalMesh->GetAllElements().Extent()<<endl;
-        cout<<"@ - nodes: "<<finalMesh->GetAllNodes().Extent()<<endl;
-        cout<<"@ --------------------------"<<endl;
-
-        /*
-        occHandle(MeshVS_Mesh) aColoredMesh = new MeshVS_Mesh();
-        aColoredMesh->SetDataSource(finalMesh);
-
-        //! create and add the presentation builder
-        occHandle(MeshVS_MeshPrsBuilder) aBuilder = new MeshVS_MeshPrsBuilder(aColoredMesh);
-        aColoredMesh->AddBuilder(aBuilder,false);
-
-        //! cosmetic for displaying the face mesh
-        Graphic3d_MaterialAspect anAspect(Graphic3d_NOM_GOLD);
-        anAspect.SetColor(Quantity_NOC_RED);
-
-        aColoredMesh->GetDrawer()->SetMaterial(MeshVS_DA_FrontMaterial,anAspect);
-        aColoredMesh->GetDrawer()->SetBoolean(MeshVS_DA_DisplayNodes,true);
-        aColoredMesh->GetDrawer()->SetBoolean(MeshVS_DA_ShowEdges,true);
-        aColoredMesh->GetDrawer()->SetColor(MeshVS_DA_EdgeColor,Quantity_NOC_BLACK);
-        aColoredMesh->SetDisplayMode(MeshVS_DMF_Shading);
-        */
-
-        occHandle(MeshVS_Mesh) aColoredMesh = new MeshVS_Mesh();
-        aColoredMesh->SetDataSource(finalMesh);
-
-        occHandle(MeshVS_ElementalColorPrsBuilder) aPrsBuilder = new MeshVS_ElementalColorPrsBuilder(aColoredMesh, MeshVS_DMF_ElementalColorDataPrs | MeshVS_DMF_OCCMask);
-
-        int n = 0;
-        for(TColStd_MapIteratorOfPackedMapOfInteger it(finalMesh->GetAllElements()); it.More(); it.Next(), n++)
-        {
-            int isoStripNb = allElements.at(n).ID;
-            //isoStrip anIsoStrip = vecIsoStrip.at(isoStripNb);
-            //double val = anIsoStrip.vmin;
-
-            int hue = this->hueFromValue(isoStripNb,0,vecIsoStrip.size()-1);
-            Quantity_Color aColor(hue,1.0,1.0,Quantity_TOC_HLS);
-            aPrsBuilder->SetColor1(it.Key(),aColor);
-        }
-        aColoredMesh->AddBuilder(aPrsBuilder);
-        aColoredMesh->GetDrawer()->SetBoolean(MeshVS_DMF_Shading, Standard_True);
-        aColoredMesh->GetDrawer()->SetBoolean(MeshVS_DA_DisplayNodes, Standard_False);
-        aColoredMesh->GetDrawer()->SetColor(MeshVS_DA_EdgeColor,Quantity_NOC_BLACK);
-        aColoredMesh->GetDrawer()->SetBoolean(MeshVS_DA_ShowEdges, showMeshEdges);
-
+        occHandle(MeshVS_Mesh) aColoredMesh;
+        QMap<int,gp_Vec> displacementMap = myMapOfNodalDisplacements.value(loc);
+        MeshTools::buildIsoStrip(curMeshDS,res,displacementMap,1.0,theMin,theMax,Nlevels,aColoredMesh,showMeshEdges);
         theMeshes.insert(loc,aColoredMesh);
-        //! -----------------
-        //! end experimental
-        //! -----------------
 #endif
     }
 
@@ -770,8 +690,8 @@ std::pair<double,double> postObject::getMinMax(int component)
     //! first element => min; second element => max;
     //! ---------------------------------------------
     std::pair<double,double> minmax;
-    minmax.first = 1e80;
-    minmax.second = -1e80;
+    minmax.first = 1e20;
+    minmax.second = -1e20;
 
     //! -------------------
     //! scan the locations
@@ -779,25 +699,24 @@ std::pair<double,double> postObject::getMinMax(int component)
     if(theData.isEmpty())
     {
         cout<<"postObject::getMinMax()->___empty data____"<<endl;
+        return std::make_pair(0.0,0.0);
     }
-    QMap<GeometryTag,QList<QMap<int,double>>>::const_iterator rIt;
-    for(rIt = theData.cbegin(); rIt!= theData.cend(); ++rIt)
+    for(QMap<GeometryTag,QList<QMap<int,double>>>::const_iterator rIt = theData.cbegin(); rIt!= theData.cend(); ++rIt)
     {
         QList<QMap<int,double>> lres = rIt.value();
         QMap<int,double> res = lres.at(component);          //! component
-        QMap<int,double>::iterator rrIt;
-
         if(res.isEmpty())
         {
             cout<<"postObject::getMinMax()->___empty map data____"<<endl;
         }
-        for(rrIt = res.begin(); rrIt!=res.end(); ++rrIt)
+        for(QMap<int,double>::iterator rrIt = res.begin(); rrIt!=res.end(); ++rrIt)
         {
             double aVal = rrIt.value();
             if(aVal<=minmax.first) minmax.first = aVal;
             if(aVal>=minmax.second) minmax.second = aVal;
         }
     }
+    //cout<<"postObject::getMinMax()->____min: "<<minmax.first<<", max: "<<minmax.second<<"____"<<endl;
     return minmax;
 }
 
