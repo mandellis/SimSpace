@@ -41,6 +41,7 @@
 #include "handle_ais_doublearrowmarker_reg.h"
 #include "markerbuilder.h"
 #include "maintreetools.h"
+#include "openfoamcontroller.h"
 #include <connectionpairgenerationoptions.h>
 #include <tabulardataviewerclass1.h>
 
@@ -10312,11 +10313,11 @@ bool SimulationManager::retrieveCurrentItemResult(postObject &aPostObject)
     return false;
 }
 
-//! -------------------------------------------------------------
+//! --------------------------------------------------
 //! function: retrieveAllResults
-//! details:  retrieve the results of an analysis run and/or the
-//!           result of an interpolation
-//! -------------------------------------------------------------
+//! details:  retrieve the results of an analysis run
+//!           or the result of an interpolation
+//! ---------------------------------------------------
 QList<postObject> SimulationManager::retrieveAllResults()
 {
     //cout<<"SimulationManager::retrieveAllResults()->____function called____"<<endl;
@@ -10367,7 +10368,6 @@ void SimulationManager::handleGlobalMeshControlChange()
 //! function: translateOpenFoamScalarData
 //! details:  start the translation process - suitable for scalar values
 //! ---------------------------------------------------------------------
-#include "openfoamcontroller.h"
 bool SimulationManager::translateOpenFoamScalarData()
 {
     cout<<"SimulationManager::translateOpenFoamScalarData->____function called____"<<endl;
@@ -10942,9 +10942,8 @@ bool SimulationManager::eventFilter(QObject *object, QEvent *event)
                  }
                  else
                  {
-                     QVector<int> init;
                      double ini=0.0;
-                     init<<0.0<<0.0<<0.0;
+                     QVector<int> init {0.0, 0.0, 0.0};
                      timeinfo.insert(ini,init);
                      data.setValue(timeinfo);
                      nodeSolutionInformation->replaceProperty("Discrete time map",Property("Discrete time map",data,Property::PropertyGroup_Hidden));
