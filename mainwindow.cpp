@@ -1180,7 +1180,6 @@ void MainWindow::createToolBars()
     meshToolBar->enableClearMesh(false);
     meshToolBar->enableSurfaceMeshButton(false);
     meshToolBar->enableVolumeMeshButton(false);
-    //cese
 
     //! ----------------
     //! results toolbar
@@ -1189,13 +1188,10 @@ void MainWindow::createToolBars()
     this->addToolBar(resultsToolBar);
     resultsToolBar->setVisible(false);
 
-    //connect(resultsToolBar,SIGNAL(requestNoWireframe()),mySimulationManager,SLOT(noWireframe()));
-    //connect(resultsToolBar,SIGNAL(requestShowElements()),mySimulationManager,SLOT(showElements()));
-    //connect(resultsToolBar,SIGNAL(requestShowUndeformedModel()),mySimulationManager,SLOT(showUndeformedModel()));
-    //connect(resultsToolBar,SIGNAL(requestShowUndeformedWireframe()),mySimulationManager,SLOT(showUndeformedWireframe()));
+    //! for changing the status variable of the main viewer
+    connect(resultsToolBar,SIGNAL(requestSetResultPresentation(resultPresentation)),myMainOCCViewer,SLOT(setResultPresentation(resultPresentation)));
+    connect(myMainOCCViewer,SIGNAL(resultsPresentationChanged()),mySimulationManager,SLOT(updateResultsPresentation()));
 
-    connect(resultsToolBar,SIGNAL(requestUpdateResultsPresentation(resultPresentation)),myMainOCCViewer,SLOT(setResultPresentation(resultPresentation)));
-    connect(resultsToolBar,SIGNAL(requestUpdateResultsPresentation(resultPresentation)),mySimulationManager,SLOT(updateResultsPresentation(resultPresentation)));
     connect(resultsToolBar,SIGNAL(requestUpdatePostObjectScale(double)),mySimulationManager,SLOT(updatePostObjectScale(double)));
 }
 

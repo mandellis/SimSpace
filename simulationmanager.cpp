@@ -10315,11 +10315,11 @@ bool SimulationManager::retrieveCurrentItemResult(postObject &aPostObject)
 //! -------------------------------------------------------------
 //! function: retrieveAllResults
 //! details:  retrieve the results of an analysis run and/or the
-//!           result of an inerpolation
+//!           result of an interpolation
 //! -------------------------------------------------------------
 QList<postObject> SimulationManager::retrieveAllResults()
 {
-    cout<<"SimulationManager::retrieveAllResults()->____function called____"<<endl;
+    //cout<<"SimulationManager::retrieveAllResults()->____function called____"<<endl;
     QList<postObject> results;
 
     //! -----------------
@@ -10328,7 +10328,7 @@ QList<postObject> SimulationManager::retrieveAllResults()
     QStandardItem *curItem = myModel->itemFromIndex(myTreeView->currentIndex());
     SimulationNodeClass *curNode = myTreeView->currentIndex().data(Qt::UserRole).value<SimulationNodeClass*>();
 
-    if(curNode->isAnalysisResult()) return results;
+    if(!curNode->isAnalysisResult()) return results;
 
     //! ----------------------------
     //! the current "Solution" item
@@ -10345,7 +10345,6 @@ QList<postObject> SimulationManager::retrieveAllResults()
         const postObject &aPostObject = itemPostObject->data(Qt::UserRole).value<Property>().getData().value<postObject>();
         results<<aPostObject;
     }
-
     return results;
 }
 
@@ -11279,21 +11278,20 @@ void SimulationManager::clearGeneratedData()
         emit requestHideSingleResult(curPostObject);
         curNode->removeProperty("Post object");
     }
-
 }
 
-//! -------------------------------------
+//! ------------------------------------
 //! function: updateResultsPresentation
 //! details:
-//! -------------------------------------
-void SimulationManager::updateResultsPresentation(const resultPresentation &aResultPresentation)
+//! ------------------------------------
+void SimulationManager::updateResultsPresentation()
 {
     cout<<"SimulationManager::updateResultsPresentation()->____function called____"<<endl;
 
     //! ---------------------
     //! retrieve all results
     //! ---------------------
-    const QList<postObject> &postObjectList= this->retrieveAllResults();
+    const QList<postObject> &postObjectList= this->retrieveAllResults(); //gildotta
 
     //! ----------------------------------------------------------------
     //! iterate over the results in order to find the displayed shapes:
@@ -11320,164 +11318,15 @@ void SimulationManager::updateResultsPresentation(const resultPresentation &aRes
     for(std::set<int>::iterator it = parentShapeIndexes.begin(); it!=parentShapeIndexes.end(); ++it) listOfBodies.Append(*it);
     emit requestHideBody(listOfBodies);
 
+    cout<<"____tag00____"<<endl;
     for(QList<postObject>::const_iterator it = postObjectList.cbegin(); it!=postObjectList.cend(); ++it)
     {
+        cout<<"____tag01____"<<endl;
         postObject aPostObject = *it;
         emit requestDisplayResult(aPostObject);
     }
-    switch(aResultPresentation.theCombinedView)
-    {
-    case resultPresentation::combinedView_resultOnly:
-        cout<<"____RESULTS ONLY____"<<endl;
-        //emit requestDisplayResult(aPostObject);
-        break;
-    case resultPresentation::combinedView_undeformedWireFrame:
-        cout<<"____RESULTS SHOW UNDEFORMED WIREFRAME____"<<endl;
-        //emit requestDisplayResult(aPostObject);
-        break;
-    case resultPresentation::combinedView_undeformedModel:
-        cout<<"____RESULTS SHOW UNDEFORMED MODEL____"<<endl;
-        //emit requestDisplayResult(aPostObject);
-        break;
-    case resultPresentation::combinedView_meshVisible:
-        cout<<"____RESULTS SHOW ELEMENTS____"<<endl;
-        //emit requestDisplayResult(aPostObject);
-        break;
-    }
-}
+    cout<<"____tag02____"<<endl;
 
-//! -----------------------
-//! function: showElements
-//! details:
-//! -----------------------
-void SimulationManager::showElements()
-{
-    cout<<"SimulationManager::showElements()->____function called____"<<endl;
-
-    //! ---------------------
-    //! retrieve all results
-    //! ---------------------
-    const QList<postObject> &postObjectList= this->retrieveAllResults();
-
-    //! ----------------------------------------------------------------
-    //! iterate over the results in order to find the displayed shapes:
-    //! the shapes are shown in wireframe mode, and here must be hidden
-    //! Moreover scanning the list of post object remove the mesh view
-    //! ----------------------------------------------------------------
-    std::set<int> parentShapeIndexes;
-    for(QList<postObject>::const_iterator it = postObjectList.cbegin(); it!=postObjectList.cend(); ++it)
-    {
-        postObject aPostObject = *it;
-
-        const QVector<GeometryTag> &vecLoc = aPostObject.getLocations();
-        for(QVector<GeometryTag>::const_iterator it = vecLoc.cbegin(); it!=vecLoc.cend(); it++)
-        {
-            const GeometryTag &aLoc = *it;
-            int bodyIndex = aLoc.parentShapeNr;
-            parentShapeIndexes.insert(bodyIndex);
-        }
-    }
-
-    //! -------------------------------------------------------------------
-    //! hide all the bodies (which are shown, by default, using wireframe)
-    //! -------------------------------------------------------------------
-    TColStd_ListOfInteger listOfBodies;
-    for(std::set<int>::iterator it = parentShapeIndexes.begin(); it!=parentShapeIndexes.end(); ++it) listOfBodies.Append(*it);
-    emit requestHideBody(listOfBodies);
-
-    emit requestShowMeshes(false);
-
-    //! ------------------------
-    //! update the mesh context
-    //! ------------------------
-    emit requestUpdateMeshView();
-}
-
-//! ----------------------------------
-//! function: showUndeformedWireframe
-//! details:
-//! ----------------------------------
-void SimulationManager::showUndeformedWireframe()
-{
-    cerr<<"SimulationManager::showUndeformedWireframe()->____function called____"<<endl;
-
-    //! ---------------------
-    //! retrieve all results
-    //! ---------------------
-    const QList<postObject> &postObjectList= this->retrieveAllResults();
-    std::set<int> parentShapeIndexes;
-    for(QList<postObject>::const_iterator it = postObjectList.cbegin(); it!=postObjectList.cend(); ++it)
-    {
-        const postObject &aPostObject = *it;
-        const QVector<GeometryTag> &vecLoc = aPostObject.getLocations();
-
-        for(QVector<GeometryTag>::const_iterator it = vecLoc.cbegin(); it!=vecLoc.cend(); it++)
-        {
-            const GeometryTag &aLoc = *it;
-            int bodyIndex = aLoc.parentShapeNr;
-            parentShapeIndexes.insert(bodyIndex);
-        }
-    }
-
-    TColStd_ListOfInteger listOfBodies;
-    for(std::set<int>::iterator it = parentShapeIndexes.begin(); it!=parentShapeIndexes.end(); ++it) listOfBodies.Append(*it);
-    emit requestShowBody(listOfBodies);
-
-    emit requestUpdateMeshView();
-}
-
-//! ------------------------------
-//! function: showUndeformedModel
-//! details:
-//! ------------------------------
-void SimulationManager::showUndeformedModel()
-{
-    cout<<"SimulationManager::showUndeformedModel()->____function called____"<<endl;
-    //! to do
-}
-
-//! ----------------------
-//! function: noWireframe
-//! details:
-//! ----------------------
-void SimulationManager::noWireframe()
-{
-    cout<<"SimulationManager::noWireframe()->____function called____"<<endl;
-
-    //! ---------------------
-    //! retrieve all results
-    //! ---------------------
-    QList<postObject> postObjectList= this->retrieveAllResults();
-
-    //! ----------------------------------------------------------------
-    //! iterate over the results in order to find the displayed shapes:
-    //! the shapes are shown in wireframe mode, and here must be hidden
-    //! Moreover scanning the list of post object remove the mesh view
-    //! ----------------------------------------------------------------
-    QList<int> parentShapeIndexes;
-    for(QList<postObject>::iterator it = postObjectList.begin(); it!=postObjectList.end(); ++it)
-    {
-        postObject aPostObject = *it;
-        QMap<GeometryTag,QList<QMap<int,double>>> theData = aPostObject.getData();
-        for(QMap<GeometryTag,QList<QMap<int,double>>>::iterator it = theData.begin(); it!= theData.end(); ++it)
-        {
-            const GeometryTag &aLoc = it.key();
-            int bodyIndex = aLoc.parentShapeNr;
-            if(!parentShapeIndexes.contains(bodyIndex))parentShapeIndexes<<bodyIndex;
-        }
-    }
-
-    //! -------------------------------------------------------------------
-    //! hide all the bodies (which are shown, by default, using wireframe)
-    //! -------------------------------------------------------------------
-    TColStd_ListOfInteger listOfBodies;
-    for(QList<int>::iterator it = parentShapeIndexes.begin(); it!=parentShapeIndexes.end(); ++it) listOfBodies.Append(*it);
-    emit requestHideBody(listOfBodies);
-
-    //! ------------------------
-    //! update the mesh context
-    //! ------------------------
-    emit requestUpdateMeshView();
 }
 
 //! --------------------------------

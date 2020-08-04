@@ -559,20 +559,8 @@ public slots:
     //! show healing elements
     void showHealingElements();
 
-    //! show elements on the results
-    void showElements();
-
-    //! show undeformed wireframe
-    void showUndeformedWireframe();
-
-    //! show undeformed model
-    void showUndeformedModel();
-
-    //! no wireframe
-    void noWireframe();
-
     //! update results presentation
-    void updateResultsPresentation(const resultPresentation &aResultPresentation);
+    void updateResultsPresentation();
 
     //! update post object scale
     void updatePostObjectScale(double scale);

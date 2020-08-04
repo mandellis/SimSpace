@@ -114,6 +114,13 @@ void occPostWidget::displayResult(const postObject &aPostObject)
     //! read the status
     //! ----------------
     resultPresentation aResultPresentation = myResultPresentation;
+    switch(aResultPresentation.theCombinedView)
+    {
+    case resultPresentation::combinedView_meshVisible: cout<<"____MESH VISIBLE____"<<endl; break;
+    case resultPresentation::combinedView_resultOnly: cout<<"____RESULTS ONLY____"<<endl; break;
+    case resultPresentation::combinedView_undeformedModel: cout<<"____MODEL VISIBLE____"<<endl; break;
+    case resultPresentation::combinedView_undeformedWireFrame: cout<<"____WIREFRAME VISIBLE____"<<endl; break;
+    }
 
     //! ---------------------------
     //! display the colored meshes
@@ -122,7 +129,7 @@ void occPostWidget::displayResult(const postObject &aPostObject)
     for(QMap<GeometryTag,occHandle(MeshVS_Mesh)>::const_iterator anIt = coloredMeshes.cbegin(); anIt != coloredMeshes.cend(); ++anIt)
     {
         const occHandle(MeshVS_Mesh) &aColoredMesh = anIt.value();
-        occPostContext->Display(aColoredMesh,false);        
+        occPostContext->Display(aColoredMesh,false);
     }
 
     switch(aResultPresentation.theCombinedView)
@@ -173,6 +180,7 @@ void occPostWidget::displayResult(const postObject &aPostObject)
             aMeshObject->AddBuilder(aB,false);
 
             occMeshContext->Display(aMeshObject,true);
+            occMeshContext->UpdateCurrentViewer();
         }
     }
         break;
@@ -246,12 +254,37 @@ void occPostWidget::displayResult(const postObject &aPostObject)
     const occHandle(AIS_ColorScaleExtended) &colorBox = aPostObject.getColorBox();
     occPostContext->Display(colorBox,true);
 
+    /*
     //! ------------------
     //! update the viewer
     //! ------------------
-    //occPostContext->UpdateCurrentViewer();
-    //occMeshContext->UpdateCurrentViewer();
-    //occContext->UpdateCurrentViewer();
+    occPostContext->UpdateCurrentViewer();
+    occMeshContext->UpdateCurrentViewer();
+    occContext->UpdateCurrentViewer();
+    */
+}
+
+//! --------------------------------
+//! function: setResultPresentation
+//! details:
+//! --------------------------------
+void occPostWidget::setResultPresentation(const resultPresentation &aResPresentation)
+{
+    myResultPresentation = aResPresentation;
+
+    switch(myResultPresentation.theCombinedView)
+    {
+    case resultPresentation::combinedView_resultOnly: cout<<"occPostWidget::setResultPresentation()->____results only____"<<endl; break;
+    case resultPresentation::combinedView_meshVisible: cout<<"occPostWidget::setResultPresentation()->____results with mesh____"<<endl; break;
+    case resultPresentation::combinedView_undeformedModel: cout<<"occPostWidget::setResultPresentation()->____results and undeformed model____"<<endl; break;
+    case resultPresentation::combinedView_undeformedWireFrame: cout<<"occPostWidget::setResultPresentation()->____results and undeformed wireframe____"<<endl; break;
+    }
+
+    //! --------------------------------------------------------------
+    //! this method calls the simulation manager, which in turn calls
+    //! <this>::displayResult()
+    //! --------------------------------------------------------------
+    emit resultsPresentationChanged();
 }
 
 //! -------------------------

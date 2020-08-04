@@ -72,7 +72,7 @@ private slots:
 
 signals:
 
-    void requestUpdateResultsPresentation(const resultPresentation &aResultPresentation);
+    void requestSetResultPresentation(const resultPresentation &aResultPresentation);
     void requestUpdatePostObjectScale(double scale);
 
 public:

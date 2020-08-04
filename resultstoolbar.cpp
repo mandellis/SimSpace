@@ -98,7 +98,7 @@ void ResultsToolBar::emitRequestNoWireframe()
     cout<<"ResultsToolBar()->____emit request \"no wireframe\"____"<<endl;
     combinedViewSelectorButton->setIcon(QIcon(":/icons/icon_no wireframe.png"));
     myResultPresentation.theCombinedView = resultPresentation::combinedView_resultOnly;
-    emit requestUpdateResultsPresentation(myResultPresentation);
+    emit requestSetResultPresentation(myResultPresentation);
 }
 
 //! -----------------------------------------
@@ -110,7 +110,7 @@ void ResultsToolBar::emitRequestShowUndeformedModel()
     cout<<"ResultsToolBar()->____emit request show undeformed model____"<<endl;
     combinedViewSelectorButton->setIcon(QIcon(":/icons/icon_undeformed model.png"));
     myResultPresentation.theCombinedView = resultPresentation::combinedView_undeformedModel;
-    emit requestUpdateResultsPresentation(myResultPresentation);
+    emit requestSetResultPresentation(myResultPresentation);
 }
 
 //! ---------------------------------------------
@@ -122,7 +122,7 @@ void ResultsToolBar::emitRequestShowUndeformedWireframe()
     cout<<"ResultsToolBar()->____emit request show undeformed wireframe____"<<endl;
     combinedViewSelectorButton->setIcon(QIcon(":/icons/icon_wireframe.png"));
     myResultPresentation.theCombinedView = resultPresentation::combinedView_undeformedWireFrame;
-    emit requestUpdateResultsPresentation(myResultPresentation);
+    emit requestSetResultPresentation(myResultPresentation);
 }
 
 //! --------------------------------------
@@ -134,7 +134,7 @@ void ResultsToolBar::emitRequestShowMeshElements()
     cout<<"ResultsToolBar()->____emit request show mesh elements____"<<endl;
     combinedViewSelectorButton->setIcon(QIcon(":/icons/icon_show elements.png"));
     myResultPresentation.theCombinedView = resultPresentation::combinedView_meshVisible;
-    emit requestUpdateResultsPresentation(myResultPresentation);
+    emit requestSetResultPresentation(myResultPresentation);
 }
 
 //! ---------------------

@@ -723,16 +723,7 @@ postObject postEngine::evaluateFatigueResults(int type, QVector<GeometryTag> loc
 
                 switch(material)
                 {
-                case 5:
-                case 6:
-                case 0:
-                case 1:
-                case 2:
-                case 3:
-                case 4:
-                case 7:
-                case 8:
-                case 9:
+                case 5:case 6:case 0:case 1:case 2:case 3:case 4:case 7:case 8:case 9:
                 {
                     elasticModulusMedium = 1.76000000e+005;
                     altStress = 0.5*(mises+eps*elasticModulusMedium);
