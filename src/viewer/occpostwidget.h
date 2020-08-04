@@ -79,7 +79,17 @@ public slots:
     virtual void refreshMeshView(bool onlyExterior);
 
     //! set the status variable
-    void setResultPresentation(const resultPresentation &aResPresentation) { myResultPresentation = aResPresentation; }
+    void setResultPresentation(const resultPresentation &aResPresentation)
+    {
+        myResultPresentation = aResPresentation;
+        switch(myResultPresentation.theCombinedView)
+        {
+        case resultPresentation::combinedView_resultOnly: cout<<"____results only____"<<endl; break;
+        case resultPresentation::combinedView_meshVisible: cout<<"____results with mesh____"<<endl; break;
+        case resultPresentation::combinedView_undeformedModel: cout<<"____results and undeformed model____"<<endl; break;
+        case resultPresentation::combinedView_undeformedWireFrame: cout<<"____results and undeformed wireframe____"<<endl; break;
+        }
+    }
 
 private:
 

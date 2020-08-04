@@ -110,6 +110,9 @@ void occPostWidget::displayResult(const postObject &aPostObject)
 {
     cout<<"occPostWidget::displayResult()->____function called____"<<endl;
 
+    //! ----------------
+    //! read the status
+    //! ----------------
     resultPresentation aResultPresentation = myResultPresentation;
 
     //! ---------------------------
@@ -122,8 +125,6 @@ void occPostWidget::displayResult(const postObject &aPostObject)
         occPostContext->Display(aColoredMesh,false);        
     }
 
-    cout<<"occPostWidget::displayResult()->____type of result presentation: "<<aResultPresentation.theCombinedView<<"____"<<endl;
-
     switch(aResultPresentation.theCombinedView)
     {
     case resultPresentation::combinedView_resultOnly:
@@ -134,13 +135,15 @@ void occPostWidget::displayResult(const postObject &aPostObject)
         //! remove the wireframe or transparent body view
         //! ----------------------------------------------
         occContext->ObjectsInside(objInside,AIS_KOI_Shape,0);
-        for(AIS_ListIteratorOfListOfInteractive it(objInside); it.More(); it.Next()) occContext->Remove(it.Value(),false);
+        for(AIS_ListIteratorOfListOfInteractive it(objInside); it.More(); it.Next()) occContext->Remove(it.Value(),true);
+        //occContext->RemoveAll(true);
 
         //! ---------------------
         //! remove the mesh view
         //! ---------------------
+        objInside.Clear();
         occMeshContext->ObjectsInside(objInside,AIS_KOI_None,-1);
-        for(AIS_ListIteratorOfListOfInteractive it(objInside); it.More(); it.Next()) occMeshContext->Remove(it.Value(),false);
+        for(AIS_ListIteratorOfListOfInteractive it(objInside); it.More(); it.Next()) occMeshContext->Remove(it.Value(),true);
         //occMeshContext->RemoveAll(false);
     }
         break;
@@ -153,7 +156,8 @@ void occPostWidget::displayResult(const postObject &aPostObject)
         //! remove the wireframe or transparent body view
         //! ----------------------------------------------
         occContext->ObjectsInside(objInside,AIS_KOI_Shape,0);
-        for(AIS_ListIteratorOfListOfInteractive it(objInside); it.More(); it.Next()) occContext->Remove(it.Value(),false);
+        for(AIS_ListIteratorOfListOfInteractive it(objInside); it.More(); it.Next()) occContext->Remove(it.Value(),true);
+        //occContext->RemoveAll(true);
 
         const QMap<GeometryTag,occHandle(MeshVS_DataSource)> &meshDS = aPostObject.getMeshDataSources();
         for(QMap<GeometryTag,occHandle(MeshVS_DataSource)>::const_iterator it = meshDS.cbegin(); it!=meshDS.cend(); it++)
@@ -168,7 +172,7 @@ void occPostWidget::displayResult(const postObject &aPostObject)
             occHandle(MeshVS_MeshPrsBuilder) aB = new MeshVS_MeshPrsBuilder(aMeshObject);
             aMeshObject->AddBuilder(aB,false);
 
-            occMeshContext->Display(aMeshObject,false);
+            occMeshContext->Display(aMeshObject,true);
         }
     }
         break;
@@ -186,8 +190,9 @@ void occPostWidget::displayResult(const postObject &aPostObject)
         //! ---------------------
         //! remove the mesh view
         //! ---------------------
+        objInside.Clear();
         occMeshContext->ObjectsInside(objInside,AIS_KOI_None,-1);
-        for(AIS_ListIteratorOfListOfInteractive it(objInside); it.More(); it.Next()) occMeshContext->Remove(it.Value(),false);
+        for(AIS_ListIteratorOfListOfInteractive it(objInside); it.More(); it.Next()) occMeshContext->Remove(it.Value(),true);
         //occMeshContext->RemoveAll(false);
 
         const QVector<GeometryTag> &vecLocs = aPostObject.getLocations();
@@ -211,13 +216,15 @@ void occPostWidget::displayResult(const postObject &aPostObject)
         //! remove the wireframe body view: "0" is the signature for AIS_Shape
         //! -------------------------------------------------------------------
         occContext->ObjectsInside(objInside,AIS_KOI_Shape,0);
-        for(AIS_ListIteratorOfListOfInteractive it(objInside); it.More(); it.Next()) occContext->Remove(it.Value(),false);
+        for(AIS_ListIteratorOfListOfInteractive it(objInside); it.More(); it.Next()) occContext->Remove(it.Value(),true);
+        //occContext->RemoveAll(true);
 
         //! ---------------------
         //! remove the mesh view
         //! ---------------------
+        objInside.Clear();
         occMeshContext->ObjectsInside(objInside,AIS_KOI_None,-1);
-        for(AIS_ListIteratorOfListOfInteractive it(objInside); it.More(); it.Next()) occMeshContext->Remove(it.Value(),false);
+        for(AIS_ListIteratorOfListOfInteractive it(objInside); it.More(); it.Next()) occMeshContext->Remove(it.Value(),true);
 
         const QVector<GeometryTag> &vecLocs = aPostObject.getLocations();
         for(QVector<GeometryTag>::const_iterator it = vecLocs.cbegin(); it!=vecLocs.cend(); it++)
@@ -237,14 +244,14 @@ void occPostWidget::displayResult(const postObject &aPostObject)
     //! display the color box
     //! ----------------------
     const occHandle(AIS_ColorScaleExtended) &colorBox = aPostObject.getColorBox();
-    occPostContext->Display(colorBox,false);
+    occPostContext->Display(colorBox,true);
 
     //! ------------------
     //! update the viewer
     //! ------------------
-    occPostContext->UpdateCurrentViewer();
-    occMeshContext->UpdateCurrentViewer();
-    occContext->UpdateCurrentViewer();
+    //occPostContext->UpdateCurrentViewer();
+    //occMeshContext->UpdateCurrentViewer();
+    //occContext->UpdateCurrentViewer();
 }
 
 //! -------------------------
