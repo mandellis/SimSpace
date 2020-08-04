@@ -79,6 +79,7 @@ public:
     ~postObject()
     {
         //cout<<"postObject:~postObject()->____DESTRUCTOR CALLED____"<<endl;
+        //exit(99999);
     }
 
     //! -----------------
@@ -86,14 +87,14 @@ public:
     //! -----------------
     postObject(const postObject &other)
     {
-        theMeshes = other.theMeshes;            // check if the operator = id defined for the class
-        AISColorScale = other.AISColorScale;    // check if the operator = id defined for the class
+        theMeshes = other.theMeshes;                    // check if the operator = id defined for the class
+        theMeshDataSources = other.theMeshDataSources;  // check if the operator = id defined for the class
+        AISColorScale = other.AISColorScale;            // check if the operator = id defined for the class
         name = other.name;
-        vecLoc = other.vecLoc;
+        myVecLoc = other.myVecLoc;
         theData = other.theData;
         myMapOfNodalDisplacements = other.myMapOfNodalDisplacements;
         mySolutionDataComponent = other.mySolutionDataComponent;
-
         myIsAutoscale = other.myIsAutoscale;
         myMin = other.myMin;
         myMax = other.myMax;
@@ -149,7 +150,7 @@ private:
     //! ----------
     //! locations
     //! ----------
-    QVector<GeometryTag> vecLoc;
+    QVector<GeometryTag> myVecLoc;
 
     //! --------------------------------------
     //! map of map of the nodal displacements
@@ -188,12 +189,13 @@ public:
     //! get data
     QMap<GeometryTag,QList<QMap<int,double>>> getData() { return theData; }
 
+    //! get locations
+    QVector<GeometryTag> getLocations() const { return myVecLoc; }
+
     //! NbMeshes
     int NbMeshes() const { return theData.size(); }
 
-    //! ------
     //! write
-    //! ------
     void write(std::ofstream &file);
 
     //! read: read only the colors
@@ -208,17 +210,24 @@ public:
     void buildMeshIO(const mapOfMeshDataSources &aMapOfMeshDataSources,
                      double min=-1e20, double max=1e20, int Nlevels=9, bool autoscale=true, int component=0, bool showMeshEdges=true);
 
+
+    void buildMeshIO(double min=-1e20, double max=1e20, int Nlevels=9, bool autoscale=true, int component=0, bool showMeshEdges=true);
+
+
     //! update
     void update(meshDataBase *mDB, int component=0);
 
     //! update mesh
-    void updateView(bool showMeshEdges);
+    //void updateView(bool showMeshEdges);
 
     //! clone
     postObject clone(const postObject &other);
 
     //! get colored meshes
     QMap<GeometryTag,occHandle(MeshVS_Mesh>) getColoredMeshes() const { return theMeshes; }
+
+    //! get the mesh data sources
+    QMap<GeometryTag,occHandle(MeshVS_DataSource)> getMeshDataSources() const { return theMeshDataSources; }
 
     //! is empty
     bool isEmpty() const{ return theData.isEmpty(); }

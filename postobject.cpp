@@ -4,10 +4,12 @@
 #include "postobject.h"
 #include "graphicstools.h"
 #include "meshtools.h"
+#include <mesh.h>
 #include <meshdatabase.h>
-//#include "ccout.h"
 #include <ng_meshvs_datasource3d.h>
 #include <ng_meshvs_deformeddatasource2d.h>
+#include <isostripbuilder.h>
+#include <isostrip.h>
 
 //! ----
 //! OCC
@@ -16,6 +18,8 @@
 #include <MeshVS_Drawer.hxx>
 #include <MeshVS_DrawerAttribute.hxx>
 #include <TopAbs_ShapeEnum.hxx>
+#include <MeshVS_MeshPrsBuilder.hxx>
+#include <MeshVS_ElementalColorPrsBuilder.hxx>
 
 //! ---
 //! Qt
@@ -28,11 +32,6 @@
 #include <iostream>
 using namespace std;
 
-//! -------
-//! system
-//! -------
-#include <Windows.h>
-
 //! ----------------------
 //! function: constructor
 //! details:  default
@@ -41,7 +40,7 @@ postObject::postObject()
 {
     //! empty
     theData = QMap<GeometryTag,QList<QMap<int,double>>>();
-    vecLoc = QVector<GeometryTag>();
+    myVecLoc = QVector<GeometryTag>();
     name = QString();
     theMeshes = QMap<GeometryTag,occHandle(MeshVS_Mesh)>();
     theMeshDataSources = QMap<GeometryTag,occHandle(MeshVS_DataSource)>();
@@ -64,7 +63,7 @@ postObject::postObject(const QMap<GeometryTag, QList<QMap<int, double>>> &resMap
     theData = resMap;
 
     //! empty
-    vecLoc = QVector<GeometryTag>();
+    myVecLoc = QVector<GeometryTag>();
     name = QString();
     theMeshes = QMap<GeometryTag,occHandle(MeshVS_Mesh)>();
     theMeshDataSources = QMap<GeometryTag,occHandle(MeshVS_DataSource)>();
@@ -84,7 +83,7 @@ postObject::postObject(const QMap<GeometryTag, QList<QMap<int, double>>> &resMap
 postObject::postObject(const QMap<GeometryTag,QList<QMap<int,double>>> &resMap, const QVector<GeometryTag> &aVecLoc)
 {
     theData = resMap;
-    vecLoc = aVecLoc;
+    myVecLoc = aVecLoc;
 
     //! empty
     name = QString();
@@ -108,7 +107,7 @@ postObject::postObject(const QMap<GeometryTag,QList<QMap<int,double>>> &resMap,
                        const QString& aName)
 {
     theData = resMap;
-    vecLoc = aVecLoc;
+    myVecLoc = aVecLoc;
     name = aName;
     theMeshes = QMap<GeometryTag,occHandle(MeshVS_Mesh)>();
     theMeshDataSources = QMap<GeometryTag,occHandle(MeshVS_DataSource)>();
@@ -132,7 +131,7 @@ postObject::postObject(const QMap<GeometryTag,QList<QMap<int,double>>> &resMap,
                        bool aShowSolidMeshAsSurface)
 {
     theData = resMap;
-    vecLoc = aVecLoc;
+    myVecLoc = aVecLoc;
     name = aName;
     myMapOfNodalDisplacements = mapOfMapOfNodalDiplacements;
     myScale = 1.0;  // initial scale "true scale"
@@ -145,7 +144,6 @@ postObject::postObject(const QMap<GeometryTag,QList<QMap<int,double>>> &resMap,
     myIsAutoscale = true;
     myNbLevels = INITIAL_NUMBER_OF_COLORBOX_LEVELS;
     myShowSolidMeshAsSurface = true;
-    myScale = 1.0;
 }
 
 //! ----------------
@@ -170,20 +168,17 @@ void postObject::write(ofstream &file)
     //! ---------------------------------------
     //! write the lines of the name one by one
     //! ---------------------------------------
-    for(int i=0; i<NbNameLines; i++)
-    {
-        file<<nameLines.at(i).toStdString()<<endl;
-    }
+    for(int i=0; i<NbNameLines; i++) file<<nameLines.at(i).toStdString()<<endl;
 
     //! -----------------------------------------
     //! write the scope: the number of locations
     //! -----------------------------------------
-    file<<vecLoc.size()<<endl;
+    file<<myVecLoc.size()<<endl;
 
     //! -----------------------------------------
     //! write the scope: write the geometry tags
     //! -----------------------------------------
-    for(QVector<GeometryTag>::iterator itLoc = vecLoc.begin();itLoc!=vecLoc.end(); ++itLoc)
+    for(QVector<GeometryTag>::iterator itLoc = myVecLoc.begin();itLoc!=myVecLoc.end(); ++itLoc)
     {
         const GeometryTag &aLoc = *itLoc;
         file<<aLoc.isParent<<endl;
@@ -356,7 +351,7 @@ postObject::postObject(ifstream &file)
         //! -------
         //! append
         //! -------
-        vecLoc.push_back(loc);
+        myVecLoc.push_back(loc);
     }
 
     //! --------------------------------------------------
@@ -465,117 +460,10 @@ void postObject::resetMeshes()
     this->theMeshes.clear();
 }
 
-/* old working code - trying to replace
 //! ---------------------------------------------------
 //! function: buildMeshIO
 //! details:  build the colored mesh and the color box
 //! ---------------------------------------------------
-void postObject::buildMeshIO(const mapOfMeshDataSources &aMapOfMeshDataSources,
-                             double min, double max,
-                             int Nlevels,
-                             bool autoscale,
-                             int component,
-                             bool showMeshEdges)
-{
-    cout<<"postObject::buildMeshIO()->____function called____"<<endl;
-
-    //! -----------------------------------
-    //! this parameter should be connected
-    //! -----------------------------------
-    bool showSolidMeshAsSurface = false;
-
-    //! -----------------
-    //! the data content
-    //! -----------------
-    double theMin, theMax;
-    QMap<GeometryTag,QList<QMap<int,double>>>::const_iterator it = theData.cbegin();
-    for(mapOfMeshDataSources::const_iterator anIt = aMapOfMeshDataSources.begin(); anIt!= aMapOfMeshDataSources.cend() && it!= theData.cend(); ++anIt, ++it)
-    {
-        const GeometryTag &loc = anIt.key();
-        occHandle(MeshVS_DataSource) curMeshDS;
-
-        //! -------------------------------------------------------
-        //! if the current shape on which results are defined
-        //! is a solid, it means that a volume mesh for that solid
-        //! is defined: generate the interactive object according
-        //! to the value of the flag "showSolidMeshAsSurface"
-        //! -------------------------------------------------------
-        if(loc.subShapeType == TopAbs_SOLID && showSolidMeshAsSurface == true)
-        {
-            const occHandle(Ng_MeshVS_DataSource3D) &volumeMeshDS = occHandle(Ng_MeshVS_DataSource3D)::DownCast(anIt.value());
-
-            //! ------------------------------------------------------------------
-            //! generate the surface mesh topologically - to be changed
-            //! (I mean access the mesh data base directly... to do, if possible,
-            //! since this object does not have access to the mesh data base)
-            //! ------------------------------------------------------------------
-            if(volumeMeshDS->myFaceToElements.size()==0) volumeMeshDS->buildFaceToElementConnectivity();
-            curMeshDS = new Ng_MeshVS_DataSource2D(volumeMeshDS);
-        }
-        else
-        {
-            curMeshDS = anIt.value();
-        }
-        const QList<QMap<int, double>> &listOfRes = theData.value(loc);
-        const QMap<int, double> &res = listOfRes.at(component);
-
-        //! -----------------------------
-        //! min and max for the colorbox
-        //! -----------------------------
-        if(autoscale)
-        {
-            std::pair<double,double> minmax = this->getMinMax(component);
-            theMin = minmax.first;
-            theMax = minmax.second;
-        }
-        else
-        {
-            theMin = min;
-            theMax = max;
-        }
-
-        //! ----------------------------
-        //! the new mesh (colored) mesh
-        //! ----------------------------
-        occHandle(MeshVS_Mesh) aColoredMesh;
-
-        QMap<int,gp_Vec> displacementMap = myMapOfNodalDisplacements.value(loc);
-        MeshTools::buildDeformedColoredMesh(curMeshDS,res,displacementMap,1.0,theMin,theMax,Nlevels,aColoredMesh,showMeshEdges);
-        theMeshes.insert(loc,aColoredMesh);
-
-        //! -------------
-        //! experimental
-        //! -------------
-
-    }
-
-    //! ---------------------------------
-    //! create the color box with labels
-    //! ---------------------------------
-    graphicsTools::createColorBox(theMin, theMax, Nlevels, AISColorScale);
-    TCollection_ExtendedString title(name.toStdString().c_str());
-    AISColorScale->SetTitle(title);
-
-    //! ------------------------
-    //! set the private members
-    //! ------------------------
-    mySolutionDataComponent = component;
-    myIsAutoscale = autoscale;
-    myMin = theMin;
-    myMax = theMax;
-    myNbLevels = Nlevels;
-    myShowSolidMeshAsSurface = showSolidMeshAsSurface;
-}
-*/
-
-//! ---------------------------------------------------
-//! function: buildMeshIO
-//! details:  build the colored mesh and the color box
-//! ---------------------------------------------------
-#include "isostripbuilder.h"
-#include "isostrip.h"
-#include <MeshVS_MeshPrsBuilder.hxx>
-#include <MeshVS_ElementalColorPrsBuilder.hxx>
 #define ISOSTRIP
 void postObject::buildMeshIO(const mapOfMeshDataSources &aMapOfMeshDataSources,
                              double min, double max,
@@ -586,17 +474,21 @@ void postObject::buildMeshIO(const mapOfMeshDataSources &aMapOfMeshDataSources,
 {
     cout<<"postObject::buildMeshIO()->____function called____"<<endl;
 
-    //! -----------------------------------
-    //! this parameter should be connected
-    //! -----------------------------------
-    bool showSolidMeshAsSurface = false;
+    //! ------------------------
+    //! set the private members
+    //! ------------------------
+    mySolutionDataComponent = component;
+    myIsAutoscale = autoscale;
+    myNbLevels = Nlevels;
+    myShowSolidMeshAsSurface = false;     // this parameter should be connected
+
+    theMeshes.clear();
 
     //! -----------------
     //! the data content
     //! -----------------
-    double theMin, theMax;
     QMap<GeometryTag,QList<QMap<int,double>>>::const_iterator it = theData.cbegin();
-    for(mapOfMeshDataSources::const_iterator anIt = aMapOfMeshDataSources.begin(); anIt!= aMapOfMeshDataSources.cend() && it!= theData.cend(); ++anIt, ++it)
+    for(QMap<GeometryTag,occHandle(MeshVS_DataSource)>::const_iterator anIt = aMapOfMeshDataSources.cbegin(); anIt!= aMapOfMeshDataSources.cend() && it!= theData.cend(); ++anIt, ++it)
     {
         const GeometryTag &loc = anIt.key();
         occHandle(MeshVS_DataSource) curMeshDS;
@@ -607,7 +499,7 @@ void postObject::buildMeshIO(const mapOfMeshDataSources &aMapOfMeshDataSources,
         //! is defined: generate the interactive object according
         //! to the value of the flag "showSolidMeshAsSurface"
         //! -------------------------------------------------------
-        if(loc.subShapeType == TopAbs_SOLID && showSolidMeshAsSurface == true)
+        if(loc.subShapeType == TopAbs_SOLID && myShowSolidMeshAsSurface == true)
         {
             const occHandle(Ng_MeshVS_DataSource3D) &volumeMeshDS = occHandle(Ng_MeshVS_DataSource3D)::DownCast(anIt.value());
 
@@ -632,14 +524,14 @@ void postObject::buildMeshIO(const mapOfMeshDataSources &aMapOfMeshDataSources,
         if(autoscale)
         {
             std::pair<double,double> minmax = this->getMinMax(component);
-            theMin = minmax.first;
-            theMax = minmax.second;
+            myMin = minmax.first;
+            myMax = minmax.second;
         }
         else
         {
-            theMin = min;
-            theMax = max;
-        }
+            myMin = min;
+            myMax = max;
+        }   
 
 #ifndef ISOSTRIP
         //! ----------------------------
@@ -653,8 +545,9 @@ void postObject::buildMeshIO(const mapOfMeshDataSources &aMapOfMeshDataSources,
 #ifdef ISOSTRIP
 
         occHandle(MeshVS_Mesh) aColoredMesh;
-        QMap<int,gp_Vec> displacementMap = myMapOfNodalDisplacements.value(loc);
-        MeshTools::buildIsoStrip(curMeshDS,res,displacementMap,1.0,theMin,theMax,Nlevels,aColoredMesh,showMeshEdges);
+        const QMap<int,gp_Vec> &displacementMap = myMapOfNodalDisplacements.value(loc);
+        MeshTools::buildIsoStrip(curMeshDS,res,displacementMap,1.0,myMin,myMax,myNbLevels,aColoredMesh,false);
+        theMeshDataSources.insert(loc,curMeshDS);
         theMeshes.insert(loc,aColoredMesh);
 #endif
     }
@@ -662,19 +555,90 @@ void postObject::buildMeshIO(const mapOfMeshDataSources &aMapOfMeshDataSources,
     //! ---------------------------------
     //! create the color box with labels
     //! ---------------------------------
-    graphicsTools::createColorBox(theMin, theMax, Nlevels, AISColorScale);
+    graphicsTools::createColorBox(myMin, myMax, myNbLevels, AISColorScale);
     TCollection_ExtendedString title(name.toStdString().c_str());
     AISColorScale->SetTitle(title);
+}
+
+//! ----------------------
+//! function: buildMeshIO
+//! details:  overload
+//! ----------------------
+void postObject::buildMeshIO(double min, double max, int Nlevels, bool autoscale, int component, bool showMeshEdges)
+{
+    cout<<"postObject::buildMeshIO()->____function called - overload -____"<<endl;
 
     //! ------------------------
     //! set the private members
     //! ------------------------
     mySolutionDataComponent = component;
     myIsAutoscale = autoscale;
-    myMin = theMin;
-    myMax = theMax;
     myNbLevels = Nlevels;
-    myShowSolidMeshAsSurface = showSolidMeshAsSurface;
+    myShowSolidMeshAsSurface = false;     // this parameter should be connected
+
+    theMeshes.clear();
+
+    //! -----------------
+    //! the data content
+    //! -----------------
+    QMap<GeometryTag,QList<QMap<int,double>>>::const_iterator it = theData.cbegin();
+    for(QMap<GeometryTag,occHandle(MeshVS_DataSource)>::const_iterator anIt = theMeshDataSources.cbegin(); anIt!= theMeshDataSources.cend() && it!= theData.cend(); ++anIt, ++it)
+    {
+        const GeometryTag &loc = anIt.key();
+        occHandle(MeshVS_DataSource) curMeshDS;
+
+        //! -------------------------------------------------------
+        //! if the current shape on which results are defined
+        //! is a solid, it means that a volume mesh for that solid
+        //! is defined: generate the interactive object according
+        //! to the value of the flag "showSolidMeshAsSurface"
+        //! -------------------------------------------------------
+        if(loc.subShapeType == TopAbs_SOLID && myShowSolidMeshAsSurface == true)
+        {
+            const occHandle(Ng_MeshVS_DataSource3D) &volumeMeshDS = occHandle(Ng_MeshVS_DataSource3D)::DownCast(anIt.value());
+
+            //! ------------------------------------------------------------------
+            //! generate the surface mesh topologically - to be changed
+            //! (I mean access the mesh data base directly... to do, if possible,
+            //! since this object does not have access to the mesh data base)
+            //! ------------------------------------------------------------------
+            if(volumeMeshDS->myFaceToElements.size()==0) volumeMeshDS->buildFaceToElementConnectivity();
+            curMeshDS = new Ng_MeshVS_DataSource2D(volumeMeshDS);
+        }
+        else
+        {
+            curMeshDS = anIt.value();
+        }
+        const QList<QMap<int, double>> &listOfRes = theData.value(loc);
+        const QMap<int, double> &res = listOfRes.at(component);
+
+        //! -----------------------------
+        //! min and max for the colorbox
+        //! -----------------------------
+        if(autoscale)
+        {
+            std::pair<double,double> minmax = this->getMinMax(component);
+            myMin = minmax.first;
+            myMax = minmax.second;
+        }
+        else
+        {
+            myMin = min;
+            myMax = max;
+        }
+
+        occHandle(MeshVS_Mesh) aColoredMesh;
+        const QMap<int,gp_Vec> &displacementMap = myMapOfNodalDisplacements.value(loc);
+        MeshTools::buildIsoStrip(curMeshDS,res,displacementMap,1.0,myMin,myMax,myNbLevels,aColoredMesh,true);
+        theMeshes.insert(loc,aColoredMesh);
+    }
+
+    //! ---------------------------------
+    //! create the color box with labels
+    //! ---------------------------------
+    graphicsTools::createColorBox(myMin, myMax, myNbLevels, AISColorScale);
+    TCollection_ExtendedString title(name.toStdString().c_str());
+    AISColorScale->SetTitle(title);
 }
 
 
@@ -738,9 +702,9 @@ void postObject::update(meshDataBase *mDB, int component)
     int topNr;
     int parentShapeNr;
     occHandle(MeshVS_DataSource) meshDS;
-    mapOfMeshDataSources aMapOfMeshDS;
+    //QMap<GeometryTag,occHandle(MeshVS_DataSource)> aMapOfMeshDS;
 
-    for(QVector<GeometryTag>::iterator it = vecLoc.begin(); it!= vecLoc.end(); ++it)
+    for(QVector<GeometryTag>::iterator it = myVecLoc.begin(); it!= myVecLoc.end(); ++it)
     {
         const GeometryTag &loc = *it;
         TopAbs_ShapeEnum type = static_cast<TopAbs_ShapeEnum>(loc.subShapeType);
@@ -749,7 +713,8 @@ void postObject::update(meshDataBase *mDB, int component)
         case TopAbs_SOLID:
         {
             topNr = loc.parentShapeNr;
-            aMapOfMeshDS.insert(loc, mDB->ArrayOfMeshDS.value(topNr));
+            //aMapOfMeshDS.insert(loc, mDB->ArrayOfMeshDS.value(topNr));
+            theMeshDataSources.insert(loc, mDB->ArrayOfMeshDS.value(topNr));
         }
             break;
 
@@ -758,7 +723,8 @@ void postObject::update(meshDataBase *mDB, int component)
             parentShapeNr = loc.parentShapeNr;
             topNr = loc.subTopNr;
             occHandle(MeshVS_DataSource) theMeshToInsert = mDB->ArrayOfMeshDSOnFaces.getValue(parentShapeNr,topNr);
-            aMapOfMeshDS.insert(loc, theMeshToInsert);
+            //aMapOfMeshDS.insert(loc, theMeshToInsert);
+            theMeshDataSources.insert(loc, theMeshToInsert);
         }
             break;
 
@@ -766,7 +732,8 @@ void postObject::update(meshDataBase *mDB, int component)
         {
             topNr = loc.subTopNr;
             parentShapeNr = loc.parentShapeNr;
-            aMapOfMeshDS.insert(loc, mDB->ArrayOfMeshDSOnEdges.getValue(parentShapeNr,topNr));
+            //aMapOfMeshDS.insert(loc, mDB->ArrayOfMeshDSOnEdges.getValue(parentShapeNr,topNr));
+            theMeshDataSources.insert(loc, mDB->ArrayOfMeshDSOnEdges.getValue(parentShapeNr,topNr));
         }
             break;
 
@@ -779,22 +746,10 @@ void postObject::update(meshDataBase *mDB, int component)
     //! ------------------------------------------------
     //! create the post object using "Autoscale" option
     //! ------------------------------------------------
+    //theMeshDataSources = aMapOfMeshDS;
     bool autoscale = true;
-    this->buildMeshIO(aMapOfMeshDS,0,0,INITIAL_NUMBER_OF_COLORBOX_LEVELS,autoscale,component);
-}
-
-//! ---------------------
-//! function: updateView
-//! details:
-//! ---------------------
-void postObject::updateView(bool showMeshEdges)
-{
-    cout<<"postObject::updateView()->____show elements: "<<(showMeshEdges? "yes, show elements":"no, hide elements")<<"____"<<endl;
-    for(QMap<GeometryTag,occHandle(MeshVS_Mesh)>::iterator it = theMeshes.begin(); it!=theMeshes.end(); ++it)
-    {
-        occHandle(MeshVS_Mesh) curMeshVS_Mesh = *it;
-        curMeshVS_Mesh->GetDrawer()->SetBoolean(MeshVS_DA_ShowEdges,showMeshEdges);
-    }
+    //this->buildMeshIO(aMapOfMeshDS,0,0,INITIAL_NUMBER_OF_COLORBOX_LEVELS,autoscale,component);
+    this->buildMeshIO(theMeshDataSources,0,0,INITIAL_NUMBER_OF_COLORBOX_LEVELS,autoscale,component);
 }
 
 //! -------------------------
@@ -835,7 +790,6 @@ void postObject::updateScaledView()
         }
     }
 }
-
 
 //! ---------------------------
 //! function: writeMesh
@@ -951,7 +905,6 @@ void postObject::writeIntoStream(ofstream &os, const occHandle(MeshVS_DataSource
 //! function: readMeshFromStream
 //! details:
 //! -----------------------------
-#include <mesh.h>
 bool postObject::readMeshFromStream(ifstream &stream, occHandle(MeshVS_DataSource) &aMeshDS)
 {
     cout<<"postObject::readMeshFromStream()->____function called____"<<endl;

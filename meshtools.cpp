@@ -494,7 +494,11 @@ bool MeshTools::buildIsoStrip(const occHandle(MeshVS_DataSource) &theMeshDS,    
                               occHandle(MeshVS_Mesh) &aColoredMesh,                 //! result
                               bool showEdges)                                       //! option
 {
-    if(theMeshDS.IsNull()) return false;
+    if(theMeshDS.IsNull())
+    {
+        exit(9999);
+        return false;
+    }
 
     //! --------------------------------------------
     //! adjust the scale in case of negative values

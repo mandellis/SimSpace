@@ -3600,7 +3600,6 @@ void GeneralDelegate::setEditorData(QWidget *editor, const QModelIndex &index) c
     //! -------------
     if(propertyName =="# intervals")
     {
-        cout<<"____setting editor data____"<<endl;
         QSpinBox *spinBox = static_cast<QSpinBox*>(editor);
         int val = data.value<Property>().getData().toInt();
         spinBox->setValue(val);

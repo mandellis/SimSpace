@@ -53,12 +53,6 @@ private:
 
 public:
 
-    //! --------------
-    //! function: col
-    //! details:
-    //! --------------
-    //std::vector<isoStripPoint> col(int aCol) { return this->value(aCol,std::vector<isoStripPoint>()); }
-
     //! -----------------------------------------------
     //! append a value at the end of a specific column
     //! -----------------------------------------------
@@ -172,7 +166,7 @@ public:
             case 6: { anElement.type = TRIG6; anElement.ID = col; /*continue; */} break;
             case 7: { anElement.type = EPTA; anElement.ID = col; /*continue; */} break;
             case 8: { anElement.type = QUAD8; anElement.ID = col; /*continue; */} break;
-            default: { cout<<"____INSERTING NON STANDARD: NUMBER OF NODES: "<<points.size()<<"____"<<endl; continue; exit(99999999); } break;
+            default: { /*cout<<"____INSERTING NON STANDARD: NUMBER OF NODES: "<<points.size()<<"____"<<endl; */ continue; } break;
             }
             for(int i=0;i<points.size(); i++)
             {

@@ -354,7 +354,7 @@ signals:
     void startOpenFoamScalarDataTranslator();
     void requestGlobalMeshControlChange();
     void requestHandleSolutionInformationUpdateIntervalChanged();
-    void requestHandleBoltControls();
+    //void requestHandleBoltControls();     to be removed
     void requestHideAllMarkers(bool = false);
     void requestHandleTransparencyChanged(double aLevel);
     void requestActivateMeshElementSelectionMode();

@@ -72,10 +72,7 @@ private slots:
 
 signals:
 
-    void requestNoWireframe();
-    void requestShowUndeformedModel();
-    void requestShowUndeformedWireframe();
-    void requestShowElements();
+    void requestUpdateResultsPresentation(const resultPresentation &aResultPresentation);
     void requestUpdatePostObjectScale(double scale);
 
 public:

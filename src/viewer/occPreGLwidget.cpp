@@ -714,10 +714,9 @@ void occPreGLWidget::displayAllMeshes(bool meshNodesVisible, Graphic3d_NameOfMat
     if(myCurDisplayMode==CurDisplayMode_Wireframe) theMeshDisplayMode = MeshVS_DMF_WireFrame;
     else theMeshDisplayMode = MeshVS_DMF_Shading;
 
-    //! -----------------------------------------
-    //! scan all the shapes, using signature "0"
-    //! (only "geometry" entities)
-    //! -----------------------------------------
+    //! -------------------------
+    //! only "geometry" entities
+    //! -------------------------
     AIS_ListOfInteractive aList;
     occContext->ObjectsInside(aList,AIS_KOI_Shape,0);
     if(aList.IsEmpty()) return;
@@ -751,20 +750,7 @@ void occPreGLWidget::displayAllMeshes(bool meshNodesVisible, Graphic3d_NameOfMat
 
         aMesh->SetDisplayMode(theMeshDisplayMode);
         occMeshContext->RecomputePrsOnly(aMesh,false);
-
-        if(aMesh==occHandle(MeshVS_Mesh)()) exit(8887);
-        if(aMesh.IsNull())
-        {
-            cout<<"occPreGLWidget::displayAllMeshes()->____the mesh object is NULL____"<<endl;
-            exit(8888);
-        }
-
-        cout<<"occPreGLWidget::displayAllMeshes()->____showing a mesh with: "<<aMesh->GetDataSource()->GetAllElements().Extent()<<" elements____"<<endl;
-        cout<<"occPreGLWidget::displayAllMeshes()->____"<<aMesh->GetDataSource()->GetAllNodes().Extent()<<" nodes____"<<endl;
-
-        cout<<"occPreGLWidget::displayAllMeshes()->____trying to display the mesh"<<endl;
         occMeshContext->Display(aMesh,false);
-        cout<<"occPreGLWidget::displayAllMeshes()->____mesh displayed"<<endl;
     }
 
     /*
@@ -1238,14 +1224,12 @@ void occPreGLWidget::buildMeshIOs()
             //! presentation builder
             //! ---------------------
             occHandle(MeshVS_MeshPrsBuilder) aBuilder = new MeshVS_MeshPrsBuilder(aMesh);
-            if(aBuilder.IsNull()) exit(8888);
             aMesh->AddBuilder(aBuilder,Standard_False);
 
             //! ---------------------------------------------------------------------
             //! retrieve the color of the underlying shape and assign it to the mesh
             //! ---------------------------------------------------------------------
             const occHandle(AIS_ColoredShape) &underlyingShape = occHandle(AIS_ColoredShape)::DownCast(myMapOfInteractiveShapes.value(k));
-
             Quantity_Color aColor;
             underlyingShape->Color(aColor);
             anAspect.SetColor(aColor);

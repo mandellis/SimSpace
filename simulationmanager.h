@@ -44,6 +44,7 @@
 #include "detailviewer.h"
 #include <userMessage.h>
 #include <qhistogramdata.h>
+#include "resultpresentation.h"
 
 #ifdef COSTAMP_VERSION
 #include <QProcess>
@@ -389,9 +390,6 @@ public slots:
     //! change scope color
     void changeColor();
 
-    //! disable/enable bolt load and adjustment in tabular data
-    void handleBoltControls();
-
     //! clear the tree
     void clearTree()
     {
@@ -572,6 +570,9 @@ public slots:
 
     //! no wireframe
     void noWireframe();
+
+    //! update results presentation
+    void updateResultsPresentation(const resultPresentation &aResultPresentation);
 
     //! update post object scale
     void updatePostObjectScale(double scale);

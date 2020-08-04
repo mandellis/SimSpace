@@ -140,9 +140,6 @@ public:
 
     void setDiscreteTimeMap(const QMap<double,QVector<int>> &dtm);
 
-    //! plot data summary
-    static void plotDataSummary(QMap<GeometryTag, QList<QMap<int,double>>> data);
-
     //! experimental
     void updateResultScale(postObject &aPostObject, int scaleType, double minValue, double maxValue, int NbIntervals);
 };

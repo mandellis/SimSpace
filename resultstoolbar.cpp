@@ -96,9 +96,9 @@ ResultsToolBar::ResultsToolBar(const QString &title, QWidget *parent):QToolBar(t
 void ResultsToolBar::emitRequestNoWireframe()
 {
     cout<<"ResultsToolBar()->____emit request \"no wireframe\"____"<<endl;
-    combinedViewSelectorButton->setIcon(QIcon(":/icons/icon_wireframe.png"));
+    combinedViewSelectorButton->setIcon(QIcon(":/icons/icon_no wireframe.png"));
     myResultPresentation.theCombinedView = resultPresentation::combinedView_resultOnly;
-    emit requestNoWireframe();
+    emit requestUpdateResultsPresentation(myResultPresentation);
 }
 
 //! -----------------------------------------
@@ -110,7 +110,7 @@ void ResultsToolBar::emitRequestShowUndeformedModel()
     cout<<"ResultsToolBar()->____emit request show undeformed model____"<<endl;
     combinedViewSelectorButton->setIcon(QIcon(":/icons/icon_undeformed model.png"));
     myResultPresentation.theCombinedView = resultPresentation::combinedView_undeformedModel;
-    emit requestShowUndeformedModel();
+    emit requestUpdateResultsPresentation(myResultPresentation);
 }
 
 //! ---------------------------------------------
@@ -122,8 +122,7 @@ void ResultsToolBar::emitRequestShowUndeformedWireframe()
     cout<<"ResultsToolBar()->____emit request show undeformed wireframe____"<<endl;
     combinedViewSelectorButton->setIcon(QIcon(":/icons/icon_wireframe.png"));
     myResultPresentation.theCombinedView = resultPresentation::combinedView_undeformedWireFrame;
-    emit requestShowUndeformedWireframe();
-
+    emit requestUpdateResultsPresentation(myResultPresentation);
 }
 
 //! --------------------------------------
@@ -134,8 +133,8 @@ void ResultsToolBar::emitRequestShowMeshElements()
 {
     cout<<"ResultsToolBar()->____emit request show mesh elements____"<<endl;
     combinedViewSelectorButton->setIcon(QIcon(":/icons/icon_show elements.png"));
-    myResultPresentation.isMeshVisible = true;
-    emit requestShowElements();
+    myResultPresentation.theCombinedView = resultPresentation::combinedView_meshVisible;
+    emit requestUpdateResultsPresentation(myResultPresentation);
 }
 
 //! ---------------------
@@ -168,11 +167,10 @@ bool ResultsToolBar::saveStatus(const std::string &fileName)
 {
     FILE *f = fopen(fileName.c_str(),"w");
     if(f==NULL) return false;
-    fprintf(f,"%d\t%d\t%lf\t%d\n",
+    fprintf(f,"%d\t%d\t%lf\n",
             myResultPresentation.theCombinedView,
             myResultPresentation.isDeformedView,
-            myResultPresentation.theScale,
-            myResultPresentation.isMeshVisible);
+            myResultPresentation.theScale);
     return true;
 }
 
@@ -191,6 +189,9 @@ void ResultsToolBar::setStatus(const resultPresentation &aResultPresentation)
     case resultPresentation::combinedView_resultOnly:
         combinedViewSelectorMenu->setActiveAction(actionNoWireframe);
         break;
+    case resultPresentation::combinedView_meshVisible:
+        combinedViewSelectorMenu->setActiveAction(actionShowElements);
+        break;
     case resultPresentation::combinedView_undeformedModel:
         combinedViewSelectorMenu->setActiveAction(actionShowUndeformedModel);
         break;
@@ -198,5 +199,4 @@ void ResultsToolBar::setStatus(const resultPresentation &aResultPresentation)
         combinedViewSelectorMenu->setActiveAction(actionShowUndeformedWireframe);
         break;
     }
-    if(aResultPresentation.isMeshVisible) combinedViewSelectorMenu->setActiveAction(actionShowElements);
 }

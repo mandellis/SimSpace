@@ -586,7 +586,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 if(isDone)
                 {
                     emit requestSetWorkingMode(3);
-                    emit requestShowAllBodies();    //! check if wireframe... to do
+                    //emit requestShowAllBodies();    //! check if wireframe... to do
                     emit requestDisplayResult(aPostObject);
                 }
                 else requestSetWorkingMode(2);
@@ -4851,8 +4851,14 @@ void SimulationManager::handleItemChange(QStandardItem *item)
             QStandardItem *itemPostObject = curNode->getPropertyItem("Post object");
             if(itemPostObject!=Q_NULLPTR)
             {
+                //postObject thePostObject = curNode->getPropertyValue<postObject>("Post object");
                 postObject thePostObject = itemPostObject->data(Qt::UserRole).value<Property>().getData().value<postObject>();
+                //cout<<"____Colored meshes: "<<curNode->getPropertyValue<postObject>("Post object").getColoredMeshes().size()<<"____"<<endl;
+                //cout<<"____Mesh data sources: "<<curNode->getPropertyValue<postObject>("Post object").getMeshDataSources().size()<<"____"<<endl;
+                //cout<<"____"<<thePostObject->getName().toStdString()<<"____"<<endl;
+
                 emit requestHideSingleResult(thePostObject);
+
                 myPostEngine->updateResultScale(thePostObject,scaleType,minValue,maxValue,NbIntervals);
 
                 //! --------------------------
@@ -10608,7 +10614,7 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
             SimulationNodeClass *nodeSolutionInformation = itemSolutionInformation->data(Qt::UserRole).value<SimulationNodeClass*>();
             QMap<double,QVector<int>> dTm = nodeSolutionInformation->getPropertyValue<QMap<double,QVector<int>>>("Discrete time map");
 
-
+            /*
             for(QMap<double,QVector<int>>::iterator it = dTm.begin(); it!=dTm.end(); ++it)
             {
                 cout<<"@-------------------------"<<endl;
@@ -10621,6 +10627,7 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
                 }
                 cout<<"@-------------------------"<<endl;
             }
+            */
 
             //! ------------------------------------------------------------------
             //! execute only if the discrete time map is not empty
@@ -10738,8 +10745,6 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
         QList<double> timeList;
         int component = curNode->getPropertyValue<int>("Component");
         int NbCycles = curNode->getPropertyValue<int>("Number of cycles");
-        //cout<<"____number of cycles: "<<NbCycles<<"____"<<endl;
-        //exit(1);
         postObject aPostObject;
 
         //! --------------------------------------------
@@ -11277,38 +11282,68 @@ void SimulationManager::clearGeneratedData()
 
 }
 
-//! ----------------------------------------------------
-//! function: handleBoltControls
-//! details:  this function enables/disables the "Load"
-//!           and "Adjustment" controls, according to
-//!           the bolt status definition "Define by"
-//! ----------------------------------------------------
-void SimulationManager::handleBoltControls()
+//! -------------------------------------
+//! function: updateResultsPresentation
+//! details:
+//! -------------------------------------
+void SimulationManager::updateResultsPresentation(const resultPresentation &aResultPresentation)
 {
-    cout<<"SimulationManager::handleBoltControls()->____function called____"<<endl;
+    cout<<"SimulationManager::updateResultsPresentation()->____function called____"<<endl;
 
-    QWidget *w = tools::getWidgetByName("messagesAndLoadsWidget");
-    TableWidget *tableWidget = static_cast<TableWidget*>(w);
-    CustomTableModel *tabularDataModel = static_cast<CustomTableModel*>(tableWidget->getTableView()->model());
+    //! ---------------------
+    //! retrieve all results
+    //! ---------------------
+    const QList<postObject> &postObjectList= this->retrieveAllResults();
 
-    QExtendedStandardItem *itemBolt = static_cast<QExtendedStandardItem*>(myModel->itemFromIndex(myTreeView->currentIndex()));
-    SimulationNodeClass *nodeBolt = itemBolt->data(Qt::UserRole).value<SimulationNodeClass*>();
-    QExtendedStandardItem *itemBoltStatus = nodeBolt->getPropertyItem("Define by");
+    //! ----------------------------------------------------------------
+    //! iterate over the results in order to find the displayed shapes:
+    //! the shapes are shown in wireframe mode, and here must be hidden
+    //! Moreover scanning the list of post object remove the mesh view
+    //! ----------------------------------------------------------------
+    std::set<int> parentShapeIndexes;
+    for(QList<postObject>::const_iterator it = postObjectList.cbegin(); it!=postObjectList.cend(); ++it)
+    {
+        postObject aPostObject = *it;
+        const QVector<GeometryTag> &vecLoc = aPostObject.getLocations();
+        for(QVector<GeometryTag>::const_iterator it = vecLoc.cbegin(); it!=vecLoc.cend(); it++)
+        {
+            const GeometryTag &aLoc = *it;
+            int bodyIndex = aLoc.parentShapeNr;
+            parentShapeIndexes.insert(bodyIndex);
+        }
+    }
 
-    //! ------------------------------------------------------------------------
-    //! act on the Current step number: modify the right column in tabular data
-    //! ------------------------------------------------------------------------
-    int currentRow = this->getAnalysisSettingsNodeFromCurrentItem()->getPropertyValue<int>("Current step number");
+    //! -------------------------------------------------------------------
+    //! hide all the bodies (which are shown, by default, using wireframe)
+    //! -------------------------------------------------------------------
+    TColStd_ListOfInteger listOfBodies;
+    for(std::set<int>::iterator it = parentShapeIndexes.begin(); it!=parentShapeIndexes.end(); ++it) listOfBodies.Append(*it);
+    emit requestHideBody(listOfBodies);
 
-    //int SC =this->calculateStartColumn();
-    int SC = mainTreeTools::calculateStartColumn(myTreeView);
-
-    QModelIndex indexBoltStatusDefinedBy = tabularDataModel->makeIndex(currentRow,SC);
-    QVariant data;
-    //Property::boltStatusDefinedBy boltStatusDefineBy = itemBoltStatus->data(Qt::UserRole).value<Property>().getData().value<Property::boltStatusDefinedBy>();
-    Property::defineBy boltStatusDefineBy = itemBoltStatus->data(Qt::UserRole).value<Property>().getData().value<Property::defineBy>();
-    data.setValue(boltStatusDefineBy);
-    tabularDataModel->setData(indexBoltStatusDefinedBy,data,Qt::EditRole);
+    for(QList<postObject>::const_iterator it = postObjectList.cbegin(); it!=postObjectList.cend(); ++it)
+    {
+        postObject aPostObject = *it;
+        emit requestDisplayResult(aPostObject);
+    }
+    switch(aResultPresentation.theCombinedView)
+    {
+    case resultPresentation::combinedView_resultOnly:
+        cout<<"____RESULTS ONLY____"<<endl;
+        //emit requestDisplayResult(aPostObject);
+        break;
+    case resultPresentation::combinedView_undeformedWireFrame:
+        cout<<"____RESULTS SHOW UNDEFORMED WIREFRAME____"<<endl;
+        //emit requestDisplayResult(aPostObject);
+        break;
+    case resultPresentation::combinedView_undeformedModel:
+        cout<<"____RESULTS SHOW UNDEFORMED MODEL____"<<endl;
+        //emit requestDisplayResult(aPostObject);
+        break;
+    case resultPresentation::combinedView_meshVisible:
+        cout<<"____RESULTS SHOW ELEMENTS____"<<endl;
+        //emit requestDisplayResult(aPostObject);
+        break;
+    }
 }
 
 //! -----------------------
@@ -11322,40 +11357,35 @@ void SimulationManager::showElements()
     //! ---------------------
     //! retrieve all results
     //! ---------------------
-    QList<postObject> postObjectList= this->retrieveAllResults();
+    const QList<postObject> &postObjectList= this->retrieveAllResults();
 
     //! ----------------------------------------------------------------
     //! iterate over the results in order to find the displayed shapes:
     //! the shapes are shown in wireframe mode, and here must be hidden
     //! Moreover scanning the list of post object remove the mesh view
     //! ----------------------------------------------------------------
-    std::vector<int> parentShapeIndexes;
-    for(QList<postObject>::iterator it = postObjectList.begin(); it!=postObjectList.end(); ++it)
+    std::set<int> parentShapeIndexes;
+    for(QList<postObject>::const_iterator it = postObjectList.cbegin(); it!=postObjectList.cend(); ++it)
     {
         postObject aPostObject = *it;
 
-        QMap<GeometryTag,QList<QMap<int,double>>> theData = aPostObject.getData();
-        for(QMap<GeometryTag,QList<QMap<int,double>>>::iterator it = theData.begin(); it!= theData.end(); ++it)
+        const QVector<GeometryTag> &vecLoc = aPostObject.getLocations();
+        for(QVector<GeometryTag>::const_iterator it = vecLoc.cbegin(); it!=vecLoc.cend(); it++)
         {
-            GeometryTag aLoc = it.key();
+            const GeometryTag &aLoc = *it;
             int bodyIndex = aLoc.parentShapeNr;
-            parentShapeIndexes.push_back(bodyIndex);
+            parentShapeIndexes.insert(bodyIndex);
         }
-        bool showElements = true;
-        aPostObject.updateView(showElements);
     }
-
-    //! ---------------------------------------------------------
-    //! clean from duplicated values the vector of parent shapes
-    //! ---------------------------------------------------------
-    parentShapeIndexes = tools::clearFromDuplicates(parentShapeIndexes);
 
     //! -------------------------------------------------------------------
     //! hide all the bodies (which are shown, by default, using wireframe)
     //! -------------------------------------------------------------------
     TColStd_ListOfInteger listOfBodies;
-    for(std::vector<int>::iterator it = parentShapeIndexes.begin(); it!=parentShapeIndexes.end(); ++it) listOfBodies.Append(*it);
+    for(std::set<int>::iterator it = parentShapeIndexes.begin(); it!=parentShapeIndexes.end(); ++it) listOfBodies.Append(*it);
     emit requestHideBody(listOfBodies);
+
+    emit requestShowMeshes(false);
 
     //! ------------------------
     //! update the mesh context
@@ -11374,28 +11404,23 @@ void SimulationManager::showUndeformedWireframe()
     //! ---------------------
     //! retrieve all results
     //! ---------------------
-    QList<postObject> postObjectList= this->retrieveAllResults();
-    std::vector<int> parentShapeIndexes;
-    for(QList<postObject>::iterator it = postObjectList.begin(); it!=postObjectList.end(); ++it)
+    const QList<postObject> &postObjectList= this->retrieveAllResults();
+    std::set<int> parentShapeIndexes;
+    for(QList<postObject>::const_iterator it = postObjectList.cbegin(); it!=postObjectList.cend(); ++it)
     {
-        postObject aPostObject = *it;
+        const postObject &aPostObject = *it;
+        const QVector<GeometryTag> &vecLoc = aPostObject.getLocations();
 
-        QMap<GeometryTag,QList<QMap<int,double>>> theData = aPostObject.getData();
-        for(QMap<GeometryTag,QList<QMap<int,double>>>::iterator it = theData.begin(); it!= theData.end(); ++it)
+        for(QVector<GeometryTag>::const_iterator it = vecLoc.cbegin(); it!=vecLoc.cend(); it++)
         {
-            GeometryTag aLoc = it.key();
+            const GeometryTag &aLoc = *it;
             int bodyIndex = aLoc.parentShapeNr;
-            parentShapeIndexes.push_back(bodyIndex);
+            parentShapeIndexes.insert(bodyIndex);
         }
-        bool showElements = false;
-        aPostObject.updateView(showElements);
     }
 
-    //! clean the vector of parent shapes
-    parentShapeIndexes = tools::clearFromDuplicates(parentShapeIndexes);
-
     TColStd_ListOfInteger listOfBodies;
-    for(std::vector<int>::iterator it = parentShapeIndexes.begin(); it!=parentShapeIndexes.end(); ++it) listOfBodies.Append(*it);
+    for(std::set<int>::iterator it = parentShapeIndexes.begin(); it!=parentShapeIndexes.end(); ++it) listOfBodies.Append(*it);
     emit requestShowBody(listOfBodies);
 
     emit requestUpdateMeshView();
@@ -11440,8 +11465,6 @@ void SimulationManager::noWireframe()
             int bodyIndex = aLoc.parentShapeNr;
             if(!parentShapeIndexes.contains(bodyIndex))parentShapeIndexes<<bodyIndex;
         }
-        bool showElements = false;
-        aPostObject.updateView(showElements);
     }
 
     //! -------------------------------------------------------------------

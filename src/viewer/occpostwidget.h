@@ -63,6 +63,7 @@ public slots:
 
     void createColorBox(double min, double max, int Nintervals);
 
+    //! it read the private member myResultPresentation before displaying
     void displayResult(const postObject &aPostObject);
 
     void hideAllResults();
@@ -77,10 +78,13 @@ public slots:
     //! refresh mesh view
     virtual void refreshMeshView(bool onlyExterior);
 
+    //! set the status variable
+    void setResultPresentation(const resultPresentation &aResPresentation) { myResultPresentation = aResPresentation; }
+
 private:
 
+    //! status variable
     resultPresentation myResultPresentation;
-
 };
 
 #endif // OCCPOSTWIDGET_H

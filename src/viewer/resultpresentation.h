@@ -11,6 +11,7 @@ struct resultPresentation
     enum combinedView
     {
         combinedView_resultOnly,
+        combinedView_meshVisible,
         combinedView_undeformedWireFrame,
         combinedView_undeformedModel
     };
@@ -26,23 +27,16 @@ struct resultPresentation
     bool isDeformedView;
     double theScale;
 
-    //! ---------------------
-    //! mesh edge visibility
-    //! ---------------------
-    bool isMeshVisible;
-
     //! ---------------------------------------------------
     //! constructor
     //! true scale/no undeformed wireframe/no mesh visible
     //! ---------------------------------------------------
     resultPresentation(combinedView aCombinedView=combinedView_resultOnly,
                        bool anIsDeformedView=false,
-                       double aScale=1.0,
-                       bool aMeshVisible=false):
+                       double aScale=1.0):
         theCombinedView(aCombinedView),
         isDeformedView(anIsDeformedView),
-        theScale(aScale),
-        isMeshVisible(aMeshVisible)
+        theScale(aScale)
     {;}
 
     //! -----------------
@@ -53,7 +47,6 @@ struct resultPresentation
         theCombinedView = aRP.theCombinedView;
         isDeformedView = aRP.isDeformedView;
         theScale = aRP.theScale;
-        isMeshVisible = aRP.isMeshVisible;
     }
 
     //! -----------
@@ -64,7 +57,6 @@ struct resultPresentation
         theCombinedView = aRP.theCombinedView;
         isDeformedView = aRP.isDeformedView;
         theScale = aRP.theScale;
-        isMeshVisible = aRP.isMeshVisible;
         return *this;
     }
 };

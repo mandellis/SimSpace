@@ -1189,10 +1189,13 @@ void MainWindow::createToolBars()
     this->addToolBar(resultsToolBar);
     resultsToolBar->setVisible(false);
 
-    connect(resultsToolBar,SIGNAL(requestNoWireframe()),mySimulationManager,SLOT(noWireframe()));
-    connect(resultsToolBar,SIGNAL(requestShowElements()),mySimulationManager,SLOT(showElements()));
-    connect(resultsToolBar,SIGNAL(requestShowUndeformedModel()),mySimulationManager,SLOT(showUndeformedModel()));
-    connect(resultsToolBar,SIGNAL(requestShowUndeformedWireframe()),mySimulationManager,SLOT(showUndeformedWireframe()));
+    //connect(resultsToolBar,SIGNAL(requestNoWireframe()),mySimulationManager,SLOT(noWireframe()));
+    //connect(resultsToolBar,SIGNAL(requestShowElements()),mySimulationManager,SLOT(showElements()));
+    //connect(resultsToolBar,SIGNAL(requestShowUndeformedModel()),mySimulationManager,SLOT(showUndeformedModel()));
+    //connect(resultsToolBar,SIGNAL(requestShowUndeformedWireframe()),mySimulationManager,SLOT(showUndeformedWireframe()));
+
+    connect(resultsToolBar,SIGNAL(requestUpdateResultsPresentation(resultPresentation)),myMainOCCViewer,SLOT(setResultPresentation(resultPresentation)));
+    connect(resultsToolBar,SIGNAL(requestUpdateResultsPresentation(resultPresentation)),mySimulationManager,SLOT(updateResultsPresentation(resultPresentation)));
     connect(resultsToolBar,SIGNAL(requestUpdatePostObjectScale(double)),mySimulationManager,SLOT(updatePostObjectScale(double)));
 }
 
@@ -2696,7 +2699,8 @@ void MainWindow::setUpConnections()
 
     connect(mySimulationManager,SIGNAL(requestCreateColorBox(double,double,int)),myMainOCCViewer,SLOT(createColorBox(double,double,int)));
     connect(mySimulationManager,SIGNAL(requestShowAllBodies()),myMainOCCViewer,SLOT(showAllBodies()));
-    connect(mySimulationManager,SIGNAL(requestDisplayResult(const postObject&)),myMainOCCViewer,SLOT(displayResult(const postObject&)));
+
+    connect(mySimulationManager,SIGNAL(requestDisplayResult(postObject)),myMainOCCViewer,SLOT(displayResult(postObject)));
     connect(mySimulationManager,SIGNAL(requestHideAllResults()),myMainOCCViewer,SLOT(hideAllResults()));
     connect(mySimulationManager,SIGNAL(requestHideSingleResult(postObject)),myMainOCCViewer,SLOT(hideSingleResult(postObject)));
 
@@ -2762,7 +2766,10 @@ void MainWindow::setUpConnections()
     connect(myDetailViewer,SIGNAL(requestGlobalMeshControlChange()),mySimulationManager,SLOT(handleGlobalMeshControlChange()));
     //connect(myDetailViewer,SIGNAL(requestHandleSolutionComponentChanged()),mySimulationManager,SLOT(handleSolutionComponentChanged())); to be deleted
     connect(myDetailViewer,SIGNAL(requestHandleSolutionInformationUpdateIntervalChanged()),mySimulationManager,SLOT(updateTimer()));
-    connect(myDetailViewer,SIGNAL(requestHandleBoltControls()),mySimulationManager,SLOT(handleBoltControls()));
+
+    // to be removed
+    //connect(myDetailViewer,SIGNAL(requestHandleBoltControls()),mySimulationManager,SLOT(handleBoltControls()));
+
     connect(myDetailViewer,SIGNAL(requestHandleTransparencyChanged(double)),myMainOCCViewer,SLOT(setTransparency_onWorkingModeContact(double)));
 
     //! ------------------------

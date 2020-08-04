@@ -49,7 +49,6 @@ occPostWidget::occPostWidget(meshDataBase *mDB, QWidget *parent):occPreGLWidget(
     //! the result presentation settings
     //! ---------------------------------
     myResultPresentation.theCombinedView = resultPresentation::combinedView_resultOnly;
-    myResultPresentation.isMeshVisible = false;
     myResultPresentation.isDeformedView = false;
     myResultPresentation.theScale = 1.0;
 }
@@ -111,15 +110,127 @@ void occPostWidget::displayResult(const postObject &aPostObject)
 {
     cout<<"occPostWidget::displayResult()->____function called____"<<endl;
 
-    //! -----------------------------------
-    //! display the list of colored meshes
-    //! -----------------------------------
-    QMap<GeometryTag,occHandle(MeshVS_Mesh)>::const_iterator anIt;
-    QMap<GeometryTag,occHandle(MeshVS_Mesh)> coloredMeshes = aPostObject.getColoredMeshes();
-    for(anIt = coloredMeshes.cbegin(); anIt != coloredMeshes.cend(); ++anIt)
+    resultPresentation aResultPresentation = myResultPresentation;
+
+    //! ---------------------------
+    //! display the colored meshes
+    //! ---------------------------
+    const QMap<GeometryTag,occHandle(MeshVS_Mesh)> &coloredMeshes = aPostObject.getColoredMeshes();
+    for(QMap<GeometryTag,occHandle(MeshVS_Mesh)>::const_iterator anIt = coloredMeshes.cbegin(); anIt != coloredMeshes.cend(); ++anIt)
     {
         const occHandle(MeshVS_Mesh) &aColoredMesh = anIt.value();
-        occPostContext->Display(aColoredMesh,false);
+        occPostContext->Display(aColoredMesh,false);        
+    }
+
+    cout<<"occPostWidget::displayResult()->____type of result presentation: "<<aResultPresentation.theCombinedView<<"____"<<endl;
+
+    switch(aResultPresentation.theCombinedView)
+    {
+    case resultPresentation::combinedView_resultOnly:
+    {
+        AIS_ListOfInteractive objInside;
+
+        //! ----------------------------------------------
+        //! remove the wireframe or transparent body view
+        //! ----------------------------------------------
+        occContext->ObjectsInside(objInside,AIS_KOI_Shape,0);
+        for(AIS_ListIteratorOfListOfInteractive it(objInside); it.More(); it.Next()) occContext->Remove(it.Value(),false);
+
+        //! ---------------------
+        //! remove the mesh view
+        //! ---------------------
+        occMeshContext->ObjectsInside(objInside,AIS_KOI_None,-1);
+        for(AIS_ListIteratorOfListOfInteractive it(objInside); it.More(); it.Next()) occMeshContext->Remove(it.Value(),false);
+        //occMeshContext->RemoveAll(false);
+    }
+        break;
+
+    case resultPresentation::combinedView_meshVisible:
+    {
+        AIS_ListOfInteractive objInside;
+
+        //! ----------------------------------------------
+        //! remove the wireframe or transparent body view
+        //! ----------------------------------------------
+        occContext->ObjectsInside(objInside,AIS_KOI_Shape,0);
+        for(AIS_ListIteratorOfListOfInteractive it(objInside); it.More(); it.Next()) occContext->Remove(it.Value(),false);
+
+        const QMap<GeometryTag,occHandle(MeshVS_DataSource)> &meshDS = aPostObject.getMeshDataSources();
+        for(QMap<GeometryTag,occHandle(MeshVS_DataSource)>::const_iterator it = meshDS.cbegin(); it!=meshDS.cend(); it++)
+        {
+            occHandle(MeshVS_Mesh) aMeshObject = new MeshVS_Mesh();
+            aMeshObject->SetDisplayMode(MeshVS_DMF_WireFrame);
+            aMeshObject->GetDrawer()->SetBoolean(MeshVS_DA_ShowEdges,false);
+            aMeshObject->GetDrawer()->SetColor(MeshVS_DA_EdgeColor,Quantity_NOC_BLACK);
+            aMeshObject->GetDrawer()->SetBoolean(MeshVS_DA_DisplayNodes,false);
+            aMeshObject->SetDataSource(it.value());
+
+            occHandle(MeshVS_MeshPrsBuilder) aB = new MeshVS_MeshPrsBuilder(aMeshObject);
+            aMeshObject->AddBuilder(aB,false);
+
+            occMeshContext->Display(aMeshObject,false);
+        }
+    }
+        break;
+
+    case resultPresentation::combinedView_undeformedWireFrame:
+    {
+        AIS_ListOfInteractive objInside;
+
+        //! ---------------------------------------------------------------------
+        //! remove the transparent body view: "0" is the signature for AIS_Shape
+        //! ---------------------------------------------------------------------
+        occContext->ObjectsInside(objInside,AIS_KOI_Shape,0);
+        for(AIS_ListIteratorOfListOfInteractive it(objInside); it.More(); it.Next()) occContext->Remove(it.Value(),false);
+
+        //! ---------------------
+        //! remove the mesh view
+        //! ---------------------
+        occMeshContext->ObjectsInside(objInside,AIS_KOI_None,-1);
+        for(AIS_ListIteratorOfListOfInteractive it(objInside); it.More(); it.Next()) occMeshContext->Remove(it.Value(),false);
+        //occMeshContext->RemoveAll(false);
+
+        const QVector<GeometryTag> &vecLocs = aPostObject.getLocations();
+        for(QVector<GeometryTag>::const_iterator it = vecLocs.cbegin(); it!=vecLocs.cend(); it++)
+        {
+            int bodyIndex = it->parentShapeNr;
+            const TopoDS_Shape &aShape = myDS2->bodyMap.value(bodyIndex);
+            const occHandle(AIS_Shape) &anAISShape = new AIS_Shape(aShape);
+            occContext->SetColor(anAISShape,Quantity_NOC_AQUAMARINE1,true);
+            occContext->SetTransparency(anAISShape,0.9,true);
+            occContext->Display(anAISShape,AIS_WireFrame,-1,false,false);
+        }
+    }
+        break;
+
+    case resultPresentation::combinedView_undeformedModel:
+    {
+        AIS_ListOfInteractive objInside;
+
+        //! -------------------------------------------------------------------
+        //! remove the wireframe body view: "0" is the signature for AIS_Shape
+        //! -------------------------------------------------------------------
+        occContext->ObjectsInside(objInside,AIS_KOI_Shape,0);
+        for(AIS_ListIteratorOfListOfInteractive it(objInside); it.More(); it.Next()) occContext->Remove(it.Value(),false);
+
+        //! ---------------------
+        //! remove the mesh view
+        //! ---------------------
+        occMeshContext->ObjectsInside(objInside,AIS_KOI_None,-1);
+        for(AIS_ListIteratorOfListOfInteractive it(objInside); it.More(); it.Next()) occMeshContext->Remove(it.Value(),false);
+
+        const QVector<GeometryTag> &vecLocs = aPostObject.getLocations();
+        for(QVector<GeometryTag>::const_iterator it = vecLocs.cbegin(); it!=vecLocs.cend(); it++)
+        {
+            int bodyIndex = it->parentShapeNr;
+            const TopoDS_Shape &aShape = myDS2->bodyMap.value(bodyIndex);
+            const occHandle(AIS_Shape) &anAISShape = new AIS_Shape(aShape);
+            occContext->SetColor(anAISShape,Quantity_NOC_AQUAMARINE1,true);
+            occContext->SetTransparency(anAISShape,0.9,true);
+            occContext->Display(anAISShape,AIS_Shaded,-1,false,false);
+        }
+    }
+       break;
     }
 
     //! ----------------------
@@ -132,6 +243,8 @@ void occPostWidget::displayResult(const postObject &aPostObject)
     //! update the viewer
     //! ------------------
     occPostContext->UpdateCurrentViewer();
+    occMeshContext->UpdateCurrentViewer();
+    occContext->UpdateCurrentViewer();
 }
 
 //! -------------------------
@@ -182,7 +295,7 @@ void occPostWidget::setWorkingMode_Solution()
         //! display the bodies in wireframe mode (this allow to
         //! select the center of rotation) and hide all the meshes
         //! -------------------------------------------------------
-        //this->setWireframeView();
+        this->setWireframeView();
         this->hideAllBodies();
         this->hideAllMeshes();
 
@@ -229,5 +342,4 @@ void occPostWidget::refreshMeshView(bool onlyExterior)
     //! ------------------------------------------------------
     occPreGLWidget::refreshMeshView(onlyExterior);
     isMeshViewVolume = (onlyExterior == true? false:true);
-
 }

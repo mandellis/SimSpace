@@ -571,10 +571,7 @@ postObject postEngine::buildPostObject(const QString &keyName,
         for(;itX!=displX.end() && itY!=displY.end() && itZ!=displZ.end(); ++itX, ++itY, ++itZ)
         {
             int nodeID = itX.key();
-            double x = itX.value();
-            double y = itY.value();
-            double z = itZ.value();
-            gp_Vec aVec(x,y,z);
+            gp_Vec aVec(itX.value(),itY.value(),itZ.value());
             displMap.insert(nodeID,aVec);
         }
         mapDisplMap.insert(aLoc,displMap);
@@ -588,27 +585,6 @@ postObject postEngine::buildPostObject(const QString &keyName,
     bool showSolidMeshAsSurface = Global::status().isVolumeMeshShownAsSurface;
     postObject aPostObject(resMap,vecLoc,mapDisplMap,aresultName,showSolidMeshAsSurface);
     return aPostObject;
-}
-
-//! ------------------------------
-//! function: plotDataSummary
-//! details:  diagnostic function
-//! ------------------------------
-void postEngine::plotDataSummary(QMap<GeometryTag, QList<QMap<int,double>>> data)
-{
-    if(!data.isEmpty())
-    {
-        QMap<GeometryTag,QList<QMap<int,double>>>::const_iterator anIt;
-        for(anIt = data.cbegin(); anIt!= data.cend(); ++anIt)
-        {
-            GeometryTag loc = anIt.key();
-            QList<QMap<int,double>> l = anIt.value();
-        }
-    }
-    else
-    {
-        cout<<"---------->no result has been found<-----------------"<<endl;
-    }
 }
 
 //! --------------------
@@ -637,26 +613,16 @@ void postEngine::updateResultScale(postObject &aPostObject, int scaleType, doubl
 {
     cout<<"postEngine::updateResultScale()->____function called____"<<endl;
 
-    //! ------------------------------------------------------------
-    //! retrieve the mesh data sources from the current MeshVS_Mesh
-    //! ------------------------------------------------------------
-    const QMap<GeometryTag,occHandle(MeshVS_Mesh)> &theMeshes = aPostObject.getColoredMeshes();
-    QMap<GeometryTag,opencascade::handle<MeshVS_DataSource>> myMapOfMeshDataSources;
-    for(QMap<GeometryTag,occHandle(MeshVS_Mesh)>::const_iterator it = theMeshes.cbegin(); it!=theMeshes.cend(); ++it)
-    {
-        const GeometryTag &loc = it.key();
-        const opencascade::handle<MeshVS_Mesh> &curMeshVS_mesh = it.value();
-        myMapOfMeshDataSources.insert(loc,curMeshVS_mesh->GetDataSource());
-    }
-
-    //! -------------------
-    //! retrieve the scale
-    //! -------------------
-    //double scale = aPostObject.getScale();
-
-    //! -----------------------
-    //! retrieve the component
-    //! -----------------------
+    //! ---------------------------------------------------------------
+    //! retrieve the mesh data sources and the solution data component
+    //! ---------------------------------------------------------------
+    //const QMap<GeometryTag,occHandle(MeshVS_DataSource)> &aMapOfMeshDataSources = aPostObject->getMeshDataSources();
+    //if(aMapOfMeshDataSources.isEmpty())
+    //{
+    //    cout<<"postEngine::updateResultScale()->____empty data sources____"<<endl;
+    //    exit(100);
+    //    return;
+    //}
     int solutionDataComponent = aPostObject.getSolutionDataComponent();
 
     //! -----------------------------------------
@@ -667,11 +633,19 @@ void postEngine::updateResultScale(postObject &aPostObject, int scaleType, doubl
     {
     case 0:
         //! autoscale min max, custom number of levels
-        aPostObject.buildMeshIO(myMapOfMeshDataSources,0,0,NbIntervals,true,solutionDataComponent);
+        //cout<<"____min: autocomputed____"<<endl;
+        //cout<<"____max: autocomputed____"<<endl;
+        //cout<<"____intervals: "<<NbIntervals<<"____"<<endl;
+        //aPostObject.buildMeshIO(mapOfMeshDataSources,0,0,NbIntervals,true,solutionDataComponent);
+        aPostObject.buildMeshIO(0,0,NbIntervals,true,solutionDataComponent);
         break;
     case 1:
-        //! custom scale (custom min, max, numbre of levels
-        aPostObject.buildMeshIO(myMapOfMeshDataSources,minValue,maxValue,NbIntervals,false,solutionDataComponent);
+        //! custom scale (custom min, max, number of levels)
+        //cout<<"____min: "<<minValue<<"____"<<endl;
+        //cout<<"____max: "<<maxValue<<"____"<<endl;
+        //cout<<"____intervals: "<<NbIntervals<<"____"<<endl;
+        //aPostObject.buildMeshIO(mapOfMeshDataSources,minValue,maxValue,NbIntervals,false,solutionDataComponent);
+        aPostObject.buildMeshIO(minValue,maxValue,NbIntervals,false,solutionDataComponent);
         break;
     }
 }
