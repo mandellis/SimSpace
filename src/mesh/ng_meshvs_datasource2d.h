@@ -117,6 +117,10 @@ public:
 
     Standard_EXPORT virtual const TColStd_PackedMapOfInteger& GetAllElements() const Standard_OVERRIDE;
 
+    Standard_EXPORT virtual Standard_Boolean Get3DGeom (const Standard_Integer theID,
+                                                        Standard_Integer& NbNodes,
+                                                        occHandle(MeshVS_HArray1OfSequenceOfInteger) &Data) const;
+
     Standard_EXPORT virtual const bool GetElementType(ElemType &eType, int elementID, bool isLocal) const;
 
     Standard_EXPORT virtual Standard_Boolean GetNormal (const Standard_Integer Id,

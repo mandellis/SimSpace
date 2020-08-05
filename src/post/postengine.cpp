@@ -539,7 +539,7 @@ postObject postEngine::buildPostObject(const QString &keyName,
     //! --------------------
     //! call the postEngine
     //! --------------------
-    QMap<GeometryTag,QList<QMap<int,double>>> resMap = this->evaluateResult(keyName, requiredSubStepNb, requiredStepNb, requiredMode, vecLoc, time);
+    const QMap<GeometryTag,QList<QMap<int,double>>> &resMap = this->evaluateResult(keyName, requiredSubStepNb, requiredStepNb, requiredMode, vecLoc, time);
 
     //! -------------------------
     //! build the colorBox title
@@ -553,22 +553,22 @@ postObject postEngine::buildPostObject(const QString &keyName,
     //! ------------------------------------------------------------------------------------------------------------
     QMap<int,gp_Vec> displMap;
     QMap<GeometryTag,QMap<int,gp_Vec>> mapDisplMap;
-    QMap<GeometryTag,QList<QMap<int,double>>> nodalDisplacements = this->evaluateResult("DISP", requiredSubStepNb, requiredStepNb,requiredMode, vecLoc, time);
+    const QMap<GeometryTag,QList<QMap<int,double>>> &nodalDisplacements = this->evaluateResult("DISP", requiredSubStepNb, requiredStepNb,requiredMode, vecLoc, time);
 
-    for(QMap<GeometryTag,QList<QMap<int,double>>>::iterator it = nodalDisplacements.begin(); it!=nodalDisplacements.end(); ++it)
+    for(QMap<GeometryTag,QList<QMap<int,double>>>::const_iterator it = nodalDisplacements.cbegin(); it!=nodalDisplacements.cend(); ++it)
     {
         const GeometryTag &aLoc= it.key();
 
-        QList<QMap<int,double>> nodalDisplacementsComponents = it.value();
-        QMap<int,double> displX = nodalDisplacementsComponents[1];
-        QMap<int,double> displY = nodalDisplacementsComponents[2];
-        QMap<int,double> displZ = nodalDisplacementsComponents[3];
+        const QList<QMap<int,double>> &nodalDisplacementsComponents = it.value();
+        const QMap<int,double> &displX = nodalDisplacementsComponents[1];
+        const QMap<int,double> &displY = nodalDisplacementsComponents[2];
+        const QMap<int,double> &displZ = nodalDisplacementsComponents[3];
 
-        QMap<int,double>::iterator itX = displX.begin();
-        QMap<int,double>::iterator itY = displY.begin();
-        QMap<int,double>::iterator itZ = displZ.begin();
+        QMap<int,double>::const_iterator itX = displX.cbegin();
+        QMap<int,double>::const_iterator itY = displY.cbegin();
+        QMap<int,double>::const_iterator itZ = displZ.cbegin();
 
-        for(;itX!=displX.end() && itY!=displY.end() && itZ!=displZ.end(); ++itX, ++itY, ++itZ)
+        for(;itX!=displX.cend() && itY!=displY.cend() && itZ!=displZ.cend(); ++itX, ++itY, ++itZ)
         {
             int nodeID = itX.key();
             gp_Vec aVec(itX.value(),itY.value(),itZ.value());
@@ -712,6 +712,7 @@ postObject postEngine::evaluateFatigueResults(int type, QVector<GeometryTag> loc
             QMap<int,double> damageIndexData;
 
             double elasticModulusMedium, elasticModulusMin,r,a,b,c,d,e,f,g,h;
+            Q_UNUSED (elasticModulusMin)
             int material = materialBodyMap.value(bodyIndex);
 
             for(QMap<int,double>::const_iterator itt=curPe.cbegin(); itt!=curPe.cend(); itt++)

@@ -129,7 +129,7 @@ public:
 
     Standard_EXPORT virtual Standard_Boolean Get3DGeom (const Standard_Integer theID,
                                                         Standard_Integer& NbNodes,
-                                                        occHandle(MeshVS_HArray1OfSequenceOfInteger) &Data) const; //Standard_OVERRIDE;
+                                                        occHandle(MeshVS_HArray1OfSequenceOfInteger) &Data) const;
 
 
     Standard_EXPORT virtual Standard_Boolean GetNormalsByElement (const Standard_Integer Id,

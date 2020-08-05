@@ -508,7 +508,7 @@ bool MeshTools::buildIsoStrip(const occHandle(MeshVS_DataSource) &theMeshDS,    
     //! ---------------------
     //! prepare the isostrip
     //! ---------------------
-    cout<<"@ ----------------------"<<endl;
+    cout<<"@ --------------------------"<<endl;
     cout<<"@ - preparing isostrips "<<endl;
 
     std::vector<isoStrip> vecIsoStrip;
@@ -523,13 +523,16 @@ bool MeshTools::buildIsoStrip(const occHandle(MeshVS_DataSource) &theMeshDS,    
         cout<<"@ - "<<ys<<"\t"<<ye<<endl;
     }
     vecIsoStrip.push_back(isoStrip(max,1e10));
-    cout<<"@ ----------------------"<<endl;
+    cout<<"@ --------------------------"<<endl;
 
     //! --------------------------------------------------------------
     //! the deformed mesh data source
     //! construct with an empty mesh data base of a specialized class
     //! --------------------------------------------------------------
     occHandle(MeshVS_DeformedDataSource) theDeformedDS = new MeshVS_DeformedDataSource(occHandle(Ng_MeshVS_DataSourceFace)(),1.0);
+
+    cout<<"MeshTools::buildIsoStrip()->____input mesh. Elements: "<<theMeshDS->GetAllElements().Extent()<<" Nodes: "<<theMeshDS->GetAllNodes().Extent()<<"____"<<endl;
+
     theDeformedDS->SetNonDeformedDataSource(theMeshDS);
     for(TColStd_MapIteratorOfPackedMapOfInteger it(theMeshDS->GetAllNodes()); it.More(); it.Next())
     {
@@ -537,21 +540,30 @@ bool MeshTools::buildIsoStrip(const occHandle(MeshVS_DataSource) &theMeshDS,    
         const gp_Vec &d = displacementMap.value(globalNodeID);
         theDeformedDS->SetVector(globalNodeID,d);
     }
+    //cout<<"____tag00____"<<endl;
     //! ----------------
     //! apply the scale
     //! ----------------
     theDeformedDS->SetMagnify(scale);
+    //cout<<"____tag01____"<<endl;
 
     //! ----------------------------------------------------------
     //! run the isostrip builder on the deformed mesh data source
     //! ----------------------------------------------------------
     isoStripBuilder anIsoStripBuilder;
     anIsoStripBuilder.setMeshDataSource(theDeformedDS);
+    //cout<<"____tag02____"<<endl;
+
     anIsoStripBuilder.setValues(res);
+    //cout<<"____tag03____"<<endl;
+
     anIsoStripBuilder.setIsoStrips(vecIsoStrip);
+    //cout<<"____tag04____"<<endl;
 
     std::vector<meshElementByCoords> allElements;
     bool isDone = anIsoStripBuilder.perform(allElements);
+    //cout<<"____tag05____"<<endl;
+
     Q_UNUSED (isDone)
 
     occHandle(Ng_MeshVS_DataSourceFace) finalMesh = new Ng_MeshVS_DataSourceFace(allElements,true,true);

@@ -503,11 +503,10 @@ void postObject::buildMeshIO(const mapOfMeshDataSources &aMapOfMeshDataSources,
         {
             const occHandle(Ng_MeshVS_DataSource3D) &volumeMeshDS = occHandle(Ng_MeshVS_DataSource3D)::DownCast(anIt.value());
 
-            //! ------------------------------------------------------------------
-            //! generate the surface mesh topologically - to be changed
-            //! (I mean access the mesh data base directly... to do, if possible,
-            //! since this object does not have access to the mesh data base)
-            //! ------------------------------------------------------------------
+            //! -----------------------------------------------------
+            //! generate the surface mesh topologically: this object
+            //! does not have access to the mesh data base)
+            //! -----------------------------------------------------
             if(volumeMeshDS->myFaceToElements.size()==0) volumeMeshDS->buildFaceToElementConnectivity();
             curMeshDS = new Ng_MeshVS_DataSource2D(volumeMeshDS);
         }
@@ -640,7 +639,6 @@ void postObject::buildMeshIO(double min, double max, int Nlevels, bool autoscale
     TCollection_ExtendedString title(name.toStdString().c_str());
     AISColorScale->SetTitle(title);
 }
-
 
 //! -------------------------------------------
 //! function: getMinMax

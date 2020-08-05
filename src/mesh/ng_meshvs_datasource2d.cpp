@@ -919,6 +919,46 @@ Standard_Boolean Ng_MeshVS_DataSource2D::GetGeomType(const Standard_Integer ID,
     }
 }
 
+//! --------------------------------------------------------------
+//! function: Get3DGeom
+//! details:  returns information about 3D geometry of an element
+//! --------------------------------------------------------------
+Standard_Boolean Ng_MeshVS_DataSource2D::Get3DGeom(const Standard_Integer theID,
+                                                   Standard_Integer &theNbNodes,
+                                                   occHandle(MeshVS_HArray1OfSequenceOfInteger) &theData) const
+{
+    //!cout<<"Ng_MeshVS_DataSource2D::Get3DGeom()->____Get3DGeom called for ID: "<<theID<<"____"<<endl;
+    int localElementID = myElementsMap.FindIndex(theID);
+    if(localElementID>=1 && localElementID<=myNumberOfElements)
+    {
+        switch(myElemType->Value(localElementID))
+        {
+        //! -----------------
+        //! Surface elements
+        //! -----------------
+        case TRIG: theNbNodes = 3; theData = TRIGMeshData; break;
+        case QUAD: theNbNodes = 4;  theData = QUADMeshData; break;
+        case TRIG6: theNbNodes = 6; theData = TRIG6MeshData; break;
+        case QUAD8: theNbNodes = 8; theData = QUAD8MeshData; break;
+        //! ----------------
+        //! Volume elements
+        //! ----------------
+        case TET: theNbNodes = 4; theData = TET4MeshData; break;
+        case HEXA: theNbNodes = 8; theData = HEXA8MeshData; break;
+        case PRISM: theNbNodes = 6; theData = PRISM6MeshData; break;
+        case PYRAM: theNbNodes = 5; theData = PYRAM5MeshData; break;
+        case TET10: theNbNodes = 10; theData= TET10MeshData; break;
+        }
+        return true;
+    }
+    else
+    {
+        cerr<<"Ng_MeshVS_DataSource3D::Get3DGeom()->____error. Element ID: "<<theID<<" out of range____"<<endl;
+        return false;
+    }
+}
+
+
 //! ------------------
 //! function: GetAddr
 //! details:

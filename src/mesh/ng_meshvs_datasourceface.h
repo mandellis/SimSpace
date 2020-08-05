@@ -232,6 +232,11 @@ public:
     //! get element type
     Standard_EXPORT virtual const bool GetElementType(ElemType &eType, int elementID, bool isLocal) const;
 
+    //! Get3DGeom
+    Standard_EXPORT virtual Standard_Boolean Get3DGeom (const Standard_Integer theID,
+                                                        Standard_Integer& NbNodes,
+                                                        occHandle(MeshVS_HArray1OfSequenceOfInteger) &Data) const;
+
     //! get all nodes
     Standard_EXPORT virtual const TColStd_PackedMapOfInteger& GetAllNodes() const Standard_OVERRIDE;
 
