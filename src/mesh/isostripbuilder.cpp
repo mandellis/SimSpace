@@ -395,13 +395,8 @@ void isoStripBuilder::classifyNodes(myMultiMap<int,int> &pointToIsoStrip)
         for(int isoStripNb = 0; isoStripNb<myIsoStrips.size(); isoStripNb++)
         {
             isoStrip curIsoStrip = myIsoStrips.at(isoStripNb);
-            if(curIsoStrip.contains(val))
-            {
-                pointToIsoStrip.insertMulti(globalNodeID,isoStripNb);
-                //cout<<"("<<curIsoStrip.vmin<<","<<curIsoStrip.vmax<<")";
-            }
+            if(curIsoStrip.contains(val)) pointToIsoStrip.insertMulti(globalNodeID,isoStripNb);
         }
-        //cout<<"\n"<<endl;
     }
     //cout<<"isoStripBuilder::classifyNodes()->____exiting function____"<<endl;
 }
