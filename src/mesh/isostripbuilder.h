@@ -1,6 +1,17 @@
 #ifndef ISOSTRIPBUILDER_H
 #define ISOSTRIPBUILDER_H
 
+#define USE_STDLIBRARY
+
+#ifdef USE_STDLIBRARY
+#define myMultiMap multimapex
+#define isoStripList std::vector<int>
+#endif
+#ifndef USE_STDLIBRARY
+#define myMultiMap QMap
+#define isoStripList QList<int>
+#endif
+
 //! ---
 //! Qt
 //! ---
@@ -11,10 +22,9 @@
 //! custom includes
 //! ----------------
 #include "occhandle.h"
-#include "hash_c.h"
 #include <isostrip.h>
-#include <meshelementbycoords.h>
 #include <mesh.h>
+#include <meshelementbycoords.h>
 #include <ng_meshvs_datasourceface.h>
 
 //! ----
@@ -22,28 +32,44 @@
 //! ----
 #include <vector>
 #include <algorithm>
+#include <map>
+#include <unordered_map>
 
 //! ----
 //! OCC
 //! ----
 #include <TColStd_MapIteratorOfPackedMapOfInteger.hxx>
 
-//! ---------------------------------------
+template<class K, class V>
+class multimapex: public std::unordered_multimap<K,V>
+{
+public:
+
+    //! ------------
+    //! insertMulti
+    //! ------------
+    inline void insertMulti(const K &key, const V &value) { this->insert(std::make_pair(key,value)); }
+
+    //! -------------------------------------
+    //! retrieve the list of values of a key
+    //! -------------------------------------
+    std::vector<V> values(const K &key)
+    {
+        std::vector<V> values;
+        auto itr1 = this->lower_bound(key);
+        auto itr2 = this->upper_bound(key);
+        while (itr1 != itr2)
+        {
+            if (itr1 -> first == key) values.push_back(itr1->second);
+            itr1++;
+        }
+        return values;
+    }
+};
+
+//! -----------------
 //! class: faceTable
-//!                      D(300)     C(50)
-//!  (0) [0-100]          ____________
-//!  (1) [100-200]       |            |
-//!  (2) [200-300]       |            |
-//!  (3) [300-400]       |            |
-//!                       ------------
-//!   | 0 | 1 | 2 | 3 |  A(50)      B(100)
-//!   -----------------
-//!   | A | B | D | D |
-//!   | B |   |   |   |
-//!   | C |   |   |   |
-//!   |   |   |   |   |
-//!
-//! ---------------------------------------
+//! -----------------
 class faceTable
 {
 
@@ -84,21 +110,6 @@ public:
 
         std::vector<isoStripPoint>::iterator it_ = std::find((*it).second.begin(),(*it).second.end(),thePoint);
 
-        /*
-        //! ----------------------------
-        //! diagnostic - can be removed
-        //! ----------------------------
-        cout<<"faceTable::insertBefore()->____searching for point ("<<thePoint.x<<", "<<thePoint.y<<", "<<thePoint.z<<")____"<<endl;
-        for(std::vector<isoStripPoint>::iterator it1= (*it).second.begin(); it1 != (*it).second.end(); it1++)
-        {
-            const isoStripPoint &aP = *it1;
-            cout<<"faceTable::insertBefore()->____available point ("<<aP.x<<", "<<aP.y<<", "<<aP.z<<")____"<<endl;
-        }
-        //! ---------------
-        //! end diagnostic
-        //! ---------------
-        */
-
         if(it_==(*it).second.end())
         {
             return false;
@@ -120,19 +131,6 @@ public:
         if(it==mdata.end()) return false;
 
         std::vector<isoStripPoint>::iterator it_ = std::find((*it).second.begin(),(*it).second.end(),thePoint);
-
-        //! ----------------------------
-        //! diagnostic - can be removed
-        //! ----------------------------
-        //cout<<"faceTable::insertAfter()->____searching for point ("<<thePoint.x<<", "<<thePoint.y<<", "<<thePoint.z<<")____"<<endl;
-        //for(std::vector<isoStripPoint>::iterator it1= (*it).second.begin(); it1 != (*it).second.end(); it1++)
-        //{
-            //const isoStripPoint &aP = *it1;
-            //cout<<"faceTable::insertAfter()->____available point ("<<aP.x<<", "<<aP.y<<", "<<aP.z<<")____"<<endl;
-        //}
-        //! ---------------
-        //! end diagnostic
-        //! ---------------
 
         if(it_==(*it).second.end())
         {
@@ -228,7 +226,7 @@ private:
 
 private:
 
-    void classifyNodes(QMap<int, int> &pointToIsoStrip);
+    void classifyNodes(myMultiMap<int, int> &pointToIsoStrip);
     void pointCoord(double *c, int globalNodeID);
 
 private:

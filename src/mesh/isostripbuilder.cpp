@@ -17,6 +17,7 @@
 //! ----
 //! C++
 //! ----
+#include <chrono>
 #include <memory>
 #include <iostream>
 using namespace std;
@@ -53,15 +54,6 @@ void isoStripBuilder::setMeshDataSource(const occHandle(MeshVS_DataSource) &aMes
 void isoStripBuilder::setIsoStrips(const std::vector<isoStrip> &theIsoStrips)
 {
     myIsoStrips = theIsoStrips;
-
-    /*
-    double isoStripAbsMin = theIsoStrips.at(0).vmin;
-    double isoStripAbsMax = theIsoStrips.at(theIsoStrips.size()-1).vmax;
-
-    myIsoStrips.push_back(isoStrip(-1e20,isoStripAbsMin));
-    for(int n=0; n<theIsoStrips.size(); n++) myIsoStrips.push_back(theIsoStrips[n]);
-    myIsoStrips.push_back(isoStrip(isoStripAbsMax,1e20));
-    */
 }
 
 //! --------------------
@@ -87,10 +79,15 @@ bool isoStripBuilder::perform(std::vector<meshElementByCoords> &vecMeshElements)
         return false;
     }
 
+    //! ------------------------
+    //! performance measurement
+    //! ------------------------
+    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+
     //! ---------------------------------------------------------
     //! classify the nodes according to the isostrip definitions
     //! ---------------------------------------------------------
-    QMap<int,int> pointToIsoStrip;
+    myMultiMap<int,int> pointToIsoStrip;
     this->classifyNodes(pointToIsoStrip);
 
     //! ----------------------
@@ -137,10 +134,11 @@ bool isoStripBuilder::perform(std::vector<meshElementByCoords> &vecMeshElements)
                 int globalNodeID = nodeIDs(index);
                 //cout<<"____(index, globalNodeID)____("<<index<<", "<<globalNodeID<<")____"<<endl;
 
-                const QList<int> &isoStripOf = pointToIsoStrip.values(globalNodeID);
+                const isoStripList &isoStripOf = pointToIsoStrip.values(globalNodeID);
+
                 int maxIsoStrip1 = -1e10;
                 int minIsoStrip1 = 1e10;
-                for(int i=0; i<isoStripOf.length(); i++)
+                for(int i=0; i<isoStripOf.size(); i++)
                 {
                     int curIsoStripNb = isoStripOf[i];
                     double c[3];
@@ -166,10 +164,11 @@ bool isoStripBuilder::perform(std::vector<meshElementByCoords> &vecMeshElements)
                 int index1 = aSeq.Value(i%N+1)+1;
                 int globalNodeID1 = nodeIDs(index1);
 
-                const QList<int> &isoStripOf1 = pointToIsoStrip.values(globalNodeID1);
+                const isoStripList &isoStripOf1 = pointToIsoStrip.values(globalNodeID1);
+
                 int maxIsoStrip1 = -1e10;
                 int minIsoStrip1 = 1e10;
-                for(int i=0; i<isoStripOf1.length(); i++)
+                for(int i=0; i<isoStripOf1.size(); i++)
                 {
                     int curIsoStripNb = isoStripOf1[i];
                     if(curIsoStripNb<=minIsoStrip1) minIsoStrip1 = curIsoStripNb;
@@ -182,11 +181,12 @@ bool isoStripBuilder::perform(std::vector<meshElementByCoords> &vecMeshElements)
                 int index2 = aSeq.Value((i+1)%N+1)+1;
                 int globalNodeID2 = nodeIDs(index2);
 
-                const QList<int> &isoStripOf2 = pointToIsoStrip.values(globalNodeID2);
+                const isoStripList &isoStripOf2 = pointToIsoStrip.values(globalNodeID2);
+
                 int maxIsoStrip2 = -1e10;
                 int minIsoStrip2 = 1e10;
 
-                for(int i=0; i<isoStripOf2.length(); i++)
+                for(int i=0; i<isoStripOf2.size(); i++)
                 {
                     int curIsoStripNb = isoStripOf2[i];
                     if(curIsoStripNb<=minIsoStrip2) minIsoStrip2 = curIsoStripNb;
@@ -302,6 +302,12 @@ bool isoStripBuilder::perform(std::vector<meshElementByCoords> &vecMeshElements)
         }
     }
 
+    //! ------------------------
+    //! performance measurement
+    //! ------------------------
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+    std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[microseconds]" << std::endl;
+
     //! --------
     //! testing
     //! --------
@@ -310,7 +316,7 @@ bool isoStripBuilder::perform(std::vector<meshElementByCoords> &vecMeshElements)
     //! ----------
     //! testing 1
     //! ----------
-    //std::multimap<int,meshElementByCoords> mm;
+    //myMultiMap<int,meshElementByCoords> mm;
     //this->getIsoStripElements(vecFaces,mm);
 
     return true;
@@ -350,7 +356,6 @@ void isoStripBuilder::getIsoStripElements(const std::vector<faceTable> &allFaceT
         for(int c = 0; c<NbIsostrip; c++)
         {
             meshElementByCoords me;
-            //allFaceTables.at(i).getElementOfColumn(c,me);
             allFaceTables[i].getElementOfColumn(c,me);
             std::pair<int,meshElementByCoords> apair;
             apair.first = c;
@@ -378,7 +383,7 @@ void isoStripBuilder::pointCoord(double *c, int globalNodeID)
 //! function: classifyNodes
 //! details:
 //! ------------------------
-void isoStripBuilder::classifyNodes(QMap<int,int> &pointToIsoStrip)
+void isoStripBuilder::classifyNodes(myMultiMap<int,int> &pointToIsoStrip)
 {
     //cout<<"isoStripBuilder::classifyNodes()->____function called____"<<endl;
     TColStd_MapIteratorOfPackedMapOfInteger it(myMeshDS->GetAllNodes());

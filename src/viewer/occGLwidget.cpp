@@ -345,7 +345,11 @@ void occGLWidget::init()
     occViewer = new V3d_Viewer(GetGraphicDriver()); // OCC 7.1.0
     occView = occViewer->CreateView();
     occView->SetWindow(wind);
+    occView->SetShadingModel(V3d_PHONG);
     occView->ChangeRenderingParams().IsAntialiasingEnabled=true;
+    occView->ChangeRenderingParams().Method = Graphic3d_RM_RAYTRACING;
+    occView->ChangeRenderingParams().IsShadowEnabled = Standard_True;
+
     if(!wind->IsMapped()) wind->Map();
 
     //! -----------------------------------------------------------
@@ -888,7 +892,6 @@ void occGLWidget::onMouseMove(const int theFlags, QPoint thePoint)
             myXmax = x_cur;
             myYmax = y_cur;
 
-            //cesere
             //! --------------------------------
             //! retrieve the current clip plane
             //! --------------------------------
@@ -1097,9 +1100,6 @@ void occGLWidget::keyPressEvent(QKeyEvent *theKey)
 
         case(CurAction3D_WindowZooming):
             setAction3D_WindowZooming();
-            break;
-
-         default:  // for the compiler
             break;
         }
 
