@@ -55,7 +55,7 @@ public:
     //! -------------------------------------
     std::vector<V> values(const K &key)
     {
-        /*
+        /* linear search O(N)
         std::vector<V> values;
         auto itr1 = this->lower_bound(key);
         auto itr2 = this->upper_bound(key);
@@ -66,11 +66,13 @@ public:
         }
         return values;
         */
+        //! ---------------------------------------------------------------------------------------------
+        //! https://thispointer.com/finding-all-values-for-a-key-in-multimap-using-equals_range-example/
+        //! ---------------------------------------------------------------------------------------------
         std::vector<V> values;
         std::pair<std::unordered_multimap<K,V>::iterator, std::unordered_multimap<K,V>::iterator> r = this->equal_range(key);
         for (std::unordered_multimap<K,V>::iterator it = r.first; it != r.second; it++) values.push_back(it->second);
         return values;
-
     }
 };
 

@@ -540,29 +540,22 @@ bool MeshTools::buildIsoStrip(const occHandle(MeshVS_DataSource) &theMeshDS,    
         const gp_Vec &d = displacementMap.value(globalNodeID);
         theDeformedDS->SetVector(globalNodeID,d);
     }
-    //cout<<"____tag00____"<<endl;
+
     //! ----------------
     //! apply the scale
     //! ----------------
     theDeformedDS->SetMagnify(scale);
-    //cout<<"____tag01____"<<endl;
 
     //! ----------------------------------------------------------
     //! run the isostrip builder on the deformed mesh data source
     //! ----------------------------------------------------------
     isoStripBuilder anIsoStripBuilder;
     anIsoStripBuilder.setMeshDataSource(theDeformedDS);
-    //cout<<"____tag02____"<<endl;
-
     anIsoStripBuilder.setValues(res);
-    //cout<<"____tag03____"<<endl;
-
     anIsoStripBuilder.setIsoStrips(vecIsoStrip);
-    //cout<<"____tag04____"<<endl;
 
     std::vector<meshElementByCoords> allElements;
     bool isDone = anIsoStripBuilder.perform(allElements);
-    //cout<<"____tag05____"<<endl;
 
     Q_UNUSED (isDone)
 

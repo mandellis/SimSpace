@@ -64,7 +64,7 @@ public slots:
     void createColorBox(double min, double max, int Nintervals);
 
     //! it read the private member myResultPresentation before displaying
-    void displayResult(const postObject &aPostObject);
+    void displayResult(postObject &aPostObject);
 
     void hideAllResults();
 

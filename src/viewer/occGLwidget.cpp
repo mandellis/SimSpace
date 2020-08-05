@@ -347,8 +347,8 @@ void occGLWidget::init()
     occView->SetWindow(wind);
     occView->SetShadingModel(V3d_PHONG);
     occView->ChangeRenderingParams().IsAntialiasingEnabled=true;
-    occView->ChangeRenderingParams().Method = Graphic3d_RM_RAYTRACING;
-    occView->ChangeRenderingParams().IsShadowEnabled = Standard_True;
+    //occView->ChangeRenderingParams().Method = Graphic3d_RM_RAYTRACING;
+    //occView->ChangeRenderingParams().IsShadowEnabled = Standard_True;
 
     if(!wind->IsMapped()) wind->Map();
 

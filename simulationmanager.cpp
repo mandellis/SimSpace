@@ -11290,7 +11290,7 @@ void SimulationManager::updateResultsPresentation()
     //! ---------------------
     //! retrieve all results
     //! ---------------------
-    const QList<postObject> &postObjectList= this->retrieveAllResults(); //gildotta
+    const QList<postObject> &postObjectList= this->retrieveAllResults();
 
     //! ----------------------------------------------------------------
     //! iterate over the results in order to find the displayed shapes:
@@ -11317,16 +11317,13 @@ void SimulationManager::updateResultsPresentation()
     for(std::set<int>::iterator it = parentShapeIndexes.begin(); it!=parentShapeIndexes.end(); ++it) listOfBodies.Append(*it);
     emit requestHideBody(listOfBodies);
 
-    cout<<"____tag00____"<<endl;
     for(QList<postObject>::const_iterator it = postObjectList.cbegin(); it!=postObjectList.cend(); ++it)
     {
-        cout<<"____tag01____"<<endl;
         postObject aPostObject = *it;
         emit requestDisplayResult(aPostObject);
     }
-    cout<<"____tag02____"<<endl;
-
 }
+
 
 //! --------------------------------
 //! function: upadtePostObjectScale
@@ -11334,6 +11331,7 @@ void SimulationManager::updateResultsPresentation()
 //! --------------------------------
 void SimulationManager::updatePostObjectScale(double scale)
 {
+    /*
     cout<<"SimulationManager::updatePostObjectScale()->____function called. Scale: "<<scale<<"____"<<endl;
 
     //! -------------------------------------------------
@@ -11341,18 +11339,16 @@ void SimulationManager::updatePostObjectScale(double scale)
     //! -------------------------------------------------
     SimulationNodeClass *nodePost = this->getCurrentNode();
     QExtendedStandardItem *itemPostObject = nodePost->getPropertyItem("Post object");
-    if(itemPostObject!=NULL)
+    if(itemPostObject!=NULL) return;
+
+    postObject *aPostObject = &itemPostObject->data(Qt::UserRole).value<Property>().getData().value<postObject>();
+    if(!aPostObject->isEmpty())
     {
-        cout<<"SimulationManager::updatePostObjectScale()->____post object found____"<<endl;
-        postObject *aPostObject = &itemPostObject->data(Qt::UserRole).value<Property>().getData().value<postObject>();
-        if(!aPostObject->isEmpty())
-        {
-            cout<<"SimulationManager::updatePostObjectScale()->____the post object contains data____"<<endl;
-            aPostObject->setScale(scale);
-            aPostObject->updateScaledView();
-        }
-        emit requestUpdateMeshView();
+        cout<<"SimulationManager::updatePostObjectScale()->____the post object contains data____"<<endl;
+        aPostObject->setScale(scale);
+        aPostObject->updateScaledView();
     }
+    */
 }
 
 //! ------------------------------

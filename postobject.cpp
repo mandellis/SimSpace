@@ -770,22 +770,18 @@ void postObject::updateMapping(int mapping)
 //! ---------------------------
 void postObject::updateScaledView()
 {
-    if(theMeshes.isEmpty()) return;
-    for(QMap<GeometryTag,occHandle(MeshVS_Mesh)>::iterator it = theMeshes.begin(); it!= theMeshes.end(); ++it)
+    cout<<"postObject::updateScaledView()->____function called____"<<endl;
+    if(theMeshDataSources.isEmpty()) return;
+    for(QMap<GeometryTag,occHandle(MeshVS_DataSource)>::iterator it = theMeshDataSources.begin(); it!= theMeshDataSources.end(); ++it)
     {
-        const occHandle(MeshVS_Mesh) &curMeshVS = it.value();
-        const occHandle(Ng_MeshVS_DeformedDataSource2D)  &curMeshDeformedDS = occHandle(Ng_MeshVS_DeformedDataSource2D)::DownCast(curMeshVS->GetDataSource());
-        if(myScale == 0.0)
-        {
-            cerr<<"postObject::updateScaledView()->____updating scale: undeformed____"<<endl;
-            occHandle(Ng_MeshVS_DataSource2D) nonDeformedDS = occHandle(Ng_MeshVS_DataSource2D)::DownCast(curMeshDeformedDS->GetNonDeformedDataSource());
-            curMeshVS->SetDataSource(nonDeformedDS);
-        }
-        else
-        {
-            cerr<<"postObject::updateScaledView()->____updating scale: "<<myScale<<"____"<<endl;
-            curMeshDeformedDS->SetMagnify(myScale);
-        }
+        const occHandle(MeshVS_DataSource) &curMeshDS = it.value();
+        const GeometryTag &loc = it.key();
+
+        occHandle(MeshVS_Mesh) aColoredMesh;
+        const QMap<int,double> &res = theData.value(loc).at(this->getSolutionDataComponent());
+        const QMap<int,gp_Vec> &displacementMap = myMapOfNodalDisplacements.value(loc);
+        MeshTools::buildIsoStrip(curMeshDS,res,displacementMap,myScale,myMin,myMax,myNbLevels,aColoredMesh,true);
+        theMeshes.insert(loc,aColoredMesh);
     }
 }
 

@@ -489,7 +489,8 @@ signals:
     void requestShowFirstRow();
 
     void requestCreateColorBox(double min, double max, int Nintervals);
-    void requestDisplayResult(const postObject& aPostObject);
+    //void requestDisplayResult(const postObject& aPostObject);
+    void requestDisplayResult(postObject& aPostObject);
     //void requestDisplayResult(postObject aPostObject);
     void requestHideAllResults();
     void requestHideSingleResult(const postObject& aPostObject);

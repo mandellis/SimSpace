@@ -156,7 +156,9 @@ void ResultsToolBar::updateIcon(QAction *action)
 void ResultsToolBar::emitRequestUpdatePostObjectScale(double scale)
 {
     cout<<"ResultsToolBar::emitRequestUpdatePostObjectScale()->____function called. Scale: "<<scale<<"____"<<endl;
-    emit requestUpdatePostObjectScale(scale);
+    myResultPresentation.theScale = scale;
+    emit requestSetResultPresentation(myResultPresentation);
+    //emit requestUpdatePostObjectScale(scale);
 }
 
 //! ---------------------

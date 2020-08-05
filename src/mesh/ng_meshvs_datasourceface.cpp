@@ -3864,136 +3864,132 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const std::vector<meshElement
 {
     //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor called____"<<endl;
 
-    //! -------------
-    //! sanity check
-    //! -------------
-    if(meshElements.size()==0) return;
+        //! -------------
+        //! sanity check
+        //! -------------
+        if(meshElements.size()==0) return;
 
-    myNumberOfElements = int(meshElements.size());
-    cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____number of elements: "<<myNumberOfElements<<"____"<<endl;
+        myNumberOfElements = int(meshElements.size());
+        myElemType = new TColStd_HArray1OfInteger(1,myNumberOfElements);
+        myElemNodes = new TColStd_HArray2OfInteger(1,myNumberOfElements,1,10);
+        myElemNormals = new TColStd_HArray2OfReal(1,myNumberOfElements,1,3);
 
-    myElemType = new TColStd_HArray1OfInteger(1,myNumberOfElements);
-    myElemNodes = new TColStd_HArray2OfInteger(1,myNumberOfElements,1,10);
-    myElemNormals = new TColStd_HArray2OfReal(1,myNumberOfElements,1,3);
+        std::map<mesh::meshPoint,int> indexedMapOfMeshPoints;
 
-    std::vector<mesh::meshPoint> vecMeshPoints;
-    std::vector<int> vecNodeIDs;
-
-    int localElementID = 0;
-    int localNodeID = 0;
-    for(std::vector<meshElementByCoords>::const_iterator it = meshElements.cbegin(); it!= meshElements.cend(); it++)
-    {
-        const meshElementByCoords &aMeshElement = *it;
-
-        localElementID++;
-
-        if(autoRenumberElements==true)
+        int localElementID = 0;
+        int localNodeID = 0;
+        for(std::vector<meshElementByCoords>::const_iterator it = meshElements.cbegin(); it!= meshElements.cend(); it++)
         {
-            myElements.Add(localElementID);
-            myElementsMap.Add(localElementID);
-        }
-        else
-        {
-            int globalElementID = aMeshElement.ID;
-            myElements.Add(globalElementID);
-            myElementsMap.Add(globalElementID);
-        }
+            const meshElementByCoords &aMeshElement = *it;
 
-        int NbPoints = aMeshElement.pointList.length();
+            localElementID++;
 
-        switch(NbPoints)
-        {
-        case 3: myElemType->SetValue(localElementID,TRIG); break;
-        case 6: myElemType->SetValue(localElementID,TRIG6); break;
-        case 5: myElemType->SetValue(localElementID,PENTA); break;
-        case 4: myElemType->SetValue(localElementID,QUAD); break;
-        case 7: myElemType->SetValue(localElementID,EPTA); break;
-        case 8: myElemType->SetValue(localElementID,QUAD8); break;
-        }
-
-        //! ---------------------------------------------------------------
-        //! this is the mechanism for the automatic numbering of the nodes
-        //! ---------------------------------------------------------------
-        if(autoRenumberNodes)
-        {
-            for(int i = 0; i<NbPoints; i++)
+            if(autoRenumberElements==true)
             {
-                mesh::meshPoint aPoint = aMeshElement.pointList[i];
-                std::vector<mesh::meshPoint>::iterator nit = std::find(vecMeshPoints.begin(),vecMeshPoints.end(),aPoint);
+                myElements.Add(localElementID);
+                myElementsMap.Add(localElementID);
+            }
+            else
+            {
+                int globalElementID = aMeshElement.ID;
+                myElements.Add(globalElementID);
+                myElementsMap.Add(globalElementID);
+            }
 
-                if(nit==vecMeshPoints.end())
+            int NbPoints = aMeshElement.pointList.length();
+
+            switch(NbPoints)
+            {
+            case 3: myElemType->SetValue(localElementID,TRIG); break;
+            case 6: myElemType->SetValue(localElementID,TRIG6); break;
+            case 5: myElemType->SetValue(localElementID,PENTA); break;
+            case 4: myElemType->SetValue(localElementID,QUAD); break;
+            case 7: myElemType->SetValue(localElementID,EPTA); break;
+            case 8: myElemType->SetValue(localElementID,QUAD8); break;
+            }
+
+            //! ---------------------------------------------------------------
+            //! this is the mechanism for the automatic numbering of the nodes
+            //! ---------------------------------------------------------------
+            if(autoRenumberNodes)
+            {
+                for(int i = 0; i<NbPoints; i++)
                 {
-                    //! ----------------
-                    //! point not found
-                    //! ---------------
-                    localNodeID++;
-                    myNodes.Add(localNodeID);
-                    myNodesMap.Add(localNodeID);
+                    mesh::meshPoint aPoint = aMeshElement.pointList[i];
+                    std::map<mesh::meshPoint,int>::iterator nnit = indexedMapOfMeshPoints.find(aPoint);
 
-                    vecMeshPoints.push_back(aPoint);
-                    vecNodeIDs.push_back(localNodeID);
+                    if(nnit == indexedMapOfMeshPoints.end())
+                    {
+                        //! ----------------
+                        //! point not found
+                        //! ---------------
+                        localNodeID++;
+                        myNodes.Add(localNodeID);
+                        myNodesMap.Add(localNodeID);
 
-                    myElemNodes->SetValue(localElementID,i+1,localNodeID);
+                        indexedMapOfMeshPoints.insert(std::make_pair(aPoint,localNodeID));
+                        myElemNodes->SetValue(localElementID,i+1,localNodeID);
+                    }
+                    else
+                    {
+                        //! ----------------------
+                        //! point already present
+                        //! ----------------------
+                        int foundLocalNodeID = (*nnit).second;
+                        myElemNodes->SetValue(localElementID,i+1,foundLocalNodeID);
+                    }
                 }
-                else
+            }
+            else
+            {
+                //! ---------------------------------------
+                //! label the nodes using their own labels
+                //! ---------------------------------------
+                for(int i=0; i<NbPoints; i++)
                 {
-                    //! ----------------------
-                    //! point already present
-                    //! ----------------------
-                    int indexOf = std::distance(vecMeshPoints.begin(),nit);
-                    int foundLocalNodeID = vecNodeIDs[indexOf];
-                    myElemNodes->SetValue(localElementID,i+1,foundLocalNodeID);
+                    mesh::meshPoint aPoint = aMeshElement.pointList[i];
+                    std::map<mesh::meshPoint,int>::iterator nnit = indexedMapOfMeshPoints.find(aPoint);
+
+                    if(nnit==indexedMapOfMeshPoints.end())
+                    {
+                        indexedMapOfMeshPoints.insert(std::make_pair(aPoint,aPoint.ID));
+                    }
+
+                    if(!myNodes.Contains(aPoint.ID))
+                    {
+                        myNodes.Add(aPoint.ID);
+                        myNodesMap.Add(aPoint.ID);
+                    }
+                    myElemNodes->SetValue(localElementID,i+1,aPoint.ID);
                 }
             }
         }
-        else
+
+        //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____elements and nodes added____"<<endl;
+
+        myNumberOfNodes = myNodes.Extent();
+        myNodeCoords = new TColStd_HArray2OfReal(1,myNumberOfNodes,1,3);
+
+        //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____number of nodes: "<<myNumberOfNodes<<"____"<<endl;
+
+        for(std::map<mesh::meshPoint,int>::iterator it = indexedMapOfMeshPoints.begin(); it!=indexedMapOfMeshPoints.end(); it++)
         {
-            //! ---------------------------------------
-            //! label the nodes using their own labels
-            //! ---------------------------------------
-            for(int i=0; i<NbPoints; i++)
-            {
-                mesh::meshPoint aPoint = aMeshElement.pointList[i];
-                std::vector<mesh::meshPoint>::iterator nit = std::find(vecMeshPoints.begin(),vecMeshPoints.end(),aPoint);
-                if(nit==vecMeshPoints.end())
-                {
-                    vecMeshPoints.push_back(aPoint);
-                }
-
-                if(!myNodes.Contains(aPoint.ID))
-                {
-                    myNodes.Add(aPoint.ID);
-                    myNodesMap.Add(aPoint.ID);
-                }
-                myElemNodes->SetValue(localElementID,i+1,aPoint.ID);
-            }
+            mesh::meshPoint aMeshPoint = (*it).first;
+            int localNodeID = (*it).second;
+            myNodeCoords->SetValue(localNodeID,1,aMeshPoint.x);
+            myNodeCoords->SetValue(localNodeID,2,aMeshPoint.y);
+            myNodeCoords->SetValue(localNodeID,3,aMeshPoint.z);
         }
-    }
 
-    //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____elements and nodes added____"<<endl;
+        //! ---------------------------
+        //! compute normal at elements
+        //! ---------------------------
+        this->computeNormalAtElements();
 
-    myNumberOfNodes = myNodes.Extent();
-    //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____number of nodes: "<<myNumberOfNodes<<"____"<<endl;
-
-    myNodeCoords = new TColStd_HArray2OfReal(1,myNumberOfNodes,1,3);
-
-    for(int i=1; i<=myNumberOfNodes; i++)
-    {
-        mesh::meshPoint aMeshPoint = vecMeshPoints[i-1];
-        myNodeCoords->SetValue(i,1,aMeshPoint.x);
-        myNodeCoords->SetValue(i,2,aMeshPoint.y);
-        myNodeCoords->SetValue(i,3,aMeshPoint.z);
-    }
-
-    //! ---------------------------
-    //! compute normal at elements
-    //! ---------------------------
-    this->computeNormalAtElements();
-
-    //! ------------------------
-    //! build elements topology
-    //! ------------------------
-    this->buildElementsTopology();
+        //! ------------------------
+        //! build elements topology
+        //! ------------------------
+        this->buildElementsTopology();
 }
 
 
