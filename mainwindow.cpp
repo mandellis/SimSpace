@@ -1192,7 +1192,8 @@ void MainWindow::createToolBars()
     connect(resultsToolBar,SIGNAL(requestSetResultPresentation(resultPresentation)),myMainOCCViewer,SLOT(setResultPresentation(resultPresentation)));
     connect(myMainOCCViewer,SIGNAL(resultsPresentationChanged()),mySimulationManager,SLOT(updateResultsPresentation()));
 
-    connect(resultsToolBar,SIGNAL(requestUpdatePostObjectScale(double)),mySimulationManager,SLOT(updatePostObjectScale(double)));
+    //to be removed
+    //connect(resultsToolBar,SIGNAL(requestUpdatePostObjectScale(double)),mySimulationManager,SLOT(updatePostObjectScale(double)));
 }
 
 //! ---------------------------------

@@ -14,6 +14,7 @@
 //! ----
 #include <MeshVS_Mesh.hxx>
 #include <MeshVS_DataSource.hxx>
+#include <MeshVS_DeformedDataSource.hxx>
 #include <NCollection_TListIterator.hxx>
 #include <MeshVS_NodalColorPrsBuilder.hxx>
 #include <MeshVS_DataSource.hxx>
@@ -135,7 +136,8 @@ private:
     //! MeshVS_Mesh objects (colored meshes)
     //! -------------------------------------
     QMap<GeometryTag,occHandle(MeshVS_Mesh)> theMeshes;
-    QMap<GeometryTag,occHandle(MeshVS_DataSource)> theMeshDataSources;
+    //QMap<GeometryTag,occHandle(MeshVS_DataSource)> theMeshDataSources;
+    QMap<GeometryTag,occHandle(MeshVS_DeformedDataSource)> theMeshDataSources;
 
     //! ----------------
     //! the color scale
@@ -208,11 +210,12 @@ public:
     //! rebuild "theMeshes" with data
     //! ------------------------------
     void buildMeshIO(const mapOfMeshDataSources &aMapOfMeshDataSources,
-                     double min=-1e20, double max=1e20, int Nlevels=9, bool autoscale=true, int component=0, bool showMeshEdges=true);
+                     double min=-1e20, double max=1e20, int Nlevels=9, bool autoscale=true, int component=0);
 
 
-    void buildMeshIO(double min=-1e20, double max=1e20, int Nlevels=9, bool autoscale=true, int component=0, bool showMeshEdges=true);
+    //void buildMeshIO(double min=-1e20, double max=1e20, int Nlevels=9, bool autoscale=true, int component=0, bool showMeshEdges=true);
 
+    void buildMeshIO(double min=-1e20, double max=1e20, int Nlevels=9, bool autoscale=true, int component=0, double deformationScale = 1.0);
 
     //! update
     void update(meshDataBase *mDB, int component=0);
@@ -227,7 +230,7 @@ public:
     QMap<GeometryTag,occHandle(MeshVS_Mesh>) getColoredMeshes() const { return theMeshes; }
 
     //! get the mesh data sources
-    QMap<GeometryTag,occHandle(MeshVS_DataSource)> getMeshDataSources() const { return theMeshDataSources; }
+    QMap<GeometryTag,occHandle(MeshVS_DeformedDataSource)> getMeshDataSources() const { return theMeshDataSources; }
 
     //! is empty
     bool isEmpty() const{ return theData.isEmpty(); }

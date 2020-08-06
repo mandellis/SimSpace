@@ -563,9 +563,6 @@ public slots:
     //! update results presentation
     void updateResultsPresentation();
 
-    //! update post object scale
-    void updatePostObjectScale(double scale);
-
     //! read results file
     void readResultsFile(const QString &fileName, const QString &solutionDataDir);
 

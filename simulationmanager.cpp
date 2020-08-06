@@ -11290,7 +11290,7 @@ void SimulationManager::updateResultsPresentation()
     //! ---------------------
     //! retrieve all results
     //! ---------------------
-    const QList<postObject> &postObjectList= this->retrieveAllResults();
+    QList<postObject> postObjectList= this->retrieveAllResults();
 
     //! ----------------------------------------------------------------
     //! iterate over the results in order to find the displayed shapes:
@@ -11300,7 +11300,7 @@ void SimulationManager::updateResultsPresentation()
     std::set<int> parentShapeIndexes;
     for(QList<postObject>::const_iterator it = postObjectList.cbegin(); it!=postObjectList.cend(); ++it)
     {
-        postObject aPostObject = *it;
+        const postObject &aPostObject = *it;
         const QVector<GeometryTag> &vecLoc = aPostObject.getLocations();
         for(QVector<GeometryTag>::const_iterator it = vecLoc.cbegin(); it!=vecLoc.cend(); it++)
         {
@@ -11322,33 +11322,6 @@ void SimulationManager::updateResultsPresentation()
         postObject aPostObject = *it;
         emit requestDisplayResult(aPostObject);
     }
-}
-
-
-//! --------------------------------
-//! function: upadtePostObjectScale
-//! details:  experimental
-//! --------------------------------
-void SimulationManager::updatePostObjectScale(double scale)
-{
-    /*
-    cout<<"SimulationManager::updatePostObjectScale()->____function called. Scale: "<<scale<<"____"<<endl;
-
-    //! -------------------------------------------------
-    //! get the current item and the current post object
-    //! -------------------------------------------------
-    SimulationNodeClass *nodePost = this->getCurrentNode();
-    QExtendedStandardItem *itemPostObject = nodePost->getPropertyItem("Post object");
-    if(itemPostObject!=NULL) return;
-
-    postObject *aPostObject = &itemPostObject->data(Qt::UserRole).value<Property>().getData().value<postObject>();
-    if(!aPostObject->isEmpty())
-    {
-        cout<<"SimulationManager::updatePostObjectScale()->____the post object contains data____"<<endl;
-        aPostObject->setScale(scale);
-        aPostObject->updateScaledView();
-    }
-    */
 }
 
 //! ------------------------------

@@ -110,6 +110,8 @@ void occPostWidget::displayResult(postObject &aPostObject)
 {
     cout<<"occPostWidget::displayResult()->____function called____"<<endl;
 
+    static resultPresentation aResultPresentationOld;
+
     //! ----------------
     //! read the status
     //! ----------------
@@ -118,19 +120,33 @@ void occPostWidget::displayResult(postObject &aPostObject)
     //! -----------------
     //! update the scale
     //! -----------------
-    aPostObject.setScale(aResultPresentation.theScale);
-    aPostObject.updateScaledView();
+    if(aResultPresentation.theScale != aResultPresentationOld.theScale)
+    {
+        cout<<"@ --------------------------------"<<endl;
+        cout<<"@ - SCALE CHANGED"<<endl;
+        cout<<"@ --------------------------------"<<endl;
+        occMeshContext->RemoveAll(true);
+        occPostContext->RemoveAll(true);
+        occContext->RemoveAll(true);
+
+        aPostObject.setScale(aResultPresentation.theScale);
+        aPostObject.updateScaledView();
+    }
+    //occPostContext->RemoveAll(false);
 
     //! ---------------------------
     //! display the colored meshes
     //! ---------------------------
     const QMap<GeometryTag,occHandle(MeshVS_Mesh)> &coloredMeshes = aPostObject.getColoredMeshes();
-    for(QMap<GeometryTag,occHandle(MeshVS_Mesh)>::const_iterator anIt = coloredMeshes.cbegin(); anIt != coloredMeshes.cend(); ++anIt)
+    for(QMap<GeometryTag,occHandle(MeshVS_Mesh)>::const_iterator it = coloredMeshes.cbegin(); it != coloredMeshes.cend(); ++it)
     {
-        const occHandle(MeshVS_Mesh) &aColoredMesh = anIt.value();
+        const occHandle(MeshVS_Mesh) &aColoredMesh = it.value();
         occPostContext->Display(aColoredMesh,false);
     }
 
+    //! ----------------------------------------------
+    //! handle the combined view of results and model
+    //! ----------------------------------------------
     switch(aResultPresentation.theCombinedView)
     {
     case resultPresentation::combinedView_resultOnly:
@@ -140,41 +156,45 @@ void occPostWidget::displayResult(postObject &aPostObject)
         //! ----------------------------------------------
         //! remove the wireframe or transparent body view
         //! ----------------------------------------------
-        occContext->ObjectsInside(objInside,AIS_KOI_Shape,0);
-        for(AIS_ListIteratorOfListOfInteractive it(objInside); it.More(); it.Next()) occContext->Remove(it.Value(),false);
-        //occContext->RemoveAll(false);
+        //occContext->ObjectsInside(objInside,AIS_KOI_Shape,0);
+        //for(AIS_ListIteratorOfListOfInteractive it(objInside); it.More(); it.Next()) occContext->Remove(it.Value(),false);
+        occContext->RemoveAll(false);
 
         //! ---------------------
         //! remove the mesh view
         //! ---------------------
-        objInside.Clear();
-        occMeshContext->ObjectsInside(objInside,AIS_KOI_None,-1);
-        for(AIS_ListIteratorOfListOfInteractive it(objInside); it.More(); it.Next()) occMeshContext->Remove(it.Value(),false);
-        //occMeshContext->RemoveAll(false);
+        //objInside.Clear();
+        //occMeshContext->ObjectsInside(objInside,AIS_KOI_None,-1);
+        //for(AIS_ListIteratorOfListOfInteractive it(objInside); it.More(); it.Next()) occMeshContext->Remove(it.Value(),false);
+        occMeshContext->RemoveAll(false);
     }
         break;
 
     case resultPresentation::combinedView_meshVisible:
     {
-        AIS_ListOfInteractive objInside;
+        //AIS_ListOfInteractive objInside;
 
         //! ----------------------------------------------
         //! remove the wireframe or transparent body view
         //! ----------------------------------------------
-        occContext->ObjectsInside(objInside,AIS_KOI_Shape,0);
-        for(AIS_ListIteratorOfListOfInteractive it(objInside); it.More(); it.Next()) occContext->Remove(it.Value(),false);
-        //occContext->RemoveAll(false);
+        //occContext->ObjectsInside(objInside,AIS_KOI_Shape,0);
+        //for(AIS_ListIteratorOfListOfInteractive it(objInside); it.More(); it.Next()) occContext->Remove(it.Value(),false);
+        occContext->RemoveAll(false);
 
-        const QMap<GeometryTag,occHandle(MeshVS_DataSource)> &meshDS = aPostObject.getMeshDataSources();
-        for(QMap<GeometryTag,occHandle(MeshVS_DataSource)>::const_iterator it = meshDS.cbegin(); it!=meshDS.cend(); it++)
+        const QMap<GeometryTag,occHandle(MeshVS_DeformedDataSource)> &mapOfMeshDS = aPostObject.getMeshDataSources();
+        for(QMap<GeometryTag,occHandle(MeshVS_DeformedDataSource)>::const_iterator it = mapOfMeshDS.cbegin(); it!=mapOfMeshDS.cend(); it++)
         {
+            cout<<"@ ----------------------------------"<<endl;
+            cout<<"@ - number of nodes: "<<it.value()->GetAllNodes().Extent()<<endl;
+            cout<<"@ - number of elements: "<<it.value()->GetAllElements().Extent()<<endl;
+            cout<<"@ ----------------------------------"<<endl;
+
             occHandle(MeshVS_Mesh) aMeshObject = new MeshVS_Mesh();
+            aMeshObject->SetDataSource(it.value());
             aMeshObject->SetDisplayMode(MeshVS_DMF_WireFrame);
             aMeshObject->GetDrawer()->SetBoolean(MeshVS_DA_ShowEdges,false);
             aMeshObject->GetDrawer()->SetColor(MeshVS_DA_EdgeColor,Quantity_NOC_BLACK);
             aMeshObject->GetDrawer()->SetBoolean(MeshVS_DA_DisplayNodes,false);
-            aMeshObject->SetDataSource(it.value());
-
             occHandle(MeshVS_MeshPrsBuilder) aB = new MeshVS_MeshPrsBuilder(aMeshObject);
             aMeshObject->AddBuilder(aB,false);
 
@@ -207,8 +227,8 @@ void occPostWidget::displayResult(postObject &aPostObject)
             int bodyIndex = it->parentShapeNr;
             const TopoDS_Shape &aShape = myDS2->bodyMap.value(bodyIndex);
             const occHandle(AIS_Shape) &anAISShape = new AIS_Shape(aShape);
-            occContext->SetColor(anAISShape,Quantity_NOC_AQUAMARINE1,false);
-            occContext->SetTransparency(anAISShape,0.9,true);
+            occContext->SetColor(anAISShape,Quantity_NOC_BLACK,false);
+            occContext->SetTransparency(anAISShape,0.0,false);
             occContext->Display(anAISShape,AIS_WireFrame,-1,false,false);
         }
     }
@@ -258,6 +278,8 @@ void occPostWidget::displayResult(postObject &aPostObject)
     occPostContext->UpdateCurrentViewer();
     occMeshContext->UpdateCurrentViewer();
     occContext->UpdateCurrentViewer();
+
+    aResultPresentationOld = myResultPresentation;
 }
 
 //! --------------------------------
