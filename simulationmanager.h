@@ -489,11 +489,8 @@ signals:
     void requestShowFirstRow();
 
     void requestCreateColorBox(double min, double max, int Nintervals);
-    //void requestDisplayResult(const postObject& aPostObject);
-    void requestDisplayResult(postObject& aPostObject);
-    //void requestDisplayResult(postObject aPostObject);
+    void requestDisplayResult(sharedPostObject &aPostObject);
     void requestHideAllResults();
-    void requestHideSingleResult(const postObject& aPostObject);
     void requestSetActiveCentralTab(const QString& widgetName);
     void requestUpdateConvergenceViewer(const QList<solutionInfo> &solutionInfoList);
 
@@ -504,7 +501,7 @@ signals:
 
 private:
 
-    QList<QStandardItem *> ItemListFromListOfShape(TopTools_ListOfShape *listOfShapes);
+    QList<QStandardItem*> ItemListFromListOfShape(TopTools_ListOfShape *listOfShapes);
     //QExtendedStandardItem* getTreeItem(nodeType theNodeType);
     int getInsertionRow() const;
 
@@ -520,7 +517,6 @@ public:
     QList<QExtendedStandardItem *> getAllTreeItemOfType(SimulationNodeClass::nodeType theNodeType);
     SimulationNodeClass* getAnalysisSettingsNodeFromCurrentItem() const;
     QExtendedStandardItem *getAnalysisSettingsItemFromCurrentItem() const;
-    //int calculateStartColumn() const;
 
 public slots:
 
@@ -572,8 +568,11 @@ public slots:
 private:
 
     //! retrieve the result contained into an item in the form of MeshVS_Mesh object
-    bool retrieveCurrentItemResult(postObject &aPostObject);
-    QList<postObject> retrieveAllResults();
+    //bool retrieveCurrentItemResult(postObject aPostObject);
+    bool retrieveCurrentItemResult(sharedPostObject &aPostObject);
+
+    //QList<postObject> retrieveAllResults();
+    QList<sharedPostObject> retrieveAllResults();
 
     //! --
     void callPostEngineEvaluateResult();

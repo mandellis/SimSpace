@@ -1326,9 +1326,9 @@ QVariant QExtendedStandardItem::data(int role) const
         }
         else if(name == "Post object")
         {
-            const postObject &aPostObject = QStandardItem::data(Qt::UserRole).value<Property>().getData().value<postObject>();
-
-            data.setValue(QString("%1 mesh objects").arg(aPostObject.NbMeshes()));
+            //const postObject &aPostObject = QStandardItem::data(Qt::UserRole).value<Property>().getData().value<postObject>();
+            const sharedPostObject &aPostObject = QStandardItem::data(Qt::UserRole).value<Property>().getData().value<sharedPostObject>();
+            data.setValue(QString("%1 mesh objects").arg(aPostObject->NbMeshes()));
             return data;
         }
         else if(name=="Remap")

@@ -18,6 +18,7 @@
 //! ----
 #include <iostream>
 #include <fstream>
+#include <memory>
 
 class OCCMeshToCCXmesh;
 
@@ -108,14 +109,26 @@ public slots:
                                                              double &requiredTime);
 
     postObject evaluateFatigueResults(int type, QVector<GeometryTag> locs, const QList<double> &times, QMap<int,int> materialBodyMap, int nCycle);
-    //postObject evaluateFatigueResults1(int type, QVector<GeometryTag> locs, const QList<double> &times, QMap<int,int> materialBodyMap, int nCycle);
 
-    postObject buildPostObject(const QString &keyName,
-                               int component,
-                               int requiredSubStepNb,
-                               int requiredStepNb,
-                               int requiredMode,
-                               const QVector<GeometryTag> &vecLoc);
+    //! experimental
+    bool evaluateFatigueResults(int type, QVector<GeometryTag> locs, const QList<double> &times, QMap<int,int> materialBodyMap, int nCycle, sharedPostObject &aPostObject);
+
+    //postObject buildPostObject(const QString &keyName,
+    //                           int component,
+    //                           int requiredSubStepNb,
+    //                           int requiredStepNb,
+    //                           int requiredMode,
+    //                           const QVector<GeometryTag> &vecLoc);
+
+
+    //! experimental OK - remove the previous
+    bool buildPostObject(const QString &keyName,
+                         int component,
+                         int requiredSubStepNb,
+                         int requiredStepNb,
+                         int requiredMode,
+                         const QVector<GeometryTag> &vecLoc,
+                         sharedPostObject &aPostObject);
 
 private:
 
@@ -127,21 +140,19 @@ private:
 
     //! read fatigue results
     QMap<GeometryTag,QMap<int,QList<double>>> readFatigueResults(int type,
-                                                                    const QVector<GeometryTag> &vecLoc,
-                                                                    const QList<double> &times);
+                                                                 const QVector<GeometryTag> &vecLoc,
+                                                                 const QList<double> &times);
 
     fatigueModel myFatigueModel;
     QMap<double,QVector<int>> myDTM;
 
 public:
 
-    //! retrieve the discrete time map
-    //QMap<double,QVector<int>> getDTM();
-
     void setDiscreteTimeMap(const QMap<double,QVector<int>> &dtm);
 
     //! experimental
-    void updateResultScale(postObject &aPostObject, int scaleType, double minValue, double maxValue, int NbIntervals);
+    //void updateIsostrips(postObject &aPostObject, int scaleType, double minValue, double maxValue, int NbIntervals);
+    void updateIsostrips(sharedPostObject &aPostObject, int scaleType, double minValue, double maxValue, int NbIntervals);
 };
 
 #endif // POSTENGINE_H

@@ -523,6 +523,7 @@ QString postEngine::resultName(const QString &keyName, int component, int step, 
     return this->timeStamp().append("\n").append(resultName).append(timeInfo).append("\n");
 }
 
+/*
 //! --------------------------
 //! function: buildPostObject
 //! details:
@@ -544,7 +545,7 @@ postObject postEngine::buildPostObject(const QString &keyName,
     //! -------------------------
     //! build the colorBox title
     //! -------------------------
-    QString aresultName = this->resultName(keyName, component, requiredStepNb, requiredSubStepNb, time);
+    QString aResultName = this->resultName(keyName, component, requiredStepNb, requiredSubStepNb, time);
 
     //! ------------------------------------------------------------------------------------------------------------
     //! create the map of nodal vectorial displacements for the deformed mesh presentation. Here:
@@ -583,9 +584,74 @@ postObject postEngine::buildPostObject(const QString &keyName,
     //! if the underlying mesh is a volume mesh
     //! ----------------------------------------------------------------
     bool showSolidMeshAsSurface = Global::status().isVolumeMeshShownAsSurface;
-    postObject aPostObject(resMap,vecLoc,mapDisplMap,aresultName,showSolidMeshAsSurface);
+    postObject aPostObject(resMap,vecLoc,mapDisplMap,aResultName,showSolidMeshAsSurface);
     return aPostObject;
 }
+*/
+
+//! --------------------------
+//! function: buildPostObject
+//! details:
+//! --------------------------
+bool postEngine::buildPostObject(const QString &keyName,
+                                 int component,
+                                 int requiredSubStepNb,
+                                 int requiredStepNb,
+                                 int requiredMode,
+                                 const QVector<GeometryTag> &vecLoc,
+                                 sharedPostObject &aPostObject)
+{
+    double time;
+
+    //! --------------------
+    //! call the postEngine
+    //! --------------------
+    const QMap<GeometryTag,QList<QMap<int,double>>> &resMap = this->evaluateResult(keyName, requiredSubStepNb, requiredStepNb, requiredMode, vecLoc, time);
+
+    //! -------------------------
+    //! build the colorBox title
+    //! -------------------------
+    QString aResultName = this->resultName(keyName, component, requiredStepNb, requiredSubStepNb, time);
+
+    //! ------------------------------------------------------------------------------------------------------------
+    //! create the map of nodal vectorial displacements for the deformed mesh presentation. Here:
+    //! QMap<int,gp_Vec> displMap                    => map of nodal vectorial displacements
+    //! QMap<GeometryTag,QList<QMap<int,gp_Vec>>> => each location has its own map of nodal vectorial displacements
+    //! ------------------------------------------------------------------------------------------------------------
+    QMap<int,gp_Vec> displMap;
+    QMap<GeometryTag,QMap<int,gp_Vec>> mapDisplMap;
+    const QMap<GeometryTag,QList<QMap<int,double>>> &nodalDisplacements = this->evaluateResult("DISP", requiredSubStepNb, requiredStepNb,requiredMode, vecLoc, time);
+
+    for(QMap<GeometryTag,QList<QMap<int,double>>>::const_iterator it = nodalDisplacements.cbegin(); it!=nodalDisplacements.cend(); ++it)
+    {
+        const GeometryTag &aLoc= it.key();
+
+        const QList<QMap<int,double>> &nodalDisplacementsComponents = it.value();
+        const QMap<int,double> &displX = nodalDisplacementsComponents[1];
+        const QMap<int,double> &displY = nodalDisplacementsComponents[2];
+        const QMap<int,double> &displZ = nodalDisplacementsComponents[3];
+
+        QMap<int,double>::const_iterator itX = displX.cbegin();
+        QMap<int,double>::const_iterator itY = displY.cbegin();
+        QMap<int,double>::const_iterator itZ = displZ.cbegin();
+
+        for(;itX!=displX.cend() && itY!=displY.cend() && itZ!=displZ.cend(); ++itX, ++itY, ++itZ)
+        {
+            int nodeID = itX.key();
+            gp_Vec aVec(itX.value(),itY.value(),itZ.value());
+            displMap.insert(nodeID,aVec);
+        }
+        mapDisplMap.insert(aLoc,displMap);
+    }
+
+    //! ----------------------
+    //! create the postObject
+    //! ----------------------
+    bool showSolidMeshAsSurface = Global::status().isVolumeMeshShownAsSurface;
+    aPostObject = std::make_shared<postObject>(resMap,vecLoc,mapDisplMap,aResultName,showSolidMeshAsSurface);
+    return true;
+}
+
 
 //! --------------------
 //! function: timeStamp
@@ -593,37 +659,26 @@ postObject postEngine::buildPostObject(const QString &keyName,
 //! --------------------
 QString postEngine::timeStamp()
 {
-    //! builds the timestamp
     QDateTime dateTime;
     QString dateFormat = "dd/MM/yyyy";
     QString dateString = dateTime.currentDateTime().toString(dateFormat);
-    //QString timeFormat = "hh:mm";
-    //QString timeString = dateTime.currentDateTime().toString(timeFormat);
     QString timeStamp;
-    //timeStamp.append("Date: ").append(dateString).append("\n").append("Time: ").append(timeString);
     timeStamp.append("Date: ").append(dateString);
     return timeStamp;
 }
 
-//! ----------------------------
-//! function: updateResultScale
+//! --------------------------
+//! function: updateIsostrips
 //! details:
-//! ----------------------------
-void postEngine::updateResultScale(postObject &aPostObject, int scaleType, double minValue, double maxValue, int NbIntervals)
+//! --------------------------
+void postEngine::updateIsostrips(sharedPostObject &aPostObject, int scaleType, double minValue, double maxValue, int NbIntervals)
 {
-    cout<<"postEngine::updateResultScale()->____function called____"<<endl;
+    cout<<"postEngine::updateIsostrips()->____function called____"<<endl;
 
     //! ---------------------------------------------------------------
     //! retrieve the mesh data sources and the solution data component
     //! ---------------------------------------------------------------
-    //const QMap<GeometryTag,occHandle(MeshVS_DataSource)> &aMapOfMeshDataSources = aPostObject->getMeshDataSources();
-    //if(aMapOfMeshDataSources.isEmpty())
-    //{
-    //    cout<<"postEngine::updateResultScale()->____empty data sources____"<<endl;
-    //    exit(100);
-    //    return;
-    //}
-    int solutionDataComponent = aPostObject.getSolutionDataComponent();
+    int solutionDataComponent = aPostObject->getSolutionDataComponent();
 
     //! -----------------------------------------
     //! update the colored mesh and the colorbox
@@ -633,19 +688,11 @@ void postEngine::updateResultScale(postObject &aPostObject, int scaleType, doubl
     {
     case 0:
         //! autoscale min max, custom number of levels
-        //cout<<"____min: autocomputed____"<<endl;
-        //cout<<"____max: autocomputed____"<<endl;
-        //cout<<"____intervals: "<<NbIntervals<<"____"<<endl;
-        //aPostObject.buildMeshIO(mapOfMeshDataSources,0,0,NbIntervals,true,solutionDataComponent);
-        aPostObject.buildMeshIO(0,0,NbIntervals,true,solutionDataComponent);
+        aPostObject->buildMeshIO(-1,-1,NbIntervals,true,solutionDataComponent);
         break;
     case 1:
         //! custom scale (custom min, max, number of levels)
-        //cout<<"____min: "<<minValue<<"____"<<endl;
-        //cout<<"____max: "<<maxValue<<"____"<<endl;
-        //cout<<"____intervals: "<<NbIntervals<<"____"<<endl;
-        //aPostObject.buildMeshIO(mapOfMeshDataSources,minValue,maxValue,NbIntervals,false,solutionDataComponent);
-        aPostObject.buildMeshIO(minValue,maxValue,NbIntervals,false,solutionDataComponent);
+        aPostObject->buildMeshIO(minValue,maxValue,NbIntervals,false,solutionDataComponent);
         break;
     }
 }
@@ -767,6 +814,124 @@ postObject postEngine::evaluateFatigueResults(int type, QVector<GeometryTag> loc
     postObject aPostObject(fatigueResults,locs,label);
     //postObject aPostObject(fatigueResults,locs);
     return aPostObject;
+}
+
+//! ---------------------------------
+//! function: evaulateFatigueResults
+//! details:  overload
+//! ---------------------------------
+bool postEngine::evaluateFatigueResults(int type, QVector<GeometryTag> locs, const QList<double> &times, QMap<int,int> materialBodyMap, int nCycle, sharedPostObject &aPostObject)
+{
+    QMap<GeometryTag,QList<QMap<int,double>>> fatigueResults;
+
+    switch(myFatigueModel.type)
+    {
+    case fatigueModel_BCM:
+    {
+        cout<<"postEngine::evaluateResult()->____fatigue model BCM called___"<<endl;
+
+        QMap<GeometryTag,QMap<int,QList<double>>> r = readFatigueResults(type,locs,times);
+        rainflow rf;
+        for(QMap<GeometryTag,QMap<int,QList<double>>>::iterator it = r.begin(); it!=r.end(); ++it)
+        {
+            GeometryTag curLoc = it.key();
+            rf.setLocation(curLoc);
+
+            QMap<int,QList<double>> strainDistTimeHistory = it.value();
+            rf.setFatigueModel(myFatigueModel);
+            QMap<int,double> damageDist;
+
+            bool isDone = rf.perform(strainDistTimeHistory,damageDist);
+            if(isDone)
+            {
+                QList<QMap<int,double>>damageDistList;
+                damageDistList<<damageDist;
+                fatigueResults.insert(curLoc,damageDistList);
+            }
+        }
+    }
+        break;
+
+    case fatigueModel_ESR:
+    {
+        cout<<"postEngine::evaluateResult()->____fatigue model ESR called___"<<endl;
+        int step,substep;
+        //QMap<double,QVector<int>> dtm= getDTM();
+        //QMap<double,QVector<int>> dtm = myDTM;
+        double requiredTime;
+        postTools::getStepSubStepByTimeDTM(myDTM,times.last(),step,substep);
+        QString tor_eps = m.key(TypeOfResult_EPS);
+        QString tor_mises = m.key(TypeOfResult_S);
+        int mode =0;
+        QMap<GeometryTag,QList<QMap<int,double>>> pe = this->evaluateResult(tor_eps,substep,step,mode,locs,requiredTime);
+        QMap<GeometryTag,QList<QMap<int,double>>> stress = this->evaluateResult(tor_mises,substep,step,mode,locs,requiredTime);
+
+        for(QVector<GeometryTag>::iterator it=locs.begin();it!=locs.end();it++)
+        {
+            GeometryTag curLoc = *it;
+            int bodyIndex = curLoc.parentShapeNr;
+            const QList<QMap<int, double>> &listOfResPe = pe.value(curLoc);
+            const QMap<int, double> &curPe = listOfResPe.first();
+            const QList<QMap<int, double>> &listOfResMises = stress.value(curLoc);
+            const QMap<int, double> &curMises = listOfResMises.first();
+            QList<QMap<int,double>> damageIndex;
+            QMap<int,double> damageIndexData;
+
+            double elasticModulusMedium, elasticModulusMin,r,a,b,c,d,e,f,g,h;
+            Q_UNUSED (elasticModulusMin)
+            int material = materialBodyMap.value(bodyIndex);
+
+            for(QMap<int,double>::const_iterator itt=curPe.cbegin(); itt!=curPe.cend(); itt++)
+            {
+                double altStress,X,Y;
+                int curPos = itt.key();
+                double eps = itt.value();
+                double mises = curMises.value(curPos);
+
+                switch(material)
+                {
+                case 5:case 6:case 0:case 1:case 2:case 3:case 4:case 7:case 8:case 9:
+                {
+                    elasticModulusMedium = 1.76000000e+005;
+                    altStress = 0.5*(mises+eps*elasticModulusMedium);
+                    Y = log10(28.3*pow(10,3)*altStress/elasticModulusMedium);
+
+                    r=35.9;
+                    a=9.030556;
+                    b=8.1906623;
+                    c=0.36077181;
+                    d=0.4706984;
+                    e=42.08579;
+                    f=12.514054;
+                    g=4.3290016;
+                    h=0.60540862;
+
+                    if(pow(10,Y)>r) X = (a-b*Y)/(1-c*Y-d*Y*Y);
+                    else  X = (-e+f*Y)/(1-g*Y+h*Y*Y);
+                }
+                    break;
+                }
+                double damage;
+                double min,max;
+                min=1;
+                max=8;
+                if(X>min && X<max) damage = nCycle/(pow(10,X));
+                else damage = 0;
+                damageIndexData.insert(curPos,damage);
+            }
+            damageIndex<<damageIndexData;
+            fatigueResults.insert(curLoc,damageIndex);
+        }
+    }
+        break;
+    }
+
+    //! -----------------------
+    //! create the post object
+    //! -----------------------
+    QString label = this->resultName("Damage",0,1,1,0);
+    aPostObject = std::make_shared<postObject>(fatigueResults,locs,label);
+    return true;
 }
 
 //! ---------------------------------------------------

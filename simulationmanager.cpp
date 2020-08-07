@@ -502,26 +502,20 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 emit requestHideSlicedMeshes();
 
                 SimulationNodeClass *node = index.data(Qt::UserRole).value<SimulationNodeClass*>();
-                cout<<"____name: "<<node->getName().toStdString()<<"____"<<endl;
                 QStandardItem *itemTemperature = (QStandardItem*)(node->getPropertyValue<void*>("Imported body temperature"));
-                cout<<"____item name: "<<itemTemperature->data(Qt::DisplayRole).toString().toStdString()<<"____"<<endl;
                 SimulationNodeClass *nodeTemperature = itemTemperature->data(Qt::UserRole).value<SimulationNodeClass*>();
-                cout<<"____contained node: "<<nodeTemperature->getName().toStdString()<<"____"<<endl;
-                cout<<"____listing the properties of the contained node____"<<endl;
-                for(int i=0; i<nodeTemperature->getPropertyItems().length(); i++)
-                {
-                    cout<<"____"<<nodeTemperature->getPropertyItems().at(i)->data(Qt::UserRole).value<Property>().getName().toStdString()<<"____"<<endl;
-                }
+
                 if(nodeTemperature->getPropertyItem("Post object")!=Q_NULLPTR)
                 {
-                    postObject aPostObject = nodeTemperature->getPropertyValue<postObject>("Post object");
+                    //postObject aPostObject = nodeTemperature->getPropertyValue<postObject>("Post object");
+                    sharedPostObject aPostObject = nodeTemperature->getPropertyValue<sharedPostObject>("Post object");
                     emit requestSetWorkingMode(3);
                     emit requestShowAllBodies();    //! check if wireframe... to do
                     emit requestDisplayResult(aPostObject);
                 }
                 else
                 {
-                    cout<<"____no data____"<<endl;
+                    //cout<<"____no data____"<<endl;
                     requestSetWorkingMode(2);
                 }
                 this->changeColor();
@@ -542,7 +536,8 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 //! in the working mode "3" "Solution" the selection modes
                 //! and the corresponding toolbar buttons are disabled
                 //! -------------------------------------------------------
-                postObject aPostObject;
+                //postObject aPostObject;
+                sharedPostObject aPostObject;
                 bool isDone = this->retrieveCurrentItemResult(aPostObject);
                 if(isDone)
                 {
@@ -582,12 +577,12 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 //! in the working mode "3" "Solution" the selection modes
                 //! and the corresponding toolbar buttons are disabled
                 //! -------------------------------------------------------
-                postObject aPostObject;
+                //postObject aPostObject;
+                sharedPostObject aPostObject;
                 bool isDone = this->retrieveCurrentItemResult(aPostObject);
                 if(isDone)
                 {
                     emit requestSetWorkingMode(3);
-                    //emit requestShowAllBodies();    //! check if wireframe... to do
                     emit requestDisplayResult(aPostObject);
                 }
                 else requestSetWorkingMode(2);
@@ -2272,7 +2267,7 @@ void SimulationManager::handleItem(int type)
         cout<<"SimulationManager::handleItem()->____update post object____"<<endl;
         SimulationNodeClass *curNode = myTreeView->currentIndex().data(Qt::UserRole).value<SimulationNodeClass*>();
         postObject curPostObject = curNode->getPropertyItem("Post object")->data(Qt::UserRole).value<Property>().getData().value<postObject>();
-        curPostObject.update(static_cast<meshDataBase*>(mySimulationDataBase));
+        curPostObject.init(static_cast<meshDataBase*>(mySimulationDataBase));
         //! ----
         //! to be implemented. Not sure if needed ...
     }
@@ -4853,14 +4848,8 @@ void SimulationManager::handleItemChange(QStandardItem *item)
             if(itemPostObject!=Q_NULLPTR)
             {
                 //postObject thePostObject = curNode->getPropertyValue<postObject>("Post object");
-                postObject thePostObject = itemPostObject->data(Qt::UserRole).value<Property>().getData().value<postObject>();
-                //cout<<"____Colored meshes: "<<curNode->getPropertyValue<postObject>("Post object").getColoredMeshes().size()<<"____"<<endl;
-                //cout<<"____Mesh data sources: "<<curNode->getPropertyValue<postObject>("Post object").getMeshDataSources().size()<<"____"<<endl;
-                //cout<<"____"<<thePostObject->getName().toStdString()<<"____"<<endl;
-
-                emit requestHideSingleResult(thePostObject);
-
-                myPostEngine->updateResultScale(thePostObject,scaleType,minValue,maxValue,NbIntervals);
+                sharedPostObject thePostObject = curNode->getPropertyValue<sharedPostObject>("Post object");
+                myPostEngine->updateIsostrips(thePostObject,scaleType,minValue,maxValue,NbIntervals);
 
                 //! --------------------------
                 //! update the property value
@@ -4879,12 +4868,7 @@ void SimulationManager::handleItemChange(QStandardItem *item)
         if(propertyName =="Mapping")
         {
             int val = curNode->getPropertyValue<int>("Mapping");
-            cout<<"____mapping: "<<val<<"____"<<endl;
-            if(curNode->getPropertyItem("Post object")!=Q_NULLPTR)
-            {
-                postObject thePostObject = curNode->getPropertyValue<postObject>("Post object");
-                emit requestHideSingleResult(thePostObject);
-            }
+            if(curNode->getPropertyItem("Post object")!=Q_NULLPTR) emit requestHideAllResults();
         }
         if(propertyName =="By")
         {
@@ -4895,8 +4879,7 @@ void SimulationManager::handleItemChange(QStandardItem *item)
 
             if(curNode->getPropertyItem("Post object")!=Q_NULLPTR)
             {
-                const postObject &curPostObject = curNode->getPropertyValue<postObject>("Post object");
-                emit requestHideSingleResult(curPostObject);
+                emit requestHideAllResults();
                 curNode->removeProperty("Post object");
                 this->callPostEngineEvaluateResult_private(curItem,false);
             }
@@ -4905,8 +4888,7 @@ void SimulationManager::handleItemChange(QStandardItem *item)
         {
             if(curNode->getPropertyItem("Post object")!=Q_NULLPTR)
             {
-                const postObject &curPostObject = curNode->getPropertyValue<postObject>("Post object");
-                emit requestHideSingleResult(curPostObject);
+                emit requestHideAllResults();
                 curNode->removeProperty("Post object");
                 this->callPostEngineEvaluateResult_private(curItem,false);
             }
@@ -7370,7 +7352,7 @@ void SimulationManager::configureAndStartPostEngine()
 
 //! ----------------------------------------------
 //! function: handleSolutionComponentChanged
-//! details:  immediately update the colored mesh
+//! details:  immediately update the colored mesh - this function is never used and should be deleted
 //! ----------------------------------------------
 void SimulationManager::handleSolutionComponentChanged()
 {
@@ -7383,11 +7365,8 @@ void SimulationManager::handleSolutionComponentChanged()
     QStandardItem *postObjectItem = curNode->getPropertyItem("Post object");
     if(postObjectItem!=Q_NULLPTR)
     {
-        cout<<"SimulationManager::handleSolutionComponentChanged()->____start updating post object and viewer____"<<endl;
-        postObject curPostObject = postObjectItem->data(Qt::UserRole).value<Property>().getData().value<postObject>();
-
         //! delete from the viewer the previous result
-        emit requestHideSingleResult(curPostObject);
+        emit requestHideAllResults();
 
         //! retrieve the new solution component
         //int component = curNode->getPropertyItem("Type ")->data(Qt::UserRole).value<Property>().getData().toInt();
@@ -10300,14 +10279,15 @@ void SimulationManager::interpolatePrivate(int mode)
 //! details:  retrieve a result in the form of a MeshVS_Mesh object
 //!           from the current item
 //! -----------------------------------------------------------------
-bool SimulationManager::retrieveCurrentItemResult(postObject &aPostObject)
+bool SimulationManager::retrieveCurrentItemResult(sharedPostObject &aPostObject)
 {
     ccout("SimulationManager::retrieveItemMesh()->____function called____");
     SimulationNodeClass* curNode = myTreeView->currentIndex().data(Qt::UserRole).value<SimulationNodeClass*>();
     QExtendedStandardItem* item = curNode->getPropertyItem("Post object");
     if(item!=Q_NULLPTR)
     {
-        aPostObject = item->data(Qt::UserRole).value<Property>().getData().value<postObject>();
+        //aPostObject = item->data(Qt::UserRole).value<Property>().getData().value<postObject>();
+        aPostObject = item->data(Qt::UserRole).value<Property>().getData().value<sharedPostObject>();
         return true;
     }
     return false;
@@ -10318,10 +10298,12 @@ bool SimulationManager::retrieveCurrentItemResult(postObject &aPostObject)
 //! details:  retrieve the results of an analysis run
 //!           or the result of an interpolation
 //! ---------------------------------------------------
-QList<postObject> SimulationManager::retrieveAllResults()
+//QList<postObject> SimulationManager::retrieveAllResults()
+QList<sharedPostObject> SimulationManager::retrieveAllResults()
 {
     //cout<<"SimulationManager::retrieveAllResults()->____function called____"<<endl;
-    QList<postObject> results;
+    //QList<postObject> results;
+    QList<sharedPostObject> results;
 
     //! -----------------
     //! the current node
@@ -10343,7 +10325,9 @@ QList<postObject> SimulationManager::retrieveAllResults()
         QExtendedStandardItem *itemPostObject = curResultNode->getPropertyItem("Post object");
         if(itemPostObject==Q_NULLPTR) continue;
 
-        const postObject &aPostObject = itemPostObject->data(Qt::UserRole).value<Property>().getData().value<postObject>();
+        //const postObject &aPostObject = itemPostObject->data(Qt::UserRole).value<Property>().getData().value<postObject>();
+        sharedPostObject aPostObject = itemPostObject->data(Qt::UserRole).value<Property>().getData().value<sharedPostObject>();
+
         results<<aPostObject;
     }
     return results;
@@ -10578,15 +10562,19 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
     {
         int component = curNode->getPropertyValue<int>("Type ");
         int mode = curNode->getPropertyValue<int>("Mode number");
+
         //! ---------------------------------------------
         //! a results is already present into the item
         //! build the mesh object from the internal data
         //! ---------------------------------------------
-        postObject aPostObject;
+        //postObject aPostObject;
+        sharedPostObject aPostObject;// create into the heap
         if(curNode->getPropertyItem("Post object")!=Q_NULLPTR)
         {
-            aPostObject = curNode->getPropertyItem("Post object")->data(Qt::UserRole).value<Property>().getData().value<postObject>();
-            aPostObject.update(static_cast<meshDataBase*>(mySimulationDataBase), component);
+            //aPostObject = curNode->getPropertyItem("Post object")->data(Qt::UserRole).value<Property>().getData().value<postObject>();
+            //aPostObject.init(static_cast<meshDataBase*>(mySimulationDataBase), component);
+            aPostObject = curNode->getPropertyItem("Post object")->data(Qt::UserRole).value<Property>().getData().value<sharedPostObject>();
+            aPostObject->init(static_cast<meshDataBase*>(mySimulationDataBase), component);
         }
         else
         {
@@ -10612,21 +10600,6 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
             QStandardItem *itemSolutionInformation = curItem->parent()->child(0,0);
             SimulationNodeClass *nodeSolutionInformation = itemSolutionInformation->data(Qt::UserRole).value<SimulationNodeClass*>();
             QMap<double,QVector<int>> dTm = nodeSolutionInformation->getPropertyValue<QMap<double,QVector<int>>>("Discrete time map");
-
-            /*
-            for(QMap<double,QVector<int>>::iterator it = dTm.begin(); it!=dTm.end(); ++it)
-            {
-                cout<<"@-------------------------"<<endl;
-                cout<<"@ time: "<<it.key()<<endl;
-                for(int i=0; i<it.value().size(); i++)
-                {
-                    cout<<"@ set: "<<it.value().at(0)<<endl;
-                    cout<<"@ step: "<<it.value().at(1)<<endl;
-                    cout<<"@ substep: "<<it.value().at(2)<<endl;
-                }
-                cout<<"@-------------------------"<<endl;
-            }
-            */
 
             //! ------------------------------------------------------------------
             //! execute only if the discrete time map is not empty
@@ -10703,8 +10676,10 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
             //! the post object retrieves the mesh data sources from the simulation database
             //! and internally builds its own interactive mesh objects
             //! -----------------------------------------------------------------------------
-            aPostObject = myPostEngine->buildPostObject(keyName,component,subStepNb,stepNb,mode,vecLoc);
-            aPostObject.update(static_cast<meshDataBase*>(mySimulationDataBase), component);
+            //aPostObject = myPostEngine->buildPostObject(keyName,component,subStepNb,stepNb,mode,vecLoc);
+            //aPostObject.init(static_cast<meshDataBase*>(mySimulationDataBase), component);
+            myPostEngine->buildPostObject(keyName,component,subStepNb,stepNb,mode,vecLoc,aPostObject);
+            aPostObject->init(static_cast<meshDataBase*>(mySimulationDataBase), component);
         }
 
         QVariant data;
@@ -10723,9 +10698,9 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
         if(curNode->getPropertyValue<int>("Scale type") == 1)
         {
             disconnect(curNode->getModel(),SIGNAL(itemChanged(QStandardItem*)),this,SLOT(handleItemChange(QStandardItem*)));
-            double minValue = aPostObject.getMin();
-            double maxValue = aPostObject.getMax();
-            int NbLevels = aPostObject.getNbLevels();
+            double minValue = aPostObject->getMin();
+            double maxValue = aPostObject->getMax();
+            int NbLevels = aPostObject->getNbLevels();
 
             data.setValue(minValue);
             Property prop_min("Min",data,Property::PropertyGroup_ColorBox);
@@ -10744,15 +10719,18 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
         QList<double> timeList;
         int component = curNode->getPropertyValue<int>("Component");
         int NbCycles = curNode->getPropertyValue<int>("Number of cycles");
-        postObject aPostObject;
+        //postObject aPostObject;
+        sharedPostObject aPostObject;
 
         //! --------------------------------------------
         //! a results is already present into the item
         //! --------------------------------------------
         if(curNode->getPropertyItem("Post object")!=Q_NULLPTR)
         {
-            aPostObject = curNode->getPropertyItem("Post object")->data(Qt::UserRole).value<Property>().getData().value<postObject>();
-            aPostObject.update(static_cast<meshDataBase*>(mySimulationDataBase), component);
+            //aPostObject = curNode->getPropertyItem("Post object")->data(Qt::UserRole).value<Property>().getData().value<postObject>();
+            //aPostObject.init(static_cast<meshDataBase*>(mySimulationDataBase), component);
+            aPostObject = curNode->getPropertyItem("Post object")->data(Qt::UserRole).value<Property>().getData().value<sharedPostObject>();
+            aPostObject->init(static_cast<meshDataBase*>(mySimulationDataBase), component);
         }
         else
         {
@@ -10811,8 +10789,12 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
             //! and internally builds its own interactive mesh objects
             //! -----------------------------------------------------------------------------
 
-            aPostObject = myPostEngine->evaluateFatigueResults(component,vecLoc,timeList,materialBodyMap,NbCycles);
-            aPostObject.update(static_cast<meshDataBase*>(mySimulationDataBase), component);
+            //aPostObject = myPostEngine->evaluateFatigueResults(component,vecLoc,timeList,materialBodyMap,NbCycles);
+            //aPostObject.init(static_cast<meshDataBase*>(mySimulationDataBase), component);
+
+            myPostEngine->evaluateFatigueResults(component,vecLoc,timeList,materialBodyMap,NbCycles,aPostObject);
+            aPostObject->init(static_cast<meshDataBase*>(mySimulationDataBase), component);
+
         }
         //! ------------------------------
         //! set the title of the colorbox
@@ -10833,9 +10815,9 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
         if(curNode->getPropertyValue<int>("Scale type") == 1)
         {
             disconnect(curNode->getModel(),SIGNAL(itemChanged(QStandardItem*)),this,SLOT(handleItemChange(QStandardItem*)));
-            double minValue = aPostObject.getMin();
-            double maxValue = aPostObject.getMax();
-            int NbLevels = aPostObject.getNbLevels();
+            double minValue = aPostObject->getMin();
+            double maxValue = aPostObject->getMax();
+            int NbLevels = aPostObject->getNbLevels();
 
             data.setValue(minValue);
             Property prop_min("Min",data,Property::PropertyGroup_ColorBox);
@@ -11260,8 +11242,7 @@ void SimulationManager::clearGeneratedData()
             SimulationNodeClass *nodePostProcessing = itemSolution->child(n,0)->data(Qt::UserRole).value<SimulationNodeClass*>();
             QStandardItem *itemPostObject = nodePostProcessing->getPropertyItem("Post object");
             if(itemPostObject==Q_NULLPTR) continue;
-            postObject curPostObject = itemPostObject->data(Qt::UserRole).value<Property>().getData().value<postObject>();
-            emit requestHideSingleResult(curPostObject);
+            emit requestHideAllResults();
             nodePostProcessing->removeProperty("Post object");
         }
     }
@@ -11273,8 +11254,7 @@ void SimulationManager::clearGeneratedData()
     {
         QStandardItem *itemPostObject = curNode->getPropertyItem("Post object");
         if(itemPostObject==Q_NULLPTR) return;
-        postObject curPostObject = itemPostObject->data(Qt::UserRole).value<Property>().getData().value<postObject>();
-        emit requestHideSingleResult(curPostObject);
+        emit requestHideAllResults();
         curNode->removeProperty("Post object");
     }
 }
@@ -11290,7 +11270,8 @@ void SimulationManager::updateResultsPresentation()
     //! ---------------------
     //! retrieve all results
     //! ---------------------
-    QList<postObject> postObjectList= this->retrieveAllResults();
+    //QList<postObject> postObjectList= this->retrieveAllResults();
+    QList<sharedPostObject> postObjectList= this->retrieveAllResults();
 
     //! ----------------------------------------------------------------
     //! iterate over the results in order to find the displayed shapes:
@@ -11298,10 +11279,13 @@ void SimulationManager::updateResultsPresentation()
     //! Moreover scanning the list of post object remove the mesh view
     //! ----------------------------------------------------------------
     std::set<int> parentShapeIndexes;
-    for(QList<postObject>::const_iterator it = postObjectList.cbegin(); it!=postObjectList.cend(); ++it)
+    //for(QList<postObject>::const_iterator it = postObjectList.cbegin(); it!=postObjectList.cend(); ++it)
+    for(QList<sharedPostObject>::const_iterator it = postObjectList.cbegin(); it!=postObjectList.cend(); ++it)
     {
-        const postObject &aPostObject = *it;
-        const QVector<GeometryTag> &vecLoc = aPostObject.getLocations();
+        //const postObject &aPostObject = *it;
+        const sharedPostObject &aPostObject = *it;
+        //const QVector<GeometryTag> &vecLoc = aPostObject.getLocations();
+        const QVector<GeometryTag> &vecLoc = aPostObject->getLocations();
         for(QVector<GeometryTag>::const_iterator it = vecLoc.cbegin(); it!=vecLoc.cend(); it++)
         {
             const GeometryTag &aLoc = *it;
@@ -11317,9 +11301,11 @@ void SimulationManager::updateResultsPresentation()
     for(std::set<int>::iterator it = parentShapeIndexes.begin(); it!=parentShapeIndexes.end(); ++it) listOfBodies.Append(*it);
     emit requestHideBody(listOfBodies);
 
-    for(QList<postObject>::const_iterator it = postObjectList.cbegin(); it!=postObjectList.cend(); ++it)
+    //for(QList<postObject>::const_iterator it = postObjectList.cbegin(); it!=postObjectList.cend(); ++it)
+    for(QList<sharedPostObject>::const_iterator it = postObjectList.cbegin(); it!=postObjectList.cend(); ++it)
     {
-        postObject aPostObject = *it;
+        //postObject aPostObject = *it;
+        sharedPostObject aPostObject = *it;
         emit requestDisplayResult(aPostObject);
     }
 }

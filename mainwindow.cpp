@@ -2697,9 +2697,9 @@ void MainWindow::setUpConnections()
     connect(mySimulationManager,SIGNAL(requestCreateColorBox(double,double,int)),myMainOCCViewer,SLOT(createColorBox(double,double,int)));
     connect(mySimulationManager,SIGNAL(requestShowAllBodies()),myMainOCCViewer,SLOT(showAllBodies()));
 
-    connect(mySimulationManager,SIGNAL(requestDisplayResult(postObject&)),myMainOCCViewer,SLOT(displayResult(postObject&)));
+    //connect(mySimulationManager,SIGNAL(requestDisplayResult(postObject&)),myMainOCCViewer,SLOT(displayResult(postObject&)));
+    connect(mySimulationManager,SIGNAL(requestDisplayResult(sharedPostObject&)),myMainOCCViewer,SLOT(displayResult(sharedPostObject&)));
     connect(mySimulationManager,SIGNAL(requestHideAllResults()),myMainOCCViewer,SLOT(hideAllResults()));
-    connect(mySimulationManager,SIGNAL(requestHideSingleResult(postObject)),myMainOCCViewer,SLOT(hideSingleResult(postObject)));
 
     //! ---------------------------------------------------
     //! connection for hiding the markers (and the triads)

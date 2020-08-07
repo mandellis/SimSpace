@@ -448,7 +448,7 @@ postObject::postObject(ifstream &file)
     //! -----------------------------------------------------
     //! create the colored meshes using the autoscale option
     //! -----------------------------------------------------
-    this->buildMeshIO(aMapOfMeshDataSources,-9999,9999,10,true,0);
+    //this->buildMeshIO(aMapOfMeshDataSources,-9999,9999,10,true,0);
 }
 
 //! ----------------------
@@ -556,89 +556,6 @@ void postObject::buildMeshIO(const mapOfMeshDataSources &aMapOfMeshDataSources,
     TCollection_ExtendedString title(name.toStdString().c_str());
     AISColorScale->SetTitle(title);
 }
-
-/*
-//! ----------------------
-//! function: buildMeshIO
-//! details:  overload
-//! ----------------------
-void postObject::buildMeshIO(double min, double max, int Nlevels, bool autoscale, int component, bool showMeshEdges)
-{
-    cout<<"postObject::buildMeshIO()->____function called - overload -____"<<endl;
-
-    //! ------------------------
-    //! set the private members
-    //! ------------------------
-    mySolutionDataComponent = component;
-    myIsAutoscale = autoscale;
-    myNbLevels = Nlevels;
-    myShowSolidMeshAsSurface = false;     // this parameter should be connected
-
-    theMeshes.clear();
-
-    //! -----------------
-    //! the data content
-    //! -----------------
-    QMap<GeometryTag,QList<QMap<int,double>>>::const_iterator it = theData.cbegin();
-    for(QMap<GeometryTag,occHandle(MeshVS_DataSource)>::const_iterator anIt = theMeshDataSources.cbegin(); anIt!= theMeshDataSources.cend() && it!= theData.cend(); ++anIt, ++it)
-    {
-        const GeometryTag &loc = anIt.key();
-        occHandle(MeshVS_DataSource) curMeshDS;
-
-        //! -------------------------------------------------------
-        //! if the current shape on which results are defined
-        //! is a solid, it means that a volume mesh for that solid
-        //! is defined: generate the interactive object according
-        //! to the value of the flag "showSolidMeshAsSurface"
-        //! -------------------------------------------------------
-        if(loc.subShapeType == TopAbs_SOLID && myShowSolidMeshAsSurface == true)
-        {
-            const occHandle(Ng_MeshVS_DataSource3D) &volumeMeshDS = occHandle(Ng_MeshVS_DataSource3D)::DownCast(anIt.value());
-
-            //! ------------------------------------------------------------------
-            //! generate the surface mesh topologically - to be changed
-            //! (I mean access the mesh data base directly... to do, if possible,
-            //! since this object does not have access to the mesh data base)
-            //! ------------------------------------------------------------------
-            if(volumeMeshDS->myFaceToElements.size()==0) volumeMeshDS->buildFaceToElementConnectivity();
-            curMeshDS = new Ng_MeshVS_DataSource2D(volumeMeshDS);
-        }
-        else
-        {
-            curMeshDS = anIt.value();
-        }
-        const QList<QMap<int, double>> &listOfRes = theData.value(loc);
-        const QMap<int, double> &res = listOfRes.at(component);
-
-        //! -----------------------------
-        //! min and max for the colorbox
-        //! -----------------------------
-        if(autoscale)
-        {
-            std::pair<double,double> minmax = this->getMinMax(component);
-            myMin = minmax.first;
-            myMax = minmax.second;
-        }
-        else
-        {
-            myMin = min;
-            myMax = max;
-        }
-
-        occHandle(MeshVS_Mesh) aColoredMesh;
-        const QMap<int,gp_Vec> &displacementMap = myMapOfNodalDisplacements.value(loc);
-        MeshTools::buildIsoStrip(curMeshDS,res,displacementMap,1.0,myMin,myMax,myNbLevels,aColoredMesh,true);
-        theMeshes.insert(loc,aColoredMesh);
-    }
-
-    //! ---------------------------------
-    //! create the color box with labels
-    //! ---------------------------------
-    graphicsTools::createColorBox(myMin, myMax, myNbLevels, AISColorScale);
-    TCollection_ExtendedString title(name.toStdString().c_str());
-    AISColorScale->SetTitle(title);
-}
-*/
 
 void postObject::buildMeshIO(double min, double max, int Nlevels, bool autoscale, int component, double deformationScale)
 {
@@ -762,7 +679,7 @@ std::pair<double,double> postObject::getMinMax(int component)
 //! details:  retrieve the mesh from the database and initialize the map of meshes
 //!           then calls buildMeshIO
 //! -------------------------------------------------------------------------------
-void postObject::update(meshDataBase *mDB, int component)
+void postObject::init(meshDataBase *mDB, int component)
 {
     cout<<"postObject::update()->____update has been requested____"<<endl;
 

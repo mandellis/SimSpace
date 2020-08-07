@@ -80,7 +80,6 @@ public:
     ~postObject()
     {
         //cout<<"postObject:~postObject()->____DESTRUCTOR CALLED____"<<endl;
-        //exit(99999);
     }
 
     //! -----------------
@@ -136,7 +135,6 @@ private:
     //! MeshVS_Mesh objects (colored meshes)
     //! -------------------------------------
     QMap<GeometryTag,occHandle(MeshVS_Mesh)> theMeshes;
-    //QMap<GeometryTag,occHandle(MeshVS_DataSource)> theMeshDataSources;
     QMap<GeometryTag,occHandle(MeshVS_DeformedDataSource)> theMeshDataSources;
 
     //! ----------------
@@ -206,19 +204,14 @@ public:
     //! write mesh
     void writeMesh(ofstream &file, const occHandle(MeshVS_DataSource) &theMeshDS);
 
-    //! ------------------------------
     //! rebuild "theMeshes" with data
-    //! ------------------------------
     void buildMeshIO(const mapOfMeshDataSources &aMapOfMeshDataSources,
                      double min=-1e20, double max=1e20, int Nlevels=9, bool autoscale=true, int component=0);
-
-
-    //void buildMeshIO(double min=-1e20, double max=1e20, int Nlevels=9, bool autoscale=true, int component=0, bool showMeshEdges=true);
 
     void buildMeshIO(double min=-1e20, double max=1e20, int Nlevels=9, bool autoscale=true, int component=0, double deformationScale = 1.0);
 
     //! update
-    void update(meshDataBase *mDB, int component=0);
+    void init(meshDataBase *mDB, int component=0);
 
     //! update mesh
     //void updateView(bool showMeshEdges);
@@ -252,9 +245,7 @@ public:
     //! get solution data component
     int getSolutionDataComponent() {return mySolutionDataComponent; }
 
-    //! ------------------------
-    //! get autoMin and autoMax
-    //! ------------------------
+    //! get min/max
     double getMin() { return myMin; }
     double getMax() { return myMax; }
 
@@ -283,5 +274,9 @@ private:
 };
 
 Q_DECLARE_METATYPE(postObject)
+
+
+typedef std::shared_ptr<postObject> sharedPostObject;
+Q_DECLARE_METATYPE(sharedPostObject)
 
 #endif // POSTOBJECT_H
