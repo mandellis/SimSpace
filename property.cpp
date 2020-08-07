@@ -491,12 +491,12 @@ void Property::writeProperty(ofstream& out, const Property &prop)
             cout<<"* THE VOID POINTER CONTAINS: "<<node->getName().toStdString()<<endl;
             Property::writeVoid(out,p);
         }
-        else if(prop.getData().canConvert<postObject>())
+        else if(prop.getData().canConvert<sharedPostObject>())
         {
             cout<<"* PROPERTY POST OBJECT"<<endl;
-            postObject aPostObject = prop.getData().value<postObject>();
-            cout<<"____writing post object: \""<<aPostObject.getName().toStdString()<<"\"____"<<endl;
-            aPostObject.write(out);
+            sharedPostObject aPostObject = prop.getData().value<sharedPostObject>();
+            cout<<"____writing post object: \""<<aPostObject->getName().toStdString()<<"\"____"<<endl;
+            aPostObject->write(out);
         }
         else if(prop.getData().canConvert<histogramData>())
         {
@@ -865,7 +865,8 @@ void Property::readProperty(ifstream &in, Property &prop)
         //! this constructor reads the name, the mesh, the data
         //! but needs to update the MeshVS_Mesh
         //! ----------------------------------------------------
-        postObject aPostObject(in);
+        sharedPostObject aPostObject = std::make_shared<postObject>(in);
+        //postObject aPostObject(in);
         data.setValue(aPostObject);
         prop.setData(data);
     }
