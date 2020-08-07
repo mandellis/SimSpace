@@ -460,6 +460,7 @@ void postObject::resetMeshes()
     this->theMeshes.clear();
 }
 
+/*
 //! ----------------------
 //! function: buildMeshIO
 //! details:
@@ -556,6 +557,7 @@ void postObject::buildMeshIO(const mapOfMeshDataSources &aMapOfMeshDataSources,
     TCollection_ExtendedString title(name.toStdString().c_str());
     AISColorScale->SetTitle(title);
 }
+*/
 
 void postObject::buildMeshIO(double min, double max, int Nlevels, bool autoscale, int component, double deformationScale)
 {
@@ -567,7 +569,7 @@ void postObject::buildMeshIO(double min, double max, int Nlevels, bool autoscale
     mySolutionDataComponent = component;
     myIsAutoscale = autoscale;
     myNbLevels = Nlevels;
-    myShowSolidMeshAsSurface = false;     // this parameter should be connected
+    myShowSolidMeshAsSurface = true;     // this parameter should be connected
     theMeshes.clear();
 
     //! -----------------
@@ -580,7 +582,7 @@ void postObject::buildMeshIO(double min, double max, int Nlevels, bool autoscale
         occHandle(MeshVS_DataSource) curMeshDS;
         if(loc.subShapeType == TopAbs_SOLID && myShowSolidMeshAsSurface == true)
         {
-            const occHandle(Ng_MeshVS_DataSource3D) &volumeMeshDS = occHandle(Ng_MeshVS_DataSource3D)::DownCast(anIt.value());
+            const occHandle(Ng_MeshVS_DataSource3D) &volumeMeshDS = occHandle(Ng_MeshVS_DataSource3D)::DownCast(anIt.value()->GetNonDeformedDataSource());
 
             //! ----------------------------------------
             //! generate the surface mesh topologically

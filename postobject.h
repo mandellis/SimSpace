@@ -205,12 +205,12 @@ public:
     void writeMesh(ofstream &file, const occHandle(MeshVS_DataSource) &theMeshDS);
 
     //! rebuild "theMeshes" with data
-    void buildMeshIO(const mapOfMeshDataSources &aMapOfMeshDataSources,
-                     double min=-1e20, double max=1e20, int Nlevels=9, bool autoscale=true, int component=0);
+    //void buildMeshIO(const mapOfMeshDataSources &aMapOfMeshDataSources,
+    //                 double min=-1e20, double max=1e20, int Nlevels=9, bool autoscale=true, int component=0);
 
     void buildMeshIO(double min=-1e20, double max=1e20, int Nlevels=9, bool autoscale=true, int component=0, double deformationScale = 1.0);
 
-    //! update
+    //! init
     void init(meshDataBase *mDB, int component=0);
 
     //! update mesh

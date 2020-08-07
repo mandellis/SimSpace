@@ -10132,9 +10132,9 @@ void SimulationManager::interpolatePrivate(int mode)
         emit requestHideBody(l);
         emit requestHideMeshes();
 
-        //! ---------------------------------------------------
-        //! create a post object (colored mesh with color box)
-        //! ---------------------------------------------------
+        //! ---------------------
+        //! create a post object
+        //! ---------------------
         QString postObjectName = QString("Interpolation result on");
 
         //! -----------------------------------------
@@ -10168,23 +10168,17 @@ void SimulationManager::interpolatePrivate(int mode)
 
         QMap<GeometryTag,QList<QMap<int,double>>> mapOfRes = listMapOfRes.at(t);
 
-        //! -----------------------
-        //! create the post object
-        //! -----------------------
-        postObject aPostObject(mapOfRes,vecLocs,postObjectName);
-
-        //! ------------
-        //! 1-st column
-        //! ------------
+        //! ---------------------------------------------------------------------
+        //! create the post object: 1-st column of data, 10 levels, autoscale ON
+        //! ---------------------------------------------------------------------
+        sharedPostObject aPostObject = std::make_shared<postObject>(mapOfRes,vecLocs,postObjectName);
         int component = 0;
-
-        //! -----------------------
-        //! generica data continer
-        //! -----------------------
-        QVariant data;
-
+        int NbLevels = 10;
         bool isAutoscale = true;
-        aPostObject.buildMeshIO(meshMap,-1e80,1e80,10,isAutoscale,component);
+        aPostObject->init(static_cast<meshDataBase*>(this->getDataBase()),component);
+        aPostObject->buildMeshIO(-1,-1,NbLevels,isAutoscale,component);
+
+        QVariant data;
         data.setValue(aPostObject);
         Property prop_postObject("Post object",data,Property::PropertyGroup_GraphicObjects);
         data.setValue(prop_postObject);

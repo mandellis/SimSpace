@@ -106,7 +106,6 @@ void occPostWidget::displayColorBox(bool isVisible)
 //! function: displayResult
 //! details:
 //! ------------------------
-//void occPostWidget::displayResult(postObject &aPostObject)
 void occPostWidget::displayResult(sharedPostObject &aPostObject)
 {
     cout<<"occPostWidget::displayResult()->____function called____"<<endl;

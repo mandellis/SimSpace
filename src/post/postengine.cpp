@@ -601,11 +601,11 @@ bool postEngine::buildPostObject(const QString &keyName,
                                  const QVector<GeometryTag> &vecLoc,
                                  sharedPostObject &aPostObject)
 {
-    double time;
 
     //! --------------------
     //! call the postEngine
     //! --------------------
+    double time;
     const QMap<GeometryTag,QList<QMap<int,double>>> &resMap = this->evaluateResult(keyName, requiredSubStepNb, requiredStepNb, requiredMode, vecLoc, time);
 
     //! -------------------------
