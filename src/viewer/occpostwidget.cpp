@@ -153,25 +153,12 @@ void occPostWidget::displayResult(sharedPostObject &aPostObject)
     {
     case resultPresentation::combinedView_resultOnly:
     {
-        //! ----------------------------------------------
-        //! remove the wireframe or transparent body view
-        //! ----------------------------------------------
-        //occContext->RemoveAll(false);
-
-        //! ---------------------
-        //! remove the mesh view
-        //! ---------------------
-        //occMeshContext->RemoveAll(false);
+        ;
     }
         break;
 
     case resultPresentation::combinedView_meshVisible:
     {
-        //! ----------------------------------------------
-        //! remove the wireframe or transparent body view
-        //! ----------------------------------------------
-        //occContext->RemoveAll(false);
-
         const QMap<GeometryTag,occHandle(MeshVS_DeformedDataSource)> &mapOfMeshDS = aPostObject->getMeshDataSources();
         for(QMap<GeometryTag,occHandle(MeshVS_DeformedDataSource)>::const_iterator it = mapOfMeshDS.cbegin(); it!=mapOfMeshDS.cend(); it++)
         {
@@ -204,11 +191,6 @@ void occPostWidget::displayResult(sharedPostObject &aPostObject)
         occContext->ObjectsInside(objInside,AIS_KOI_Shape,0);
         for(AIS_ListIteratorOfListOfInteractive it(objInside); it.More(); it.Next()) occContext->Remove(it.Value(),false);
 
-        //! ---------------------
-        //! remove the mesh view
-        //! ---------------------
-        //occMeshContext->RemoveAll(false);
-
         const QVector<GeometryTag> &vecLocs = aPostObject->getLocations();
         for(QVector<GeometryTag>::const_iterator it = vecLocs.cbegin(); it!=vecLocs.cend(); it++)
         {
@@ -224,16 +206,6 @@ void occPostWidget::displayResult(sharedPostObject &aPostObject)
 
     case resultPresentation::combinedView_undeformedModel:
     {
-        //! -------------------------------------------------------------------
-        //! remove the wireframe body view: "0" is the signature for AIS_Shape
-        //! -------------------------------------------------------------------
-        //occContext->RemoveAll(false);
-
-        //! ---------------------
-        //! remove the mesh view
-        //! ---------------------
-        //occMeshContext->RemoveAll(false);
-
         const QVector<GeometryTag> &vecLocs = aPostObject->getLocations();
         for(QVector<GeometryTag>::const_iterator it = vecLocs.cbegin(); it!=vecLocs.cend(); it++)
         {

@@ -345,7 +345,7 @@ Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(const std::string &fileName)
     //! -------------
     //! connectivity
     //! -------------
-    //this->buildFaceToElementConnectivity();
+    this->buildFaceToElementConnectivity();
 }
 
 //! -----------------------------------------------
@@ -446,7 +446,7 @@ Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(Ng_Mesh *aMesh)
     //! -----------------------------
     //! face to element connectivity
     //! -----------------------------
-    //this->buildFaceToElementConnectivity();
+    this->buildFaceToElementConnectivity();
 }
 
 //! -------------------------------------------------------
@@ -2215,52 +2215,7 @@ void Ng_MeshVS_DataSource3D::computeNormalAtElements()
 {
     cout<<"Ng_MeshVS_DataSource3D::computeNormalAtElements()->____function called____"<<endl;
 
-#ifndef USE_POLYGON
-    //! -----------------------------------------------------
-    //! calculate the normal vector for each surface element
-    //! for the moment this method handle triangles
-    //! -----------------------------------------------------
-    for(TColStd_MapIteratorOfPackedMapOfInteger it(myElements); it.More(); it.Next())
-    {
-        int globalElementID = it.Key();
-        int localElementID = myElementsMap.FindIndex(globalElementID);
 
-        //cout<<"@____(global element ID, local element ID) = ("<<globalElementID<<", "<<localElementID<<")____"<<endl;
-
-        double x[3],y[3],z[3];
-        double nx,ny,nz,L;
-        for(int n=1; n<=3; n++)
-        {
-            int globalNodeID = myElemNodes->Value(localElementID,n);
-            int localNodeID = myNodesMap.FindIndex(globalNodeID);
-
-            //cout<<" ____(global node ID, local node ID) = ("<<globalNodeID<<", "<<localNodeID<<")____"<<endl;
-
-            x[n-1] = myNodeCoords->Value(localNodeID,1);
-            y[n-1] = myNodeCoords->Value(localNodeID,2);
-            z[n-1] = myNodeCoords->Value(localNodeID,3);
-        }
-
-        //! ----------------------
-        //!   i       j       k
-        //! x1-x0   y1-y0   z1-z0
-        //! x2-x0   y2-y0   z2-z0
-        //! ----------------------
-        nx=(y[1]-y[0])*(z[2]-z[0])-(z[1]-z[0])*(y[2]-y[0]);
-        ny=(z[1]-z[0])*(x[2]-x[0])-(x[1]-x[0])*(z[2]-z[0]);
-        nz=(x[1]-x[0])*(y[2]-y[0])-(y[1]-y[0])*(x[2]-x[0]);
-
-        L = sqrt(pow(nx,2)+pow(ny,2)+pow(nz,2));
-        if(L<1e-20) nx=ny=nz=0.0;
-        else { nx=nx/L; ny=ny/L; nz=nz/L; }
-
-        myElemNormals->SetValue(localElementID,1,nx);
-        myElemNormals->SetValue(localElementID,2,ny);
-        myElemNormals->SetValue(localElementID,3,nz);
-        //cout<<"compute normal at elements____("<<nx<<", "<<ny<<", "<<nz<<")____"<<endl;
-    }
-#endif
-#ifdef USE_POLYGON
     TColStd_MapIteratorOfPackedMapOfInteger it;
     for(it.Initialize(myElements); it.More(); it.Next())
     {
@@ -2293,7 +2248,6 @@ void Ng_MeshVS_DataSource3D::computeNormalAtElements()
         myElemNormals->SetValue(localElementID,3,n.at(2));
         cout<<"compute normal at elements____("<<n.at(0)<<", "<<n.at(1)<<", "<<n.at(2)<<")____"<<endl;
     }
-#endif
 }
 
 //! ---------------------------
@@ -3421,5 +3375,63 @@ Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(const occHandle(Ng_MeshVS_DataSou
     //! ------------------
     //! elements topology
     //! ------------------
+    this->buildElementsTopology();
+}
+
+//! ----------------------
+//! function: constructor
+//! details:  upcast
+//! ----------------------
+Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(const occHandle(MeshVS_DataSource) &aMeshDS)
+{
+    if(aMeshDS.IsNull()) return;
+    if(aMeshDS->GetAllElements().Extent()<1) return;
+    if(aMeshDS->GetAllNodes().Extent()<4) return;
+
+    myNodes = aMeshDS->GetAllNodes();
+    myNumberOfNodes = myNodes.Extent();
+    for(TColStd_MapIteratorOfPackedMapOfInteger it(myNodes); it.More(); it.Next()) myNodesMap.Add(it.Key());
+
+    myElements = aMeshDS->GetAllElements();
+    myNumberOfElements = myElements.Extent();
+    for(TColStd_MapIteratorOfPackedMapOfInteger it(myElements); it.More(); it.Next()) myElementsMap.Add(it.Key());
+
+    myElemType = new TColStd_HArray1OfInteger(1,myNumberOfElements);
+    myNodeCoords = new TColStd_HArray2OfReal(1,myNumberOfNodes,1,3);
+    myElemNodes = new TColStd_HArray2OfInteger(1,myNumberOfElements,1,20);
+
+    int NbNodes, buf[20];
+    double bufd[3];
+    TColStd_Array1OfInteger nodeIDs(*buf,1,20);
+    TColStd_Array1OfReal coords(*bufd,1,3);
+    MeshVS_EntityType aType;
+
+    int localNodeID = 1;
+    for(TColStd_MapIteratorOfPackedMapOfInteger it(myNodes); it.More(); it.Next(), localNodeID++)
+    {
+        int globalNodeID = it.Key();
+        aMeshDS->GetGeom(globalNodeID,false,coords,NbNodes,aType);
+        for(int i=1; i<=3; i++) myNodeCoords->SetValue(localNodeID,i,coords(i));
+    }
+
+    int localElementID = 1;
+    for(TColStd_MapIteratorOfPackedMapOfInteger it(myElements); it.More(); it.Next(),localElementID++)
+    {
+        int globalElementID = it.Key();
+        aMeshDS->GetNodesByElement(globalElementID,nodeIDs,NbNodes);
+        for(int i=1; i<=NbNodes; i++) myElemNodes->SetValue(globalElementID,i,nodeIDs(i));
+        switch(NbNodes)
+        {
+        case 4: myElemType->SetValue(localElementID,TET); break;
+        case 5: myElemType->SetValue(localElementID,PYRAM); break;
+        case 6: myElemType->SetValue(localElementID,PRISM); break;
+        case 8: myElemType->SetValue(localElementID,HEXA); break;
+        case 10: myElemType->SetValue(localElementID,TET10); break;
+        case 13: myElemType->SetValue(localElementID,PYRAM13); break;
+        case 15: myElemType->SetValue(localElementID,PRISM15); break;
+        case 20: myElemType->SetValue(localElementID,HEXA20); break;
+        }
+    }
+
     this->buildElementsTopology();
 }

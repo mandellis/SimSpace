@@ -136,6 +136,7 @@ private:
     //! -------------------------------------
     QMap<GeometryTag,occHandle(MeshVS_Mesh)> theMeshes;
     QMap<GeometryTag,occHandle(MeshVS_DeformedDataSource)> theMeshDataSources;
+    QMap<GeometryTag,occHandle(MeshVS_DeformedDataSource)> theMeshDataSourcesForView;
 
     //! ----------------
     //! the color scale

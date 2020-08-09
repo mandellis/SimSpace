@@ -104,6 +104,9 @@ public:
     //! constructor X - a mesh from another mesh with nodal displacements applied
     Standard_EXPORT Ng_MeshVS_DataSource3D(const occHandle(Ng_MeshVS_DataSource3D) &aMesh, const QMap<int,gp_Vec> &displacements);
 
+    //! upcast
+    Standard_EXPORT Ng_MeshVS_DataSource3D(const occHandle(MeshVS_DataSource) &aMeshDS);
+
     Standard_EXPORT virtual Standard_Boolean GetGeom (const Standard_Integer ID,
                                                       const Standard_Boolean IsElement,
                                                       TColStd_Array1OfReal& Coords,

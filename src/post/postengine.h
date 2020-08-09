@@ -113,14 +113,6 @@ public slots:
     //! experimental
     bool evaluateFatigueResults(int type, QVector<GeometryTag> locs, const QList<double> &times, QMap<int,int> materialBodyMap, int nCycle, sharedPostObject &aPostObject);
 
-    //postObject buildPostObject(const QString &keyName,
-    //                           int component,
-    //                           int requiredSubStepNb,
-    //                           int requiredStepNb,
-    //                           int requiredMode,
-    //                           const QVector<GeometryTag> &vecLoc);
-
-
     //! experimental OK - remove the previous
     bool buildPostObject(const QString &keyName,
                          int component,
@@ -150,8 +142,6 @@ public:
 
     void setDiscreteTimeMap(const QMap<double,QVector<int>> &dtm);
 
-    //! experimental
-    //void updateIsostrips(postObject &aPostObject, int scaleType, double minValue, double maxValue, int NbIntervals);
     void updateIsostrips(sharedPostObject &aPostObject, int scaleType, double minValue, double maxValue, int NbIntervals);
 };
 

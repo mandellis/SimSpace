@@ -47,7 +47,7 @@ void postEngine::setDiscreteTimeMap(const QMap<double,QVector<int>> &dtm)
 //! ------------------
 bool postEngine::perform()
 {
-    if(myMeshDataBase==NULL) return false;
+    if(myMeshDataBase==Q_NULLPTR) return false;
     if(myResultsFilePath.isNull()) return false;
     if(myResultsFilePath.isEmpty()) return false;
 
@@ -92,9 +92,7 @@ QMap<GeometryTag,QList<QMap<int,double>>> postEngine::evaluateResult(const QStri
     //! generate the results on all the requested locations
     //! ----------------------------------------------------
     QMap<GeometryTag,QList<QMap<int,double>>> resMap;
-
-    QVector<GeometryTag>::const_iterator it;
-    for(it = vecLoc.cbegin(); it!= vecLoc.cend(); ++it)
+    for(QVector<GeometryTag>::const_iterator it = vecLoc.cbegin(); it!= vecLoc.cend(); ++it)
     {
         GeometryTag loc = *it;
 
@@ -111,11 +109,8 @@ QMap<GeometryTag,QList<QMap<int,double>>> postEngine::evaluateResult(const QStri
         path.chop(tmp.length());
 
         QDir curDir(path);
-        //cout<<"____"<<curDir.absolutePath().toStdString()<<"____"<<endl;
         curDir.cd("ResultsData");
-        //cout<<"____"<<curDir.absolutePath().toStdString()<<"____"<<endl;
         QFileInfoList entriesInfo = curDir.entryInfoList();
-        //cout<<"____"<<entriesInfo.length()<<"____"<<endl;
 
         QList<QString> entryList = curDir.entryList();
         QList<QString> fileList;
@@ -411,15 +406,13 @@ QMap<GeometryTag,QList<QMap<int,double>>> postEngine::evaluateResult(const QStri
         //! --------------------------------------------------------
     }
 
-    //! diagnostic function
     return resMap;
 }
 
-//! ----------------------------------------------------------
+//! ---------------------------------
 //! function: resultName
-//! details:  build a title for the colorbox according to the
-//!           type of result
-//! ----------------------------------------------------------
+//! details:  title for the colorbox
+//! ---------------------------------
 QString postEngine::resultName(const QString &keyName, int component, int step, int subStep,double time)
 {
     //QString timeInfo = QString("\nTime %1\nStep %2").arg(time).arg(step);
@@ -519,75 +512,11 @@ QString postEngine::resultName(const QString &keyName, int component, int step, 
         case 0: resultName="Equivalent Plastic Strain"; break;
         }
         break;
+    default:
+        resultName = "Unnamed result"; break;
     }
     return this->timeStamp().append("\n").append(resultName).append(timeInfo).append("\n");
 }
-
-/*
-//! --------------------------
-//! function: buildPostObject
-//! details:
-//! --------------------------
-postObject postEngine::buildPostObject(const QString &keyName,
-                                       int component,
-                                       int requiredSubStepNb,
-                                       int requiredStepNb,
-                                       int requiredMode,
-                                       const QVector<GeometryTag> &vecLoc)
-{
-    double time;
-
-    //! --------------------
-    //! call the postEngine
-    //! --------------------
-    const QMap<GeometryTag,QList<QMap<int,double>>> &resMap = this->evaluateResult(keyName, requiredSubStepNb, requiredStepNb, requiredMode, vecLoc, time);
-
-    //! -------------------------
-    //! build the colorBox title
-    //! -------------------------
-    QString aResultName = this->resultName(keyName, component, requiredStepNb, requiredSubStepNb, time);
-
-    //! ------------------------------------------------------------------------------------------------------------
-    //! create the map of nodal vectorial displacements for the deformed mesh presentation. Here:
-    //! QMap<int,gp_Vec> displMap                    => map of nodal vectorial displacements
-    //! QMap<GeometryTag,QList<QMap<int,gp_Vec>>> => each location has its own map of nodal vectorial displacements
-    //! ------------------------------------------------------------------------------------------------------------
-    QMap<int,gp_Vec> displMap;
-    QMap<GeometryTag,QMap<int,gp_Vec>> mapDisplMap;
-    const QMap<GeometryTag,QList<QMap<int,double>>> &nodalDisplacements = this->evaluateResult("DISP", requiredSubStepNb, requiredStepNb,requiredMode, vecLoc, time);
-
-    for(QMap<GeometryTag,QList<QMap<int,double>>>::const_iterator it = nodalDisplacements.cbegin(); it!=nodalDisplacements.cend(); ++it)
-    {
-        const GeometryTag &aLoc= it.key();
-
-        const QList<QMap<int,double>> &nodalDisplacementsComponents = it.value();
-        const QMap<int,double> &displX = nodalDisplacementsComponents[1];
-        const QMap<int,double> &displY = nodalDisplacementsComponents[2];
-        const QMap<int,double> &displZ = nodalDisplacementsComponents[3];
-
-        QMap<int,double>::const_iterator itX = displX.cbegin();
-        QMap<int,double>::const_iterator itY = displY.cbegin();
-        QMap<int,double>::const_iterator itZ = displZ.cbegin();
-
-        for(;itX!=displX.cend() && itY!=displY.cend() && itZ!=displZ.cend(); ++itX, ++itY, ++itZ)
-        {
-            int nodeID = itX.key();
-            gp_Vec aVec(itX.value(),itY.value(),itZ.value());
-            displMap.insert(nodeID,aVec);
-        }
-        mapDisplMap.insert(aLoc,displMap);
-    }
-
-    //! ----------------------------------------------------------------
-    //! create the postObject
-    //! the last options create the post object using the surface mesh,
-    //! if the underlying mesh is a volume mesh
-    //! ----------------------------------------------------------------
-    bool showSolidMeshAsSurface = Global::status().isVolumeMeshShownAsSurface;
-    postObject aPostObject(resMap,vecLoc,mapDisplMap,aResultName,showSolidMeshAsSurface);
-    return aPostObject;
-}
-*/
 
 //! --------------------------
 //! function: buildPostObject
@@ -647,8 +576,11 @@ bool postEngine::buildPostObject(const QString &keyName,
     //! ----------------------
     //! create the postObject
     //! ----------------------
-    bool showSolidMeshAsSurface = Global::status().isVolumeMeshShownAsSurface;
-    aPostObject = std::make_shared<postObject>(resMap,vecLoc,mapDisplMap,aResultName,showSolidMeshAsSurface);
+    //bool showSolidMeshAsSurface = Global::status().isVolumeMeshShownAsSurface;
+    bool useSurfaceMeshForVolumeResults = true;
+    aPostObject = std::make_shared<postObject>(resMap,vecLoc,mapDisplMap,aResultName,useSurfaceMeshForVolumeResults);
+    aPostObject->init(myMeshDataBase,0);
+    aPostObject->buildMeshIO(-1,-1,10,true,component);
     return true;
 }
 
@@ -959,10 +891,10 @@ QMap<GeometryTag,QMap<int,QList<double>>> postEngine::readFatigueResults(int typ
     QVector<GeometryTag>::const_iterator it;
     for(it = vecLoc.cbegin(); it!= vecLoc.cend(); ++it)
     {
-        GeometryTag loc = *it;
         //! -------------------------------------------------------------------------
         //! node conversion map: (Calculix mesh nodeID,nodeID for MeshVS_DataSource)
         //! -------------------------------------------------------------------------
+        GeometryTag loc = *it;
         QMap<int,int> indexedMapOfNodes = OCCMeshToCCXmesh::perform(loc,myMeshDataBase);
 
         //! -------------------------------------
