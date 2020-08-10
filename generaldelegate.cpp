@@ -3952,6 +3952,8 @@ void GeneralDelegate::setEditorData(QWidget *editor, const QModelIndex &index) c
         case SimulationNodeClass::nodeType_solutionStructuralTotalStrain:
         case SimulationNodeClass::nodeType_solutionStructuralEquivalentPlasticStrain:
         case SimulationNodeClass::nodeType_solutionStructuralNodalForces:
+        case SimulationNodeClass::nodeType_solutionStructuralReactionForce:
+        case SimulationNodeClass::nodeType_solutionStructuralGamma:
         {
             int val = data.value<Property>().getData().toInt();
             QComboBox *cb = static_cast<QComboBox*>(editor);
@@ -7646,6 +7648,9 @@ void GeneralDelegate::commitAndCloseBySelector()
     case SimulationNodeClass::nodeType_solutionStructuralTemperature:
     case SimulationNodeClass::nodeType_solutionStructuralThermalStrain:
     case SimulationNodeClass::nodeType_solutionStructuralTotalStrain:
+    case SimulationNodeClass::nodeType_solutionStructuralGamma:
+    case SimulationNodeClass::nodeType_solutionStructuralNodalForces:
+    case SimulationNodeClass::nodeType_solutionStructuralReactionForce:
     {
         emit byChanged();
     }

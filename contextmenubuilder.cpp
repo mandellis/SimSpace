@@ -1456,13 +1456,12 @@ void contextMenuBuilder::buildStructuralSolutionContextMenu(QMenu *contextMenu, 
     //! ----------------------
     QMenu *subMenuNodalForces =menuInsert->addMenu("Nodal forces");
     subMenuNodalForces->setIcon(QIcon(":/icons/icon_nodal force.png"));
+
+    //! -------------------------
+    //! sub menu reaction forces
+    //! -------------------------
     QMenu *subMenuReactionForce =menuInsert->addMenu("ReactionForce");
     subMenuReactionForce->setIcon(QIcon(":/icons/icon_nodal force.png"));
-
-
-    //! ----------------------
-    //! sub menu reaction forces
-    //! ----------------------
     QAction *ActionInsertReactionForce = subMenuReactionForce->addAction("Total reaction force");
     ActionInsertReactionForce->setIcon(QIcon(":/icons/icon_nodal force.png"));
     ActionInsertReactionForce->setData(246);
@@ -1472,7 +1471,7 @@ void contextMenuBuilder::buildStructuralSolutionContextMenu(QMenu *contextMenu, 
     ActionInsertDirectionReactionForce->setData(247);
 
     //! ----------------------
-    //! sub menu reaction forces
+    //! sub menu gamma
     //! ----------------------
     QAction *ActionInsertGamma = subMenuGamma->addAction("Gamma");
     ActionInsertGamma->setIcon(QIcon(":/icons/icon_gamma.png"));

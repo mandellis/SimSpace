@@ -2572,6 +2572,21 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
         data.setValue(0);
         Property prop_modeNumber("Mode number",data,Property::PropertyGroup_Definition);
         vecProp.push_back(prop_modeNumber);
+/*
+        //! mode
+        data.setValue(0);
+        Property prop_modeNumber("Mode number",data,Property::PropertyGroup_Definition);
+        vecProp.push_back(prop_modeNumber);
+
+        //! mode
+        data.setValue(0);
+        Property prop_modeNumber("Mode number",data,Property::PropertyGroup_Definition);
+        vecProp.push_back(prop_modeNumber);
+
+        //! mode
+        data.setValue(0);
+        Property prop_modeNumber("Mode number",data,Property::PropertyGroup_Definition);
+        vecProp.push_back(prop_modeNumber);*/
 
         //! ---------------------------------------------------
         //! type of scale: "0" => "Autoscale"; "1" => "Custom"

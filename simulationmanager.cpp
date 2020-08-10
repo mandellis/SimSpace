@@ -10559,171 +10559,9 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
     }
     if(isMeshOK==false) return;
 
-    if(type!=SimulationNodeClass::nodeType_solutionStructuralFatigueTool)
+    switch (type)
     {
-        int component = curNode->getPropertyValue<int>("Type ");
-        int mode = curNode->getPropertyValue<int>("Mode number");
-        //! ---------------------------------------------
-        //! a results is already present into the item
-        //! build the mesh object from the internal data
-        //! ---------------------------------------------
-        postObject aPostObject;
-        if(curNode->getPropertyItem("Post object")!=Q_NULLPTR)
-        {
-            aPostObject = curNode->getPropertyItem("Post object")->data(Qt::UserRole).value<Property>().getData().value<postObject>();
-            aPostObject.update(static_cast<meshDataBase*>(mySimulationDataBase), component);
-        }
-        else
-        {
-            //! ------------------------------------------------------------
-            //! retrieve the time info:
-            //! a result is always retrieved using the pair (step, substep)
-            //! ------------------------------------------------------------
-            int subStepNb, stepNb;
-
-            //! if "By" is "Time" - "Analysis time" is read from the GUI
-            double analysisTime;
-
-            //! if "By" is "Set" - "Set number" is read from the GUI
-            int setNumber;
-            int rmode = curNode->getPropertyValue<int>("By");
-
-            // left here for documentation
-            //QMap<double,QVector<int>> dTm = myPostEngine->getDTM();
-
-            //! ---------------------------------------
-            //! retrieve the solution information item
-            //! ---------------------------------------
-            QStandardItem *itemSolutionInformation = curItem->parent()->child(0,0);
-            SimulationNodeClass *nodeSolutionInformation = itemSolutionInformation->data(Qt::UserRole).value<SimulationNodeClass*>();
-            QMap<double,QVector<int>> dTm = nodeSolutionInformation->getPropertyValue<QMap<double,QVector<int>>>("Discrete time map");
-
-
-            for(QMap<double,QVector<int>>::iterator it = dTm.begin(); it!=dTm.end(); ++it)
-            {
-                cout<<"@-------------------------"<<endl;
-                cout<<"@ time: "<<it.key()<<endl;
-                for(int i=0; i<it.value().size(); i++)
-                {
-                    cout<<"@ set: "<<it.value().at(0)<<endl;
-                    cout<<"@ step: "<<it.value().at(1)<<endl;
-                    cout<<"@ substep: "<<it.value().at(2)<<endl;
-                }
-                cout<<"@-------------------------"<<endl;
-            }
-
-            //! ------------------------------------------------------------------
-            //! execute only if the discrete time map is not empty
-            //! (that is the .frd file exixts and it has been scanned)
-            //! This avoids application crash when requiring "Evaluate result(s)"
-            //! and no result exixts
-            //! ------------------------------------------------------------------
-            if(dTm.isEmpty())
-            {
-                cout<<"----------------------------------------------------------------------------------------------------------------------"<<endl;
-                cout<<"SimulationManager::callPostEngineEvaluateResult_private()->____cannot evaluate results: the discrete time is empty____"<<endl;
-                cout<<"----------------------------------------------------------------------------------------------------------------------"<<endl;
-                QMessageBox::warning(this,APPNAME,"No result available", QMessageBox::Ok);
-                return;
-            }
-            switch(rmode)
-            {
-            case 0:
-            {
-                //! --------------------------------------------
-                //! from "Analysis time" to ("Step", "Substep")
-                //! --------------------------------------------
-                cout<<"SimulationManager::callPostEngineEvaluateResult_private()->____retriving data using \"Display time\": "<<endl;
-                analysisTime = curNode->getPropertyValue<double>("Display time");
-                postTools::getStepSubStepByTimeDTM(dTm,analysisTime, stepNb, subStepNb);
-                cout<<"\"StepNb\" = "<<stepNb<<endl;
-                cout<<"\"SubStepNb\" = "<<subStepNb<<endl;
-            }
-                break;
-
-            case 1:
-            {
-                //! -----------------------------------------
-                //! from "Set" number to ("Step", "Substep")
-                //! "Analysis time" is returned also
-                //! -----------------------------------------
-                cout<<"SimulationManager::callPostEngineEvaluateResult_private()->____retriving data using \"Set number\": "<<endl;
-                setNumber = curNode->getPropertyValue<int>("Set number");
-                postTools::getStepSubStepBySetDTM(dTm, setNumber, analysisTime, stepNb, subStepNb);
-            }
-                break;
-            }
-
-            //! -------------------------------------------------------
-            //! the required "Set"/"Display time" are always converted
-            //! into the pair ("Step number", "Substep number")
-            //! -------------------------------------------------------
-            QString keyName;
-            switch(type)
-            {
-            case SimulationNodeClass::nodeType_solutionThermalTemperature: keyName ="NDTEMP"; break;
-            case SimulationNodeClass::nodeType_solutionThermalFlux: keyName ="FLUX"; break;
-            case SimulationNodeClass::nodeType_solutionStructuralNodalDisplacement: keyName = "DISP"; break;
-            case SimulationNodeClass::nodeType_solutionStructuralStress: keyName ="STRESS"; break;
-            case SimulationNodeClass::nodeType_solutionStructuralTotalStrain: keyName ="TOSTRAIN"; break;
-            case SimulationNodeClass::nodeType_solutionStructuralMechanicalStrain: keyName ="MESTRAIN"; break;
-            case SimulationNodeClass::nodeType_solutionStructuralEquivalentPlasticStrain: keyName ="PE"; break;
-            case SimulationNodeClass::nodeType_solutionStructuralNodalForces: keyName ="FORC"; break;
-            case SimulationNodeClass::nodeType_solutionStructuralTemperature: keyName ="NDTEMP"; break;
-            case SimulationNodeClass::nodeType_solutionStructuralContact: keyName = "CONTACT"; break;
-            }
-
-            //! -----------------------------------------------
-            //! launch the post engine on the <keyName> result
-            //! -----------------------------------------------
-            cout<<"@____launching the post engine____"<<endl;
-            cout<<"@____keyName: "<<keyName.toStdString()<<"____"<<endl;
-            cout<<"@____component: "<<component<<"____"<<endl;
-            cout<<"@____step: "<<stepNb<<"____"<<endl;
-            cout<<"@____sub step: "<<subStepNb<<"____\n"<<endl;
-
-            //! -----------------------------------------------------------------------------
-            //! create the postObject
-            //! the post object retrieves the mesh data sources from the simulation database
-            //! and internally builds its own interactive mesh objects
-            //! -----------------------------------------------------------------------------
-            aPostObject = myPostEngine->buildPostObject(keyName,component,subStepNb,stepNb,mode,vecLoc);
-            aPostObject.update(static_cast<meshDataBase*>(mySimulationDataBase), component);
-        }
-
-        QVariant data;
-        data.setValue(aPostObject);
-        Property prop_postObject("Post object",data,Property::PropertyGroup_GraphicObjects);
-
-        curNode->removeProperty("Post object");
-        curNode->addProperty(prop_postObject);
-
-        //! ---------------------------------------------------------------------
-        //! color box controls: synchronize the post object min, man, scale type
-        //! with the color box properties
-        //! ---------------------------------------------------------------------
-        if(curNode->getPropertyItem("Scale type")==Q_NULLPTR) cerr<<"____NULL property____"<<endl;
-
-        if(curNode->getPropertyValue<int>("Scale type") == 1)
-        {
-            disconnect(curNode->getModel(),SIGNAL(itemChanged(QStandardItem*)),this,SLOT(handleItemChange(QStandardItem*)));
-            double minValue = aPostObject.getMin();
-            double maxValue = aPostObject.getMax();
-            int NbLevels = aPostObject.getNbLevels();
-
-            data.setValue(minValue);
-            Property prop_min("Min",data,Property::PropertyGroup_ColorBox);
-            data.setValue(maxValue);
-            Property prop_max("Max",data,Property::PropertyGroup_ColorBox);
-            data.setValue(NbLevels);
-            Property prop_intervals("# intervals",data,Property::PropertyGroup_ColorBox);
-            curNode->replaceProperty("Min",prop_min);
-            curNode->replaceProperty("Max",prop_max);
-            curNode->replaceProperty("# intervals",prop_intervals);
-            connect(curNode->getModel(),SIGNAL(itemChanged(QStandardItem*)),this,SLOT(handleItemChange(QStandardItem*)));
-        }
-    }
-    else
+    case SimulationNodeClass::nodeType_solutionStructuralFatigueTool:
     {
         QList<double> timeList;
         int component = curNode->getPropertyValue<int>("Component");
@@ -10841,6 +10679,174 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
             emit requestSetWorkingMode(3);
             emit requestDisplayResult(aPostObject);
         }
+    }
+        break;
+    default:
+    {
+        int component = curNode->getPropertyValue<int>("Type ");
+        int mode = curNode->getPropertyValue<int>("Mode number");
+        //! ---------------------------------------------
+        //! a results is already present into the item
+        //! build the mesh object from the internal data
+        //! ---------------------------------------------
+        postObject aPostObject;
+        if(curNode->getPropertyItem("Post object")!=Q_NULLPTR)
+        {
+            aPostObject = curNode->getPropertyItem("Post object")->data(Qt::UserRole).value<Property>().getData().value<postObject>();
+            aPostObject.update(static_cast<meshDataBase*>(mySimulationDataBase), component);
+        }
+        else
+        {
+            //! ------------------------------------------------------------
+            //! retrieve the time info:
+            //! a result is always retrieved using the pair (step, substep)
+            //! ------------------------------------------------------------
+            int subStepNb, stepNb;
+
+            //! if "By" is "Time" - "Analysis time" is read from the GUI
+            double analysisTime;
+
+            //! if "By" is "Set" - "Set number" is read from the GUI
+            int setNumber;
+            int rmode = curNode->getPropertyValue<int>("By");
+
+            // left here for documentation
+            //QMap<double,QVector<int>> dTm = myPostEngine->getDTM();
+
+            //! ---------------------------------------
+            //! retrieve the solution information item
+            //! ---------------------------------------
+            QStandardItem *itemSolutionInformation = curItem->parent()->child(0,0);
+            SimulationNodeClass *nodeSolutionInformation = itemSolutionInformation->data(Qt::UserRole).value<SimulationNodeClass*>();
+            QMap<double,QVector<int>> dTm = nodeSolutionInformation->getPropertyValue<QMap<double,QVector<int>>>("Discrete time map");
+
+
+            for(QMap<double,QVector<int>>::iterator it = dTm.begin(); it!=dTm.end(); ++it)
+            {
+                cout<<"@-------------------------"<<endl;
+                cout<<"@ time: "<<it.key()<<endl;
+                for(int i=0; i<it.value().size(); i++)
+                {
+                    cout<<"@ set: "<<it.value().at(0)<<endl;
+                    cout<<"@ step: "<<it.value().at(1)<<endl;
+                    cout<<"@ substep: "<<it.value().at(2)<<endl;
+                }
+                cout<<"@-------------------------"<<endl;
+            }
+
+            //! ------------------------------------------------------------------
+            //! execute only if the discrete time map is not empty
+            //! (that is the .frd file exixts and it has been scanned)
+            //! This avoids application crash when requiring "Evaluate result(s)"
+            //! and no result exixts
+            //! ------------------------------------------------------------------
+            if(dTm.isEmpty())
+            {
+                cout<<"----------------------------------------------------------------------------------------------------------------------"<<endl;
+                cout<<"SimulationManager::callPostEngineEvaluateResult_private()->____cannot evaluate results: the discrete time is empty____"<<endl;
+                cout<<"----------------------------------------------------------------------------------------------------------------------"<<endl;
+                QMessageBox::warning(this,APPNAME,"No result available", QMessageBox::Ok);
+                return;
+            }
+            switch(rmode)
+            {
+            case 0:
+            {
+                //! --------------------------------------------
+                //! from "Analysis time" to ("Step", "Substep")
+                //! --------------------------------------------
+                cout<<"SimulationManager::callPostEngineEvaluateResult_private()->____retriving data using \"Display time\": "<<endl;
+                analysisTime = curNode->getPropertyValue<double>("Display time");
+                postTools::getStepSubStepByTimeDTM(dTm,analysisTime, stepNb, subStepNb);
+                cout<<"\"StepNb\" = "<<stepNb<<endl;
+                cout<<"\"SubStepNb\" = "<<subStepNb<<endl;
+            }
+                break;
+
+            case 1:
+            {
+                //! -----------------------------------------
+                //! from "Set" number to ("Step", "Substep")
+                //! "Analysis time" is returned also
+                //! -----------------------------------------
+                cout<<"SimulationManager::callPostEngineEvaluateResult_private()->____retriving data using \"Set number\": "<<endl;
+                setNumber = curNode->getPropertyValue<int>("Set number");
+                postTools::getStepSubStepBySetDTM(dTm, setNumber, analysisTime, stepNb, subStepNb);
+            }
+                break;
+            }
+
+            //! -------------------------------------------------------
+            //! the required "Set"/"Display time" are always converted
+            //! into the pair ("Step number", "Substep number")
+            //! -------------------------------------------------------
+            QString keyName;
+            switch(type)
+            {
+            case SimulationNodeClass::nodeType_solutionThermalTemperature: keyName ="NDTEMP"; break;
+            case SimulationNodeClass::nodeType_solutionThermalFlux: keyName ="FLUX"; break;
+            case SimulationNodeClass::nodeType_solutionStructuralNodalDisplacement: keyName = "DISP"; break;
+            case SimulationNodeClass::nodeType_solutionStructuralStress: keyName ="STRESS"; break;
+            case SimulationNodeClass::nodeType_solutionStructuralTotalStrain: keyName ="TOSTRAIN"; break;
+            case SimulationNodeClass::nodeType_solutionStructuralMechanicalStrain: keyName ="MESTRAIN"; break;
+            case SimulationNodeClass::nodeType_solutionStructuralEquivalentPlasticStrain: keyName ="PE"; break;
+            case SimulationNodeClass::nodeType_solutionStructuralNodalForces: keyName ="FORC"; break;
+            case SimulationNodeClass::nodeType_solutionStructuralReactionForce: keyName = "FORC"; break;
+            case SimulationNodeClass::nodeType_solutionStructuralTemperature: keyName ="NDTEMP"; break;
+            case SimulationNodeClass::nodeType_solutionStructuralContact: keyName = "CONTACT"; break;
+            }
+
+            //! -----------------------------------------------
+            //! launch the post engine on the <keyName> result
+            //! -----------------------------------------------
+            cout<<"@____launching the post engine____"<<endl;
+            cout<<"@____keyName: "<<keyName.toStdString()<<"____"<<endl;
+            cout<<"@____component: "<<component<<"____"<<endl;
+            cout<<"@____step: "<<stepNb<<"____"<<endl;
+            cout<<"@____sub step: "<<subStepNb<<"____\n"<<endl;
+
+            //! -----------------------------------------------------------------------------
+            //! create the postObject
+            //! the post object retrieves the mesh data sources from the simulation database
+            //! and internally builds its own interactive mesh objects
+            //! -----------------------------------------------------------------------------
+            aPostObject = myPostEngine->buildPostObject(keyName,component,subStepNb,stepNb,mode,vecLoc);
+            aPostObject.update(static_cast<meshDataBase*>(mySimulationDataBase), component);
+        }
+
+        QVariant data;
+        data.setValue(aPostObject);
+        Property prop_postObject("Post object",data,Property::PropertyGroup_GraphicObjects);
+
+        curNode->removeProperty("Post object");
+        curNode->addProperty(prop_postObject);
+
+        //! ---------------------------------------------------------------------
+        //! color box controls: synchronize the post object min, man, scale type
+        //! with the color box properties
+        //! ---------------------------------------------------------------------
+        if(curNode->getPropertyItem("Scale type")==Q_NULLPTR) cerr<<"____NULL property____"<<endl;
+
+        if(curNode->getPropertyValue<int>("Scale type") == 1)
+        {
+            disconnect(curNode->getModel(),SIGNAL(itemChanged(QStandardItem*)),this,SLOT(handleItemChange(QStandardItem*)));
+            double minValue = aPostObject.getMin();
+            double maxValue = aPostObject.getMax();
+            int NbLevels = aPostObject.getNbLevels();
+
+            data.setValue(minValue);
+            Property prop_min("Min",data,Property::PropertyGroup_ColorBox);
+            data.setValue(maxValue);
+            Property prop_max("Max",data,Property::PropertyGroup_ColorBox);
+            data.setValue(NbLevels);
+            Property prop_intervals("# intervals",data,Property::PropertyGroup_ColorBox);
+            curNode->replaceProperty("Min",prop_min);
+            curNode->replaceProperty("Max",prop_max);
+            curNode->replaceProperty("# intervals",prop_intervals);
+            connect(curNode->getModel(),SIGNAL(itemChanged(QStandardItem*)),this,SLOT(handleItemChange(QStandardItem*)));
+        }
+    }
+        break;
     }
 }
 
