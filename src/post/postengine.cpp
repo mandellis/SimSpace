@@ -32,6 +32,24 @@ postEngine::postEngine(QObject *parent) : QObject(parent),myDTM(QMap<double,QVec
     this->buildMap();
 }
 
+//! -------------------
+//! function: buildMap
+//! details:
+//! -------------------
+void postEngine::buildMap()
+{
+    m.insert("DISP",TypeOfResult_U);
+    m.insert("STRESS",TypeOfResult_S);
+    m.insert("TOSTRAIN",TypeOfResult_TOSTRAIN);
+    m.insert("MESTRAIN",TypeOfResult_MESTRAIN);
+    m.insert("NDTEMP",TypeOfResult_NT);
+    m.insert("UDR",TypeOfResult_UDR);
+    m.insert("FORC",TypeOfResult_F);
+    m.insert("PE",TypeOfResult_EPS);
+    m.insert("FLUX",TypeOfResult_HFL);
+    m.insert("CONTACT",TypeOfResult_CONT);
+}
+
 //! -----------------------------
 //! function: setDiscreteTimeMap
 //! details:
@@ -631,125 +649,6 @@ void postEngine::updateIsostrips(sharedPostObject &aPostObject, int scaleType, d
 
 //! ---------------------------------
 //! function: evaulateFatigueResults
-//! details:
-//! ---------------------------------
-postObject postEngine::evaluateFatigueResults(int type, QVector<GeometryTag> locs, const QList<double> &times, QMap<int,int> materialBodyMap, int nCycle)
-{
-    QMap<GeometryTag,QList<QMap<int,double>>> fatigueResults;
-
-    switch(myFatigueModel.type)
-    {
-    case fatigueModel_BCM:
-    {
-        cout<<"postEngine::evaluateResult()->____fatigue model BCM called___"<<endl;
-
-        QMap<GeometryTag,QMap<int,QList<double>>> r = readFatigueResults(type,locs,times);
-        rainflow rf;
-        for(QMap<GeometryTag,QMap<int,QList<double>>>::iterator it = r.begin(); it!=r.end(); ++it)
-        {
-            GeometryTag curLoc = it.key();
-            rf.setLocation(curLoc);
-
-            QMap<int,QList<double>> strainDistTimeHistory = it.value();
-            rf.setFatigueModel(myFatigueModel);
-            QMap<int,double> damageDist;
-
-            bool isDone = rf.perform(strainDistTimeHistory,damageDist);
-            if(isDone)
-            {
-                QList<QMap<int,double>>damageDistList;
-                damageDistList<<damageDist;
-                fatigueResults.insert(curLoc,damageDistList);
-            }
-        }
-    }
-        break;
-
-    case fatigueModel_ESR:
-    {
-        cout<<"postEngine::evaluateResult()->____fatigue model ESR called___"<<endl;
-        int step,substep;
-        //QMap<double,QVector<int>> dtm= getDTM();
-        //QMap<double,QVector<int>> dtm = myDTM;
-        double requiredTime;
-        postTools::getStepSubStepByTimeDTM(myDTM,times.last(),step,substep);
-        QString tor_eps = m.key(TypeOfResult_EPS);
-        QString tor_mises = m.key(TypeOfResult_S);
-        int mode =0;
-        QMap<GeometryTag,QList<QMap<int,double>>> pe = this->evaluateResult(tor_eps,substep,step,mode,locs,requiredTime);
-        QMap<GeometryTag,QList<QMap<int,double>>> stress = this->evaluateResult(tor_mises,substep,step,mode,locs,requiredTime);
-
-        for(QVector<GeometryTag>::iterator it=locs.begin();it!=locs.end();it++)
-        {
-            GeometryTag curLoc = *it;
-            int bodyIndex = curLoc.parentShapeNr;
-            const QList<QMap<int, double>> &listOfResPe = pe.value(curLoc);
-            const QMap<int, double> &curPe = listOfResPe.first();
-            const QList<QMap<int, double>> &listOfResMises = stress.value(curLoc);
-            const QMap<int, double> &curMises = listOfResMises.first();
-            QList<QMap<int,double>> damageIndex;
-            QMap<int,double> damageIndexData;
-
-            double elasticModulusMedium, elasticModulusMin,r,a,b,c,d,e,f,g,h;
-            Q_UNUSED (elasticModulusMin)
-            int material = materialBodyMap.value(bodyIndex);
-
-            for(QMap<int,double>::const_iterator itt=curPe.cbegin(); itt!=curPe.cend(); itt++)
-            {
-                double altStress,X,Y;
-                int curPos = itt.key();
-                double eps = itt.value();
-                double mises = curMises.value(curPos);
-
-                switch(material)
-                {
-                case 5:case 6:case 0:case 1:case 2:case 3:case 4:case 7:case 8:case 9:
-                {
-                    elasticModulusMedium = 1.76000000e+005;
-                    altStress = 0.5*(mises+eps*elasticModulusMedium);
-                    Y = log10(28.3*pow(10,3)*altStress/elasticModulusMedium);
-
-                    r=35.9;
-                    a=9.030556;
-                    b=8.1906623;
-                    c=0.36077181;
-                    d=0.4706984;
-                    e=42.08579;
-                    f=12.514054;
-                    g=4.3290016;
-                    h=0.60540862;
-
-                    if(pow(10,Y)>r) X = (a-b*Y)/(1-c*Y-d*Y*Y);
-                    else  X = (-e+f*Y)/(1-g*Y+h*Y*Y);
-                }
-                    break;
-                }
-                double damage;
-                double min,max;
-                min=1;
-                max=8;
-                if(X>min && X<max) damage = nCycle/(pow(10,X));
-                else damage = 0;
-                damageIndexData.insert(curPos,damage);
-            }
-            damageIndex<<damageIndexData;
-            fatigueResults.insert(curLoc,damageIndex);
-        }
-    }
-        break;
-    }
-
-    //! -----------------------
-    //! create the post object
-    //! -----------------------
-    QString label = this->resultName("Damage",0,1,1,0);
-    postObject aPostObject(fatigueResults,locs,label);
-    //postObject aPostObject(fatigueResults,locs);
-    return aPostObject;
-}
-
-//! ---------------------------------
-//! function: evaulateFatigueResults
 //! details:  overload
 //! ---------------------------------
 bool postEngine::evaluateFatigueResults(int type, QVector<GeometryTag> locs, const QList<double> &times, QMap<int,int> materialBodyMap, int nCycle, sharedPostObject &aPostObject)
@@ -788,8 +687,6 @@ bool postEngine::evaluateFatigueResults(int type, QVector<GeometryTag> locs, con
     {
         cout<<"postEngine::evaluateResult()->____fatigue model ESR called___"<<endl;
         int step,substep;
-        //QMap<double,QVector<int>> dtm= getDTM();
-        //QMap<double,QVector<int>> dtm = myDTM;
         double requiredTime;
         postTools::getStepSubStepByTimeDTM(myDTM,times.last(),step,substep);
         QString tor_eps = m.key(TypeOfResult_EPS);
@@ -1038,6 +935,37 @@ void postEngine::setFatigueModel(int fatigueAlgo)
     }
         break;
     }
+}
+
+//! ------------------------------------
+//! function: updateResultsPresentation
+//! details:
+//! ------------------------------------
+void postEngine::updateResultsPresentation(QList<sharedPostObject> &postObjectList)
+{
+    static resultPresentation previousResultPresentation;
+    resultPresentation newResultsPresentation = Global::status().myResultPresentation;
+    for(QList<sharedPostObject>::iterator it = postObjectList.cbegin(); it!=postObjectList.cend(); ++it)
+    {
+        sharedPostObject aPostObject = *it;
+
+        //! ----------------------------------------------------------------------------
+        //! the surface mesh=>volume mesh/volume mesh=>surface mesh for viewing results
+        //! the presentation should be fully rebuilt
+        //! ----------------------------------------------------------------------------
+        if(previousResultPresentation != newResultsPresentation)
+        {
+            double min= aPostObject->getMin();
+            double max = aPostObject->getMax();
+            int NbLevels = aPostObject->getNbLevels();
+            int component = aPostObject->getSolutionDataComponent();
+            bool isAutoScale = aPostObject->isAutoscale;
+            int magnifyFactor = newResultsPresentation.theScale;
+            //aPostObject->setScale(aResultPresentation.theScale);
+            aPostObject->buildMeshIO(min,max,NbLevels,isAutoScale,component,magnifyFactor);
+        }
+    }
+    previousResultPresentation = newResultsPresentation;
 }
 
 /*

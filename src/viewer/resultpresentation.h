@@ -8,6 +8,9 @@ using namespace std;
 
 struct resultPresentation
 {
+    //! ----------
+    //! view mode
+    //! ----------
     enum combinedView
     {
         combinedView_resultOnly,
@@ -16,26 +19,18 @@ struct resultPresentation
         combinedView_undeformedModel
     };
 
-    //! ----------
-    //! view mode
-    //! ----------
     combinedView theCombinedView;
-
-    //! ------------------------------
-    //! result mesh is shown deformed
-    //! ------------------------------
-    bool isDeformedView;
+    bool useExteriorMeshForVolumeResults;
     double theScale;
 
-    //! ---------------------------------------------------
+    //! ------------
     //! constructor
-    //! true scale/no undeformed wireframe/no mesh visible
-    //! ---------------------------------------------------
-    resultPresentation(combinedView aCombinedView=combinedView_resultOnly,
-                       bool anIsDeformedView=false,
-                       double aScale=1.0):
+    //! ------------
+    resultPresentation(combinedView aCombinedView = combinedView_resultOnly,
+                       double aScale = 1.0,
+                       bool aUseExteriorMeshForVolumeResults = true):
         theCombinedView(aCombinedView),
-        isDeformedView(anIsDeformedView),
+        useExteriorMeshForVolumeResults(aUseExteriorMeshForVolumeResults),
         theScale(aScale)
     {;}
 
@@ -45,7 +40,7 @@ struct resultPresentation
     resultPresentation(const resultPresentation &aRP)
     {
         theCombinedView = aRP.theCombinedView;
-        isDeformedView = aRP.isDeformedView;
+        useExteriorMeshForVolumeResults = aRP.useExteriorMeshForVolumeResults;
         theScale = aRP.theScale;
     }
 
@@ -55,7 +50,7 @@ struct resultPresentation
     resultPresentation operator = (const resultPresentation &aRP)
     {
         theCombinedView = aRP.theCombinedView;
-        isDeformedView = aRP.isDeformedView;
+        useExteriorMeshForVolumeResults = aRP.useExteriorMeshForVolumeResults;
         theScale = aRP.theScale;
         return *this;
     }

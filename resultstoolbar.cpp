@@ -3,6 +3,7 @@
 //! ----------------
 #include "resultstoolbar.h"
 #include <scaleselector.h>
+#include "global.h"
 
 //! ---
 //! Qt
@@ -31,15 +32,12 @@ ResultsToolBar::ResultsToolBar(const QString &title, QWidget *parent):QToolBar(t
     //! ----------------------
     this->addWidget(scaleSelector);
     connect(scaleSelector,SIGNAL(scaleChanged(double)),this,SLOT(emitRequestUpdatePostObjectScale(double)));
-    myResultPresentation.isDeformedView = false;
-    myResultPresentation.theScale = 1.0;
 
     //! -----------------------
     //! create a button widget
     //! -----------------------
     combinedViewSelectorButton = new QPushButtonExtended(this);
     combinedViewSelectorButton->setIcon(QIcon(":/icons/icon_no wireframe.png"));
-    myResultPresentation.theCombinedView = resultPresentation::combinedView_resultOnly;
 
     //! -----------------------------
     //! create a menu for the button
@@ -97,8 +95,8 @@ void ResultsToolBar::emitRequestNoWireframe()
 {
     cout<<"ResultsToolBar()->____emit request \"no wireframe\"____"<<endl;
     combinedViewSelectorButton->setIcon(QIcon(":/icons/icon_no wireframe.png"));
-    myResultPresentation.theCombinedView = resultPresentation::combinedView_resultOnly;
-    emit requestSetResultPresentation(myResultPresentation);
+    Global::status().myResultPresentation.theCombinedView = resultPresentation::combinedView_resultOnly;
+    emit requestUpdateViewerStatus();
 }
 
 //! -----------------------------------------
@@ -109,8 +107,8 @@ void ResultsToolBar::emitRequestShowUndeformedModel()
 {
     cout<<"ResultsToolBar()->____emit request show undeformed model____"<<endl;
     combinedViewSelectorButton->setIcon(QIcon(":/icons/icon_undeformed model.png"));
-    myResultPresentation.theCombinedView = resultPresentation::combinedView_undeformedModel;
-    emit requestSetResultPresentation(myResultPresentation);
+    Global::status().myResultPresentation.theCombinedView = resultPresentation::combinedView_undeformedModel;
+    emit requestUpdateViewerStatus();
 }
 
 //! ---------------------------------------------
@@ -121,8 +119,8 @@ void ResultsToolBar::emitRequestShowUndeformedWireframe()
 {
     cout<<"ResultsToolBar()->____emit request show undeformed wireframe____"<<endl;
     combinedViewSelectorButton->setIcon(QIcon(":/icons/icon_wireframe.png"));
-    myResultPresentation.theCombinedView = resultPresentation::combinedView_undeformedWireFrame;
-    emit requestSetResultPresentation(myResultPresentation);
+    Global::status().myResultPresentation.theCombinedView = resultPresentation::combinedView_undeformedWireFrame;
+    emit requestUpdateViewerStatus();
 }
 
 //! --------------------------------------
@@ -133,8 +131,19 @@ void ResultsToolBar::emitRequestShowMeshElements()
 {
     cout<<"ResultsToolBar()->____emit request show mesh elements____"<<endl;
     combinedViewSelectorButton->setIcon(QIcon(":/icons/icon_show elements.png"));
-    myResultPresentation.theCombinedView = resultPresentation::combinedView_meshVisible;
-    emit requestSetResultPresentation(myResultPresentation);
+    Global::status().myResultPresentation.theCombinedView = resultPresentation::combinedView_meshVisible;
+    emit requestUpdateViewerStatus();
+}
+
+//! -------------------------------------------
+//! function: emitRequestUpdatePostObjectScale
+//! details:
+//! -------------------------------------------
+void ResultsToolBar::emitRequestUpdatePostObjectScale(double scale)
+{
+    cout<<"ResultsToolBar::emitRequestUpdatePostObjectScale()->____function called. Scale: "<<scale<<"____"<<endl;
+    Global::status().myResultPresentation.theScale = scale;
+    emit requestUpdateViewerStatus();
 }
 
 //! ---------------------
@@ -149,18 +158,7 @@ void ResultsToolBar::updateIcon(QAction *action)
     button->setIcon(icon);
 }
 
-//! -------------------------------------------
-//! function: emitRequestUpdatePostObjectScale
-//! details:
-//! -------------------------------------------
-void ResultsToolBar::emitRequestUpdatePostObjectScale(double scale)
-{
-    cout<<"ResultsToolBar::emitRequestUpdatePostObjectScale()->____function called. Scale: "<<scale<<"____"<<endl;
-    myResultPresentation.theScale = scale;
-    emit requestSetResultPresentation(myResultPresentation);
-    //emit requestUpdatePostObjectScale(scale);
-}
-
+/*
 //! ---------------------
 //! function: saveStatus
 //! details:
@@ -175,6 +173,7 @@ bool ResultsToolBar::saveStatus(const std::string &fileName)
             myResultPresentation.theScale);
     return true;
 }
+*/
 
 //! --------------------
 //! function: setStatus
@@ -182,23 +181,11 @@ bool ResultsToolBar::saveStatus(const std::string &fileName)
 //! --------------------
 void ResultsToolBar::setStatus(const resultPresentation &aResultPresentation)
 {
-    //actionNoWireframe->blockSignals(true);
-    //actionShowElements->blockSignals(true);
-    //actionShowUndeformedModel->blockSignals(true);
-    //actionShowUndeformedWireframe->blockSignals(true);
     switch(aResultPresentation.theCombinedView)
     {
-    case resultPresentation::combinedView_resultOnly:
-        combinedViewSelectorMenu->setActiveAction(actionNoWireframe);
-        break;
-    case resultPresentation::combinedView_meshVisible:
-        combinedViewSelectorMenu->setActiveAction(actionShowElements);
-        break;
-    case resultPresentation::combinedView_undeformedModel:
-        combinedViewSelectorMenu->setActiveAction(actionShowUndeformedModel);
-        break;
-    case resultPresentation::combinedView_undeformedWireFrame:
-        combinedViewSelectorMenu->setActiveAction(actionShowUndeformedWireframe);
-        break;
+    case resultPresentation::combinedView_resultOnly: combinedViewSelectorMenu->setActiveAction(actionNoWireframe); break;
+    case resultPresentation::combinedView_meshVisible: combinedViewSelectorMenu->setActiveAction(actionShowElements); break;
+    case resultPresentation::combinedView_undeformedModel: combinedViewSelectorMenu->setActiveAction(actionShowUndeformedModel); break;
+    case resultPresentation::combinedView_undeformedWireFrame: combinedViewSelectorMenu->setActiveAction(actionShowUndeformedWireframe); break;
     }
 }

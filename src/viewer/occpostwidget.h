@@ -78,7 +78,7 @@ public slots:
     virtual void refreshMeshView(bool onlyExterior);
 
     //! set the status variable
-    void setResultPresentation(const resultPresentation &aResPresentation);
+    void updateViewerStatus();
 
 private:
 

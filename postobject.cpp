@@ -493,9 +493,8 @@ void postObject::buildMeshIO(double min, double max, int Nlevels, bool autoscale
         if(loc.subShapeType == TopAbs_SOLID && myShowSolidMeshAsSurface == true)
         {
             occHandle(Ng_MeshVS_DataSource3D) volumeMeshDS = new Ng_MeshVS_DataSource3D(anIt.value()->GetNonDeformedDataSource());
-            //occHandle(Ng_MeshVS_DataSource3D)::DownCast(anIt.value()->GetNonDeformedDataSource());
 
-            if(volumeMeshDS.IsNull()) exit(9999); //cesere
+            if(volumeMeshDS.IsNull()) exit(99999999999); //cesere
 
             cout<<"____volumeMeshDS: nodes = "<<volumeMeshDS->GetAllNodes().Extent()<<"____"<<endl;
             cout<<"____volumeMeshDS: elements = "<<volumeMeshDS->GetAllElements().Extent()<<"____"<<endl;

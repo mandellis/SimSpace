@@ -1189,7 +1189,7 @@ void MainWindow::createToolBars()
     resultsToolBar->setVisible(false);
 
     //! for changing the status variable of the main viewer
-    connect(resultsToolBar,SIGNAL(requestSetResultPresentation(resultPresentation)),myMainOCCViewer,SLOT(setResultPresentation(resultPresentation)));
+    connect(resultsToolBar,SIGNAL(requestUdateViewerStatus()),myMainOCCViewer,SLOT(updateViewerStatus()));
     connect(myMainOCCViewer,SIGNAL(resultsPresentationChanged()),mySimulationManager,SLOT(updateResultsPresentation()));
 
     //to be removed

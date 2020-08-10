@@ -47,7 +47,7 @@ private:
     QMenu *combinedViewSelectorMenu;
 
     //! status variable
-    resultPresentation myResultPresentation;
+    //resultPresentation myResultPresentation;
 
     //! ------------
     //! save status
@@ -65,14 +65,13 @@ private slots:
     void emitRequestShowUndeformedModel();
     void emitRequestShowUndeformedWireframe();
     void emitRequestShowMeshElements();
+    void ResultsToolBar::emitRequestUpdatePostObjectScale(double scale);
 
     void updateIcon(QAction *action);
 
-    void emitRequestUpdatePostObjectScale(double scale);
-
 signals:
 
-    void requestSetResultPresentation(const resultPresentation &aResultPresentation);
+    void requestUpdateViewerStatus();
     void requestUpdatePostObjectScale(double scale);
 
 public:

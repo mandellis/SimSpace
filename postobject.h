@@ -205,10 +205,7 @@ public:
     //! write mesh
     void writeMesh(ofstream &file, const occHandle(MeshVS_DataSource) &theMeshDS);
 
-    //! rebuild "theMeshes" with data
-    //void buildMeshIO(const mapOfMeshDataSources &aMapOfMeshDataSources,
-    //                 double min=-1e20, double max=1e20, int Nlevels=9, bool autoscale=true, int component=0);
-
+    //! build mesh IO
     void buildMeshIO(double min=-1e20, double max=1e20, int Nlevels=9, bool autoscale=true, int component=0, double deformationScale = 1.0);
 
     //! init
@@ -255,6 +252,9 @@ public:
 
     //! get auto number of levels
     int getNbLevels() { return myNbLevels; }
+
+    //! is autoscale
+    bool IsAutoscale() { return myIsAutoscale; }
 
     //! experimental
     void updateMapping(int mapping);
