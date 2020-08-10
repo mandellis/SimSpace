@@ -471,7 +471,7 @@ void postObject::resetMeshes()
 //! ----------------------
 void postObject::buildMeshIO(double min, double max, int Nlevels, bool autoscale, int component, double deformationScale)
 {
-    cout<<"postObject::buildMeshIO()->____function called - overload -____"<<endl;
+    cout<<"postObject::buildMeshIO()->____function called____"<<endl;
 
     //! ------------------------
     //! set the private members
@@ -504,19 +504,14 @@ void postObject::buildMeshIO(double min, double max, int Nlevels, bool autoscale
             //! generate the surface mesh topologically
             //! ----------------------------------------
             if(volumeMeshDS->myFaceToElements.isEmpty()) volumeMeshDS->buildFaceToElementConnectivity();
-            cout<<"____tag03____"<<endl;
             curMeshDS = new Ng_MeshVS_DataSource2D(volumeMeshDS);
-            cout<<"____tag04____"<<endl;
         }
         else curMeshDS = anIt.value()->GetNonDeformedDataSource();
-
-        cout<<"____tag05____"<<endl;
 
         //! ----------------------------------
         //! build a deformed mesh data source
         //! ----------------------------------
         occHandle(MeshVS_DeformedDataSource) theDeformedDS = new MeshVS_DeformedDataSource(curMeshDS,deformationScale);
-        cout<<"____tag06____"<<endl;
 
         const QMap<int,gp_Vec> &displacementMap = myMapOfNodalDisplacements.value(loc);
         theDeformedDS->SetNonDeformedDataSource(curMeshDS);
@@ -555,7 +550,7 @@ void postObject::buildMeshIO(double min, double max, int Nlevels, bool autoscale
     graphicsTools::createColorBox(myMin, myMax, myNbLevels, AISColorScale);
     TCollection_ExtendedString title(name.toStdString().c_str());
     AISColorScale->SetTitle(title);
-    cout<<"postObject::buildMeshIO()->____exiting function - overload -____"<<endl;
+    cout<<"postObject::buildMeshIO()->____exiting function____"<<endl;
 }
 
 //! -------------------------------------------

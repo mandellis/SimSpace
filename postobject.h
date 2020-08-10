@@ -226,6 +226,9 @@ public:
     //! get the mesh data sources
     QMap<GeometryTag,occHandle(MeshVS_DeformedDataSource)> getMeshDataSources() const { return theMeshDataSources; }
 
+    //! get the mesh data sources for view
+    QMap<GeometryTag,occHandle(MeshVS_DeformedDataSource)> getMeshDataSourcesForView() const { return theMeshDataSourcesForView; }
+
     //! is empty
     bool isEmpty() const{ return theData.isEmpty(); }
 

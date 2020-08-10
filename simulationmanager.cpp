@@ -10761,7 +10761,6 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
     //! --------------------
     if(immediatelyDisplay == true)
     {
-        //emit requestHideMeshes();
         emit requestSetWorkingMode(3);
         emit requestDisplayResult(aPostObject);
     }
@@ -11198,34 +11197,6 @@ void SimulationManager::updateResultsPresentation()
     //! retrieve all results
     //! ---------------------
     QList<sharedPostObject> postObjectList= this->retrieveAllResults();
-
-    /*
-    //! ----------------------------------------------------------------
-    //! iterate over the results in order to find the displayed shapes:
-    //! the shapes are shown in wireframe mode, and here must be hidden
-    //! Moreover scanning the list of post object remove the mesh view
-    //! ----------------------------------------------------------------
-    std::set<int> parentShapeIndexes;
-    for(QList<sharedPostObject>::const_iterator it = postObjectList.cbegin(); it!=postObjectList.cend(); ++it)
-    {
-        const sharedPostObject &aPostObject = *it;
-        const QVector<GeometryTag> &vecLoc = aPostObject->getLocations();
-        for(QVector<GeometryTag>::const_iterator it = vecLoc.cbegin(); it!=vecLoc.cend(); it++)
-        {
-            const GeometryTag &aLoc = *it;
-            int bodyIndex = aLoc.parentShapeNr;
-            parentShapeIndexes.insert(bodyIndex);
-        }
-    }
-
-    //! -------------------------------------------------------------------
-    //! hide all the bodies (which are shown, by default, using wireframe)
-    //! -------------------------------------------------------------------
-    TColStd_ListOfInteger listOfBodies;
-    for(std::set<int>::iterator it = parentShapeIndexes.begin(); it!=parentShapeIndexes.end(); ++it) listOfBodies.Append(*it);
-    emit requestHideBody(listOfBodies);
-    */
-
     for(QList<sharedPostObject>::const_iterator it = postObjectList.cbegin(); it!=postObjectList.cend(); ++it)
     {
         sharedPostObject aPostObject = *it;

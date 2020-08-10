@@ -159,7 +159,8 @@ void occPostWidget::displayResult(sharedPostObject &aPostObject)
 
     case resultPresentation::combinedView_meshVisible:
     {
-        const QMap<GeometryTag,occHandle(MeshVS_DeformedDataSource)> &mapOfMeshDS = aPostObject->getMeshDataSources();
+        //const QMap<GeometryTag,occHandle(MeshVS_DeformedDataSource)> &mapOfMeshDS = aPostObject->getMeshDataSources();
+        const QMap<GeometryTag,occHandle(MeshVS_DeformedDataSource)> &mapOfMeshDS = aPostObject->getMeshDataSourcesForView();
         for(QMap<GeometryTag,occHandle(MeshVS_DeformedDataSource)>::const_iterator it = mapOfMeshDS.cbegin(); it!=mapOfMeshDS.cend(); it++)
         {
             cout<<"@ ----------------------------------"<<endl;
