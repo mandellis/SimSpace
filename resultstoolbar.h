@@ -65,7 +65,7 @@ private slots:
     void emitRequestShowUndeformedModel();
     void emitRequestShowUndeformedWireframe();
     void emitRequestShowMeshElements();
-    void ResultsToolBar::emitRequestUpdatePostObjectScale(double scale);
+    void emitRequestUpdatePostObjectScale(double scale);
 
     void updateIcon(QAction *action);
 

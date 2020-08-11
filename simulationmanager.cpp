@@ -11193,13 +11193,15 @@ void SimulationManager::updateResultsPresentation()
 {
     cout<<"SimulationManager::updateResultsPresentation()->____function called____"<<endl;
 
-    //! ---------------------
-    //! retrieve all results
-    //! ---------------------
+    //! ----------------------------------------------------
+    //! retrieve all results and update their presentations
+    //! ----------------------------------------------------
     QList<sharedPostObject> postObjectList= this->retrieveAllResults();
-    for(QList<sharedPostObject>::const_iterator it = postObjectList.cbegin(); it!=postObjectList.cend(); ++it)
+    myPostEngine->updateResultsPresentation(postObjectList);
+    SimulationNodeClass *curNode = this->getCurrentNode();
+    if(curNode->isAnalysisResult())
     {
-        sharedPostObject aPostObject = *it;
+        sharedPostObject aPostObject = curNode->getPropertyValue<sharedPostObject>("Post object");
         emit requestDisplayResult(aPostObject);
     }
 }

@@ -103,8 +103,10 @@ QMap<GeometryTag,QList<QMap<int,double>>> postEngine::evaluateResult(const QStri
                                                                      const QVector<GeometryTag> &vecLoc,
                                                                      double &requiredTime)
 {
-    cout<<"postEngine::evaluateResult()->____function called for variable: "<<resultKeyName.toStdString()<<"____"<<endl;
-    cout<<"postEngine::evaluateResult()->____on Nr: "<<vecLoc.length()<<" locations____"<<endl;
+    cout<<"@ -------------------------------------------------"<<endl;
+    cout<<"@ - postEngine::evaluateResult "<<endl;
+    cout<<"@ - variable "<<resultKeyName.toStdString()<<" on "<<vecLoc.length()<<" locations"<<endl;
+    cout<<"@ -------------------------------------------------"<<endl;
 
     //! ----------------------------------------------------
     //! generate the results on all the requested locations
@@ -312,22 +314,22 @@ QMap<GeometryTag,QList<QMap<int,double>>> postEngine::evaluateResult(const QStri
                             }
                             resMISES.insert(OCCnodeID,vonMises);
 
-                            //! --------------------------------------------
+                            //! ---------------------------------
                             //! compute the principal components
-                            //! --------------------------------------------
-                            QList<double> sik;
-                            sik<<cxx<<cyy<<czz<<cxy<<cyz<<cxz;
-                            QList<double> s = postTools::principalComponents(sik);
+                            //! ---------------------------------
+                            double sik[6] {cxx,cyy,czz,cxy,cyz,cxz};
+                            double s[3];
+                            postTools::principalComponents(sik,s);
 
-                            resSI.insert(OCCnodeID,s.at(2));        //! maximum
-                            resSII.insert(OCCnodeID,s.at(1));       //! middle
-                            resSIII.insert(OCCnodeID,s.at(0));      //! minimum
+                            resSI.insert(OCCnodeID,s[2]);        //! maximum
+                            resSII.insert(OCCnodeID,s[1]);       //! middle
+                            resSIII.insert(OCCnodeID,s[0]);      //! minimum
 
                             //! -----------------------------------------------
                             //! compute the stress/strain intensity (2*Tresca)
                             //! maximum shear stress/strain
                             //! -----------------------------------------------
-                            double sint = fabs(s.at(2)-s.at(0));
+                            double sint = fabs(s[2]-s[0]);
                             resSINT.insert(OCCnodeID,sint);
 
                             resSXX.insert(OCCnodeID,cxx);
@@ -706,7 +708,7 @@ bool postEngine::evaluateFatigueResults(int type, QVector<GeometryTag> locs, con
             QList<QMap<int,double>> damageIndex;
             QMap<int,double> damageIndexData;
 
-            double elasticModulusMedium, elasticModulusMin,r,a,b,c,d,e,f,g,h;
+            double elasticModulusAve, elasticModulusMin,r,a,b,c,d,e,f,g,h;
             Q_UNUSED (elasticModulusMin)
             int material = materialBodyMap.value(bodyIndex);
 
@@ -721,9 +723,9 @@ bool postEngine::evaluateFatigueResults(int type, QVector<GeometryTag> locs, con
                 {
                 case 5:case 6:case 0:case 1:case 2:case 3:case 4:case 7:case 8:case 9:
                 {
-                    elasticModulusMedium = 1.76000000e+005;
-                    altStress = 0.5*(mises+eps*elasticModulusMedium);
-                    Y = log10(28.3*pow(10,3)*altStress/elasticModulusMedium);
+                    elasticModulusAve = 1.76e5;
+                    altStress = 0.5*(mises+eps*elasticModulusAve);
+                    Y = log10(28.3*pow(10,3)*altStress/elasticModulusAve);
 
                     r=35.9;
                     a=9.030556;
@@ -875,9 +877,9 @@ QMap<GeometryTag,QMap<int,QList<double>>> postEngine::readFatigueResults(int typ
                         //! -----------------------------------------------------
                         //! compute the principal components: index 0 is minimum
                         //! -----------------------------------------------------
-                        QList<double> sik;
-                        sik<<cxx<<cyy<<czz<<cxy<<cyz<<cxz;
-                        QList<double> s = postTools::principalComponents(sik);
+                        double sik[6] {cxx,cyy,czz,cxy,cyz,cxz};
+                        double s[3];
+                        postTools::principalComponents(sik,s);
 
                     }
                     else if(OCCnodeID!=-1)
@@ -894,10 +896,9 @@ QMap<GeometryTag,QMap<int,QList<double>>> postEngine::readFatigueResults(int typ
                         //! ---------------------------------
                         //! compute the principal components
                         //! ---------------------------------
-                        QList<double> sik;
-                        sik<<cxx<<cyy<<czz<<cxy<<cyz<<cxz;
-                        QList<double> s = postTools::principalComponents(sik);
-
+                        double sik[6] {cxx,cyy,czz,cxy,cyz,cxz};
+                        double s[3];
+                        postTools::principalComponents(sik,s);
                     }
                     std::getline(curFile,val);
                 }
@@ -945,7 +946,7 @@ void postEngine::updateResultsPresentation(QList<sharedPostObject> &postObjectLi
 {
     static resultPresentation previousResultPresentation;
     resultPresentation newResultsPresentation = Global::status().myResultPresentation;
-    for(QList<sharedPostObject>::iterator it = postObjectList.cbegin(); it!=postObjectList.cend(); ++it)
+    for(QList<sharedPostObject>::iterator it = postObjectList.begin(); it!=postObjectList.end(); ++it)
     {
         sharedPostObject aPostObject = *it;
 
@@ -959,9 +960,8 @@ void postEngine::updateResultsPresentation(QList<sharedPostObject> &postObjectLi
             double max = aPostObject->getMax();
             int NbLevels = aPostObject->getNbLevels();
             int component = aPostObject->getSolutionDataComponent();
-            bool isAutoScale = aPostObject->isAutoscale;
+            bool isAutoScale = aPostObject->IsAutoscale();
             int magnifyFactor = newResultsPresentation.theScale;
-            //aPostObject->setScale(aResultPresentation.theScale);
             aPostObject->buildMeshIO(min,max,NbLevels,isAutoScale,component,magnifyFactor);
         }
     }

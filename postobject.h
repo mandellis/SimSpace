@@ -229,7 +229,7 @@ public:
     //! is empty
     bool isEmpty() const{ return theData.isEmpty(); }
 
-    //! update scaled view (read myScale)
+    //! update scaled view (internally read myScale)
     void updateScaledView();
 
 public:

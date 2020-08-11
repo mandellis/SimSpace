@@ -54,6 +54,26 @@ struct resultPresentation
         theScale = aRP.theScale;
         return *this;
     }
+
+    //! ------------
+    //! operator ==
+    //! ------------
+    bool operator == (const resultPresentation &aRP)
+    {
+        if(theCombinedView != aRP.theCombinedView) return false;
+        if(useExteriorMeshForVolumeResults != aRP.useExteriorMeshForVolumeResults) return false;
+        if(theScale != aRP.theScale) return false;
+        return true;
+    }
+
+    //! ------------
+    //! operator !=
+    //! ------------
+    bool operator != (const resultPresentation &aRP)
+    {
+        if(*this == aRP) return false;
+        return true;
+    }
 };
 
 #endif // RESULTPRESENTATION_H

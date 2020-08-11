@@ -125,14 +125,14 @@ void occPostWidget::displayResult(sharedPostObject &aPostObject)
     //! -----------------
     //! update the scale
     //! -----------------
-    if(aResultPresentation.theScale != aResultPresentationOld.theScale)
-    {
-        cout<<"@ --------------------------------"<<endl;
-        cout<<"@ - SCALE CHANGED"<<endl;
-        cout<<"@ --------------------------------"<<endl;
-        aPostObject->setScale(aResultPresentation.theScale);
-        aPostObject->updateScaledView();
-    }
+    //if(aResultPresentation.theScale != aResultPresentationOld.theScale)
+    //{
+    //    cout<<"@ --------------------------------"<<endl;
+    //    cout<<"@ - SCALE CHANGED"<<endl;
+    //    cout<<"@ --------------------------------"<<endl;
+    //    aPostObject->setScale(aResultPresentation.theScale);
+    //    aPostObject->updateScaledView();
+    //}
 
     //! ---------------------------
     //! display the colored meshes
