@@ -1,8 +1,13 @@
+//! ----------------
 //! custom includes
+//! ----------------
 #include "meshtoolbar.h"
 #include "qpushbuttonextended.h"
+#include "global.h"
 
+//! ---
 //! Qt
+//! ---
 #include <QMenu>
 #include <QAction>
 #include <QMessageBox>
@@ -82,7 +87,9 @@ MeshToolBar::MeshToolBar(const QString &title, QWidget *parent):QToolBar(title,p
 void MeshToolBar::emitShowInteriorMeshRequested()
 {
     meshViewSelector->setIcon(QIcon(":/icons/icon_volume mesh.png"));
+    Global::status().myResultPresentation.useExteriorMeshForVolumeResults = false;
     emit showExteriorMeshRequest(false);
+    emit requestUpdateViewerStatus();
 }
 
 //! -------------------------------------------
@@ -92,7 +99,9 @@ void MeshToolBar::emitShowInteriorMeshRequested()
 void MeshToolBar::emitShowOnlySurfaceMeshRequested()
 {
     meshViewSelector->setIcon(QIcon(":/icons/icon_surface mesh.png"));
+    Global::status().myResultPresentation.useExteriorMeshForVolumeResults = true;
     emit showExteriorMeshRequest(true);
+    emit requestUpdateViewerStatus();
 }
 
 //! -------------------------------

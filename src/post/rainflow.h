@@ -71,7 +71,8 @@ public:
     inline void setFatigueModel (fatigueModel fm) { myFatigueModel = fm; }
 
     //! perform
-    bool perform(QMap<int, QList<double> > strainDistTimeHistory, QMap<int, double> &damageDist);
+    //bool perform(QMap<int, QList<double> > strainDistTimeHistory, QMap<int, double> &damageDist);
+    bool perform(std::map<int, QList<double> > strainDistTimeHistory, std::map<int, double> &damageDist);
 
     //void read_data();
 

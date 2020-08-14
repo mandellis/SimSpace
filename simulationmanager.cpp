@@ -507,7 +507,6 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
 
                 if(nodeTemperature->getPropertyItem("Post object")!=Q_NULLPTR)
                 {
-                    //postObject aPostObject = nodeTemperature->getPropertyValue<postObject>("Post object");
                     sharedPostObject aPostObject = nodeTemperature->getPropertyValue<sharedPostObject>("Post object");
                     emit requestSetWorkingMode(3);
                     emit requestShowAllBodies();    //! check if wireframe... to do
@@ -536,7 +535,6 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 //! in the working mode "3" "Solution" the selection modes
                 //! and the corresponding toolbar buttons are disabled
                 //! -------------------------------------------------------
-                //postObject aPostObject;
                 sharedPostObject aPostObject;
                 bool isDone = this->retrieveCurrentItemResult(aPostObject);
                 if(isDone)
@@ -577,7 +575,6 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 //! in the working mode "3" "Solution" the selection modes
                 //! and the corresponding toolbar buttons are disabled
                 //! -------------------------------------------------------
-                //postObject aPostObject;
                 sharedPostObject aPostObject;
                 bool isDone = this->retrieveCurrentItemResult(aPostObject);
                 if(isDone)
@@ -2266,8 +2263,8 @@ void SimulationManager::handleItem(int type)
     {
         cout<<"SimulationManager::handleItem()->____update post object____"<<endl;
         SimulationNodeClass *curNode = myTreeView->currentIndex().data(Qt::UserRole).value<SimulationNodeClass*>();
-        postObject curPostObject = curNode->getPropertyItem("Post object")->data(Qt::UserRole).value<Property>().getData().value<postObject>();
-        curPostObject.init(static_cast<meshDataBase*>(mySimulationDataBase));
+        sharedPostObject curPostObject = curNode->getPropertyValue<sharedPostObject>("Post object");
+        curPostObject->init(static_cast<meshDataBase*>(mySimulationDataBase));
         //! ----
         //! to be implemented. Not sure if needed ...
     }
@@ -4846,7 +4843,6 @@ void SimulationManager::handleItemChange(QStandardItem *item)
             QStandardItem *itemPostObject = curNode->getPropertyItem("Post object");
             if(itemPostObject!=Q_NULLPTR)
             {
-                //postObject thePostObject = curNode->getPropertyValue<postObject>("Post object");
                 sharedPostObject thePostObject = curNode->getPropertyValue<sharedPostObject>("Post object");
                 myPostEngine->updateIsostrips(thePostObject,scaleType,minValue,maxValue,NbIntervals);
 
@@ -9964,7 +9960,7 @@ void SimulationManager::interpolatePrivate(int mode)
     //! results of the interpolation
     //! -----------------------------
     QList<QMap<int,std::pair<double,double>>> listMapMinMax;
-    QList<QMap<GeometryTag,QList<QMap<int,double>>>> listMapOfRes;
+    std::vector<std::map<GeometryTag,std::vector<std::map<int,double>>>> listMapOfRes;
 
     //! --------------------------
     //! start the mapping process
@@ -10048,9 +10044,9 @@ void SimulationManager::interpolatePrivate(int mode)
 
             for(int pos=0;pos<NbStep;pos++)
             {
-                QMap<GeometryTag,QList<QMap<int,double>>> mapOfRes;
+                std::map<GeometryTag,std::vector<std::map<int,double>>> mapOfRes;
                 QMap<int,std::pair<double,double>> mapMinMax;
-                QList<QMap<int,double>> listOfRes;
+                std::vector<std::map<int,double>> listOfRes;
 
                 cout<<"SimulationManager::interpolatePrivate()->____retrieve list of map of result at step "<<pos<<"____"<<endl;
 
@@ -10061,17 +10057,17 @@ void SimulationManager::interpolatePrivate(int mode)
                 std::pair<double,double> aPair = mapper.getMinMax();
 
                 //! retrieve the results at time pos
-                listOfRes<<mapper.getResults();
+                listOfRes.push_back(mapper.getResults());
 
                 if(it==vecLocs.begin())
                 {
                     cout<<"SimulationManager::interpolatePrivate()->inserting results on first body number = "<<bodyIndex<<endl;
                     mapMinMax.insert(bodyIndex,aPair);
-                    mapOfRes.insert(loc,listOfRes);
+                    mapOfRes.insert(std::make_pair(loc,listOfRes));
 
                     //! insert all results type into the "time" list of results
                     listMapMinMax<<mapMinMax;
-                    listMapOfRes<<mapOfRes;
+                    listMapOfRes.push_back(mapOfRes);
                 }
                 else
                 {
@@ -10080,18 +10076,16 @@ void SimulationManager::interpolatePrivate(int mode)
                     mapOfRes=listMapOfRes[pos];
 
                     mapMinMax.insert(bodyIndex,aPair);
-                    mapOfRes.insert(loc,listOfRes);
+                    mapOfRes.insert(std::make_pair(loc,listOfRes));
 
                     //! --------------------------------------------
                     //! insert all results into the list of results
                     //! --------------------------------------------
                     listMapMinMax.replace(pos,mapMinMax);
-                    listMapOfRes.replace(pos,mapOfRes);
+                    listMapOfRes[pos] = mapOfRes;
                 }
             }
-            //cout<<"SimulationManager::interpolatePrivate()->____exit if cycle______"<<endl;
         }
-        //cout<<"SimulationManager::interpolatePrivate()->____exit iteration over bodies______"<<endl;
 
         //! ------------
         //! stop chrono
@@ -10165,7 +10159,11 @@ void SimulationManager::interpolatePrivate(int mode)
         //! ---------------------------------------------
         postObjectName.append("\n").append(tools::timeStamp()).append("\n");
 
-        QMap<GeometryTag,QList<QMap<int,double>>> mapOfRes = listMapOfRes.at(t);
+        //! -----------------------------------------------------------------------------------------------------
+        //! use a patch - replace QMap and QMultiMap in Mapper3DClass
+        //! QMap<GeometryTag,QList<QMap<int,double>>> => std::map<GeometryTag,std::vector<std::map<int,double>>>
+        //! -----------------------------------------------------------------------------------------------------
+        std::map<GeometryTag,std::vector<std::map<int,double>>> mapOfRes = listMapOfRes.at(t);
 
         //! ---------------------------------------------------------------------
         //! create the post object: 1-st column of data, 10 levels, autoscale ON
@@ -10792,7 +10790,6 @@ void SimulationManager::evaluateAllResults()
     for(int row = 1; row<curItemSolution->rowCount(); row++)
     {
         QStandardItem *itemResult = curItemSolution->child(row,0);
-        SimulationNodeClass *nodeResult = itemResult->data(Qt::UserRole).value<SimulationNodeClass*>();
         this->callPostEngineEvaluateResult_private(itemResult,false);
     }
 }

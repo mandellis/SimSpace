@@ -1190,6 +1190,8 @@ void MainWindow::createToolBars()
 
     //! for changing the status variable of the main viewer
     connect(resultsToolBar,SIGNAL(requestUpdateViewerStatus()),myMainOCCViewer,SLOT(updateViewerStatus()));
+    connect(meshToolBar,SIGNAL(requestUpdateViewerStatus()),myMainOCCViewer,SLOT(updateViewerStatus()));
+
     connect(myMainOCCViewer,SIGNAL(resultsPresentationChanged()),mySimulationManager,SLOT(updateResultsPresentation()));
 }
 
@@ -2025,7 +2027,6 @@ void MainWindow::setWorkingMode(int workingModeNumber)
         myMainOCCViewer->setWorkingMode_Solution();
         myTabularDataDock->setVisible(false);
         myTabularDataViewerDock->setVisible(false);
-
     }
         break;
     }

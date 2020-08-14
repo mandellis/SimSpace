@@ -142,10 +142,10 @@ int rainflow::solve(double eps)
         cout<<"rainflow::solve()->____bisection method, initial calculated Root for NR = "<<initialRoot<<"____"<<endl;
         */
 
-        //!------------------------------------------------------------------
+        //!---------------------------------------------------
         //! Newton Raphson Method: calculate root of equation
         //! details:
-        //!------------------------------------------------------------------
+        //!---------------------------------------------------
 
         //! estimate initial root
         double level1=3.53e-3;
@@ -450,18 +450,22 @@ QList<double> rainflow::rainflow_engine(QList<double> y)
     return B;
 }
 
-
-bool rainflow::perform(QMap<int, QList<double>> strainDistTimeHistory, QMap<int,double> &damageDist)
+//bool rainflow::perform(QMap<int, QList<double>> strainDistTimeHistory, QMap<int,double> &damageDist)
+bool rainflow::perform(std::map<int, QList<double>> strainDistTimeHistory, std::map<int,double> &damageDist)
 {
     cout<<"rainflow::perform()->____function called____"<<endl;
-    for(QMap<int, QList<double>>::iterator it = strainDistTimeHistory.begin(); it!= strainDistTimeHistory.end(); ++it)
+
+    for(std::map<int, QList<double>>::iterator it = strainDistTimeHistory.begin(); it!= strainDistTimeHistory.end(); ++it)
+    //for(QMap<int, QList<double>>::iterator it = strainDistTimeHistory.begin(); it!= strainDistTimeHistory.end(); ++it)
     {
-        int nodeID = it.key();
-        QList<double> timeHistory = it.value();
+        //int nodeID = it.key();
+        int nodeID = it->first;
+        //QList<double> timeHistory = it.value();
+        QList<double> timeHistory = it->second;
+
         double damage = this->damage_index(timeHistory);
-        //cout<<"rainflow::perform()->____damage = "<<damage<<endl;
-        damageDist.insert(nodeID,damage);
+        //damageDist.insert(nodeID,damage);
+        damageDist.insert(std::make_pair(nodeID,damage));
     }
-    //cout<<"rainflow::perform()->____return true____"<<endl;
     return true;
 }

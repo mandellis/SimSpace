@@ -77,6 +77,7 @@ public:
                          const QString &polyFilePath,
                          QProgressIndicator *progressIndicator = Q_NULLPTR);
 
+    /*
     static bool buildColoredMesh(const occHandle(MeshVS_DataSource) &theMeshVS_DataSource,
                                  const QMap<int,double> &res,
                                  occHandle(MeshVS_Mesh) &aColoredMesh,
@@ -86,9 +87,19 @@ public:
                                  bool showEdges = false,
                                  bool autoscale = true);
 
+                                 */
+    static bool buildColoredMesh(const occHandle(MeshVS_DataSource) &theMeshVS_DataSource,
+                                 const std::map<int,double> &res,
+                                 occHandle(MeshVS_Mesh) &aColoredMesh,
+                                 double min = -100,
+                                 double max = 100,
+                                 int numberOfLevels = 10,
+                                 bool showEdges = false,
+                                 bool autoscale = true);
+
     static bool buildDeformedColoredMesh(const occHandle(MeshVS_DataSource) &theMeshVS_DataSource,
-                                         const QMap<int,double> &res,
-                                         const QMap<int,gp_Vec> &displacementMap,
+                                         const std::map<int,double> &res,
+                                         const std::map<int,gp_Vec> &displacementMap,
                                          double scale,
                                          double min,
                                          double max,
@@ -97,8 +108,8 @@ public:
                                          bool showEdges = false);
 
     static bool buildIsoStrip(const occHandle(MeshVS_DataSource) &theMeshVS_DataSource,
-                              const QMap<int,double> &res,
-                              const QMap<int,gp_Vec> &displacementMap,
+                              const std::map<int,double> &res,
+                              const std::map<int,gp_Vec> &displacementMap,
                               double scale,
                               double min,
                               double max,
@@ -107,7 +118,7 @@ public:
                               bool showEdges = false);
 
     static bool buildIsoStrip(const occHandle(MeshVS_DataSource) &theMeshVS_DataSource,
-                              const QMap<int,double> &res,
+                              const std::map<int,double> &res,
                               double min,
                               double max,
                               int NbLevels,

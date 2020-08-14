@@ -93,12 +93,12 @@ public slots:
     bool perform();
 
     //! evaluate results
-    QMap<GeometryTag,QList<QMap<int,double>>> evaluateResult(const QString &resultKeyName,
-                                                             int requiredSubStepNb,
-                                                             int requiredStepNb,
-                                                             int requiredMode,
-                                                             const QVector<GeometryTag> &vecLoc,
-                                                             double &requiredTime);
+    std::map<GeometryTag,std::vector<std::map<int,double>>> evaluateResult(const QString &resultKeyName,
+                                                                            int requiredSubStepNb,
+                                                                            int requiredStepNb,
+                                                                            int requiredMode,
+                                                                            const QVector<GeometryTag> &vecLoc,
+                                                                            double &requiredTime);
 
     //! evaluate fatigue results
     bool evaluateFatigueResults(int type, QVector<GeometryTag> locs, const QList<double> &times, QMap<int,int> materialBodyMap, int nCycle, sharedPostObject &aPostObject);
@@ -121,9 +121,14 @@ private:
     QString timeStamp();
 
     //! read fatigue results
-    QMap<GeometryTag,QMap<int,QList<double>>> readFatigueResults(int type,
+    //QMap<GeometryTag,QMap<int,QList<double>>> readFatigueResults(int type,
+    //                                                             const QVector<GeometryTag> &vecLoc,
+    //                                                             const QList<double> &times);
+
+    std::map<GeometryTag,std::map<int,QList<double>>> readFatigueResults(int type,
                                                                  const QVector<GeometryTag> &vecLoc,
                                                                  const QList<double> &times);
+
 
     //! fatigue model
     fatigueModel myFatigueModel;

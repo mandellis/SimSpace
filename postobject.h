@@ -49,25 +49,25 @@ public:
     //! ------------
     //! constructor
     //! ------------
-    postObject(const QMap<GeometryTag, QList<QMap<int, double>>> &resMap);
+    postObject(const std::map<GeometryTag, std::vector<std::map<int, double> > > &resMap);
 
     //! ------------
     //! constructor
     //! ------------
-    postObject(const QMap<GeometryTag, QList<QMap<int, double>>> &resMap, const QVector<GeometryTag> &aVecLoc);
+    postObject(const std::map<GeometryTag, std::vector<std::map<int, double>>> &resMap, const QVector<GeometryTag> &aVecLoc);
 
     //! ------------
     //! constructor
     //! ------------
-    postObject(const QMap<GeometryTag,QList<QMap<int,double>>> &resMap, const QVector<GeometryTag> &aVecLoc, const QString& aName);
+    postObject(const std::map<GeometryTag,std::vector<std::map<int,double>>> &resMap, const QVector<GeometryTag> &aVecLoc, const QString& aName);
 
     //! ------------
     //! constructor
     //! ------------
-    postObject(const QMap<GeometryTag,QList<QMap<int,double>>> &resMap,
+    postObject(const std::map<GeometryTag,std::vector<std::map<int,double>>> &resMap,
                const QVector<GeometryTag> &aVecLoc,
-               const QMap<GeometryTag,QMap<int,gp_Vec>> mapOfMapOfNodalDiplacements,
-               const QString& aName, bool aShowSolidMeshAsSurface);
+               const std::map<GeometryTag,std::map<int,gp_Vec>> mapOfMapOfNodalDiplacements,
+               const QString& aName, bool useSurfaceMeshForVolumeResults);
 
     //! ----------------------
     //! constructor from file
@@ -99,13 +99,13 @@ public:
         myMin = other.myMin;
         myMax = other.myMax;
         myNbLevels = other.myNbLevels;
-        myShowSolidMeshAsSurface = other.myShowSolidMeshAsSurface;
+        myUseSurfaceMeshForVolumeResults = other.myUseSurfaceMeshForVolumeResults;
     }
 
     //! -------------------------------------------------
     //! set the map of the vectorial nodal displacements
     //! -------------------------------------------------
-    void setMapOfNodalDisplacements(const QMap<GeometryTag,QMap<int,gp_Vec>> &mapDisplMap)
+    void setMapOfNodalDisplacements(const std::map<GeometryTag,std::map<int,gp_Vec>> &mapDisplMap)
     {
         myMapOfNodalDisplacements = mapDisplMap;
     }
@@ -113,7 +113,7 @@ public:
     //! -------------------------------------------------
     //! get the map of the vectorial nodal displacements
     //! -------------------------------------------------
-    QMap<GeometryTag,QMap<int,gp_Vec>> getMapOfNodalDisplacements()
+    std::map<GeometryTag,std::map<int,gp_Vec>> getMapOfNodalDisplacements()
     {
         return myMapOfNodalDisplacements;
     }
@@ -124,19 +124,19 @@ private:
     //! in case of results on a volume mesh tells
     //! if plot only the surface mesh or the volume mesh
     //! -------------------------------------------------
-    bool myShowSolidMeshAsSurface;
+    bool myUseSurfaceMeshForVolumeResults;
 
     //! ---------
     //! the data
     //! ---------
-    QMap<GeometryTag,QList<QMap<int,double>>> theData;
+    std::map<GeometryTag,std::vector<std::map<int,double>>> theData;
 
-    //! -------------------------------------
-    //! MeshVS_Mesh objects (colored meshes)
-    //! -------------------------------------
-    QMap<GeometryTag,occHandle(MeshVS_Mesh)> theMeshes;
-    QMap<GeometryTag,occHandle(MeshVS_DeformedDataSource)> theMeshDataSources;
-    QMap<GeometryTag,occHandle(MeshVS_DeformedDataSource)> theMeshDataSourcesForView;
+    //! -----------------------------------
+    //! mesh objects and mesh data sources
+    //! -----------------------------------
+    std::map<GeometryTag,occHandle(MeshVS_Mesh)> theMeshes;
+    std::map<GeometryTag,occHandle(MeshVS_DeformedDataSource)> theMeshDataSources;
+    std::map<GeometryTag,occHandle(MeshVS_DeformedDataSource)> theMeshDataSourcesForView;
 
     //! ----------------
     //! the color scale
@@ -156,7 +156,7 @@ private:
     //! --------------------------------------
     //! map of map of the nodal displacements
     //! --------------------------------------
-    QMap<GeometryTag,QMap<int,gp_Vec>> myMapOfNodalDisplacements;
+    std::map<GeometryTag,std::map<int,gp_Vec>> myMapOfNodalDisplacements;
 
     //! ----------------------------
     //! the solution data component
@@ -188,13 +188,13 @@ public:
     QString getName() const { return name;}
 
     //! get data
-    QMap<GeometryTag,QList<QMap<int,double>>> getData() { return theData; }
+    std::map<GeometryTag,std::vector<std::map<int,double>>> getData() { return theData; }
 
     //! get locations
     QVector<GeometryTag> getLocations() const { return myVecLoc; }
 
     //! NbMeshes
-    int NbMeshes() const { return theData.size(); }
+    int NbMeshes() const { return (int)theData.size(); }
 
     //! write
     void write(std::ofstream &file);
@@ -206,28 +206,25 @@ public:
     void writeMesh(ofstream &file, const occHandle(MeshVS_DataSource) &theMeshDS);
 
     //! build mesh IO
-    void buildMeshIO(double min=-1e20, double max=1e20, int Nlevels=9, bool autoscale=true, int component=0, double deformationScale = 1.0);
+    void buildMeshIO(double min=-1e20, double max=1e20, int Nlevels=10, bool autoscale=true, int component=0, double deformationScale = 1.0);
 
     //! init
     void init(meshDataBase *mDB, int component=0);
-
-    //! update mesh
-    //void updateView(bool showMeshEdges);
 
     //! clone
     postObject clone(const postObject &other);
 
     //! get colored meshes
-    QMap<GeometryTag,occHandle(MeshVS_Mesh>) getColoredMeshes() const { return theMeshes; }
+    std::map<GeometryTag,occHandle(MeshVS_Mesh>) getColoredMeshes() const { return theMeshes; }
 
     //! get the mesh data sources
-    QMap<GeometryTag,occHandle(MeshVS_DeformedDataSource)> getMeshDataSources() const { return theMeshDataSources; }
+    std::map<GeometryTag,occHandle(MeshVS_DeformedDataSource)> getMeshDataSources() const { return theMeshDataSources; }
 
     //! get the mesh data sources for view
-    QMap<GeometryTag,occHandle(MeshVS_DeformedDataSource)> getMeshDataSourcesForView() const { return theMeshDataSourcesForView; }
+    std::map<GeometryTag,occHandle(MeshVS_DeformedDataSource)> getMeshDataSourcesForView() const { return theMeshDataSourcesForView; }
 
     //! is empty
-    bool isEmpty() const{ return theData.isEmpty(); }
+    bool isEmpty() const{ return (theData.size()==0? true:false); }
 
     //! update scaled view (internally read myScale)
     void updateScaledView();
@@ -236,9 +233,6 @@ public:
 
     //! get the color box
     occHandle(AIS_ColorScaleExtended) getColorBox() const { return AISColorScale; }
-
-    //! set scale
-    void setScale(double scale) { myScale = scale; }
 
     //! get scale
     double getScale() { return myScale; }
@@ -259,9 +253,15 @@ public:
     //! experimental
     void updateMapping(int mapping);
 
+    //! set scale
+    void setScale(double scale) { myScale = scale; }
+
+    //! set mode
+    void setMode (bool useSurfaceMeshForVolumeResults) { myUseSurfaceMeshForVolumeResults = useSurfaceMeshForVolumeResults; }
+
 private:
 
-    void writeIntoStream(ofstream &os, const opencascade::handle<MeshVS_DataSource> &aMeshDS);
+    void writeIntoStream(ofstream &os, const occHandle(MeshVS_DataSource) &aMeshDS);
     bool readMeshFromStream(ifstream &stream, occHandle(MeshVS_DataSource) &aMeshDS);
 
     //! -------
@@ -278,7 +278,6 @@ private:
 };
 
 Q_DECLARE_METATYPE(postObject)
-
 
 typedef std::shared_ptr<postObject> sharedPostObject;
 Q_DECLARE_METATYPE(sharedPostObject)

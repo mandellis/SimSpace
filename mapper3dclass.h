@@ -44,7 +44,7 @@ public:
     struct nodeSource
     {
         double x[3];
-        QList<double> vecVal;
+        std::vector<double> vecVal;
 
         //! --------------------
         //! default constructor
@@ -52,7 +52,7 @@ public:
         nodeSource()
         {
             x[0]=0; x[1]=0; x[2]=0;
-            vecVal = QList<double>();
+            vecVal = std::vector<double>();
         }
 
         //! -----------
@@ -64,7 +64,7 @@ public:
             x[1] = rhs.x[1];
             x[2] = rhs.x[2];
             vecVal.clear();
-            vecVal<<rhs.vecVal;
+            vecVal = rhs.vecVal;
             return *this;
         }
 
@@ -77,13 +77,13 @@ public:
             x[1] = rhs.x[1];
             x[2] = rhs.x[2];
             vecVal.clear();
-            vecVal<<rhs.vecVal;
+            vecVal = rhs.vecVal;
         }
 
         //! ------------
         //! operator ==
         //! ------------
-        bool operator ==(const nodeSource &other)
+        bool operator == (const nodeSource &other)
         {
             //! check the coordinates
             if(x[0] != other.x[0]) return false;
@@ -106,7 +106,7 @@ public:
     {
         double x,y,z;
         int nodeID;
-        QList<double> values;
+        std::vector<double> values;
         double pinball;
         bool hasValue;
 
@@ -118,7 +118,7 @@ public:
             x = other.x; y = other.y; z = other.z;
             nodeID = other.nodeID;
             values.clear();
-            values<<other.values;
+            values = other.values;
             pinball = other.pinball;
             hasValue = other.hasValue;
         }
@@ -130,7 +130,7 @@ public:
         {
             x = xp; y = yp; z = zp;
             nodeID = aNodeID;
-            values = QList<double>();
+            values = std::vector<double>();
             pinball = 1e80;
             hasValue = false;
         }
@@ -152,9 +152,7 @@ public:
             {
                 pinball = d;
                 values.clear();
-                values<<aNodeSource.vecVal;
-                //cout<<"____in put: "<<values.length()<<" values____"<<endl;
-                //exit(1);
+                values = aNodeSource.vecVal;
                 hasValue = true;
             }
         }
@@ -294,7 +292,8 @@ public:
     //! -----------
     //! get result
     //! -----------
-    QMap<int,double> getResults();
+    //QMap<int,double> getResults();
+    std::map<int,double> getResults();
 
     //! --------------------------
     //! return min and max values
@@ -315,7 +314,7 @@ public:
     //! --------------------------------------
     //! getMultiresult for multiInterpolation
     //! --------------------------------------
-    QMap<int, QList<double> > getMultiResults();
+    std::map<int, std::vector<double> > getMultiResults();
 
     //! ---------------------------
     //! set the progress indicator
@@ -351,12 +350,17 @@ private:
     std::vector<mesh::meshElement> myVecElements;
     std::vector<mesh::meshElement> myVecEmptyElements;
 
-    QMap<int,QList<double>> myMapOfNodes;               //! target mesh nodes - key->nodeID, value[3]->coords(x, y, z)
-    QMultiMap<int,double> myResNodes;                   //! target mesh nodes - intermediate result of the interpolation
-    QMap<int,double> myRes;                             //! target mesh nodes - key->nodeID, averaged interpolated scalar value
+    //QMap<int,std::vector<double>> myMapOfNodes;               //! target mesh nodes - key->nodeID, value[3]->coords(x, y, z)
+    //QMap<int,double> myRes;                             //! target mesh nodes - key->nodeID, averaged interpolated scalar value
 
-    QMultiMap<int,QList<double>> myMultiResNodes; //! target mesh nodes - intermediate result of the multiInterpolation
-    QMap<int,QList<double>> myMultiRes;           //! target mesh nodes - key->nodeID, averaged interpolated scalar value for multiinterpolate
+    std::map<int,std::vector<double>> myMapOfNodes;         //! target mesh nodes - key->nodeID, value[3]->coords(x, y, z)
+    std::map<int,double> myRes;                             //! target mesh nodes - key->nodeID, averaged interpolated scalar value
+
+    //QMultiMap<int,std::vector<double>> myMultiResNodes; //! target mesh nodes - intermediate result of the multiInterpolation
+    //QMap<int,std::vector<double>> myMultiRes;           //! target mesh nodes - key->nodeID, averaged interpolated scalar value for multiinterpolate
+
+    std::multimap<int,std::vector<double>> myMultiResNodes; //! target mesh nodes - intermediate result of the multiInterpolation
+    std::map<int,std::vector<double>> myMultiRes;           //! target mesh nodes - key->nodeID, averaged interpolated scalar value for multiinterpolate
 
     //! -------------------------
     //! grouping of source nodes

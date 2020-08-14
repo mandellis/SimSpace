@@ -3450,22 +3450,20 @@ void writeSolverFileClass::writeTemperatureHistory(postObject pObject, QString t
     myTemperature.precision(EXPFORMAT_PRECISION);
     myTemperature.open(tName.toStdString());
 
-    QMap<GeometryTag,QList<QMap<int,double>>> Tdata;
-    Tdata = pObject.getData();
-
-    QMap<GeometryTag,QList<QMap<int,double>>>::iterator mapIt;
-    for(mapIt = Tdata.begin(); mapIt!=Tdata.end(); ++mapIt)
+    std::map<GeometryTag,std::vector<std::map<int,double>>> Tdata = pObject.getData();
+    for(std::map<GeometryTag,std::vector<std::map<int,double>>>::iterator mapIt = Tdata.begin(); mapIt!=Tdata.end(); ++mapIt)
     {
-        GeometryTag aloc = mapIt.key();
-        QList<QMap<int,double>> lres = mapIt.value();    //extract the list of results
+        GeometryTag aloc = mapIt->first;
 
-        QMap<int,double> res = lres.at(0);     //extract the result from the list
-        QMap<int,int> trans = OCCMeshToCCXmesh::perform(aloc,myDB);
+        std::vector<std::map<int,double>> lres = mapIt->second;     //extract the list of results
+        std::map<int,double> res = lres.at(0);                      //extract the result from the list
+        std::map<int,int> trans = OCCMeshToCCXmesh::perform(aloc,myDB);
 
         int l=1;
-        for(QMap<int,double>::iterator mapIt2=res.begin();mapIt2!=res.end();++mapIt2)
+        for(std::map<int,double>::const_iterator it =res.cbegin(); it!=res.cend(); it++)
         {
-            myTemperature<<trans.key(l)<<", "<<mapIt2.value()<<endl;
+            int keyOfl = trans.find(l)->first;
+            myTemperature<<keyOfl<<", "<<it->second<<endl;
             l++;
         }
     }
@@ -3479,8 +3477,7 @@ void writeSolverFileClass::writeTemperatureHistory(postObject pObject, QString t
 void writeSolverFileClass::writeGapElement(const IndexedMapOfMeshDataSources &anIndexedMapOfFaceMeshDS,
                                            QString setName, double K, double F)
 {
-    QString gapuniName = setName;
-    gapuniName = gapuniName.append(".gap");
+    QString gapuniName = setName + ".gap";
     //! this is the absolute path on the disk
     QString absFileName = myFileName.split("/").last();
     QString dirName = myFileName;
@@ -3496,11 +3493,12 @@ void writeSolverFileClass::writeGapElement(const IndexedMapOfMeshDataSources &an
     //! write the copied face mesh
     //! ----------------------------
     myGapuni<<"*NODE, NSET= N"<<setName.toStdString()<<endl;
-    //int bodyEnd = myDB->bodyMap.end().key();
 
-    QMap<std::pair<int,int>,QList<double>> gapInfo;
+    //QMap<std::pair<int,int>,QList<double>> gapInfo;
+    std::map<std::pair<int,int>,QList<double>> gapInfo;
+
     int offset=0;
-    for(QMap<int,opencascade::handle<MeshVS_DataSource>>::const_iterator it = anIndexedMapOfFaceMeshDS.cbegin(); it!= anIndexedMapOfFaceMeshDS.cend(); ++it)
+    for(QMap<int,occHandle(MeshVS_DataSource)>::const_iterator it = anIndexedMapOfFaceMeshDS.cbegin(); it!= anIndexedMapOfFaceMeshDS.cend(); ++it)
     {
         int bodyIndex = it.key();
         for(int k=1; k<bodyIndex; k++)
@@ -3519,9 +3517,9 @@ void writeSolverFileClass::writeGapElement(const IndexedMapOfMeshDataSources &an
         for(TColStd_MapIteratorOfPackedMapOfInteger anIter(theCurMeshDS->GetAllNodes()); anIter.More(); anIter.Next())
         {
             totalNumberOfNodes++;
-            Standard_Real aCoordsBuf[3];
+            double aCoordsBuf[3];
             TColStd_Array1OfReal aCoords(*aCoordsBuf,1,3);
-            Standard_Integer nbNodes;
+            int nbNodes;
             MeshVS_EntityType aType;
 
             std::pair<int,int> aNodePair;
@@ -3529,17 +3527,11 @@ void writeSolverFileClass::writeGapElement(const IndexedMapOfMeshDataSources &an
             aNodePair.first = anIter.Key()+offset;
             aNodePair.second=totalNumberOfNodes;
 
-            //aMeshVS_DataSource.GetGeom(anIter.Key(),Standard_False,aCoords,nbNodes,aType);
-            theCurMeshDS->GetGeom(anIter.Key(),Standard_False,aCoords,nbNodes,aType);
-            Standard_Real x_node = aCoordsBuf[0];
-            Standard_Real y_node = aCoordsBuf[1];
-            Standard_Real z_node = aCoordsBuf[2];
+            theCurMeshDS->GetGeom(anIter.Key(),false,aCoords,nbNodes,aType);
+            myGapuni<<aNodePair.second<<","<<aCoords(1)<<","<<aCoords(2)<<","<<aCoords(3)<<endl;
 
-            myGapuni<<aNodePair.second<<","<<x_node<<","<<y_node<<","<<z_node<<endl;
-
-            //vecNodeId<<nodeID;
-            //vecNodeIdCopy<<nodeIDcopy;
-            gapInfo.insert(aNodePair,curNormal);
+            //gapInfo.insert(aNodePair,curNormal);
+            gapInfo.insert(std::make_pair(aNodePair,curNormal));
         }
     }
 
@@ -3549,11 +3541,14 @@ void writeSolverFileClass::writeGapElement(const IndexedMapOfMeshDataSources &an
     myGapuni<<"*BOUNDARY"<<endl;
     myGapuni<<"N"<<setName.toStdString()<<","<<"1,"<<"3"<<endl;
 
-    for(QMap<std::pair<int,int>,QList<double>>::iterator it=gapInfo.begin();it!=gapInfo.end();it++)
+    for(std::map<std::pair<int,int>,QList<double>>::iterator it=gapInfo.begin();it!=gapInfo.end();it++)
+    //for(QMap<std::pair<int,int>,QList<double>>::iterator it=gapInfo.begin();it!=gapInfo.end();it++)
     {
         totalNumberOfElements++;
-        std::pair<int,int> aPair = it.key();
-        QList<double> nodeNormal = it.value();
+        //std::pair<int,int> aPair = it.key();
+        //QList<double> nodeNormal = it.value();
+        std::pair<int,int> aPair = it->first;
+        QList<double> nodeNormal = it->second;
 
         //! write the gap element (connection btw faceMeshDS and the copied one)
         myGapuni<<"*ELEMENT,TYPE = GAPUNI, ELSET= G"<<totalNumberOfElements<<endl;

@@ -356,12 +356,13 @@ Ng_Mesh* MeshTools::OCCDSToNegtenSurfaceMesh(const TopoDS_Shape &theShape,
 
     return NgMesh;
 }
+
 //! -----------------------------------------------------------------------
 //! function: buildColoredMesh
 //! details:  create a MeshVS_Mesh object with colored shaded presentation
 //! -----------------------------------------------------------------------
 bool MeshTools::buildColoredMesh(const occHandle(MeshVS_DataSource) &theMeshVS_DataSource,
-                                 const QMap<int,double> &res,
+                                 const std::map<int,double> &res,
                                  occHandle(MeshVS_Mesh) &aColoredMesh,
                                  double min,
                                  double max,
@@ -399,10 +400,15 @@ bool MeshTools::buildColoredMesh(const occHandle(MeshVS_DataSource) &theMeshVS_D
     {
         max = -1e80;
         min = -max;
-        for(QMap<int,double>::const_iterator it = res.cbegin(); it!=res.cend(); it++)
+
+        //for(QMap<int,double>::const_iterator it = res.cbegin(); it!=res.cend(); it++)
+        for(std::map<int,double>::const_iterator it = res.cbegin(); it!=res.cend(); it++)
         {
-            double curVal = it.value();
-            int index = it.key();
+            //double curVal = it.value();
+            //int index = it.key();
+            double curVal = it->second;
+            int index = it->first;
+
             if(curVal>=max) { max = curVal; indexOfMax = index; }
             if(curVal<=min) { min = curVal; indexOfMin = index; }
         }
@@ -442,14 +448,18 @@ bool MeshTools::buildColoredMesh(const occHandle(MeshVS_DataSource) &theMeshVS_D
     //! iterate through the nodes and add an appropriate value to the map
     //! scan the result of type (nodeID, scalarValue)
     //! ------------------------------------------------------------------
-    QMap<int, double>::const_iterator itNodes;
+    std::map<int, double>::const_iterator itNodes;
+    //QMap<int, double>::const_iterator itNodes;
+
     TColStd_DataMapOfIntegerReal aScaleMap;
 
     for(itNodes = res.cbegin(); itNodes!= res.cend(); ++itNodes)
     {
-        int nodeID = itNodes.key();
+        //int nodeID = itNodes.key();
+        int nodeID = itNodes->first;
         double aValue;
-        if(range != 0.0) aValue = (itNodes.value()-min)/range;
+        //if(range != 0.0) aValue = (itNodes.value()-min)/range;
+        if(range != 0.0) aValue = (itNodes->second-min)/range;
         else aValue = 0.0;
         aScaleMap.Bind(nodeID, aValue);
     }
@@ -485,12 +495,12 @@ extern int hueFromValue(int,int,int);
 //! details:
 //! ------------------------
 bool MeshTools::buildIsoStrip(const occHandle(MeshVS_DataSource) &theMeshDS,        //! input mesh data source
-                   const QMap<int,double> &res,                          //! nodal results
-                   double min,                                           //! used for isostrips generation
-                   double max,                                           //! used for isostrips generation
-                   int NbLevels,                                         //! user for isostrip generation
-                   occHandle(MeshVS_Mesh) &aColoredMesh,                 //! result
-                   bool showEdges)
+                              const std::map<int,double> &res,                          //! nodal results
+                              double min,                                           //! used for isostrips generation
+                              double max,                                           //! used for isostrips generation
+                              int NbLevels,                                         //! user for isostrip generation
+                              occHandle(MeshVS_Mesh) &aColoredMesh,                 //! result
+                              bool showEdges)
 {
     if(theMeshDS.IsNull()) return false;
 
@@ -523,7 +533,8 @@ bool MeshTools::buildIsoStrip(const occHandle(MeshVS_DataSource) &theMeshDS,    
     anIsoStripBuilder.setIsoStrips(vecIsoStrip);
 
     std::vector<meshElementByCoords> allElements;
-    bool isDone = anIsoStripBuilder.perform(allElements);
+    //bool isDone = anIsoStripBuilder.perform(allElements);
+    bool isDone = anIsoStripBuilder.perform1(allElements);
 
     if(isDone == false) return false;
 
@@ -567,8 +578,8 @@ bool MeshTools::buildIsoStrip(const occHandle(MeshVS_DataSource) &theMeshDS,    
 //! details:
 //! ------------------------
 bool MeshTools::buildIsoStrip(const occHandle(MeshVS_DataSource) &theMeshDS,        //! input mesh data source
-                              const QMap<int,double> &res,                          //! nodal results
-                              const QMap<int,gp_Vec> &displacementMap,              //! displacement field
+                              const std::map<int,double> &res,                          //! nodal results
+                              const std::map<int,gp_Vec> &displacementMap,              //! displacement field
                               double scale,
                               double min,                                           //! used for isostrips generation
                               double max,                                           //! used for isostrips generation
@@ -619,7 +630,9 @@ bool MeshTools::buildIsoStrip(const occHandle(MeshVS_DataSource) &theMeshDS,    
     for(TColStd_MapIteratorOfPackedMapOfInteger it(theMeshDS->GetAllNodes()); it.More(); it.Next())
     {
         int globalNodeID = it.Key();
-        const gp_Vec &d = displacementMap.value(globalNodeID);
+        //const gp_Vec &d = displacementMap.value(globalNodeID);
+        const gp_Vec &d = displacementMap.at(globalNodeID);
+
         theDeformedDS->SetVector(globalNodeID,d);
     }
 
@@ -681,8 +694,8 @@ bool MeshTools::buildIsoStrip(const occHandle(MeshVS_DataSource) &theMeshDS,    
 //! details:
 //! -----------------------------------
 bool MeshTools::buildDeformedColoredMesh(const occHandle(MeshVS_DataSource) &theMeshVS_DataSource,
-                                         const QMap<int,double> &res,
-                                         const QMap<int,gp_Vec> &displacementMap,
+                                         const std::map<int,double> &res,
+                                         const std::map<int,gp_Vec> &displacementMap,
                                          double scale,
                                          double min,
                                          double max,
@@ -706,7 +719,8 @@ bool MeshTools::buildDeformedColoredMesh(const occHandle(MeshVS_DataSource) &the
     for(TColStd_MapIteratorOfPackedMapOfInteger nodeIt(deformedDS->GetAllNodes());nodeIt.More();nodeIt.Next())
     {
         int nodeID = nodeIt.Key();
-        deformedDS->SetVector(nodeID,displacementMap.value(nodeID));
+        //deformedDS->SetVector(nodeID,displacementMap.value(nodeID));
+        deformedDS->SetVector(nodeID,displacementMap.at(nodeID));
     }
     deformedDS->SetMagnify(scale);
     aColoredMesh->SetDataSource(deformedDS);
@@ -752,14 +766,17 @@ bool MeshTools::buildDeformedColoredMesh(const occHandle(MeshVS_DataSource) &the
     //! -----------------------------------------------------
     //! iterate through the nodes and add a node id and an appropriate value to the map
     //! scan the result of type (nodeID, scalarValue)
-    QMap<int, double>::const_iterator itNodes;
+    //QMap<int, double>::const_iterator itNodes;
+    //std::map<int, double>::const_iterator itNodes;
     TColStd_DataMapOfIntegerReal aScaleMap;
 
-    for(itNodes = res.cbegin(); itNodes!= res.cend(); ++itNodes)
+    for(std::map<int, double>::const_iterator itNodes = res.cbegin(); itNodes!= res.cend(); ++itNodes)
     {
-        int nodeID = itNodes.key();
+        //int nodeID = itNodes.key();
+        int nodeID = itNodes->first;
         double aValue;
-        if(Delta!=0.0) aValue = (itNodes.value()-min)/Delta;
+        //if(Delta!=0.0) aValue = (itNodes.value()-min)/Delta;
+        if(Delta!=0.0) aValue = (itNodes->first-min)/Delta;
         else aValue = 0.0;
         aScaleMap.Bind(nodeID, aValue);
     }

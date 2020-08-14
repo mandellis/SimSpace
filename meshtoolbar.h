@@ -52,6 +52,7 @@ signals:
     void requestClearMesh();
     void requestGenerateSurfaceMesh();
     void requestGenerateVolumeMesh();
+    void requestUpdateViewerStatus();
 };
 
 #endif // MESHTOOLBAR

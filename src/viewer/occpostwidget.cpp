@@ -118,29 +118,17 @@ void occPostWidget::displayResult(sharedPostObject &aPostObject)
     //! ----------------------------------------
     //! delete all the objects from the display
     //! ----------------------------------------
-    occMeshContext->RemoveAll(true);
-    occPostContext->RemoveAll(true);
-    occContext->RemoveAll(true);
-
-    //! -----------------
-    //! update the scale
-    //! -----------------
-    //if(aResultPresentation.theScale != aResultPresentationOld.theScale)
-    //{
-    //    cout<<"@ --------------------------------"<<endl;
-    //    cout<<"@ - SCALE CHANGED"<<endl;
-    //    cout<<"@ --------------------------------"<<endl;
-    //    aPostObject->setScale(aResultPresentation.theScale);
-    //    aPostObject->updateScaledView();
-    //}
+    occMeshContext->RemoveAll(false);
+    occPostContext->RemoveAll(false);
+    occContext->RemoveAll(false);
 
     //! ---------------------------
     //! display the colored meshes
     //! ---------------------------
-    const QMap<GeometryTag,occHandle(MeshVS_Mesh)> &coloredMeshes = aPostObject->getColoredMeshes();
-    for(QMap<GeometryTag,occHandle(MeshVS_Mesh)>::const_iterator it = coloredMeshes.cbegin(); it != coloredMeshes.cend(); ++it)
+    const std::map<GeometryTag,occHandle(MeshVS_Mesh)> &coloredMeshes = aPostObject->getColoredMeshes();
+    for(std::map<GeometryTag,occHandle(MeshVS_Mesh)>::const_iterator it = coloredMeshes.cbegin(); it != coloredMeshes.cend(); ++it)
     {
-        const occHandle(MeshVS_Mesh) &aColoredMesh = it.value();
+        const occHandle(MeshVS_Mesh) &aColoredMesh = it->second;
         occPostContext->Display(aColoredMesh,false);
     }
 
@@ -157,17 +145,17 @@ void occPostWidget::displayResult(sharedPostObject &aPostObject)
 
     case resultPresentation::combinedView_meshVisible:
     {
-        //const QMap<GeometryTag,occHandle(MeshVS_DeformedDataSource)> &mapOfMeshDS = aPostObject->getMeshDataSources();
-        const QMap<GeometryTag,occHandle(MeshVS_DeformedDataSource)> &mapOfMeshDS = aPostObject->getMeshDataSourcesForView();
-        for(QMap<GeometryTag,occHandle(MeshVS_DeformedDataSource)>::const_iterator it = mapOfMeshDS.cbegin(); it!=mapOfMeshDS.cend(); it++)
+        const std::map<GeometryTag,occHandle(MeshVS_DeformedDataSource)> &mapOfMeshDS = aPostObject->getMeshDataSourcesForView();
+        for(std::map<GeometryTag,occHandle(MeshVS_DeformedDataSource)>::const_iterator it = mapOfMeshDS.cbegin(); it!=mapOfMeshDS.cend(); it++)
         {
             cout<<"@ ----------------------------------"<<endl;
-            cout<<"@ - number of nodes: "<<it.value()->GetAllNodes().Extent()<<endl;
-            cout<<"@ - number of elements: "<<it.value()->GetAllElements().Extent()<<endl;
+            cout<<"@ - number of nodes: "<<it->second->GetAllNodes().Extent()<<endl;
+            cout<<"@ - number of elements: "<<it->second->GetAllElements().Extent()<<endl;
             cout<<"@ ----------------------------------"<<endl;
 
             occHandle(MeshVS_Mesh) aMeshObject = new MeshVS_Mesh();
-            aMeshObject->SetDataSource(it.value());
+            aMeshObject->SetDataSource(it->second);
+
             aMeshObject->SetDisplayMode(MeshVS_DMF_WireFrame);
             aMeshObject->GetDrawer()->SetBoolean(MeshVS_DA_ShowEdges,false);
             aMeshObject->GetDrawer()->SetColor(MeshVS_DA_EdgeColor,Quantity_NOC_BLACK);
@@ -182,14 +170,6 @@ void occPostWidget::displayResult(sharedPostObject &aPostObject)
 
     case resultPresentation::combinedView_undeformedWireFrame:
     {
-        AIS_ListOfInteractive objInside;
-
-        //! ---------------------------------------------------------------------
-        //! remove the transparent body view: "0" is the signature for AIS_Shape
-        //! ---------------------------------------------------------------------
-        occContext->ObjectsInside(objInside,AIS_KOI_Shape,0);
-        for(AIS_ListIteratorOfListOfInteractive it(objInside); it.More(); it.Next()) occContext->Remove(it.Value(),false);
-
         const QVector<GeometryTag> &vecLocs = aPostObject->getLocations();
         for(QVector<GeometryTag>::const_iterator it = vecLocs.cbegin(); it!=vecLocs.cend(); it++)
         {
@@ -197,7 +177,6 @@ void occPostWidget::displayResult(sharedPostObject &aPostObject)
             const TopoDS_Shape &aShape = myDS2->bodyMap.value(bodyIndex);
             const occHandle(AIS_Shape) &anAISShape = new AIS_Shape(aShape);
             occContext->SetColor(anAISShape,Quantity_NOC_BLACK,false);
-            occContext->SetTransparency(anAISShape,0.0,false);
             occContext->Display(anAISShape,AIS_WireFrame,-1,false,false);
         }
     }
@@ -235,10 +214,10 @@ void occPostWidget::displayResult(sharedPostObject &aPostObject)
     aResultPresentationOld = myResultPresentation;
 }
 
-//! -----------------------------
+//! -------------------------------------
 //! function: updateViewerStatus
-//! details:
-//! -----------------------------
+//! details:  update the status variable
+//! -------------------------------------
 void occPostWidget::updateViewerStatus()
 {
     myResultPresentation = Global::status().myResultPresentation;

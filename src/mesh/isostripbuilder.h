@@ -16,7 +16,7 @@
 //! Qt
 //! ---
 #include <QObject>
-#include <QMap>
+//#include <QMap>
 
 //! ----------------
 //! custom includes
@@ -221,16 +221,20 @@ public:
                              QObject *parent = 0);
     void setMeshDataSource(const occHandle(MeshVS_DataSource) &aMeshDS);
     void setNbStrip(int NbStrips);
-    void setValues(const QMap<int,double> &values);
+
+    void setValues(const std::map<int,double> &values);
     void setIsoStrips(const std::vector<isoStrip> &theIsoStrips);
+
     bool perform(std::vector<meshElementByCoords> &vecMeshElements);
+    bool perform1(std::vector<meshElementByCoords> &vecMeshElements);
+
     void getAllElements(const std::vector<faceTable> &vecFaceTables, std::vector<meshElementByCoords> &vecMeshElements);
     void getIsoStripElements(const std::vector<faceTable> &vecFaceTables, std::multimap<int, meshElementByCoords> &meshElementsByIsoStripNb);
 
 private:
 
     occHandle(MeshVS_DataSource) myMeshDS;
-    QMap<int,double> myValues;
+    std::map<int,double> myValues;
     std::vector<isoStrip> myIsoStrips;
 
 private:

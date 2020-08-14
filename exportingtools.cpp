@@ -400,9 +400,9 @@ void exportingTools::exportNodalResult(SimulationNodeClass *aNode, const std::st
     //! -----------------------------------
     //! data and meshes within post object
     //! -----------------------------------
-    postObject *aPostObject = &(aNode->getPropertyValue<postObject>("Post object"));
-    const QMap<GeometryTag,QList<QMap<int,double>>> &data = aPostObject->getData();
-    const QMap<GeometryTag,opencascade::handle<MeshVS_Mesh>> &meshes = aPostObject->getColoredMeshes();
+    sharedPostObject aPostObject = aNode->getPropertyValue<sharedPostObject>("Post object");
+    const std::map<GeometryTag,std::vector<std::map<int,double>>> &data = aPostObject->getData();
+    const std::map<GeometryTag,occHandle(MeshVS_Mesh)> &meshes = aPostObject->getColoredMeshes();
 
     switch(aNode->getType())
     {
@@ -412,11 +412,12 @@ void exportingTools::exportNodalResult(SimulationNodeClass *aNode, const std::st
         std::ofstream fout;
         fout.open(fileName);
         fout<<"#x\ty\tz\ttot\tdx\tdy\tdz"<<endl;
-        for(QMap<GeometryTag,QList<QMap<int,double>>>::const_iterator it = data.cbegin(); it!=data.cend(); it++)
+        for(std::map<GeometryTag,std::vector<std::map<int,double>>>::const_iterator it = data.cbegin(); it!=data.cend(); it++)
         {
-            const GeometryTag &aTag = it.key();
-            const QList<QMap<int,double>> &aRes = it.value();   // contains components
-            const occHandle(MeshVS_Mesh) &aMeshVS = meshes.value(aTag);
+            const GeometryTag &aTag = it->first;
+            const std::vector<std::map<int,double>> &aRes = it->second;   // contains components
+
+            const occHandle(MeshVS_Mesh) &aMeshVS = meshes.at(aTag);
 
             const occHandle(MeshVS_DataSource) &aMeshDS= aMeshVS->GetDataSource();
             if(aMeshDS.IsNull()) exit(100);
@@ -433,16 +434,16 @@ void exportingTools::exportNodalResult(SimulationNodeClass *aNode, const std::st
                 MeshVS_EntityType eType;
                 if(!aMeshDS_nonDef->GetGeom(globalNodeID,false,coords,NbNodes,eType)) continue;
 
-                //! ---------------------------------------
-                //! write coordinates and component values
-                //! ---------------------------------------
+                //! -----------------------------------------------
+                //! write the coordinates and the component values
+                //! -----------------------------------------------
                 fout<<coords(1)<<"\t"<<coords(2)<<"\t"<<coords(3)<<"\t";
-                for(int component = 0; component<aRes.length()-1; component++)
+                for(int component = 0; component<aRes.size()-1; component++)
                 {
-                    double aVal = aRes.at(component).value(globalNodeID);
+                    double aVal = aRes.at(component).at(globalNodeID);
                     fout<<aVal<<"\t";
                 }
-                double aVal = aRes.at(aRes.length()-1).value(globalNodeID);
+                double aVal = aRes.at(aRes.size()-1).at(globalNodeID);
                 fout<<aVal<<endl;
             }
         }

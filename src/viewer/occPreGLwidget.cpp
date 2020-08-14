@@ -822,15 +822,9 @@ void occPreGLWidget::setWorkingMode_Model()
         //! ------------------------
         switch(myCurDisplayMode)
         {
-        case CurDisplayMode_ShadedExterior:
-            occGLWidget::setShadedExteriorView();
-            break;
-        case CurDisplayMode_ShadedExteriorAndEdges:
-            occGLWidget::setShadedExteriorAndEdgesView();
-            break;
-        case CurDisplayMode_Wireframe:
-            occGLWidget::setWireframeView();
-            break;
+        case CurDisplayMode_ShadedExterior: occGLWidget::setShadedExteriorView(); break;
+        case CurDisplayMode_ShadedExteriorAndEdges: occGLWidget::setShadedExteriorAndEdgesView(); break;
+        case CurDisplayMode_Wireframe: occGLWidget::setWireframeView(); break;
         }
 
         //! ------------------------
@@ -3609,7 +3603,14 @@ void occPreGLWidget::displayCurvatureMap()
         occHandle(MeshVS_Mesh) coloredMesh;
         int mode = 1;   //! Gaussian curvature
         summedDS->computeDiscreteCurvature(mode);
-        MeshTools::buildColoredMesh(summedDS,summedDS->myCurvature,coloredMesh,0,6.28,10,true);
+
+        //! patch: convert QMap<int,int> into std::map<int,int>
+        std::map<int,double> curvatureData;
+        for(QMap<int,double>::iterator it = summedDS->myCurvature.begin(); it != summedDS->myCurvature.end(); it++)
+        {
+            curvatureData.insert(std::make_pair(it.key(),it.value()));
+        }
+        MeshTools::buildColoredMesh(summedDS,curvatureData,coloredMesh,0,6.28,10,true);
         //MeshTools::buildColoredMesh(summedDS,summedDS->myCurvatureGradient,coloredMesh,0,6.28,10,true);
 
         occMeshContext->Display(coloredMesh,false);
