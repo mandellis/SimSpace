@@ -52,7 +52,8 @@ public:
         TypeOfResult_F,
         TypeOfResult_EPS,
         TypeOfResult_CONT,
-        TypeOfResult_HFL
+        TypeOfResult_HFL,
+        TypeOfResult_RF
     };
 
 public:
@@ -83,6 +84,7 @@ private:
         m.insert("PE",TypeOfResult_EPS);
         m.insert("FLUX",TypeOfResult_HFL);
         m.insert("CONTACT",TypeOfResult_CONT);
+        m.insert("FORC",TypeOfResult_RF);
     }
 
 signals:

@@ -2297,7 +2297,6 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
         //! nodal forces
         //! -------------
     case SimulationNodeClass::nodeType_solutionStructuralNodalForces:
-    case SimulationNodeClass::nodeType_solutionStructuralReactionForce:
     {
         //! read options
         int typeOfForces = addOptions.toInt();
@@ -2309,6 +2308,75 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
         case 1: name = "Directional force X"; break;
         case 2: name = "Directional force Y"; break;
         case 3: name = "Directional force Z"; break;
+        }
+
+        for(QVector<GeometryTag>::iterator it = vecLoc.begin(); it!=vecLoc.end(); ++it)
+        {
+            const GeometryTag curLoc = *it;
+            int parentShapeNr = curLoc.parentShapeNr;
+            QString suffix = mDB->MapOfBodyNames.value(parentShapeNr)+" ";
+            name.append(suffix);
+        }
+
+        //! under scope
+        vecProp.push_back(prop_scopingMethod);
+        vecProp.push_back(prop_scope);
+        vecProp.push_back(prop_tags);
+
+        //! under definition
+        //! the component (total, X, Y, Z) is provided by the calling function through the addOptions
+        Property prop_type("Type ",typeOfForces,Property::PropertyGroup_Definition);
+        vecProp.push_back(prop_type);
+
+        //! ---------------------------------------------------------------------------
+        //! under definition
+        //! "By" selector: it provides options "Time" and "Set"
+        //! Here "By"="Time", so the "Display time" property is created
+        //! If "By" is changed into "Set", the DetailViewer replace the "Display time"
+        //! with "Set Number"
+        //! 0 => "Time"
+        //! 1 => "Set number"
+        //! ---------------------------------------------------------------------------
+        data.setValue(0.0);
+        Property prop_By("By",data,Property::PropertyGroup_Definition);
+        vecProp.push_back(prop_By);
+        Property prop_displayTime("Display time",data,Property::PropertyGroup_Definition);
+        vecProp.push_back(prop_displayTime);
+
+        //! mode
+        data.setValue(0);
+        Property prop_modeNumber("Mode number",data,Property::PropertyGroup_Definition);
+        vecProp.push_back(prop_modeNumber);
+
+        //! ---------------------------------------------------
+        //! type of scale: "0" => "Autoscale"; "1" => "Custom"
+        //! ---------------------------------------------------
+        int typeOfScale = 0;
+        data.setValue(typeOfScale);
+        Property prop_scaleType("Scale type",data,Property::PropertyGroup_ColorBox);
+        vecProp.push_back(prop_scaleType);
+
+        //! ------------------------------------------------
+        //! Number of intervals: "0" => "Program controlled
+        //! ------------------------------------------------
+        int NbIntervals = INITIAL_NUMBER_OF_COLORBOX_LEVELS;
+        data.setValue(NbIntervals);
+        Property prop_NbIntervals("# intervals",data,Property::PropertyGroup_ColorBox);
+        vecProp.push_back(prop_NbIntervals);
+    }
+        break;
+    case SimulationNodeClass::nodeType_solutionStructuralReactionForce:
+    {
+        //! read options
+        int typeOfForces = addOptions.toInt();
+
+        //! prepare the name
+        switch(typeOfForces)
+        {
+        case 0: name = "Total reaction force"; break;
+        case 1: name = "Directional reaction force X"; break;
+        case 2: name = "Directional reaction force Y"; break;
+        case 3: name = "Directional reaction force Z"; break;
         }
 
         for(QVector<GeometryTag>::iterator it = vecLoc.begin(); it!=vecLoc.end(); ++it)

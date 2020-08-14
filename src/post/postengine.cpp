@@ -17,6 +17,7 @@
 //! ----
 #include <iostream>
 #include <fstream>
+#include <unordered_map>
 
 //! -------
 //! global
@@ -93,6 +94,11 @@ QMap<GeometryTag,QList<QMap<int,double>>> postEngine::evaluateResult(const QStri
     //! ----------------------------------------------------
     QMap<GeometryTag,QList<QMap<int,double>>> resMap;
 
+    //! ----------------------------------------------------
+    //! result of
+    //! ----------------------------------------------------
+    std::unordered_multimap<int,std::vector<double>> totalRForcesMap;
+
     QVector<GeometryTag>::const_iterator it;
     for(it = vecLoc.cbegin(); it!= vecLoc.cend(); ++it)
     {
@@ -138,7 +144,7 @@ QMap<GeometryTag,QList<QMap<int,double>>> postEngine::evaluateResult(const QStri
         //! the results on a location
         //! --------------------------
         QList<QMap<int,double>> res;
-
+        std::vector<double> totalRForces;
         //! ---------------
         //! scan the files
         //! ---------------
@@ -263,7 +269,40 @@ QMap<GeometryTag,QList<QMap<int,double>>> postEngine::evaluateResult(const QStri
                     //cout<<"postEngine::evaluateResult()->____Number of components: "<<res.length()<<"____"<<endl;
                 }
                     break;
+                case TypeOfResult_RF:
+                {
+                    QMap<int,double> resComp_X,resComp_Y,resComp_Z,resComp_Total;
+                    double compXtotal,compYtotal,compZtotal,compTtotal;
+                    //! <>::eof(): call getline before while, then inside {}, @ as last instruction
+                    std::getline(curFile,val);
+                    while(curFile.eof()!=true)
+                    {
+                        int ni;
+                        double cxx,cyy,czz,total;
+                        sscanf(val.c_str(),"%d%lf%lf%lf",&ni,&cxx,&cyy,&czz);
 
+                        //! nodeIDs defining the MeshVS_dataSource
+                        int OCCnodeID = indexedMapOfNodes.value(ni,-1);
+                        if(OCCnodeID!=-1)
+                        {
+                            total = sqrt(pow(cxx,2)+pow(cyy,2)+pow(czz,2));
+                            resComp_Total.insert(OCCnodeID,total);
+                            resComp_X.insert(OCCnodeID,cxx);
+                            resComp_Y.insert(OCCnodeID,cyy);
+                            resComp_Z.insert(OCCnodeID,czz);
+                            compXtotal+=cxx;
+                            compYtotal+=cyy;
+                            compZtotal+=czz;
+                            compTtotal+=total;
+                        }
+                        std::getline(curFile,val);
+                    }
+                    totalRForces<<compXtotal<<compYtotal<<compZtotal<<compTtotal;
+                    //! result
+                    res<<resComp_Total<<resComp_X<<resComp_Y<<resComp_Z;
+                    //cout<<"postEngine::evaluateResult()->____Number of components: "<<res.length()<<"____"<<endl;
+                }
+                    break;
                 case TypeOfResult_S:
                 case TypeOfResult_TOSTRAIN:
                 case TypeOfResult_MESTRAIN:
@@ -395,6 +434,7 @@ QMap<GeometryTag,QList<QMap<int,double>>> postEngine::evaluateResult(const QStri
                 }
                     break;
                 }
+                totalRForcesMap.insert(loc,totalRForces);
                 resMap.insert(loc,res);
                 curFile.close();
                 break;
@@ -414,7 +454,6 @@ QMap<GeometryTag,QList<QMap<int,double>>> postEngine::evaluateResult(const QStri
     //! diagnostic function
     return resMap;
 }
-
 //! ----------------------------------------------------------
 //! function: colorBoxTitle
 //! details:  build a title for the colorbox according to the
@@ -510,6 +549,15 @@ QString postEngine::colorBoxTitle(const QString &keyName, int component, int ste
         case 1: colorBoxTitle="Directional Force X"; break;
         case 2: colorBoxTitle="Directional Force Y"; break;
         case 3: colorBoxTitle="Directional Force Z"; break;
+        }
+        break;
+    case TypeOfResult_RF:
+        switch(component)
+        {
+        case 0: colorBoxTitle="Total reaction force"; break;
+        case 1: colorBoxTitle="Directional reaction force X"; break;
+        case 2: colorBoxTitle="Directional reaction force Y"; break;
+        case 3: colorBoxTitle="Directional reaction force Z"; break;
         }
         break;
     case TypeOfResult_EPS:

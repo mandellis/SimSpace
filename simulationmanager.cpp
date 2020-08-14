@@ -2342,7 +2342,7 @@ void SimulationManager::handleItem(int type)
     case 245: this->createSimulationNode(SimulationNodeClass::nodeType_solutionStructuralGamma); break;
 
     //! -----------------
-    //! evaluate results
+    //!  results
     //! -----------------
     case 204:
     {

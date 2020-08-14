@@ -1499,10 +1499,10 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
             case SimulationNodeClass::nodeType_solutionStructuralReactionForce:
             {
                 editor = new QComboBox(parent);
-                data.setValue(0); editor->addItem("Total force",data);
-                data.setValue(1); editor->addItem("Directional force X",data);
-                data.setValue(2); editor->addItem("Directional force Y",data);
-                data.setValue(3); editor->addItem("Directional force Z",data);
+                data.setValue(0); editor->addItem("Total reaction force",data);
+                data.setValue(1); editor->addItem("Directional reaction force X",data);
+                data.setValue(2); editor->addItem("Directional reaction force Y",data);
+                data.setValue(3); editor->addItem("Directional reaction force Z",data);
             }
                 break;
             case SimulationNodeClass::nodeType_solutionStructuralEquivalentPlasticStrain:
