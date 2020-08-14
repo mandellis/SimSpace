@@ -6517,7 +6517,8 @@ void SimulationManager::duplicateItem(QExtendedStandardItem *item)
     //! replace the time tag
     //! ---------------------
     disconnect(theNewNode->getModel(),SIGNAL(itemChanged(QStandardItem*)),this,SLOT(handleItemChange(QStandardItem*)));
-    QString timeTag = QDateTime::currentDateTime().toString("yyyyMMddhhmmzzz");
+    QThread::msleep(5);
+    QString timeTag = QString::fromStdString(SimulationNodeClass::generateTimeString());
     data.setValue(timeTag);
     Property prop_timeTag("Time tag",timeTag,Property::PropertyGroup_Identifier);
     theNewNode->replaceProperty("Time tag",prop_timeTag);

@@ -396,7 +396,7 @@ public:
     bool isSolutionInformation();
 
     //! generate time string
-    std::string SimulationNodeClass::generateTimeString();
+    static std::string generateTimeString();
 };
 
 Q_DECLARE_METATYPE(SimulationNodeClass)
