@@ -467,12 +467,12 @@ void Property::writeProperty(ofstream& out, const Property &prop)
             QVector<QVector<double>> tensor2 = prop.getData().value<QVector<QVector<double>>>();
             tools::writeTensor2<QVector<QVector<double>>>(tensor2,out);
         }
-        else if(prop.getData().canConvert<QVector<GeometryTag>>())
+        else if(prop.getData().canConvert<std::vector<GeometryTag>>())
         {
-            cout<<"* PROPERTY DEFINED THROUGH \"QVector<GeometryTag>\""<<endl;
-            QVector<GeometryTag> vecLocs = prop.getData().value<QVector<GeometryTag>>();
+            cout<<"* PROPERTY DEFINED THROUGH \"std::vector<GeometryTag>\""<<endl;
+            std::vector<GeometryTag> vecLocs = prop.getData().value<std::vector<GeometryTag>>();
             //out<<vecLocs.size()<<endl;
-            //for(QVector<GeometryTag>::iterator it = vecLocs.begin(); it!=vecLocs.end(); ++it)
+            //for(std::vector<GeometryTag>::iterator it = vecLocs.begin(); it!=vecLocs.end(); ++it)
             //{
             //    const GeometryTag &aGT = *it;
             //    aGT.write(out);
@@ -604,7 +604,7 @@ void Property::readProperty(ifstream &in, Property &prop)
     else if(propKeyName=="Geometry" || propKeyName=="Master"
             || propKeyName=="Slave" || propKeyName=="Boundary") //! "Boundary" identify the prismatic faces
     {
-        QVector<GeometryTag> vecLocs;
+        std::vector<GeometryTag> vecLocs;
         vecLocs = tools::readVectorOfLocations(in);
         data.setValue(vecLocs);
         prop.setData(data);
@@ -855,7 +855,7 @@ void Property::readProperty(ifstream &in, Property &prop)
     else if(propKeyName=="Tags" || propKeyName =="Tags slave"
             || propKeyName =="Tags master" || propKeyName =="Boundary tags")
     {
-        QVector<GeometryTag> vecLocs = tools::readVectorOfLocations(in);
+        std::vector<GeometryTag> vecLocs = tools::readVectorOfLocations(in);
         data.setValue(vecLocs);
         prop.setData(data);
     }

@@ -318,7 +318,7 @@ bool writeSolverFileClass::perform()
                 //! ----------
                 //! eccezione
                 //! ----------
-                QVector<GeometryTag> tags = theItemNode->getPropertyValue<QVector<GeometryTag>>("Tags");
+                std::vector<GeometryTag> tags = theItemNode->getPropertyValue<std::vector<GeometryTag>>("Tags");
                 int boltBodyIndex = tags.at(0).parentShapeNr;
                 double d = -boltAxis[0]*origin[0]-boltAxis[1]*origin[1]-boltAxis[2]*origin[2];
                 this->writeElementSurfaceBolt(SetName,boltBodyIndex,boltAxis[0],boltAxis[1],boltAxis[2],d);
@@ -559,7 +559,7 @@ bool writeSolverFileClass::perform()
 
             this->writeElementSurface(itemName,anIndexedMapOfFaceMeshDS);    //TO DO DS is missing for point mass
 
-            //QVector<GeometryTag> scope = theCurNode->getPropertyValue<QVector<GeometryTag>>("Tags");
+            //std::vector<GeometryTag> scope = theCurNode->getPropertyValue<std::vector<GeometryTag>>("Tags");
             double mass = theCurNode->getPropertyValue<double>("Mass");
             double Jx = theCurNode->getPropertyValue<double>("Jx");
             double Jy = theCurNode->getPropertyValue<double>("Jy");
@@ -803,12 +803,12 @@ bool writeSolverFileClass::perform()
                             myInputFile<<"LINEAR"<<endl;
                             if(KF == 0) KF=1;
                             //{
-                                QVector<GeometryTag> tagsMaster = node->getPropertyValue<QVector<GeometryTag>>("Tags master");
-                                QVector<GeometryTag> tagsSlave = node->getPropertyValue<QVector<GeometryTag>>("Tags slave");
+                                std::vector<GeometryTag> tagsMaster = node->getPropertyValue<std::vector<GeometryTag>>("Tags master");
+                                std::vector<GeometryTag> tagsSlave = node->getPropertyValue<std::vector<GeometryTag>>("Tags slave");
 
                                 QList<occHandle(Ng_MeshVS_DataSourceFace)> masterFaces,slaveFaces;
 
-                                for(QVector<GeometryTag>::iterator it = tagsMaster.begin(); it!= tagsMaster.end(); ++it)
+                                for(std::vector<GeometryTag>::iterator it = tagsMaster.begin(); it!= tagsMaster.end(); ++it)
                                 {
                                     GeometryTag aLoc = *it;
                                     int bodyIndex = aLoc.parentShapeNr;
@@ -817,7 +817,7 @@ bool writeSolverFileClass::perform()
                                     const occHandle(Ng_MeshVS_DataSourceFace) &faceMesh = occHandle(Ng_MeshVS_DataSourceFace)::DownCast(myDB->ArrayOfMeshDSOnFaces.getValue(bodyIndex,faceIndex));
                                     masterFaces<<faceMesh;
                                 }
-                                for(QVector<GeometryTag>::iterator itt = tagsSlave.begin(); itt!= tagsSlave.end(); ++itt)
+                                for(std::vector<GeometryTag>::iterator itt = tagsSlave.begin(); itt!= tagsSlave.end(); ++itt)
                                 {
                                     GeometryTag aLoc = *itt;
                                     int bodyIndex = aLoc.parentShapeNr;
@@ -963,12 +963,12 @@ bool writeSolverFileClass::perform()
                             KF = node->getPropertyValue<double>("K");
                             if(KF==0) KF=1.0;
                             //{
-                            QVector<GeometryTag> tagsMaster = node->getPropertyValue<QVector<GeometryTag>>("Tags master");
-                            QVector<GeometryTag> tagsSlave = node->getPropertyValue<QVector<GeometryTag>>("Tags slave");
+                            std::vector<GeometryTag> tagsMaster = node->getPropertyValue<std::vector<GeometryTag>>("Tags master");
+                            std::vector<GeometryTag> tagsSlave = node->getPropertyValue<std::vector<GeometryTag>>("Tags slave");
 
                             QList<occHandle(Ng_MeshVS_DataSourceFace)> masterFaces,slaveFaces;
 
-                                for(QVector<GeometryTag>::iterator it = tagsMaster.begin(); it!= tagsMaster.end(); ++it)
+                                for(std::vector<GeometryTag>::iterator it = tagsMaster.begin(); it!= tagsMaster.end(); ++it)
                                 {
                                     GeometryTag aLoc = *it;
                                     int bodyIndex = aLoc.parentShapeNr;
@@ -977,7 +977,7 @@ bool writeSolverFileClass::perform()
                                     const occHandle(Ng_MeshVS_DataSourceFace) &faceMesh = occHandle(Ng_MeshVS_DataSourceFace)::DownCast(myDB->ArrayOfMeshDSOnFaces.getValue(bodyIndex,faceIndex));
                                     masterFaces<<faceMesh;
                                 }
-                                for(QVector<GeometryTag>::iterator itt = tagsSlave.begin(); itt!= tagsSlave.end(); ++itt)
+                                for(std::vector<GeometryTag>::iterator itt = tagsSlave.begin(); itt!= tagsSlave.end(); ++itt)
                                 {
                                     GeometryTag aLoc = *itt;
                                     int bodyIndex = aLoc.parentShapeNr;
@@ -1064,12 +1064,12 @@ bool writeSolverFileClass::perform()
                         KF = node->getPropertyValue<double>("K");
                         if(K==0) KF=1.0;
                         //{
-                            QVector<GeometryTag> tagsMaster = node->getPropertyValue<QVector<GeometryTag>>("Tags master");
-                            QVector<GeometryTag> tagsSlave = node->getPropertyValue<QVector<GeometryTag>>("Tags slave");
+                            std::vector<GeometryTag> tagsMaster = node->getPropertyValue<std::vector<GeometryTag>>("Tags master");
+                            std::vector<GeometryTag> tagsSlave = node->getPropertyValue<std::vector<GeometryTag>>("Tags slave");
 
                             QList<occHandle(Ng_MeshVS_DataSourceFace)> masterFaces,slaveFaces;
 
-                            for(QVector<GeometryTag>::iterator it = tagsMaster.begin(); it!= tagsMaster.end(); ++it)
+                            for(std::vector<GeometryTag>::iterator it = tagsMaster.begin(); it!= tagsMaster.end(); ++it)
                             {
                                 GeometryTag aLoc = *it;
                                 int bodyIndex = aLoc.parentShapeNr;
@@ -1078,7 +1078,7 @@ bool writeSolverFileClass::perform()
                                 const occHandle(Ng_MeshVS_DataSourceFace) &faceMesh = occHandle(Ng_MeshVS_DataSourceFace)::DownCast(myDB->ArrayOfMeshDSOnFaces.getValue(bodyIndex,faceIndex));
                                 masterFaces<<faceMesh;
                             }
-                            for(QVector<GeometryTag>::iterator itt = tagsSlave.begin(); itt!= tagsSlave.end(); ++itt)
+                            for(std::vector<GeometryTag>::iterator itt = tagsSlave.begin(); itt!= tagsSlave.end(); ++itt)
                             {
                                 GeometryTag aLoc = *itt;
                                 int bodyIndex = aLoc.parentShapeNr;
@@ -1177,10 +1177,10 @@ bool writeSolverFileClass::perform()
                 gp_Pnt P0, P1;
 
                 //! retrieve the scope through Tags
-                QVector<GeometryTag> vecLoc = theCurNode->getPropertyItem("Tags")->data(Qt::UserRole).value<Property>().getData().value<QVector<GeometryTag>>();
+                std::vector<GeometryTag> vecLoc = theCurNode->getPropertyItem("Tags")->data(Qt::UserRole).value<Property>().getData().value<std::vector<GeometryTag>>();
 
                 int i=0;
-                for(QVector<GeometryTag>::iterator it = vecLoc.begin(); it!=vecLoc.end(); ++it)
+                for(std::vector<GeometryTag>::iterator it = vecLoc.begin(); it!=vecLoc.end(); ++it)
                 {
                     ++i;
                     GeometryTag loc = *it;
@@ -1232,10 +1232,10 @@ bool writeSolverFileClass::perform()
                 //SetName = itemName+append("_").append(QString("%1").arg(k));
                 /*
                 //! retrieve the the scope using Tags
-                QVector<GeometryTag> vecLoc = theCurNode->getPropertyValue<QVector<GeometryTag>>("Tags");
+                std::vector<GeometryTag> vecLoc = theCurNode->getPropertyValue<std::vector<GeometryTag>>("Tags");
                 int i=0;
                 ListOfShape scope;
-                for(QVector<GeometryTag>::iterator it = vecLoc.begin(); it!=vecLoc.end(); ++it)
+                for(std::vector<GeometryTag>::iterator it = vecLoc.begin(); it!=vecLoc.end(); ++it)
                 {
                     ++i;
                     QString SName=SetName+QString("%1").arg(i);
@@ -2057,7 +2057,7 @@ bool writeSolverFileClass::perform()
                         case 0:
                         {
                             type="ELEMENT";
-                            QVector<GeometryTag> scope = theCurNode->getPropertyValue<QVector<GeometryTag>>("Tags");
+                            std::vector<GeometryTag> scope = theCurNode->getPropertyValue<std::vector<GeometryTag>>("Tags");
 
                             myInputFile<<"*MODEL CHANGE, TYPE = "<<type.toStdString()<<", "<<addORemove.toStdString()<<endl;
                             for(int i=0; i<scope.size();i++)
@@ -2220,7 +2220,7 @@ bool writeSolverFileClass::perform()
                             //! details:
                             //! treat acceleration as gravity
                             //! ------------------------------
-                            //QVector<GeometryTag> vecLoc = theCurNode->getPropertyValue<QVector<GeometryTag>>("Tags");
+                            //std::vector<GeometryTag> vecLoc = theCurNode->getPropertyValue<std::vector<GeometryTag>>("Tags");
                             myInputFile<<"*DLOAD"<<endl;
                             double loadValue = pow((pow(loadX_global,2)+pow(loadY_global,2)+pow(loadZ_global,2)),0.5);
                             double x,y,z;
@@ -2421,7 +2421,7 @@ bool writeSolverFileClass::perform()
                                 break;
                             case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Acceleration:
                             {
-                                //QVector<GeometryTag> vecLoc = theCurNode->getPropertyValue<QVector<GeometryTag>>("Tags");
+                                //std::vector<GeometryTag> vecLoc = theCurNode->getPropertyValue<std::vector<GeometryTag>>("Tags");
                                 myInputFile<<"*DLOAD"<<endl;
                                 /*
                                 for(int i=0; i<vecLoc.size();i++)
@@ -3141,7 +3141,7 @@ void writeSolverFileClass::writeNodalSet(QString SetName,
 //! function: writeElementSet
 //! details:
 //! --------------------------
-void writeSolverFileClass::writeElementSet(QVector<GeometryTag> vecLoc,QList<QString> &bodyNameList)
+void writeSolverFileClass::writeElementSet(std::vector<GeometryTag> vecLoc,QList<QString> &bodyNameList)
 {
     for(int i=0; i<vecLoc.size();i++)
     {

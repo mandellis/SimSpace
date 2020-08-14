@@ -2352,7 +2352,7 @@ QString MesherClass::processSTL(int bodyIndex)
         MeshTools::toSTLMesh1(shape,inputExtendedSTL,surfaceMeshDS,vecFaceMeshDS);
 
         QList<occHandle(Ng_MeshVS_DataSourceFace)> listOfFaces;
-        for(int i=0; i<myMeshDB->featuredTags.length(); i++)
+        for(int i=0; i<myMeshDB->featuredTags.size(); i++)
         {
             //cout<<"____feature tag: ("<<myMeshDB->featuredTags[i].parentShapeNr<<", "<<myMeshDB->featuredTags[i].subTopNr<<")____"<<endl;
             const GeometryTag &aTag = myMeshDB->featuredTags[i];

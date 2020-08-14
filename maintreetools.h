@@ -44,7 +44,7 @@ public:
     //! conditions, including contacts
     //! type: 2 solid, 3 shell, 4 face, 5 wire, 6 edge, 7 vertex
     //! ----------------------------------------------------------
-    static void getAllBoundaryConditionsTags(QTreeView *tree, int type=0, QVector<GeometryTag> &tags =QVector<GeometryTag>());
+    static void getAllBoundaryConditionsTags(QTreeView *tree, int type=0, std::vector<GeometryTag> &tags =std::vector<GeometryTag>());
 
     static SimulationNodeClass* getAnalysisSettingsNodeFromIndex(QModelIndex curIndex);
     static QStandardItem* getAnalysisSettingsItemFromCurrentItem(QTreeView *treeView);

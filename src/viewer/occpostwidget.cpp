@@ -120,7 +120,6 @@ void occPostWidget::displayResult(sharedPostObject &aPostObject)
     //! ----------------------------------------
     occMeshContext->RemoveAll(false);
     occPostContext->RemoveAll(false);
-    occContext->RemoveAll(false);
 
     //! ---------------------------
     //! display the colored meshes
@@ -170,29 +169,29 @@ void occPostWidget::displayResult(sharedPostObject &aPostObject)
 
     case resultPresentation::combinedView_undeformedWireFrame:
     {
-        const QVector<GeometryTag> &vecLocs = aPostObject->getLocations();
-        for(QVector<GeometryTag>::const_iterator it = vecLocs.cbegin(); it!=vecLocs.cend(); it++)
+        const std::vector<GeometryTag> &vecLocs = aPostObject->getLocations();
+        for(std::vector<GeometryTag>::const_iterator it = vecLocs.cbegin(); it!=vecLocs.cend(); it++)
         {
             int bodyIndex = it->parentShapeNr;
             const TopoDS_Shape &aShape = myDS2->bodyMap.value(bodyIndex);
             const occHandle(AIS_Shape) &anAISShape = new AIS_Shape(aShape);
-            occContext->SetColor(anAISShape,Quantity_NOC_BLACK,false);
-            occContext->Display(anAISShape,AIS_WireFrame,-1,false,false);
+            occPostContext->SetColor(anAISShape,Quantity_NOC_BLACK,false);
+            occPostContext->Display(anAISShape,AIS_WireFrame,-1,false,false);
         }
     }
         break;
 
     case resultPresentation::combinedView_undeformedModel:
     {
-        const QVector<GeometryTag> &vecLocs = aPostObject->getLocations();
-        for(QVector<GeometryTag>::const_iterator it = vecLocs.cbegin(); it!=vecLocs.cend(); it++)
+        const std::vector<GeometryTag> &vecLocs = aPostObject->getLocations();
+        for(std::vector<GeometryTag>::const_iterator it = vecLocs.cbegin(); it!=vecLocs.cend(); it++)
         {
             int bodyIndex = it->parentShapeNr;
             const TopoDS_Shape &aShape = myDS2->bodyMap.value(bodyIndex);
             const occHandle(AIS_Shape) &anAISShape = new AIS_Shape(aShape);
-            occContext->SetColor(anAISShape,Quantity_NOC_AQUAMARINE1,false);
-            occContext->SetTransparency(anAISShape,0.9,true);
-            occContext->Display(anAISShape,AIS_Shaded,-1,false,false);
+            occPostContext->SetColor(anAISShape,Quantity_NOC_AQUAMARINE1,false);
+            occPostContext->SetTransparency(anAISShape,0.9,true);
+            occPostContext->Display(anAISShape,AIS_Shaded,-1,false,false);
         }
     }
        break;

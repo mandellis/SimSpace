@@ -1445,13 +1445,13 @@ QVariant QExtendedStandardItem::data(int role) const
                 data.setValue(QString("Multiple selection"));
                 return data;
             }
-            QVector<GeometryTag> vecLocs = QStandardItem::data(Qt::UserRole).value<Property>().getData().value<QVector<GeometryTag>>();
+            std::vector<GeometryTag> vecLocs = QStandardItem::data(Qt::UserRole).value<Property>().getData().value<std::vector<GeometryTag>>();
             QString val;
-            QVector<GeometryTag>::iterator it;
-            if(!vecLocs.isEmpty())
+            std::vector<GeometryTag>::iterator it;
+            if(vecLocs.size()!=0)
                 for(it=vecLocs.begin();it!=vecLocs.end();++it)
                 {
-                    GeometryTag loc = *it;
+                    const GeometryTag &loc = *it;
                     int parentShapeNumber = loc.parentShapeNr;
                     int childShapeNumber = loc.subTopNr;
                     bool isParent = loc.isParent;
@@ -2113,14 +2113,14 @@ QVariant QExtendedStandardItem::data(int role) const
             //! ------------------------------------------------
             //! a vector of GeometryTag is stored into the item
             //! ------------------------------------------------
-            if(QStandardItem::data(Qt::UserRole).value<Property>().getData().canConvert<QVector<GeometryTag>>())
+            if(QStandardItem::data(Qt::UserRole).value<Property>().getData().canConvert<std::vector<GeometryTag>>())
             {
                 QString msg;
-                QVector<GeometryTag> vecLoc = QStandardItem::data(Qt::UserRole).value<Property>().getData().value<QVector<GeometryTag>>();
+                std::vector<GeometryTag> vecLoc = QStandardItem::data(Qt::UserRole).value<Property>().getData().value<std::vector<GeometryTag>>();
                 if(vecLoc.size()!=0)
                 {
                     msg = QString("%1").arg(vecLoc.size());
-                    switch(vecLoc.first().subShapeType)
+                    switch(vecLoc.begin()->subShapeType)
                     {
                     case TopAbs_VERTEX:
                         if(vecLoc.size()>1)msg.append(" vertexes");
@@ -2170,13 +2170,13 @@ QVariant QExtendedStandardItem::data(int role) const
         }
         else if(name == "Geometry")
         {
-            QVector<GeometryTag> vecLoc = QStandardItem::data(Qt::UserRole).value<Property>().getData().value<QVector<GeometryTag>>();
-            if(!vecLoc.isEmpty())
+            std::vector<GeometryTag> vecLoc = QStandardItem::data(Qt::UserRole).value<Property>().getData().value<std::vector<GeometryTag>>();
+            if(vecLoc.size()!=0)
             {
                 QString shapeType;
                 for(int i=0; i<vecLoc.size();i++)
                 {
-                    switch(vecLoc.first().subShapeType)
+                    switch(vecLoc[0].subShapeType)
                     {
                     case TopAbs_COMPOUND: shapeType = "CC"; break;
                     case TopAbs_COMPSOLID: shapeType = "CS"; break;
@@ -2185,14 +2185,12 @@ QVariant QExtendedStandardItem::data(int role) const
                     case TopAbs_EDGE: shapeType = "ED"; break;
                     case TopAbs_VERTEX: shapeType = "VE"; break;
                     }
-                    //val.append(QString("(%1, %2 %3) ").arg(vecLoc.at(i).parentShapeNr).arg(vecLoc.at(i).subTopNr).arg(suffixShapeType));
-                    data.setValue(QString("%1 %2").arg(shapeType).arg(vecLoc.length()));
+                    data.setValue(QString("%1 %2").arg(shapeType).arg(vecLoc.size()));
                 }
             }
             else
             {
                 data.setValue(QString("No selection"));
-                //val ="No selection";
             }
             //data.setValue(val);
             return data;
@@ -2204,26 +2202,21 @@ QVariant QExtendedStandardItem::data(int role) const
             {
             case Property::ScopingMethod_GeometrySelection:
             {
-                //QString val;
-                QVector<GeometryTag> vecLoc = QStandardItem::data(Qt::UserRole).value<Property>().getData().value<QVector<GeometryTag>>();
-                if(!vecLoc.isEmpty())
+                std::vector<GeometryTag> vecLoc = QStandardItem::data(Qt::UserRole).value<Property>().getData().value<std::vector<GeometryTag>>();
+                if(vecLoc.size()!=0)
                 {
                     QString shapeType;
                     for(int i=0; i<vecLoc.size();i++)
                     {
-                        switch(vecLoc.first().subShapeType)
+                        switch(vecLoc[0].subShapeType)
                         {
                         case TopAbs_FACE: shapeType = "FA"; break;
                         }
-                        //val.append(QString("(%1, %2 %3) ").arg(vecLoc.at(i).parentShapeNr).arg(vecLoc.at(i).subTopNr).arg(suffixShapeType));
-                        //data.setValue(val);
-                        data.setValue(QString("%1 %2").arg(shapeType).arg(vecLoc.length()));
+                        data.setValue(QString("%1 %2").arg(shapeType).arg(vecLoc.size()));
                     }
                 }
                 else
                 {
-                    //val ="No selection";
-                    //data.setValue(val);
                     data.setValue(QString("No selection"));
                 }
             }

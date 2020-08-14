@@ -97,11 +97,11 @@ public slots:
                                                                             int requiredSubStepNb,
                                                                             int requiredStepNb,
                                                                             int requiredMode,
-                                                                            const QVector<GeometryTag> &vecLoc,
+                                                                            const std::vector<GeometryTag> &vecLoc,
                                                                             double &requiredTime);
 
     //! evaluate fatigue results
-    bool evaluateFatigueResults(int type, QVector<GeometryTag> locs, const QList<double> &times, QMap<int,int> materialBodyMap, int nCycle, sharedPostObject &aPostObject);
+    bool evaluateFatigueResults(int type, std::vector<GeometryTag> locs, const QList<double> &times, QMap<int,int> materialBodyMap, int nCycle, sharedPostObject &aPostObject);
 
     //! build a post object
     bool buildPostObject(const QString &keyName,
@@ -109,7 +109,7 @@ public slots:
                          int requiredSubStepNb,
                          int requiredStepNb,
                          int requiredMode,
-                         const QVector<GeometryTag> &vecLoc,
+                         const std::vector<GeometryTag> &vecLoc,
                          sharedPostObject &aPostObject);
 
 private:
@@ -122,11 +122,11 @@ private:
 
     //! read fatigue results
     //QMap<GeometryTag,QMap<int,QList<double>>> readFatigueResults(int type,
-    //                                                             const QVector<GeometryTag> &vecLoc,
+    //                                                             const std::vector<GeometryTag> &vecLoc,
     //                                                             const QList<double> &times);
 
     std::map<GeometryTag,std::map<int,QList<double>>> readFatigueResults(int type,
-                                                                 const QVector<GeometryTag> &vecLoc,
+                                                                 const std::vector<GeometryTag> &vecLoc,
                                                                  const QList<double> &times);
 
 

@@ -1129,7 +1129,7 @@ void contextMenuBuilder::buildStructuralAnalysisContextMenu(QMenu *contextMenu, 
             //! a geometry or a named selection, i.e. there is
             //! something to "promote")
             //! ------------------------------------------------
-            if(!node->getPropertyValue<QVector<GeometryTag>>("Tags").isEmpty())
+            if(node->getPropertyValue<std::vector<GeometryTag>>("Tags").size()!=0)
             {
                 QAction *ActionPromoteToRemotePoint = contextMenu->addAction("Promote to remote point");
                 ActionPromoteToRemotePoint->setIcon(QIcon(":/icons/icon_pin.png"));
@@ -1145,7 +1145,7 @@ void contextMenuBuilder::buildStructuralAnalysisContextMenu(QMenu *contextMenu, 
             //! a geometry selection, i.e. there is something
             //! to "promote")
             //! -----------------------------------------------
-            if(!node->getPropertyValue<QVector<GeometryTag>>("Tags").isEmpty())
+            if(node->getPropertyValue<std::vector<GeometryTag>>("Tags").size()!=0)
             {
                 QAction *ActionPromoteToNamedSelection = contextMenu->addAction("Promote to named selection");
                 ActionPromoteToNamedSelection->setIcon(QIcon(":/icons/icon_pin.png"));
@@ -1952,18 +1952,18 @@ void contextMenuBuilder::addActionCreateNamedSelection(QMenu *contextMenu)
 {
     SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
     const QList<QModelIndex> &selectedIndexes = sm->myTreeView->selectionModel()->selectedIndexes();
-    QVector<GeometryTag> geometryTags;
+    std::vector<GeometryTag> geometryTags;
     for(int n=0; n<selectedIndexes.length(); n++)
     {
         SimulationNodeClass *node = selectedIndexes[n].data(Qt::UserRole).value<SimulationNodeClass*>();
         if(node->isSimulationSetUpNode()==false && node->isAnalysisResult()==false) return;
         if(node->getPropertyItem("Tags")!=Q_NULLPTR)
         {
-            QVector<GeometryTag> curTags = node->getPropertyValue<QVector<GeometryTag>>("Tags");
-            geometryTags.append(curTags);
+            std::vector<GeometryTag> curTags = node->getPropertyValue<std::vector<GeometryTag>>("Tags");
+            geometryTags.insert(geometryTags.end(),curTags.begin(),curTags.end());
         }
     }
-    if(geometryTags.length()==0) return;
+    if(geometryTags.size()==0) return;
     QAction *ActionCreateNamedSelection = contextMenu->addAction("Create named selection");
     ActionCreateNamedSelection->setIcon(QIcon(":/icons/icon_named selection geometry.png"));
     ActionCreateNamedSelection->setData(106);

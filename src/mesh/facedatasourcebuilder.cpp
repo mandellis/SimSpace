@@ -85,10 +85,10 @@ void faceDataSourceBuilder::setMapOfIsMeshExact(const QMap<int,bool> &aMapOfIsMe
 //! function: setFaces
 //! details:  through a vector of GeometryTag
 //! ------------------------------------------
-void faceDataSourceBuilder::setFaces(const QVector<GeometryTag> &vecLoc)
+void faceDataSourceBuilder::setFaces(const std::vector<GeometryTag> &vecLoc)
 {
     myListOfFaces.clear();
-    for(QVector<GeometryTag>::const_iterator it = vecLoc.cbegin(); it!= vecLoc.cend(); ++it)
+    for(std::vector<GeometryTag>::const_iterator it = vecLoc.cbegin(); it!= vecLoc.cend(); ++it)
     {
         const GeometryTag &loc = *it;
         int bodyIndex = loc.parentShapeNr;
@@ -102,15 +102,15 @@ void faceDataSourceBuilder::setFaces(const QVector<GeometryTag> &vecLoc)
 //! function: setFaces
 //! details:  through a map of vector of GeometryTag
 //! -------------------------------------------------
-void faceDataSourceBuilder::setFaces(const QMap<int,QVector<GeometryTag>> &vecLocMap)
+void faceDataSourceBuilder::setFaces(const QMap<int,std::vector<GeometryTag>> &vecLocMap)
 {
     cout<<"faceDataSourceBuilder::setFaces()->____setting up the face list from input geometry tags____"<<endl;
-    for(QMap<int,QVector<GeometryTag>>::const_iterator it = vecLocMap.begin(); it!=vecLocMap.end(); ++it)
+    for(QMap<int,std::vector<GeometryTag>>::const_iterator it = vecLocMap.begin(); it!=vecLocMap.end(); ++it)
     {
         int bcNumber = it.key();
-        QVector<GeometryTag> vecLoc = it.value();
+        std::vector<GeometryTag> vecLoc = it.value();
         QList<TopoDS_Face> listOfFaces;
-        for(QVector<GeometryTag>::const_iterator it = vecLoc.cbegin(); it!= vecLoc.cend(); ++it)
+        for(std::vector<GeometryTag>::const_iterator it = vecLoc.cbegin(); it!= vecLoc.cend(); ++it)
         {
             const GeometryTag &loc = *it;
             int bodyIndex = loc.parentShapeNr;

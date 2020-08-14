@@ -284,10 +284,10 @@ bool GeomToolsClass::getEllipseInfo(const TopoDS_Edge &anEdge, gp_Ax1 &theAxis, 
 //! function: calculateCentroid
 //! details:
 //! ----------------------------
-QList<double> GeomToolsClass::calculateCentroid(geometryDataBase *gDB, const QVector<GeometryTag> &vecLoc)
+QList<double> GeomToolsClass::calculateCentroid(geometryDataBase *gDB, const std::vector<GeometryTag> &vecLoc)
 {
     if(gDB==NULL) return QList<double>();
-    if(vecLoc.isEmpty()) return QList<double>();
+    if(vecLoc.size()==0) return QList<double>();
 
     //! ----------------------------------------------
     //! compute the centroid of the selected entities
@@ -298,9 +298,9 @@ QList<double> GeomToolsClass::calculateCentroid(geometryDataBase *gDB, const QVe
     TopoDS_Compound theCompound;
     theBuilder.MakeCompound(theCompound);
 
-    for(QVector<GeometryTag>::const_iterator it = vecLoc.cbegin(); it!=vecLoc.cend(); ++it)
+    for(std::vector<GeometryTag>::const_iterator it = vecLoc.cbegin(); it!=vecLoc.cend(); ++it)
     {
-        GeometryTag loc = *it;
+        const GeometryTag &loc = *it;
         int parentShape = loc.parentShapeNr;
         int childShape = loc.subTopNr;
         TopAbs_ShapeEnum type = loc.subShapeType;

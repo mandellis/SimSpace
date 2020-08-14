@@ -1041,17 +1041,17 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 //! -----------------------------------------
                 emit requestShowDoubleViewPort(true);
 
-                QVector<GeometryTag> vecLocM = theNode->getPropertyItem("Tags master")->data(Qt::UserRole).value<Property>().getData().value<QVector<GeometryTag>>();
-                QVector<GeometryTag> vecLocS = theNode->getPropertyItem("Tags slave")->data(Qt::UserRole).value<Property>().getData().value<QVector<GeometryTag>>();
+                std::vector<GeometryTag> vecLocM = theNode->getPropertyItem("Tags master")->data(Qt::UserRole).value<Property>().getData().value<std::vector<GeometryTag>>();
+                std::vector<GeometryTag> vecLocS = theNode->getPropertyItem("Tags slave")->data(Qt::UserRole).value<Property>().getData().value<std::vector<GeometryTag>>();
 
                 std::vector<int> indexes_master;
                 std::vector<int> indexes_slave;
-                for(QVector<GeometryTag>::iterator it = vecLocM.begin(); it!=vecLocM.end(); ++it)
+                for(std::vector<GeometryTag>::iterator it = vecLocM.begin(); it!=vecLocM.end(); ++it)
                 {
                     GeometryTag loc = *it;
                     indexes_master.push_back(loc.parentShapeNr);
                 }
-                for(QVector<GeometryTag>::iterator it = vecLocS.begin(); it!=vecLocS.end(); ++it)
+                for(std::vector<GeometryTag>::iterator it = vecLocS.begin(); it!=vecLocS.end(); ++it)
                 {
                     GeometryTag loc = *it;
                     indexes_slave.push_back(loc.parentShapeNr);
@@ -1534,7 +1534,7 @@ void SimulationManager::deleteItem(QList<QModelIndex> indexesList)
                         nodeSetUp->getModel()->blockSignals(true);
 
                         QVariant data;
-                        data.setValue(QVector<GeometryTag>());
+                        data.setValue(std::vector<GeometryTag>());
                         nodeSetUp->replaceProperty("Geometry",Property("Tags",data,Property::Property::PropertyGroup_Scope));
                         nodeSetUp->replaceProperty("Tags",Property("Tags",data,Property::Property::PropertyGroup_Scope));
                         data.setValue(Property::ScopingMethod_GeometrySelection);
@@ -1622,9 +1622,9 @@ void SimulationManager::handleItem(int type)
     case 85:
     {
         SimulationNodeClass *curNode = myTreeView->currentIndex().data(Qt::UserRole).value<SimulationNodeClass*>();
-        const QVector<GeometryTag> tags = curNode->getPropertyValue<QVector<GeometryTag>>("Geometry");
-        if(tags.isEmpty() || tags.size()>1) return;
-        TopAbs_ShapeEnum shapeType = tags.first().subShapeType;
+        const std::vector<GeometryTag> tags = curNode->getPropertyValue<std::vector<GeometryTag>>("Geometry");
+        if(tags.size()==0 || tags.size()>1) return;
+        TopAbs_ShapeEnum shapeType = tags[0].subShapeType;
         if(shapeType!=TopAbs_SOLID) return;
 
         int bodyIndex = tags.at(0).parentShapeNr;
@@ -1749,7 +1749,7 @@ void SimulationManager::handleItem(int type)
         if(curNode->getPropertyItem("Geometry")!=Q_NULLPTR)
         {
             cout<<" replacing the \"Geometry\" property of the promoted remote point"<<endl;
-            QVector<GeometryTag> vecLoc = curNode->getPropertyValue<QVector<GeometryTag>>("Geometry");
+            std::vector<GeometryTag> vecLoc = curNode->getPropertyValue<std::vector<GeometryTag>>("Geometry");
             data.setValue(vecLoc);
             Property prop("Geometry",data,Property::PropertyGroup_Scope);
             theNewRPNode->replaceProperty("Geometry",prop);
@@ -1777,7 +1777,7 @@ void SimulationManager::handleItem(int type)
         if(curNode->getPropertyItem("Tags")!=Q_NULLPTR)
         {
             cout<<" replacing the \"Tags\" property of the promoted remote point"<<endl;
-            QVector<GeometryTag> vecLoc = curNode->getPropertyValue<QVector<GeometryTag>>("Tags");
+            std::vector<GeometryTag> vecLoc = curNode->getPropertyValue<std::vector<GeometryTag>>("Tags");
             data.setValue(vecLoc);
             Property prop("Tags",data,Property::PropertyGroup_Scope);
             theNewRPNode->replaceProperty("Tags",prop);
@@ -1897,7 +1897,7 @@ void SimulationManager::handleItem(int type)
         break;
     case 50:
     {
-        QVector<GeometryTag> mergedMasterTags, mergedSlaveTags;
+        std::vector<GeometryTag> mergedMasterTags, mergedSlaveTags;
         QList<QModelIndex> insel = myTreeView->selectionModel()->selectedIndexes();
 
         //! ----------------------------
@@ -1907,8 +1907,10 @@ void SimulationManager::handleItem(int type)
         {
             QModelIndex index = *it;
             SimulationNodeClass *node = index.data(Qt::UserRole).value<SimulationNodeClass*>();
-            mergedMasterTags.append(node->getPropertyValue<QVector<GeometryTag>>("Tags master"));
-            mergedSlaveTags.append(node->getPropertyValue<QVector<GeometryTag>>("Tags slave"));
+            const std::vector<GeometryTag> &tm = node->getPropertyValue<std::vector<GeometryTag>>("Tags master");
+            const std::vector<GeometryTag> &ts = node->getPropertyValue<std::vector<GeometryTag>>("Tags slave");
+            mergedMasterTags.insert(mergedMasterTags.end(),tm.cbegin(),tm.cend());
+            mergedSlaveTags.insert(mergedSlaveTags.end(),ts.cbegin(),ts.cend());
         }
         QVariant data;
         data.setValue(mergedMasterTags);
@@ -1987,16 +1989,16 @@ void SimulationManager::handleItem(int type)
         //! create a named selection from an item/items selection
         //! ------------------------------------------------------
         const QList<QModelIndex> &indexes = myTreeView->selectionModel()->selectedIndexes();
-        QVector<GeometryTag> tags;
+        std::vector<GeometryTag> tags;
         for(int n=0; n<indexes.length(); n++)
         {
             SimulationNodeClass *node = indexes[n].data(Qt::UserRole).value<SimulationNodeClass*>();
             if(node->isAnalysisResult()==false && node->isSimulationSetUpNode()==false) continue;
             if(node->getPropertyItem("Tags")==Q_NULLPTR) continue;
-            const QVector<GeometryTag> curTags = node->getPropertyValue<QVector<GeometryTag>>("Tags");
-            tags.append(curTags);
+            const std::vector<GeometryTag> &curTags = node->getPropertyValue<std::vector<GeometryTag>>("Tags");
+            tags.insert(tags.end(),curTags.cbegin(),curTags.cend());
         }
-        if(tags.length()==0) return;
+        if(tags.size()==0) return;
         this->createSimulationNode(SimulationNodeClass::nodeType_namedSelectionGeometry);
         SimulationNodeClass *namedSelectionNode = myTreeView->currentIndex().data(Qt::UserRole).value<SimulationNodeClass*>();
         QVariant data;
@@ -2201,12 +2203,14 @@ void SimulationManager::handleItem(int type)
     {
         QList<QModelIndex> modelIndexList = myTreeView->selectionModel()->selectedIndexes();
         if(modelIndexList.size()<2) return;
-        QVector<GeometryTag> tags;
+        std::vector<GeometryTag> tags;
         for(int i=0; i<modelIndexList.size(); i++)
         {
             const QModelIndex &curIndex = modelIndexList[i];
             SimulationNodeClass *curNode = curIndex.data(Qt::UserRole).value<SimulationNodeClass*>();
-            tags.append(curNode->getPropertyValue<QVector<GeometryTag>>("Tags"));
+            const std::vector<GeometryTag> &t = curNode->getPropertyValue<std::vector<GeometryTag>>("Tags");
+            tags.insert(tags.end(),t.cbegin(),t.cend());
+
         }
         //! --------------------------
         //! delete the selected items
@@ -2244,10 +2248,10 @@ void SimulationManager::handleItem(int type)
         SimulationNodeClass::nodeType theFamily = curNode->getFamily();
         if(theFamily==SimulationNodeClass::nodeType_meshControl)
         {
-            QVector<GeometryTag> vecLocs = curNode->getPropertyValue<QVector<GeometryTag>>("Tags");
+            std::vector<GeometryTag> vecLocs = curNode->getPropertyValue<std::vector<GeometryTag>>("Tags");
             std::vector<int> parentShapes;
 
-            for(QVector<GeometryTag>::iterator it = vecLocs.begin(); it!=vecLocs.end(); ++it)
+            for(std::vector<GeometryTag>::iterator it = vecLocs.begin(); it!=vecLocs.end(); ++it)
             {
                 const GeometryTag &loc = *it;
                 int n = loc.parentShapeNr;
@@ -2479,8 +2483,8 @@ void SimulationManager::showHealingElements()
             const TopoDS_Shape &curShape = myCTX->SelectedShape();
             listOfShapes.Append(curShape);
         }
-        QVector<GeometryTag> vecLoc = TopologyTools::generateLocationPairs(mySimulationDataBase,listOfShapes);
-        for(QVector<GeometryTag>::iterator it = vecLoc.begin(); it!=vecLoc.end(); ++it)
+        std::vector<GeometryTag> vecLoc = TopologyTools::generateLocationPairs(mySimulationDataBase,listOfShapes);
+        for(std::vector<GeometryTag>::iterator it = vecLoc.begin(); it!=vecLoc.end(); ++it)
         {
             GeometryTag loc = *it;
             vecBodyIndexes.push_back(loc.parentShapeNr);
@@ -3832,15 +3836,15 @@ void SimulationManager::transferMeshNodes()
                     const Property &curProp = *it;
                     if(curProp.getGroup()==Property::PropertyGroup_Scope)
                     {
-                        QVector<GeometryTag> vecLocs;
+                        std::vector<GeometryTag> vecLocs;
                         if(curProp.getName()=="Tags")
                         {
-                            vecLocs = curProp.getData().value<QVector<GeometryTag>>();
+                            vecLocs = curProp.getData().value<std::vector<GeometryTag>>();
 
                             cout<<"SimulationManager::transferMeshNodes()->____property \"Tags\" found; extent: "<<vecLocs.size()<<"____"<<endl;
 
                             int j=0;
-                            for(QVector<GeometryTag>::iterator vecIt = vecLocs.begin();  vecIt!=vecLocs.end(); ++vecIt)
+                            for(std::vector<GeometryTag>::iterator vecIt = vecLocs.begin();  vecIt!=vecLocs.end(); ++vecIt)
                             {
                                 GeometryTag curLoc = *vecIt;
                                 bodyIndex_.push_back(curLoc.parentShapeNr);
@@ -3909,8 +3913,8 @@ void SimulationManager::transferMeshNodes()
                 if(ss==Property::SuppressionStatus_Active) isActive = true;
 
                 bool isScopeOK = false;
-                QVector<GeometryTag> vecLoc = meshControlNode->getPropertyValue<QVector<GeometryTag>>("Tags");
-                if(!vecLoc.isEmpty()) isScopeOK = true;
+                std::vector<GeometryTag> vecLoc = meshControlNode->getPropertyValue<std::vector<GeometryTag>>("Tags");
+                if(vecLoc.size()!=0) isScopeOK = true;
 
                 //! ---------------------------------
                 //! "Active" is on and "Scope" is ok
@@ -3923,7 +3927,7 @@ void SimulationManager::transferMeshNodes()
                 //! -----------------------------
                 //! actually transfer parameters
                 //! -----------------------------
-                for(QVector<GeometryTag>::iterator it = vecLoc.begin(); it!=vecLoc.end(); ++it)
+                for(std::vector<GeometryTag>::iterator it = vecLoc.begin(); it!=vecLoc.end(); ++it)
                 {
                     GeometryTag aLoc = *it;
                     int bodyIndex = aLoc.parentShapeNr;
@@ -3955,10 +3959,10 @@ void SimulationManager::transferMeshNodes()
                 {
                     if(props.at(k).getGroup()==Property::PropertyGroup_Scope)
                     {
-                        QVector<GeometryTag> vecLocs;
+                        std::vector<GeometryTag> vecLocs;
                         if(props.at(k).getName()=="Tags")
                         {
-                            vecLocs = props.at(k).getData().value<QVector<GeometryTag>>();
+                            vecLocs = props.at(k).getData().value<std::vector<GeometryTag>>();
                             if(vecLocs.size()>0)
                             {
                                 //!cout<<"SimulationManager::transferMeshNodes()->____property scope found; pairs: "<<vecLocs.size()<<"____"<<endl;
@@ -4034,10 +4038,10 @@ void SimulationManager::transferMeshNodes()
                 {
                     if(props.at(k).getGroup()==Property::PropertyGroup_Scope)
                     {
-                        QVector<GeometryTag> vecLocs;
+                        std::vector<GeometryTag> vecLocs;
                         if(props.at(k).getName()=="Tags")
                         {
-                            vecLocs = props.at(k).getData().value<QVector<GeometryTag>>();
+                            vecLocs = props.at(k).getData().value<std::vector<GeometryTag>>();
                             if(vecLocs.size()>0)
                             {
                                 //!cout<<"SimulationManager::transferMeshNodes()->____property scope found; pairs: "<<vecLocs.size()<<"____"<<endl;
@@ -4128,10 +4132,10 @@ void SimulationManager::transferMeshNodes()
                 {
                     if(props.at(k).getGroup()==Property::PropertyGroup_Scope)
                     {
-                        QVector<GeometryTag> vecLocs;
+                        std::vector<GeometryTag> vecLocs;
                         if(props.at(k).getName()=="Tags")
                         {
-                            vecLocs = props.at(k).getData().value<QVector<GeometryTag>>();
+                            vecLocs = props.at(k).getData().value<std::vector<GeometryTag>>();
                             if(vecLocs.size()>0)
                             {
                                 //!cout<<"SimulationManager::transferMeshNodes()->____property scope found; pairs: "<<vecLocs.size()<<"____"<<endl;
@@ -4216,8 +4220,8 @@ void SimulationManager::transferMeshNodes()
                 //! check if the scope is defined
                 //! ------------------------------
                 bool isScopeOK = false;
-                QVector<GeometryTag> vecLoc = meshControlNode->getPropertyValue<QVector<GeometryTag>>("Tags");
-                if(!vecLoc.isEmpty()) isScopeOK = true;
+                std::vector<GeometryTag> vecLoc = meshControlNode->getPropertyValue<std::vector<GeometryTag>>("Tags");
+                if(vecLoc.size()!=0) isScopeOK = true;
 
                 //! ---------------------------------
                 //! "Active" is on and "Scope" is ok
@@ -4356,7 +4360,7 @@ void SimulationManager::transferMeshNodes()
                     //! -----------------------------
                     //! actually transfer parameters
                     //! -----------------------------
-                    for(QVector<GeometryTag>::iterator it = vecLoc.begin(); it!=vecLoc.end(); ++it)
+                    for(std::vector<GeometryTag>::iterator it = vecLoc.begin(); it!=vecLoc.end(); ++it)
                     {
                         GeometryTag aLoc = *it;
                         int bodyIndex = aLoc.parentShapeNr;
@@ -4447,11 +4451,11 @@ void SimulationManager::transferMeshNodes()
                 //! check if the scope is defined
                 //! ------------------------------
                 bool isScopeOK = false;
-                QVector<GeometryTag> vecLoc = meshControlNode->getPropertyValue<QVector<GeometryTag>>("Tags");
-                if(!vecLoc.isEmpty()) isScopeOK = true;
+                std::vector<GeometryTag> vecLoc = meshControlNode->getPropertyValue<std::vector<GeometryTag>>("Tags");
+                if(vecLoc.size()!=0) isScopeOK = true;
 
-                QVector<GeometryTag> boundaryVecLoc = meshControlNode->getPropertyValue<QVector<GeometryTag>>("Boundary tags");
-                if(!boundaryVecLoc.isEmpty()) isScopeOK = true;
+                std::vector<GeometryTag> boundaryVecLoc = meshControlNode->getPropertyValue<std::vector<GeometryTag>>("Boundary tags");
+                if(!boundaryVecLoc.size()!=0) isScopeOK = true;
 
                 if(isActive == true && isScopeOK == true)
                 {
@@ -4578,7 +4582,7 @@ void SimulationManager::handleMeshItemChange(QStandardItem *item)
     //! ----------------------------------------------------
     if(curNode->getType() == SimulationNodeClass::nodeType_meshMeshMetric) return;
 
-    QVector<GeometryTag> vecLocs = curNode->getPropertyValue<QVector<GeometryTag>>("Tags");
+    std::vector<GeometryTag> vecLocs = curNode->getPropertyValue<std::vector<GeometryTag>>("Tags");
     std::vector<int> parentShapes;
     for(int k=0; k<vecLocs.size();k++)
     {
@@ -5943,7 +5947,7 @@ void SimulationManager::buildMesh(bool isVolumeMesh)
     //! simplification, the boundary of the patches of the boundary conditions will
     //! be preserved (if the "Preserve boundary condition edges" selector is ON
     //! ----------------------------------------------------------------------------
-    QVector<GeometryTag> vecTags;
+    std::vector<GeometryTag> vecTags;
     int type = 4;       //! on faces
     mainTreeTools::getAllBoundaryConditionsTags(myTreeView,type,vecTags);
 
@@ -6610,8 +6614,8 @@ void SimulationManager::changeColor()
     {
         emit requestResetCustomColors(true);
 
-        const QVector<GeometryTag> &tagsMaster = node->getPropertyValue<QVector<GeometryTag>>("Tags master");
-        if(tagsMaster.isEmpty()==false)
+        const std::vector<GeometryTag> &tagsMaster = node->getPropertyValue<std::vector<GeometryTag>>("Tags master");
+        if(tagsMaster.size()!=0)
         {
             QMap<GeometryTag,TopoDS_Shape> subShapesMap;
             for(int i=0; i<tagsMaster.size(); i++)
@@ -6624,8 +6628,8 @@ void SimulationManager::changeColor()
             emit requestApplyCustomColor(subShapesMap,Quantity_NOC_BLUE1,false);
         }
 
-        const QVector<GeometryTag> &tagsSlave = node->getPropertyValue<QVector<GeometryTag>>("Tags slave");
-        if(tagsSlave.isEmpty()==false)
+        const std::vector<GeometryTag> &tagsSlave = node->getPropertyValue<std::vector<GeometryTag>>("Tags slave");
+        if(tagsSlave.size()!=0)
         {
             QMap<GeometryTag,TopoDS_Shape> subShapesMap;
             for(int i=0; i<tagsSlave.size(); i++)
@@ -6640,7 +6644,7 @@ void SimulationManager::changeColor()
     }
     else
     {
-        const QVector<GeometryTag> &tags = node->getPropertyValue<QVector<GeometryTag>>("Tags");
+        const std::vector<GeometryTag> &tags = node->getPropertyValue<std::vector<GeometryTag>>("Tags");
         emit requestResetCustomColors(true);
         QMap<GeometryTag,TopoDS_Shape> subShapesMap;
         for(int i=0; i<tags.size(); i++)
@@ -6694,13 +6698,13 @@ void SimulationManager::changeColor()
             color1 = MASTER_COLOR;
             color2 = SLAVE_COLOR;
 
-            QVector<GeometryTag> vecLocs;
+            std::vector<GeometryTag> vecLocs;
             GeometryTag loc;
             if(itemMasterTags!=NULL)
             {
-                vecLocs = itemMasterTags->data(Qt::UserRole).value<Property>().getData().value<QVector<GeometryTag>>();
+                vecLocs = itemMasterTags->data(Qt::UserRole).value<Property>().getData().value<std::vector<GeometryTag>>();
                 std::vector<int> vecParentShapes;
-                for(QVector<GeometryTag>::iterator it = vecLocs.begin(); it!=vecLocs.end(); ++it)
+                for(std::vector<GeometryTag>::iterator it = vecLocs.begin(); it!=vecLocs.end(); ++it)
                 {
                     loc = *it;
                     TopAbs_ShapeEnum type = loc.subShapeType;
@@ -6759,8 +6763,8 @@ void SimulationManager::changeColor()
             if(itemSlaveTags!=NULL)
             {
                 std::vector<int> vecParentShapes;
-                vecLocs = itemSlaveTags->data(Qt::UserRole).value<Property>().getData().value<QVector<GeometryTag>>();
-                for(QVector<GeometryTag>::iterator it = vecLocs.begin(); it!=vecLocs.end(); ++it)
+                vecLocs = itemSlaveTags->data(Qt::UserRole).value<Property>().getData().value<std::vector<GeometryTag>>();
+                for(std::vector<GeometryTag>::iterator it = vecLocs.begin(); it!=vecLocs.end(); ++it)
                 {
                     loc = *it;
                     TopAbs_ShapeEnum type = loc.subShapeType;
@@ -6853,12 +6857,12 @@ void SimulationManager::changeColor()
         {
             QExtendedStandardItem* itemTags = node->getPropertyItem("Tags");
             color1 = graphicsTools::getModelFeatureColor(theType);
-            QVector<GeometryTag> vecLocs;
+            std::vector<GeometryTag> vecLocs;
             if(itemTags!=Q_NULLPTR)
             {
                 GeometryTag loc;
-                vecLocs = itemTags->data(Qt::UserRole).value<Property>().getData().value<QVector<GeometryTag>>();
-                for(QVector<GeometryTag>::iterator it = vecLocs.begin(); it!=vecLocs.end(); ++it)
+                vecLocs = itemTags->data(Qt::UserRole).value<Property>().getData().value<std::vector<GeometryTag>>();
+                for(std::vector<GeometryTag>::iterator it = vecLocs.begin(); it!=vecLocs.end(); ++it)
                 {
                     loc = *it;
                     TopAbs_ShapeEnum type = loc.subShapeType;
@@ -6954,8 +6958,8 @@ void SimulationManager::swapContact()
     //! -------------------------
     //! the old master and slave
     //! -------------------------
-    const QVector<GeometryTag> &scope1 = node->getPropertyValue<QVector<GeometryTag>>("Master");
-    const QVector<GeometryTag> &scope2 = node->getPropertyValue<QVector<GeometryTag>>("Slave");
+    const std::vector<GeometryTag> &scope1 = node->getPropertyValue<std::vector<GeometryTag>>("Master");
+    const std::vector<GeometryTag> &scope2 = node->getPropertyValue<std::vector<GeometryTag>>("Slave");
 
     QVariant data;
 
@@ -6995,10 +6999,10 @@ void SimulationManager::swapContact()
     //! ------------------
     ListOfShape shapeScope1,shapeScope2;
 
-    //! QVector<GeometryTag> contains homogeneous shapes (same type)
-    if(scope1.first().isParent)
+    //! std::vector<GeometryTag> contains homogeneous shapes (same type)
+    if(scope1[0].isParent)
     {
-        for(QVector<GeometryTag>::const_iterator it = scope1.cbegin(); it!= scope1.cend(); ++it)
+        for(std::vector<GeometryTag>::const_iterator it = scope1.cbegin(); it!= scope1.cend(); ++it)
         {
             GeometryTag aLoc = *it;
             shapeScope1.Append(mySimulationDataBase->bodyMap.value(aLoc.parentShapeNr));
@@ -7006,10 +7010,10 @@ void SimulationManager::swapContact()
     }
     else
     {
-        switch(scope1.first().subShapeType)
+        switch(scope1[0].subShapeType)
         {
         case TopAbs_FACE:
-            for(QVector<GeometryTag>::const_iterator it = scope1.cbegin(); it!= scope1.cend(); ++it)
+            for(std::vector<GeometryTag>::const_iterator it = scope1.cbegin(); it!= scope1.cend(); ++it)
             {
                 GeometryTag aLoc = *it;
                 int bodyIndex = aLoc.parentShapeNr;
@@ -7018,7 +7022,7 @@ void SimulationManager::swapContact()
             }
             break;
         case TopAbs_EDGE:
-            for(QVector<GeometryTag>::const_iterator it = scope1.cbegin(); it!= scope1.cend(); ++it)
+            for(std::vector<GeometryTag>::const_iterator it = scope1.cbegin(); it!= scope1.cend(); ++it)
             {
                 GeometryTag aLoc = *it;
                 int bodyIndex = aLoc.parentShapeNr;
@@ -7027,7 +7031,7 @@ void SimulationManager::swapContact()
             }
             break;
         case TopAbs_VERTEX:
-            for(QVector<GeometryTag>::const_iterator it = scope1.cbegin(); it!= scope1.cend(); ++it)
+            for(std::vector<GeometryTag>::const_iterator it = scope1.cbegin(); it!= scope1.cend(); ++it)
             {
                 GeometryTag aLoc = *it;
                 int bodyIndex = aLoc.parentShapeNr;
@@ -7038,10 +7042,10 @@ void SimulationManager::swapContact()
         }
     }
 
-    //! QVector<GeometryTag> contains homogeneous shapes (same type)
-    if(scope2.first().isParent)
+    //! std::vector<GeometryTag> contains homogeneous shapes (same type)
+    if(scope2[0].isParent)
     {
-        for(QVector<GeometryTag>::const_iterator it = scope2.begin(); it!= scope2.end(); ++it)
+        for(std::vector<GeometryTag>::const_iterator it = scope2.begin(); it!= scope2.end(); ++it)
         {
             GeometryTag aLoc = *it;
             shapeScope2.Append(mySimulationDataBase->bodyMap.value(aLoc.parentShapeNr));
@@ -7049,10 +7053,10 @@ void SimulationManager::swapContact()
     }
     else
     {
-        switch(scope2.first().subShapeType)
+        switch(scope2[0].subShapeType)
         {
         case TopAbs_FACE:
-            for(QVector<GeometryTag>::const_iterator it = scope2.cbegin(); it!= scope2.cend(); ++it)
+            for(std::vector<GeometryTag>::const_iterator it = scope2.cbegin(); it!= scope2.cend(); ++it)
             {
                 GeometryTag aLoc = *it;
                 int bodyIndex = aLoc.parentShapeNr;
@@ -7061,7 +7065,7 @@ void SimulationManager::swapContact()
             }
             break;
         case TopAbs_EDGE:
-            for(QVector<GeometryTag>::const_iterator it = scope2.cbegin(); it!= scope2.cend(); ++it)
+            for(std::vector<GeometryTag>::const_iterator it = scope2.cbegin(); it!= scope2.cend(); ++it)
             {
                 GeometryTag aLoc = *it;
                 int bodyIndex = aLoc.parentShapeNr;
@@ -7070,7 +7074,7 @@ void SimulationManager::swapContact()
             }
             break;
         case TopAbs_VERTEX:
-            for(QVector<GeometryTag>::const_iterator it = scope2.cbegin(); it!= scope2.cend(); ++it)
+            for(std::vector<GeometryTag>::const_iterator it = scope2.cbegin(); it!= scope2.cend(); ++it)
             {
                 GeometryTag aLoc = *it;
                 int bodyIndex = aLoc.parentShapeNr;
@@ -9730,7 +9734,7 @@ void SimulationManager::interpolatePrivate(int mode)
     //! ---------------------------
     //! retrieve the target bodies
     //! ---------------------------
-    QVector<GeometryTag> vecLocs = node->getPropertyValue<QVector<GeometryTag>>("Tags");
+    std::vector<GeometryTag> vecLocs = node->getPropertyValue<std::vector<GeometryTag>>("Tags");
 
     //! ---------------------------------------
     //! retrieve the number of remapping steps
@@ -9966,7 +9970,7 @@ void SimulationManager::interpolatePrivate(int mode)
     //! start the mapping process
     //! --------------------------
     QMap<GeometryTag,QString> computationTimesMap;
-    for(QVector<GeometryTag>::iterator it = vecLocs.begin();it!=vecLocs.end();++it)
+    for(std::vector<GeometryTag>::iterator it = vecLocs.begin();it!=vecLocs.end();++it)
     {
         //! -------------
         //! start chrono
@@ -10134,7 +10138,7 @@ void SimulationManager::interpolatePrivate(int mode)
         //! prepare the name(s) of the postObject(s)
         //! -----------------------------------------
         mapOfMeshDataSources meshMap;
-        for(QVector<GeometryTag>::const_iterator it = vecLocs.cbegin();it!=vecLocs.cend();++it)
+        for(std::vector<GeometryTag>::const_iterator it = vecLocs.cbegin();it!=vecLocs.cend();++it)
         {
             GeometryTag loc = *it;
             int bodyIndex=loc.parentShapeNr;
@@ -10484,7 +10488,7 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
     //! ----------------------
     //! retrieve the location
     //! ----------------------
-    QVector<GeometryTag> vecLoc = curNode->getPropertyValue<QVector<GeometryTag>>("Tags");
+    std::vector<GeometryTag> vecLoc = curNode->getPropertyValue<std::vector<GeometryTag>>("Tags");
 
     //! ----------------------------------------------------------------
     //! check if a mesh for each location exists
@@ -10492,7 +10496,7 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
     //! and the seleted geometry has not a mesh yet
     //! ----------------------------------------------------------------
     bool isMeshOK = true;
-    for(QVector<GeometryTag>::iterator it = vecLoc.begin(); it!=vecLoc.end(); ++it)
+    for(std::vector<GeometryTag>::iterator it = vecLoc.begin(); it!=vecLoc.end(); ++it)
     {
         const GeometryTag &loc = *it;
         if(loc.isParent)
@@ -10903,10 +10907,10 @@ TopoDS_Shape SimulationManager::fromTagToShape(const GeometryTag &aTag)
 //! function: fromTagToShape
 //! details:  helper
 //! --------------------------
-TopTools_ListOfShape SimulationManager::fromTagToShape(const QVector<GeometryTag> &vecLoc)
+TopTools_ListOfShape SimulationManager::fromTagToShape(const std::vector<GeometryTag> &vecLoc)
 {
     TopTools_ListOfShape lshapes;
-    for(QVector<GeometryTag>::const_iterator it = vecLoc.cbegin(); it!=vecLoc.cend(); ++it)
+    for(std::vector<GeometryTag>::const_iterator it = vecLoc.cbegin(); it!=vecLoc.cend(); ++it)
     {
         GeometryTag loc = *it;
         int parentShapeIndex = loc.parentShapeNr;
@@ -11350,12 +11354,12 @@ bool SimulationManager::previewPrismaticLayer()
     //! --------------------------------------------------
     //! "Tags" of the "Scope" property (should be bodies)
     //! --------------------------------------------------
-    const QVector<GeometryTag> &vecLoc = this->getCurrentNode()->getPropertyValue<QVector<GeometryTag>>("Tags");
+    const std::vector<GeometryTag> &vecLoc = this->getCurrentNode()->getPropertyValue<std::vector<GeometryTag>>("Tags");
 
     //! -------------------------------------------------------------
     //! "Boundary tags" of the "Boundary" property (should be faces)
     //! -------------------------------------------------------------
-    const QVector<GeometryTag> &boundaryVecLoc = this->getCurrentNode()->getPropertyValue<QVector<GeometryTag>>("Boundary tags");
+    const std::vector<GeometryTag> &boundaryVecLoc = this->getCurrentNode()->getPropertyValue<std::vector<GeometryTag>>("Boundary tags");
 
     //! ----------------------------------------------
     //! the prismatic faces:
@@ -11538,9 +11542,9 @@ void SimulationManager::renameItemBasedOnDefinition()
         //! build a name for a contact pair
         //! do not rename if master or slave tags are empty
         //! ------------------------------------------------
-        const QVector<GeometryTag> &vecLocMasterTags = node->getPropertyValue<QVector<GeometryTag>>("Tags master");
+        const std::vector<GeometryTag> &vecLocMasterTags = node->getPropertyValue<std::vector<GeometryTag>>("Tags master");
         if(vecLocMasterTags.size()==0) return;
-        const QVector<GeometryTag> &vecLocSlaveTags = node->getPropertyValue<QVector<GeometryTag>>("Tags slave");
+        const std::vector<GeometryTag> &vecLocSlaveTags = node->getPropertyValue<std::vector<GeometryTag>>("Tags slave");
         if(vecLocSlaveTags.size()==0) return;
 
         //! -------------
@@ -11599,7 +11603,7 @@ void SimulationManager::renameItemBasedOnDefinition()
         //! -------------
         QString locationNames;
         int bodyIndex;
-        const QVector<GeometryTag> &locs = node->getPropertyValue<QVector<GeometryTag>>("Tags");
+        const std::vector<GeometryTag> &locs = node->getPropertyValue<std::vector<GeometryTag>>("Tags");
 
         //! ----------------------------------
         //! do not remane if there is not tag
@@ -11607,7 +11611,7 @@ void SimulationManager::renameItemBasedOnDefinition()
         if(locs.size()==0) return;
 
         int i;
-        for(i=0; i<locs.length()-1; i++)
+        for(i=0; i<locs.size()-1; i++)
         {
             const GeometryTag &aLoc = locs.at(i);
             bodyIndex = aLoc.parentShapeNr;
@@ -12080,9 +12084,9 @@ void SimulationManager::createAutomaticConnections()
 
     SimulationNodeClass *curNode = myTreeView->currentIndex().data(Qt::UserRole).value<SimulationNodeClass*>();
     QExtendedStandardItem *itemTags = curNode->getPropertyItem("Tags");
-    QVector<GeometryTag> vecLoc = itemTags->data(Qt::UserRole).value<Property>().getData().value<QVector<GeometryTag>>();
+    std::vector<GeometryTag> vecLoc = itemTags->data(Qt::UserRole).value<Property>().getData().value<std::vector<GeometryTag>>();
 
-    if(vecLoc.isEmpty()) return;
+    if(vecLoc.size()==0) return;
 
     //! --------------------------------------
     //! tolerance for contact pairs detection
@@ -12140,7 +12144,7 @@ void SimulationManager::createAutomaticConnections()
     //! define the result: a vector of mesh pairs
     //! indexed as the input vector of geometry tags
     //! ---------------------------------------------
-    std::vector<std::pair<QVector<GeometryTag>,QVector<GeometryTag>>> allContactPairs;
+    std::vector<std::pair<std::vector<GeometryTag>,std::vector<GeometryTag>>> allContactPairs;
 
     //! -------------------------------------------------------------
     //! create an instance of contactFinder
@@ -12178,9 +12182,9 @@ void SimulationManager::createAutomaticConnections()
     //! -----------------------
     //! create the model items
     //! -----------------------
-    for(std::vector<std::pair<QVector<GeometryTag>,QVector<GeometryTag>>>::iterator it = allContactPairs.begin(); it!=allContactPairs.end(); it++)
+    for(std::vector<std::pair<std::vector<GeometryTag>,std::vector<GeometryTag>>>::iterator it = allContactPairs.begin(); it!=allContactPairs.end(); it++)
     {
-        const std::pair<QVector<GeometryTag>,QVector<GeometryTag>> &curPair = *it;
+        const std::pair<std::vector<GeometryTag>,std::vector<GeometryTag>> &curPair = *it;
         int masterBodyIndex = curPair.first[0].parentShapeNr;
         int slaveBodyIndex = curPair.second[0].parentShapeNr;
 
@@ -12452,7 +12456,7 @@ void SimulationManager::generateBoundaryConditionsMeshDS(bool computeDual)
             case Property::meshEngine2D_Netgen_STL:
             case Property::meshEngine2D_OCC_ExpressMesh:
             {
-                const QVector<GeometryTag> &vecLoc = meshNode->getPropertyValue<QVector<GeometryTag>>("Tags");
+                const std::vector<GeometryTag> &vecLoc = meshNode->getPropertyValue<std::vector<GeometryTag>>("Tags");
                 for(int k=0; k<vecLoc.size(); k++)
                 {
                     int bodyIndex = vecLoc.at(k).parentShapeNr;
@@ -12466,7 +12470,7 @@ void SimulationManager::generateBoundaryConditionsMeshDS(bool computeDual)
                 if(meshEngine3D == Property::meshEngine3D_Tetgen_BR)
                 {
                     //! Tetgen with boundary recovery
-                    const QVector<GeometryTag> &vecLoc = meshNode->getPropertyValue<QVector<GeometryTag>>("Tags");
+                    const std::vector<GeometryTag> &vecLoc = meshNode->getPropertyValue<std::vector<GeometryTag>>("Tags");
                     for(int k=0; k<vecLoc.size(); k++)
                     {
                         int bodyIndex = vecLoc.at(k).parentShapeNr;
@@ -12477,7 +12481,7 @@ void SimulationManager::generateBoundaryConditionsMeshDS(bool computeDual)
                 {
                     //! TetWild - no boundary recovery. The face mesh datasources
                     //! must be rebuilt
-                    const QVector<GeometryTag> &vecLoc = meshNode->getPropertyValue<QVector<GeometryTag>>("Tags");
+                    const std::vector<GeometryTag> &vecLoc = meshNode->getPropertyValue<std::vector<GeometryTag>>("Tags");
                     for(int k=0; k<vecLoc.size(); k++)
                     {
                         int bodyIndex = vecLoc.at(k).parentShapeNr;
@@ -12530,8 +12534,8 @@ void SimulationManager::generateBoundaryConditionsMeshDS(bool computeDual)
 
     for(int n=1; n<NbRows-1; n++) //skip the analysis settings item
     {
-        QVector<GeometryTag> patchConformingTags;
-        QVector<GeometryTag> nonPatchConformingTags;
+        std::vector<GeometryTag> patchConformingTags;
+        std::vector<GeometryTag> nonPatchConformingTags;
         //! -------------------
         //! working on an item
         //! -------------------
@@ -12558,13 +12562,13 @@ void SimulationManager::generateBoundaryConditionsMeshDS(bool computeDual)
             else
             {
                 cout<<"____valid BC detected____"<<endl;
-                const QVector<GeometryTag> &vecLoc = curNode->getPropertyValue<QVector<GeometryTag>>("Tags");
+                const std::vector<GeometryTag> &vecLoc = curNode->getPropertyValue<std::vector<GeometryTag>>("Tags");
                 for(int i=0; i<vecLoc.size(); i++)
                 {
                     int bodyIndex = vecLoc.at(i).parentShapeNr;
                     bool isMeshDSExactOnBody = mapOfIsMeshDSExact.value(bodyIndex);
-                    if(isMeshDSExactOnBody) patchConformingTags<<vecLoc.at(i);
-                    else nonPatchConformingTags<<vecLoc.at(i);
+                    if(isMeshDSExactOnBody) patchConformingTags.push_back(vecLoc.at(i));
+                    else nonPatchConformingTags.push_back(vecLoc.at(i));
                 }
 
                 //! --------------------------
@@ -12653,8 +12657,8 @@ void SimulationManager::generateBoundaryConditionsMeshDS(bool computeDual)
                 {
                     for(int n=0; n<NbContactPairs; n++)
                     {
-                        QVector<GeometryTag> patchConformingTags;
-                        QVector<GeometryTag> nonPatchConformingTags;
+                        std::vector<GeometryTag> patchConformingTags;
+                        std::vector<GeometryTag> nonPatchConformingTags;
                         //! -------------------
                         //! working on an item
                         //! -------------------
@@ -12664,18 +12668,18 @@ void SimulationManager::generateBoundaryConditionsMeshDS(bool computeDual)
                         Property::SuppressionStatus isSuppressed = curNode->getPropertyItem("Suppressed")->data(Qt::UserRole).value<Property>().getData().value<Property::SuppressionStatus>();
                         if(isSuppressed == Property::SuppressionStatus_Active)
                         {
-                            QVector<GeometryTag> vecLoc;
+                            std::vector<GeometryTag> vecLoc;
                             if(i==0) //Master
-                                vecLoc = curNode->getPropertyValue<QVector<GeometryTag>>("Tags master");
+                                vecLoc = curNode->getPropertyValue<std::vector<GeometryTag>>("Tags master");
                             else //Slave
-                                vecLoc = curNode->getPropertyValue<QVector<GeometryTag>>("Tags slave");
+                                vecLoc = curNode->getPropertyValue<std::vector<GeometryTag>>("Tags slave");
 
                             for(int ii=0; ii<vecLoc.size(); ii++)
                             {
                                 int bodyIndex = vecLoc.at(ii).parentShapeNr;
                                 bool isMeshDSExactOnBody = mapOfIsMeshDSExact.value(bodyIndex);
-                                if(isMeshDSExactOnBody) patchConformingTags<<vecLoc.at(ii);
-                                else nonPatchConformingTags<<vecLoc.at(ii);
+                                if(isMeshDSExactOnBody) patchConformingTags.push_back(vecLoc.at(ii));
+                                else nonPatchConformingTags.push_back(vecLoc.at(ii));
                             }
                             //! --------------------------
                             //! work on exact datasources
@@ -12752,8 +12756,8 @@ void SimulationManager::generateBoundaryConditionsMeshDS(bool computeDual)
     //! -----------------------------------
     for(int n=0; n<Geometry_RootItem->rowCount();n++)
     {
-        QVector<GeometryTag> patchConformingTags;
-        QVector<GeometryTag> nonPatchConformingTags;
+        std::vector<GeometryTag> patchConformingTags;
+        std::vector<GeometryTag> nonPatchConformingTags;
         //! -------------------
         //! working on an item
         //! -------------------
@@ -12765,13 +12769,13 @@ void SimulationManager::generateBoundaryConditionsMeshDS(bool computeDual)
         {
             if(nodeType == SimulationNodeClass::nodeType_pointMass)
             {
-                const QVector<GeometryTag> &vecLoc = curNode->getPropertyValue<QVector<GeometryTag>>("Tags");
+                const std::vector<GeometryTag> &vecLoc = curNode->getPropertyValue<std::vector<GeometryTag>>("Tags");
                 for(int i=0; i<vecLoc.size(); i++)
                 {
                     int bodyIndex = vecLoc.at(i).parentShapeNr;
                     bool isMeshDSExactOnBody = mapOfIsMeshDSExact.value(bodyIndex);
-                    if(isMeshDSExactOnBody) patchConformingTags<<vecLoc.at(i);
-                    else nonPatchConformingTags<<vecLoc.at(i);
+                    if(isMeshDSExactOnBody) patchConformingTags.push_back(vecLoc.at(i));
+                    else nonPatchConformingTags.push_back(vecLoc.at(i));
                 }
                 //! --------------------------
                 //! work on exact datasources
@@ -12856,9 +12860,9 @@ void SimulationManager::replicateBolt()
     //! the current simulation node
     //! ----------------------------
     SimulationNodeClass *curNode = myTreeView->currentIndex().data(Qt::UserRole).value<SimulationNodeClass*>();
-    const QVector<GeometryTag> tags = curNode->getPropertyValue<QVector<GeometryTag>>("Geometry");
-    if(tags.isEmpty() || tags.size()>1) return;
-    TopAbs_ShapeEnum shapeType = tags.first().subShapeType;
+    const std::vector<GeometryTag> &tags = curNode->getPropertyValue<std::vector<GeometryTag>>("Geometry");
+    if(tags.size()==0 || tags.size()>1) return;
+    TopAbs_ShapeEnum shapeType = tags[0].subShapeType;
     if(shapeType!=TopAbs_SOLID) return;
 
     //! ------------------------------------------------
@@ -13025,7 +13029,7 @@ void SimulationManager::replicateBolt()
         //! replace the default scope and tags
         //! -----------------------------------
         ListOfShape listOfShape; listOfShape.Append(curSelectedShape);
-        QVector<GeometryTag> tags = TopologyTools::generateLocationPairs(mySimulationDataBase,listOfShape);
+        std::vector<GeometryTag> tags = TopologyTools::generateLocationPairs(mySimulationDataBase,listOfShape);
         data.setValue(tags);
         Property prop_scope("Geometry",data,Property::PropertyGroup_Scope);
         Property prop_tags("Tags",data,Property::PropertyGroup_Scope);
@@ -13194,8 +13198,8 @@ void SimulationManager::computeAndDisplayMeshMetric()
     SimulationNodeClass *node = modelIndex.data(Qt::UserRole).value<SimulationNodeClass*>();
     if(node->getType()!=SimulationNodeClass::nodeType_meshMeshMetric) return;
 
-    QVector<GeometryTag> vecLoc = node->getPropertyValue<QVector<GeometryTag>>("Tags");
-    if(vecLoc.isEmpty()) return;
+    std::vector<GeometryTag> vecLoc = node->getPropertyValue<std::vector<GeometryTag>>("Tags");
+    if(vecLoc.size()==0) return;
     if(vecLoc.at(0).subShapeType!=TopAbs_SOLID) return;
 
     //! ---------------------------------------
@@ -13218,7 +13222,7 @@ void SimulationManager::computeAndDisplayMeshMetric()
     //! scan the volume meshes
     //! -----------------------
     //TetQualityClass aTetQualityChecker;
-    for(QVector<GeometryTag>::iterator it = vecLoc.begin(); it!=vecLoc.end(); it++)
+    for(std::vector<GeometryTag>::iterator it = vecLoc.begin(); it!=vecLoc.end(); it++)
     {
         int bodyIndex = it->parentShapeNr;
 

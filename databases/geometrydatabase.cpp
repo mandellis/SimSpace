@@ -406,7 +406,7 @@ void geometryDataBase::createGeometryNodes()
         loc.parentShapeNr=mainShapeIndex;
         loc.subTopNr=subShapeIndex;
         loc.subShapeType=subShapeType;
-        QVector<GeometryTag> vecLoc;
+        std::vector<GeometryTag> vecLoc;
         vecLoc.push_back(loc);
         data.setValue(vecLoc);
         Property property_geometry("Geometry",data,Property::PropertyGroup_Scope);
@@ -1094,7 +1094,7 @@ geometryDataBase::geometryDataBase(const QList<SimulationNodeClass*> listOfNodes
             loc.parentShapeNr = mainShapeIndex;
             loc.subTopNr = subShapeIndex;
             loc.subShapeType = subShapeType;
-            QVector<GeometryTag> vecLoc;
+            std::vector<GeometryTag> vecLoc;
             vecLoc.push_back(loc);
 
             QVariant data;

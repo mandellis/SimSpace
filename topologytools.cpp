@@ -18,10 +18,10 @@ TopologyTools::TopologyTools()
 //! function: generateLocationPair
 //! details:
 //! -------------------------------
-QVector<GeometryTag> TopologyTools::generateLocationPairs(geometryDataBase *gDB, const ListOfShape& scope)
+std::vector<GeometryTag> TopologyTools::generateLocationPairs(geometryDataBase *gDB, const ListOfShape& scope)
 {
     //cout<<"TopologyTools::generateLocationPairs()->____function called on "<<scope.Extent()<<" shapes____"<<endl;
-    QVector<GeometryTag> vecLocs;
+    std::vector<GeometryTag> vecLocs;
     for(TopTools_ListIteratorOfListOfShape it(scope);it.More();it.Next())
     {
         const TopoDS_Shape &curShape = it.Value();

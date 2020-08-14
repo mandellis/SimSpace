@@ -100,19 +100,19 @@ std::map<GeometryTag,std::vector<std::map<int,double>>> postEngine::evaluateResu
                                                                                    int requiredSubStepNb,
                                                                                    int requiredStepNb,
                                                                                    int requiredMode,
-                                                                                   const QVector<GeometryTag> &vecLoc,
+                                                                                   const std::vector<GeometryTag> &vecLoc,
                                                                                    double &requiredTime)
 {
     cout<<"@ -------------------------------------------------"<<endl;
     cout<<"@ - postEngine::evaluateResult "<<endl;
-    cout<<"@ - variable "<<resultKeyName.toStdString()<<" on "<<vecLoc.length()<<" locations"<<endl;
+    cout<<"@ - variable "<<resultKeyName.toStdString()<<" on "<<vecLoc.size()<<" locations"<<endl;
     cout<<"@ -------------------------------------------------"<<endl;
 
     //! ----------------------------------------------------
     //! generate the results on all the requested locations
     //! ----------------------------------------------------
     std::map<GeometryTag,std::vector<std::map<int,double>>> resMap;
-    for(QVector<GeometryTag>::const_iterator it = vecLoc.cbegin(); it!= vecLoc.cend(); ++it)
+    for(std::vector<GeometryTag>::const_iterator it = vecLoc.cbegin(); it!= vecLoc.cend(); ++it)
     {
         GeometryTag loc = *it;
 
@@ -586,7 +586,7 @@ bool postEngine::buildPostObject(const QString &keyName,
                                  int requiredSubStepNb,
                                  int requiredStepNb,
                                  int requiredMode,
-                                 const QVector<GeometryTag> &vecLoc,
+                                 const std::vector<GeometryTag> &vecLoc,
                                  sharedPostObject &aPostObject)
 {
 
@@ -690,7 +690,7 @@ void postEngine::updateIsostrips(sharedPostObject &aPostObject, int scaleType, d
 //! function: evaulateFatigueResults
 //! details:  overload
 //! ---------------------------------
-bool postEngine::evaluateFatigueResults(int type, QVector<GeometryTag> locs, const QList<double> &times, QMap<int,int> materialBodyMap, int nCycle, sharedPostObject &aPostObject)
+bool postEngine::evaluateFatigueResults(int type, std::vector<GeometryTag> locs, const QList<double> &times, QMap<int,int> materialBodyMap, int nCycle, sharedPostObject &aPostObject)
 {
     std::map<GeometryTag,std::vector<std::map<int,double>>> fatigueResults;
 
@@ -738,7 +738,7 @@ bool postEngine::evaluateFatigueResults(int type, QVector<GeometryTag> locs, con
         std::map<GeometryTag,std::vector<std::map<int,double>>> pe = this->evaluateResult(tor_eps,substep,step,mode,locs,requiredTime);
         std::map<GeometryTag,std::vector<std::map<int,double>>> stress = this->evaluateResult(tor_mises,substep,step,mode,locs,requiredTime);
 
-        for(QVector<GeometryTag>::iterator it=locs.begin();it!=locs.end();it++)
+        for(std::vector<GeometryTag>::iterator it=locs.begin();it!=locs.end();it++)
         {
             GeometryTag curLoc = *it;
             int bodyIndex = curLoc.parentShapeNr;
@@ -813,7 +813,7 @@ bool postEngine::evaluateFatigueResults(int type, QVector<GeometryTag> locs, con
 //!           ... other types
 //! ---------------------------------------------------
 std::map<GeometryTag,std::map<int,QList<double>>> postEngine::readFatigueResults(int type,
-                                                                                 const QVector<GeometryTag> &vecLoc,
+                                                                                 const std::vector<GeometryTag> &vecLoc,
                                                                                  const QList<double> &times)
 {
     QString resultKeyName;
@@ -829,7 +829,7 @@ std::map<GeometryTag,std::map<int,QList<double>>> postEngine::readFatigueResults
     //! ----------------------------------------------------
     std::map<GeometryTag,std::map<int,QList<double>>> resMap;
 
-    QVector<GeometryTag>::const_iterator it;
+    std::vector<GeometryTag>::const_iterator it;
     for(it = vecLoc.cbegin(); it!= vecLoc.cend(); ++it)
     {
         //! -------------------------------------------------------------------------
@@ -1051,7 +1051,7 @@ void coefficients(double x, double *c)
 //! function: evaulateFatigueResults
 //! details:
 //! ---------------------------------
-postObject postEngine::evaluateFatigueResults(int type, QVector<GeometryTag> locs, const QList<double> &times, QMap<int,int> materialBodyMap, int nCycle)
+postObject postEngine::evaluateFatigueResults(int type, std::vector<GeometryTag> locs, const QList<double> &times, QMap<int,int> materialBodyMap, int nCycle)
 {
     QMap<GeometryTag,QList<QMap<int,double>>> fatigueResults;
 
@@ -1097,7 +1097,7 @@ postObject postEngine::evaluateFatigueResults(int type, QVector<GeometryTag> loc
         QMap<GeometryTag,QList<QMap<int,double>>> pe = this->evaluateResult(tor_eps,substep,step,locs);
         QMap<GeometryTag,QList<QMap<int,double>>> stress = this->evaluateResult(tor_mises,substep,step,locs);
 
-        for(QVector<GeometryTag>::iterator it=locs.begin();it!=locs.end();it++)
+        for(std::vector<GeometryTag>::iterator it=locs.begin();it!=locs.end();it++)
         {
             GeometryTag curLoc = *it;
             int bodyIndex = curLoc.parentShapeNr;

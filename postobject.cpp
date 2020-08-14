@@ -40,7 +40,7 @@ postObject::postObject()
 {
     theData = std::map<GeometryTag,std::vector<std::map<int,double>>>();
 
-    myVecLoc = QVector<GeometryTag>();
+    myVecLoc = std::vector<GeometryTag>();
     name = QString();
 
     theMeshes = std::map<GeometryTag,occHandle(MeshVS_Mesh)>();
@@ -63,7 +63,7 @@ postObject::postObject(const std::map<GeometryTag, std::vector<std::map<int, dou
 {
     theData = resMap;
 
-    myVecLoc = QVector<GeometryTag>();
+    myVecLoc = std::vector<GeometryTag>();
     name = QString();
     theMeshes = std::map<GeometryTag,occHandle(MeshVS_Mesh)>();
     theMeshDataSources = std::map<GeometryTag,occHandle(MeshVS_DeformedDataSource)>();
@@ -81,7 +81,7 @@ postObject::postObject(const std::map<GeometryTag, std::vector<std::map<int, dou
 //! function: constructor
 //! details:  unused for the moment
 //! --------------------------------
-postObject::postObject(const std::map<GeometryTag,std::vector<std::map<int,double>>> &resMap, const QVector<GeometryTag> &aVecLoc)
+postObject::postObject(const std::map<GeometryTag,std::vector<std::map<int,double>>> &resMap, const std::vector<GeometryTag> &aVecLoc)
 {
     theData = resMap;
     myVecLoc = aVecLoc;
@@ -104,7 +104,7 @@ postObject::postObject(const std::map<GeometryTag,std::vector<std::map<int,doubl
 //! details:
 //! ----------------------
 postObject::postObject(const std::map<GeometryTag,std::vector<std::map<int,double>>> &resMap,
-                       const QVector<GeometryTag> &aVecLoc,
+                       const std::vector<GeometryTag> &aVecLoc,
                        const QString& aName)
 {
     theData = resMap;
@@ -127,7 +127,7 @@ postObject::postObject(const std::map<GeometryTag,std::vector<std::map<int,doubl
 //! details:  this is actually used
 //! --------------------------------
 postObject::postObject(const std::map<GeometryTag,std::vector<std::map<int,double>>> &resMap,
-                       const QVector<GeometryTag> &aVecLoc,
+                       const std::vector<GeometryTag> &aVecLoc,
                        const std::map<GeometryTag,std::map<int,gp_Vec>> mapOfMapOfNodalDiplacements,
                        const QString& aName,
                        bool useSurfaceMeshForVolumeResults)
@@ -181,7 +181,7 @@ void postObject::write(ofstream &file)
     //! -----------------------------------------
     //! write the scope: write the geometry tags
     //! -----------------------------------------
-    for(QVector<GeometryTag>::iterator itLoc = myVecLoc.begin();itLoc!=myVecLoc.end(); ++itLoc)
+    for(std::vector<GeometryTag>::iterator itLoc = myVecLoc.begin();itLoc!=myVecLoc.end(); ++itLoc)
     {
         const GeometryTag &aLoc = *itLoc;
         file<<aLoc.isParent<<endl;
@@ -605,7 +605,7 @@ void postObject::init(meshDataBase *mDB, int component)
     int topNr, parentShapeNr;
     occHandle(MeshVS_DataSource) meshDS;
 
-    for(QVector<GeometryTag>::iterator it = myVecLoc.begin(); it!= myVecLoc.end(); ++it)
+    for(std::vector<GeometryTag>::iterator it = myVecLoc.begin(); it!= myVecLoc.end(); ++it)
     {
         const GeometryTag &loc = *it;
         TopAbs_ShapeEnum type = static_cast<TopAbs_ShapeEnum>(loc.subShapeType);

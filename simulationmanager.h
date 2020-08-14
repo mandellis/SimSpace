@@ -158,7 +158,7 @@ private:
     //int calculateStartColumn() const;
 
     TopoDS_Shape fromTagToShape(const GeometryTag &aTag);
-    TopTools_ListOfShape fromTagToShape(const QVector<GeometryTag> &vecLoc);
+    TopTools_ListOfShape fromTagToShape(const std::vector<GeometryTag> &vecLoc);
 
     //! clear generated data
     void clearGeneratedData();

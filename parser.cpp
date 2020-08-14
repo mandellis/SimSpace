@@ -105,7 +105,7 @@ bool parser::NamedSelection(QExtendedStandardItem *item)
     itemToCheck = node->getPropertyItem("Tags");
     indexToCheck = node->getPropertyItem("Geometry")->index();
 
-    QVector<GeometryTag> vecLoc = itemToCheck->data(Qt::UserRole).value<Property>().getData().value<QVector<GeometryTag>>();
+    std::vector<GeometryTag> vecLoc = itemToCheck->data(Qt::UserRole).value<Property>().getData().value<std::vector<GeometryTag>>();
     if(vecLoc.size()==0) invalidEntries.append(indexToCheck);
 
     parser::setItemBackground(node, invalidEntries);
@@ -143,7 +143,7 @@ bool parser::BodyLoads(QExtendedStandardItem *item)
         if(node->getPropertyItem("Geometry")!=NULL) indexToCheck = node->getPropertyItem("Geometry")->index();
         else indexToCheck = node->getPropertyItem("Named selection")->index();
 
-        QVector<GeometryTag> vecLoc = itemToCheck->data(Qt::UserRole).value<Property>().getData().value<QVector<GeometryTag>>();
+        std::vector<GeometryTag> vecLoc = itemToCheck->data(Qt::UserRole).value<Property>().getData().value<std::vector<GeometryTag>>();
         if(vecLoc.size()==0)
         {
             //! the scope is empty => the item is not valid
@@ -153,7 +153,7 @@ bool parser::BodyLoads(QExtendedStandardItem *item)
         }
         else
         {
-            for(QVector<GeometryTag>::iterator itLoc = vecLoc.begin(); itLoc!=vecLoc.end(); ++itLoc)
+            for(std::vector<GeometryTag>::iterator itLoc = vecLoc.begin(); itLoc!=vecLoc.end(); ++itLoc)
             {
                 GeometryTag loc = *itLoc;
                 TopAbs_ShapeEnum type = loc.subShapeType;
@@ -202,8 +202,8 @@ bool parser::FixedSupport(QExtendedStandardItem *item)
     if(node->getPropertyItem("Geometry")!=NULL) indexToHighlight = node->getPropertyItem("Geometry")->index();
     else indexToHighlight = node->getPropertyItem("Named selection")->index();
 
-    QVector<GeometryTag> vecLoc = itemToCheck->data(Qt::UserRole).value<Property>().getData().value<QVector<GeometryTag>>();
-    if(vecLoc.isEmpty())
+    std::vector<GeometryTag> vecLoc = itemToCheck->data(Qt::UserRole).value<Property>().getData().value<std::vector<GeometryTag>>();
+    if(vecLoc.size()==0)
     {
         cerr<<"____the scope is empty____"<<endl;
         //! --------------------------------------------------------
@@ -219,7 +219,7 @@ bool parser::FixedSupport(QExtendedStandardItem *item)
         //! for "Fixed support" SOLIDS, COMPSOLIDS, and COMPOUNDS are
         //! note allowed
         //! ----------------------------------------------------------
-        for(QVector<GeometryTag>::iterator itLoc = vecLoc.begin(); itLoc!=vecLoc.end(); ++itLoc)
+        for(std::vector<GeometryTag>::iterator itLoc = vecLoc.begin(); itLoc!=vecLoc.end(); ++itLoc)
         {
             GeometryTag loc = *itLoc;
             TopAbs_ShapeEnum type = loc.subShapeType;
@@ -252,10 +252,10 @@ bool parser::FixedSupport(QExtendedStandardItem *item)
     }
 }
 
-//! ----------------------------------------------------------------------------------
+//! -------------------
 //! function: Pressure
-//! details:  parse a pressure
-//! ----------------------------------------------------------------------------------
+//! details:
+//! -------------------
 bool parser::Pressure(QExtendedStandardItem *item)
 {
     SimulationNodeClass *node = item->data(Qt::UserRole).value<SimulationNodeClass*>();
@@ -271,7 +271,7 @@ bool parser::Pressure(QExtendedStandardItem *item)
     if(node->getPropertyItem("Geometry")!=NULL) indexToCheck = node->getPropertyItem("Geometry")->index();
     else indexToCheck = node->getPropertyItem("Named selection")->index();
 
-    QVector<GeometryTag> vecLoc = itemToCheck->data(Qt::UserRole).value<Property>().getData().value<QVector<GeometryTag>>();
+    std::vector<GeometryTag> vecLoc = itemToCheck->data(Qt::UserRole).value<Property>().getData().value<std::vector<GeometryTag>>();
     if(vecLoc.size()==0)
     {
         //! the scope is empty => the item is not valid
@@ -281,7 +281,7 @@ bool parser::Pressure(QExtendedStandardItem *item)
     }
     else
     {
-        for(QVector<GeometryTag>::iterator itLoc = vecLoc.begin(); itLoc!=vecLoc.end(); ++itLoc)
+        for(std::vector<GeometryTag>::iterator itLoc = vecLoc.begin(); itLoc!=vecLoc.end(); ++itLoc)
         {
             GeometryTag loc = *itLoc;
             TopAbs_ShapeEnum type = loc.subShapeType;
@@ -327,7 +327,7 @@ bool parser::Force(QExtendedStandardItem *item)
     if(node->getPropertyItem("Geometry")!=NULL) indexToCheck = node->getPropertyItem("Geometry")->index();
     else indexToCheck = node->getPropertyItem("Named selection")->index();
 
-    QVector<GeometryTag> vecLoc = itemToCheck->data(Qt::UserRole).value<Property>().getData().value<QVector<GeometryTag>>();
+    std::vector<GeometryTag> vecLoc = itemToCheck->data(Qt::UserRole).value<Property>().getData().value<std::vector<GeometryTag>>();
     if(vecLoc.size()==0)
     {
         //! the scope is empty => the item is not valid
@@ -337,7 +337,7 @@ bool parser::Force(QExtendedStandardItem *item)
     }
     else
     {
-        for(QVector<GeometryTag>::iterator itLoc = vecLoc.begin(); itLoc!=vecLoc.end(); ++itLoc)
+        for(std::vector<GeometryTag>::iterator itLoc = vecLoc.begin(); itLoc!=vecLoc.end(); ++itLoc)
         {
             GeometryTag loc = *itLoc;
             TopAbs_ShapeEnum type = loc.subShapeType;
@@ -388,7 +388,7 @@ bool parser::ThermalCondition(QExtendedStandardItem *item)
     if(node->getPropertyItem("Geometry")!=NULL) indexToCheck = node->getPropertyItem("Geometry")->index();
     else indexToCheck = node->getPropertyItem("Named selection")->index();
 
-    QVector<GeometryTag> vecLoc = itemToCheck->data(Qt::UserRole).value<Property>().getData().value<QVector<GeometryTag>>();
+    std::vector<GeometryTag> vecLoc = itemToCheck->data(Qt::UserRole).value<Property>().getData().value<std::vector<GeometryTag>>();
     if(vecLoc.size()==0)
     {
         //! the scope is empty => the item is not valid
@@ -398,7 +398,7 @@ bool parser::ThermalCondition(QExtendedStandardItem *item)
     }
     else
     {
-        for(QVector<GeometryTag>::iterator itLoc = vecLoc.begin(); itLoc!=vecLoc.end(); ++itLoc)
+        for(std::vector<GeometryTag>::iterator itLoc = vecLoc.begin(); itLoc!=vecLoc.end(); ++itLoc)
         {
             GeometryTag loc = *itLoc;
             TopAbs_ShapeEnum type = loc.subShapeType;
@@ -447,7 +447,7 @@ bool parser::CylindricalSupport(QExtendedStandardItem *item)
     if(node->getPropertyItem("Geometry")!=NULL) indexToCheck = node->getPropertyItem("Geometry")->index();
     else indexToCheck = node->getPropertyItem("Named selection")->index();
 
-    QVector<GeometryTag> vecLoc = itemToCheck->data(Qt::UserRole).value<Property>().getData().value<QVector<GeometryTag>>();
+    std::vector<GeometryTag> vecLoc = itemToCheck->data(Qt::UserRole).value<Property>().getData().value<std::vector<GeometryTag>>();
     if(vecLoc.size()==0)
     {
         //! the scope is empty => the item is not valid
@@ -457,7 +457,7 @@ bool parser::CylindricalSupport(QExtendedStandardItem *item)
         node->setValid(false);
         return false;
     }
-    for(QVector<GeometryTag>::iterator it = vecLoc.begin(); it!=vecLoc.end(); ++it)
+    for(std::vector<GeometryTag>::iterator it = vecLoc.begin(); it!=vecLoc.end(); ++it)
     {
         GeometryTag curLoc = *it;
 
@@ -526,7 +526,7 @@ bool parser::MeshControl(QExtendedStandardItem *item)
     if(node->getPropertyItem("Geometry")!=NULL) indexToCheck = node->getPropertyItem("Geometry")->index();
     else indexToCheck = node->getPropertyItem("Named selection")->index();
 
-    QVector<GeometryTag> vecLoc = itemToCheck->data(Qt::UserRole).value<Property>().getData().value<QVector<GeometryTag>>();
+    std::vector<GeometryTag> vecLoc = itemToCheck->data(Qt::UserRole).value<Property>().getData().value<std::vector<GeometryTag>>();
     if(vecLoc.size()==0)
     {
         invalidEntries.append(indexToCheck);
@@ -558,7 +558,7 @@ bool parser::MeshControl(QExtendedStandardItem *item)
         break;
     }
 
-    for(QVector<GeometryTag>::iterator it = vecLoc.begin(); it!=vecLoc.end(); ++it)
+    for(std::vector<GeometryTag>::iterator it = vecLoc.begin(); it!=vecLoc.end(); ++it)
     {
         GeometryTag loc = *it;
         TopAbs_ShapeEnum shapeType = loc.subShapeType;
@@ -602,22 +602,22 @@ bool parser::ContactPair(QExtendedStandardItem *item)
     //! ----------------------------------------
     //! check the presence of the "Tags master"
     //! ----------------------------------------
-    QVector<GeometryTag> vecLoc_master;
+    std::vector<GeometryTag> vecLoc_master;
     itemToCheck = node->getPropertyItem("Tags master");
     indexToCheck = node->getPropertyItem("Master")->index();
 
-    vecLoc_master= itemToCheck->data(Qt::UserRole).value<Property>().getData().value<QVector<GeometryTag>>();
+    vecLoc_master= itemToCheck->data(Qt::UserRole).value<Property>().getData().value<std::vector<GeometryTag>>();
     if(vecLoc_master.size()==0) invalidEntries.append(indexToCheck);
     parser::setItemBackground(node, invalidEntries);
 
     //! ----------------------------------------
     //! check the presence of the "Tags slave"
     //! ----------------------------------------
-    QVector<GeometryTag> vecLoc_slave;
+    std::vector<GeometryTag> vecLoc_slave;
     itemToCheck = node->getPropertyItem("Tags slave");
     indexToCheck = node->getPropertyItem("Slave")->index();
 
-    vecLoc_slave = itemToCheck->data(Qt::UserRole).value<Property>().getData().value<QVector<GeometryTag>>();
+    vecLoc_slave = itemToCheck->data(Qt::UserRole).value<Property>().getData().value<std::vector<GeometryTag>>();
     if(vecLoc_slave.size()==0) invalidEntries.append(indexToCheck);
     parser::setItemBackground(node, invalidEntries);
     if(invalidEntries.length()==0)
@@ -659,7 +659,7 @@ bool parser::Displacement(QExtendedStandardItem *item)
     if(node->getPropertyItem("Geometry")!=NULL) indexToCheck = node->getPropertyItem("Geometry")->index();
     else indexToCheck = node->getPropertyItem("Named selection")->index();
 
-    QVector<GeometryTag> vecLoc = itemToCheck->data(Qt::UserRole).value<Property>().getData().value<QVector<GeometryTag>>();
+    std::vector<GeometryTag> vecLoc = itemToCheck->data(Qt::UserRole).value<Property>().getData().value<std::vector<GeometryTag>>();
     if(vecLoc.size()==0)
     {
         //! the scope is empty => the item is not valid
@@ -667,7 +667,7 @@ bool parser::Displacement(QExtendedStandardItem *item)
     }
     else
     {
-        for(QVector<GeometryTag>::iterator it = vecLoc.begin(); it!=vecLoc.end(); ++it)
+        for(std::vector<GeometryTag>::iterator it = vecLoc.begin(); it!=vecLoc.end(); ++it)
         {
             GeometryTag loc = *it;
             TopAbs_ShapeEnum type = loc.subShapeType;
@@ -738,7 +738,7 @@ bool parser::FrictionlessSupport(QExtendedStandardItem *item)
     if(node->getPropertyItem("Geometry")!=NULL) indexToCheck = node->getPropertyItem("Geometry")->index();
     else indexToCheck = node->getPropertyItem("Named selection")->index();
 
-    QVector<GeometryTag> vecLoc = itemToCheck->data(Qt::UserRole).value<Property>().getData().value<QVector<GeometryTag>>();
+    std::vector<GeometryTag> vecLoc = itemToCheck->data(Qt::UserRole).value<Property>().getData().value<std::vector<GeometryTag>>();
     if(vecLoc.size()==0)
     {
         //! the scope is empty => the item is not valid
@@ -748,7 +748,7 @@ bool parser::FrictionlessSupport(QExtendedStandardItem *item)
     }
     else
     {
-        for(QVector<GeometryTag>::iterator itLoc = vecLoc.begin(); itLoc!=vecLoc.end(); ++itLoc)
+        for(std::vector<GeometryTag>::iterator itLoc = vecLoc.begin(); itLoc!=vecLoc.end(); ++itLoc)
         {
             GeometryTag loc = *itLoc;
             TopAbs_ShapeEnum type = loc.subShapeType;
@@ -794,7 +794,7 @@ bool parser::PostProcessingItem(QExtendedStandardItem *item)
     if(node->getPropertyItem("Geometry")!=NULL) indexToCheck = node->getPropertyItem("Geometry")->index();
     else indexToCheck = node->getPropertyItem("Named selection")->index();
 
-    QVector<GeometryTag> vecLoc = itemToCheck->data(Qt::UserRole).value<Property>().getData().value<QVector<GeometryTag>>();
+    std::vector<GeometryTag> vecLoc = itemToCheck->data(Qt::UserRole).value<Property>().getData().value<std::vector<GeometryTag>>();
     if(vecLoc.size()==0)
     {
         //! the scope is empty => the item is not valid
@@ -885,7 +885,7 @@ bool parser::Moment(QExtendedStandardItem *item)
     if(node->getPropertyItem("Geometry")!=NULL) indexToCheck = node->getPropertyItem("Geometry")->index();
     else indexToCheck = node->getPropertyItem("Named selection")->index();
 
-    QVector<GeometryTag> vecLoc = itemToCheck->data(Qt::UserRole).value<Property>().getData().value<QVector<GeometryTag>>();
+    std::vector<GeometryTag> vecLoc = itemToCheck->data(Qt::UserRole).value<Property>().getData().value<std::vector<GeometryTag>>();
     if(vecLoc.size()==0)
     {
         //! the scope is empty => the item is not valid
@@ -895,7 +895,7 @@ bool parser::Moment(QExtendedStandardItem *item)
     }
     else
     {
-        for(QVector<GeometryTag>::iterator itLoc = vecLoc.begin(); itLoc!=vecLoc.end(); ++itLoc)
+        for(std::vector<GeometryTag>::iterator itLoc = vecLoc.begin(); itLoc!=vecLoc.end(); ++itLoc)
         {
             GeometryTag loc = *itLoc;
             TopAbs_ShapeEnum type = loc.subShapeType;

@@ -36,8 +36,8 @@ public:
     faceDataSourceBuilder(const QList<TopoDS_Face> &aFaceList, meshDataBase *mDB, QObject *parent = 0);
 
     void setFaces(const QList<TopoDS_Face> &faceList);
-    void setFaces(const QVector<GeometryTag> &vecLoc);
-    void setFaces(const QMap<int, QVector<GeometryTag>> &vecLocMap);
+    void setFaces(const std::vector<GeometryTag> &vecLoc);
+    void setFaces(const QMap<int, std::vector<GeometryTag>> &vecLocMap);
     void setMapOfIsMeshExact(const QMap<int,bool> &aMapOfIsMeshExact);
     void setDataBase(meshDataBase *mDB);
 

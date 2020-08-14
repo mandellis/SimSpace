@@ -108,7 +108,7 @@ void ShapeSelector::setAccepted()
 
     myVecLoc = TopologyTools::generateLocationPairs(gdb,myShapes);
 
-    for(int i=0; i<myVecLoc.length(); i++) cout<<"____("<<myVecLoc.at(i).parentShapeNr<<", "<<myVecLoc.at(i).subTopNr<<")____"<<endl;
+    for(int i=0; i<myVecLoc.size(); i++) cout<<"____("<<myVecLoc.at(i).parentShapeNr<<", "<<myVecLoc.at(i).subTopNr<<")____"<<endl;
     cout<<"ShapeSelector::setAccepted()->____number of current selected shapes: "<<myShapes.Extent()<<"____"<<endl;
     cout<<"ShapeSelector::setAccepted()->____number of shapes in vecLoc: "<<myVecLoc.size()<<"____"<<endl;
 
@@ -148,7 +148,7 @@ ListOfShape ShapeSelector::getShape() const
 //! function: getVecLoc
 //! details:
 //! --------------------
-QVector<GeometryTag> ShapeSelector::getVecLoc() const
+std::vector<GeometryTag> ShapeSelector::getVecLoc() const
 {
     return myVecLoc;
 }
@@ -157,7 +157,7 @@ QVector<GeometryTag> ShapeSelector::getVecLoc() const
 //! function: setShape
 //! details:  set myShapes and activate the selector
 //! -------------------------------------------------
-void ShapeSelector::setShape(const QVector<GeometryTag> &vecLoc)
+void ShapeSelector::setShape(const std::vector<GeometryTag> &vecLoc)
 {
     cout<<"ShapeSelector::setShape()->____set shape called____"<<endl;
 

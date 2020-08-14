@@ -116,11 +116,11 @@ public:
     static void writeQVariant(const QVariant &var, std::ofstream &os);
     static QVariant readQVariant(std::ifstream &is);
 
-    static QVector<GeometryTag> getScope(SimulationNodeClass *aNode);
-    static QVector<GeometryTag> getScope(QExtendedStandardItem *item);
+    static std::vector<GeometryTag> getScope(SimulationNodeClass *aNode);
+    static std::vector<GeometryTag> getScope(QExtendedStandardItem *item);
 
-    static void writeVectorOfLocations(const QVector<GeometryTag> &vecLocs, std::ofstream &os);
-    static QVector<GeometryTag> readVectorOfLocations(std::ifstream &is);
+    static void writeVectorOfLocations(const std::vector<GeometryTag> &vecLocs, std::ofstream &os);
+    static std::vector<GeometryTag> readVectorOfLocations(std::ifstream &is);
 
     static void writeColor(QColor color, std::ofstream &os);
     static QColor readColor(std::ifstream &is);

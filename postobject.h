@@ -54,18 +54,18 @@ public:
     //! ------------
     //! constructor
     //! ------------
-    postObject(const std::map<GeometryTag, std::vector<std::map<int, double>>> &resMap, const QVector<GeometryTag> &aVecLoc);
+    postObject(const std::map<GeometryTag, std::vector<std::map<int, double>>> &resMap, const std::vector<GeometryTag> &aVecLoc);
 
     //! ------------
     //! constructor
     //! ------------
-    postObject(const std::map<GeometryTag,std::vector<std::map<int,double>>> &resMap, const QVector<GeometryTag> &aVecLoc, const QString& aName);
+    postObject(const std::map<GeometryTag,std::vector<std::map<int,double>>> &resMap, const std::vector<GeometryTag> &aVecLoc, const QString& aName);
 
     //! ------------
     //! constructor
     //! ------------
     postObject(const std::map<GeometryTag,std::vector<std::map<int,double>>> &resMap,
-               const QVector<GeometryTag> &aVecLoc,
+               const std::vector<GeometryTag> &aVecLoc,
                const std::map<GeometryTag,std::map<int,gp_Vec>> mapOfMapOfNodalDiplacements,
                const QString& aName, bool useSurfaceMeshForVolumeResults);
 
@@ -151,7 +151,7 @@ private:
     //! ----------
     //! locations
     //! ----------
-    QVector<GeometryTag> myVecLoc;
+    std::vector<GeometryTag> myVecLoc;
 
     //! --------------------------------------
     //! map of map of the nodal displacements
@@ -191,7 +191,7 @@ public:
     std::map<GeometryTag,std::vector<std::map<int,double>>> getData() { return theData; }
 
     //! get locations
-    QVector<GeometryTag> getLocations() const { return myVecLoc; }
+    std::vector<GeometryTag> getLocations() const { return myVecLoc; }
 
     //! NbMeshes
     int NbMeshes() const { return (int)theData.size(); }

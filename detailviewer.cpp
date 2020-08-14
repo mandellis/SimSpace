@@ -776,7 +776,7 @@ void DetailViewer::handleScopingMethodChange()
                 myCurNode->removeProperty("Slave mesh data sources");
 
                 QVariant data;
-                QVector<GeometryTag> vecLoc;
+                std::vector<GeometryTag> vecLoc;
                 data.setValue(vecLoc);
 
                 Property prop_master("Master",data,Property::PropertyGroup_Scope);
@@ -799,8 +799,8 @@ void DetailViewer::handleScopingMethodChange()
             else
             {
                 myCurNode->removeProperty("Named selection");
-                QVector<GeometryTag> curTags = myCurNode->getPropertyValue<QVector<GeometryTag>>("Tags");
-                if(curTags.isEmpty()==false)
+                std::vector<GeometryTag> curTags = myCurNode->getPropertyValue<std::vector<GeometryTag>>("Tags");
+                if(curTags.size()!=0)
                 {
                     QVariant data;
                     data.setValue(curTags);
@@ -810,7 +810,7 @@ void DetailViewer::handleScopingMethodChange()
                 {
                     myCurNode->removeProperty("Tags");
 
-                    QVector<GeometryTag> vecLoc;
+                    std::vector<GeometryTag> vecLoc;
                     QVariant data;
                     data.setValue(vecLoc);
                     Property property_scope("Geometry",data,Property::PropertyGroup_Scope);
@@ -851,7 +851,7 @@ void DetailViewer::handleScopingMethodChange()
                 Property prop_master("Master",data,Property::PropertyGroup_Scope);
                 Property prop_slave("Slave",data,Property::PropertyGroup_Scope);
 
-                QVector<GeometryTag> vecLocs;
+                std::vector<GeometryTag> vecLocs;
                 data.setValue(vecLocs);
 
                 Property prop_tagsMaster("Tags master",data,Property::PropertyGroup_Scope);
@@ -883,7 +883,7 @@ void DetailViewer::handleScopingMethodChange()
 
                 Property prop_namedSelection("Named selection",data,Property::PropertyGroup_Scope);
                 myCurNode->addProperty(prop_namedSelection,1);
-                QVector<GeometryTag> vecLoc;
+                std::vector<GeometryTag> vecLoc;
                 data.setValue(vecLoc);
                 Property prop_tags("Tags",data,Property::PropertyGroup_Scope);
                 myCurNode->addProperty(prop_tags,2);
@@ -964,7 +964,7 @@ void DetailViewer::handleScopingMethodChange()
 //! -----------------------------------------------------------
 //! function: updateTags
 //! details:  for "Tags"/"Slave tags"/"Master tags" copies the
-//!           content (QVector<GeometryTag>) into the property
+//!           content (std::vector<GeometryTag>) into the property
 //! -----------------------------------------------------------
 #include "markers.h"
 #include "markerbuilder.h"
@@ -1007,11 +1007,11 @@ void DetailViewer::updateTags()
             //! actually the case "Location" should never occur
             //! -----------------------------------------------------
             QVariant data;
-            QVector<GeometryTag> vecLoc;
+            std::vector<GeometryTag> vecLoc;
             if(itemGeometry!=Q_NULLPTR || itemLocation!=Q_NULLPTR)
             {
                 cout<<"DetailViewer::updateTags()->____Reading scope from \"Geometry\" or \"Location\"____"<<endl;
-                QVector<GeometryTag> vecLoc = itemGeometry->data(Qt::UserRole).value<Property>().getData().value<QVector<GeometryTag>>();
+                std::vector<GeometryTag> vecLoc = itemGeometry->data(Qt::UserRole).value<Property>().getData().value<std::vector<GeometryTag>>();
                 data.setValue(vecLoc);
 
                 Property prop_tags("Tags",data,Property::PropertyGroup_Scope);
@@ -1020,13 +1020,13 @@ void DetailViewer::updateTags()
             else if(itemMaster!=Q_NULLPTR && itemSlave!=Q_NULLPTR) //! "&&" is unessential, since master is always present with slave
             {
                 cout<<"DetailViewer::updateTags()->____Reading scope from \"Master\"____"<<endl;
-                vecLoc = itemMaster->data(Qt::UserRole).value<Property>().getData().value<QVector<GeometryTag>>();
+                vecLoc = itemMaster->data(Qt::UserRole).value<Property>().getData().value<std::vector<GeometryTag>>();
                 data.setValue(vecLoc);
                 Property prop_masterTags("Tags master",data,Property::PropertyGroup_Scope);
                 myCurNode->replaceProperty("Tags master",prop_masterTags);
 
                 cout<<"DetailViewer::updateTags()->____Reading scope from \"Slave\"____"<<endl;
-                vecLoc = itemSlave->data(Qt::UserRole).value<Property>().getData().value<QVector<GeometryTag>>();
+                vecLoc = itemSlave->data(Qt::UserRole).value<Property>().getData().value<std::vector<GeometryTag>>();
                 data.setValue(vecLoc);
 
                 Property prop_slaveTags("Tags slave",data,Property::PropertyGroup_Scope);
@@ -1052,7 +1052,7 @@ void DetailViewer::updateTags()
                 QExtendedStandardItem *itemNS = static_cast<QExtendedStandardItem*>(p);
 
                 SimulationNodeClass *nodeNS = itemNS->data(Qt::UserRole).value<SimulationNodeClass*>();
-                QVector<GeometryTag> vecLoc = nodeNS->getPropertyValue<QVector<GeometryTag>>("Tags");
+                std::vector<GeometryTag> vecLoc = nodeNS->getPropertyValue<std::vector<GeometryTag>>("Tags");
 
                 QVariant data;
                 data.setValue(vecLoc);
@@ -1067,7 +1067,7 @@ void DetailViewer::updateTags()
                 QExtendedStandardItem *itemNS = static_cast<QExtendedStandardItem*>(p);
 
                 SimulationNodeClass *nodeNS = itemNS->data(Qt::UserRole).value<SimulationNodeClass*>();
-                QVector<GeometryTag> vecLoc = nodeNS->getPropertyValue<QVector<GeometryTag>>("Tags");
+                std::vector<GeometryTag> vecLoc = nodeNS->getPropertyValue<std::vector<GeometryTag>>("Tags");
 
                 QVariant data;
                 data.setValue(vecLoc);
@@ -1079,7 +1079,7 @@ void DetailViewer::updateTags()
                 void *p;
                 QExtendedStandardItem *itemNS;
                 SimulationNodeClass *nodeNS;
-                QVector<GeometryTag> vecLoc;
+                std::vector<GeometryTag> vecLoc;
 
                 //! -----------------------------------------------------------------
                 //! [1] rebuild the pairs (parent shape, child shape) for the Master
@@ -1090,7 +1090,7 @@ void DetailViewer::updateTags()
 
                 //! see: SimulationNodeClass* nodeFactory::nodeFromScratch Ref. [1]
                 vecLoc = nodeNS->getPropertyItem("Tags")
-                        ->data(Qt::UserRole).value<Property>().getData().value<QVector<GeometryTag>>();
+                        ->data(Qt::UserRole).value<Property>().getData().value<std::vector<GeometryTag>>();
 
                 QVariant data;
                 data.setValue(vecLoc);
@@ -1106,7 +1106,7 @@ void DetailViewer::updateTags()
 
                 //! see: SimulationNodeClass* nodeFactory::nodeFromScratch Ref. [1]
                 vecLoc = nodeNS->getPropertyItem("Tags")
-                        ->data(Qt::UserRole).value<Property>().getData().value<QVector<GeometryTag>>();
+                        ->data(Qt::UserRole).value<Property>().getData().value<std::vector<GeometryTag>>();
                 data.setValue(vecLoc);
                 Property prop_slaveTags("Tags slave",data,Property::PropertyGroup_Scope);
                 myCurNode->replaceProperty("Tags slave",prop_slaveTags);
@@ -1123,7 +1123,7 @@ void DetailViewer::updateTags()
             //! --------------------------------
             void *p = myCurNode->getPropertyItem("Remote points")->data(Qt::UserRole).value<Property>().getData().value<void*>();
             QStandardItem *curItemRemotePointInItem = (QStandardItem*) p;
-            QVector<GeometryTag> vecLoc =curItemRemotePointInItem->data(Qt::UserRole).value<SimulationNodeClass*>()->getPropertyValue<QVector<GeometryTag>>("Tags");
+            std::vector<GeometryTag> vecLoc =curItemRemotePointInItem->data(Qt::UserRole).value<SimulationNodeClass*>()->getPropertyValue<std::vector<GeometryTag>>("Tags");
             QVariant data;
             data.setValue(vecLoc);
             Property prop("Tags",data,Property::PropertyGroup_Scope);
@@ -1145,7 +1145,7 @@ void DetailViewer::updateTags()
         case SimulationNodeClass::nodeType_namedSelectionGeometry:
         {
             cout<<"DetailViewer::updateTags()->____handling \"Geometry\"____"<<endl;
-            QVector<GeometryTag> vecLoc = myCurNode->getPropertyValue<QVector<GeometryTag>>("Geometry");
+            std::vector<GeometryTag> vecLoc = myCurNode->getPropertyValue<std::vector<GeometryTag>>("Geometry");
             data.setValue(vecLoc);
             Property prop_tags("Tags",data,Property::PropertyGroup_Scope);
             myCurNode->replaceProperty("Tags", prop_tags);
@@ -1160,7 +1160,7 @@ void DetailViewer::updateTags()
             {
                 item = myCurNode->getPropertyItem("Location");
             }
-            QVector<GeometryTag> vecLoc = item->data(Qt::UserRole).value<Property>().getData().value<QVector<GeometryTag>>();
+            std::vector<GeometryTag> vecLoc = item->data(Qt::UserRole).value<Property>().getData().value<std::vector<GeometryTag>>();
             data.setValue(vecLoc);
             Property prop_tags("Tags",data,Property::PropertyGroup_Origin);
             myCurNode->replaceProperty("Tags", prop_tags);
@@ -1182,7 +1182,7 @@ void DetailViewer::updateTags()
     {
         SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
         simulationDataBase *sdb = sm->getDataBase();
-        QVector<GeometryTag> vecLoc = myCurNode->getPropertyValue<QVector<GeometryTag>>("Tags");
+        std::vector<GeometryTag> vecLoc = myCurNode->getPropertyValue<std::vector<GeometryTag>>("Tags");
         QList<double> newReferencePoint = GeomToolsClass::calculateCentroid(sdb,vecLoc);
         //cout<<"DetailViewer::updateTags()->____updating reference point ("<<newReferencePoint.at(0)<<", "<<newReferencePoint.at(1)<<", "<<newReferencePoint.at(2)<<")____"<<endl;
         QVariant data;
@@ -2156,7 +2156,7 @@ void DetailViewer::handleDefineBy_Changed()
             {
                 //! add
                 QVariant data;
-                QVector<GeometryTag> vecLoc;
+                std::vector<GeometryTag> vecLoc;
                 data.setValue(vecLoc);
                 Property prop_geometry("Geometry",data,Property::PropertyGroup_Origin);
                 myCurNode->addProperty(prop_geometry);
@@ -2178,7 +2178,7 @@ void DetailViewer::handleDefineBy_Changed()
             {
                 //! add
                 QVariant data;
-                QVector<GeometryTag> vecLoc;
+                std::vector<GeometryTag> vecLoc;
                 data.setValue(vecLoc);
                 Property prop_location("Location",data,Property::PropertyGroup_Origin);
                 myCurNode->addProperty(prop_location);
@@ -2206,7 +2206,7 @@ void DetailViewer::handleOriginAndDirectionChanged()
     QVector<QVector<double>> directionalData;
 
     QExtendedStandardItem *itemTags = myCurNode->getPropertyItem("Tags");
-    QVector<GeometryTag> vecLoc = itemTags->data(Qt::UserRole).value<Property>().getData().value<QVector<GeometryTag>>();
+    std::vector<GeometryTag> vecLoc = itemTags->data(Qt::UserRole).value<Property>().getData().value<std::vector<GeometryTag>>();
 
     if(vecLoc.size()!=0)
     {
@@ -2216,8 +2216,8 @@ void DetailViewer::handleOriginAndDirectionChanged()
         //! ------------------------------------------
         //! use the last location in case of multiple
         //! ------------------------------------------
-        int bodyIndex = vecLoc.last().parentShapeNr;
-        int subShapeIndex = vecLoc.last().subTopNr;
+        int bodyIndex = vecLoc.end()->parentShapeNr;
+        int subShapeIndex =  vecLoc.end()->subTopNr;
 
         TopoDS_Face theFace = TopoDS::Face(gdb->MapOfBodyTopologyMap.value(bodyIndex).faceMap.FindKey(subShapeIndex));
 
@@ -2327,7 +2327,7 @@ void DetailViewer::handleOriginChanged()
     //! update the origin
     //! ------------------
     gp_Pnt P;
-    QVector<GeometryTag> vecLoc = itemScope->data(Qt::UserRole).value<Property>().getData().value<QVector<GeometryTag>>();
+    std::vector<GeometryTag> vecLoc = itemScope->data(Qt::UserRole).value<Property>().getData().value<std::vector<GeometryTag>>();
 
     if(vecLoc.size()==0) return;
 
@@ -2337,7 +2337,7 @@ void DetailViewer::handleOriginChanged()
     //! ------------------------------------------
     //! use the last location in case of multiple
     //! ------------------------------------------
-    GeometryTag loc = vecLoc.last();
+    GeometryTag loc = *vecLoc.end();
     int bodyIndex = loc.parentShapeNr;
     int subShapeNr = loc.subTopNr;
 
@@ -2538,20 +2538,20 @@ void DetailViewer::handleRemotePointChangedByLocation()
         //! the updated point P: calculate the location
         //! using the last entry in "Location"
         //! --------------------------------------------
-        const QVector<GeometryTag> &vecLoc = itemLocation->data(Qt::UserRole).value<Property>().getData().value<QVector<GeometryTag>>();
+        const std::vector<GeometryTag> &vecLoc = itemLocation->data(Qt::UserRole).value<Property>().getData().value<std::vector<GeometryTag>>();
         if(vecLoc.size()!=0)
         {
             SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
             geometryDataBase *gdb = sm->getDataBase();
 
-            if(vecLoc.length()==1)
+            if(vecLoc.size()==1)
             {
                 //! --------------------
                 //! one entity selected
                 //! --------------------
                 cout<<"DetailViewer::handleRemotePointLocationChanged()->____one single entity selected____"<<endl;
 
-                GeometryTag loc = vecLoc.last();
+                const GeometryTag &loc = *vecLoc.end();
                 int bodyIndex = loc.parentShapeNr;
                 int subShapeNr = loc.subTopNr;
 
@@ -2629,7 +2629,7 @@ void DetailViewer::handleRemotePointChangedByLocation()
                 bool selectionContainsWires = false;
                 bool selectionContainsEdges = false;
 
-                for(QVector<GeometryTag>::const_iterator anIt = vecLoc.cbegin(); anIt!=vecLoc.cend(); ++anIt)
+                for(std::vector<GeometryTag>::const_iterator anIt = vecLoc.cbegin(); anIt!=vecLoc.cend(); ++anIt)
                 {
                     const GeometryTag &aLoc = *anIt;
                     TopAbs_ShapeEnum type = aLoc.subShapeType;
@@ -2712,9 +2712,9 @@ void DetailViewer::handleRemotePointChangedByLocation()
                     //! compute the centroid
                     //! ------------------------------
                     double xB = 0, yB = 0, zB = 0;
-                    int NbPoints = vecLoc.length();
+                    int NbPoints = (int)vecLoc.size();
                     cout<<"DetailViewer::handleRemotePointLocationChanged()->____number of selected points: "<<NbPoints<<"____"<<endl;
-                    for(QVector<GeometryTag>::const_iterator anIt = vecLoc.cbegin(); anIt!=vecLoc.cend(); ++anIt)
+                    for(std::vector<GeometryTag>::const_iterator anIt = vecLoc.cbegin(); anIt!=vecLoc.cend(); ++anIt)
                     {
                         const GeometryTag &aLoc = *anIt;
                         int parentShapeNr = aLoc.parentShapeNr;
@@ -5559,8 +5559,8 @@ void DetailViewer::handleBoundaryScopingMethodChanged()
     {
     case Property::ScopingMethod_GeometrySelection:
     {
-        QVector<GeometryTag> tags = myCurNode->getPropertyValue<QVector<GeometryTag>>("Boundary tags");
-        cout<<"____NUMBER OF FACES: "<<tags.length()<<"____"<<endl;
+        std::vector<GeometryTag> tags = myCurNode->getPropertyValue<std::vector<GeometryTag>>("Boundary tags");
+        //cout<<"____NUMBER OF FACES: "<<(int)tags.size()<<"____"<<endl;
         myCurNode->removeProperty("Boundary named selection");
         myCurNode->removeProperty("Boundary tags");
         data.setValue(tags);
@@ -5568,14 +5568,7 @@ void DetailViewer::handleBoundaryScopingMethodChanged()
         myCurNode->addProperty(prop_namedSelection,2);
         Property prop_boundaryTags("Boundary tags",data,Property::PropertyGroup_Definition);
         myCurNode->addProperty(prop_boundaryTags,3);
-        /*
-        QVector<GeometryTag> vecLoc;
-        data.setValue(vecLoc);
-        Property prop_namedSelection("Boundary",data,Property::PropertyGroup_Definition);
-        myCurNode->addProperty(prop_namedSelection,2);
-        Property prop_boundaryTags("Boundary tags",data,Property::PropertyGroup_Definition);
-        myCurNode->addProperty(prop_boundaryTags,3);
-        */
+
         //! update tags?
     }
         break;
@@ -5593,7 +5586,7 @@ void DetailViewer::handleBoundaryScopingMethodChanged()
 
         Property prop_namedSelection("Boundary named selection",data,Property::PropertyGroup_Definition);
         myCurNode->addProperty(prop_namedSelection,2);
-        QVector<GeometryTag> vecLoc;
+        std::vector<GeometryTag> vecLoc;
         data.setValue(vecLoc);
         Property prop_boundaryTags("Boundary tags",data,Property::PropertyGroup_Definition);
         myCurNode->addProperty(prop_boundaryTags,3);
@@ -5619,7 +5612,7 @@ void DetailViewer::updateBoudaryTags()
     {
     case Property::ScopingMethod_GeometrySelection:
     {
-        const QVector<GeometryTag> &vecLoc = myCurNode->getPropertyValue<QVector<GeometryTag>>("Boundary");
+        const std::vector<GeometryTag> &vecLoc = myCurNode->getPropertyValue<std::vector<GeometryTag>>("Boundary");
         data.setValue(vecLoc);
         Property prop_boundaryTags("Boundary tags",data,Property::PropertyGroup_Definition);
         myCurNode->replaceProperty("Boundary tags",prop_boundaryTags);
@@ -5631,7 +5624,7 @@ void DetailViewer::updateBoudaryTags()
         void *p = myCurNode->getPropertyValue<void*>("Boundary named selection");
         QStandardItem *itemNS = static_cast<QStandardItem*>(p);
         SimulationNodeClass *nodeNS = itemNS->data(Qt::UserRole).value<SimulationNodeClass*>();
-        const QVector<GeometryTag> &vecLoc = nodeNS->getPropertyValue<QVector<GeometryTag>>("Tags");
+        const std::vector<GeometryTag> &vecLoc = nodeNS->getPropertyValue<std::vector<GeometryTag>>("Tags");
         data.setValue(vecLoc);
         Property prop_boundaryTags("Boundary tags",data,Property::PropertyGroup_Definition);
         myCurNode->replaceProperty("Boundary tags",prop_boundaryTags);
@@ -6742,7 +6735,7 @@ void DetailViewer::handleModelChangeScopingMethodChanged()
 
         data.setValue(Property::ScopingMethod_GeometrySelection);
         Property prop_scopingMethod("Scoping method",data,Property::PropertyGroup_Scope);
-        QVector<GeometryTag> emptyTags;
+        std::vector<GeometryTag> emptyTags;
         data.setValue(emptyTags);
         Property prop_scope("Geometry",data,Property::PropertyGroup_Scope);
         Property prop_tags("Tags",data,Property::PropertyGroup_Scope);
@@ -6880,7 +6873,7 @@ void DetailViewer::handleMeshElementListChanged()
         elementList.push_back(std::atoi(substr.c_str()));
         cout<<"____element: "<<atoi(substr.c_str())<<"____"<<endl;
     }
-    QVector<GeometryTag> tags = myCurNode->getPropertyValue<QVector<GeometryTag>>("Geometry");
+    std::vector<GeometryTag> tags = myCurNode->getPropertyValue<std::vector<GeometryTag>>("Geometry");
     int bodyIndex = tags[0].parentShapeNr;
     cout<<"____body index: "<<bodyIndex<<"____"<<endl;
     SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));

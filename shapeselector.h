@@ -43,7 +43,7 @@ private:
     QGridLayout *g;
 
     ListOfShape myShapes;
-    QVector<GeometryTag> myVecLoc;
+    std::vector<GeometryTag> myVecLoc;
 
     occHandle(AIS_InteractiveContext) myCTX;
 
@@ -63,11 +63,11 @@ private slots:
 
 public:
 
-    void setShape(const QVector<GeometryTag> &vecLoc);
+    void setShape(const std::vector<GeometryTag> &vecLoc);
     void setContext(const occHandle(AIS_InteractiveContext) &aCTX);
 
     ListOfShape getShape() const;
-    QVector<GeometryTag> getVecLoc() const;
+    std::vector<GeometryTag> getVecLoc() const;
 
 signals:
 
