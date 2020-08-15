@@ -55,6 +55,9 @@
 #include <Geom_Line.hxx>
 #include <GeomAdaptor_Curve.hxx>
 #include <GeomAbs_CurveType.hxx>
+#include <TopoDS_Builder.hxx>
+#include <GProp_GProps.hxx>
+#include <BRepGProp.hxx>
 
 //! ----
 //! C++
@@ -2187,11 +2190,11 @@ void DetailViewer::handleDefineBy_Changed()
     }
 }
 
-//! ------------------------------------------------------
+//! ----------------------------------------------------------------
 //! function: handleOriginAndDirectionChanged
-//! details:  the origin and the direction of the CS have
-//!           been changed by a geometry selection
-//! ------------------------------------------------------
+//! details:  handle the case in which the origin and the direction
+//!           of the CS have been changed by a geometry selection
+//! ----------------------------------------------------------------
 void DetailViewer::handleOriginAndDirectionChanged()
 {
     cout<<"DetailViewer::handleOriginAndDirectionChanged()->____function called____"<<endl;
@@ -2216,11 +2219,10 @@ void DetailViewer::handleOriginAndDirectionChanged()
         //! ------------------------------------------
         //! use the last location in case of multiple
         //! ------------------------------------------
-        int bodyIndex = vecLoc.end()->parentShapeNr;
-        int subShapeIndex =  vecLoc.end()->subTopNr;
+        int bodyIndex = vecLoc[vecLoc.size()-1].parentShapeNr;
+        int subShapeIndex =  vecLoc[vecLoc.size()-1].subTopNr;
 
         TopoDS_Face theFace = TopoDS::Face(gdb->MapOfBodyTopologyMap.value(bodyIndex).faceMap.FindKey(subShapeIndex));
-
         GeomAbs_SurfaceType surfaceType;
         GeomToolsClass::getFaceType(theFace,surfaceType);
 
@@ -2297,7 +2299,6 @@ void DetailViewer::handleOriginAndDirectionChanged()
         myCurNode->replaceProperty("Origin Z",prop_Zorigin);
         //! end update the origin and the directional data
 
-
         //! copy the new origin coordinates and the new directional data
         //! into the base origin cell and base directional data cell
         this->updateBaseData();
@@ -2337,7 +2338,7 @@ void DetailViewer::handleOriginChanged()
     //! ------------------------------------------
     //! use the last location in case of multiple
     //! ------------------------------------------
-    GeometryTag loc = *vecLoc.end();
+    const GeometryTag &loc = vecLoc[vecLoc.size()-1];
     int bodyIndex = loc.parentShapeNr;
     int subShapeNr = loc.subTopNr;
 
@@ -2523,9 +2524,6 @@ void DetailViewer::handleRemotePointSystemOfReferenceChanged()
 //! function: handleRemotePointChangedByLocation
 //! details:
 //! ---------------------------------------------
-#include <TopoDS_Builder.hxx>
-#include <GProp_GProps.hxx>
-#include <BRepGProp.hxx>
 void DetailViewer::handleRemotePointChangedByLocation()
 {
     cout<<"DetailViewer::handleRemotePointLocationChanged()->____function called____"<<endl;
@@ -2551,7 +2549,7 @@ void DetailViewer::handleRemotePointChangedByLocation()
                 //! --------------------
                 cout<<"DetailViewer::handleRemotePointLocationChanged()->____one single entity selected____"<<endl;
 
-                const GeometryTag &loc = *vecLoc.end();
+                const GeometryTag &loc = vecLoc[vecLoc.size()-1];
                 int bodyIndex = loc.parentShapeNr;
                 int subShapeNr = loc.subTopNr;
 

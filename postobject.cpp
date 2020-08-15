@@ -190,10 +190,10 @@ void postObject::write(ofstream &file)
         file<<aLoc.subShapeType<<endl;
     }
 
-    //! --------------------------------------------------
+    //! ----------------------------------------------------------------
     //! write the data: write the number of data blocks
-    //! QMap<GeometryTag,QList<QMap<int,double>>> &resMap
-    //! --------------------------------------------------
+    //! std::map<GeometryTag,std::vector<std::map<int,double>>> &resMap
+    //! ----------------------------------------------------------------
     file<<theData.size()<<endl;
 
     for(std::map<GeometryTag,std::vector<std::map<int,double>>>::iterator it=theData.begin(); it!=theData.end(); ++it)
@@ -221,7 +221,7 @@ void postObject::write(ofstream &file)
             //! ----------------------------------------------------
             //! write the size of the map for the current component
             //! ----------------------------------------------------
-            int L = res.size();
+            int L = (int)res.size();
             file<<L<<endl;
 
             //! ---------------
@@ -239,7 +239,7 @@ void postObject::write(ofstream &file)
     //! -------------------------------------------
     //! write the mesh: write the number of meshes
     //! -------------------------------------------
-    int NbMeshes = theMeshDataSources.size();
+    int NbMeshes = (int)theMeshDataSources.size();
     for(std::map<GeometryTag,occHandle(MeshVS_DeformedDataSource)>::iterator it = theMeshDataSources.begin(); it!=theMeshDataSources.end(); it++)
     {
         const occHandle(MeshVS_DeformedDataSource) &aMeshDS = it->second;
@@ -249,7 +249,6 @@ void postObject::write(ofstream &file)
             break;
         }
     }
-
     file<<NbMeshes<<endl;
 
     for(std::map<GeometryTag,occHandle(MeshVS_DeformedDataSource)>::iterator it = theMeshDataSources.begin(); it != theMeshDataSources.end(); ++it)
@@ -269,34 +268,20 @@ void postObject::write(ofstream &file)
         //! write the mesh data source
         //! ---------------------------
         const occHandle(MeshVS_DataSource) &aMeshDS = aDeformedMeshDS->GetNonDeformedDataSource();
-
         switch(aTag.subShapeType)
         {
-        case TopAbs_SOLID:
-        {
-            this->writeIntoStream(file,aMeshDS);
-        }
-            break;
-
-        case TopAbs_FACE:
-        {
-            this->writeIntoStream(file,aMeshDS);
-        }
-            break;
-
-        case TopAbs_EDGE:
-        {
-            //! to be implemented
-        }
-            break;
-
-        case TopAbs_VERTEX:
-        {
-            //! to be implemented
-        }
-            break;
+        case TopAbs_SOLID: this->writeIntoStream(file,aMeshDS); break;
+        case TopAbs_FACE: this->writeIntoStream(file,aMeshDS); break;
+        case TopAbs_EDGE: /* to be implemented */ break;
+        case TopAbs_VERTEX: /* to be implemented */ break;
         }
     }
+    //! ------------------
+    //! write min and max
+    //! ------------------
+    file<<myMin<<endl;
+    file<<myMax<<endl;
+    file<<myNbLevels<<endl;
 }
 
 //! --------------------------------
@@ -355,10 +340,10 @@ postObject::postObject(ifstream &file)
         myVecLoc.push_back(loc);
     }
 
-    //! --------------------------------------------------
+    //! ----------------------------------------------------------------
     //! read the data: read the number of data blocks
-    //! QMap<GeometryTag,QList<QMap<int,double>>> &resMap
-    //! --------------------------------------------------
+    //! std::map<GeometryTag,std::vector<std::map<int,double>>> &resMap
+    //! ----------------------------------------------------------------
     int NbBlocks;
     file>>NbBlocks;
 
@@ -418,7 +403,7 @@ postObject::postObject(ifstream &file)
     //! --------------
     //! read the mesh
     //! --------------
-    std::map<GeometryTag, occHandle(MeshVS_DataSource)> aMapOfMeshDataSources;
+    //std::map<GeometryTag, occHandle(MeshVS_DataSource)> aMapOfMeshDataSources;
     for(int i=0; i<NbMeshes; i++)
     {
         //! -------------
@@ -443,13 +428,19 @@ postObject::postObject(ifstream &file)
         //! ----------------------------------
         //! fill the map of mesh data sources
         //! ----------------------------------
-        aMapOfMeshDataSources.insert(std::make_pair(aTag,aMeshDS));
+        occHandle(MeshVS_DeformedDataSource) aDefMeshDS = new MeshVS_DeformedDataSource(aMeshDS,1.0);
+        //aMapOfMeshDataSources.insert(std::make_pair(aTag,aDefMeshDS));
+        //aMapOfMeshDataSources.insert(std::make_pair(aTag,aMeshDS));
+        cout<<"____"<<aDefMeshDS->GetAllElements().Extent()<<"____"<<endl;
+        cout<<"____"<<aDefMeshDS->GetAllNodes().Extent()<<"____"<<endl;
+        theMeshDataSources.insert(std::make_pair(aTag,aDefMeshDS));
     }
-
-    //! -----------------------------------------------------
-    //! create the colored meshes using the autoscale option
-    //! -----------------------------------------------------
-    //this->buildMeshIO(aMapOfMeshDataSources,-9999,9999,10,true,0);
+    //! -----------------
+    //! read min and max
+    //! -----------------
+    file>>myMin;
+    file>>myMax;
+    file>>myNbLevels;
 }
 
 //! ----------------------
@@ -484,7 +475,6 @@ void postObject::buildMeshIO(double min, double max, int Nlevels, bool autoscale
     for(std::map<GeometryTag,occHandle(MeshVS_DeformedDataSource)>::const_iterator anIt = theMeshDataSources.cbegin(); anIt!= theMeshDataSources.cend() && it!= theData.cend(); ++anIt, ++it)
     {
         const GeometryTag &loc = anIt->first;
-
         occHandle(MeshVS_DataSource) curMeshDS;
         if(loc.subShapeType == TopAbs_SOLID && myUseSurfaceMeshForVolumeResults == true)
         {
@@ -501,6 +491,8 @@ void postObject::buildMeshIO(double min, double max, int Nlevels, bool autoscale
         {
             cout<<"____USING THE WHOLE MESH____"<<endl;
             curMeshDS = anIt->second->GetNonDeformedDataSource();
+            cout<<"____ELEMENTS: "<<curMeshDS->GetAllElements().Extent()<<"____"<<endl;
+            cout<<"____NODES: "<<curMeshDS->GetAllNodes().Extent()<<"____"<<endl;
         }
 
         //! ----------------------------------
@@ -508,6 +500,8 @@ void postObject::buildMeshIO(double min, double max, int Nlevels, bool autoscale
         //! ----------------------------------
         occHandle(MeshVS_DeformedDataSource) theDeformedDS = new MeshVS_DeformedDataSource(curMeshDS,deformationScale);
         const std::map<int,gp_Vec> &displacementMap = myMapOfNodalDisplacements.at(loc);
+        cout<<"____displacement map size: "<<displacementMap.size()<<"____"<<endl;
+        exit(9999);
         theDeformedDS->SetNonDeformedDataSource(curMeshDS);
         for(TColStd_MapIteratorOfPackedMapOfInteger it(curMeshDS->GetAllNodes()); it.More(); it.Next())
         {
@@ -592,7 +586,7 @@ std::pair<double,double> postObject::getMinMax(int component)
 //! function: init
 //! details:  provide the mesh data sources
 //! ----------------------------------------
-void postObject::init(meshDataBase *mDB, int component)
+void postObject::init(meshDataBase *mDB)
 {
     cout<<"postObject::init()->____function called____"<<endl;
 
@@ -645,15 +639,7 @@ void postObject::init(meshDataBase *mDB, int component)
             break;
         }
     }
-    cout<<"postObject::init()->____exiting function____"<<endl;
-
-    /*
-    //! ------------------------------------------------------------
-    //! create the post object using "Autoscale" option
-    //! initially the colored mesh is built using the exterior mesh
-    //! ------------------------------------------------------------
-    this->buildMeshIO(-1,-1,INITIAL_NUMBER_OF_COLORBOX_LEVELS,true,component);
-    */
+    //cout<<"postObject::init()->____exiting function____"<<endl;
 }
 
 //! ------------------------

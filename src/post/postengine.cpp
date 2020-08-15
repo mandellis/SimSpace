@@ -635,7 +635,7 @@ bool postEngine::buildPostObject(const QString &keyName,
     //! ----------------------
     bool useSurfaceMeshForVolumeResults = Global::status().myResultPresentation.useExteriorMeshForVolumeResults;
     aPostObject = std::make_shared<postObject>(resMap,vecLoc,mapDisplMap,aResultName,useSurfaceMeshForVolumeResults);
-    aPostObject->init(myMeshDataBase,0);
+    aPostObject->init(myMeshDataBase);
     double magnifyFactor = Global::status().myResultPresentation.theScale;
     aPostObject->buildMeshIO(-1,-1,10,true,component,magnifyFactor);
     return true;

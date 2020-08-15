@@ -533,8 +533,8 @@ bool MeshTools::buildIsoStrip(const occHandle(MeshVS_DataSource) &theMeshDS,    
     anIsoStripBuilder.setIsoStrips(vecIsoStrip);
 
     std::vector<meshElementByCoords> allElements;
-    //bool isDone = anIsoStripBuilder.perform(allElements);
-    bool isDone = anIsoStripBuilder.perform1(allElements);
+    bool isDone = anIsoStripBuilder.perform(allElements);
+    //bool isDone = anIsoStripBuilder.perform1(allElements);
 
     if(isDone == false) return false;
 
@@ -630,9 +630,7 @@ bool MeshTools::buildIsoStrip(const occHandle(MeshVS_DataSource) &theMeshDS,    
     for(TColStd_MapIteratorOfPackedMapOfInteger it(theMeshDS->GetAllNodes()); it.More(); it.Next())
     {
         int globalNodeID = it.Key();
-        //const gp_Vec &d = displacementMap.value(globalNodeID);
         const gp_Vec &d = displacementMap.at(globalNodeID);
-
         theDeformedDS->SetVector(globalNodeID,d);
     }
 

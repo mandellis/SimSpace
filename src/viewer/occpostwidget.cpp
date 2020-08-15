@@ -86,10 +86,8 @@ void occPostWidget::displayColorBox(bool isVisible)
 {
     if(!myColorBox.IsNull())
     {
-        cout<<"occPostWidget::displayColorBox(isVisible)->____function called____"<<endl;
         if(isVisible)
         {
-            //occContext->Display(myColorBox,1);
             occPostContext->Display(myColorBox,1);
             occViewer->Update();
         }

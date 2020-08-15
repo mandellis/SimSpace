@@ -9224,7 +9224,7 @@ QList<SimulationNodeClass*> SimulationManager::nodeListBuilder(const QString &sa
     QApplication::postEvent(theProgressIndicator,pgrEvent);
     QApplication::processEvents();
 
-    Sleep(1000);
+    Sleep(500);
 
     //! ---------------------------
     //! count the number of nodes
@@ -9244,7 +9244,7 @@ QList<SimulationNodeClass*> SimulationManager::nodeListBuilder(const QString &sa
     QApplication::postEvent(theProgressIndicator,pgrEvent);
     QApplication::processEvents();
 
-    Sleep(1000);
+    Sleep(500);
 
     //! -----------------------------------
     //! scan the directory with node files
@@ -9466,9 +9466,9 @@ void SimulationManager::buildDataBaseFromDisk(const QString &fileName)
     //! -------------------------------------------
     myPostEngine->setDataBase(aDB);
 
-    //! ---------------------------------------
-    //! aim: rebuild the post processing items
-    //! ---------------------------------------
+    //! ----------------------------------------------------------------
+    //! aim: rebuild the post processing items for each simulation root
+    //! ----------------------------------------------------------------
     QStandardItem *modelRootItem = Geometry_RootItem->parent();
     for(int n = 0; n < modelRootItem->rowCount(); n++)
     {
@@ -10176,7 +10176,7 @@ void SimulationManager::interpolatePrivate(int mode)
         int component = 0;
         int NbLevels = 10;
         bool isAutoscale = true;
-        aPostObject->init(static_cast<meshDataBase*>(this->getDataBase()),component);
+        aPostObject->init(static_cast<meshDataBase*>(this->getDataBase()));
         aPostObject->buildMeshIO(-1,-1,NbLevels,isAutoscale,component);
 
         QVariant data;
@@ -10385,64 +10385,40 @@ bool SimulationManager::translateOpenFoamScalarData()
     //! start the thread - this will also lock the items within the detail viewer
     //! --------------------------------------------------------------------------
     anOpenFoamController->operate(theCurNode);
-
-
     return true;
 }
 
 //! ---------------------------------------
 //! function: callPostEngineEvaluateResult
-//! details:  evaluate a single result
+//! details:
 //! ---------------------------------------
 void SimulationManager::callPostEngineEvaluateResult()
 {
     cout<<"SimulationManager::callPostEngineEvaluateResult()->____function called____"<<endl;
 
-    //! ----------------------
-    //! the current item/node
-    //! ----------------------
     QModelIndex index = myTreeView->currentIndex();
     QExtendedStandardItem *curItem = static_cast<QExtendedStandardItem*>(myModel->itemFromIndex(index));
     SimulationNodeClass *curNode = curItem->data(Qt::UserRole).value<SimulationNodeClass*>();
 
+    //! --------------------------------------------------
+    //! execute on the items under "Solution information"
+    //! --------------------------------------------------
     if(curNode->isSolutionInformation())
     {
-        cout<<"SimulationManager::callPostEngineEvaluateResult()->____solutionInformation Item____"<<endl;
+        QStandardItem *itemSolution = curItem->parent();
+        for(int i=1; i<itemSolution->rowCount(); i++)
+            this->callPostEngineEvaluateResult_private(itemSolution->child(i,0),false);
+    }
+    //! ------------------------------------------------------------------------
+    //! execute on the children of "Solution" apart from "Solution information"
+    //! ------------------------------------------------------------------------
+    if(curNode->isSolution()) for(int i=1; i<curItem->rowCount(); i++)
+        this->callPostEngineEvaluateResult_private(curItem->child(i,0),false);
 
-        //! -------------------------------------------
-        //! the current node is "Solution information"
-        //! jump over the first child (i=0)
-        //! -------------------------------------------
-        QExtendedStandardItem *itemSolution = static_cast<QExtendedStandardItem*>(curItem->parent());
-        for(int i=1; i<itemSolution->rowCount(); i++)
-        {
-            QExtendedStandardItem *postProcessingItem = static_cast<QExtendedStandardItem*>(itemSolution->child(i,0));
-            this->callPostEngineEvaluateResult_private(postProcessingItem,false);
-        }
-    }
-    if(curNode->isSolution())
-    {
-        cout<<"SimulationManager::callPostEngineEvaluateResult()->____solution Item____"<<endl;
-        //! --------------------------------
-        //! the current node is "Solution"
-        //! jump over the first child (i=0)
-        //! --------------------------------
-        QExtendedStandardItem *itemSolution = curItem;
-        for(int i=1; i<itemSolution->rowCount(); i++)
-        {
-            QExtendedStandardItem *postProcessingItem = static_cast<QExtendedStandardItem*>(itemSolution->child(i,0));
-            this->callPostEngineEvaluateResult_private(postProcessingItem, false);
-        }
-    }
-    if(curNode->isAnalysisResult())
-    {
-        //! ------------------------------------------
-        //! the current item is a postprocessing item
-        //! ------------------------------------------
-        bool immediatelyDisplay = true;
-        cout<<"SimulationManager::callPostEngineEvaluateResult()->____postProcessing Item____"<<endl;
-        this->callPostEngineEvaluateResult_private(curItem, immediatelyDisplay);
-    }
+    //! -----------------------------------------
+    //! execute on a simgle post processing item
+    //! -----------------------------------------
+    if(curNode->isAnalysisResult()) this->callPostEngineEvaluateResult_private(curItem, true);
 
     //! parse the item
     //parser::PostProcessingItem(treeItem);
@@ -10551,14 +10527,44 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
     {
         int component = curNode->getPropertyValue<int>("Type ");
         int mode = curNode->getPropertyValue<int>("Mode number");
-
-        //! -------------------------------------------
-        //! a results is already present into the item
-        //! -------------------------------------------
         if(curNode->getPropertyItem("Post object")!=Q_NULLPTR)
         {
-            aPostObject = curNode->getPropertyItem("Post object")->data(Qt::UserRole).value<Property>().getData().value<sharedPostObject>();
-            aPostObject->init(static_cast<meshDataBase*>(mySimulationDataBase), component);
+            //! -------------------------------------------
+            //! a results is already present into the item
+            //! -------------------------------------------
+            aPostObject = curNode->getPropertyValue<sharedPostObject>("Post object"); //cesere
+            //aPostObject->init(static_cast<meshDataBase*>(mySimulationDataBase));
+            bool useExteriorMeshForVolumeResults = Global::status().myResultPresentation.useExteriorMeshForVolumeResults;
+            aPostObject->setMode(useExteriorMeshForVolumeResults);     // use the exterior mesh for showing volume results
+            int scaleType = curNode->getPropertyValue<int>("Scale type");
+            double min = aPostObject->getMin();
+            double max = aPostObject->getMax();
+            int NbIntervals = aPostObject->getNbLevels();
+            double magnifyFactor = Global::status().myResultPresentation.theScale;
+            int component = aPostObject->getSolutionDataComponent();
+
+            std::map<GeometryTag,std::map<int,gp_Vec>> mapOfNodalDisplacements = aPostObject->getMapOfNodalDisplacements();
+            cout<<"___SIZE OF MAP: "<<mapOfNodalDisplacements.size()<<"____"<<endl;
+
+            if(mapOfNodalDisplacements.size()==0)
+            {
+                cout<<"____REBUILDING NODAL DISPLACEMENTS (ZERO)____"<<endl;
+                //! rebuild the map of nodal displacements
+                const std::vector<GeometryTag> &tags = curNode->getPropertyValue<std::vector<GeometryTag>>("Tags");
+                for(std::vector<GeometryTag>::const_iterator it = tags.cbegin(); it!=tags.cend(); it++)
+                {
+                    std::map<int,gp_Vec> nmap;
+                    const GeometryTag &aTag = *it;
+                    TColStd_PackedMapOfInteger nodeMap = aPostObject->getMeshDataSources().find(aTag)->second->GetAllNodes();
+                    for(TColStd_MapIteratorOfPackedMapOfInteger it_(nodeMap); it_.More(); it_.Next())
+                    {
+                        nmap.insert(std::make_pair(it_.Key(),gp_Vec(0,0,0)));
+                    }
+                    mapOfNodalDisplacements.insert(std::make_pair(aTag,nmap));
+                }
+                aPostObject->setMapOfNodalDisplacements(mapOfNodalDisplacements);
+            }
+            aPostObject->buildMeshIO(min,max,NbIntervals,scaleType,component,magnifyFactor);
         }
         else
         {
@@ -10667,7 +10673,7 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
         if(curNode->getPropertyItem("Post object")!=Q_NULLPTR)
         {
             aPostObject = curNode->getPropertyItem("Post object")->data(Qt::UserRole).value<Property>().getData().value<sharedPostObject>();
-            aPostObject->init(static_cast<meshDataBase*>(mySimulationDataBase), component);
+            aPostObject->init(static_cast<meshDataBase*>(mySimulationDataBase));
         }
         else
         {
@@ -10719,7 +10725,7 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
             //! the post object retrieves the mesh data sources from the simulation database
             //! and internally builds its own interactive mesh objects
             //! -----------------------------------------------------------------------------
-            aPostObject->init(static_cast<meshDataBase*>(mySimulationDataBase), component);
+            aPostObject->init(static_cast<meshDataBase*>(mySimulationDataBase));
             myPostEngine->evaluateFatigueResults(component,vecLoc,timeList,materialBodyMap,NbCycles,aPostObject);
         }
     }

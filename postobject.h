@@ -209,7 +209,7 @@ public:
     void buildMeshIO(double min=-1e20, double max=1e20, int Nlevels=10, bool autoscale=true, int component=0, double deformationScale = 1.0);
 
     //! init
-    void init(meshDataBase *mDB, int component=0);
+    void init(meshDataBase *mDB);
 
     //! clone
     postObject clone(const postObject &other);

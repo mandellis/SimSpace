@@ -6,7 +6,6 @@
 #include "qextendedstandarditem.h"
 #include "tools.h"
 #include "customtablemodel.h"
-#include "ccout.h"
 #include "postobject.h"
 
 //! ----
@@ -44,17 +43,17 @@ serializerClass::serializerClass(QObject* parent): QObject(parent)
     ;
 }
 
-//! ---------------------
-//! function: savePath()
+//! -------------------
+//! function: savePath
 //! details:
-//! ---------------------
+//! -------------------
 void serializerClass::setSavingDirPath(const QString &path)
 {
     myPath = path;
 }
 
 //! ---------------------------------------------------
-//! function: serialize()
+//! function: serialize
 //! details:  [A] write the name (QString)
 //!           [B] write the type (enum) - as QString
 //!           [C] write the number of properties (int)
@@ -192,6 +191,10 @@ void serializerClass::serialize(int n)
             continue;
         }
         */
+
+        //! ---------------------------------------------------------
+        //! "Graphic object" should not be persistent (i.e. markers)
+        //! ---------------------------------------------------------
         if(theCurProperty.getName()=="Graphic object") continue;
         Property::writeProperty(outFile,theCurProperty);
     }
