@@ -279,6 +279,7 @@ void postObject::write(ofstream &file)
     //! ------------------
     //! write min and max
     //! ------------------
+    file<<mySolutionDataComponent<<endl;
     file<<myMin<<endl;
     file<<myMax<<endl;
     file<<myNbLevels<<endl;
@@ -438,6 +439,7 @@ postObject::postObject(ifstream &file)
     //! -----------------
     //! read min and max
     //! -----------------
+    file>>mySolutionDataComponent;
     file>>myMin;
     file>>myMax;
     file>>myNbLevels;
@@ -501,20 +503,26 @@ void postObject::buildMeshIO(double min, double max, int Nlevels, bool autoscale
         occHandle(MeshVS_DeformedDataSource) theDeformedDS = new MeshVS_DeformedDataSource(curMeshDS,deformationScale);
         const std::map<int,gp_Vec> &displacementMap = myMapOfNodalDisplacements.at(loc);
         cout<<"____displacement map size: "<<displacementMap.size()<<"____"<<endl;
-        exit(9999);
+        //exit(9999);
         theDeformedDS->SetNonDeformedDataSource(curMeshDS);
+        cout<<"____tag00____"<<endl;
         for(TColStd_MapIteratorOfPackedMapOfInteger it(curMeshDS->GetAllNodes()); it.More(); it.Next())
         {
             int globalNodeID = it.Key();
             const gp_Vec &d = displacementMap.at(globalNodeID);
             theDeformedDS->SetVector(globalNodeID,d);
         }
+        cout<<"____tag01____"<<endl;
         theDeformedDS->SetMagnify(deformationScale);
+        cout<<"____tag02____"<<endl;
         theMeshDataSourcesForView[loc]=theDeformedDS;   //! abruptly replace - do not use "insert"
+        cout<<"____tag03____"<<endl;
 
         const std::vector<std::map<int, double>> &listOfRes = theData.at(loc);
+        cout<<"____tag04____"<<endl;
+        cout<<"____tag04: component: "<<component<<"____"<<endl;
         const std::map<int, double> &res = listOfRes.at(component);
-
+        cout<<"____tag5____"<<endl;
         //! -------------------------------------------
         //! min and max for the colorbox and isostrips
         //! -------------------------------------------

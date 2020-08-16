@@ -10533,7 +10533,6 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
             //! a results is already present into the item
             //! -------------------------------------------
             aPostObject = curNode->getPropertyValue<sharedPostObject>("Post object"); //cesere
-            //aPostObject->init(static_cast<meshDataBase*>(mySimulationDataBase));
             bool useExteriorMeshForVolumeResults = Global::status().myResultPresentation.useExteriorMeshForVolumeResults;
             aPostObject->setMode(useExteriorMeshForVolumeResults);     // use the exterior mesh for showing volume results
             int scaleType = curNode->getPropertyValue<int>("Scale type");
@@ -10541,14 +10540,14 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
             double max = aPostObject->getMax();
             int NbIntervals = aPostObject->getNbLevels();
             double magnifyFactor = Global::status().myResultPresentation.theScale;
-            int component = aPostObject->getSolutionDataComponent();
+            int component = aPostObject->getSolutionDataComponent();    //cesere
 
             std::map<GeometryTag,std::map<int,gp_Vec>> mapOfNodalDisplacements = aPostObject->getMapOfNodalDisplacements();
             cout<<"___SIZE OF MAP: "<<mapOfNodalDisplacements.size()<<"____"<<endl;
 
             if(mapOfNodalDisplacements.size()==0)
             {
-                cout<<"____REBUILDING NODAL DISPLACEMENTS (ZERO)____"<<endl;
+                cout<<"____REBUILDING NODAL DISPLACEMENTS (FILLING WITH ZERO)____"<<endl;
                 //! rebuild the map of nodal displacements
                 const std::vector<GeometryTag> &tags = curNode->getPropertyValue<std::vector<GeometryTag>>("Tags");
                 for(std::vector<GeometryTag>::const_iterator it = tags.cbegin(); it!=tags.cend(); it++)
