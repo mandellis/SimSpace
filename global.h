@@ -20,18 +20,15 @@
 //! ----------------
 #include <userMessage.h>
 #include "usermessagesmodel.h"
+#include "resultpresentation.h"
 
 //! ---
 //! Qt
 //! ---
 #include <QStandardItem>
 
-//! ---------------------------
-//! codes: "0" stopped or stop
-//!        "1" run or running
-//! ---------------------------
 class Global
-{
+{    
 public:
 
     //! -----------------------------
@@ -51,11 +48,10 @@ public:
     //! -------------------
     QString task ="";
 
-    //! -------------------------------------------------------
-    //! this flags indicates if when showing results
-    //! the full volume mesh is drawn or only the surface mesh
-    //! -------------------------------------------------------
-    bool isVolumeMeshShownAsSurface = false;
+    //! --------------------
+    //! result presentation
+    //! --------------------
+    resultPresentation myResultPresentation;
 
     //! -------------------------------------------------
     //! the user message model storing the user messages

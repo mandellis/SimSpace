@@ -20,11 +20,7 @@ public:
         double x,y;
         Point2D(double x0 = 0, double y0 = 0):x(x0),y(y0){;}
         Point2D(const Point2D &rhs){ x=rhs.x; y = rhs.y; }
-        inline bool operator == (const Point2D &rhs)
-        {
-            if(x==rhs.x && y==rhs.y) return true;
-            return false;
-        }
+        bool operator == (const Point2D &rhs) { if(x==rhs.x && y==rhs.y) return true; return false; }
         Point2D operator = (const Point2D &rhs) {x=rhs.x; y = rhs.y; return *this; }
     };
 
@@ -37,6 +33,7 @@ public:
         Point(double x0=0, double y0=0, double z0=0):x(x0),y(y0),z(z0){;}
         Point(const Point &other) {x = other.x; y = other.y; z = other.z; }
         Point operator = (const Point &other) { x = other.x; y = other.y; z = other.z; return *this; }
+        bool operator == (const Point &other) { if(x == other.x && y == other.y && z == other.z) return true; return false; }
     };
 
     //! -------------------------

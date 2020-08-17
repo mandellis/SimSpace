@@ -186,6 +186,11 @@ public:
     //! -------------------------------------
     Standard_EXPORT Ng_MeshVS_DataSourceFace(const occHandle(Ng_MeshVS_DataSourceFace) &aMesh, int order);
 
+    //! -----------------------------------------------------------------------
+    //! constructor: a mesh from another mesh with nodal displacements applied
+    //! -----------------------------------------------------------------------
+    Standard_EXPORT Ng_MeshVS_DataSourceFace(const occHandle(Ng_MeshVS_DataSource3D) &aMesh, const QMap<int,gp_Vec> &displacements);
+
     //! -------------------------------
     //! constructor: meshDSA - meshDSB
     //! -------------------------------
@@ -226,6 +231,11 @@ public:
 
     //! get element type
     Standard_EXPORT virtual const bool GetElementType(ElemType &eType, int elementID, bool isLocal) const;
+
+    //! Get3DGeom
+    Standard_EXPORT virtual Standard_Boolean Get3DGeom (const Standard_Integer theID,
+                                                        Standard_Integer& NbNodes,
+                                                        occHandle(MeshVS_HArray1OfSequenceOfInteger) &Data) const;
 
     //! get all nodes
     Standard_EXPORT virtual const TColStd_PackedMapOfInteger& GetAllNodes() const Standard_OVERRIDE;
@@ -379,10 +389,22 @@ public:
     std::shared_ptr<std::vector<int>> myMidSideNodes;
     void getMidSideNodes(std::vector<int> *midSideNodes) { midSideNodes=myMidSideNodes.get(); }
 
-    //! ------------------------------------
-    //! for storing scalar/vectors at nodes
-    //! ------------------------------------
-    timeHistoryOfDistributions myTimeHistoryOfDistributions;
+    //! ------------------
+    //! elements topology
+    //! ------------------
+    occHandle(MeshVS_HArray1OfSequenceOfInteger) TRIGMeshData;
+    occHandle(MeshVS_HArray1OfSequenceOfInteger) QUADMeshData;
+    occHandle(MeshVS_HArray1OfSequenceOfInteger) TRIG6MeshData;
+    occHandle(MeshVS_HArray1OfSequenceOfInteger) QUAD8MeshData;
+    occHandle(MeshVS_HArray1OfSequenceOfInteger) TET4MeshData;
+    occHandle(MeshVS_HArray1OfSequenceOfInteger) TET10MeshData;
+    occHandle(MeshVS_HArray1OfSequenceOfInteger) HEXA8MeshData;
+    occHandle(MeshVS_HArray1OfSequenceOfInteger) HEXA20MeshData;
+    occHandle(MeshVS_HArray1OfSequenceOfInteger) PRISM6MeshData;
+    occHandle(MeshVS_HArray1OfSequenceOfInteger) PRISM15MeshData;
+    occHandle(MeshVS_HArray1OfSequenceOfInteger) PYRAM5MeshData;
+    occHandle(MeshVS_HArray1OfSequenceOfInteger) PYRAM13MeshData;
+    void buildElementsTopology();
 };
 
 DEFINE_STANDARD_HANDLE(Ng_MeshVS_DataSourceFace, MeshVS_DataSource)

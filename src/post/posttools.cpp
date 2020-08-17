@@ -27,7 +27,7 @@ postTools::postTools()
 //! function: principalComponents
 //! details:  return the principal components from minimum to maximum
 //! ------------------------------------------------------------------
-QList<double> postTools::principalComponents(const QList<double> &sik)
+void postTools::principalComponents(double *sik, double *values)
 {
     double s11 = sik[0];
     double s22 = sik[1];
@@ -65,26 +65,12 @@ QList<double> postTools::principalComponents(const QList<double> &sik)
         x[2]=x[0];
     }
 
-    //! sort roots
-    std::vector<double> vec;
-    vec.push_back(x[0]);
-    vec.push_back(x[1]);
-    vec.push_back(x[2]);
-    //! within triad, from the smallest to the largest
+    //! sort roots from the smallest to the largest
+    std::vector<double> vec {x[0], x[1], x[2]};
     std::sort(vec.begin(), vec.end());
-
-    QList<double> values;
-
-    for(int i=0; i<3; i++)
-    {
-        //cout<<" x["<<i<<"] = "<<x[i];
-        //! from the largest to the smaller within the list
-        values.push_back(vec.at(2-i));
-    }
-    //cout<<endl;
-
-    return values;
+    for(int i=0; i<3; i++) values[i] = vec[i];
 }
+
 
 //! -----------------------------------
 //! function: getStepSubStepByTimeDTM

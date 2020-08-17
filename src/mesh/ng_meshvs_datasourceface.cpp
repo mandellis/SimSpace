@@ -173,6 +173,11 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const occHandle(Ng_MeshVS_Dat
     //! compute the normal at elements
     //! -------------------------------
     this->computeNormalAtElements();
+
+    //! ------------------------
+    //! build elements topology
+    //! ------------------------
+    this->buildElementsTopology();
 }
 
 //! ----------------------------------------------
@@ -260,7 +265,10 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const std::vector<mesh::meshE
     //! ----------------------------
     this->computeNormalAtElements();
 
-    //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____exiting constructor____"<<endl;
+    //! ------------------------
+    //! build elements topology
+    //! ------------------------
+    this->buildElementsTopology();
 }
 
 //! -----------------------------------------------
@@ -360,12 +368,24 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const std::string &fileName)
                 myElemNodes->SetValue(i,k+1,globalNodeID);
             }
             break;
+        case QUAD8:
+            for(int k=0; k<anElement.theNodeIDs.size(); k++)
+            {
+                int globalNodeID = anElement.theNodeIDs.at(k);
+                myElemNodes->SetValue(i,k+1,globalNodeID);
+            }
+            break;
         }
     }
     //! ----------------------------
     //! compute normals at elements
     //! ----------------------------
     this->computeNormalAtElements();
+
+    //! ------------------------
+    //! build elements topology
+    //! ------------------------
+    this->buildElementsTopology();
 }
 
 //! ----------------------------------------------
@@ -581,6 +601,11 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(Ng_Mesh *aMesh, int faceNr)
     //! compute normals at elements
     //! ----------------------------
     this->computeNormalAtElements();
+
+    //! ------------------------
+    //! build elements topology
+    //! ------------------------
+    this->buildElementsTopology();
 }
 
 //! ------------------------------------------
@@ -680,7 +705,6 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(tetgenio *aMesh,int faceNr)
     //! the face elements are defined through global mesh numbering
     //! "i" here is a local numbering
     //! ------------------------------------------------------------
-    //const int C[3]{0,2,1};
     for(int i=1; i<=myNumberOfElements; i++)
     {
         myElemType->SetValue(i,TRIG);
@@ -691,9 +715,7 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(tetgenio *aMesh,int faceNr)
         int elementID = myElementsMap.FindKey(i);
         for(int k=0; k<3; k++)
         {
-            //int k1 = C[k];
             int globalNodeID = aMesh->trifacelist[3*(elementID-1)+k];
-            //myElemNodes->SetValue(i,k1+1,globalNodeID);
             myElemNodes->SetValue(i,k+1,globalNodeID);
         }
     }
@@ -771,6 +793,11 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const occHandle(StlMesh_Mesh)
             myElemNormals->SetValue(i,3,nz);
         }
     }
+
+    //! ------------------------
+    //! build elements topology
+    //! ------------------------
+    this->buildElementsTopology();
 }
 
 //! ----------------------------
@@ -825,6 +852,11 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const occHandle(StlMesh_Mesh)
         myElemNormals->SetValue(i,2,ny);
         myElemNormals->SetValue(i,3,nz);
     }
+
+    //! ------------------------
+    //! build elements topology
+    //! ------------------------
+    this->buildElementsTopology();
 }
 
 //! ---------------------------------
@@ -846,10 +878,12 @@ Standard_Boolean Ng_MeshVS_DataSourceFace::GetGeom(const Standard_Integer ID,
             Type = MeshVS_ET_Face;
             switch(myElemType->Value(localElementID))
             {
-            case(TRIG): NbNodes=3; break;
-            case(QUAD): NbNodes=4; break;
-            case(TRIG6): NbNodes=6; break;
-            case(QUAD8): NbNodes=8; break;
+            case TRIG: NbNodes=3; break;
+            case QUAD: NbNodes=4; break;
+            case PENTA: NbNodes=5; break;
+            case TRIG6: NbNodes=6; break;
+            case EPTA: NbNodes=7; break;
+            case QUAD8: NbNodes=8; break;
             }
 
             for(int i=1, k=1; i<=NbNodes; i++)
@@ -926,6 +960,45 @@ Standard_Boolean Ng_MeshVS_DataSourceFace::GetGeomType(const Standard_Integer ID
             cerr<<"Ng_MeshVS_DataSourceFace::GetGeomType()->____error: node ID: "<<ID<<" out of range____"<<endl;
             return false;
         }
+    }
+}
+
+//! --------------------------------------------------------------
+//! function: Get3DGeom
+//! details:  returns information about 3D geometry of an element
+//! --------------------------------------------------------------
+Standard_Boolean Ng_MeshVS_DataSourceFace::Get3DGeom(const Standard_Integer theID,
+                                                     Standard_Integer &theNbNodes,
+                                                     occHandle(MeshVS_HArray1OfSequenceOfInteger) &theData) const
+{
+    //!cout<<"Ng_MeshVS_DataSourceFace::Get3DGeom()->____Get3DGeom called for ID: "<<theID<<"____"<<endl;
+    int localElementID = myElementsMap.FindIndex(theID);
+    if(localElementID>=1 && localElementID<=myNumberOfElements)
+    {
+        switch(myElemType->Value(localElementID))
+        {
+        //! -----------------
+        //! Surface elements
+        //! -----------------
+        case TRIG: theNbNodes = 3; theData = TRIGMeshData; break;
+        case QUAD: theNbNodes = 4;  theData = QUADMeshData; break;
+        case TRIG6: theNbNodes = 6; theData = TRIG6MeshData; break;
+        case QUAD8: theNbNodes = 8; theData = QUAD8MeshData; break;
+        //! ----------------
+        //! Volume elements
+        //! ----------------
+        case TET: theNbNodes = 4; theData = TET4MeshData; break;
+        case HEXA: theNbNodes = 8; theData = HEXA8MeshData; break;
+        case PRISM: theNbNodes = 6; theData = PRISM6MeshData; break;
+        case PYRAM: theNbNodes = 5; theData = PYRAM5MeshData; break;
+        case TET10: theNbNodes = 10; theData= TET10MeshData; break;
+        }
+        return true;
+    }
+    else
+    {
+        cerr<<"Ng_MeshVS_DataSource3D::Get3DGeom()->____error. Element ID: "<<theID<<" out of range____"<<endl;
+        return false;
     }
 }
 
@@ -1180,7 +1253,6 @@ bool Ng_MeshVS_DataSourceFace::readMesh(const QString &meshFileName,
         //! close the file
         //! ---------------
         fclose(filein);
-        //cout<<"Ng_MeshVS_DataSourceFace::readMesh()->____successfully exiting____"<<endl;
         return true;
     }
     else return false;
@@ -1253,6 +1325,11 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const QList<mesh::meshPoint> 
     //! compute normal at elements
     //! ---------------------------
     this->computeNormalAtElements();
+
+    //! ------------------------
+    //! build elements topology
+    //! ------------------------
+    this->buildElementsTopology();
 }
 
 //! ---------------------------------------------
@@ -1612,52 +1689,9 @@ void Ng_MeshVS_DataSourceFace::computeFreeMeshSegments()
 //! function: computeNormalAtElements
 //! details:
 //! ----------------------------------
-#define USE_POLYGON
 void Ng_MeshVS_DataSourceFace::computeNormalAtElements()
 {
     //cout<<"Ng_MeshVS_DataSourceFace::computeNormalAtElements()->____function called____"<<endl;
-
-#ifndef USE_POLYGON
-    //! -----------------------------------------------------
-    //! calculate the normal vector for each surface element
-    //! for the moment this method handle triangles
-    //! -----------------------------------------------------
-    for(TColStd_MapIteratorOfPackedMapOfInteger it(myElements); it.More(); it.Next())
-    {
-        int globalElementID = it.Key();
-        int localElementID = myElementsMap.FindIndex(globalElementID);
-
-        double x[3],y[3],z[3];
-        double nx,ny,nz,L;
-        for(int n=1; n<=3; n++)
-        {
-            int globalNodeID = myElemNodes->Value(localElementID,n);
-            int localNodeID = myNodesMap.FindIndex(globalNodeID);
-            x[n-1] = myNodeCoords->Value(localNodeID,1);
-            y[n-1] = myNodeCoords->Value(localNodeID,2);
-            z[n-1] = myNodeCoords->Value(localNodeID,3);
-        }
-
-        //! ----------------------
-        //!   i       j       k
-        //! x1-x0   y1-y0   z1-z0
-        //! x2-x0   y2-y0   z2-z0
-        //! ----------------------
-        nx=(y[1]-y[0])*(z[2]-z[0])-(z[1]-z[0])*(y[2]-y[0]);
-        ny=(z[1]-z[0])*(x[2]-x[0])-(x[1]-x[0])*(z[2]-z[0]);
-        nz=(x[1]-x[0])*(y[2]-y[0])-(y[1]-y[0])*(x[2]-x[0]);
-
-        L = sqrt(pow(nx,2)+pow(ny,2)+pow(nz,2));
-        if(L<1e-20) nx=ny=nz=0.0;
-        else { nx=nx/L; ny=ny/L; nz=nz/L; }
-
-        myElemNormals->SetValue(localElementID,1,nx);
-        myElemNormals->SetValue(localElementID,2,ny);
-        myElemNormals->SetValue(localElementID,3,nz);
-    }
-#endif
-#ifdef USE_POLYGON
-
     for(TColStd_MapIteratorOfPackedMapOfInteger it(myElements); it.More(); it.Next())
     {
         std::vector<polygon::Point> aPolygon;
@@ -1668,8 +1702,8 @@ void Ng_MeshVS_DataSourceFace::computeNormalAtElements()
         //cout<<"@____(global element ID, local element ID) = ("<<globalElementID<<", "<<localElementID<<")____"<<endl;
 
         int NbNodes;
-        double buf[24];
-        TColStd_Array1OfReal coords(*buf,1,24);
+        double buf[30];
+        TColStd_Array1OfReal coords(*buf,1,30);
         MeshVS_EntityType type;
         bool isDone = this->GetGeom(globalElementID,true,coords,NbNodes,type);
         Q_UNUSED(isDone)
@@ -1682,15 +1716,12 @@ void Ng_MeshVS_DataSourceFace::computeNormalAtElements()
             double z = coords(s+3);
             polygon::Point aPoint(x,y,z);
             aPolygon.push_back(aPoint);
-            //cout<<"@____("<<x<<", "<<y<<", "<<z<<")____"<<endl;
         }
-        std::vector<double> n = polygon::getNormal(aPolygon);
-        //cout<<"@____normal ("<<n[0]<<", "<<n[1]<<", "<<n[2]<<")____"<<endl;
+        const std::vector<double> &n = polygon::getNormal(aPolygon);
         myElemNormals->SetValue(localElementID,1,n[0]);
         myElemNormals->SetValue(localElementID,2,n[1]);
         myElemNormals->SetValue(localElementID,3,n[2]);
     }
-#endif
 }
 
 //! -------------------------------------------------------------------
@@ -2099,8 +2130,17 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const QString &faceFileName,
         myNodeCoords->SetValue(localNodeID,2,y);
         myNodeCoords->SetValue(localNodeID,3,z);
     }
+
+    //! -------------------
+    //! normal at elements
+    //! -------------------
     this->computeNormalAtElements();
     //this->computeNormalAtNodes();         //! correct - not working
+
+    //! ------------------------
+    //! build elements topology
+    //! ------------------------
+    this->buildElementsTopology();
 }
 
 
@@ -2252,9 +2292,18 @@ Standard_EXPORT Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const QList<Q
         myNodeCoords->SetValue(localNodeID,3,z);
     }
 
+    //! -------------------
+    //! normal at elements
+    //! -------------------
     this->computeNormalAtElements();
     this->computeNormalAtNodes();
     this->computeFreeMeshSegments();
+
+    //! ------------------------
+    //! build elements topology
+    //! ------------------------
+    this->buildElementsTopology();
+
     cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from Tetgen files (using lists) exiting____"<<endl;
 }
 
@@ -2449,6 +2498,12 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const QList<occHandle(Ng_Mesh
     //! compute the normals at elements
     //! --------------------------------
     this->computeNormalAtElements();
+
+    //! ------------------------
+    //! build elements topology
+    //! ------------------------
+    this->buildElementsTopology();
+
     cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____exiting____"<<endl;
 }
 
@@ -2674,6 +2729,11 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const QString &nodeFileName, 
     //! compute the normals at elements
     //! --------------------------------
     this->computeNormalAtElements();
+
+    //! ------------------------
+    //! build elements topology
+    //! ------------------------
+    this->buildElementsTopology();
 }
 
 //! ------------------------------
@@ -2730,6 +2790,11 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const Eigen::MatrixXd &V, con
     //! compute the normal at each triangle
     //! ------------------------------------
     this->computeNormalAtElements();
+
+    //! ------------------------
+    //! build elements topology
+    //! ------------------------
+    this->buildElementsTopology();
 }
 
 /*
@@ -3278,6 +3343,11 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const TopoDS_Face &aFace,
     //! compute normal at elements
     //! ---------------------------
     this->computeNormalAtElements();
+
+    //! ------------------------
+    //! build elements topology
+    //! ------------------------
+    this->buildElementsTopology();
 }
 
 //! -----------------------------
@@ -3430,7 +3500,11 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const occHandle(Ng_MeshVS_Dat
     //! compute normal at elements
     //! ---------------------------
     this->computeNormalAtElements();
-    cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor done____"<<endl;
+
+    //! ------------------------
+    //! build elements topology
+    //! ------------------------
+    this->buildElementsTopology();
 }
 
 //! ----------------------------------------------------
@@ -3642,6 +3716,11 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const TopoDS_Shape &shape, in
         myNodes.Add(nodeID);
         myNodesMap.Add(nodeID);
     }
+
+    //! ------------------------
+    //! build elements topology
+    //! ------------------------
+    this->buildElementsTopology();
 }
 
 //! ------------------------
@@ -3777,10 +3856,10 @@ void Ng_MeshVS_DataSourceFace::setNodeNormal(int globalNodeID, double *n)
 }
 
 
-//! ------------------------------------------------------------------
+//! -------------------------------------------------------------
 //! function: constructor
-//! details:  build the data source from a list of (2D) mesh elements
-//! ------------------------------------------------------------------
+//! details:  build the data source from a list of mesh elements
+//! -------------------------------------------------------------
 Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const std::vector<meshElementByCoords> &meshElements, bool autoRenumberElements, bool autoRenumberNodes)
 {
     //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor called____"<<endl;
@@ -3791,16 +3870,208 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const std::vector<meshElement
     if(meshElements.size()==0) return;
 
     myNumberOfElements = int(meshElements.size());
-
     myElemType = new TColStd_HArray1OfInteger(1,myNumberOfElements);
-    myElemNodes = new TColStd_HArray2OfInteger(1,myNumberOfElements,1,8);
+    myElemNodes = new TColStd_HArray2OfInteger(1,myNumberOfElements,1,10);
     myElemNormals = new TColStd_HArray2OfReal(1,myNumberOfElements,1,3);
 
-    std::vector<mesh::meshPoint> vecMeshPoints;
-    std::vector<int> vecNodeIDs;
+    std::map<mesh::meshPoint,int> indexedMapOfMeshPoints;
 
     int localElementID = 0;
     int localNodeID = 0;
+
+    //! ------------------------------------------------
+    //! autorenumber elements ON autorenumber nodes ON
+    //! ------------------------------------------------
+    if(autoRenumberElements == true && autoRenumberNodes == true)
+    {
+        for(std::vector<meshElementByCoords>::const_iterator it = meshElements.cbegin(); it!= meshElements.cend(); it++)
+        {
+            const meshElementByCoords &aMeshElement = *it;
+            localElementID++;
+            myElements.Add(localElementID);
+            myElementsMap.Add(localElementID);
+            int NbPoints = aMeshElement.pointList.length();
+            switch(NbPoints)
+            {
+            case 3: myElemType->SetValue(localElementID,TRIG); break;
+            case 6: myElemType->SetValue(localElementID,TRIG6); break;
+            case 5: myElemType->SetValue(localElementID,PENTA); break;
+            case 4: myElemType->SetValue(localElementID,QUAD); break;
+            case 7: myElemType->SetValue(localElementID,EPTA); break;
+            case 8: myElemType->SetValue(localElementID,QUAD8); break;
+            }
+            for(int i = 0; i<NbPoints; i++)
+            {
+                mesh::meshPoint aPoint = aMeshElement.pointList[i];
+                std::map<mesh::meshPoint,int>::iterator nnit = indexedMapOfMeshPoints.find(aPoint);
+                if(nnit == indexedMapOfMeshPoints.end())
+                {
+                    //! ----------------
+                    //! point not found
+                    //! ---------------
+                    localNodeID++;
+                    myNodes.Add(localNodeID);
+                    myNodesMap.Add(localNodeID);
+
+                    indexedMapOfMeshPoints.insert(std::make_pair(aPoint,localNodeID));
+                    myElemNodes->SetValue(localElementID,i+1,localNodeID);
+                }
+                else
+                {
+                    //! ----------------------
+                    //! point already present
+                    //! ----------------------
+                    int foundLocalNodeID = (*nnit).second;
+                    myElemNodes->SetValue(localElementID,i+1,foundLocalNodeID);
+                }
+            }
+        }
+    }
+    //! ------------------------------------------------
+    //! autorenumber elements ON autorenumber nodes OFF
+    //! ------------------------------------------------
+    if(autoRenumberElements == true && autoRenumberNodes == false)
+    {
+         for(std::vector<meshElementByCoords>::const_iterator it = meshElements.cbegin(); it!= meshElements.cend(); it++)
+        {
+            const meshElementByCoords &aMeshElement = *it;
+            localElementID++;
+            myElements.Add(localElementID);
+            myElementsMap.Add(localElementID);
+            int NbPoints = aMeshElement.pointList.length();
+            switch(NbPoints)
+            {
+            case 3: myElemType->SetValue(localElementID,TRIG); break;
+            case 6: myElemType->SetValue(localElementID,TRIG6); break;
+            case 5: myElemType->SetValue(localElementID,PENTA); break;
+            case 4: myElemType->SetValue(localElementID,QUAD); break;
+            case 7: myElemType->SetValue(localElementID,EPTA); break;
+            case 8: myElemType->SetValue(localElementID,QUAD8); break;
+            }
+            //! ---------------------------------------
+            //! label the nodes using their own labels
+            //! ---------------------------------------
+            for(int i=0; i<NbPoints; i++)
+            {
+                mesh::meshPoint aPoint = aMeshElement.pointList[i];
+                std::map<mesh::meshPoint,int>::iterator nnit = indexedMapOfMeshPoints.find(aPoint);
+                if(nnit==indexedMapOfMeshPoints.end())
+                {
+                    indexedMapOfMeshPoints.insert(std::make_pair(aPoint,aPoint.ID));
+                }
+                if(!myNodes.Contains(aPoint.ID))
+                {
+                    myNodes.Add(aPoint.ID);
+                    myNodesMap.Add(aPoint.ID);
+                }
+                myElemNodes->SetValue(localElementID,i+1,aPoint.ID);
+            }
+        }
+    }
+    //! ------------------------------------------------
+    //! autorenumber elements OFF autorenumber nodes ON
+    //! ------------------------------------------------
+    if(autoRenumberElements == false && autoRenumberNodes == true)
+    {
+        for(std::vector<meshElementByCoords>::const_iterator it = meshElements.cbegin(); it!= meshElements.cend(); it++)
+        {
+            const meshElementByCoords &aMeshElement = *it;
+            localElementID++;
+            int globalElementID = aMeshElement.ID;
+            myElements.Add(globalElementID);
+            myElementsMap.Add(globalElementID);
+            int NbPoints = aMeshElement.pointList.length();
+            switch(NbPoints)
+            {
+            case 3: myElemType->SetValue(localElementID,TRIG); break;
+            case 6: myElemType->SetValue(localElementID,TRIG6); break;
+            case 5: myElemType->SetValue(localElementID,PENTA); break;
+            case 4: myElemType->SetValue(localElementID,QUAD); break;
+            case 7: myElemType->SetValue(localElementID,EPTA); break;
+            case 8: myElemType->SetValue(localElementID,QUAD8); break;
+            }
+            for(int i = 0; i<NbPoints; i++)
+            {
+                mesh::meshPoint aPoint = aMeshElement.pointList[i];
+                std::map<mesh::meshPoint,int>::iterator nnit = indexedMapOfMeshPoints.find(aPoint);
+                if(nnit == indexedMapOfMeshPoints.end())
+                {
+                    //! ----------------
+                    //! point not found
+                    //! ---------------
+                    localNodeID++;
+                    myNodes.Add(localNodeID);
+                    myNodesMap.Add(localNodeID);
+
+                    indexedMapOfMeshPoints.insert(std::make_pair(aPoint,localNodeID));
+                    myElemNodes->SetValue(localElementID,i+1,localNodeID);
+                }
+                else
+                {
+                    //! ----------------------
+                    //! point already present
+                    //! ----------------------
+                    int foundLocalNodeID = (*nnit).second;
+                    myElemNodes->SetValue(localElementID,i+1,foundLocalNodeID);
+                }
+            }
+
+        }
+    }
+    //! -------------------------------------------------
+    //! autorenumber elements OFF autorenumber nodes OFF
+    //! -------------------------------------------------
+    if(autoRenumberElements == false && autoRenumberNodes == false)
+    {
+        for(std::vector<meshElementByCoords>::const_iterator it = meshElements.cbegin(); it!= meshElements.cend(); it++)
+        {
+            const meshElementByCoords &aMeshElement = *it;
+            localElementID++;
+
+            cout<<"____"<<localElementID<<" ";
+
+            int globalElementID = aMeshElement.ID;
+
+            cout<<globalElementID<<"____"<<endl;
+
+            myElements.Add(globalElementID);
+            myElementsMap.Add(globalElementID);
+            int NbPoints = aMeshElement.pointList.length();
+            switch(NbPoints)
+            {
+            case 3: myElemType->SetValue(localElementID,TRIG); break;
+            case 4: myElemType->SetValue(localElementID,QUAD); break;
+            case 5: myElemType->SetValue(localElementID,PENTA); break;
+            case 6: myElemType->SetValue(localElementID,TRIG6); break;
+            case 7: myElemType->SetValue(localElementID,EPTA); break;
+            case 8: myElemType->SetValue(localElementID,QUAD8); break;
+            }
+            //! ---------------------------------------
+            //! label the nodes using their own labels
+            //! ---------------------------------------
+            for(int i=0; i<NbPoints; i++)
+            {
+                mesh::meshPoint aPoint = aMeshElement.pointList[i];
+                std::map<mesh::meshPoint,int>::iterator nnit = indexedMapOfMeshPoints.find(aPoint);
+                if(nnit==indexedMapOfMeshPoints.end())
+                {
+                    indexedMapOfMeshPoints.insert(std::make_pair(aPoint,aPoint.ID));
+                }
+                if(!myNodes.Contains(aPoint.ID))
+                {
+                    myNodes.Add(aPoint.ID);
+                    myNodesMap.Add(aPoint.ID);
+                }
+                myElemNodes->SetValue(localElementID,i+1,aPoint.ID);
+            }
+        }
+    }
+    /* -----------------------------------------------------------------------------------
+     * this is a working - not optimized version - please do not remove even if connected
+     * -----------------------------------------------------------------------------------
+    //! ---------------------------------
+    //! if autorenumber element elements
+    //! ---------------------------------
     for(std::vector<meshElementByCoords>::const_iterator it = meshElements.cbegin(); it!= meshElements.cend(); it++)
     {
         const meshElementByCoords &aMeshElement = *it;
@@ -3817,19 +4088,17 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const std::vector<meshElement
             int globalElementID = aMeshElement.ID;
             myElements.Add(globalElementID);
             myElementsMap.Add(globalElementID);
-            //cout<<"____tag01 local element ID: "<<localElementID<<"____"<<endl;
-            //cout<<"____tag01 global element ID: "<<globalElementID<<"____"<<endl;
         }
 
         int NbPoints = aMeshElement.pointList.length();
-        //cout<<"____tag01 NbPoints: "<<NbPoints<<endl;
-        //if(NbPoints!=3) exit(1);
 
         switch(NbPoints)
         {
         case 3: myElemType->SetValue(localElementID,TRIG); break;
         case 6: myElemType->SetValue(localElementID,TRIG6); break;
+        case 5: myElemType->SetValue(localElementID,PENTA); break;
         case 4: myElemType->SetValue(localElementID,QUAD); break;
+        case 7: myElemType->SetValue(localElementID,EPTA); break;
         case 8: myElemType->SetValue(localElementID,QUAD8); break;
         }
 
@@ -3841,9 +4110,9 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const std::vector<meshElement
             for(int i = 0; i<NbPoints; i++)
             {
                 mesh::meshPoint aPoint = aMeshElement.pointList[i];
-                std::vector<mesh::meshPoint>::iterator nit = std::find(vecMeshPoints.begin(),vecMeshPoints.end(),aPoint);
+                std::map<mesh::meshPoint,int>::iterator nnit = indexedMapOfMeshPoints.find(aPoint);
 
-                if(nit==vecMeshPoints.end())
+                if(nnit == indexedMapOfMeshPoints.end())
                 {
                     //! ----------------
                     //! point not found
@@ -3852,9 +4121,7 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const std::vector<meshElement
                     myNodes.Add(localNodeID);
                     myNodesMap.Add(localNodeID);
 
-                    vecMeshPoints.push_back(aPoint);
-                    vecNodeIDs.push_back(localNodeID);
-
+                    indexedMapOfMeshPoints.insert(std::make_pair(aPoint,localNodeID));
                     myElemNodes->SetValue(localElementID,i+1,localNodeID);
                 }
                 else
@@ -3862,31 +4129,28 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const std::vector<meshElement
                     //! ----------------------
                     //! point already present
                     //! ----------------------
-                    int indexOf = std::distance(vecMeshPoints.begin(),nit);
-                    int foundLocalNodeID = vecNodeIDs[indexOf];
+                    int foundLocalNodeID = (*nnit).second;
                     myElemNodes->SetValue(localElementID,i+1,foundLocalNodeID);
                 }
             }
         }
         else
         {
-            //cout<<"____tag02____"<<endl;
-
             //! ---------------------------------------
             //! label the nodes using their own labels
             //! ---------------------------------------
             for(int i=0; i<NbPoints; i++)
             {
                 mesh::meshPoint aPoint = aMeshElement.pointList[i];
-                std::vector<mesh::meshPoint>::iterator nit = std::find(vecMeshPoints.begin(),vecMeshPoints.end(),aPoint);
-                if(nit==vecMeshPoints.end())
+                std::map<mesh::meshPoint,int>::iterator nnit = indexedMapOfMeshPoints.find(aPoint);
+
+                if(nnit==indexedMapOfMeshPoints.end())
                 {
-                    vecMeshPoints.push_back(aPoint);
+                    indexedMapOfMeshPoints.insert(std::make_pair(aPoint,aPoint.ID));
                 }
 
                 if(!myNodes.Contains(aPoint.ID))
                 {
-                    //cout<<"____tag02 labelling point using: "<<aPoint.ID<<"____"<<endl;
                     myNodes.Add(aPoint.ID);
                     myNodesMap.Add(aPoint.ID);
                 }
@@ -3894,27 +4158,28 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const std::vector<meshElement
             }
         }
     }
+    */
+    //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____elements and nodes added____"<<endl;
 
     myNumberOfNodes = myNodes.Extent();
-    //cout<<"____number of nodes: "<<myNumberOfNodes<<"____"<<endl;
     myNodeCoords = new TColStd_HArray2OfReal(1,myNumberOfNodes,1,3);
-
-    for(int i=1; i<=myNumberOfNodes; i++)
+    for(std::map<mesh::meshPoint,int>::iterator it = indexedMapOfMeshPoints.begin(); it!=indexedMapOfMeshPoints.end(); it++)
     {
-        //cout<<"____tag02____"<<endl;
-        mesh::meshPoint aMeshPoint = vecMeshPoints[i-1];
-        myNodeCoords->SetValue(i,1,aMeshPoint.x);
-        myNodeCoords->SetValue(i,2,aMeshPoint.y);
-        myNodeCoords->SetValue(i,3,aMeshPoint.z);
+        mesh::meshPoint aMeshPoint = it->first;
+        int localNodeID = myNodesMap.FindIndex(it->second);
+        myNodeCoords->SetValue(localNodeID,1,aMeshPoint.x);
+        myNodeCoords->SetValue(localNodeID,2,aMeshPoint.y);
+        myNodeCoords->SetValue(localNodeID,3,aMeshPoint.z);
     }
-    //cout<<"____tag03____"<<endl;
-
-    //cout<<"____vector of mesh points size: "<<vecMeshPoints.size()<<"____"<<endl;
-
     //! ---------------------------
     //! compute normal at elements
     //! ---------------------------
     this->computeNormalAtElements();
+
+    //! ------------------------
+    //! build elements topology
+    //! ------------------------
+    this->buildElementsTopology();
 }
 
 
@@ -4349,6 +4614,11 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(ifstream &stream)
     //! compute normal at elements
     //! ---------------------------
     this->computeNormalAtElements();
+
+    //! ------------------------
+    //! build elements topology
+    //! ------------------------
+    this->buildElementsTopology();
 }
 
 //! ---------------------------------------------------------------------
@@ -4439,6 +4709,11 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const opencascade::handle<Ng_
     //! compute the normals at elements
     //! --------------------------------
     this->computeNormalAtElements();
+
+    //! ------------------------
+    //! build elements topology
+    //! ------------------------
+    this->buildElementsTopology();
 }
 
 //! -------------------------------
@@ -4689,6 +4964,11 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const occHandle(Ng_MeshVS_Dat
     //! compute normals at elements
     //! ----------------------------
     this->computeNormalAtElements();
+
+    //! ------------------------
+    //! build elements topology
+    //! ------------------------
+    this->buildElementsTopology();
 }
 
 
@@ -4791,4 +5071,199 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const occHandle(Ng_MeshVS_Dat
     //! compute normal at elements
     //! ---------------------------
     //this->computeNormalAtElements();
+
+    //! ------------------------
+    //! build elements topology
+    //! ------------------------
+    this->buildElementsTopology();
+}
+
+
+//! --------------------------------
+//! function: buildElementsTopology
+//! details:
+//! --------------------------------
+void Ng_MeshVS_DataSourceFace::buildElementsTopology()
+{
+    //! ----------------
+    //! Linear triangle
+    //! ----------------
+    TRIGMeshData = new MeshVS_HArray1OfSequenceOfInteger(1,1);
+    TRIGMeshData->ChangeValue(1).Append(0);
+    TRIGMeshData->ChangeValue(1).Append(1);
+    TRIGMeshData->ChangeValue(1).Append(2);
+
+    //! ------------------
+    //! Linear quadrangle
+    //! ------------------
+    QUADMeshData = new MeshVS_HArray1OfSequenceOfInteger(1,1);
+    QUADMeshData->ChangeValue(1).Append(0);
+    QUADMeshData->ChangeValue(1).Append(1);
+    QUADMeshData->ChangeValue(1).Append(2);
+    QUADMeshData->ChangeValue(1).Append(3);
+
+    //! -------------------
+    //! Quadratic triangle
+    //! -------------------
+    TRIG6MeshData = new MeshVS_HArray1OfSequenceOfInteger(1,1);
+    TRIG6MeshData->ChangeValue(1).Append(0);
+    TRIG6MeshData->ChangeValue(1).Append(3);
+    TRIG6MeshData->ChangeValue(1).Append(1);
+    TRIG6MeshData->ChangeValue(1).Append(4);
+    TRIG6MeshData->ChangeValue(1).Append(2);
+    TRIG6MeshData->ChangeValue(1).Append(5);
+
+    //! ---------------------
+    //! Quadratic quadrangle
+    //! ---------------------
+    QUAD8MeshData = new MeshVS_HArray1OfSequenceOfInteger(1,1);
+    QUAD8MeshData->ChangeValue(1).Append(0);
+    QUAD8MeshData->ChangeValue(1).Append(4);
+    QUAD8MeshData->ChangeValue(1).Append(1);
+    QUAD8MeshData->ChangeValue(1).Append(5);
+    QUAD8MeshData->ChangeValue(1).Append(2);
+    QUAD8MeshData->ChangeValue(1).Append(6);
+    QUAD8MeshData->ChangeValue(1).Append(3);
+    QUAD8MeshData->ChangeValue(1).Append(7);
+
+    //! -------------------
+    //! Linear tetrahedron
+    //! -------------------
+    TET4MeshData = new MeshVS_HArray1OfSequenceOfInteger(1,4);
+    for(int i=1;i<=4;i++)
+    {
+        TET4MeshData->ChangeValue(i).Append((i-1)%4);
+        TET4MeshData->ChangeValue(i).Append(i%4);
+        TET4MeshData->ChangeValue(i).Append((i+1)%4);
+    }
+
+    //! ---------------
+    //! Linear pyramid
+    //! ---------------
+    int NbBasePoints = 4;
+    PYRAM5MeshData = new MeshVS_HArray1OfSequenceOfInteger(1,NbBasePoints+1);
+    for(int i=1; i<=NbBasePoints; i++)
+    {
+        PYRAM5MeshData->ChangeValue(1).Prepend(i);
+        PYRAM5MeshData->ChangeValue(1+i).Append(0);
+        PYRAM5MeshData->ChangeValue(1+i).Append(i);
+        PYRAM5MeshData->ChangeValue(1+i).Append(i%NbBasePoints+1);
+    }
+
+    //! -------------
+    //! Linear prism
+    //! -------------
+    NbBasePoints = 3;
+    int Nseq = NbBasePoints + 2;
+    PRISM6MeshData = new MeshVS_HArray1OfSequenceOfInteger(1,Nseq);
+    int i, next;
+    for(i=0; i<NbBasePoints; i++)
+    {
+        PRISM6MeshData->ChangeValue(1).Prepend(i);
+        PRISM6MeshData->ChangeValue(2).Append(i+NbBasePoints);
+        PRISM6MeshData->ChangeValue(3+i).Prepend(i);
+        PRISM6MeshData->ChangeValue(3+i).Prepend(i+NbBasePoints);
+        next = (i+1)%NbBasePoints;
+        PRISM6MeshData->ChangeValue(3+i).Prepend(next+NbBasePoints);
+        PRISM6MeshData->ChangeValue(3+i).Prepend(next);
+    }
+
+    //! ------------------
+    //! Linear hexahedron
+    //! ------------------
+    HEXA8MeshData = new MeshVS_HArray1OfSequenceOfInteger(1,6);
+    HEXA8MeshData->ChangeValue(1).Append(3); HEXA8MeshData->ChangeValue(1).Append(2); HEXA8MeshData->ChangeValue(1).Append(1); HEXA8MeshData->ChangeValue(1).Append(0);
+    HEXA8MeshData->ChangeValue(2).Append(4); HEXA8MeshData->ChangeValue(2).Append(5); HEXA8MeshData->ChangeValue(2).Append(6); HEXA8MeshData->ChangeValue(2).Append(7);
+    HEXA8MeshData->ChangeValue(3).Append(1); HEXA8MeshData->ChangeValue(3).Append(5); HEXA8MeshData->ChangeValue(3).Append(4); HEXA8MeshData->ChangeValue(3).Append(0);
+    HEXA8MeshData->ChangeValue(4).Append(2); HEXA8MeshData->ChangeValue(4).Append(6); HEXA8MeshData->ChangeValue(4).Append(5); HEXA8MeshData->ChangeValue(4).Append(1);
+    HEXA8MeshData->ChangeValue(5).Append(3); HEXA8MeshData->ChangeValue(5).Append(7); HEXA8MeshData->ChangeValue(5).Append(6); HEXA8MeshData->ChangeValue(5).Append(2);
+    HEXA8MeshData->ChangeValue(6).Append(0); HEXA8MeshData->ChangeValue(6).Append(4); HEXA8MeshData->ChangeValue(6).Append(7); HEXA8MeshData->ChangeValue(6).Append(3);
+
+    //! ----------------------
+    //! Quadratic tetrahedron
+    //! ----------------------
+    const int mask[4][6] = {{0,4,1,5,2,6},{1,5,2,7,3,8},{0,6,2,7,3,9},{1,8,3,9,0,4}};
+    TET10MeshData = new MeshVS_HArray1OfSequenceOfInteger(1,4);
+    TColStd_SequenceOfInteger face[4];
+    for(int f=0; f<4; f++)
+    {
+        for(int j=0; j<6; j++) face[f].Append(mask[f][j]);
+        TET10MeshData->SetValue(f+1,face[f]);
+    }
+}
+
+
+//! ----------------------
+//! function: constructor
+//! details:
+//! ----------------------
+Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const occHandle(Ng_MeshVS_DataSource3D) &aMesh, const QMap<int,gp_Vec> &displacements)
+{
+    myNumberOfElements = aMesh->GetAllElements().Extent();
+    myNumberOfNodes = aMesh->GetAllNodes().Extent();
+
+    //! ---------------------------
+    //! maps of nodes and elements
+    //! ---------------------------
+    myElements = aMesh->GetAllElements();
+    myElementsMap = aMesh->myNodesMap;
+    myNodes = aMesh->GetAllNodes();
+    myNodesMap = aMesh->myNodesMap;
+
+    myElemType = new TColStd_HArray1OfInteger(1,myNumberOfElements);
+    myNodeCoords = new TColStd_HArray2OfReal(1,myNumberOfNodes,1,3);
+    myElemNodes = new TColStd_HArray2OfInteger(1,myNumberOfElements,1,20);
+
+    //! ----------------------------------
+    //! elements definition through nodes
+    //! ----------------------------------
+    int localElementID = 0;
+    int NbNodes, b[20];
+    TColStd_Array1OfInteger nodeIDs(*b,1,20);
+    for(TColStd_MapIteratorOfPackedMapOfInteger it(aMesh->GetAllElements()); it.More(); it.Next())
+    {
+        localElementID++;
+        int globalElementID = it.Key();
+        aMesh->GetNodesByElement(globalElementID,nodeIDs,NbNodes);
+        for(int c=1; c<=NbNodes; c++) myElemNodes->SetValue(localElementID,c,nodeIDs(c));
+
+        ElemType eType;
+        aMesh->GetElementType(eType,globalElementID,false);
+        myElemType->SetValue(localElementID,eType);
+    }
+
+    //! -----------------
+    //! node coordinates
+    //! -----------------
+    double a[3];
+    TColStd_Array1OfReal coords(*a,1,3);
+    MeshVS_EntityType aType;
+    int localNodeID = 0;
+    for(TColStd_MapIteratorOfPackedMapOfInteger it(aMesh->GetAllNodes()); it.More(); it.Next())
+    {
+        localNodeID ++;
+        int globalNodeID = it.Key();
+        aMesh->GetGeom(globalNodeID,false,coords,NbNodes,aType);
+        const gp_Vec &d = displacements.value(globalNodeID);
+        for(int c=0; c<NbNodes; c++)
+        {
+            int s = 3*c;
+            double x = coords(s+1) + d.X();
+            double y = coords(s+2) + d.Y();
+            double z = coords(s+3) + d.Z();
+            myNodeCoords->SetValue(localNodeID,s+1,x);
+            myNodeCoords->SetValue(localNodeID,s+2,y);
+            myNodeCoords->SetValue(localNodeID,s+3,z);
+        }
+    }
+
+    //! ---------------------------
+    //! compute normal at elements
+    //! ---------------------------
+    this->computeNormalAtElements();
+
+    //! ------------------
+    //! elements topology
+    //! ------------------
+    this->buildElementsTopology();
 }

@@ -1180,7 +1180,6 @@ void MainWindow::createToolBars()
     meshToolBar->enableClearMesh(false);
     meshToolBar->enableSurfaceMeshButton(false);
     meshToolBar->enableVolumeMeshButton(false);
-    //cese
 
     //! ----------------
     //! results toolbar
@@ -1189,11 +1188,11 @@ void MainWindow::createToolBars()
     this->addToolBar(resultsToolBar);
     resultsToolBar->setVisible(false);
 
-    connect(resultsToolBar,SIGNAL(requestNoWireframe()),mySimulationManager,SLOT(noWireframe()));
-    connect(resultsToolBar,SIGNAL(requestShowElements()),mySimulationManager,SLOT(showElements()));
-    connect(resultsToolBar,SIGNAL(requestShowUndeformedModel()),mySimulationManager,SLOT(showUndeformedModel()));
-    connect(resultsToolBar,SIGNAL(requestShowUndeformedWireframe()),mySimulationManager,SLOT(showUndeformedWireframe()));
-    connect(resultsToolBar,SIGNAL(requestUpdatePostObjectScale(double)),mySimulationManager,SLOT(updatePostObjectScale(double)));
+    //! for changing the status variable of the main viewer
+    connect(resultsToolBar,SIGNAL(requestUpdateViewerStatus()),myMainOCCViewer,SLOT(updateViewerStatus()));
+    connect(meshToolBar,SIGNAL(requestUpdateViewerStatus()),myMainOCCViewer,SLOT(updateViewerStatus()));
+
+    connect(myMainOCCViewer,SIGNAL(resultsPresentationChanged()),mySimulationManager,SLOT(updateResultsPresentation()));
 }
 
 //! ---------------------------------
@@ -2028,7 +2027,6 @@ void MainWindow::setWorkingMode(int workingModeNumber)
         myMainOCCViewer->setWorkingMode_Solution();
         myTabularDataDock->setVisible(false);
         myTabularDataViewerDock->setVisible(false);
-
     }
         break;
     }
@@ -2622,11 +2620,11 @@ void MainWindow::setUpConnections()
     connect(myMainOCCViewer,SIGNAL(statusBarMessage(QString)),statusLabel,SLOT(setText(QString)));
     connect(myMainOCCViewer,SIGNAL(viewModeChanged(CurDisplayMode)),this,SLOT(checkViewModeItem(CurDisplayMode)));
     connect(this,SIGNAL(requestExtendSelectionToAdjacent()),myMainOCCViewer,SLOT(extendSelectionToAjacent()));
-
-    //! ------------------------------------------------------------------------------
     //! synchronize the checkmark of the menu action and the visibility of the widget
     //! ------------------------------------------------------------------------------
     connect(actionShowGraphViewer,SIGNAL(triggered(bool)),myTabularDataViewerDock,SLOT(setVisible(bool)));
+
+    //! ------------------------------------------------------------------------------
     connect(myTabularDataViewerDock,SIGNAL(visibilityChanged(bool)),actionShowGraphViewer,SLOT(setChecked(bool)));
 
     //! ------------------------------------------------------------------------------
@@ -2696,9 +2694,9 @@ void MainWindow::setUpConnections()
 
     connect(mySimulationManager,SIGNAL(requestCreateColorBox(double,double,int)),myMainOCCViewer,SLOT(createColorBox(double,double,int)));
     connect(mySimulationManager,SIGNAL(requestShowAllBodies()),myMainOCCViewer,SLOT(showAllBodies()));
-    connect(mySimulationManager,SIGNAL(requestDisplayResult(const postObject&)),myMainOCCViewer,SLOT(displayResult(const postObject&)));
+
+    connect(mySimulationManager,SIGNAL(requestDisplayResult(sharedPostObject&)),myMainOCCViewer,SLOT(displayResult(sharedPostObject&)));
     connect(mySimulationManager,SIGNAL(requestHideAllResults()),myMainOCCViewer,SLOT(hideAllResults()));
-    connect(mySimulationManager,SIGNAL(requestHideSingleResult(postObject)),myMainOCCViewer,SLOT(hideSingleResult(postObject)));
 
     //! ---------------------------------------------------
     //! connection for hiding the markers (and the triads)
@@ -2762,7 +2760,10 @@ void MainWindow::setUpConnections()
     connect(myDetailViewer,SIGNAL(requestGlobalMeshControlChange()),mySimulationManager,SLOT(handleGlobalMeshControlChange()));
     //connect(myDetailViewer,SIGNAL(requestHandleSolutionComponentChanged()),mySimulationManager,SLOT(handleSolutionComponentChanged())); to be deleted
     connect(myDetailViewer,SIGNAL(requestHandleSolutionInformationUpdateIntervalChanged()),mySimulationManager,SLOT(updateTimer()));
-    connect(myDetailViewer,SIGNAL(requestHandleBoltControls()),mySimulationManager,SLOT(handleBoltControls()));
+
+    // to be removed
+    //connect(myDetailViewer,SIGNAL(requestHandleBoltControls()),mySimulationManager,SLOT(handleBoltControls()));
+
     connect(myDetailViewer,SIGNAL(requestHandleTransparencyChanged(double)),myMainOCCViewer,SLOT(setTransparency_onWorkingModeContact(double)));
 
     //! ------------------------

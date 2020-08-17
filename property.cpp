@@ -466,21 +466,13 @@ void Property::writeProperty(ofstream& out, const Property &prop)
             cout<<"* PROPERTY DEFINED THROUGH \"DOUBLE VECTOR\""<<endl;
             QVector<QVector<double>> tensor2 = prop.getData().value<QVector<QVector<double>>>();
             tools::writeTensor2<QVector<QVector<double>>>(tensor2,out);
-            //for(QVector<QVector<double>>::iterator it = tensor2.begin(); it!=tensor2.end(); it++)
-            //{
-            //    const QVector<double> &vec = *it;
-            //    for(QVector<double>::const_iterator itt = vec.begin(); itt!=vec.end(); itt++)
-            //    {
-            //        out<<*itt<<endl;
-            //    }
-            //}
         }
-        else if(prop.getData().canConvert<QVector<GeometryTag>>())
+        else if(prop.getData().canConvert<std::vector<GeometryTag>>())
         {
-            cout<<"* PROPERTY DEFINED THROUGH \"QVector<GeometryTag>\""<<endl;
-            QVector<GeometryTag> vecLocs = prop.getData().value<QVector<GeometryTag>>();
+            cout<<"* PROPERTY DEFINED THROUGH \"std::vector<GeometryTag>\""<<endl;
+            std::vector<GeometryTag> vecLocs = prop.getData().value<std::vector<GeometryTag>>();
             //out<<vecLocs.size()<<endl;
-            //for(QVector<GeometryTag>::iterator it = vecLocs.begin(); it!=vecLocs.end(); ++it)
+            //for(std::vector<GeometryTag>::iterator it = vecLocs.begin(); it!=vecLocs.end(); ++it)
             //{
             //    const GeometryTag &aGT = *it;
             //    aGT.write(out);
@@ -499,12 +491,12 @@ void Property::writeProperty(ofstream& out, const Property &prop)
             cout<<"* THE VOID POINTER CONTAINS: "<<node->getName().toStdString()<<endl;
             Property::writeVoid(out,p);
         }
-        else if(prop.getData().canConvert<postObject>())
+        else if(prop.getData().canConvert<sharedPostObject>())
         {
             cout<<"* PROPERTY POST OBJECT"<<endl;
-            postObject aPostObject = prop.getData().value<postObject>();
-            cout<<"____writing post object: \""<<aPostObject.getName().toStdString()<<"\"____"<<endl;
-            aPostObject.write(out);
+            sharedPostObject aPostObject = prop.getData().value<sharedPostObject>();
+            cout<<"____writing post object: \""<<aPostObject->getName().toStdString()<<"\"____"<<endl;
+            aPostObject->write(out);
         }
         else if(prop.getData().canConvert<histogramData>())
         {
@@ -612,7 +604,7 @@ void Property::readProperty(ifstream &in, Property &prop)
     else if(propKeyName=="Geometry" || propKeyName=="Master"
             || propKeyName=="Slave" || propKeyName=="Boundary") //! "Boundary" identify the prismatic faces
     {
-        QVector<GeometryTag> vecLocs;
+        std::vector<GeometryTag> vecLocs;
         vecLocs = tools::readVectorOfLocations(in);
         data.setValue(vecLocs);
         prop.setData(data);
@@ -863,7 +855,7 @@ void Property::readProperty(ifstream &in, Property &prop)
     else if(propKeyName=="Tags" || propKeyName =="Tags slave"
             || propKeyName =="Tags master" || propKeyName =="Boundary tags")
     {
-        QVector<GeometryTag> vecLocs = tools::readVectorOfLocations(in);
+        std::vector<GeometryTag> vecLocs = tools::readVectorOfLocations(in);
         data.setValue(vecLocs);
         prop.setData(data);
     }
@@ -873,7 +865,8 @@ void Property::readProperty(ifstream &in, Property &prop)
         //! this constructor reads the name, the mesh, the data
         //! but needs to update the MeshVS_Mesh
         //! ----------------------------------------------------
-        postObject aPostObject(in);
+        sharedPostObject aPostObject = std::make_shared<postObject>(in);
+        //postObject aPostObject(in);
         data.setValue(aPostObject);
         prop.setData(data);
     }

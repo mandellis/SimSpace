@@ -91,7 +91,7 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
     //! -------------------
     //! "Scope" and "Tags"
     //! -------------------
-    QVector<GeometryTag> vecLoc = TopologyTools::generateLocationPairs(mDB,scope);
+    std::vector<GeometryTag> vecLoc = TopologyTools::generateLocationPairs(mDB,scope);
     data.setValue(vecLoc);
     Property prop_scope("Geometry",data,Property::PropertyGroup_Scope);
     Property prop_tags("Tags",data,Property::PropertyGroup_Scope);
@@ -327,7 +327,7 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
             TopoDS_Solid aSolid = TopoDS::Solid(mDB->bodyMap.value(i));
             scope.Append(aSolid);
         }
-        QVector<GeometryTag> vecLocAllBodies = TopologyTools::generateLocationPairs(mDB, scope);
+        std::vector<GeometryTag> vecLocAllBodies = TopologyTools::generateLocationPairs(mDB, scope);
 
         data.setValue(vecLocAllBodies);
         Property prop_scopeAllBodies("Geometry",data,Property::PropertyGroup_Scope);
@@ -414,7 +414,7 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
             TopoDS_Solid aSolid = TopoDS::Solid(mDB->bodyMap.value(i));
             scope.Append(aSolid);
         }
-        QVector<GeometryTag> vecLocAllBodies = TopologyTools::generateLocationPairs(mDB, scope);
+        std::vector<GeometryTag> vecLocAllBodies = TopologyTools::generateLocationPairs(mDB, scope);
 
         data.setValue(vecLocAllBodies);
         Property prop_scopeAllBodies("Geometry",data,Property::PropertyGroup_Scope);
@@ -481,7 +481,7 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
         case 3: name = "Directional displacement Z"; break;
         }
 
-        for(QVector<GeometryTag>::iterator it = vecLoc.begin(); it!=vecLoc.end(); ++it)
+        for(std::vector<GeometryTag>::iterator it = vecLoc.begin(); it!=vecLoc.end(); ++it)
         {
             const GeometryTag curLoc = *it;
             int parentShapeNr = curLoc.parentShapeNr;
@@ -500,7 +500,7 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
             TopoDS_Solid aSolid = TopoDS::Solid(mDB->bodyMap.value(i));
             scope.Append(aSolid);
         }
-        QVector<GeometryTag> vecLocAllBodies = TopologyTools::generateLocationPairs(mDB, scope);
+        std::vector<GeometryTag> vecLocAllBodies = TopologyTools::generateLocationPairs(mDB, scope);
 
         data.setValue(vecLocAllBodies);
         Property prop_scopeAllBodies("Geometry",data,Property::PropertyGroup_Scope);
@@ -984,7 +984,7 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
             prop_ZAbscoord.setData(data);
         }
 
-        QVector<GeometryTag> vecLoc;
+        std::vector<GeometryTag> vecLoc;
         data.setValue(vecLoc);
         Property prop_location("Location",data,Property::PropertyGroup_Scope);
 
@@ -1057,8 +1057,8 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
         cout<<"nodeFactory::nodeFromScratch()->____creating connection node____"<<endl;
 
         QVariant data;
-        QVector<GeometryTag> vecLocMaster;
-        QVector<GeometryTag> vecLocSlave;
+        std::vector<GeometryTag> vecLocMaster;
+        std::vector<GeometryTag> vecLocSlave;
 
         //! -------------------
         //! suppression status
@@ -1086,7 +1086,7 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
             //! -------
             //! master
             //! -------
-            vecLocMaster = QVector<GeometryTag>();
+            vecLocMaster = std::vector<GeometryTag>();
             data.setValue(vecLocMaster);
             Property prop_scopeMaster("Master",data,Property::PropertyGroup_Scope);
             Property prop_MasterTags("Tags master",data,Property::PropertyGroup_Scope);
@@ -1096,7 +1096,7 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
             //! ------
             //! slave
             //! ------
-            vecLocSlave = QVector<GeometryTag>();
+            vecLocSlave = std::vector<GeometryTag>();
             data.setValue(vecLocSlave);
             Property prop_scopeSlave("Slave",data,Property::PropertyGroup_Scope);
             Property prop_SlaveTags("Tags slave",data,Property::PropertyGroup_Scope);
@@ -1131,7 +1131,7 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
             //! ------
             //! slave
             //! ------
-            vecLocSlave = QVector<GeometryTag>();
+            vecLocSlave = std::vector<GeometryTag>();
             data.setValue(vecLocSlave);
             Property prop_scopeSlave("Slave",data,Property::PropertyGroup_Scope);
             Property prop_SlaveTags("Tags slave",data,Property::PropertyGroup_Scope);
@@ -1986,7 +1986,7 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
         //! scope: "Boundary"
         //! ------------------
         ListOfShape boundaryScope;
-        QVector<GeometryTag> vecLoc = TopologyTools::generateLocationPairs(mDB,boundaryScope);
+        std::vector<GeometryTag> vecLoc = TopologyTools::generateLocationPairs(mDB,boundaryScope);
         data.setValue(vecLoc);
 
         Property prop_boundaryScope("Boundary",data,Property::PropertyGroup_Definition);
@@ -2205,7 +2205,7 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
         case 0: name = "Equivalent plastic strain"; break;
         }
 
-        for(QVector<GeometryTag>::iterator it = vecLoc.begin(); it!=vecLoc.end(); ++it)
+        for(std::vector<GeometryTag>::iterator it = vecLoc.begin(); it!=vecLoc.end(); ++it)
         {
             const GeometryTag curLoc = *it;
             int parentShapeNr = curLoc.parentShapeNr;
@@ -2277,7 +2277,7 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
         case 3: name = "Directional force Z"; break;
         }
 
-        for(QVector<GeometryTag>::iterator it = vecLoc.begin(); it!=vecLoc.end(); ++it)
+        for(std::vector<GeometryTag>::iterator it = vecLoc.begin(); it!=vecLoc.end(); ++it)
         {
             const GeometryTag curLoc = *it;
             int parentShapeNr = curLoc.parentShapeNr;
@@ -2350,7 +2350,7 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
         case 3: name = "Sliding"; break;
         }
 
-        for(QVector<GeometryTag>::iterator it = vecLoc.begin(); it!=vecLoc.end(); ++it)
+        for(std::vector<GeometryTag>::iterator it = vecLoc.begin(); it!=vecLoc.end(); ++it)
         {
             const GeometryTag curLoc = *it;
             int parentShapeNr = curLoc.parentShapeNr;
@@ -2429,7 +2429,7 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
             TopoDS_Solid aSolid = TopoDS::Solid(mDB->bodyMap.value(i));
             scope.Append(aSolid);
         }
-        QVector<GeometryTag> vecLocAllBodies = TopologyTools::generateLocationPairs(mDB, scope);
+        std::vector<GeometryTag> vecLocAllBodies = TopologyTools::generateLocationPairs(mDB, scope);
 
         data.setValue(vecLocAllBodies);
         Property prop_scopeAllBodies("Geometry",data,Property::PropertyGroup_Scope);
@@ -2509,7 +2509,7 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
             TopoDS_Solid aSolid = TopoDS::Solid(mDB->bodyMap.value(i));
             scope.Append(aSolid);
         }
-        QVector<GeometryTag> vecLocAllBodies = TopologyTools::generateLocationPairs(mDB, scope);
+        std::vector<GeometryTag> vecLocAllBodies = TopologyTools::generateLocationPairs(mDB, scope);
 
         data.setValue(vecLocAllBodies);
         Property prop_scopeAllBodies("Geometry",data,Property::PropertyGroup_Scope);

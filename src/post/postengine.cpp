@@ -32,6 +32,24 @@ postEngine::postEngine(QObject *parent) : QObject(parent),myDTM(QMap<double,QVec
     this->buildMap();
 }
 
+//! -------------------
+//! function: buildMap
+//! details:
+//! -------------------
+void postEngine::buildMap()
+{
+    m.insert("DISP",TypeOfResult_U);
+    m.insert("STRESS",TypeOfResult_S);
+    m.insert("TOSTRAIN",TypeOfResult_TOSTRAIN);
+    m.insert("MESTRAIN",TypeOfResult_MESTRAIN);
+    m.insert("NDTEMP",TypeOfResult_NT);
+    m.insert("UDR",TypeOfResult_UDR);
+    m.insert("FORC",TypeOfResult_F);
+    m.insert("PE",TypeOfResult_EPS);
+    m.insert("FLUX",TypeOfResult_HFL);
+    m.insert("CONTACT",TypeOfResult_CONT);
+}
+
 //! -----------------------------
 //! function: setDiscreteTimeMap
 //! details:
@@ -47,7 +65,7 @@ void postEngine::setDiscreteTimeMap(const QMap<double,QVector<int>> &dtm)
 //! ------------------
 bool postEngine::perform()
 {
-    if(myMeshDataBase==NULL) return false;
+    if(myMeshDataBase==Q_NULLPTR) return false;
     if(myResultsFilePath.isNull()) return false;
     if(myResultsFilePath.isEmpty()) return false;
 
@@ -78,30 +96,30 @@ void postEngine::setResultsFile(QString resultsFilePath)
 //! function: evaluateResult
 //! details:
 //! --------------------------
-QMap<GeometryTag,QList<QMap<int,double>>> postEngine::evaluateResult(const QString &resultKeyName,
-                                                                     int requiredSubStepNb,
-                                                                     int requiredStepNb,
-                                                                     int requiredMode,
-                                                                     const QVector<GeometryTag> &vecLoc,
-                                                                     double &requiredTime)
+std::map<GeometryTag,std::vector<std::map<int,double>>> postEngine::evaluateResult(const QString &resultKeyName,
+                                                                                   int requiredSubStepNb,
+                                                                                   int requiredStepNb,
+                                                                                   int requiredMode,
+                                                                                   const std::vector<GeometryTag> &vecLoc,
+                                                                                   double &requiredTime)
 {
-    cout<<"postEngine::evaluateResult()->____function called for variable: "<<resultKeyName.toStdString()<<"____"<<endl;
-    cout<<"postEngine::evaluateResult()->____on Nr: "<<vecLoc.length()<<" locations____"<<endl;
+    cout<<"@ -------------------------------------------------"<<endl;
+    cout<<"@ - postEngine::evaluateResult "<<endl;
+    cout<<"@ - variable "<<resultKeyName.toStdString()<<" on "<<vecLoc.size()<<" locations"<<endl;
+    cout<<"@ -------------------------------------------------"<<endl;
 
     //! ----------------------------------------------------
     //! generate the results on all the requested locations
     //! ----------------------------------------------------
-    QMap<GeometryTag,QList<QMap<int,double>>> resMap;
-
-    QVector<GeometryTag>::const_iterator it;
-    for(it = vecLoc.cbegin(); it!= vecLoc.cend(); ++it)
+    std::map<GeometryTag,std::vector<std::map<int,double>>> resMap;
+    for(std::vector<GeometryTag>::const_iterator it = vecLoc.cbegin(); it!= vecLoc.cend(); ++it)
     {
         GeometryTag loc = *it;
 
         //! -------------------------------------------------------------------------
         //! node conversion map: (Calculix mesh nodeID,nodeID for MeshVS_DataSource)
         //! -------------------------------------------------------------------------
-        QMap<int,int> indexedMapOfNodes = OCCMeshToCCXmesh::perform(loc,myMeshDataBase);
+        std::map<int,int> indexedMapOfNodes = OCCMeshToCCXmesh::perform(loc,myMeshDataBase);
 
         //! ------------------------------------------------
         //! enter <...>/SolutionData/ResultsData
@@ -111,11 +129,8 @@ QMap<GeometryTag,QList<QMap<int,double>>> postEngine::evaluateResult(const QStri
         path.chop(tmp.length());
 
         QDir curDir(path);
-        //cout<<"____"<<curDir.absolutePath().toStdString()<<"____"<<endl;
         curDir.cd("ResultsData");
-        //cout<<"____"<<curDir.absolutePath().toStdString()<<"____"<<endl;
         QFileInfoList entriesInfo = curDir.entryInfoList();
-        //cout<<"____"<<entriesInfo.length()<<"____"<<endl;
 
         QList<QString> entryList = curDir.entryList();
         QList<QString> fileList;
@@ -137,7 +152,7 @@ QMap<GeometryTag,QList<QMap<int,double>>> postEngine::evaluateResult(const QStri
         //! --------------------------
         //! the results on a location
         //! --------------------------
-        QList<QMap<int,double>> res;
+        std::vector<std::map<int,double>> res;
 
         //! ---------------
         //! scan the files
@@ -201,7 +216,7 @@ QMap<GeometryTag,QList<QMap<int,double>>> postEngine::evaluateResult(const QStri
                 {
                 case TypeOfResult_HFL:
                 {
-                    QMap<int,double> resComp_normal;
+                    std::map<int,double> resComp_normal;
                     occHandle(Ng_MeshVS_DataSourceFace) curFaceDS = occHandle(Ng_MeshVS_DataSourceFace)::
                             DownCast(myMeshDataBase->ArrayOfMeshDSOnFaces.getValue(loc.parentShapeNr,loc.subTopNr));
 
@@ -216,18 +231,23 @@ QMap<GeometryTag,QList<QMap<int,double>>> postEngine::evaluateResult(const QStri
                         sscanf(val.c_str(),"%d%lf%lf%lf",&ni,&cxx,&cyy,&czz);
 
                         //! nodeIDs defining the MeshVS_dataSource
-                        int OCCnodeID = indexedMapOfNodes.value(ni,-1);
-                        if(OCCnodeID!=-1)
+                        //int OCCnodeID = indexedMapOfNodes.value(ni,-1);
+                        std::map<int,int>::iterator it = indexedMapOfNodes.find(ni);
+
+                        if(it!=indexedMapOfNodes.end())
+                        //if(OCCnodeID!=-1)
                         {
+                            int OCCnodeID = it->second;
                             const QList<double> &normal = curFaceDS->myNodeNormals.value(OCCnodeID);
                             double normalFlux = cxx*normal[0]+cyy*normal[1]+czz*normal[2];
-                            resComp_normal.insert(OCCnodeID,normalFlux);
+                            //resComp_normal.insert(OCCnodeID,normalFlux);
+                            resComp_normal.insert(std::make_pair(OCCnodeID,normalFlux));
                         }
                         std::getline(curFile,val);
                     }
 
                     //! result
-                    res<<resComp_normal;
+                    res.push_back(resComp_normal);
                     //cout<<"postEngine::evaluateResult()->____Number of components: "<<res.length()<<"____"<<endl;
                 }
                     break;
@@ -235,7 +255,7 @@ QMap<GeometryTag,QList<QMap<int,double>>> postEngine::evaluateResult(const QStri
                 case TypeOfResult_F:
                 //case TypeOfResult_HFL:
                 {
-                    QMap<int,double> resComp_X,resComp_Y,resComp_Z,resComp_Total;
+                    std::map<int,double> resComp_X,resComp_Y,resComp_Z,resComp_Total;
 
                     //! <>::eof(): call getline before while, then inside {}, @ as last instruction
                     std::getline(curFile,val);
@@ -246,20 +266,28 @@ QMap<GeometryTag,QList<QMap<int,double>>> postEngine::evaluateResult(const QStri
                         sscanf(val.c_str(),"%d%lf%lf%lf",&ni,&cxx,&cyy,&czz);
 
                         //! nodeIDs defining the MeshVS_dataSource
-                        int OCCnodeID = indexedMapOfNodes.value(ni,-1);
-                        if(OCCnodeID!=-1)
+                        //int OCCnodeID = indexedMapOfNodes.value(ni,-1);
+                        std::map<int,int>::iterator it = indexedMapOfNodes.find(ni);
+                        if(it!=indexedMapOfNodes.end())
+                        //if(OCCnodeID!=-1)
                         {
+                            int OCCnodeID = it->second;
                             total = sqrt(pow(cxx,2)+pow(cyy,2)+pow(czz,2));
-                            resComp_Total.insert(OCCnodeID,total);
-                            resComp_X.insert(OCCnodeID,cxx);
-                            resComp_Y.insert(OCCnodeID,cyy);
-                            resComp_Z.insert(OCCnodeID,czz);
+                            resComp_Total.insert(std::make_pair(OCCnodeID,total));
+                            resComp_X.insert(std::make_pair(OCCnodeID,cxx));
+                            resComp_Y.insert(std::make_pair(OCCnodeID,cyy));
+                            resComp_Z.insert(std::make_pair(OCCnodeID,czz));
+
                         }
                         std::getline(curFile,val);
                     }
 
                     //! result
-                    res<<resComp_Total<<resComp_X<<resComp_Y<<resComp_Z;
+                    res.push_back(resComp_Total);
+                    res.push_back(resComp_X);
+                    res.push_back(resComp_Y);
+                    res.push_back(resComp_Z);
+
                     //cout<<"postEngine::evaluateResult()->____Number of components: "<<res.length()<<"____"<<endl;
                 }
                     break;
@@ -269,7 +297,7 @@ QMap<GeometryTag,QList<QMap<int,double>>> postEngine::evaluateResult(const QStri
                 case TypeOfResult_MESTRAIN:
                 {
                     //!                   0       1        2      3       4        5       6       7       8      9      10
-                    QMap<int,double> resMISES, resSINT, resSI, resSII, resSIII, resSXX, resSYY, resSZZ, resSXY,resSYZ,resSXZ;
+                    std::map<int,double> resMISES, resSINT, resSI, resSII, resSIII, resSXX, resSYY, resSZZ, resSXY,resSYZ,resSXZ;
 
                     //! <>::eof(): call getline before while, then inside {}, @ as last instruction
                     std::getline(curFile,val);
@@ -281,9 +309,13 @@ QMap<GeometryTag,QList<QMap<int,double>>> postEngine::evaluateResult(const QStri
                         sscanf(val.c_str(),"%d%lf%lf%lf%lf%lf%lf",&ni,&cxx,&cyy,&czz,&cxy,&cyz,&cxz);
 
                         //! nodeIDs defining the MeshVS_dataSource
-                        int OCCnodeID = indexedMapOfNodes.value(ni,-1);
-                        if(OCCnodeID!=-1)
+                        //int OCCnodeID = indexedMapOfNodes.value(ni,-1);
+                        std::map<int,int>::iterator it = indexedMapOfNodes.find(ni);
+                        if(it!=indexedMapOfNodes.end())
+                        //if(OCCnodeID!=-1)
                         {
+                            int OCCnodeID = it->second;
+
                             //! --------------------------------------------
                             //! compute the equivalent stress/strain
                             //! --------------------------------------------
@@ -297,37 +329,48 @@ QMap<GeometryTag,QList<QMap<int,double>>> postEngine::evaluateResult(const QStri
                                 //vonMises = sqrt(cxx*cxx+cyy*cyy+czz*czz-cxx*cyy-cyy*czz-czz*cxx+3*(cxz*cxz+cyz*cyz+cxz*cxz));
                                 vonMises = sqrt(0.5*(pow(cxx-cyy,2)+pow(cxx-czz,2)+pow(cyy-czz,2))+3*(cxz*cxz+cyz*cyz+cxz*cxz));
                             }
-                            resMISES.insert(OCCnodeID,vonMises);
+                            //resMISES.insert(OCCnodeID,vonMises);
+                            resMISES.insert(std::make_pair(OCCnodeID,vonMises));
 
-                            //! --------------------------------------------
+                            //! ---------------------------------
                             //! compute the principal components
-                            //! --------------------------------------------
-                            QList<double> sik;
-                            sik<<cxx<<cyy<<czz<<cxy<<cyz<<cxz;
-                            QList<double> s = postTools::principalComponents(sik);
+                            //! ---------------------------------
+                            double sik[6] {cxx,cyy,czz,cxy,cyz,cxz};
+                            double s[3];
+                            postTools::principalComponents(sik,s);
 
-                            resSI.insert(OCCnodeID,s.at(2));        //! maximum
-                            resSII.insert(OCCnodeID,s.at(1));       //! middle
-                            resSIII.insert(OCCnodeID,s.at(0));      //! minimum
+                            resSI.insert(std::make_pair(OCCnodeID,s[2]));        //! maximum
+                            resSII.insert(std::make_pair(OCCnodeID,s[1]));       //! middle
+                            resSIII.insert(std::make_pair(OCCnodeID,s[0]));      //! minimum
 
                             //! -----------------------------------------------
                             //! compute the stress/strain intensity (2*Tresca)
                             //! maximum shear stress/strain
                             //! -----------------------------------------------
-                            double sint = fabs(s.at(2)-s.at(0));
-                            resSINT.insert(OCCnodeID,sint);
+                            double sint = fabs(s[2]-s[0]);
+                            resSINT.insert(std::make_pair(OCCnodeID,sint));
+                            resSXX.insert(std::make_pair(OCCnodeID,cxx));
+                            resSYY.insert(std::make_pair(OCCnodeID,cyy));
+                            resSZZ.insert(std::make_pair(OCCnodeID,czz));
+                            resSXY.insert(std::make_pair(OCCnodeID,cxy));
+                            resSYZ.insert(std::make_pair(OCCnodeID,cyz));
+                            resSXZ.insert(std::make_pair(OCCnodeID,cxz));
 
-                            resSXX.insert(OCCnodeID,cxx);
-                            resSYY.insert(OCCnodeID,cyy);
-                            resSZZ.insert(OCCnodeID,czz);
-                            resSXY.insert(OCCnodeID,cxy);
-                            resSYZ.insert(OCCnodeID,cyz);
-                            resSXZ.insert(OCCnodeID,cxz);
                         }
                         std::getline(curFile,val);
                     }
                     //! result
-                    res<<resMISES<<resSINT<<resSI<<resSII<<resSIII<<resSXX<<resSYY<<resSZZ<<resSXY<<resSYZ<<resSXZ;
+                    res.push_back(resMISES);
+                    res.push_back(resSINT);
+                    res.push_back(resSI);
+                    res.push_back(resSII);
+                    res.push_back(resSIII);
+                    res.push_back(resSXX);
+                    res.push_back(resSYY);
+                    res.push_back(resSZZ);
+                    res.push_back(resSXY);
+                    res.push_back(resSYZ);
+                    res.push_back(resSXZ);
                     //cout<<"postEngine::evaluateResult()->____Number of components: "<<res.length()<<"____"<<endl;;
                 }
                     break;
@@ -335,7 +378,7 @@ QMap<GeometryTag,QList<QMap<int,double>>> postEngine::evaluateResult(const QStri
                 case TypeOfResult_NT:
                 case TypeOfResult_EPS:
                 {
-                    QMap<int,double> resT;
+                    std::map<int,double> resT;
 
                     //! <>::eof(): call getline before while, then inside {}, @ as last instruction
                     std::getline(curFile,val);
@@ -346,15 +389,19 @@ QMap<GeometryTag,QList<QMap<int,double>>> postEngine::evaluateResult(const QStri
                         sscanf(val.c_str(),"%d%lf",&ni,&v);
 
                         //! nodeIDs defining the MeshVS_dataSource
-                        int OCCnodeID = indexedMapOfNodes.value(ni,-1);
-                        if(OCCnodeID!=-1)
+                        //int OCCnodeID = indexedMapOfNodes.value(ni,-1);
+                        std::map<int,int>::iterator it = indexedMapOfNodes.find(ni);
+                        if(it!=indexedMapOfNodes.end())
+                        //if(OCCnodeID!=-1)
                         {
-                            resT.insert(OCCnodeID,v);
+                            int OCCnodeID = it->second;
+                            //resT.insert(OCCnodeID,v);
+                            resT.insert(std::make_pair(OCCnodeID,v));
                         }
                         std::getline(curFile,val);
                     }
                     //! result
-                    res<<resT;
+                    res.push_back(resT);
                     //cout<<"Number of components: "<<res.length();
                 }
                     break;
@@ -362,7 +409,7 @@ QMap<GeometryTag,QList<QMap<int,double>>> postEngine::evaluateResult(const QStri
                 case TypeOfResult_CONT:
                 {
                     //!                         col 1           col 2+3     col 4           col 5+6
-                    QMap<int,double>  resContPenetration, resContSliding,resContPress, resContFrictStress;
+                    std::map<int,double> resContPenetration, resContSliding, resContPress, resContFrictStress;
 
                     //! <>::eof(): call getline before while, then inside {}, @ as last instruction
                     std::getline(curFile,val);
@@ -374,28 +421,36 @@ QMap<GeometryTag,QList<QMap<int,double>>> postEngine::evaluateResult(const QStri
                         sscanf(val.c_str(),"%d%lf%lf%lf%lf%lf%lf",&ni,&cxx,&cyy,&czz,&cxy,&cyz,&cxz);
 
                         //! nodeIDs defining the MeshVS_dataSource
-                        int OCCnodeID = indexedMapOfNodes.value(ni,-1);
-                        if(OCCnodeID!=-1)
+                        //int OCCnodeID = indexedMapOfNodes.value(ni,-1);
+                        std::map<int,int>::iterator it = indexedMapOfNodes.find(ni);
+                        if(it!=indexedMapOfNodes.end())
+                        //if(OCCnodeID!=-1)
                         {
+                            int OCCnodeID = it->second;
+
                             //! --------------------------------------------------
                             //! compute the frictional stress and contact sliding
                             //! -------------------------------------------------
                             double frictStress = sqrt(cyz*cyz+cxz*cxz);
                             double contSliding = sqrt(cyy*cyy+czz*czz);
 
-                            resContFrictStress.insert(OCCnodeID,frictStress);
-                            resContSliding.insert(OCCnodeID,contSliding);
-                            resContPress.insert(OCCnodeID,cxy);
-                            resContPenetration.insert(OCCnodeID,cxx);
+                            resContFrictStress.insert(std::make_pair(OCCnodeID,frictStress));
+                            resContSliding.insert(std::make_pair(OCCnodeID,contSliding));
+                            resContPress.insert(std::make_pair(OCCnodeID,cxy));
+                            resContPenetration.insert(std::make_pair(OCCnodeID,cxx));
                         }
                         std::getline(curFile,val);
                     }
                     //! result
-                    res<<resContPress<<resContFrictStress<<resContPenetration<<resContSliding;
+                    res.push_back(resContPress);
+                    res.push_back(resContFrictStress);
+                    res.push_back(resContPenetration);
+                    res.push_back(resContSliding);
                 }
                     break;
                 }
-                resMap.insert(loc,res);
+                //resMap.insert(loc,res);
+                resMap.insert(std::make_pair(loc,res));
                 curFile.close();
                 break;
             }
@@ -410,27 +465,25 @@ QMap<GeometryTag,QList<QMap<int,double>>> postEngine::evaluateResult(const QStri
         //! res => QList<QMap<int,double>>
         //! --------------------------------------------------------
     }
-
-    //! diagnostic function
     return resMap;
 }
 
-//! ----------------------------------------------------------
-//! function: colorBoxTitle
-//! details:  build a title for the colorbox according to the
-//!           type of result
-//! ----------------------------------------------------------
-QString postEngine::colorBoxTitle(const QString &keyName, int component, int step, int subStep,double time)
+//! ---------------------------------
+//! function: resultName
+//! details:  title for the colorbox
+//! ---------------------------------
+QString postEngine::resultName(const QString &keyName, int component, int step, int subStep, double time)
 {
-    QString timeInfo = QString("\nTime %1\nStep %2").arg(time).arg(step);
+    //QString timeInfo = QString("\nTime %1\nStep %2").arg(time).arg(step);
     //QString timeInfo = QString("\nStep %1\nSub Step %2").arg(step).arg(subStep);
+    QString timeInfo = QString("\nTime %1\nStep %2\nSub Step %3").arg(time).arg(step).arg(subStep);
 
-    QString colorBoxTitle;
+    QString resultName;
 
     if(keyName =="Damage")
     {
-        colorBoxTitle = keyName;
-        return colorBoxTitle.append("\n");
+        resultName = keyName;
+        return resultName.append("\n");
     }
 
     TypeOfResult tor = m.value(keyName);
@@ -439,175 +492,155 @@ QString postEngine::colorBoxTitle(const QString &keyName, int component, int ste
     case TypeOfResult_HFL:
         switch(component)
         {
-        case 0: colorBoxTitle="Thermal flux"; break;
+        case 0: resultName="Thermal flux"; break;
         }
         break;
     case TypeOfResult_CONT:
         switch(component)
         {
-        case 0: colorBoxTitle="Contact pressure"; break;
-        case 1: colorBoxTitle="Frictional stress"; break;
-        case 2: colorBoxTitle="Contact penetration"; break;
-        case 3: colorBoxTitle="Contact sliding"; break;
+        case 0: resultName="Contact pressure"; break;
+        case 1: resultName="Frictional stress"; break;
+        case 2: resultName="Contact penetration"; break;
+        case 3: resultName="Contact sliding"; break;
         }
         break;
     case TypeOfResult_U:
         switch(component)
         {
-        //case 0: colorBoxTitle="Total displacement"; break;
-        case 0: colorBoxTitle="Total displacement"; break;
-        case 1: colorBoxTitle="Directional displacement X"; break;
-        case 2: colorBoxTitle="Directional displacement Y"; break;
-        case 3: colorBoxTitle="Directional displacement Z"; break;
+        //case 0: resultName="Total displacement"; break;
+        case 0: resultName="Total displacement"; break;
+        case 1: resultName="Directional displacement X"; break;
+        case 2: resultName="Directional displacement Y"; break;
+        case 3: resultName="Directional displacement Z"; break;
         }
         break;
     case TypeOfResult_S:
         switch(component)
         {
-        case 0: colorBoxTitle="Equivalent stress"; break;
-        case 1: colorBoxTitle = "Stress intensity"; break;
-        case 2: colorBoxTitle = "Maximum principal stress"; break;
-        case 3: colorBoxTitle = "Middle principal stress"; break;
-        case 4: colorBoxTitle = "Minimum principal stress"; break;
-        case 5: colorBoxTitle = "Normal stress X"; break;
-        case 6: colorBoxTitle = "Normal stress Y"; break;
-        case 7: colorBoxTitle = "Normal stres Z"; break;
-        case 9: colorBoxTitle = "Shear stress XY"; break;
-        case 10: colorBoxTitle = "Shear stress YZ"; break;
-        case 11: colorBoxTitle = "Shear stress ZX"; break;
+        case 0: resultName="Equivalent stress"; break;
+        case 1: resultName = "Stress intensity"; break;
+        case 2: resultName = "Maximum principal stress"; break;
+        case 3: resultName = "Middle principal stress"; break;
+        case 4: resultName = "Minimum principal stress"; break;
+        case 5: resultName = "Normal stress X"; break;
+        case 6: resultName = "Normal stress Y"; break;
+        case 7: resultName = "Normal stres Z"; break;
+        case 9: resultName = "Shear stress XY"; break;
+        case 10: resultName = "Shear stress YZ"; break;
+        case 11: resultName = "Shear stress ZX"; break;
         }
         break;
     case TypeOfResult_TOSTRAIN:
         switch(component)
         {
-        case 0: colorBoxTitle="Equivalent strain"; break;
-        case 1: colorBoxTitle = "Strain intensity"; break;
-        case 2: colorBoxTitle = "Maximum principal strain"; break;
-        case 3: colorBoxTitle = "Middle principal strain"; break;
-        case 4: colorBoxTitle = "Minimum principal strain"; break;
+        case 0: resultName="Equivalent strain"; break;
+        case 1: resultName = "Strain intensity"; break;
+        case 2: resultName = "Maximum principal strain"; break;
+        case 3: resultName = "Middle principal strain"; break;
+        case 4: resultName = "Minimum principal strain"; break;
         }
         break;
     case TypeOfResult_MESTRAIN:
         switch(component)
         {
-        case 0: colorBoxTitle="Equivalent strain"; break;
-        case 1: colorBoxTitle = "Strain intensity"; break;
-        case 2: colorBoxTitle = "Maximum principal strain"; break;
-        case 3: colorBoxTitle = "Middle principal strain"; break;
-        case 4: colorBoxTitle = "Minimum principal strain"; break;
+        case 0: resultName="Equivalent strain"; break;
+        case 1: resultName = "Strain intensity"; break;
+        case 2: resultName = "Maximum principal strain"; break;
+        case 3: resultName = "Middle principal strain"; break;
+        case 4: resultName = "Minimum principal strain"; break;
         }
         break;
     case TypeOfResult_NT:
         switch(component)
         {
-        case 0: colorBoxTitle = "Temperature"; break;
+        case 0: resultName = "Temperature"; break;
         }
         break;
     case TypeOfResult_F:
         switch(component)
         {
-        case 0: colorBoxTitle="Total force"; break;
-        case 1: colorBoxTitle="Directional Force X"; break;
-        case 2: colorBoxTitle="Directional Force Y"; break;
-        case 3: colorBoxTitle="Directional Force Z"; break;
+        case 0: resultName="Total force"; break;
+        case 1: resultName="Directional Force X"; break;
+        case 2: resultName="Directional Force Y"; break;
+        case 3: resultName="Directional Force Z"; break;
         }
         break;
     case TypeOfResult_EPS:
         switch(component)
         {
-        case 0: colorBoxTitle="Equivalent Plastic Strain"; break;
+        case 0: resultName="Equivalent Plastic Strain"; break;
         }
         break;
+    default:
+        resultName = "Unnamed result"; break;
     }
-    return this->timeStamp().append("\n").append(colorBoxTitle).append(timeInfo).append("\n");
+    return this->timeStamp().append("\n").append(resultName).append(timeInfo).append("\n");
 }
 
 //! --------------------------
 //! function: buildPostObject
 //! details:
 //! --------------------------
-postObject postEngine::buildPostObject(const QString &keyName,
-                                       int component,
-                                       int requiredSubStepNb,
-                                       int requiredStepNb,
-                                       int requiredMode,
-                                       const QVector<GeometryTag> &vecLoc)
+bool postEngine::buildPostObject(const QString &keyName,
+                                 int component,
+                                 int requiredSubStepNb,
+                                 int requiredStepNb,
+                                 int requiredMode,
+                                 const std::vector<GeometryTag> &vecLoc,
+                                 sharedPostObject &aPostObject)
 {
-    double time;
+
     //! --------------------
     //! call the postEngine
     //! --------------------
-    QMap<GeometryTag,QList<QMap<int,double>>> resMap = this->evaluateResult(keyName, requiredSubStepNb, requiredStepNb, requiredMode, vecLoc, time);
+    double time;
+    const std::map<GeometryTag,std::vector<std::map<int,double>>> &resMap = this->evaluateResult(keyName, requiredSubStepNb, requiredStepNb, requiredMode, vecLoc, time);
 
     //! -------------------------
     //! build the colorBox title
     //! -------------------------
-    QString aColorBoxTitle = this->colorBoxTitle(keyName, component, requiredStepNb, requiredSubStepNb, time);
+    QString aResultName = this->resultName(keyName, component, requiredStepNb, requiredSubStepNb, time);
 
-    //! ------------------------------------------------------------------------------------------------------------
+    //! --------------------------------------------------------------------------------------------------------------------------
     //! create the map of nodal vectorial displacements for the deformed mesh presentation. Here:
-    //! QMap<int,gp_Vec> displMap                    => map of nodal vectorial displacements
-    //! QMap<GeometryTag,QList<QMap<int,gp_Vec>>> => each location has its own map of nodal vectorial displacements
-    //! ------------------------------------------------------------------------------------------------------------
-    QMap<int,gp_Vec> displMap;
-    QMap<GeometryTag,QMap<int,gp_Vec>> mapDisplMap;
-    QMap<GeometryTag,QList<QMap<int,double>>> nodalDisplacements = this->evaluateResult("DISP", requiredSubStepNb, requiredStepNb,requiredMode, vecLoc, time);
-
-    for(QMap<GeometryTag,QList<QMap<int,double>>>::iterator it = nodalDisplacements.begin(); it!=nodalDisplacements.end(); ++it)
+    //! std::map<int,gp_Vec> displMap                    => map of nodal vectorial displacements
+    //! std::map<GeometryTag,std:.vector<std::map<int,gp_Vec>>> => each location has its own map of nodal vectorial displacements
+    //! --------------------------------------------------------------------------------------------------------------------------
+    std::map<int,gp_Vec> displMap;
+    std::map<GeometryTag,std::map<int,gp_Vec>> mapDisplMap;
+    const std::map<GeometryTag,std::vector<std::map<int,double>>> &nodalDisplacements = this->evaluateResult("DISP", requiredSubStepNb, requiredStepNb,requiredMode, vecLoc, time);
+    for(std::map<GeometryTag,std::vector<std::map<int,double>>>::const_iterator it = nodalDisplacements.cbegin(); it!=nodalDisplacements.cend(); ++it)
     {
-        const GeometryTag &aLoc= it.key();
+        const GeometryTag &aLoc= it->first;
 
-        QList<QMap<int,double>> nodalDisplacementsComponents = it.value();
-        QMap<int,double> displX = nodalDisplacementsComponents[1];
-        QMap<int,double> displY = nodalDisplacementsComponents[2];
-        QMap<int,double> displZ = nodalDisplacementsComponents[3];
+        const std::vector<std::map<int,double>> &nodalDisplacementsComponents = it->second;
+        const std::map<int,double> &displX = nodalDisplacementsComponents[1];
+        const std::map<int,double> &displY = nodalDisplacementsComponents[2];
+        const std::map<int,double> &displZ = nodalDisplacementsComponents[3];
 
-        QMap<int,double>::iterator itX = displX.begin();
-        QMap<int,double>::iterator itY = displY.begin();
-        QMap<int,double>::iterator itZ = displZ.begin();
-
-        for(;itX!=displX.end() && itY!=displY.end() && itZ!=displZ.end(); ++itX, ++itY, ++itZ)
+        std::map<int,double>::const_iterator itX = displX.cbegin();
+        std::map<int,double>::const_iterator itY = displY.cbegin();
+        std::map<int,double>::const_iterator itZ = displZ.cbegin();
+        for(;itX!=displX.cend() && itY!=displY.cend() && itZ!=displZ.cend(); ++itX, ++itY, ++itZ)
         {
-            int nodeID = itX.key();
-            double x = itX.value();
-            double y = itY.value();
-            double z = itZ.value();
-            gp_Vec aVec(x,y,z);
-            displMap.insert(nodeID,aVec);
+            int nodeID = itX->first;
+            gp_Vec aVec(itX->second,itY->second,itZ->second);
+            displMap[nodeID] = aVec;        // do not use "insert"
         }
-        mapDisplMap.insert(aLoc,displMap);
+        mapDisplMap[aLoc]=displMap;         // do not use "insert"
     }
 
-    //! ----------------------------------------------------------------
+    //! ----------------------
     //! create the postObject
-    //! the last options create the post object using the surface mesh,
-    //! if the underlying mesh is a volume mesh
-    //! ----------------------------------------------------------------
-    bool showSolidMeshAsSurface = Global::status().isVolumeMeshShownAsSurface;
-    postObject aPostObject(resMap,vecLoc,mapDisplMap,aColorBoxTitle,showSolidMeshAsSurface);
-    return aPostObject;
+    //! ----------------------
+    bool useSurfaceMeshForVolumeResults = Global::status().myResultPresentation.useExteriorMeshForVolumeResults;
+    aPostObject = std::make_shared<postObject>(resMap,vecLoc,mapDisplMap,aResultName,useSurfaceMeshForVolumeResults);
+    aPostObject->init(myMeshDataBase);
+    double magnifyFactor = Global::status().myResultPresentation.theScale;
+    aPostObject->buildMeshIO(-1,-1,10,true,component,magnifyFactor);
+    return true;
 }
 
-//! ------------------------------
-//! function: plotDataSummary
-//! details:  diagnostic function
-//! ------------------------------
-void postEngine::plotDataSummary(QMap<GeometryTag, QList<QMap<int,double>>> data)
-{
-    if(!data.isEmpty())
-    {
-        QMap<GeometryTag,QList<QMap<int,double>>>::const_iterator anIt;
-        for(anIt = data.cbegin(); anIt!= data.cend(); ++anIt)
-        {
-            GeometryTag loc = anIt.key();
-            QList<QMap<int,double>> l = anIt.value();
-        }
-    }
-    else
-    {
-        cout<<"---------->no result has been found<-----------------"<<endl;
-    }
-}
 
 //! --------------------
 //! function: timeStamp
@@ -615,47 +648,26 @@ void postEngine::plotDataSummary(QMap<GeometryTag, QList<QMap<int,double>>> data
 //! --------------------
 QString postEngine::timeStamp()
 {
-    //! builds the timestamp
     QDateTime dateTime;
     QString dateFormat = "dd/MM/yyyy";
     QString dateString = dateTime.currentDateTime().toString(dateFormat);
-    //QString timeFormat = "hh:mm";
-    //QString timeString = dateTime.currentDateTime().toString(timeFormat);
     QString timeStamp;
-    //timeStamp.append("Date: ").append(dateString).append("\n").append("Time: ").append(timeString);
     timeStamp.append("Date: ").append(dateString);
     return timeStamp;
 }
 
-//! ----------------------------
-//! function: updateResultScale
+//! --------------------------
+//! function: updateIsostrips
 //! details:
-//! ----------------------------
-void postEngine::updateResultScale(postObject &aPostObject, int scaleType, double minValue, double maxValue, int NbIntervals)
+//! --------------------------
+void postEngine::updateIsostrips(sharedPostObject &aPostObject, int scaleType, double minValue, double maxValue, int NbIntervals)
 {
-    cout<<"postEngine::updateResultScale()->____function called____"<<endl;
+    cout<<"postEngine::updateIsostrips()->____function called____"<<endl;
 
-    //! ------------------------------------------------------------
-    //! retrieve the mesh data sources from the current MeshVS_Mesh
-    //! ------------------------------------------------------------
-    const QMap<GeometryTag,occHandle(MeshVS_Mesh)> &theMeshes = aPostObject.getColoredMeshes();
-    QMap<GeometryTag,opencascade::handle<MeshVS_DataSource>> myMapOfMeshDataSources;
-    for(QMap<GeometryTag,occHandle(MeshVS_Mesh)>::const_iterator it = theMeshes.cbegin(); it!=theMeshes.cend(); ++it)
-    {
-        const GeometryTag &loc = it.key();
-        const opencascade::handle<MeshVS_Mesh> &curMeshVS_mesh = it.value();
-        myMapOfMeshDataSources.insert(loc,curMeshVS_mesh->GetDataSource());
-    }
-
-    //! -------------------
-    //! retrieve the scale
-    //! -------------------
-    //double scale = aPostObject.getScale();
-
-    //! -----------------------
-    //! retrieve the component
-    //! -----------------------
-    int solutionDataComponent = aPostObject.getSolutionDataComponent();
+    //! ---------------------------------------------------------------
+    //! retrieve the mesh data sources and the solution data component
+    //! ---------------------------------------------------------------
+    int solutionDataComponent = aPostObject->getSolutionDataComponent();
 
     //! -----------------------------------------
     //! update the colored mesh and the colorbox
@@ -665,46 +677,49 @@ void postEngine::updateResultScale(postObject &aPostObject, int scaleType, doubl
     {
     case 0:
         //! autoscale min max, custom number of levels
-        aPostObject.buildMeshIO(myMapOfMeshDataSources,0,0,NbIntervals,true,solutionDataComponent);
+        aPostObject->buildMeshIO(-1,-1,NbIntervals,true,solutionDataComponent);
         break;
     case 1:
-        //! custom scale (custom min, max, numbre of levels
-        aPostObject.buildMeshIO(myMapOfMeshDataSources,minValue,maxValue,NbIntervals,false,solutionDataComponent);
+        //! custom scale (custom min, max, number of levels)
+        aPostObject->buildMeshIO(minValue,maxValue,NbIntervals,false,solutionDataComponent);
         break;
     }
 }
 
 //! ---------------------------------
 //! function: evaulateFatigueResults
-//! details:
+//! details:  overload
 //! ---------------------------------
-postObject postEngine::evaluateFatigueResults(int type, QVector<GeometryTag> locs, const QList<double> &times, QMap<int,int> materialBodyMap, int nCycle)
+bool postEngine::evaluateFatigueResults(int type, std::vector<GeometryTag> locs, const QList<double> &times, QMap<int,int> materialBodyMap, int nCycle, sharedPostObject &aPostObject)
 {
-    QMap<GeometryTag,QList<QMap<int,double>>> fatigueResults;
+    std::map<GeometryTag,std::vector<std::map<int,double>>> fatigueResults;
 
     switch(myFatigueModel.type)
     {
     case fatigueModel_BCM:
     {
         cout<<"postEngine::evaluateResult()->____fatigue model BCM called___"<<endl;
+        std::map<GeometryTag,std::map<int,QList<double>>> r = readFatigueResults(type,locs,times);
 
-        QMap<GeometryTag,QMap<int,QList<double>>> r = readFatigueResults(type,locs,times);
         rainflow rf;
-        for(QMap<GeometryTag,QMap<int,QList<double>>>::iterator it = r.begin(); it!=r.end(); ++it)
+        for(std::map<GeometryTag,std::map<int,QList<double>>>::iterator it = r.begin(); it!=r.end(); ++it)
         {
-            GeometryTag curLoc = it.key();
+            GeometryTag curLoc = it->first;
+
             rf.setLocation(curLoc);
 
-            QMap<int,QList<double>> strainDistTimeHistory = it.value();
+            std::map<int,QList<double>> strainDistTimeHistory = it->second;
+
             rf.setFatigueModel(myFatigueModel);
-            QMap<int,double> damageDist;
+            std::map<int,double> damageDist;
 
             bool isDone = rf.perform(strainDistTimeHistory,damageDist);
             if(isDone)
             {
-                QList<QMap<int,double>>damageDistList;
-                damageDistList<<damageDist;
-                fatigueResults.insert(curLoc,damageDistList);
+                std::vector<std::map<int,double>> damageDistList;
+
+                damageDistList.push_back(damageDist);
+                fatigueResults.insert(std::make_pair(curLoc,damageDistList));
             }
         }
     }
@@ -714,53 +729,44 @@ postObject postEngine::evaluateFatigueResults(int type, QVector<GeometryTag> loc
     {
         cout<<"postEngine::evaluateResult()->____fatigue model ESR called___"<<endl;
         int step,substep;
-        //QMap<double,QVector<int>> dtm= getDTM();
-        //QMap<double,QVector<int>> dtm = myDTM;
         double requiredTime;
         postTools::getStepSubStepByTimeDTM(myDTM,times.last(),step,substep);
         QString tor_eps = m.key(TypeOfResult_EPS);
         QString tor_mises = m.key(TypeOfResult_S);
         int mode =0;
-        QMap<GeometryTag,QList<QMap<int,double>>> pe = this->evaluateResult(tor_eps,substep,step,mode,locs,requiredTime);
-        QMap<GeometryTag,QList<QMap<int,double>>> stress = this->evaluateResult(tor_mises,substep,step,mode,locs,requiredTime);
 
-        for(QVector<GeometryTag>::iterator it=locs.begin();it!=locs.end();it++)
+        std::map<GeometryTag,std::vector<std::map<int,double>>> pe = this->evaluateResult(tor_eps,substep,step,mode,locs,requiredTime);
+        std::map<GeometryTag,std::vector<std::map<int,double>>> stress = this->evaluateResult(tor_mises,substep,step,mode,locs,requiredTime);
+
+        for(std::vector<GeometryTag>::iterator it=locs.begin();it!=locs.end();it++)
         {
             GeometryTag curLoc = *it;
             int bodyIndex = curLoc.parentShapeNr;
-            const QList<QMap<int, double>> &listOfResPe = pe.value(curLoc);
-            const QMap<int, double> &curPe = listOfResPe.first();
-            const QList<QMap<int, double>> &listOfResMises = stress.value(curLoc);
-            const QMap<int, double> &curMises = listOfResMises.first();
-            QList<QMap<int,double>> damageIndex;
-            QMap<int,double> damageIndexData;
+            const std::vector<std::map<int, double>> &listOfResPe = pe.at(curLoc);
+            const std::map<int, double> &curPe = listOfResPe[0];
+            const std::vector<std::map<int, double>> &listOfResMises = stress.at(curLoc);
+            const std::map<int, double> &curMises = listOfResMises[0];
+            std::vector<std::map<int,double>> damageIndex;
+            std::map<int,double> damageIndexData;
 
-            double elasticModulusMedium, elasticModulusMin,r,a,b,c,d,e,f,g,h;
+            double elasticModulusAve, elasticModulusMin,r,a,b,c,d,e,f,g,h;
+            Q_UNUSED (elasticModulusMin)
             int material = materialBodyMap.value(bodyIndex);
 
-            for(QMap<int,double>::const_iterator itt=curPe.cbegin(); itt!=curPe.cend(); itt++)
+            for(std::map<int,double>::const_iterator itt=curPe.cbegin(); itt!=curPe.cend(); itt++)
             {
                 double altStress,X,Y;
-                int curPos = itt.key();
-                double eps = itt.value();
-                double mises = curMises.value(curPos);
+                int curPos = itt->first;
+                double eps = itt->second;
+                double mises = curMises.at(curPos);
 
                 switch(material)
                 {
-                case 5:
-                case 6:
-                case 0:
-                case 1:
-                case 2:
-                case 3:
-                case 4:
-                case 7:
-                case 8:
-                case 9:
+                case 5:case 6:case 0:case 1:case 2:case 3:case 4:case 7:case 8:case 9:
                 {
-                    elasticModulusMedium = 1.76000000e+005;
-                    altStress = 0.5*(mises+eps*elasticModulusMedium);
-                    Y = log10(28.3*pow(10,3)*altStress/elasticModulusMedium);
+                    elasticModulusAve = 1.76e5;
+                    altStress = 0.5*(mises+eps*elasticModulusAve);
+                    Y = log10(28300*altStress/elasticModulusAve);
 
                     r=35.9;
                     a=9.030556;
@@ -783,10 +789,10 @@ postObject postEngine::evaluateFatigueResults(int type, QVector<GeometryTag> loc
                 max=8;
                 if(X>min && X<max) damage = nCycle/(pow(10,X));
                 else damage = 0;
-                damageIndexData.insert(curPos,damage);
+                damageIndexData.insert(std::make_pair(curPos,damage));
             }
-            damageIndex<<damageIndexData;
-            fatigueResults.insert(curLoc,damageIndex);
+            damageIndex.push_back(damageIndexData);
+            fatigueResults.insert(std::make_pair(curLoc,damageIndex));
         }
     }
         break;
@@ -795,10 +801,9 @@ postObject postEngine::evaluateFatigueResults(int type, QVector<GeometryTag> loc
     //! -----------------------
     //! create the post object
     //! -----------------------
-    QString label = this->colorBoxTitle("Damage",0,1,1,0);
-    postObject aPostObject(fatigueResults,locs,label);
-    //postObject aPostObject(fatigueResults,locs);
-    return aPostObject;
+    QString label = this->resultName("Damage",0,1,1,0);
+    aPostObject = std::make_shared<postObject>(fatigueResults,locs,label);
+    return true;
 }
 
 //! ---------------------------------------------------
@@ -807,9 +812,9 @@ postObject postEngine::evaluateFatigueResults(int type, QVector<GeometryTag> loc
 //!           type = 0 => equivalent total strain
 //!           ... other types
 //! ---------------------------------------------------
-QMap<GeometryTag,QMap<int,QList<double>>> postEngine::readFatigueResults(int type,
-                                                                         const QVector<GeometryTag> &vecLoc,
-                                                                         const QList<double> &times)
+std::map<GeometryTag,std::map<int,QList<double>>> postEngine::readFatigueResults(int type,
+                                                                                 const std::vector<GeometryTag> &vecLoc,
+                                                                                 const QList<double> &times)
 {
     QString resultKeyName;
     switch(type)
@@ -822,15 +827,16 @@ QMap<GeometryTag,QMap<int,QList<double>>> postEngine::readFatigueResults(int typ
     //! ----------------------------------------------------
     //! generate the results on all the requested locations
     //! ----------------------------------------------------
-    QMap<GeometryTag,QMap<int,QList<double>>> resMap;
-    QVector<GeometryTag>::const_iterator it;
+    std::map<GeometryTag,std::map<int,QList<double>>> resMap;
+
+    std::vector<GeometryTag>::const_iterator it;
     for(it = vecLoc.cbegin(); it!= vecLoc.cend(); ++it)
     {
-        GeometryTag loc = *it;
         //! -------------------------------------------------------------------------
         //! node conversion map: (Calculix mesh nodeID,nodeID for MeshVS_DataSource)
         //! -------------------------------------------------------------------------
-        QMap<int,int> indexedMapOfNodes = OCCMeshToCCXmesh::perform(loc,myMeshDataBase);
+        GeometryTag loc = *it;
+        std::map<int,int> indexedMapOfNodes = OCCMeshToCCXmesh::perform(loc,myMeshDataBase);
 
         //! -------------------------------------
         //! enter <...>/SolutionData/ResultsData
@@ -863,7 +869,9 @@ QMap<GeometryTag,QMap<int,QList<double>>> postEngine::readFatigueResults(int typ
         //! scan the files
         //! ---------------
         int n=0;    //! time index
-        QMap<int,QList<double>> resMISES;
+        //QMap<int,QList<double>> resMISES;
+        std::map<int,QList<double>> resMISES;
+
         for(int i=0; i<fileList.length(); i++)
         {
             QString filePath = fileList.at(i);
@@ -899,43 +907,51 @@ QMap<GeometryTag,QMap<int,QList<double>>> postEngine::readFatigueResults(int typ
                     sscanf(val.c_str(),"%d%lf%lf%lf%lf%lf%lf",&ni,&cxx,&cyy,&czz,&cxy,&cyz,&cxz);
 
                     //! nodeIDs defining the MeshVS_dataSource
-                    int OCCnodeID = indexedMapOfNodes.value(ni,-1);
-                    if(OCCnodeID!=-1 && n==0)
+                    std::map<int,int>::iterator it = indexedMapOfNodes.find(ni);
+                    if(it!=indexedMapOfNodes.end() && n==0)
+                    //if(OCCnodeID!=-1 && n==0)
                     {
+                        int OCCnodeID = it->second;
+
                         //! -------------------------------------
                         //! compute the equivalent stress/strain
                         //! -------------------------------------
-                        double vonMises;
-                        vonMises = (2.0/3.0)*sqrt((3.0/2.0)*(cxx*cxx+cyy*cyy+czz*czz)+(3.0/4.0)*(cxy*cxy+cyz*cyz+cxz*cxz));
+                        double vonMises = (2.0/3.0)*sqrt((3.0/2.0)*(cxx*cxx+cyy*cyy+czz*czz)+(3.0/4.0)*(cxy*cxy+cyz*cyz+cxz*cxz));
                         timeHistory<<vonMises;
-                        resMISES.insert(OCCnodeID,timeHistory);
+                        //resMISES.insert(OCCnodeID,timeHistory);
+                        resMISES.insert(std::make_pair(OCCnodeID,timeHistory));
 
                         //! -----------------------------------------------------
                         //! compute the principal components: index 0 is minimum
                         //! -----------------------------------------------------
-                        QList<double> sik;
-                        sik<<cxx<<cyy<<czz<<cxy<<cyz<<cxz;
-                        QList<double> s = postTools::principalComponents(sik);
+                        double sik[6] {cxx,cyy,czz,cxy,cyz,cxz};
+                        double s[3];
+                        postTools::principalComponents(sik,s);
 
                     }
-                    else if(OCCnodeID!=-1)
+                    else if(it!=indexedMapOfNodes.end())
+                    //else if(OCCnodeID!=-1)
                     {
+                        int OCCnodeID = indexedMapOfNodes.find(ni)->second;
+
                         //! -------------------------------------
                         //! compute the equivalent stress/strain
                         //! -------------------------------------
                         double vonMises;
                         vonMises = (2.0/3.0)*sqrt((3.0/2.0)*(cxx*cxx+cyy*cyy+czz*czz)+(3.0/4.0)*(cxy*cxy+cyz*cyz+cxz*cxz));
-                        timeHistory = resMISES.value(OCCnodeID);
+                        //timeHistory = resMISES.value(OCCnodeID);
+                        timeHistory = resMISES.at(OCCnodeID);
+
                         timeHistory<<vonMises;
-                        resMISES.insert(OCCnodeID,timeHistory);
+                        //resMISES.insert(OCCnodeID,timeHistory);
+                        resMISES.insert(std::make_pair(OCCnodeID,timeHistory));
 
                         //! ---------------------------------
                         //! compute the principal components
                         //! ---------------------------------
-                        QList<double> sik;
-                        sik<<cxx<<cyy<<czz<<cxy<<cyz<<cxz;
-                        QList<double> s = postTools::principalComponents(sik);
-
+                        double sik[6] {cxx,cyy,czz,cxy,cyz,cxz};
+                        double s[3];
+                        postTools::principalComponents(sik,s);
                     }
                     std::getline(curFile,val);
                 }
@@ -946,7 +962,7 @@ QMap<GeometryTag,QMap<int,QList<double>>> postEngine::readFatigueResults(int typ
                 curFile.close();
             }
         }
-        resMap.insert(loc,resMISES);
+        resMap.insert(std::make_pair(loc,resMISES));
     }
     return resMap;
 }
@@ -973,6 +989,38 @@ void postEngine::setFatigueModel(int fatigueAlgo)
     }
         break;
     }
+}
+
+//! ------------------------------------
+//! function: updateResultsPresentation
+//! details:
+//! ------------------------------------
+void postEngine::updateResultsPresentation(QList<sharedPostObject> &postObjectList)
+{
+    static resultPresentation previousResultPresentation;
+    resultPresentation newResultsPresentation = Global::status().myResultPresentation;
+    for(QList<sharedPostObject>::iterator it = postObjectList.begin(); it!=postObjectList.end(); ++it)
+    {
+        sharedPostObject aPostObject = *it;
+
+        //! ----------------------------------------------------------------------------
+        //! the surface mesh=>volume mesh/volume mesh=>surface mesh for viewing results
+        //! the presentation should be fully rebuilt
+        //! ----------------------------------------------------------------------------
+        if(previousResultPresentation != newResultsPresentation)
+        {
+            double min= aPostObject->getMin();
+            double max = aPostObject->getMax();
+            int NbLevels = aPostObject->getNbLevels();
+            int component = aPostObject->getSolutionDataComponent();
+            bool isAutoScale = aPostObject->IsAutoscale();
+            int magnifyFactor = newResultsPresentation.theScale;
+
+            aPostObject->setMode(newResultsPresentation.useExteriorMeshForVolumeResults);
+            aPostObject->buildMeshIO(min,max,NbLevels,isAutoScale,component,magnifyFactor);
+        }
+    }
+    previousResultPresentation = newResultsPresentation;
 }
 
 /*
@@ -1003,7 +1051,7 @@ void coefficients(double x, double *c)
 //! function: evaulateFatigueResults
 //! details:
 //! ---------------------------------
-postObject postEngine::evaluateFatigueResults(int type, QVector<GeometryTag> locs, const QList<double> &times, QMap<int,int> materialBodyMap, int nCycle)
+postObject postEngine::evaluateFatigueResults(int type, std::vector<GeometryTag> locs, const QList<double> &times, QMap<int,int> materialBodyMap, int nCycle)
 {
     QMap<GeometryTag,QList<QMap<int,double>>> fatigueResults;
 
@@ -1049,7 +1097,7 @@ postObject postEngine::evaluateFatigueResults(int type, QVector<GeometryTag> loc
         QMap<GeometryTag,QList<QMap<int,double>>> pe = this->evaluateResult(tor_eps,substep,step,locs);
         QMap<GeometryTag,QList<QMap<int,double>>> stress = this->evaluateResult(tor_mises,substep,step,locs);
 
-        for(QVector<GeometryTag>::iterator it=locs.begin();it!=locs.end();it++)
+        for(std::vector<GeometryTag>::iterator it=locs.begin();it!=locs.end();it++)
         {
             GeometryTag curLoc = *it;
             int bodyIndex = curLoc.parentShapeNr;
@@ -1112,7 +1160,7 @@ postObject postEngine::evaluateFatigueResults(int type, QVector<GeometryTag> loc
     //! -----------------------
     //! create the post object
     //! -----------------------
-    QString label = this->colorBoxTitle("Damage",0,1,1);
+    QString label = this->resultName("Damage",0,1,1);
     postObject aPostObject(fatigueResults,locs,label);
     //postObject aPostObject(fatigueResults,locs);
     return aPostObject;

@@ -345,7 +345,11 @@ void occGLWidget::init()
     occViewer = new V3d_Viewer(GetGraphicDriver()); // OCC 7.1.0
     occView = occViewer->CreateView();
     occView->SetWindow(wind);
+    occView->SetShadingModel(V3d_PHONG);
     occView->ChangeRenderingParams().IsAntialiasingEnabled=true;
+    //occView->ChangeRenderingParams().Method = Graphic3d_RM_RAYTRACING;
+    //occView->ChangeRenderingParams().IsShadowEnabled = Standard_True;
+
     if(!wind->IsMapped()) wind->Map();
 
     //! -----------------------------------------------------------
@@ -888,7 +892,6 @@ void occGLWidget::onMouseMove(const int theFlags, QPoint thePoint)
             myXmax = x_cur;
             myYmax = y_cur;
 
-            //cesere
             //! --------------------------------
             //! retrieve the current clip plane
             //! --------------------------------
@@ -1097,9 +1100,6 @@ void occGLWidget::keyPressEvent(QKeyEvent *theKey)
 
         case(CurAction3D_WindowZooming):
             setAction3D_WindowZooming();
-            break;
-
-         default:  // for the compiler
             break;
         }
 
@@ -3223,9 +3223,8 @@ void occGLWidget::setTransparency(bool isActive, bool updateViewer, double level
     //! retrieve the AIS_Shapes with signature "0" (Shape signature)
     //! -------------------------------------------------------------
     AIS_ListOfInteractive AISList;
-    AIS_ListIteratorOfListOfInteractive iter;    
     occContext->ObjectsInside(AISList,AIS_KOI_Shape,0);
-    for(iter.Initialize(AISList);iter.More();iter.Next())
+    for(AIS_ListIteratorOfListOfInteractive iter(AISList);iter.More();iter.Next())
     {
         const occHandle(AIS_Shape) &shape = occHandle(AIS_Shape)::DownCast(iter.Value());
         occContext->SetTransparency(shape,level,false);
@@ -3244,37 +3243,33 @@ void occGLWidget::hideAllMarkers(bool updateViewer)
     occContext->CloseLocalContext(-1,false);
     AIS_ListOfInteractive theListOfIO;
     AIS_ListIteratorOfListOfInteractive it;
-    QList<int> listOfSignatures;
-    listOfSignatures<<CUSTOM_SIGNATURE_COR_MARKER<<
-                      CUSTOM_SIGNATURE_MESH_SEGMENT_MARKER<<
-                      CUSTOM_SIGNATURE_SPHERE_MARKER<<
-                      CUSTOM_SIGNATURE_ARROW_MARKER<<
-                      CUSTOM_SIGNATURE_DOUBLE_ARROW_MARKER<<
-                      CUSTOM_SIGNATURE_CUSTOM_TRIHEDRON_MARKER<<
-                      CUSTOM_SIGNATURE_CURVED_ARROW;
+    std::vector<int> listOfSignatures
+    {
+        CUSTOM_SIGNATURE_COR_MARKER,
+                CUSTOM_SIGNATURE_MESH_SEGMENT_MARKER,
+                CUSTOM_SIGNATURE_SPHERE_MARKER,
+                CUSTOM_SIGNATURE_ARROW_MARKER,
+                CUSTOM_SIGNATURE_DOUBLE_ARROW_MARKER,
+                CUSTOM_SIGNATURE_CUSTOM_TRIHEDRON_MARKER,
+                CUSTOM_SIGNATURE_CURVED_ARROW
+    };
 
     //! -------------
     //! hide markers
     //! -------------
-    for(QList<int>::iterator listIt = listOfSignatures.begin(); listIt!=listOfSignatures.end(); ++listIt)
+    for(std::vector<int>::const_iterator listIt = listOfSignatures.cbegin(); listIt!=listOfSignatures.cend(); ++listIt)
     {
         int signature = *listIt;
         occContext->ObjectsByDisplayStatus(AIS_KOI_Shape,signature,AIS_DS_Displayed,theListOfIO);
-        for(it.Initialize(theListOfIO); it.More(); it.Next())
-        {
-            occContext->Erase(it.Value(),false);
-        }
+        //for(it.Initialize(theListOfIO); it.More(); it.Next()) occContext->Erase(it.Value(),false);
+        for(it.Initialize(theListOfIO); it.More(); it.Next()) occContext->Remove(it.Value(),false);
     }
 
     //! ------------------------------------------
     //! hide also the triads (type AIS_KOI_Datum)
     //! ------------------------------------------
-    //cout<<"____removing system of references____"<<endl;
     occContext->ObjectsByDisplayStatus(AIS_KOI_Datum,-1,AIS_DS_Displayed,theListOfIO);
-    for(it.Initialize(theListOfIO); it.More(); it.Next())
-    {
-        occContext->Remove(it.Value(),false);
-    }
+    for(it.Initialize(theListOfIO); it.More(); it.Next()) occContext->Remove(it.Value(),false);
     if(updateViewer) occContext->UpdateCurrentViewer();
 
     myLocalCtxNumber = occContext->OpenLocalContext();

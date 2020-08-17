@@ -48,10 +48,7 @@ occPostWidget::occPostWidget(meshDataBase *mDB, QWidget *parent):occPreGLWidget(
     //! ---------------------------------
     //! the result presentation settings
     //! ---------------------------------
-    myResultPresentation.theCombinedView = resultPresentation::combinedView_resultOnly;
-    myResultPresentation.isMeshVisible = false;
-    myResultPresentation.isDeformedView = false;
-    myResultPresentation.theScale = 1.0;
+    myResultPresentation = Global::status().myResultPresentation;
 }
 
 //! -------------------------
@@ -89,10 +86,8 @@ void occPostWidget::displayColorBox(bool isVisible)
 {
     if(!myColorBox.IsNull())
     {
-        cout<<"occPostWidget::displayColorBox(isVisible)->____function called____"<<endl;
         if(isVisible)
         {
-            //occContext->Display(myColorBox,1);
             occPostContext->Display(myColorBox,1);
             occViewer->Update();
         }
@@ -107,31 +102,137 @@ void occPostWidget::displayColorBox(bool isVisible)
 //! function: displayResult
 //! details:
 //! ------------------------
-void occPostWidget::displayResult(const postObject &aPostObject)
+void occPostWidget::displayResult(sharedPostObject &aPostObject)
 {
     cout<<"occPostWidget::displayResult()->____function called____"<<endl;
 
-    //! -----------------------------------
-    //! display the list of colored meshes
-    //! -----------------------------------
-    QMap<GeometryTag,occHandle(MeshVS_Mesh)>::const_iterator anIt;
-    QMap<GeometryTag,occHandle(MeshVS_Mesh)> coloredMeshes = aPostObject.getColoredMeshes();
-    for(anIt = coloredMeshes.cbegin(); anIt != coloredMeshes.cend(); ++anIt)
+    static resultPresentation aResultPresentationOld;
+
+    //! ----------------
+    //! read the status
+    //! ----------------
+    resultPresentation aResultPresentation = myResultPresentation;
+
+    //! ----------------------------------------
+    //! delete all the objects from the display
+    //! ----------------------------------------
+    occMeshContext->RemoveAll(false);
+    occPostContext->RemoveAll(false);
+
+    //! ---------------------------
+    //! display the colored meshes
+    //! ---------------------------
+    const std::map<GeometryTag,occHandle(MeshVS_Mesh)> &coloredMeshes = aPostObject->getColoredMeshes();
+    for(std::map<GeometryTag,occHandle(MeshVS_Mesh)>::const_iterator it = coloredMeshes.cbegin(); it != coloredMeshes.cend(); ++it)
     {
-        const occHandle(MeshVS_Mesh) &aColoredMesh = anIt.value();
+        const occHandle(MeshVS_Mesh) &aColoredMesh = it->second;
         occPostContext->Display(aColoredMesh,false);
+    }
+
+    //! ----------------------------------------------
+    //! handle the combined view of results and model
+    //! ----------------------------------------------
+    switch(aResultPresentation.theCombinedView)
+    {
+    case resultPresentation::combinedView_resultOnly:
+    {
+        ;
+    }
+        break;
+
+    case resultPresentation::combinedView_meshVisible:
+    {
+        const std::map<GeometryTag,occHandle(MeshVS_DeformedDataSource)> &mapOfMeshDS = aPostObject->getMeshDataSourcesForView();
+        for(std::map<GeometryTag,occHandle(MeshVS_DeformedDataSource)>::const_iterator it = mapOfMeshDS.cbegin(); it!=mapOfMeshDS.cend(); it++)
+        {
+            cout<<"@ ----------------------------------"<<endl;
+            cout<<"@ - number of nodes: "<<it->second->GetAllNodes().Extent()<<endl;
+            cout<<"@ - number of elements: "<<it->second->GetAllElements().Extent()<<endl;
+            cout<<"@ ----------------------------------"<<endl;
+
+            occHandle(MeshVS_Mesh) aMeshObject = new MeshVS_Mesh();
+            aMeshObject->SetDataSource(it->second);
+
+            aMeshObject->SetDisplayMode(MeshVS_DMF_WireFrame);
+            aMeshObject->GetDrawer()->SetBoolean(MeshVS_DA_ShowEdges,false);
+            aMeshObject->GetDrawer()->SetColor(MeshVS_DA_EdgeColor,Quantity_NOC_BLACK);
+            aMeshObject->GetDrawer()->SetBoolean(MeshVS_DA_DisplayNodes,false);
+            occHandle(MeshVS_MeshPrsBuilder) aB = new MeshVS_MeshPrsBuilder(aMeshObject);
+            aMeshObject->AddBuilder(aB,false);
+
+            occMeshContext->Display(aMeshObject,false);
+        }
+    }
+        break;
+
+    case resultPresentation::combinedView_undeformedWireFrame:
+    {
+        const std::vector<GeometryTag> &vecLocs = aPostObject->getLocations();
+        for(std::vector<GeometryTag>::const_iterator it = vecLocs.cbegin(); it!=vecLocs.cend(); it++)
+        {
+            int bodyIndex = it->parentShapeNr;
+            const TopoDS_Shape &aShape = myDS2->bodyMap.value(bodyIndex);
+            const occHandle(AIS_Shape) &anAISShape = new AIS_Shape(aShape);
+            occPostContext->SetColor(anAISShape,Quantity_NOC_BLACK,false);
+            occPostContext->Display(anAISShape,AIS_WireFrame,-1,false,false);
+        }
+    }
+        break;
+
+    case resultPresentation::combinedView_undeformedModel:
+    {
+        const std::vector<GeometryTag> &vecLocs = aPostObject->getLocations();
+        for(std::vector<GeometryTag>::const_iterator it = vecLocs.cbegin(); it!=vecLocs.cend(); it++)
+        {
+            int bodyIndex = it->parentShapeNr;
+            const TopoDS_Shape &aShape = myDS2->bodyMap.value(bodyIndex);
+            const occHandle(AIS_Shape) &anAISShape = new AIS_Shape(aShape);
+            occPostContext->SetColor(anAISShape,Quantity_NOC_AQUAMARINE1,false);
+            occPostContext->SetTransparency(anAISShape,0.9,true);
+            occPostContext->Display(anAISShape,AIS_Shaded,-1,false,false);
+        }
+    }
+       break;
     }
 
     //! ----------------------
     //! display the color box
     //! ----------------------
-    const occHandle(AIS_ColorScaleExtended) &colorBox = aPostObject.getColorBox();
+    const occHandle(AIS_ColorScaleExtended) &colorBox = aPostObject->getColorBox();
     occPostContext->Display(colorBox,false);
 
     //! ------------------
     //! update the viewer
     //! ------------------
     occPostContext->UpdateCurrentViewer();
+    occMeshContext->UpdateCurrentViewer();
+    occContext->UpdateCurrentViewer();
+
+    aResultPresentationOld = myResultPresentation;
+}
+
+//! -------------------------------------
+//! function: updateViewerStatus
+//! details:  update the status variable
+//! -------------------------------------
+void occPostWidget::updateViewerStatus()
+{
+    myResultPresentation = Global::status().myResultPresentation;
+
+    switch(myResultPresentation.theCombinedView)
+    {
+    case resultPresentation::combinedView_resultOnly: cout<<"occPostWidget::updateViewerStatus()->____results only____"<<endl; break;
+    case resultPresentation::combinedView_meshVisible: cout<<"occPostWidget::updateViewerStatus()->____results with mesh____"<<endl; break;
+    case resultPresentation::combinedView_undeformedModel: cout<<"occPostWidget::updateViewerStatus()->____results and undeformed model____"<<endl; break;
+    case resultPresentation::combinedView_undeformedWireFrame: cout<<"occPostWidget::updateViewerStatus()->____results and undeformed wireframe____"<<endl; break;
+    }
+    cout<<"occPostWidget::updateViewerStatus()->____scale: "<<myResultPresentation.theScale<<"____"<<endl;
+
+    //! --------------------------------------------------------------
+    //! this method calls the simulation manager, which in turn calls
+    //! <this>::displayResult()
+    //! --------------------------------------------------------------
+    emit resultsPresentationChanged();
 }
 
 //! -------------------------
@@ -144,23 +245,13 @@ void occPostWidget::hideAllResults()
     occPostContext->RemoveAll(true);
 }
 
-//! ---------------------------
-//! function: hideSingleResult
-//! details:
-//! ----------------------------
-void occPostWidget::hideSingleResult(postObject curPostObject)
-{
-    //cout<<"occPostWidget::hideSingleResult()->____function called____"<<endl;
-    occPostContext->RemoveAll(true);
-}
-
 //! -----------------------
 //! function: updateResult
 //! details:
 //! -----------------------
 void occPostWidget::updateResult(postObject &aPostObject)
 {
-    aPostObject.update(static_cast<meshDataBase*>(myDS2));
+    aPostObject.init(static_cast<meshDataBase*>(myDS2));
 }
 
 //! ----------------------------------
@@ -182,7 +273,7 @@ void occPostWidget::setWorkingMode_Solution()
         //! display the bodies in wireframe mode (this allow to
         //! select the center of rotation) and hide all the meshes
         //! -------------------------------------------------------
-        //this->setWireframeView();
+        this->setWireframeView();
         this->hideAllBodies();
         this->hideAllMeshes();
 
@@ -229,5 +320,4 @@ void occPostWidget::refreshMeshView(bool onlyExterior)
     //! ------------------------------------------------------
     occPreGLWidget::refreshMeshView(onlyExterior);
     isMeshViewVolume = (onlyExterior == true? false:true);
-
 }

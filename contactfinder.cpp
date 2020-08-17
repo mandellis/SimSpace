@@ -185,7 +185,7 @@ std::size_t contactFinder::triangleHash(const triangle &aTriangle)
 //! details:
 //! ------------------
 bool contactFinder::perform(const std::vector<std::pair<GeometryTag,GeometryTag>> &vectorOfBodyPairs,
-                            std::vector<std::pair<QVector<GeometryTag>,QVector<GeometryTag>>> &allContactsPairs,
+                            std::vector<std::pair<std::vector<GeometryTag>,std::vector<GeometryTag>>> &allContactsPairs,
                             double tolerance,
                             int grouping)
 {
@@ -387,7 +387,7 @@ bool contactFinder::perform(const std::vector<std::pair<GeometryTag,GeometryTag>
         int end = getTimePoint();
         for(std::vector<std::pair<int,int>>::iterator it = vecSourceTargetFaceNr.begin(); it!= vecSourceTargetFaceNr.end(); it++)
         {
-            QVector<GeometryTag> tagsMaster,tagsSlave;
+            std::vector<GeometryTag> tagsMaster,tagsSlave;
 
             std::pair<int,int> apair = *it;
 
@@ -407,7 +407,7 @@ bool contactFinder::perform(const std::vector<std::pair<GeometryTag,GeometryTag>
 
             tagsSlave.push_back(aSlaveTag);
 
-            std::pair<QVector<GeometryTag>,QVector<GeometryTag>> apair_;
+            std::pair<std::vector<GeometryTag>,std::vector<GeometryTag>> apair_;
             apair_.first = tagsMaster;
             apair_.second = tagsSlave;
 
@@ -505,7 +505,7 @@ bool contactFinder::perform(const std::vector<std::pair<GeometryTag,GeometryTag>
     QApplication::processEvents();
     QThread::msleep(500);
 
-    std::vector<std::pair<QVector<GeometryTag>,QVector<GeometryTag>>> reordered;
+    std::vector<std::pair<std::vector<GeometryTag>,std::vector<GeometryTag>>> reordered;
     this->groupBy(allContactsPairs,reordered,grouping);
     allContactsPairs.clear();       //! unessential: left here for showing the intention
     allContactsPairs = reordered;
@@ -1175,8 +1175,8 @@ bool contactFinder::sourceNodesToTargetElement1(const occHandle(Ng_MeshVS_DataSo
 //! function: groupBy
 //! details:
 //! -------------------
-void contactFinder::groupBy(const std::vector<std::pair<QVector<GeometryTag>,QVector<GeometryTag>>> &allContactsPairs,
-                             std::vector<std::pair<QVector<GeometryTag>,QVector<GeometryTag>>> &reordered,
+void contactFinder::groupBy(const std::vector<std::pair<std::vector<GeometryTag>,std::vector<GeometryTag>>> &allContactsPairs,
+                             std::vector<std::pair<std::vector<GeometryTag>,std::vector<GeometryTag>>> &reordered,
                              int grouping)
 {
     switch(grouping)
@@ -1189,9 +1189,9 @@ void contactFinder::groupBy(const std::vector<std::pair<QVector<GeometryTag>,QVe
         cout<<"____FILTERING BY BODY PAIR____"<<endl;
         for(std::vector<std::pair<GeometryTag,GeometryTag>>::iterator it = myVectorOfBodyPairs.begin(); it!=myVectorOfBodyPairs.end(); ++it)
         {
-            std::pair<QVector<GeometryTag>,QVector<GeometryTag>> reorderedPair;
-            QVector<GeometryTag> tagsMasterReordered;
-            QVector<GeometryTag> tagsSlaveReordered;
+            std::pair<std::vector<GeometryTag>,std::vector<GeometryTag>> reorderedPair;
+            std::vector<GeometryTag> tagsMasterReordered;
+            std::vector<GeometryTag> tagsSlaveReordered;
 
             std::pair<GeometryTag,GeometryTag> &curPair = *it;
             int masterBodyIndex = curPair.first.parentShapeNr;
@@ -1200,9 +1200,9 @@ void contactFinder::groupBy(const std::vector<std::pair<QVector<GeometryTag>,QVe
             int Nb = int(allContactsPairs.size());
             for(int i=0; i<Nb; i++)
             {
-                std::pair<QVector<GeometryTag>,QVector<GeometryTag>> aContactPair = allContactsPairs[i];
-                QVector<GeometryTag> tagsMaster = aContactPair.first;
-                QVector<GeometryTag> tagsSlave = aContactPair.second;
+                std::pair<std::vector<GeometryTag>,std::vector<GeometryTag>> aContactPair = allContactsPairs[i];
+                std::vector<GeometryTag> tagsMaster = aContactPair.first;
+                std::vector<GeometryTag> tagsSlave = aContactPair.second;
                 GeometryTag aMtag = tagsMaster.at(0);
                 GeometryTag aStag = tagsSlave.at(0);
                 if(aMtag.parentShapeNr == masterBodyIndex && aStag.parentShapeNr == slaveBodyIndex)
@@ -1226,32 +1226,36 @@ void contactFinder::groupBy(const std::vector<std::pair<QVector<GeometryTag>,QVe
     //! ----------------
     case 1:
     {
-        std::map<GeometryTag,QVector<GeometryTag>> supportMap;
+        std::map<GeometryTag,std::vector<GeometryTag>> supportMap;
         int Nb = int(allContactsPairs.size());
         for(int i=0; i<Nb; i++)
         {
-            std::pair<QVector<GeometryTag>,QVector<GeometryTag>> aContact = allContactsPairs[i];
+            std::pair<std::vector<GeometryTag>,std::vector<GeometryTag>> aContact = allContactsPairs[i];
             GeometryTag masterTag = aContact.first[0];
-            std::map<GeometryTag,QVector<GeometryTag>>::iterator it = supportMap.find(masterTag);
+            std::map<GeometryTag,std::vector<GeometryTag>>::iterator it = supportMap.find(masterTag);
             if(it==supportMap.end())
             {
-                std::pair<GeometryTag,QVector<GeometryTag>> element;
+                std::pair<GeometryTag,std::vector<GeometryTag>> element;
                 element.first = masterTag;
                 element.second = aContact.second;
                 supportMap.insert(element);
             }
-            else (*it).second.append(aContact.second);
+            else
+            {
+                //(*it).second.append(aContact.second);
+                (*it).second.insert((*it).second.end(),aContact.second.begin(),aContact.second.end());
+            }
         }
 
-        for(std::map<GeometryTag,QVector<GeometryTag>>::iterator it = supportMap.begin(); it!=supportMap.end(); it++)
+        for(std::map<GeometryTag,std::vector<GeometryTag>>::iterator it = supportMap.begin(); it!=supportMap.end(); it++)
         {
-            std::pair<GeometryTag,QVector<GeometryTag>> aPair = *it;
-            QVector<GeometryTag> masterTags;
+            std::pair<GeometryTag,std::vector<GeometryTag>> aPair = *it;
+            std::vector<GeometryTag> masterTags;
             masterTags.push_back(aPair.first);
-            QVector<GeometryTag> slaveTags;
+            std::vector<GeometryTag> slaveTags;
             slaveTags = aPair.second;
 
-            std::pair<QVector<GeometryTag>,QVector<GeometryTag>> aPair_;
+            std::pair<std::vector<GeometryTag>,std::vector<GeometryTag>> aPair_;
             aPair_.first = masterTags;
             aPair_.second = slaveTags;
             reordered.push_back(aPair_);
@@ -1261,10 +1265,10 @@ void contactFinder::groupBy(const std::vector<std::pair<QVector<GeometryTag>,QVe
         //! testing
         //! --------
         cout<<"@____AGGREGATION____@"<<endl;
-        for(std::map<GeometryTag,QVector<GeometryTag>>::iterator it = supportMap.begin(); it!=supportMap.end(); ++it)
+        for(std::map<GeometryTag,std::vector<GeometryTag>>::iterator it = supportMap.begin(); it!=supportMap.end(); ++it)
         {
             GeometryTag mt = (*it).first;
-            QVector<GeometryTag> sts = (*it).second;
+            std::vector<GeometryTag> sts = (*it).second;
             cout<<"____master: ("<<mt.parentShapeNr<<", "<<mt.subTopNr<<")____"<<endl;
             for(int i=0; i<sts.size(); i++)
             {
@@ -1283,32 +1287,36 @@ void contactFinder::groupBy(const std::vector<std::pair<QVector<GeometryTag>,QVe
         //! -----------------------------------------
         //! key => slave face; value => master faces
         //! -----------------------------------------
-        std::map<GeometryTag,QVector<GeometryTag>> supportMap;
+        std::map<GeometryTag,std::vector<GeometryTag>> supportMap;
         int Nb = int(allContactsPairs.size());
         for(int i=0; i<Nb; i++)
         {
-            std::pair<QVector<GeometryTag>,QVector<GeometryTag>> aContact = allContactsPairs[i];
+            std::pair<std::vector<GeometryTag>,std::vector<GeometryTag>> aContact = allContactsPairs[i];
             GeometryTag slaveTag = aContact.second[0];
-            std::map<GeometryTag,QVector<GeometryTag>>::iterator it = supportMap.find(slaveTag);
+            std::map<GeometryTag,std::vector<GeometryTag>>::iterator it = supportMap.find(slaveTag);
             if(it==supportMap.end())
             {
-                std::pair<GeometryTag,QVector<GeometryTag>> element;
+                std::pair<GeometryTag,std::vector<GeometryTag>> element;
                 element.first = slaveTag;
                 element.second = aContact.first;
                 supportMap.insert(element);
             }
-            else (*it).second.append(aContact.first);
+            else
+            {
+                //(*it).second.append(aContact.first);
+                it->second.insert(it->second.end(),aContact.first.begin(),aContact.first.end());
+            }
         }
 
-        for(std::map<GeometryTag,QVector<GeometryTag>>::iterator it = supportMap.begin(); it!=supportMap.end(); it++)
+        for(std::map<GeometryTag,std::vector<GeometryTag>>::iterator it = supportMap.begin(); it!=supportMap.end(); it++)
         {
-            std::pair<GeometryTag,QVector<GeometryTag>> aPair = *it;
-            QVector<GeometryTag> slaveTags;
+            std::pair<GeometryTag,std::vector<GeometryTag>> aPair = *it;
+            std::vector<GeometryTag> slaveTags;
             slaveTags.push_back(aPair.first);
-            QVector<GeometryTag> masterTags;
+            std::vector<GeometryTag> masterTags;
             masterTags = aPair.second;
 
-            std::pair<QVector<GeometryTag>,QVector<GeometryTag>> aPair_;
+            std::pair<std::vector<GeometryTag>,std::vector<GeometryTag>> aPair_;
             aPair_.first = masterTags;
             aPair_.second = slaveTags;
             reordered.push_back(aPair_);
@@ -1330,12 +1338,12 @@ void contactFinder::groupBy(const std::vector<std::pair<QVector<GeometryTag>,QVe
         int Nb = int(allContactsPairs.size());
         for(int i=0; i<Nb; i++)
         {
-            std::pair<QVector<GeometryTag>,QVector<GeometryTag>> aContact = allContactsPairs[i];
+            std::pair<std::vector<GeometryTag>,std::vector<GeometryTag>> aContact = allContactsPairs[i];
 
             //! ----------------------------------------------------------------
             //! by definition the "masterTags" vector contains only one element
             //! ----------------------------------------------------------------
-            QVector<GeometryTag> masterTags = aContact.first;
+            std::vector<GeometryTag> masterTags = aContact.first;
 
             int masterBodyNumber = masterTags[0].parentShapeNr;
             std::map<int,std::vector<int>>::iterator it = supportMap.find(masterBodyNumber);
@@ -1354,24 +1362,22 @@ void contactFinder::groupBy(const std::vector<std::pair<QVector<GeometryTag>,QVe
         for(std::map<int,std::vector<int>>::iterator it = supportMap.begin(); it!=supportMap.end(); it++)
         {
             std::vector<int> listOfIndexOfContactPairs = (*it).second;
-
-            QVector<GeometryTag> masterTags;
-            QVector<GeometryTag> slaveTags;
+            std::vector<GeometryTag> masterTags, slaveTags;
             for(int k=0; k<listOfIndexOfContactPairs.size(); k++)
             {
                 int indexOfContactPair = listOfIndexOfContactPairs[k];
-                std::pair<QVector<GeometryTag>,QVector<GeometryTag>> apair = allContactsPairs[indexOfContactPair];
-                masterTags.append(apair.first);
-                slaveTags.append(apair.second);
+                std::pair<std::vector<GeometryTag>,std::vector<GeometryTag>> apair = allContactsPairs[indexOfContactPair];
+                masterTags.insert(masterTags.end(),apair.first.begin(),apair.first.end());
+                slaveTags.insert(slaveTags.end(),apair.second.begin(),apair.second.end());
             }
 
-            if(masterTags.isEmpty()) { cerr<<"____EMPTY MASTER TAGS____"<<endl; exit(1); }
-            if(slaveTags.isEmpty()) { cerr<<"____EMPTY SLAVE TAGS____"<<endl; exit(2); }
+            if(masterTags.size()==0) { cerr<<"____EMPTY MASTER TAGS____"<<endl; exit(1); }
+            if(slaveTags.size()==0) { cerr<<"____EMPTY SLAVE TAGS____"<<endl; exit(2); }
 
             //! --------------------------
             //! define a new contact pair
             //! --------------------------
-            std::pair<QVector<GeometryTag>,QVector<GeometryTag>> aContact;
+            std::pair<std::vector<GeometryTag>,std::vector<GeometryTag>> aContact;
             aContact.first = masterTags;
             aContact.second = slaveTags;
             reordered.push_back(aContact);
@@ -1393,12 +1399,12 @@ void contactFinder::groupBy(const std::vector<std::pair<QVector<GeometryTag>,QVe
         int Nb = int(allContactsPairs.size());
         for(int i=0; i<Nb; i++)
         {
-            std::pair<QVector<GeometryTag>,QVector<GeometryTag>> aContact = allContactsPairs[i];
+            std::pair<std::vector<GeometryTag>,std::vector<GeometryTag>> aContact = allContactsPairs[i];
 
             //! ---------------------------------------------------------------
             //! by definition the "slaveTags" vector contains only one element
             //! ---------------------------------------------------------------
-            QVector<GeometryTag> slaveTags = aContact.second;
+            std::vector<GeometryTag> slaveTags = aContact.second;
 
             int slaveBodyNumber = slaveTags[0].parentShapeNr;
             std::map<int,std::vector<int>>::iterator it = supportMap.find(slaveBodyNumber);
@@ -1418,23 +1424,22 @@ void contactFinder::groupBy(const std::vector<std::pair<QVector<GeometryTag>,QVe
         {
             std::vector<int> listOfIndexOfContactPairs = (*it).second;
 
-            QVector<GeometryTag> masterTags;
-            QVector<GeometryTag> slaveTags;
+            std::vector<GeometryTag> masterTags, slaveTags;
             for(int k=0; k<listOfIndexOfContactPairs.size(); k++)
             {
                 int indexOfContactPair = listOfIndexOfContactPairs[k];
-                std::pair<QVector<GeometryTag>,QVector<GeometryTag>> apair = allContactsPairs[indexOfContactPair];
-                masterTags.append(apair.first);
-                slaveTags.append(apair.second);
+                std::pair<std::vector<GeometryTag>,std::vector<GeometryTag>> apair = allContactsPairs[indexOfContactPair];
+                masterTags.insert(masterTags.end(),apair.first.begin(),apair.first.end());
+                slaveTags.insert(slaveTags.end(),apair.second.begin(),apair.second.end());
             }
 
-            if(masterTags.isEmpty()) { cerr<<"____EMPTY MASTER TAGS____"<<endl; exit(1); }
-            if(slaveTags.isEmpty()) { cerr<<"____EMPTY SLAVE TAGS____"<<endl; exit(2); }
+            if(masterTags.size()==0) { cerr<<"____EMPTY MASTER TAGS____"<<endl; exit(1); }
+            if(slaveTags.size()==0) { cerr<<"____EMPTY SLAVE TAGS____"<<endl; exit(2); }
 
             //! --------------------------
             //! define a new contact pair
             //! --------------------------
-            std::pair<QVector<GeometryTag>,QVector<GeometryTag>> aContact;
+            std::pair<std::vector<GeometryTag>,std::vector<GeometryTag>> aContact;
             aContact.first = masterTags;
             aContact.second = slaveTags;
             reordered.push_back(aContact);

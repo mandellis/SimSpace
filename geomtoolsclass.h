@@ -56,7 +56,7 @@ public:
     static bool getEdgeInfo(const TopoDS_Edge &anEdge, gp_Ax1 &theAxis, gp_Pnt &P);
     static bool getCircleInfo(const TopoDS_Edge &anEdge, gp_Ax1 &theAxis, gp_Pnt &P);
     static bool getEllipseInfo(const TopoDS_Edge &anEdge, gp_Ax1 &theAxis, gp_Pnt &P);
-    static QList<double> calculateCentroid(geometryDataBase *gDB, const QVector<GeometryTag> &vecLoc);
+    static QList<double> calculateCentroid(geometryDataBase *gDB, const std::vector<GeometryTag> &vecLoc);
 
     //! ---------------------------------
     //! test if three points are aligned

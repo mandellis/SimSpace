@@ -4,10 +4,12 @@
 #include "postobject.h"
 #include "graphicstools.h"
 #include "meshtools.h"
+#include <mesh.h>
 #include <meshdatabase.h>
-#include "ccout.h"
 #include <ng_meshvs_datasource3d.h>
 #include <ng_meshvs_deformeddatasource2d.h>
+#include <isostripbuilder.h>
+#include <isostrip.h>
 
 //! ----
 //! OCC
@@ -16,6 +18,8 @@
 #include <MeshVS_Drawer.hxx>
 #include <MeshVS_DrawerAttribute.hxx>
 #include <TopAbs_ShapeEnum.hxx>
+#include <MeshVS_MeshPrsBuilder.hxx>
+#include <MeshVS_ElementalColorPrsBuilder.hxx>
 
 //! ---
 //! Qt
@@ -28,36 +32,26 @@
 #include <iostream>
 using namespace std;
 
-//! -------
-//! system
-//! -------
-#include <Windows.h>
-
-/*
-___postObject();
-___postObject(const QMap<int, QMap<int, double> > &resMap);
-___postObject(const QMap<int,QMap<int,double>> &resMap, const QVector<GeometryTag> &aVecLoc);
-___postObject(const QMap<int,QMap<int,double>> &resMap, const QVector<GeometryTag> &aVecLoc, const QString &aName);
-*/
-
 //! ----------------------
 //! function: constructor
 //! details:  default
 //! ----------------------
 postObject::postObject()
 {
-    //! empty
-    theData = QMap<GeometryTag,QList<QMap<int,double>>>();
-    vecLoc = QVector<GeometryTag>();
+    theData = std::map<GeometryTag,std::vector<std::map<int,double>>>();
+
+    myVecLoc = std::vector<GeometryTag>();
     name = QString();
-    theMeshes = QMap<GeometryTag,opencascade::handle<MeshVS_Mesh>>();
+
+    theMeshes = std::map<GeometryTag,occHandle(MeshVS_Mesh)>();
+    theMeshDataSources = std::map<GeometryTag,occHandle(MeshVS_DeformedDataSource)>();
+
     mySolutionDataComponent = 0;
-    myShowSolidMeshAsSurface = true;
     myMax = 100;
     myMin = -100;
     myIsAutoscale = true;
     myNbLevels = INITIAL_NUMBER_OF_COLORBOX_LEVELS;
-    myShowSolidMeshAsSurface = true;
+    myUseSurfaceMeshForVolumeResults = true;
     myScale = 1.0;
 }
 
@@ -65,21 +59,21 @@ postObject::postObject()
 //! function: constructor
 //! details:
 //! ----------------------
-postObject::postObject(const QMap<GeometryTag, QList<QMap<int, double>>> &resMap)
+postObject::postObject(const std::map<GeometryTag, std::vector<std::map<int, double>>> &resMap)
 {
     theData = resMap;
 
-    //! empty
-    vecLoc = QVector<GeometryTag>();
+    myVecLoc = std::vector<GeometryTag>();
     name = QString();
-    theMeshes = QMap<GeometryTag,opencascade::handle<MeshVS_Mesh>>();
+    theMeshes = std::map<GeometryTag,occHandle(MeshVS_Mesh)>();
+    theMeshDataSources = std::map<GeometryTag,occHandle(MeshVS_DeformedDataSource)>();
+
     mySolutionDataComponent = 0;
-    myShowSolidMeshAsSurface = true;
     myMax = 100;
     myMin = -100;
     myIsAutoscale = true;
     myNbLevels = INITIAL_NUMBER_OF_COLORBOX_LEVELS;
-    myShowSolidMeshAsSurface = true;
+    myUseSurfaceMeshForVolumeResults = true;
     myScale = 1.0;
 }
 
@@ -87,21 +81,21 @@ postObject::postObject(const QMap<GeometryTag, QList<QMap<int, double>>> &resMap
 //! function: constructor
 //! details:  unused for the moment
 //! --------------------------------
-postObject::postObject(const QMap<GeometryTag,QList<QMap<int,double>>> &resMap, const QVector<GeometryTag> &aVecLoc)
+postObject::postObject(const std::map<GeometryTag,std::vector<std::map<int,double>>> &resMap, const std::vector<GeometryTag> &aVecLoc)
 {
     theData = resMap;
-    vecLoc = aVecLoc;
+    myVecLoc = aVecLoc;
 
-    //! empty
     name = QString();
-    theMeshes = QMap<GeometryTag,opencascade::handle<MeshVS_Mesh>>();
+    theMeshes = std::map<GeometryTag,occHandle(MeshVS_Mesh)>();
+    theMeshDataSources = std::map<GeometryTag,occHandle(MeshVS_DeformedDataSource)>();
+    theMeshDataSourcesForView = std::map<GeometryTag,occHandle(MeshVS_DeformedDataSource)>();
     mySolutionDataComponent = 0;
-    myShowSolidMeshAsSurface = true;
     myMax = 100;
     myMin = -100;
     myIsAutoscale = true;
     myNbLevels = INITIAL_NUMBER_OF_COLORBOX_LEVELS;
-    myShowSolidMeshAsSurface = true;
+    myUseSurfaceMeshForVolumeResults = true;
     myScale = 1.0;
 }
 
@@ -109,20 +103,22 @@ postObject::postObject(const QMap<GeometryTag,QList<QMap<int,double>>> &resMap, 
 //! function: constructor
 //! details:
 //! ----------------------
-postObject::postObject(const QMap<GeometryTag,QList<QMap<int,double>>> &resMap,
-                       const QVector<GeometryTag> &aVecLoc,
+postObject::postObject(const std::map<GeometryTag,std::vector<std::map<int,double>>> &resMap,
+                       const std::vector<GeometryTag> &aVecLoc,
                        const QString& aName)
 {
     theData = resMap;
-    vecLoc = aVecLoc;
+    myVecLoc = aVecLoc;
     name = aName;
-    theMeshes = QMap<GeometryTag,opencascade::handle<MeshVS_Mesh>>();
+    theMeshes = std::map<GeometryTag,occHandle(MeshVS_Mesh)>();
+    theMeshDataSources = std::map<GeometryTag,occHandle(MeshVS_DeformedDataSource)>();
+    theMeshDataSourcesForView = std::map<GeometryTag,occHandle(MeshVS_DeformedDataSource)>();
     mySolutionDataComponent = 0;
     myMax = 100;
     myMin = -100;
     myIsAutoscale = true;
     myNbLevels = INITIAL_NUMBER_OF_COLORBOX_LEVELS;
-    myShowSolidMeshAsSurface = true;
+    myUseSurfaceMeshForVolumeResults = true;
     myScale = 1.0;
 }
 
@@ -130,26 +126,27 @@ postObject::postObject(const QMap<GeometryTag,QList<QMap<int,double>>> &resMap,
 //! function: constructor
 //! details:  this is actually used
 //! --------------------------------
-postObject::postObject(const QMap<GeometryTag,QList<QMap<int,double>>> &resMap,
-                       const QVector<GeometryTag> &aVecLoc,
-                       const QMap<GeometryTag,QMap<int,gp_Vec>> mapOfMapOfNodalDiplacements,
+postObject::postObject(const std::map<GeometryTag,std::vector<std::map<int,double>>> &resMap,
+                       const std::vector<GeometryTag> &aVecLoc,
+                       const std::map<GeometryTag,std::map<int,gp_Vec>> mapOfMapOfNodalDiplacements,
                        const QString& aName,
-                       bool aShowSolidMeshAsSurface)
+                       bool useSurfaceMeshForVolumeResults)
+
 {
     theData = resMap;
-    vecLoc = aVecLoc;
+    myVecLoc = aVecLoc;
     name = aName;
     myMapOfNodalDisplacements = mapOfMapOfNodalDiplacements;
     myScale = 1.0;  // initial scale "true scale"
-    theMeshes = QMap<GeometryTag,opencascade::handle<MeshVS_Mesh>>();
+    theMeshes = std::map<GeometryTag,occHandle(MeshVS_Mesh)>();
+    theMeshDataSources = std::map<GeometryTag,occHandle(MeshVS_DeformedDataSource)>();
+    theMeshDataSourcesForView = std::map<GeometryTag,occHandle(MeshVS_DeformedDataSource)>();
     mySolutionDataComponent = 0;
-    myShowSolidMeshAsSurface = aShowSolidMeshAsSurface;
+    myUseSurfaceMeshForVolumeResults = useSurfaceMeshForVolumeResults;
     myMax = 100;
     myMin = -100;
     myIsAutoscale = true;
     myNbLevels = INITIAL_NUMBER_OF_COLORBOX_LEVELS;
-    myShowSolidMeshAsSurface = true;
-    myScale = 1.0;
 }
 
 //! ----------------
@@ -174,20 +171,17 @@ void postObject::write(ofstream &file)
     //! ---------------------------------------
     //! write the lines of the name one by one
     //! ---------------------------------------
-    for(int i=0; i<NbNameLines; i++)
-    {
-        file<<nameLines.at(i).toStdString()<<endl;
-    }
+    for(int i=0; i<NbNameLines; i++) file<<nameLines.at(i).toStdString()<<endl;
 
     //! -----------------------------------------
     //! write the scope: the number of locations
     //! -----------------------------------------
-    file<<vecLoc.size()<<endl;
+    file<<myVecLoc.size()<<endl;
 
     //! -----------------------------------------
     //! write the scope: write the geometry tags
     //! -----------------------------------------
-    for(QVector<GeometryTag>::iterator itLoc = vecLoc.begin();itLoc!=vecLoc.end(); ++itLoc)
+    for(std::vector<GeometryTag>::iterator itLoc = myVecLoc.begin();itLoc!=myVecLoc.end(); ++itLoc)
     {
         const GeometryTag &aLoc = *itLoc;
         file<<aLoc.isParent<<endl;
@@ -196,16 +190,16 @@ void postObject::write(ofstream &file)
         file<<aLoc.subShapeType<<endl;
     }
 
-    //! --------------------------------------------------
+    //! ----------------------------------------------------------------
     //! write the data: write the number of data blocks
-    //! QMap<GeometryTag,QList<QMap<int,double>>> &resMap
-    //! --------------------------------------------------
-    file<<theData.keys().length()<<endl;
+    //! std::map<GeometryTag,std::vector<std::map<int,double>>> &resMap
+    //! ----------------------------------------------------------------
+    file<<theData.size()<<endl;
 
-    for(QMap<GeometryTag,QList<QMap<int,double>>>::iterator it=theData.begin(); it!=theData.end(); ++it)
+    for(std::map<GeometryTag,std::vector<std::map<int,double>>>::iterator it=theData.begin(); it!=theData.end(); ++it)
     {
-        const GeometryTag &tag = it.key();
-        const QList<QMap<int,double>> &l = it.value();
+        const GeometryTag &tag = it->first;
+        const std::vector<std::map<int,double>> &l = it->second;
 
         //! --------------------------------------------------------
         //! write the number of components the result is defined by
@@ -222,21 +216,21 @@ void postObject::write(ofstream &file)
 
         for(int k=0; k<l.size(); k++)
         {
-            const QMap<int,double> &res = l.at(k);
+            const std::map<int,double> &res = l.at(k);
 
             //! ----------------------------------------------------
             //! write the size of the map for the current component
             //! ----------------------------------------------------
-            int L = res.size();
+            int L = (int)res.size();
             file<<L<<endl;
 
             //! ---------------
             //! write the data
             //! ---------------
-            for(QMap<int,double>::const_iterator itRes = res.begin(); itRes != res.cend(); ++itRes)
+            for(std::map<int,double>::const_iterator itRes = res.begin(); itRes != res.cend(); ++itRes)
             {
-                int nodeID = itRes.key();
-                double val = itRes.value();
+                int nodeID = itRes->first;
+                double val = itRes->second;
                 file<<nodeID<<"\t"<<val<<endl;
             }
         }
@@ -245,25 +239,22 @@ void postObject::write(ofstream &file)
     //! -------------------------------------------
     //! write the mesh: write the number of meshes
     //! -------------------------------------------
-    int NbMeshes = theMeshes.size();
-
-    for(QMap<GeometryTag,occHandle(MeshVS_Mesh)>::iterator it = theMeshes.begin(); it != theMeshes.end(); ++it)
+    int NbMeshes = (int)theMeshDataSources.size();
+    for(std::map<GeometryTag,occHandle(MeshVS_DeformedDataSource)>::iterator it = theMeshDataSources.begin(); it!=theMeshDataSources.end(); it++)
     {
-        const occHandle(MeshVS_Mesh) aMeshVS = it.value();
-        const occHandle(MeshVS_DataSource) &aMeshDS = aMeshVS->GetDataSource();
+        const occHandle(MeshVS_DeformedDataSource) &aMeshDS = it->second;
         if(aMeshDS.IsNull())
         {
             NbMeshes=0;
             break;
         }
     }
-
     file<<NbMeshes<<endl;
 
-    for(QMap<GeometryTag,occHandle(MeshVS_Mesh)>::iterator it = theMeshes.begin(); it != theMeshes.end(); ++it)
+    for(std::map<GeometryTag,occHandle(MeshVS_DeformedDataSource)>::iterator it = theMeshDataSources.begin(); it != theMeshDataSources.end(); ++it)
     {
-        const GeometryTag &aTag = it.key();
-        const occHandle(MeshVS_Mesh) aMeshVS = it.value();
+        const GeometryTag &aTag = it->first;
+        const occHandle(MeshVS_DeformedDataSource) &aDeformedMeshDS = it->second;
 
         //! --------------
         //! write the tag
@@ -276,35 +267,22 @@ void postObject::write(ofstream &file)
         //! ---------------------------
         //! write the mesh data source
         //! ---------------------------
-        const occHandle(MeshVS_DataSource) &aMeshDS = aMeshVS->GetDataSource();
-
+        const occHandle(MeshVS_DataSource) &aMeshDS = aDeformedMeshDS->GetNonDeformedDataSource();
         switch(aTag.subShapeType)
         {
-        case TopAbs_SOLID:
-        {
-            this->writeIntoStream(file,aMeshDS);
-        }
-            break;
-
-        case TopAbs_FACE:
-        {
-            this->writeIntoStream(file,aMeshDS);
-        }
-            break;
-
-        case TopAbs_EDGE:
-        {
-            //! to be implemented
-        }
-            break;
-
-        case TopAbs_VERTEX:
-        {
-            //! to be implemented
-        }
-            break;
+        case TopAbs_SOLID: this->writeIntoStream(file,aMeshDS); break;
+        case TopAbs_FACE: this->writeIntoStream(file,aMeshDS); break;
+        case TopAbs_EDGE: /* to be implemented */ break;
+        case TopAbs_VERTEX: /* to be implemented */ break;
         }
     }
+    //! ------------------
+    //! write min and max
+    //! ------------------
+    file<<mySolutionDataComponent<<endl;
+    file<<myMin<<endl;
+    file<<myMax<<endl;
+    file<<myNbLevels<<endl;
 }
 
 //! --------------------------------
@@ -360,13 +338,13 @@ postObject::postObject(ifstream &file)
         //! -------
         //! append
         //! -------
-        vecLoc.push_back(loc);
+        myVecLoc.push_back(loc);
     }
 
-    //! --------------------------------------------------
+    //! ----------------------------------------------------------------
     //! read the data: read the number of data blocks
-    //! QMap<GeometryTag,QList<QMap<int,double>>> &resMap
-    //! --------------------------------------------------
+    //! std::map<GeometryTag,std::vector<std::map<int,double>>> &resMap
+    //! ----------------------------------------------------------------
     int NbBlocks;
     file>>NbBlocks;
 
@@ -392,7 +370,7 @@ postObject::postObject(ifstream &file)
         TopAbs_ShapeEnum shapeType = static_cast<TopAbs_ShapeEnum>(type);
         aTag.subShapeType = shapeType;
 
-        QList<QMap<int,double>> listRes;
+        std::vector<std::map<int,double>> listRes;
         for(int k=0; k<NbComponents; k++)
         {
             //! ---------------------------------------------------
@@ -406,15 +384,15 @@ postObject::postObject(ifstream &file)
             //! --------------
             int nodeID;
             double val;
-            QMap<int,double> res;
+            std::map<int,double> res;
             for(int j=0; j<L; j++)
             {
                 file>>nodeID>>val;
-                res.insert(nodeID,val);
+                res.insert(std::make_pair(nodeID,val));
             }
-            listRes<<res;
+            listRes.push_back(res);
         }
-        theData.insert(aTag,listRes);
+        theData.insert(std::make_pair(aTag,listRes));
     }
 
     //! -----------------------------------------
@@ -426,7 +404,7 @@ postObject::postObject(ifstream &file)
     //! --------------
     //! read the mesh
     //! --------------
-    QMap<GeometryTag, occHandle(MeshVS_DataSource)> aMapOfMeshDataSources;
+    //std::map<GeometryTag, occHandle(MeshVS_DataSource)> aMapOfMeshDataSources;
     for(int i=0; i<NbMeshes; i++)
     {
         //! -------------
@@ -451,13 +429,20 @@ postObject::postObject(ifstream &file)
         //! ----------------------------------
         //! fill the map of mesh data sources
         //! ----------------------------------
-        aMapOfMeshDataSources.insert(aTag,aMeshDS);
+        occHandle(MeshVS_DeformedDataSource) aDefMeshDS = new MeshVS_DeformedDataSource(aMeshDS,1.0);
+        //aMapOfMeshDataSources.insert(std::make_pair(aTag,aDefMeshDS));
+        //aMapOfMeshDataSources.insert(std::make_pair(aTag,aMeshDS));
+        cout<<"____"<<aDefMeshDS->GetAllElements().Extent()<<"____"<<endl;
+        cout<<"____"<<aDefMeshDS->GetAllNodes().Extent()<<"____"<<endl;
+        theMeshDataSources.insert(std::make_pair(aTag,aDefMeshDS));
     }
-
-    //! -----------------------------------------------------
-    //! create the colored meshes using the autoscale option
-    //! -----------------------------------------------------
-    this->buildMeshIO(aMapOfMeshDataSources,-9999,9999,10,true,0);
+    //! -----------------
+    //! read min and max
+    //! -----------------
+    file>>mySolutionDataComponent;
+    file>>myMin;
+    file>>myMax;
+    file>>myNbLevels;
 }
 
 //! ----------------------
@@ -469,100 +454,98 @@ void postObject::resetMeshes()
     this->theMeshes.clear();
 }
 
-//! ---------------------------------------------------
+//! ----------------------
 //! function: buildMeshIO
-//! details:  build the colored mesh and the color box
-//! ---------------------------------------------------
-void postObject::buildMeshIO(const mapOfMeshDataSources &aMapOfMeshDataSources,
-                             double min, double max,
-                             int Nlevels,
-                             bool autoscale,
-                             int component,
-                             bool showMeshEdges)
+//! details:
+//! ----------------------
+void postObject::buildMeshIO(double min, double max, int Nlevels, bool autoscale, int component, double deformationScale)
 {
     cout<<"postObject::buildMeshIO()->____function called____"<<endl;
-
-    //! -----------------------------------
-    //! this parameter should be connected
-    //! -----------------------------------
-    bool showSolidMeshAsSurface = false;
-
-    //! -----------------
-    //! the data content
-    //! -----------------
-    double theMin, theMax;
-    QMap<GeometryTag,QList<QMap<int,double>>>::const_iterator it = theData.cbegin();
-    for(mapOfMeshDataSources::const_iterator anIt = aMapOfMeshDataSources.begin(); anIt!= aMapOfMeshDataSources.cend() && it!= theData.cend(); ++anIt, ++it)
-    {
-        const GeometryTag &loc = anIt.key();
-        occHandle(MeshVS_DataSource) curMeshDS;
-
-        //! -------------------------------------------------------
-        //! if the current shape on which results are defined
-        //! is a solid, it means that a volume mesh for that solid
-        //! is defined: generate the interactive object according
-        //! to the value of the flag "showSolidMeshAsSurface"
-        //! -------------------------------------------------------
-        if(loc.subShapeType == TopAbs_SOLID && showSolidMeshAsSurface == true)
-        {
-            const occHandle(Ng_MeshVS_DataSource3D) &volumeMeshDS = occHandle(Ng_MeshVS_DataSource3D)::DownCast(anIt.value());
-
-            //! ------------------------------------------------------------------
-            //! generate the surface mesh topologically - to be changed
-            //! (I mean access the mesh data base directly... to do, if possible,
-            //! since this object does not have access to the mesh data base)
-            //! ------------------------------------------------------------------
-            if(volumeMeshDS->myFaceToElements.size()==0) volumeMeshDS->buildFaceToElementConnectivity();
-            curMeshDS = new Ng_MeshVS_DataSource2D(volumeMeshDS);
-        }
-        else
-        {
-            curMeshDS = anIt.value();
-        }
-        const QList<QMap<int, double>> &listOfRes = theData.value(loc);
-        const QMap<int, double> &res = listOfRes.at(component);
-
-        //! -----------------------------
-        //! min and max for the colorbox
-        //! -----------------------------
-        if(autoscale)
-        {
-            std::pair<double,double> minmax = this->getMinMax(component);
-            theMin = minmax.first;
-            theMax = minmax.second;
-        }
-        else
-        {
-            theMin = min;
-            theMax = max;
-        }
-
-        //! ----------------------------
-        //! the new mesh (colored) mesh
-        //! ----------------------------
-        occHandle(MeshVS_Mesh) aColoredMesh;
-
-        QMap<int,gp_Vec> displacementMap = myMapOfNodalDisplacements.value(loc);
-        MeshTools::buildDeformedColoredMesh(curMeshDS,res,displacementMap,1.0,theMin,theMax,Nlevels,aColoredMesh,showMeshEdges);
-        theMeshes.insert(loc,aColoredMesh);
-    }
-
-    //! ---------------------------------
-    //! create the color box with labels
-    //! ---------------------------------
-    graphicsTools::createColorBox(theMin, theMax, Nlevels, AISColorScale);
-    TCollection_ExtendedString title(name.toStdString().c_str());
-    AISColorScale->SetTitle(title);
 
     //! ------------------------
     //! set the private members
     //! ------------------------
     mySolutionDataComponent = component;
     myIsAutoscale = autoscale;
-    myMin = theMin;
-    myMax = theMax;
     myNbLevels = Nlevels;
-    myShowSolidMeshAsSurface = showSolidMeshAsSurface;
+    theMeshes.clear();
+
+    //! -----------------
+    //! the data content
+    //! -----------------
+    std::map<GeometryTag,std::vector<std::map<int,double>>>::const_iterator it = theData.cbegin();
+    for(std::map<GeometryTag,occHandle(MeshVS_DeformedDataSource)>::const_iterator anIt = theMeshDataSources.cbegin(); anIt!= theMeshDataSources.cend() && it!= theData.cend(); ++anIt, ++it)
+    {
+        const GeometryTag &loc = anIt->first;
+        occHandle(MeshVS_DataSource) curMeshDS;
+        if(loc.subShapeType == TopAbs_SOLID && myUseSurfaceMeshForVolumeResults == true)
+        {
+            cout<<"____USING THE EXTERIOR MESH____"<<endl;
+            occHandle(Ng_MeshVS_DataSource3D) volumeMeshDS = new Ng_MeshVS_DataSource3D(anIt->second->GetNonDeformedDataSource());
+
+            //! ----------------------------------------
+            //! generate the surface mesh topologically
+            //! ----------------------------------------
+            if(volumeMeshDS->myFaceToElements.isEmpty()) volumeMeshDS->buildFaceToElementConnectivity();
+            curMeshDS = new Ng_MeshVS_DataSource2D(volumeMeshDS);
+        }
+        else
+        {
+            cout<<"____USING THE WHOLE MESH____"<<endl;
+            curMeshDS = anIt->second->GetNonDeformedDataSource();
+            cout<<"____ELEMENTS: "<<curMeshDS->GetAllElements().Extent()<<"____"<<endl;
+            cout<<"____NODES: "<<curMeshDS->GetAllNodes().Extent()<<"____"<<endl;
+        }
+
+        //! ----------------------------------
+        //! build a deformed mesh data source
+        //! ----------------------------------
+        occHandle(MeshVS_DeformedDataSource) theDeformedDS = new MeshVS_DeformedDataSource(curMeshDS,deformationScale);
+        const std::map<int,gp_Vec> &displacementMap = myMapOfNodalDisplacements.at(loc);
+        cout<<"____displacement map size: "<<displacementMap.size()<<"____"<<endl;
+        //exit(9999);
+        theDeformedDS->SetNonDeformedDataSource(curMeshDS);
+        cout<<"____tag00____"<<endl;
+        for(TColStd_MapIteratorOfPackedMapOfInteger it(curMeshDS->GetAllNodes()); it.More(); it.Next())
+        {
+            int globalNodeID = it.Key();
+            const gp_Vec &d = displacementMap.at(globalNodeID);
+            theDeformedDS->SetVector(globalNodeID,d);
+        }
+        cout<<"____tag01____"<<endl;
+        theDeformedDS->SetMagnify(deformationScale);
+        cout<<"____tag02____"<<endl;
+        theMeshDataSourcesForView[loc]=theDeformedDS;   //! abruptly replace - do not use "insert"
+        cout<<"____tag03____"<<endl;
+
+        const std::vector<std::map<int, double>> &listOfRes = theData.at(loc);
+        cout<<"____tag04____"<<endl;
+        cout<<"____tag04: component: "<<component<<"____"<<endl;
+        const std::map<int, double> &res = listOfRes.at(component);
+        cout<<"____tag5____"<<endl;
+        //! -------------------------------------------
+        //! min and max for the colorbox and isostrips
+        //! -------------------------------------------
+        if(autoscale)
+        {
+            std::pair<double,double> minmax = this->getMinMax(component);
+            myMin = minmax.first;
+            myMax = minmax.second;
+        }
+        else { myMin = min; myMax = max; }
+
+        occHandle(MeshVS_Mesh) aColoredMesh;
+        MeshTools::buildIsoStrip(theDeformedDS,res,myMin,myMax,myNbLevels,aColoredMesh);
+        theMeshes.insert(std::make_pair(loc,aColoredMesh));
+    }
+
+    //! ---------------------------------
+    //! create the color box with labels
+    //! ---------------------------------
+    graphicsTools::createColorBox(myMin, myMax, myNbLevels, AISColorScale);
+    TCollection_ExtendedString title(name.toStdString().c_str());
+    AISColorScale->SetTitle(title);
+    cout<<"postObject::buildMeshIO()->____exiting function____"<<endl;
 }
 
 //! -------------------------------------------
@@ -577,58 +560,54 @@ std::pair<double,double> postObject::getMinMax(int component)
     //! first element => min; second element => max;
     //! ---------------------------------------------
     std::pair<double,double> minmax;
-    minmax.first = 1e80;
-    minmax.second = -1e80;
+    minmax.first = 1e20;
+    minmax.second = -1e20;
 
     //! -------------------
     //! scan the locations
     //! -------------------
-    if(theData.isEmpty())
+    if(theData.size()==0)
     {
         cout<<"postObject::getMinMax()->___empty data____"<<endl;
+        return std::make_pair(0.0,0.0);
     }
-    QMap<GeometryTag,QList<QMap<int,double>>>::const_iterator rIt;
-    for(rIt = theData.cbegin(); rIt!= theData.cend(); ++rIt)
+    for(std::map<GeometryTag,std::vector<std::map<int,double>>>::const_iterator rIt = theData.cbegin(); rIt!= theData.cend(); ++rIt)
     {
-        QList<QMap<int,double>> lres = rIt.value();
-        QMap<int,double> res = lres.at(component);          //! component
-        QMap<int,double>::iterator rrIt;
-
-        if(res.isEmpty())
+        std::vector<std::map<int,double>> lres = rIt->second;
+        std::map<int,double> res = lres.at(component);          //! component
+        if(res.size()==0)
         {
             cout<<"postObject::getMinMax()->___empty map data____"<<endl;
         }
-        for(rrIt = res.begin(); rrIt!=res.end(); ++rrIt)
+        for(std::map<int,double>::iterator rrIt = res.begin(); rrIt!=res.end(); ++rrIt)
         {
-            double aVal = rrIt.value();
+            double aVal = rrIt->second;
             if(aVal<=minmax.first) minmax.first = aVal;
             if(aVal>=minmax.second) minmax.second = aVal;
         }
     }
+    //cout<<"postObject::getMinMax()->____min: "<<minmax.first<<", max: "<<minmax.second<<"____"<<endl;
     return minmax;
 }
 
-//! ---------------------------------------------------
-//! function: update
-//! details:  retrieve the mesh from the database
-//!           internally calls postObject::buildMeshIO
-//! ---------------------------------------------------
-void postObject::update(meshDataBase *mDB, int component)
+//! ----------------------------------------
+//! function: init
+//! details:  provide the mesh data sources
+//! ----------------------------------------
+void postObject::init(meshDataBase *mDB)
 {
-    cout<<"postObject::update()->____update has been requested____"<<endl;
+    cout<<"postObject::init()->____function called____"<<endl;
 
-    if(theData.isEmpty())
+    if(theData.size()==0)
     {
         cout<<"postObject::update()->____cannot generate the mesh object: no data____"<<endl;
         return;
     }
 
-    int topNr;
-    int parentShapeNr;
+    int topNr, parentShapeNr;
     occHandle(MeshVS_DataSource) meshDS;
-    mapOfMeshDataSources aMapOfMeshDS;
 
-    for(QVector<GeometryTag>::iterator it = vecLoc.begin(); it!= vecLoc.end(); ++it)
+    for(std::vector<GeometryTag>::iterator it = myVecLoc.begin(); it!= myVecLoc.end(); ++it)
     {
         const GeometryTag &loc = *it;
         TopAbs_ShapeEnum type = static_cast<TopAbs_ShapeEnum>(loc.subShapeType);
@@ -637,7 +616,10 @@ void postObject::update(meshDataBase *mDB, int component)
         case TopAbs_SOLID:
         {
             topNr = loc.parentShapeNr;
-            aMapOfMeshDS.insert(loc, mDB->ArrayOfMeshDS.value(topNr));
+            const occHandle(MeshVS_DeformedDataSource) &aDeformedMeshDS = new MeshVS_DeformedDataSource(mDB->ArrayOfMeshDS.value(topNr),1.0);
+            aDeformedMeshDS->SetNonDeformedDataSource(mDB->ArrayOfMeshDS.value(topNr));
+            aDeformedMeshDS->SetMagnify(1.0);
+            theMeshDataSources.insert(std::make_pair(loc, aDeformedMeshDS));
         }
             break;
 
@@ -645,8 +627,9 @@ void postObject::update(meshDataBase *mDB, int component)
         {
             parentShapeNr = loc.parentShapeNr;
             topNr = loc.subTopNr;
-            occHandle(MeshVS_DataSource) theMeshToInsert = mDB->ArrayOfMeshDSOnFaces.getValue(parentShapeNr,topNr);
-            aMapOfMeshDS.insert(loc, theMeshToInsert);
+            occHandle(MeshVS_DataSource) theMeshToInsert = mDB->ArrayOfMeshDSOnFaces.getValue(parentShapeNr,topNr);            
+            const occHandle(MeshVS_DeformedDataSource) &aDeformedMeshDS = new MeshVS_DeformedDataSource(mDB->ArrayOfMeshDSOnFaces.getValue(parentShapeNr,topNr),1.0);
+            theMeshDataSources.insert(std::make_pair(loc, aDeformedMeshDS));
         }
             break;
 
@@ -654,7 +637,8 @@ void postObject::update(meshDataBase *mDB, int component)
         {
             topNr = loc.subTopNr;
             parentShapeNr = loc.parentShapeNr;
-            aMapOfMeshDS.insert(loc, mDB->ArrayOfMeshDSOnEdges.getValue(parentShapeNr,topNr));
+            const occHandle(MeshVS_DeformedDataSource) &aDeformedMeshDS = new MeshVS_DeformedDataSource(mDB->ArrayOfMeshDSOnEdges.getValue(parentShapeNr,topNr),1.0);
+            theMeshDataSources.insert(std::make_pair(loc, aDeformedMeshDS));
         }
             break;
 
@@ -663,39 +647,19 @@ void postObject::update(meshDataBase *mDB, int component)
             break;
         }
     }
-
-    //! ------------------------------------------------
-    //! create the post object using "Autoscale" option
-    //! ------------------------------------------------
-    bool autoscale = true;
-    this->buildMeshIO(aMapOfMeshDS,0,0,INITIAL_NUMBER_OF_COLORBOX_LEVELS,autoscale,component);
+    //cout<<"postObject::init()->____exiting function____"<<endl;
 }
 
-//! ---------------------
-//! function: updateView
+//! ------------------------
+//! function: updateMapping
 //! details:
-//! ---------------------
-void postObject::updateView(bool showMeshEdges)
-{
-    cout<<"postObject::updateView()->____show elements: "<<(showMeshEdges? "yes, show elements":"no, hide elements")<<"____"<<endl;
-    for(QMap<GeometryTag,occHandle(MeshVS_Mesh)>::iterator it = theMeshes.begin(); it!=theMeshes.end(); ++it)
-    {
-        occHandle(MeshVS_Mesh) curMeshVS_Mesh = *it;
-        curMeshVS_Mesh->GetDrawer()->SetBoolean(MeshVS_DA_ShowEdges,showMeshEdges);
-    }
-}
-
-//! -------------------------
-//! function: update mapping
-//! details:
-//! -------------------------
+//! ------------------------
 void postObject::updateMapping(int mapping)
 {
     cout<<"postObject::updateView()->____function called____"<<endl;
-    for(QMap<GeometryTag,occHandle(MeshVS_Mesh)>::iterator it = theMeshes.begin(); it!=theMeshes.end(); ++it)
+    for(std::map<GeometryTag,occHandle(MeshVS_Mesh)>::iterator it = theMeshes.begin(); it!=theMeshes.end(); ++it)
     {
-        occHandle(MeshVS_Mesh) aMeshObject = *it;
-
+        occHandle(MeshVS_Mesh) aMeshObject = it->second;
     }
 }
 
@@ -705,25 +669,10 @@ void postObject::updateMapping(int mapping)
 //! ---------------------------
 void postObject::updateScaledView()
 {
-    if(theMeshes.isEmpty()) return;
-    for(QMap<GeometryTag,occHandle(MeshVS_Mesh)>::iterator it = theMeshes.begin(); it!= theMeshes.end(); ++it)
-    {
-        const occHandle(MeshVS_Mesh) &curMeshVS = it.value();
-        const occHandle(Ng_MeshVS_DeformedDataSource2D)  &curMeshDeformedDS = occHandle(Ng_MeshVS_DeformedDataSource2D)::DownCast(curMeshVS->GetDataSource());
-        if(myScale == 0.0)
-        {
-            cerr<<"postObject::updateScaledView()->____updating scale: undeformed____"<<endl;
-            occHandle(Ng_MeshVS_DataSource2D) nonDeformedDS = occHandle(Ng_MeshVS_DataSource2D)::DownCast(curMeshDeformedDS->GetNonDeformedDataSource());
-            curMeshVS->SetDataSource(nonDeformedDS);
-        }
-        else
-        {
-            cerr<<"postObject::updateScaledView()->____updating scale: "<<myScale<<"____"<<endl;
-            curMeshDeformedDS->SetMagnify(myScale);
-        }
-    }
+    cout<<"postObject::updateScaledView()->____function called____"<<endl;
+    if(theMeshDataSources.size()==0) return;
+    buildMeshIO(myMin, myMax, myNbLevels, myIsAutoscale, mySolutionDataComponent, myScale);
 }
-
 
 //! ---------------------------
 //! function: writeMesh
@@ -839,7 +788,6 @@ void postObject::writeIntoStream(ofstream &os, const occHandle(MeshVS_DataSource
 //! function: readMeshFromStream
 //! details:
 //! -----------------------------
-#include <mesh.h>
 bool postObject::readMeshFromStream(ifstream &stream, occHandle(MeshVS_DataSource) &aMeshDS)
 {
     cout<<"postObject::readMeshFromStream()->____function called____"<<endl;

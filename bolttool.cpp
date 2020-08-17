@@ -81,10 +81,11 @@ bool boltTool::sliceMeshWithPlane(double a, double b, double c, double d,
             hash_c<double>(seed,x);
             hash_c<double>(seed,y);
             hash_c<double>(seed,z);
-            std::pair<size_t,int> apair;
-            apair.first = seed;
-            apair.second = globalNodeID;
-            mapNodeCoordsToNodeGlobalID.insert(apair);
+            //std::pair<size_t,int> apair;
+            //apair.first = seed;
+            //apair.second = globalNodeID;
+            //mapNodeCoordsToNodeGlobalID.insert(apair);
+            mapNodeCoordsToNodeGlobalID.insert(std::make_pair(seed,globalNodeID));
             const double tolerance = 1e-6;
             vecTolerantPoints.push_back(mesh::tolerantPoint(x,y,z,tolerance));
             vecGlobalNodeIDs.push_back(globalNodeID);
@@ -96,6 +97,9 @@ bool boltTool::sliceMeshWithPlane(double a, double b, double c, double d,
         case 6: aVolumeMeshElement.type = PRISM; break;
         case 8: aVolumeMeshElement.type = HEXA; break;
         case 10: aVolumeMeshElement.type = TET10; break;
+        case 13: aVolumeMeshElement.type = PYRAM13; break;
+        case 15: aVolumeMeshElement.type = PRISM15; break;
+        case 20: aVolumeMeshElement.type = HEXA20; break;
         }
         bool intersect = polygon::testPolygonPlaneIntersection(aPointCloud,a,b,c,d);
         if(!intersect) continue;
@@ -159,11 +163,13 @@ bool boltTool::sliceMeshWithPlane(double a, double b, double c, double d,
         case 3: aMeshElement2D.type = TRIG; break;
         case 4: aMeshElement2D.type = QUAD; break;
         case 6: aMeshElement2D.type = TRIG6; break;
+        case 8: aMeshElement2D.type = QUAD8; break;
         }
-        std::pair<meshElement2D,int> apair;
-        apair.first = aMeshElement2D;
-        apair.second = ++h;
-        serviceMap.insert(apair);
+        //std::pair<meshElement2D,int> apair;
+        //apair.first = aMeshElement2D;
+        //apair.second = ++h;
+        //serviceMap.insert(apair);
+        serviceMap.insert(std::make_pair(aMeshElement2D,++h));
     }
 
     //! ------------------------------------------
@@ -221,6 +227,12 @@ bool boltTool::sliceMeshWithPlane(double a, double b, double c, double d,
             aMeshElement.type = TRIG6;
         }
             break;
+        case 8:
+        {
+            aMeshElement2D.type = QUAD8;
+            aMeshElement.type = QUAD8;
+        }
+            break;
         }
 
         //! ------------------------------------------------
@@ -267,8 +279,9 @@ bool boltTool::sliceMeshWithPlane(double a, double b, double c, double d,
     switch(NbNodes)
     {
     case 3: aMeshElement.type = TRIG; break;
-    case 4: aMeshElement.type = QUAD; break;
+    case 4: aMeshElement.type = QUAD; break;    
     case 6: aMeshElement.type = TRIG6; break;
+    case 8: aMeshElement.type = QUAD8; break;
     }
 
     //! ---------------------------------------------------
@@ -349,6 +362,7 @@ bool boltTool::sliceMeshWithPlane(double a, double b, double c, double d,
                 case 3: me.type = TRIG; break;
                 case 4: me.type = QUAD; break;
                 case 6: me.type = TRIG6; break;
+                case 8: me.type = QUAD8; break;
                 }
 
                 //! ---------------------------------------------
@@ -399,6 +413,7 @@ bool boltTool::sliceMeshWithPlane(double a, double b, double c, double d,
         case 3: aMeshElement2D.type = TRIG; break;
         case 4: aMeshElement2D.type = QUAD; break;
         case 6: aMeshElement2D.type = TRIG6; break;
+        case 8: aMeshElement2D.type = QUAD8; break;
         }
 
         if(CCXFaceConnectivity.at(aMeshElement2D).size()!=1)

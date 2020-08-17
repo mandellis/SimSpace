@@ -67,7 +67,7 @@ private:
     void writeElementSurface(QString SetName,
                              const IndexedMapOfMeshDataSources &anIndexedMapOfMeshDataSources);
 
-    void writeElementSet(QVector<GeometryTag> vecLoc,QList<QString> &bodyNameList);
+    void writeElementSet(std::vector<GeometryTag> vecLoc,QList<QString> &bodyNameList);
     void writeNodesAndElements(QString aName,QMap<int,QList<int>> &nodeListByBody);
 
     QExtendedStandardItem *ItemFromScope(const TopoDS_Shape &aShape);

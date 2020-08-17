@@ -3600,7 +3600,6 @@ void GeneralDelegate::setEditorData(QWidget *editor, const QModelIndex &index) c
     //! -------------
     if(propertyName =="# intervals")
     {
-        cout<<"____setting editor data____"<<endl;
         QSpinBox *spinBox = static_cast<QSpinBox*>(editor);
         int val = data.value<Property>().getData().toInt();
         spinBox->setValue(val);
@@ -4639,10 +4638,10 @@ void GeneralDelegate::setEditorData(QWidget *editor, const QModelIndex &index) c
         //    return;
         //}
 
-        if(data.value<Property>().getData().canConvert<QVector<GeometryTag>>())
+        if(data.value<Property>().getData().canConvert<std::vector<GeometryTag>>())
         {
             ShapeSelector *shapeSelector = static_cast<ShapeSelector*>(editor);
-            QVector<GeometryTag> vecLoc = data.value<Property>().getData().value<QVector<GeometryTag>>();
+            std::vector<GeometryTag> vecLoc = data.value<Property>().getData().value<std::vector<GeometryTag>>();
             shapeSelector->setShape(vecLoc);
             //connect(editor, SIGNAL(editingFinished()),this, SLOT(commitAndCloseShapeSelectorEditor()));
             connect(shapeSelector,SIGNAL(editingSelectionFinished()),this, SLOT(commitAndCloseShapeSelectorEditor()));
@@ -4985,7 +4984,7 @@ void GeneralDelegate::setEditorData(QWidget *editor, const QModelIndex &index) c
     else if(propertyName == "Geometry" || propertyName== "Location")
     {
         ShapeSelector *shapeSelector = static_cast<ShapeSelector*>(editor);
-        QVector<GeometryTag> vecLoc = data.value<Property>().getData().value<QVector<GeometryTag>>();
+        std::vector<GeometryTag> vecLoc = data.value<Property>().getData().value<std::vector<GeometryTag>>();
         shapeSelector->setShape(vecLoc);
 
         connect(shapeSelector, SIGNAL(editingSelectionFinished()),this, SLOT(commitAndCloseShapeSelectorEditor()));
@@ -5030,7 +5029,7 @@ void GeneralDelegate::setEditorData(QWidget *editor, const QModelIndex &index) c
     {
         cerr<<"____setting editor data for \"Boundary\": case geometry selection____"<<endl;
         ShapeSelector *shapeSelector = static_cast<ShapeSelector*>(editor);
-        QVector<GeometryTag> vecLoc = data.value<Property>().getData().value<QVector<GeometryTag>>();
+        std::vector<GeometryTag> vecLoc = data.value<Property>().getData().value<std::vector<GeometryTag>>();
         shapeSelector->setShape(vecLoc);
         //connect(editor, SIGNAL(editingFinished()), this, SLOT(commitAndCloseShapeSelectorEditor_boundaryPrismaticLayer()));
         connect(shapeSelector, SIGNAL(editingSelectionFinished()), this, SLOT(commitAndCloseShapeSelectorEditor_boundaryPrismaticLayer()));
@@ -6433,7 +6432,7 @@ void GeneralDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, c
         //! -----------------
         else if(propertyName=="Master" || propertyName =="Slave")
         {
-            if(content.value<Property>().getData().canConvert<QVector<GeometryTag>>())
+            if(content.value<Property>().getData().canConvert<std::vector<GeometryTag>>())
             {
                 ShapeSelector *shapeSelector = static_cast<ShapeSelector*>(editor);
                 data.setValue(shapeSelector->getVecLoc());

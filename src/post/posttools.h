@@ -50,7 +50,7 @@ public:
     //! ---------------------------------------------------------
     static bool getStepSubStepBySetDTM(QMap<double, QVector<int>> discreteTimeMap, int setNumber, double &analysisTime, int &foundStep, int &foundSubStep);
 
-    static QList<double> principalComponents(const QList<double> &sik);
+    static void principalComponents(double *sik, double *values);
 };
 
 #endif // POSTTOOLS_H

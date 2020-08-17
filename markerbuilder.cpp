@@ -46,7 +46,6 @@ bool markerBuilder::addMarker(SimulationNodeClass *node, geometryDataBase *gDB)
         //! retrieve the coordinate system of the bolt
         //! -------------------------------------------
         void *CSpointer = node->getPropertyValue<void*>("Coordinate system");
-
         QStandardItem *itemCS = static_cast<QStandardItem*>(CSpointer);
         SimulationNodeClass *nodeCS = itemCS->data(Qt::UserRole).value<SimulationNodeClass*>();
 
@@ -54,13 +53,13 @@ bool markerBuilder::addMarker(SimulationNodeClass *node, geometryDataBase *gDB)
         double nx,ny,nz;
         double D;
 
-        QVector<GeometryTag> locs = node->getPropertyValue<QVector<GeometryTag>>("Tags");
-        if(locs.isEmpty()) return false;
+        std::vector<GeometryTag> locs = node->getPropertyValue<std::vector<GeometryTag>>("Tags");
+        if(locs.size()==0) return false;
 
         //! -----------------------------------------------
         //! only solids are acceptable for bolt pretension
         //! -----------------------------------------------
-        if(locs.length()==1 && locs.at(0).subShapeType==TopAbs_SOLID)
+        if(locs.size()==1 && locs[0].subShapeType==TopAbs_SOLID)
         {
             const TopoDS_Shape &theBoltsShape = gDB->bodyMap.value(locs.at(0).subTopNr);
             Bnd_Box BB;
@@ -120,11 +119,11 @@ bool markerBuilder::addMarker(SimulationNodeClass *node, geometryDataBase *gDB)
 
     case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Acceleration:
     {
-        const QVector<GeometryTag> &locs = node->getPropertyValue<QVector<GeometryTag>>("Geometry");
+        const std::vector<GeometryTag> &locs = node->getPropertyValue<std::vector<GeometryTag>>("Geometry");
         //! ---------------------------------------------------------
         //! create the marker only if something is present in "Tags"
         //! ---------------------------------------------------------
-        if(locs.isEmpty())
+        if(locs.size()==0)
         {
             cout<<"markerBuilder::addMarker()->____locs empty: returning false____"<<endl;
             return false;
@@ -136,7 +135,7 @@ bool markerBuilder::addMarker(SimulationNodeClass *node, geometryDataBase *gDB)
         TopoDS_Compound compound;
         TopoDS_Builder theBuilder;
         theBuilder.MakeCompound(compound);
-        for(int i=0; i<locs.length(); i++)
+        for(int i=0; i<locs.size(); i++)
         {
             const GeometryTag &loc = locs.at(i);
             const TopoDS_Shape &curShape = gDB->bodyMap.value(loc.parentShapeNr);
@@ -270,11 +269,11 @@ bool markerBuilder::addMarker(SimulationNodeClass *node, geometryDataBase *gDB)
 
     case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Moment:
     {
-        const QVector<GeometryTag> &locs = node->getPropertyValue<QVector<GeometryTag>>("Geometry");
+        const std::vector<GeometryTag> &locs = node->getPropertyValue<std::vector<GeometryTag>>("Geometry");
         //! ---------------------------------------------------------
         //! create the marker only if something is present in "Tags"
         //! ---------------------------------------------------------
-        if(locs.isEmpty())
+        if(locs.size()==0)
         {
             cout<<"markerBuilder::addMarker()->____locs empty: returning false____"<<endl;
             return false;
@@ -286,7 +285,7 @@ bool markerBuilder::addMarker(SimulationNodeClass *node, geometryDataBase *gDB)
         TopoDS_Compound compound;
         TopoDS_Builder theBuilder;
         theBuilder.MakeCompound(compound);
-        for(int i=0; i<locs.length(); i++)
+        for(int i=0; i<locs.size(); i++)
         {
             int bodyIndex = locs.at(i).parentShapeNr;
             int faceIndex = locs.at(i).subTopNr;

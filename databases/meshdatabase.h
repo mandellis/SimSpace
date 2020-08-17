@@ -216,7 +216,7 @@ public:
     //! ------------------------
     QMap<int,bool> mapOfFeaturePreserving;
     QMap<int,bool> defaultMapOfFeaturePreserving;
-    QVector<GeometryTag> featuredTags;
+    std::vector<GeometryTag> featuredTags;
 
     //! ----------------------------------------------------
     //! geometry correction after patch independent meshing

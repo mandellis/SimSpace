@@ -21,7 +21,7 @@ public:
 
     TopologyTools();
 
-    static QVector<GeometryTag> generateLocationPairs(geometryDataBase *gDB, const ListOfShape& scope);
+    static std::vector<GeometryTag> generateLocationPairs(geometryDataBase *gDB, const ListOfShape& scope);
 
     //! ------------------------------------------
     //! retrieve the main shapes within a compoud
