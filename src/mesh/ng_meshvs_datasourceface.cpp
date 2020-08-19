@@ -4171,6 +4171,7 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const std::vector<meshElement
         myNodeCoords->SetValue(localNodeID,2,aMeshPoint.y);
         myNodeCoords->SetValue(localNodeID,3,aMeshPoint.z);
     }
+
     //! ---------------------------
     //! compute normal at elements
     //! ---------------------------

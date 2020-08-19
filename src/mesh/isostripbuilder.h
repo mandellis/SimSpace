@@ -16,7 +16,6 @@
 //! Qt
 //! ---
 #include <QObject>
-//#include <QMap>
 
 //! ----------------
 //! custom includes
@@ -87,6 +86,21 @@ private:
     std::map<int,std::vector<isoStripPoint>> mdata;
 
 public:
+
+    //! ----------
+    //! getColumn
+    //! ----------
+    std::vector<isoStripPoint> getColumn(int col) const
+    {
+        std::vector<isoStripPoint> vecPoints;
+        std::map<int,std::vector<isoStripPoint>>::const_iterator it = mdata.find(col);
+        if(it!=mdata.cend())
+        {
+            const std::vector<isoStripPoint> &vp = it->second;
+            for(int k=0; k<vp.size(); k++) vecPoints.push_back(vp[k]);
+        }
+        return vecPoints;
+    }
 
     //! -----------------------------------------------
     //! append a value at the end of a specific column
@@ -208,6 +222,9 @@ public:
             theElement.pointList<<mesh::meshPoint(aPoint.x,aPoint.y,aPoint.z);
         }
     }
+
+    //void getBottomPointsOfIsoStrip(int n, std::vector<isoStripPoint> &bottomPoints){;}
+    //void getTopPointsOfIsoStrip(int n, std::vector<isoStripPoint> &topPoints){;}
 };
 
 class MeshVS_DataSource;
@@ -226,21 +243,26 @@ public:
     void setIsoStrips(const std::vector<isoStrip> &theIsoStrips);
 
     bool perform(std::vector<meshElementByCoords> &vecMeshElements);
-    bool perform1(std::vector<meshElementByCoords> &vecMeshElements);
+    bool perform1(std::vector<meshElementByCoords> &vecMeshElements);   // a - for the moment - failed attempt to optimize
 
-    void getAllElements(const std::vector<faceTable> &vecFaceTables, std::vector<meshElementByCoords> &vecMeshElements);
     void getIsoStripElements(const std::vector<faceTable> &vecFaceTables, std::multimap<int, meshElementByCoords> &meshElementsByIsoStripNb);
+
+    //! new method for iso-surfaces
+    bool performIsoSurface(int NbLevels, std::vector<meshElementByCoords> &vecMeshElements, std::map<int,int> &mapElementLevel);
 
 private:
 
     occHandle(MeshVS_DataSource) myMeshDS;
     std::map<int,double> myValues;
     std::vector<isoStrip> myIsoStrips;
+    std::map<int,std::vector<faceTable>> myMapElementFaceTables;
 
 private:
 
     void classifyNodes(myMultiMap<int, int> &pointToIsoStrip);
     void pointCoord(double *c, int globalNodeID);
+    void getAllElements(const std::vector<faceTable> &vecFaceTables, std::vector<meshElementByCoords> &vecMeshElements);
+    bool computeFaceTables();
 
 private:
 

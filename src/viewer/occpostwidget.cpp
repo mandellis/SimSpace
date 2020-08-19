@@ -145,11 +145,6 @@ void occPostWidget::displayResult(sharedPostObject &aPostObject)
         const std::map<GeometryTag,occHandle(MeshVS_DeformedDataSource)> &mapOfMeshDS = aPostObject->getMeshDataSourcesForView();
         for(std::map<GeometryTag,occHandle(MeshVS_DeformedDataSource)>::const_iterator it = mapOfMeshDS.cbegin(); it!=mapOfMeshDS.cend(); it++)
         {
-            cout<<"@ ----------------------------------"<<endl;
-            cout<<"@ - number of nodes: "<<it->second->GetAllNodes().Extent()<<endl;
-            cout<<"@ - number of elements: "<<it->second->GetAllElements().Extent()<<endl;
-            cout<<"@ ----------------------------------"<<endl;
-
             occHandle(MeshVS_Mesh) aMeshObject = new MeshVS_Mesh();
             aMeshObject->SetDataSource(it->second);
 
@@ -219,14 +214,14 @@ void occPostWidget::updateViewerStatus()
 {
     myResultPresentation = Global::status().myResultPresentation;
 
-    switch(myResultPresentation.theCombinedView)
-    {
-    case resultPresentation::combinedView_resultOnly: cout<<"occPostWidget::updateViewerStatus()->____results only____"<<endl; break;
-    case resultPresentation::combinedView_meshVisible: cout<<"occPostWidget::updateViewerStatus()->____results with mesh____"<<endl; break;
-    case resultPresentation::combinedView_undeformedModel: cout<<"occPostWidget::updateViewerStatus()->____results and undeformed model____"<<endl; break;
-    case resultPresentation::combinedView_undeformedWireFrame: cout<<"occPostWidget::updateViewerStatus()->____results and undeformed wireframe____"<<endl; break;
-    }
-    cout<<"occPostWidget::updateViewerStatus()->____scale: "<<myResultPresentation.theScale<<"____"<<endl;
+    //switch(myResultPresentation.theCombinedView)
+    //{
+    //case resultPresentation::combinedView_resultOnly: cout<<"occPostWidget::updateViewerStatus()->____results only____"<<endl; break;
+    //case resultPresentation::combinedView_meshVisible: cout<<"occPostWidget::updateViewerStatus()->____results with mesh____"<<endl; break;
+    //case resultPresentation::combinedView_undeformedModel: cout<<"occPostWidget::updateViewerStatus()->____results and undeformed model____"<<endl; break;
+    //case resultPresentation::combinedView_undeformedWireFrame: cout<<"occPostWidget::updateViewerStatus()->____results and undeformed wireframe____"<<endl; break;
+    //}
+    //cout<<"occPostWidget::updateViewerStatus()->____scale: "<<myResultPresentation.theScale<<"____"<<endl;
 
     //! --------------------------------------------------------------
     //! this method calls the simulation manager, which in turn calls

@@ -10540,14 +10540,18 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
             double max = aPostObject->getMax();
             int NbIntervals = aPostObject->getNbLevels();
             double magnifyFactor = Global::status().myResultPresentation.theScale;
-            int component = aPostObject->getSolutionDataComponent();    //cesere
+            int component = aPostObject->getSolutionDataComponent();
 
             std::map<GeometryTag,std::map<int,gp_Vec>> mapOfNodalDisplacements = aPostObject->getMapOfNodalDisplacements();
-            cout<<"___SIZE OF MAP: "<<mapOfNodalDisplacements.size()<<"____"<<endl;
+            //cout<<"___SIZE OF MAP: "<<mapOfNodalDisplacements.size()<<"____"<<endl;
 
+            //! ---------------------------------------------------------------
+            //! this is a patch: actually the nodal displacement for building
+            //! the deformed view should be incorporated into the postObject
+            //! ---------------------------------------------------------------
             if(mapOfNodalDisplacements.size()==0)
             {
-                cout<<"____REBUILDING NODAL DISPLACEMENTS (FILLING WITH ZERO)____"<<endl;
+                //cout<<"____REBUILDING NODAL DISPLACEMENTS (FILLING WITH ZERO)____"<<endl;
                 //! rebuild the map of nodal displacements
                 const std::vector<GeometryTag> &tags = curNode->getPropertyValue<std::vector<GeometryTag>>("Tags");
                 for(std::vector<GeometryTag>::const_iterator it = tags.cbegin(); it!=tags.cend(); it++)
@@ -10563,6 +10567,10 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
                 }
                 aPostObject->setMapOfNodalDisplacements(mapOfNodalDisplacements);
             }
+
+            //! -------------------------
+            //! build the colored result
+            //! -------------------------
             aPostObject->buildMeshIO(min,max,NbIntervals,scaleType,component,magnifyFactor);
         }
         else

@@ -276,9 +276,9 @@ void postObject::write(ofstream &file)
         case TopAbs_VERTEX: /* to be implemented */ break;
         }
     }
-    //! ------------------
-    //! write min and max
-    //! ------------------
+    //! ----------------------------
+    //! write generation paramaters
+    //! ----------------------------
     file<<mySolutionDataComponent<<endl;
     file<<myMin<<endl;
     file<<myMax<<endl;
@@ -404,7 +404,6 @@ postObject::postObject(ifstream &file)
     //! --------------
     //! read the mesh
     //! --------------
-    //std::map<GeometryTag, occHandle(MeshVS_DataSource)> aMapOfMeshDataSources;
     for(int i=0; i<NbMeshes; i++)
     {
         //! -------------
@@ -430,15 +429,11 @@ postObject::postObject(ifstream &file)
         //! fill the map of mesh data sources
         //! ----------------------------------
         occHandle(MeshVS_DeformedDataSource) aDefMeshDS = new MeshVS_DeformedDataSource(aMeshDS,1.0);
-        //aMapOfMeshDataSources.insert(std::make_pair(aTag,aDefMeshDS));
-        //aMapOfMeshDataSources.insert(std::make_pair(aTag,aMeshDS));
-        cout<<"____"<<aDefMeshDS->GetAllElements().Extent()<<"____"<<endl;
-        cout<<"____"<<aDefMeshDS->GetAllNodes().Extent()<<"____"<<endl;
         theMeshDataSources.insert(std::make_pair(aTag,aDefMeshDS));
     }
-    //! -----------------
-    //! read min and max
-    //! -----------------
+    //! -------------------------------
+    //! read the generation parameters
+    //! -------------------------------
     file>>mySolutionDataComponent;
     file>>myMin;
     file>>myMax;
@@ -491,10 +486,7 @@ void postObject::buildMeshIO(double min, double max, int Nlevels, bool autoscale
         }
         else
         {
-            cout<<"____USING THE WHOLE MESH____"<<endl;
             curMeshDS = anIt->second->GetNonDeformedDataSource();
-            cout<<"____ELEMENTS: "<<curMeshDS->GetAllElements().Extent()<<"____"<<endl;
-            cout<<"____NODES: "<<curMeshDS->GetAllNodes().Extent()<<"____"<<endl;
         }
 
         //! ----------------------------------
@@ -502,27 +494,20 @@ void postObject::buildMeshIO(double min, double max, int Nlevels, bool autoscale
         //! ----------------------------------
         occHandle(MeshVS_DeformedDataSource) theDeformedDS = new MeshVS_DeformedDataSource(curMeshDS,deformationScale);
         const std::map<int,gp_Vec> &displacementMap = myMapOfNodalDisplacements.at(loc);
-        cout<<"____displacement map size: "<<displacementMap.size()<<"____"<<endl;
-        //exit(9999);
         theDeformedDS->SetNonDeformedDataSource(curMeshDS);
-        cout<<"____tag00____"<<endl;
+
         for(TColStd_MapIteratorOfPackedMapOfInteger it(curMeshDS->GetAllNodes()); it.More(); it.Next())
         {
             int globalNodeID = it.Key();
             const gp_Vec &d = displacementMap.at(globalNodeID);
             theDeformedDS->SetVector(globalNodeID,d);
         }
-        cout<<"____tag01____"<<endl;
         theDeformedDS->SetMagnify(deformationScale);
-        cout<<"____tag02____"<<endl;
         theMeshDataSourcesForView[loc]=theDeformedDS;   //! abruptly replace - do not use "insert"
-        cout<<"____tag03____"<<endl;
 
         const std::vector<std::map<int, double>> &listOfRes = theData.at(loc);
-        cout<<"____tag04____"<<endl;
-        cout<<"____tag04: component: "<<component<<"____"<<endl;
         const std::map<int, double> &res = listOfRes.at(component);
-        cout<<"____tag5____"<<endl;
+
         //! -------------------------------------------
         //! min and max for the colorbox and isostrips
         //! -------------------------------------------
@@ -535,7 +520,21 @@ void postObject::buildMeshIO(double min, double max, int Nlevels, bool autoscale
         else { myMin = min; myMax = max; }
 
         occHandle(MeshVS_Mesh) aColoredMesh;
-        MeshTools::buildIsoStrip(theDeformedDS,res,myMin,myMax,myNbLevels,aColoredMesh);
+        switch(Global::status().myResultPresentation.theTypeOfPresentation)
+        {
+        case resultPresentation::typeOfPresentation_isostrips:
+            MeshTools::buildIsoStrip(theDeformedDS,res,myMin,myMax,myNbLevels,aColoredMesh);
+            break;
+        case resultPresentation::typeOfPresentation_nodalresults:
+            MeshTools::buildColoredMesh(theDeformedDS,res,aColoredMesh,myMin,myMax,myNbLevels);
+            break;
+        case resultPresentation::typeOfPresentation_isosurfaces:
+            MeshTools::buildIsoSurfaces(theDeformedDS,res,myMin,myMax,myNbLevels,aColoredMesh,false);
+            break;
+        case resultPresentation::typeOfPresentation_isolines:
+            break;
+        }
+
         theMeshes.insert(std::make_pair(loc,aColoredMesh));
     }
 

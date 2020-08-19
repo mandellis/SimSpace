@@ -211,9 +211,6 @@ public:
     //! init
     void init(meshDataBase *mDB);
 
-    //! clone
-    postObject clone(const postObject &other);
-
     //! get colored meshes
     std::map<GeometryTag,occHandle(MeshVS_Mesh>) getColoredMeshes() const { return theMeshes; }
 
