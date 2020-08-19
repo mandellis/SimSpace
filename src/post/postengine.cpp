@@ -297,7 +297,7 @@ QMap<GeometryTag,QList<QMap<int,double>>> postEngine::evaluateResult(const QStri
                         }
                         std::getline(curFile,val);
                     }
-                    totalRForces<<compXtotal<<compYtotal<<compZtotal<<compTtotal;
+                    //totalRForces<<compXtotal<<compYtotal<<compZtotal<<compTtotal;
                     //! result
                     res<<resComp_Total<<resComp_X<<resComp_Y<<resComp_Z;
                     //cout<<"postEngine::evaluateResult()->____Number of components: "<<res.length()<<"____"<<endl;
@@ -434,7 +434,7 @@ QMap<GeometryTag,QList<QMap<int,double>>> postEngine::evaluateResult(const QStri
                 }
                     break;
                 }
-                totalRForcesMap.insert(loc,totalRForces);
+                //totalRForcesMap.insert(loc,totalRForces);
                 resMap.insert(loc,res);
                 curFile.close();
                 break;
