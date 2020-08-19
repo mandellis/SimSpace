@@ -563,6 +563,9 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
             case SimulationNodeClass::nodeType_solutionStructuralEquivalentPlasticStrain:
             case SimulationNodeClass::nodeType_solutionStructuralContact:
             case SimulationNodeClass::nodeType_solutionStructuralFatigueTool:
+            case SimulationNodeClass::nodeType_solutionStructuralGamma:
+            case SimulationNodeClass::nodeType_solutionStructuralNodalForces:
+            case SimulationNodeClass::nodeType_solutionStructuralReactionForce:
             {
                 //! ---------------------------------------------------------------------
                 //! hide the meshes: keep the bodies in wireframe mode for the selection
@@ -2349,8 +2352,20 @@ void SimulationManager::handleItem(int type)
     case 234: this->createSimulationNode(SimulationNodeClass::nodeType_solutionStructuralContact,2); break;
     case 235: this->createSimulationNode(SimulationNodeClass::nodeType_solutionStructuralContact,3); break;
 
+    //! ------------------------------------------------------------------
+    //! 246 -> insert total "Reaction forces"
+    //! directional nodal forces (option "1" => "x" direction by default)
+    //! ------------------------------------------------------------------
+    case 246: this->createSimulationNode(SimulationNodeClass::nodeType_solutionStructuralReactionForce,0); break;
+    case 247: this->createSimulationNode(SimulationNodeClass::nodeType_solutionStructuralReactionForce,1); break;
+
+    //! ------------------------------------------------------------------
+    //! 245 -> insert total "Gamma"
+    //! ------------------------------------------------------------------
+    case 245: this->createSimulationNode(SimulationNodeClass::nodeType_solutionStructuralGamma); break;
+
     //! -----------------
-    //! evaluate results
+    //!  results
     //! -----------------
     case 204:
     {
@@ -2672,7 +2687,9 @@ void SimulationManager::createSimulationNode(SimulationNodeClass::nodeType type,
             type ==SimulationNodeClass::nodeType_solutionStructuralStress ||
             type ==SimulationNodeClass::nodeType_solutionStructuralFatigueTool ||
             type ==SimulationNodeClass::nodeType_solutionStructuralNodalForces ||
-            type ==SimulationNodeClass::nodeType_solutionStructuralContact)
+            type ==SimulationNodeClass::nodeType_solutionStructuralContact  ||
+            type ==SimulationNodeClass::nodeType_solutionStructuralGamma  ||
+            type ==SimulationNodeClass::nodeType_solutionStructuralReactionForce)
     {
         aNode = nodeFactory::nodeFromScratch(type,mySimulationDataBase, myCTX, addOptions);
         aNode->setParent(this);
@@ -10517,7 +10534,6 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
         }
     }
     if(isMeshOK==false) return;
-
     //! --------------
     //! a post object
     //! --------------
@@ -10641,6 +10657,7 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
             case SimulationNodeClass::nodeType_solutionStructuralMechanicalStrain: keyName ="MESTRAIN"; break;
             case SimulationNodeClass::nodeType_solutionStructuralEquivalentPlasticStrain: keyName ="PE"; break;
             case SimulationNodeClass::nodeType_solutionStructuralNodalForces: keyName ="FORC"; break;
+            case SimulationNodeClass::nodeType_solutionStructuralReactionForce: keyName = "FORC"; break;
             case SimulationNodeClass::nodeType_solutionStructuralTemperature: keyName ="NDTEMP"; break;
             case SimulationNodeClass::nodeType_solutionStructuralContact: keyName = "CONTACT"; break;
             }
@@ -10846,12 +10863,13 @@ bool SimulationManager::eventFilter(QObject *object, QEvent *event)
              QFile f(stafile);
              if(f.exists())
              {
-                 //cout<<"____.STA FILE FOUND: \""<<stafile.toStdString()<<"\"____"<<endl;
+                 cout<<"____.STA FILE FOUND: \""<<stafile.toStdString()<<"\"____"<<endl;
                  QMap<double,QVector<int>> timeinfo;
                  bool isDone = CCXTools::readsta(stafile,timeinfo);
                  if(isDone)
                  {
                      data.setValue(timeinfo);
+                     cout<<timeinfo.firstKey()<<endl;
                      nodeSolutionInformation->replaceProperty("Discrete time map",Property("Discrete time map",data,Property::PropertyGroup_Hidden));
                  }
                  else
@@ -10961,6 +10979,7 @@ void SimulationManager::retrieveSolverInfo()
     {
     case SimulationNodeClass::nodeType_structuralAnalysis: analysisType = 0; break;
     case SimulationNodeClass::nodeType_thermalAnalysis: analysisType = 1; break;
+    case SimulationNodeClass::nodeType_combinedAnalysis: analysisType = 2; break;
     }
 
     //! ------------------------------------------------------

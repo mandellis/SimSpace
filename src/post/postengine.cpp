@@ -17,6 +17,7 @@
 //! ----
 #include <iostream>
 #include <fstream>
+#include <unordered_map>
 
 //! -------
 //! global
@@ -111,8 +112,15 @@ std::map<GeometryTag,std::vector<std::map<int,double>>> postEngine::evaluateResu
     //! ----------------------------------------------------
     //! generate the results on all the requested locations
     //! ----------------------------------------------------
+
+    //! ----------------------------------------------------
+    //! result of reaction forces (to do)
+    //! ----------------------------------------------------
+    std::unordered_multimap<int,std::vector<double>> totalRForcesMap;
+
     std::map<GeometryTag,std::vector<std::map<int,double>>> resMap;
     for(std::vector<GeometryTag>::const_iterator it = vecLoc.cbegin(); it!= vecLoc.cend(); ++it)
+
     {
         GeometryTag loc = *it;
 
@@ -152,6 +160,8 @@ std::map<GeometryTag,std::vector<std::map<int,double>>> postEngine::evaluateResu
         //! --------------------------
         //! the results on a location
         //! --------------------------
+  
+        std::vector<double> totalRForces;
         std::vector<std::map<int,double>> res;
 
         //! ---------------
@@ -291,7 +301,40 @@ std::map<GeometryTag,std::vector<std::map<int,double>>> postEngine::evaluateResu
                     //cout<<"postEngine::evaluateResult()->____Number of components: "<<res.length()<<"____"<<endl;
                 }
                     break;
+                case TypeOfResult_RF:
+                {
+                    QMap<int,double> resComp_X,resComp_Y,resComp_Z,resComp_Total;
+                    double compXtotal,compYtotal,compZtotal,compTtotal;
+                    //! <>::eof(): call getline before while, then inside {}, @ as last instruction
+                    std::getline(curFile,val);
+                    while(curFile.eof()!=true)
+                    {
+                        int ni;
+                        double cxx,cyy,czz,total;
+                        sscanf(val.c_str(),"%d%lf%lf%lf",&ni,&cxx,&cyy,&czz);
 
+                        //! nodeIDs defining the MeshVS_dataSource
+                        int OCCnodeID = indexedMapOfNodes.value(ni,-1);
+                        if(OCCnodeID!=-1)
+                        {
+                            total = sqrt(pow(cxx,2)+pow(cyy,2)+pow(czz,2));
+                            resComp_Total.insert(OCCnodeID,total);
+                            resComp_X.insert(OCCnodeID,cxx);
+                            resComp_Y.insert(OCCnodeID,cyy);
+                            resComp_Z.insert(OCCnodeID,czz);
+                            compXtotal+=cxx;
+                            compYtotal+=cyy;
+                            compZtotal+=czz;
+                            compTtotal+=total;
+                        }
+                        std::getline(curFile,val);
+                    }
+                    //totalRForces<<compXtotal<<compYtotal<<compZtotal<<compTtotal;
+                    //! result
+                    res<<resComp_Total<<resComp_X<<resComp_Y<<resComp_Z;
+                    //cout<<"postEngine::evaluateResult()->____Number of components: "<<res.length()<<"____"<<endl;
+                }
+                    break;
                 case TypeOfResult_S:
                 case TypeOfResult_TOSTRAIN:
                 case TypeOfResult_MESTRAIN:
@@ -449,8 +492,11 @@ std::map<GeometryTag,std::vector<std::map<int,double>>> postEngine::evaluateResu
                 }
                     break;
                 }
+                //totalRForcesMap.insert(loc,totalRForces);
+
                 //resMap.insert(loc,res);
                 resMap.insert(std::make_pair(loc,res));
+
                 curFile.close();
                 break;
             }
@@ -563,6 +609,15 @@ QString postEngine::resultName(const QString &keyName, int component, int step, 
         case 1: resultName="Directional Force X"; break;
         case 2: resultName="Directional Force Y"; break;
         case 3: resultName="Directional Force Z"; break;
+        }
+        break;
+    case TypeOfResult_RF:
+        switch(component)
+        {
+        case 0: colorBoxTitle="Total reaction force"; break;
+        case 1: colorBoxTitle="Directional reaction force X"; break;
+        case 2: colorBoxTitle="Directional reaction force Y"; break;
+        case 3: colorBoxTitle="Directional reaction force Z"; break;
         }
         break;
     case TypeOfResult_EPS:

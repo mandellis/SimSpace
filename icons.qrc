@@ -160,5 +160,6 @@
         <file>icons/icon_a field.png</file>
         <file>icons/icon_electrostatic potential.png</file>
         <file>icons/icon_point mass.png</file>
+        <file>icons/icon_gamma.png</file>
     </qresource>
 </RCC>

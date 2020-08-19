@@ -1460,6 +1460,8 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
             case SimulationNodeClass::nodeType_solutionStructuralTotalStrain:
             case SimulationNodeClass::nodeType_solutionStructuralEquivalentPlasticStrain:
             case SimulationNodeClass::nodeType_solutionStructuralNodalForces:
+            case SimulationNodeClass::nodeType_solutionStructuralGamma:
+            case SimulationNodeClass::nodeType_solutionStructuralReactionForce:
             {
                 data.setValue(0); editor->addItem("Time",data);
                 data.setValue(1); editor->addItem("Set",data);
@@ -1491,9 +1493,18 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
             {
             case SimulationNodeClass::nodeType_solutionThermalTemperature:
             case SimulationNodeClass::nodeType_solutionThermalFlux:
+            case SimulationNodeClass::nodeType_solutionStructuralGamma:
                 return Q_NULLPTR;
                 break;
-
+            case SimulationNodeClass::nodeType_solutionStructuralReactionForce:
+            {
+                editor = new QComboBox(parent);
+                data.setValue(0); editor->addItem("Total reaction force",data);
+                data.setValue(1); editor->addItem("Directional reaction force X",data);
+                data.setValue(2); editor->addItem("Directional reaction force Y",data);
+                data.setValue(3); editor->addItem("Directional reaction force Z",data);
+            }
+                break;
             case SimulationNodeClass::nodeType_solutionStructuralEquivalentPlasticStrain:
             {
                 editor = new QComboBox(parent);
@@ -3940,6 +3951,8 @@ void GeneralDelegate::setEditorData(QWidget *editor, const QModelIndex &index) c
         case SimulationNodeClass::nodeType_solutionStructuralTotalStrain:
         case SimulationNodeClass::nodeType_solutionStructuralEquivalentPlasticStrain:
         case SimulationNodeClass::nodeType_solutionStructuralNodalForces:
+        case SimulationNodeClass::nodeType_solutionStructuralReactionForce:
+        case SimulationNodeClass::nodeType_solutionStructuralGamma:
         {
             int val = data.value<Property>().getData().toInt();
             QComboBox *cb = static_cast<QComboBox*>(editor);
@@ -7634,6 +7647,9 @@ void GeneralDelegate::commitAndCloseBySelector()
     case SimulationNodeClass::nodeType_solutionStructuralTemperature:
     case SimulationNodeClass::nodeType_solutionStructuralThermalStrain:
     case SimulationNodeClass::nodeType_solutionStructuralTotalStrain:
+    case SimulationNodeClass::nodeType_solutionStructuralGamma:
+    case SimulationNodeClass::nodeType_solutionStructuralNodalForces:
+    case SimulationNodeClass::nodeType_solutionStructuralReactionForce:
     {
         emit byChanged();
     }
