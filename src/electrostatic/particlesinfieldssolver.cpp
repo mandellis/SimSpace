@@ -174,8 +174,8 @@ bool particlesInFieldsSolver::init(QStandardItem* simulationRoot)
         {
         case SimulationNodeClass::nodeType_electrostaticPotential:
         {
-            const QVector<GeometryTag> &vecLoc = curNode->getPropertyValue<QVector<GeometryTag>>("Tags");
-            int NbPatches = vecLoc.length();
+            const std::vector<GeometryTag> &vecLoc = curNode->getPropertyValue<std::vector<GeometryTag>>("Tags");
+            int NbPatches = vecLoc.size();
             QList<occHandle(Ng_MeshVS_DataSourceFace)> listOfFaceMeshDS;
             for(int n=0; n<NbPatches; n++)
             {
@@ -183,9 +183,7 @@ bool particlesInFieldsSolver::init(QStandardItem* simulationRoot)
                 int faceNr = vecLoc[0].subTopNr;
                 const occHandle(Ng_MeshVS_DataSourceFace) &aFaceMeshDS =
                         occHandle(Ng_MeshVS_DataSourceFace)::DownCast(mySDB->ArrayOfMeshDSOnFaces.getValue(1,faceNr));
-                apair.first = faceNr;
-                apair.second = aFaceMeshDS;
-                patches.insert(apair);
+                patches.insert(std::make_pair(faceNr,aFaceMeshDS));
 
                 //! -------------------------------
                 //! sum the face mesh data sources

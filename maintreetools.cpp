@@ -572,7 +572,7 @@ void mainTreeTools::addSolutionInformation(QStandardItem* solutionItem)
 //! function: getAllBoundaryConditionsTags
 //! details:
 //! ---------------------------------------
-void mainTreeTools::getAllBoundaryConditionsTags(QTreeView *tree, int type, QVector<GeometryTag> &vecTags)
+void mainTreeTools::getAllBoundaryConditionsTags(QTreeView *tree, int type, std::vector<GeometryTag> &vecTags)
 {
     //! -----------
     //! model root
@@ -599,19 +599,19 @@ void mainTreeTools::getAllBoundaryConditionsTags(QTreeView *tree, int type, QVec
                 {
                     QStandardItem *connectionItem = connectionGroup->child(k,0);
                     SimulationNodeClass *node = connectionItem->data(Qt::UserRole).value<SimulationNodeClass*>();
-                    QVector<GeometryTag> masterTags = node->getPropertyValue<QVector<GeometryTag>>("Tags master");
-                    QVector<GeometryTag> slaveTags = node->getPropertyValue<QVector<GeometryTag>>("Tags slave");
-                    for(int m = 0; m<masterTags.length(); m++)
+                    std::vector<GeometryTag> masterTags = node->getPropertyValue<std::vector<GeometryTag>>("Tags master");
+                    std::vector<GeometryTag> slaveTags = node->getPropertyValue<std::vector<GeometryTag>>("Tags slave");
+                    for(int m = 0; m<masterTags.size(); m++)
                     {
                         int shapeType = int(masterTags[m].subShapeType);
                         if(shapeType!=type) continue;
-                        if(vecTags.contains(masterTags[m])==false) vecTags.push_back(masterTags[m]);
+                        if(std::find(masterTags.begin(),masterTags.end(),masterTags[m])==vecTags.end()) vecTags.push_back(masterTags[m]);
                     }
-                    for(int m=0; m<slaveTags.length(); m++)
+                    for(int m=0; m<slaveTags.size(); m++)
                     {
                         int shapeType = int(slaveTags[m].subShapeType);
                         if(shapeType!=type) continue;
-                        if(vecTags.contains(slaveTags[m])==false) vecTags.push_back(slaveTags[m]);
+                        if(std::find(vecTags.begin(),vecTags.end(),slaveTags[m])==vecTags.end()) vecTags.push_back(slaveTags[m]);
                     }
                 }
             }
@@ -627,10 +627,10 @@ void mainTreeTools::getAllBoundaryConditionsTags(QTreeView *tree, int type, QVec
                 QStandardItem *itemBC = item->child(j,0);
                 SimulationNodeClass *nodeBC = itemBC->data(Qt::UserRole).value<SimulationNodeClass*>();
                 if(nodeBC->isSimulationSetUpNode()==false) continue;
-                QVector<GeometryTag> BCTags = nodeBC->getPropertyValue<QVector<GeometryTag>>("Tags");
-                for(int m=0; m<BCTags.length(); m++)
+                std::vector<GeometryTag> BCTags = nodeBC->getPropertyValue<std::vector<GeometryTag>>("Tags");
+                for(int m=0; m<BCTags.size(); m++)
                 {
-                    if(vecTags.contains(BCTags[m])==false)
+                    if(std::find(vecTags.begin(),vecTags.end(),BCTags[m])==vecTags.end())
                     {
                         int shapeType = int(BCTags[m].subShapeType);
                         if(shapeType!=type) continue;
@@ -647,10 +647,10 @@ void mainTreeTools::getAllBoundaryConditionsTags(QTreeView *tree, int type, QVec
                 QStandardItem *itemMeshControl = item->child(j,0);
                 SimulationNodeClass *nodeFaceMeshControl = itemMeshControl->data(Qt::UserRole).value<SimulationNodeClass*>();
                 if(nodeFaceMeshControl->getType()!=SimulationNodeClass::nodeType_meshFaceSize) continue;
-                QVector<GeometryTag> faceSizingTags = nodeFaceMeshControl->getPropertyValue<QVector<GeometryTag>>("Tags");
-                for(int m=0; m<faceSizingTags.length(); m++)
+                std::vector<GeometryTag> faceSizingTags = nodeFaceMeshControl->getPropertyValue<std::vector<GeometryTag>>("Tags");
+                for(int m=0; m<faceSizingTags.size(); m++)
                 {
-                    if(vecTags.contains(faceSizingTags[m])==false)
+                    if(std::find(vecTags.begin(),vecTags.end(),faceSizingTags[m])==vecTags.end())
                     {
                         int shapeType = int(faceSizingTags[m].subShapeType);
                         if(shapeType!=type) continue;

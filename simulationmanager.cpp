@@ -41,6 +41,7 @@
 #include "handle_ais_doublearrowmarker_reg.h"
 #include "markerbuilder.h"
 #include "maintreetools.h"
+#include "openfoamcontroller.h"
 #include <connectionpairgenerationoptions.h>
 #include <tabulardataviewerclass1.h>
 
@@ -501,26 +502,19 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 emit requestHideSlicedMeshes();
 
                 SimulationNodeClass *node = index.data(Qt::UserRole).value<SimulationNodeClass*>();
-                cout<<"____name: "<<node->getName().toStdString()<<"____"<<endl;
                 QStandardItem *itemTemperature = (QStandardItem*)(node->getPropertyValue<void*>("Imported body temperature"));
-                cout<<"____item name: "<<itemTemperature->data(Qt::DisplayRole).toString().toStdString()<<"____"<<endl;
                 SimulationNodeClass *nodeTemperature = itemTemperature->data(Qt::UserRole).value<SimulationNodeClass*>();
-                cout<<"____contained node: "<<nodeTemperature->getName().toStdString()<<"____"<<endl;
-                cout<<"____listing the properties of the contained node____"<<endl;
-                for(int i=0; i<nodeTemperature->getPropertyItems().length(); i++)
-                {
-                    cout<<"____"<<nodeTemperature->getPropertyItems().at(i)->data(Qt::UserRole).value<Property>().getName().toStdString()<<"____"<<endl;
-                }
+
                 if(nodeTemperature->getPropertyItem("Post object")!=Q_NULLPTR)
                 {
-                    postObject aPostObject = nodeTemperature->getPropertyValue<postObject>("Post object");
+                    sharedPostObject aPostObject = nodeTemperature->getPropertyValue<sharedPostObject>("Post object");
                     emit requestSetWorkingMode(3);
                     emit requestShowAllBodies();    //! check if wireframe... to do
                     emit requestDisplayResult(aPostObject);
                 }
                 else
                 {
-                    cout<<"____no data____"<<endl;
+                    //cout<<"____no data____"<<endl;
                     requestSetWorkingMode(2);
                 }
                 this->changeColor();
@@ -541,7 +535,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 //! in the working mode "3" "Solution" the selection modes
                 //! and the corresponding toolbar buttons are disabled
                 //! -------------------------------------------------------
-                postObject aPostObject;
+                sharedPostObject aPostObject;
                 bool isDone = this->retrieveCurrentItemResult(aPostObject);
                 if(isDone)
                 {
@@ -584,12 +578,11 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 //! in the working mode "3" "Solution" the selection modes
                 //! and the corresponding toolbar buttons are disabled
                 //! -------------------------------------------------------
-                postObject aPostObject;
+                sharedPostObject aPostObject;
                 bool isDone = this->retrieveCurrentItemResult(aPostObject);
                 if(isDone)
                 {
                     emit requestSetWorkingMode(3);
-                    emit requestShowAllBodies();    //! check if wireframe... to do
                     emit requestDisplayResult(aPostObject);
                 }
                 else requestSetWorkingMode(2);
@@ -743,7 +736,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 bool areMeshNodeVisible = meshRootNode->getPropertyValue<bool>("Show mesh nodes");
                 emit requestShowMeshes(areMeshNodeVisible);
                 this->changeColor();
-                this->requestClearGraph();
+                emit requestClearGraph();
             }
                 break;
 
@@ -904,15 +897,18 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 emit requestHideSlicedMeshes();
                 emit requestSetWorkingMode(2);
                 this->changeColor();
-                emit requestClearGraph();
 
                 //! --------------
                 //! set the model
                 //! --------------
-                QModelIndex index_analysisSettings = this->getAnalysisSettingsItemFromCurrentItem()->index();
+                QModelIndex index_analysisSettings = mainTreeTools::getAnalysisSettingsItemFromCurrentItem(myTreeView)->index();
                 emit requestTabularData(index_analysisSettings);
                 emit requestHideFirstRow();
                 emit requestClearGraph();
+
+                QList<int> columnsToShow;
+                columnsToShow << TABULAR_DATA_STEP_NUMBER_COLUMN << TABULAR_DATA_STEP_END_TIME_COLUMN;
+                emit requestShowColumns(columnsToShow);
 
                 bool isDone = markerBuilder::addMarker(this->getCurrentNode(), mySimulationDataBase);
                 if(isDone == true) this->displayMarker();
@@ -1048,17 +1044,17 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 //! -----------------------------------------
                 emit requestShowDoubleViewPort(true);
 
-                QVector<GeometryTag> vecLocM = theNode->getPropertyItem("Tags master")->data(Qt::UserRole).value<Property>().getData().value<QVector<GeometryTag>>();
-                QVector<GeometryTag> vecLocS = theNode->getPropertyItem("Tags slave")->data(Qt::UserRole).value<Property>().getData().value<QVector<GeometryTag>>();
+                std::vector<GeometryTag> vecLocM = theNode->getPropertyItem("Tags master")->data(Qt::UserRole).value<Property>().getData().value<std::vector<GeometryTag>>();
+                std::vector<GeometryTag> vecLocS = theNode->getPropertyItem("Tags slave")->data(Qt::UserRole).value<Property>().getData().value<std::vector<GeometryTag>>();
 
                 std::vector<int> indexes_master;
                 std::vector<int> indexes_slave;
-                for(QVector<GeometryTag>::iterator it = vecLocM.begin(); it!=vecLocM.end(); ++it)
+                for(std::vector<GeometryTag>::iterator it = vecLocM.begin(); it!=vecLocM.end(); ++it)
                 {
                     GeometryTag loc = *it;
                     indexes_master.push_back(loc.parentShapeNr);
                 }
-                for(QVector<GeometryTag>::iterator it = vecLocS.begin(); it!=vecLocS.end(); ++it)
+                for(std::vector<GeometryTag>::iterator it = vecLocS.begin(); it!=vecLocS.end(); ++it)
                 {
                     GeometryTag loc = *it;
                     indexes_slave.push_back(loc.parentShapeNr);
@@ -1067,7 +1063,6 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 //! -------------------------------------------
                 //! hide all the bodies from the two viewports
                 //! -------------------------------------------
-                //TopTools_IndexedMapOfShape shapeMap = mySimulationDataBase->bodyMap;
                 QMap<int,TopoDS_Shape> shapeMap = mySimulationDataBase->bodyMap;
                 TColStd_ListOfInteger allBodies;
 
@@ -1542,7 +1537,7 @@ void SimulationManager::deleteItem(QList<QModelIndex> indexesList)
                         nodeSetUp->getModel()->blockSignals(true);
 
                         QVariant data;
-                        data.setValue(QVector<GeometryTag>());
+                        data.setValue(std::vector<GeometryTag>());
                         nodeSetUp->replaceProperty("Geometry",Property("Tags",data,Property::Property::PropertyGroup_Scope));
                         nodeSetUp->replaceProperty("Tags",Property("Tags",data,Property::Property::PropertyGroup_Scope));
                         data.setValue(Property::ScopingMethod_GeometrySelection);
@@ -1630,9 +1625,9 @@ void SimulationManager::handleItem(int type)
     case 85:
     {
         SimulationNodeClass *curNode = myTreeView->currentIndex().data(Qt::UserRole).value<SimulationNodeClass*>();
-        const QVector<GeometryTag> tags = curNode->getPropertyValue<QVector<GeometryTag>>("Geometry");
-        if(tags.isEmpty() || tags.size()>1) return;
-        TopAbs_ShapeEnum shapeType = tags.first().subShapeType;
+        const std::vector<GeometryTag> tags = curNode->getPropertyValue<std::vector<GeometryTag>>("Geometry");
+        if(tags.size()==0 || tags.size()>1) return;
+        TopAbs_ShapeEnum shapeType = tags[0].subShapeType;
         if(shapeType!=TopAbs_SOLID) return;
 
         int bodyIndex = tags.at(0).parentShapeNr;
@@ -1757,7 +1752,7 @@ void SimulationManager::handleItem(int type)
         if(curNode->getPropertyItem("Geometry")!=Q_NULLPTR)
         {
             cout<<" replacing the \"Geometry\" property of the promoted remote point"<<endl;
-            QVector<GeometryTag> vecLoc = curNode->getPropertyValue<QVector<GeometryTag>>("Geometry");
+            std::vector<GeometryTag> vecLoc = curNode->getPropertyValue<std::vector<GeometryTag>>("Geometry");
             data.setValue(vecLoc);
             Property prop("Geometry",data,Property::PropertyGroup_Scope);
             theNewRPNode->replaceProperty("Geometry",prop);
@@ -1785,7 +1780,7 @@ void SimulationManager::handleItem(int type)
         if(curNode->getPropertyItem("Tags")!=Q_NULLPTR)
         {
             cout<<" replacing the \"Tags\" property of the promoted remote point"<<endl;
-            QVector<GeometryTag> vecLoc = curNode->getPropertyValue<QVector<GeometryTag>>("Tags");
+            std::vector<GeometryTag> vecLoc = curNode->getPropertyValue<std::vector<GeometryTag>>("Tags");
             data.setValue(vecLoc);
             Property prop("Tags",data,Property::PropertyGroup_Scope);
             theNewRPNode->replaceProperty("Tags",prop);
@@ -1905,7 +1900,7 @@ void SimulationManager::handleItem(int type)
         break;
     case 50:
     {
-        QVector<GeometryTag> mergedMasterTags, mergedSlaveTags;
+        std::vector<GeometryTag> mergedMasterTags, mergedSlaveTags;
         QList<QModelIndex> insel = myTreeView->selectionModel()->selectedIndexes();
 
         //! ----------------------------
@@ -1915,8 +1910,10 @@ void SimulationManager::handleItem(int type)
         {
             QModelIndex index = *it;
             SimulationNodeClass *node = index.data(Qt::UserRole).value<SimulationNodeClass*>();
-            mergedMasterTags.append(node->getPropertyValue<QVector<GeometryTag>>("Tags master"));
-            mergedSlaveTags.append(node->getPropertyValue<QVector<GeometryTag>>("Tags slave"));
+            const std::vector<GeometryTag> &tm = node->getPropertyValue<std::vector<GeometryTag>>("Tags master");
+            const std::vector<GeometryTag> &ts = node->getPropertyValue<std::vector<GeometryTag>>("Tags slave");
+            mergedMasterTags.insert(mergedMasterTags.end(),tm.cbegin(),tm.cend());
+            mergedSlaveTags.insert(mergedSlaveTags.end(),ts.cbegin(),ts.cend());
         }
         QVariant data;
         data.setValue(mergedMasterTags);
@@ -1995,22 +1992,46 @@ void SimulationManager::handleItem(int type)
         //! create a named selection from an item/items selection
         //! ------------------------------------------------------
         const QList<QModelIndex> &indexes = myTreeView->selectionModel()->selectedIndexes();
-        QVector<GeometryTag> tags;
+        std::vector<GeometryTag> tags;
         for(int n=0; n<indexes.length(); n++)
         {
             SimulationNodeClass *node = indexes[n].data(Qt::UserRole).value<SimulationNodeClass*>();
             if(node->isAnalysisResult()==false && node->isSimulationSetUpNode()==false) continue;
             if(node->getPropertyItem("Tags")==Q_NULLPTR) continue;
-            const QVector<GeometryTag> curTags = node->getPropertyValue<QVector<GeometryTag>>("Tags");
-            tags.append(curTags);
+            const std::vector<GeometryTag> &curTags = node->getPropertyValue<std::vector<GeometryTag>>("Tags");
+            tags.insert(tags.end(),curTags.cbegin(),curTags.cend());
         }
-        if(tags.length()==0) return;
+        if(tags.size()==0) return;
         this->createSimulationNode(SimulationNodeClass::nodeType_namedSelectionGeometry);
         SimulationNodeClass *namedSelectionNode = myTreeView->currentIndex().data(Qt::UserRole).value<SimulationNodeClass*>();
         QVariant data;
         data.setValue(tags);
         namedSelectionNode->replaceProperty("Geometry",Property("Geometry",data,Property::PropertyGroup_Scope));
         namedSelectionNode->replaceProperty("Tags",Property("Tags",data,Property::PropertyGroup_Scope));
+    }
+        break;
+        //! export a result
+    case 109:
+    {
+        cout<<"____case 109 selected____"<<endl;
+        SimulationNodeClass *curNode = myTreeView->currentIndex().data(Qt::UserRole).value<SimulationNodeClass*>();
+        if(curNode->getPropertyItem("Post object")==Q_NULLPTR) return;
+
+        //! ----------------------------------------
+        //! get a defaul folder position for saving
+        //! ----------------------------------------
+        QStandardItem *itemSimulationRoot = mainTreeTools::getCurrentSimulationRoot(myTreeView);
+        QStandardItem *itemSolution = itemSimulationRoot->child(itemSimulationRoot->rowCount()-1);
+        SimulationNodeClass *nodeSolution = itemSolution->data(Qt::UserRole).value<SimulationNodeClass*>();
+        QString directoryForSaving = nodeSolution->getPropertyValue<QString>("Project files dir");
+        if(directoryForSaving.isEmpty()) directoryForSaving = tools::getWorkingDir();
+
+        QString selectedFilter;
+        QString fileName = QFileDialog::getSaveFileName(this,"Export file as ",directoryForSaving,".txt",&selectedFilter,0);
+        fileName += selectedFilter;
+        if(fileName.isEmpty()) return;
+        //cout<<"____"<<fileName.toStdString()<<"____"<<endl;
+        exportingTools::exportNodalResult(curNode,fileName.toStdString());
     }
         break;
     case 54:
@@ -2185,12 +2206,14 @@ void SimulationManager::handleItem(int type)
     {
         QList<QModelIndex> modelIndexList = myTreeView->selectionModel()->selectedIndexes();
         if(modelIndexList.size()<2) return;
-        QVector<GeometryTag> tags;
+        std::vector<GeometryTag> tags;
         for(int i=0; i<modelIndexList.size(); i++)
         {
             const QModelIndex &curIndex = modelIndexList[i];
             SimulationNodeClass *curNode = curIndex.data(Qt::UserRole).value<SimulationNodeClass*>();
-            tags.append(curNode->getPropertyValue<QVector<GeometryTag>>("Tags"));
+            const std::vector<GeometryTag> &t = curNode->getPropertyValue<std::vector<GeometryTag>>("Tags");
+            tags.insert(tags.end(),t.cbegin(),t.cend());
+
         }
         //! --------------------------
         //! delete the selected items
@@ -2228,10 +2251,10 @@ void SimulationManager::handleItem(int type)
         SimulationNodeClass::nodeType theFamily = curNode->getFamily();
         if(theFamily==SimulationNodeClass::nodeType_meshControl)
         {
-            QVector<GeometryTag> vecLocs = curNode->getPropertyValue<QVector<GeometryTag>>("Tags");
+            std::vector<GeometryTag> vecLocs = curNode->getPropertyValue<std::vector<GeometryTag>>("Tags");
             std::vector<int> parentShapes;
 
-            for(QVector<GeometryTag>::iterator it = vecLocs.begin(); it!=vecLocs.end(); ++it)
+            for(std::vector<GeometryTag>::iterator it = vecLocs.begin(); it!=vecLocs.end(); ++it)
             {
                 const GeometryTag &loc = *it;
                 int n = loc.parentShapeNr;
@@ -2247,8 +2270,8 @@ void SimulationManager::handleItem(int type)
     {
         cout<<"SimulationManager::handleItem()->____update post object____"<<endl;
         SimulationNodeClass *curNode = myTreeView->currentIndex().data(Qt::UserRole).value<SimulationNodeClass*>();
-        postObject curPostObject = curNode->getPropertyItem("Post object")->data(Qt::UserRole).value<Property>().getData().value<postObject>();
-        curPostObject.update(static_cast<meshDataBase*>(mySimulationDataBase));
+        sharedPostObject curPostObject = curNode->getPropertyValue<sharedPostObject>("Post object");
+        curPostObject->init(static_cast<meshDataBase*>(mySimulationDataBase));
         //! ----
         //! to be implemented. Not sure if needed ...
     }
@@ -2475,8 +2498,8 @@ void SimulationManager::showHealingElements()
             const TopoDS_Shape &curShape = myCTX->SelectedShape();
             listOfShapes.Append(curShape);
         }
-        QVector<GeometryTag> vecLoc = TopologyTools::generateLocationPairs(mySimulationDataBase,listOfShapes);
-        for(QVector<GeometryTag>::iterator it = vecLoc.begin(); it!=vecLoc.end(); ++it)
+        std::vector<GeometryTag> vecLoc = TopologyTools::generateLocationPairs(mySimulationDataBase,listOfShapes);
+        for(std::vector<GeometryTag>::iterator it = vecLoc.begin(); it!=vecLoc.end(); ++it)
         {
             GeometryTag loc = *it;
             vecBodyIndexes.push_back(loc.parentShapeNr);
@@ -3677,7 +3700,6 @@ void SimulationManager::createSimulationDataBase(const TopoDS_Shape &shapeFromRe
 #ifdef COSTAMP_VERSION
     //this->COSTAMP_addProcessParameters();
 #endif
-    //ccout("SimulationManager::createSimulationDataBase()->____database created____");
 }
 
 //! --------------------------------------------------
@@ -3831,15 +3853,15 @@ void SimulationManager::transferMeshNodes()
                     const Property &curProp = *it;
                     if(curProp.getGroup()==Property::PropertyGroup_Scope)
                     {
-                        QVector<GeometryTag> vecLocs;
+                        std::vector<GeometryTag> vecLocs;
                         if(curProp.getName()=="Tags")
                         {
-                            vecLocs = curProp.getData().value<QVector<GeometryTag>>();
+                            vecLocs = curProp.getData().value<std::vector<GeometryTag>>();
 
                             cout<<"SimulationManager::transferMeshNodes()->____property \"Tags\" found; extent: "<<vecLocs.size()<<"____"<<endl;
 
                             int j=0;
-                            for(QVector<GeometryTag>::iterator vecIt = vecLocs.begin();  vecIt!=vecLocs.end(); ++vecIt)
+                            for(std::vector<GeometryTag>::iterator vecIt = vecLocs.begin();  vecIt!=vecLocs.end(); ++vecIt)
                             {
                                 GeometryTag curLoc = *vecIt;
                                 bodyIndex_.push_back(curLoc.parentShapeNr);
@@ -3908,8 +3930,8 @@ void SimulationManager::transferMeshNodes()
                 if(ss==Property::SuppressionStatus_Active) isActive = true;
 
                 bool isScopeOK = false;
-                QVector<GeometryTag> vecLoc = meshControlNode->getPropertyValue<QVector<GeometryTag>>("Tags");
-                if(!vecLoc.isEmpty()) isScopeOK = true;
+                std::vector<GeometryTag> vecLoc = meshControlNode->getPropertyValue<std::vector<GeometryTag>>("Tags");
+                if(vecLoc.size()!=0) isScopeOK = true;
 
                 //! ---------------------------------
                 //! "Active" is on and "Scope" is ok
@@ -3922,7 +3944,7 @@ void SimulationManager::transferMeshNodes()
                 //! -----------------------------
                 //! actually transfer parameters
                 //! -----------------------------
-                for(QVector<GeometryTag>::iterator it = vecLoc.begin(); it!=vecLoc.end(); ++it)
+                for(std::vector<GeometryTag>::iterator it = vecLoc.begin(); it!=vecLoc.end(); ++it)
                 {
                     GeometryTag aLoc = *it;
                     int bodyIndex = aLoc.parentShapeNr;
@@ -3954,10 +3976,10 @@ void SimulationManager::transferMeshNodes()
                 {
                     if(props.at(k).getGroup()==Property::PropertyGroup_Scope)
                     {
-                        QVector<GeometryTag> vecLocs;
+                        std::vector<GeometryTag> vecLocs;
                         if(props.at(k).getName()=="Tags")
                         {
-                            vecLocs = props.at(k).getData().value<QVector<GeometryTag>>();
+                            vecLocs = props.at(k).getData().value<std::vector<GeometryTag>>();
                             if(vecLocs.size()>0)
                             {
                                 //!cout<<"SimulationManager::transferMeshNodes()->____property scope found; pairs: "<<vecLocs.size()<<"____"<<endl;
@@ -4033,10 +4055,10 @@ void SimulationManager::transferMeshNodes()
                 {
                     if(props.at(k).getGroup()==Property::PropertyGroup_Scope)
                     {
-                        QVector<GeometryTag> vecLocs;
+                        std::vector<GeometryTag> vecLocs;
                         if(props.at(k).getName()=="Tags")
                         {
-                            vecLocs = props.at(k).getData().value<QVector<GeometryTag>>();
+                            vecLocs = props.at(k).getData().value<std::vector<GeometryTag>>();
                             if(vecLocs.size()>0)
                             {
                                 //!cout<<"SimulationManager::transferMeshNodes()->____property scope found; pairs: "<<vecLocs.size()<<"____"<<endl;
@@ -4127,10 +4149,10 @@ void SimulationManager::transferMeshNodes()
                 {
                     if(props.at(k).getGroup()==Property::PropertyGroup_Scope)
                     {
-                        QVector<GeometryTag> vecLocs;
+                        std::vector<GeometryTag> vecLocs;
                         if(props.at(k).getName()=="Tags")
                         {
-                            vecLocs = props.at(k).getData().value<QVector<GeometryTag>>();
+                            vecLocs = props.at(k).getData().value<std::vector<GeometryTag>>();
                             if(vecLocs.size()>0)
                             {
                                 //!cout<<"SimulationManager::transferMeshNodes()->____property scope found; pairs: "<<vecLocs.size()<<"____"<<endl;
@@ -4215,8 +4237,8 @@ void SimulationManager::transferMeshNodes()
                 //! check if the scope is defined
                 //! ------------------------------
                 bool isScopeOK = false;
-                QVector<GeometryTag> vecLoc = meshControlNode->getPropertyValue<QVector<GeometryTag>>("Tags");
-                if(!vecLoc.isEmpty()) isScopeOK = true;
+                std::vector<GeometryTag> vecLoc = meshControlNode->getPropertyValue<std::vector<GeometryTag>>("Tags");
+                if(vecLoc.size()!=0) isScopeOK = true;
 
                 //! ---------------------------------
                 //! "Active" is on and "Scope" is ok
@@ -4355,7 +4377,7 @@ void SimulationManager::transferMeshNodes()
                     //! -----------------------------
                     //! actually transfer parameters
                     //! -----------------------------
-                    for(QVector<GeometryTag>::iterator it = vecLoc.begin(); it!=vecLoc.end(); ++it)
+                    for(std::vector<GeometryTag>::iterator it = vecLoc.begin(); it!=vecLoc.end(); ++it)
                     {
                         GeometryTag aLoc = *it;
                         int bodyIndex = aLoc.parentShapeNr;
@@ -4446,11 +4468,11 @@ void SimulationManager::transferMeshNodes()
                 //! check if the scope is defined
                 //! ------------------------------
                 bool isScopeOK = false;
-                QVector<GeometryTag> vecLoc = meshControlNode->getPropertyValue<QVector<GeometryTag>>("Tags");
-                if(!vecLoc.isEmpty()) isScopeOK = true;
+                std::vector<GeometryTag> vecLoc = meshControlNode->getPropertyValue<std::vector<GeometryTag>>("Tags");
+                if(vecLoc.size()!=0) isScopeOK = true;
 
-                QVector<GeometryTag> boundaryVecLoc = meshControlNode->getPropertyValue<QVector<GeometryTag>>("Boundary tags");
-                if(!boundaryVecLoc.isEmpty()) isScopeOK = true;
+                std::vector<GeometryTag> boundaryVecLoc = meshControlNode->getPropertyValue<std::vector<GeometryTag>>("Boundary tags");
+                if(!boundaryVecLoc.size()!=0) isScopeOK = true;
 
                 if(isActive == true && isScopeOK == true)
                 {
@@ -4577,7 +4599,7 @@ void SimulationManager::handleMeshItemChange(QStandardItem *item)
     //! ----------------------------------------------------
     if(curNode->getType() == SimulationNodeClass::nodeType_meshMeshMetric) return;
 
-    QVector<GeometryTag> vecLocs = curNode->getPropertyValue<QVector<GeometryTag>>("Tags");
+    std::vector<GeometryTag> vecLocs = curNode->getPropertyValue<std::vector<GeometryTag>>("Tags");
     std::vector<int> parentShapes;
     for(int k=0; k<vecLocs.size();k++)
     {
@@ -4842,9 +4864,8 @@ void SimulationManager::handleItemChange(QStandardItem *item)
             QStandardItem *itemPostObject = curNode->getPropertyItem("Post object");
             if(itemPostObject!=Q_NULLPTR)
             {
-                postObject thePostObject = itemPostObject->data(Qt::UserRole).value<Property>().getData().value<postObject>();
-                emit requestHideSingleResult(thePostObject);
-                myPostEngine->updateResultScale(thePostObject,scaleType,minValue,maxValue,NbIntervals);
+                sharedPostObject thePostObject = curNode->getPropertyValue<sharedPostObject>("Post object");
+                myPostEngine->updateIsostrips(thePostObject,scaleType,minValue,maxValue,NbIntervals);
 
                 //! --------------------------
                 //! update the property value
@@ -4863,12 +4884,7 @@ void SimulationManager::handleItemChange(QStandardItem *item)
         if(propertyName =="Mapping")
         {
             int val = curNode->getPropertyValue<int>("Mapping");
-            cout<<"____mapping: "<<val<<"____"<<endl;
-            if(curNode->getPropertyItem("Post object")!=Q_NULLPTR)
-            {
-                postObject thePostObject = curNode->getPropertyValue<postObject>("Post object");
-                emit requestHideSingleResult(thePostObject);
-            }
+            if(curNode->getPropertyItem("Post object")!=Q_NULLPTR) emit requestHideAllResults();
         }
         if(propertyName =="By")
         {
@@ -4879,8 +4895,7 @@ void SimulationManager::handleItemChange(QStandardItem *item)
 
             if(curNode->getPropertyItem("Post object")!=Q_NULLPTR)
             {
-                const postObject &curPostObject = curNode->getPropertyValue<postObject>("Post object");
-                emit requestHideSingleResult(curPostObject);
+                emit requestHideAllResults();
                 curNode->removeProperty("Post object");
                 this->callPostEngineEvaluateResult_private(curItem,false);
             }
@@ -4889,8 +4904,7 @@ void SimulationManager::handleItemChange(QStandardItem *item)
         {
             if(curNode->getPropertyItem("Post object")!=Q_NULLPTR)
             {
-                const postObject &curPostObject = curNode->getPropertyValue<postObject>("Post object");
-                emit requestHideSingleResult(curPostObject);
+                emit requestHideAllResults();
                 curNode->removeProperty("Post object");
                 this->callPostEngineEvaluateResult_private(curItem,false);
             }
@@ -5950,7 +5964,7 @@ void SimulationManager::buildMesh(bool isVolumeMesh)
     //! simplification, the boundary of the patches of the boundary conditions will
     //! be preserved (if the "Preserve boundary condition edges" selector is ON
     //! ----------------------------------------------------------------------------
-    QVector<GeometryTag> vecTags;
+    std::vector<GeometryTag> vecTags;
     int type = 4;       //! on faces
     mainTreeTools::getAllBoundaryConditionsTags(myTreeView,type,vecTags);
 
@@ -6617,8 +6631,8 @@ void SimulationManager::changeColor()
     {
         emit requestResetCustomColors(true);
 
-        const QVector<GeometryTag> &tagsMaster = node->getPropertyValue<QVector<GeometryTag>>("Tags master");
-        if(tagsMaster.isEmpty()==false)
+        const std::vector<GeometryTag> &tagsMaster = node->getPropertyValue<std::vector<GeometryTag>>("Tags master");
+        if(tagsMaster.size()!=0)
         {
             QMap<GeometryTag,TopoDS_Shape> subShapesMap;
             for(int i=0; i<tagsMaster.size(); i++)
@@ -6631,8 +6645,8 @@ void SimulationManager::changeColor()
             emit requestApplyCustomColor(subShapesMap,Quantity_NOC_BLUE1,false);
         }
 
-        const QVector<GeometryTag> &tagsSlave = node->getPropertyValue<QVector<GeometryTag>>("Tags slave");
-        if(tagsSlave.isEmpty()==false)
+        const std::vector<GeometryTag> &tagsSlave = node->getPropertyValue<std::vector<GeometryTag>>("Tags slave");
+        if(tagsSlave.size()!=0)
         {
             QMap<GeometryTag,TopoDS_Shape> subShapesMap;
             for(int i=0; i<tagsSlave.size(); i++)
@@ -6647,7 +6661,7 @@ void SimulationManager::changeColor()
     }
     else
     {
-        const QVector<GeometryTag> &tags = node->getPropertyValue<QVector<GeometryTag>>("Tags");
+        const std::vector<GeometryTag> &tags = node->getPropertyValue<std::vector<GeometryTag>>("Tags");
         emit requestResetCustomColors(true);
         QMap<GeometryTag,TopoDS_Shape> subShapesMap;
         for(int i=0; i<tags.size(); i++)
@@ -6701,13 +6715,13 @@ void SimulationManager::changeColor()
             color1 = MASTER_COLOR;
             color2 = SLAVE_COLOR;
 
-            QVector<GeometryTag> vecLocs;
+            std::vector<GeometryTag> vecLocs;
             GeometryTag loc;
             if(itemMasterTags!=NULL)
             {
-                vecLocs = itemMasterTags->data(Qt::UserRole).value<Property>().getData().value<QVector<GeometryTag>>();
+                vecLocs = itemMasterTags->data(Qt::UserRole).value<Property>().getData().value<std::vector<GeometryTag>>();
                 std::vector<int> vecParentShapes;
-                for(QVector<GeometryTag>::iterator it = vecLocs.begin(); it!=vecLocs.end(); ++it)
+                for(std::vector<GeometryTag>::iterator it = vecLocs.begin(); it!=vecLocs.end(); ++it)
                 {
                     loc = *it;
                     TopAbs_ShapeEnum type = loc.subShapeType;
@@ -6766,8 +6780,8 @@ void SimulationManager::changeColor()
             if(itemSlaveTags!=NULL)
             {
                 std::vector<int> vecParentShapes;
-                vecLocs = itemSlaveTags->data(Qt::UserRole).value<Property>().getData().value<QVector<GeometryTag>>();
-                for(QVector<GeometryTag>::iterator it = vecLocs.begin(); it!=vecLocs.end(); ++it)
+                vecLocs = itemSlaveTags->data(Qt::UserRole).value<Property>().getData().value<std::vector<GeometryTag>>();
+                for(std::vector<GeometryTag>::iterator it = vecLocs.begin(); it!=vecLocs.end(); ++it)
                 {
                     loc = *it;
                     TopAbs_ShapeEnum type = loc.subShapeType;
@@ -6860,12 +6874,12 @@ void SimulationManager::changeColor()
         {
             QExtendedStandardItem* itemTags = node->getPropertyItem("Tags");
             color1 = graphicsTools::getModelFeatureColor(theType);
-            QVector<GeometryTag> vecLocs;
+            std::vector<GeometryTag> vecLocs;
             if(itemTags!=Q_NULLPTR)
             {
                 GeometryTag loc;
-                vecLocs = itemTags->data(Qt::UserRole).value<Property>().getData().value<QVector<GeometryTag>>();
-                for(QVector<GeometryTag>::iterator it = vecLocs.begin(); it!=vecLocs.end(); ++it)
+                vecLocs = itemTags->data(Qt::UserRole).value<Property>().getData().value<std::vector<GeometryTag>>();
+                for(std::vector<GeometryTag>::iterator it = vecLocs.begin(); it!=vecLocs.end(); ++it)
                 {
                     loc = *it;
                     TopAbs_ShapeEnum type = loc.subShapeType;
@@ -6961,8 +6975,8 @@ void SimulationManager::swapContact()
     //! -------------------------
     //! the old master and slave
     //! -------------------------
-    const QVector<GeometryTag> &scope1 = node->getPropertyValue<QVector<GeometryTag>>("Master");
-    const QVector<GeometryTag> &scope2 = node->getPropertyValue<QVector<GeometryTag>>("Slave");
+    const std::vector<GeometryTag> &scope1 = node->getPropertyValue<std::vector<GeometryTag>>("Master");
+    const std::vector<GeometryTag> &scope2 = node->getPropertyValue<std::vector<GeometryTag>>("Slave");
 
     QVariant data;
 
@@ -7002,10 +7016,10 @@ void SimulationManager::swapContact()
     //! ------------------
     ListOfShape shapeScope1,shapeScope2;
 
-    //! QVector<GeometryTag> contains homogeneous shapes (same type)
-    if(scope1.first().isParent)
+    //! std::vector<GeometryTag> contains homogeneous shapes (same type)
+    if(scope1[0].isParent)
     {
-        for(QVector<GeometryTag>::const_iterator it = scope1.cbegin(); it!= scope1.cend(); ++it)
+        for(std::vector<GeometryTag>::const_iterator it = scope1.cbegin(); it!= scope1.cend(); ++it)
         {
             GeometryTag aLoc = *it;
             shapeScope1.Append(mySimulationDataBase->bodyMap.value(aLoc.parentShapeNr));
@@ -7013,10 +7027,10 @@ void SimulationManager::swapContact()
     }
     else
     {
-        switch(scope1.first().subShapeType)
+        switch(scope1[0].subShapeType)
         {
         case TopAbs_FACE:
-            for(QVector<GeometryTag>::const_iterator it = scope1.cbegin(); it!= scope1.cend(); ++it)
+            for(std::vector<GeometryTag>::const_iterator it = scope1.cbegin(); it!= scope1.cend(); ++it)
             {
                 GeometryTag aLoc = *it;
                 int bodyIndex = aLoc.parentShapeNr;
@@ -7025,7 +7039,7 @@ void SimulationManager::swapContact()
             }
             break;
         case TopAbs_EDGE:
-            for(QVector<GeometryTag>::const_iterator it = scope1.cbegin(); it!= scope1.cend(); ++it)
+            for(std::vector<GeometryTag>::const_iterator it = scope1.cbegin(); it!= scope1.cend(); ++it)
             {
                 GeometryTag aLoc = *it;
                 int bodyIndex = aLoc.parentShapeNr;
@@ -7034,7 +7048,7 @@ void SimulationManager::swapContact()
             }
             break;
         case TopAbs_VERTEX:
-            for(QVector<GeometryTag>::const_iterator it = scope1.cbegin(); it!= scope1.cend(); ++it)
+            for(std::vector<GeometryTag>::const_iterator it = scope1.cbegin(); it!= scope1.cend(); ++it)
             {
                 GeometryTag aLoc = *it;
                 int bodyIndex = aLoc.parentShapeNr;
@@ -7045,10 +7059,10 @@ void SimulationManager::swapContact()
         }
     }
 
-    //! QVector<GeometryTag> contains homogeneous shapes (same type)
-    if(scope2.first().isParent)
+    //! std::vector<GeometryTag> contains homogeneous shapes (same type)
+    if(scope2[0].isParent)
     {
-        for(QVector<GeometryTag>::const_iterator it = scope2.begin(); it!= scope2.end(); ++it)
+        for(std::vector<GeometryTag>::const_iterator it = scope2.begin(); it!= scope2.end(); ++it)
         {
             GeometryTag aLoc = *it;
             shapeScope2.Append(mySimulationDataBase->bodyMap.value(aLoc.parentShapeNr));
@@ -7056,10 +7070,10 @@ void SimulationManager::swapContact()
     }
     else
     {
-        switch(scope2.first().subShapeType)
+        switch(scope2[0].subShapeType)
         {
         case TopAbs_FACE:
-            for(QVector<GeometryTag>::const_iterator it = scope2.cbegin(); it!= scope2.cend(); ++it)
+            for(std::vector<GeometryTag>::const_iterator it = scope2.cbegin(); it!= scope2.cend(); ++it)
             {
                 GeometryTag aLoc = *it;
                 int bodyIndex = aLoc.parentShapeNr;
@@ -7068,7 +7082,7 @@ void SimulationManager::swapContact()
             }
             break;
         case TopAbs_EDGE:
-            for(QVector<GeometryTag>::const_iterator it = scope2.cbegin(); it!= scope2.cend(); ++it)
+            for(std::vector<GeometryTag>::const_iterator it = scope2.cbegin(); it!= scope2.cend(); ++it)
             {
                 GeometryTag aLoc = *it;
                 int bodyIndex = aLoc.parentShapeNr;
@@ -7077,7 +7091,7 @@ void SimulationManager::swapContact()
             }
             break;
         case TopAbs_VERTEX:
-            for(QVector<GeometryTag>::const_iterator it = scope2.cbegin(); it!= scope2.cend(); ++it)
+            for(std::vector<GeometryTag>::const_iterator it = scope2.cbegin(); it!= scope2.cend(); ++it)
             {
                 GeometryTag aLoc = *it;
                 int bodyIndex = aLoc.parentShapeNr;
@@ -7354,7 +7368,7 @@ void SimulationManager::configureAndStartPostEngine()
 
 //! ----------------------------------------------
 //! function: handleSolutionComponentChanged
-//! details:  immediately update the colored mesh
+//! details:  immediately update the colored mesh - this function is never used and should be deleted
 //! ----------------------------------------------
 void SimulationManager::handleSolutionComponentChanged()
 {
@@ -7367,11 +7381,8 @@ void SimulationManager::handleSolutionComponentChanged()
     QStandardItem *postObjectItem = curNode->getPropertyItem("Post object");
     if(postObjectItem!=Q_NULLPTR)
     {
-        cout<<"SimulationManager::handleSolutionComponentChanged()->____start updating post object and viewer____"<<endl;
-        postObject curPostObject = postObjectItem->data(Qt::UserRole).value<Property>().getData().value<postObject>();
-
         //! delete from the viewer the previous result
-        emit requestHideSingleResult(curPostObject);
+        emit requestHideAllResults();
 
         //! retrieve the new solution component
         //int component = curNode->getPropertyItem("Type ")->data(Qt::UserRole).value<Property>().getData().toInt();
@@ -9230,7 +9241,7 @@ QList<SimulationNodeClass*> SimulationManager::nodeListBuilder(const QString &sa
     QApplication::postEvent(theProgressIndicator,pgrEvent);
     QApplication::processEvents();
 
-    Sleep(1000);
+    Sleep(500);
 
     //! ---------------------------
     //! count the number of nodes
@@ -9250,7 +9261,7 @@ QList<SimulationNodeClass*> SimulationManager::nodeListBuilder(const QString &sa
     QApplication::postEvent(theProgressIndicator,pgrEvent);
     QApplication::processEvents();
 
-    Sleep(1000);
+    Sleep(500);
 
     //! -----------------------------------
     //! scan the directory with node files
@@ -9472,9 +9483,9 @@ void SimulationManager::buildDataBaseFromDisk(const QString &fileName)
     //! -------------------------------------------
     myPostEngine->setDataBase(aDB);
 
-    //! ---------------------------------------
-    //! aim: rebuild the post processing items
-    //! ---------------------------------------
+    //! ----------------------------------------------------------------
+    //! aim: rebuild the post processing items for each simulation root
+    //! ----------------------------------------------------------------
     QStandardItem *modelRootItem = Geometry_RootItem->parent();
     for(int n = 0; n < modelRootItem->rowCount(); n++)
     {
@@ -9740,7 +9751,7 @@ void SimulationManager::interpolatePrivate(int mode)
     //! ---------------------------
     //! retrieve the target bodies
     //! ---------------------------
-    QVector<GeometryTag> vecLocs = node->getPropertyValue<QVector<GeometryTag>>("Tags");
+    std::vector<GeometryTag> vecLocs = node->getPropertyValue<std::vector<GeometryTag>>("Tags");
 
     //! ---------------------------------------
     //! retrieve the number of remapping steps
@@ -9970,13 +9981,13 @@ void SimulationManager::interpolatePrivate(int mode)
     //! results of the interpolation
     //! -----------------------------
     QList<QMap<int,std::pair<double,double>>> listMapMinMax;
-    QList<QMap<GeometryTag,QList<QMap<int,double>>>> listMapOfRes;
+    std::vector<std::map<GeometryTag,std::vector<std::map<int,double>>>> listMapOfRes;
 
     //! --------------------------
     //! start the mapping process
     //! --------------------------
     QMap<GeometryTag,QString> computationTimesMap;
-    for(QVector<GeometryTag>::iterator it = vecLocs.begin();it!=vecLocs.end();++it)
+    for(std::vector<GeometryTag>::iterator it = vecLocs.begin();it!=vecLocs.end();++it)
     {
         //! -------------
         //! start chrono
@@ -10054,9 +10065,9 @@ void SimulationManager::interpolatePrivate(int mode)
 
             for(int pos=0;pos<NbStep;pos++)
             {
-                QMap<GeometryTag,QList<QMap<int,double>>> mapOfRes;
+                std::map<GeometryTag,std::vector<std::map<int,double>>> mapOfRes;
                 QMap<int,std::pair<double,double>> mapMinMax;
-                QList<QMap<int,double>> listOfRes;
+                std::vector<std::map<int,double>> listOfRes;
 
                 cout<<"SimulationManager::interpolatePrivate()->____retrieve list of map of result at step "<<pos<<"____"<<endl;
 
@@ -10067,17 +10078,17 @@ void SimulationManager::interpolatePrivate(int mode)
                 std::pair<double,double> aPair = mapper.getMinMax();
 
                 //! retrieve the results at time pos
-                listOfRes<<mapper.getResults();
+                listOfRes.push_back(mapper.getResults());
 
                 if(it==vecLocs.begin())
                 {
                     cout<<"SimulationManager::interpolatePrivate()->inserting results on first body number = "<<bodyIndex<<endl;
                     mapMinMax.insert(bodyIndex,aPair);
-                    mapOfRes.insert(loc,listOfRes);
+                    mapOfRes.insert(std::make_pair(loc,listOfRes));
 
                     //! insert all results type into the "time" list of results
                     listMapMinMax<<mapMinMax;
-                    listMapOfRes<<mapOfRes;
+                    listMapOfRes.push_back(mapOfRes);
                 }
                 else
                 {
@@ -10086,18 +10097,16 @@ void SimulationManager::interpolatePrivate(int mode)
                     mapOfRes=listMapOfRes[pos];
 
                     mapMinMax.insert(bodyIndex,aPair);
-                    mapOfRes.insert(loc,listOfRes);
+                    mapOfRes.insert(std::make_pair(loc,listOfRes));
 
                     //! --------------------------------------------
                     //! insert all results into the list of results
                     //! --------------------------------------------
                     listMapMinMax.replace(pos,mapMinMax);
-                    listMapOfRes.replace(pos,mapOfRes);
+                    listMapOfRes[pos] = mapOfRes;
                 }
             }
-            //cout<<"SimulationManager::interpolatePrivate()->____exit if cycle______"<<endl;
         }
-        //cout<<"SimulationManager::interpolatePrivate()->____exit iteration over bodies______"<<endl;
 
         //! ------------
         //! stop chrono
@@ -10137,16 +10146,16 @@ void SimulationManager::interpolatePrivate(int mode)
         emit requestHideBody(l);
         emit requestHideMeshes();
 
-        //! ---------------------------------------------------
-        //! create a post object (colored mesh with color box)
-        //! ---------------------------------------------------
+        //! ---------------------
+        //! create a post object
+        //! ---------------------
         QString postObjectName = QString("Interpolation result on");
 
         //! -----------------------------------------
         //! prepare the name(s) of the postObject(s)
         //! -----------------------------------------
         mapOfMeshDataSources meshMap;
-        for(QVector<GeometryTag>::const_iterator it = vecLocs.cbegin();it!=vecLocs.cend();++it)
+        for(std::vector<GeometryTag>::const_iterator it = vecLocs.cbegin();it!=vecLocs.cend();++it)
         {
             GeometryTag loc = *it;
             int bodyIndex=loc.parentShapeNr;
@@ -10171,25 +10180,23 @@ void SimulationManager::interpolatePrivate(int mode)
         //! ---------------------------------------------
         postObjectName.append("\n").append(tools::timeStamp()).append("\n");
 
-        QMap<GeometryTag,QList<QMap<int,double>>> mapOfRes = listMapOfRes.at(t);
+        //! -----------------------------------------------------------------------------------------------------
+        //! use a patch - replace QMap and QMultiMap in Mapper3DClass
+        //! QMap<GeometryTag,QList<QMap<int,double>>> => std::map<GeometryTag,std::vector<std::map<int,double>>>
+        //! -----------------------------------------------------------------------------------------------------
+        std::map<GeometryTag,std::vector<std::map<int,double>>> mapOfRes = listMapOfRes.at(t);
 
-        //! -----------------------
-        //! create the post object
-        //! -----------------------
-        postObject aPostObject(mapOfRes,vecLocs,postObjectName);
-
-        //! ------------
-        //! 1-st column
-        //! ------------
+        //! ---------------------------------------------------------------------
+        //! create the post object: 1-st column of data, 10 levels, autoscale ON
+        //! ---------------------------------------------------------------------
+        sharedPostObject aPostObject = std::make_shared<postObject>(mapOfRes,vecLocs,postObjectName);
         int component = 0;
-
-        //! -----------------------
-        //! generica data continer
-        //! -----------------------
-        QVariant data;
-
+        int NbLevels = 10;
         bool isAutoscale = true;
-        aPostObject.buildMeshIO(meshMap,-1e80,1e80,10,isAutoscale,component);
+        aPostObject->init(static_cast<meshDataBase*>(this->getDataBase()));
+        aPostObject->buildMeshIO(-1,-1,NbLevels,isAutoscale,component);
+
+        QVariant data;
         data.setValue(aPostObject);
         Property prop_postObject("Post object",data,Property::PropertyGroup_GraphicObjects);
         data.setValue(prop_postObject);
@@ -10279,33 +10286,27 @@ void SimulationManager::interpolatePrivate(int mode)
     }
 }
 
-//! -----------------------------------------------------------------
+//! ------------------------------------
 //! function: retrieveCurrentItemResult
-//! details:  retrieve a result in the form of a MeshVS_Mesh object
-//!           from the current item
-//! -----------------------------------------------------------------
-bool SimulationManager::retrieveCurrentItemResult(postObject &aPostObject)
+//! details:
+//! ------------------------------------
+bool SimulationManager::retrieveCurrentItemResult(sharedPostObject &aPostObject)
 {
-    ccout("SimulationManager::retrieveItemMesh()->____function called____");
     SimulationNodeClass* curNode = myTreeView->currentIndex().data(Qt::UserRole).value<SimulationNodeClass*>();
     QExtendedStandardItem* item = curNode->getPropertyItem("Post object");
-    if(item!=Q_NULLPTR)
-    {
-        aPostObject = item->data(Qt::UserRole).value<Property>().getData().value<postObject>();
-        return true;
-    }
-    return false;
+    if(item==Q_NULLPTR) return false;
+    aPostObject = item->data(Qt::UserRole).value<Property>().getData().value<sharedPostObject>();
+    return true;
 }
 
-//! -------------------------------------------------------------
+//! -----------------------------
 //! function: retrieveAllResults
-//! details:  retrieve the results of an analysis run and/or the
-//!           result of an inerpolation
-//! -------------------------------------------------------------
-QList<postObject> SimulationManager::retrieveAllResults()
+//! details:
+//! -----------------------------
+QList<sharedPostObject> SimulationManager::retrieveAllResults()
 {
-    cout<<"SimulationManager::retrieveAllResults()->____function called____"<<endl;
-    QList<postObject> results;
+    //cout<<"SimulationManager::retrieveAllResults()->____function called____"<<endl;
+    QList<sharedPostObject> results;
 
     //! -----------------
     //! the current node
@@ -10313,7 +10314,7 @@ QList<postObject> SimulationManager::retrieveAllResults()
     QStandardItem *curItem = myModel->itemFromIndex(myTreeView->currentIndex());
     SimulationNodeClass *curNode = myTreeView->currentIndex().data(Qt::UserRole).value<SimulationNodeClass*>();
 
-    if(curNode->isAnalysisResult()) return results;
+    if(!curNode->isAnalysisResult()) return results;
 
     //! ----------------------------
     //! the current "Solution" item
@@ -10327,10 +10328,9 @@ QList<postObject> SimulationManager::retrieveAllResults()
         QExtendedStandardItem *itemPostObject = curResultNode->getPropertyItem("Post object");
         if(itemPostObject==Q_NULLPTR) continue;
 
-        const postObject &aPostObject = itemPostObject->data(Qt::UserRole).value<Property>().getData().value<postObject>();
+        sharedPostObject aPostObject = itemPostObject->data(Qt::UserRole).value<Property>().getData().value<sharedPostObject>();
         results<<aPostObject;
     }
-
     return results;
 }
 
@@ -10353,7 +10353,6 @@ void SimulationManager::handleGlobalMeshControlChange()
 //! function: translateOpenFoamScalarData
 //! details:  start the translation process - suitable for scalar values
 //! ---------------------------------------------------------------------
-#include "openfoamcontroller.h"
 bool SimulationManager::translateOpenFoamScalarData()
 {
     cout<<"SimulationManager::translateOpenFoamScalarData->____function called____"<<endl;
@@ -10403,64 +10402,40 @@ bool SimulationManager::translateOpenFoamScalarData()
     //! start the thread - this will also lock the items within the detail viewer
     //! --------------------------------------------------------------------------
     anOpenFoamController->operate(theCurNode);
-
-
     return true;
 }
 
 //! ---------------------------------------
 //! function: callPostEngineEvaluateResult
-//! details:  evaluate a single result
+//! details:
 //! ---------------------------------------
 void SimulationManager::callPostEngineEvaluateResult()
 {
     cout<<"SimulationManager::callPostEngineEvaluateResult()->____function called____"<<endl;
 
-    //! ----------------------
-    //! the current item/node
-    //! ----------------------
     QModelIndex index = myTreeView->currentIndex();
     QExtendedStandardItem *curItem = static_cast<QExtendedStandardItem*>(myModel->itemFromIndex(index));
     SimulationNodeClass *curNode = curItem->data(Qt::UserRole).value<SimulationNodeClass*>();
 
+    //! --------------------------------------------------
+    //! execute on the items under "Solution information"
+    //! --------------------------------------------------
     if(curNode->isSolutionInformation())
     {
-        cout<<"SimulationManager::callPostEngineEvaluateResult()->____solutionInformation Item____"<<endl;
+        QStandardItem *itemSolution = curItem->parent();
+        for(int i=1; i<itemSolution->rowCount(); i++)
+            this->callPostEngineEvaluateResult_private(itemSolution->child(i,0),false);
+    }
+    //! ------------------------------------------------------------------------
+    //! execute on the children of "Solution" apart from "Solution information"
+    //! ------------------------------------------------------------------------
+    if(curNode->isSolution()) for(int i=1; i<curItem->rowCount(); i++)
+        this->callPostEngineEvaluateResult_private(curItem->child(i,0),false);
 
-        //! -------------------------------------------
-        //! the current node is "Solution information"
-        //! jump over the first child (i=0)
-        //! -------------------------------------------
-        QExtendedStandardItem *itemSolution = static_cast<QExtendedStandardItem*>(curItem->parent());
-        for(int i=1; i<itemSolution->rowCount(); i++)
-        {
-            QExtendedStandardItem *postProcessingItem = static_cast<QExtendedStandardItem*>(itemSolution->child(i,0));
-            this->callPostEngineEvaluateResult_private(postProcessingItem,false);
-        }
-    }
-    if(curNode->isSolution())
-    {
-        cout<<"SimulationManager::callPostEngineEvaluateResult()->____solution Item____"<<endl;
-        //! --------------------------------
-        //! the current node is "Solution"
-        //! jump over the first child (i=0)
-        //! --------------------------------
-        QExtendedStandardItem *itemSolution = curItem;
-        for(int i=1; i<itemSolution->rowCount(); i++)
-        {
-            QExtendedStandardItem *postProcessingItem = static_cast<QExtendedStandardItem*>(itemSolution->child(i,0));
-            this->callPostEngineEvaluateResult_private(postProcessingItem, false);
-        }
-    }
-    if(curNode->isAnalysisResult())
-    {
-        //! ------------------------------------------
-        //! the current item is a postprocessing item
-        //! ------------------------------------------
-        bool immediatelyDisplay = true;
-        cout<<"SimulationManager::callPostEngineEvaluateResult()->____postProcessing Item____"<<endl;
-        this->callPostEngineEvaluateResult_private(curItem, immediatelyDisplay);
-    }
+    //! -----------------------------------------
+    //! execute on a simgle post processing item
+    //! -----------------------------------------
+    if(curNode->isAnalysisResult()) this->callPostEngineEvaluateResult_private(curItem, true);
 
     //! parse the item
     //parser::PostProcessingItem(treeItem);
@@ -10506,7 +10481,7 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
     //! ----------------------
     //! retrieve the location
     //! ----------------------
-    QVector<GeometryTag> vecLoc = curNode->getPropertyValue<QVector<GeometryTag>>("Tags");
+    std::vector<GeometryTag> vecLoc = curNode->getPropertyValue<std::vector<GeometryTag>>("Tags");
 
     //! ----------------------------------------------------------------
     //! check if a mesh for each location exists
@@ -10514,7 +10489,7 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
     //! and the seleted geometry has not a mesh yet
     //! ----------------------------------------------------------------
     bool isMeshOK = true;
-    for(QVector<GeometryTag>::iterator it = vecLoc.begin(); it!=vecLoc.end(); ++it)
+    for(std::vector<GeometryTag>::iterator it = vecLoc.begin(); it!=vecLoc.end(); ++it)
     {
         const GeometryTag &loc = *it;
         if(loc.isParent)
@@ -10559,160 +10534,64 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
         }
     }
     if(isMeshOK==false) return;
+    //! --------------
+    //! a post object
+    //! --------------
+    sharedPostObject aPostObject;
 
-    switch (type)
-    {
-    case SimulationNodeClass::nodeType_solutionStructuralFatigueTool:
-    {
-        QList<double> timeList;
-        int component = curNode->getPropertyValue<int>("Component");
-        int NbCycles = curNode->getPropertyValue<int>("Number of cycles");
-        //cout<<"____number of cycles: "<<NbCycles<<"____"<<endl;
-        //exit(1);
-        postObject aPostObject;
-
-        //! --------------------------------------------
-        //! a results is already present into the item
-        //! --------------------------------------------
-        if(curNode->getPropertyItem("Post object")!=Q_NULLPTR)
-        {
-            aPostObject = curNode->getPropertyItem("Post object")->data(Qt::UserRole).value<Property>().getData().value<postObject>();
-            aPostObject.update(static_cast<meshDataBase*>(mySimulationDataBase), component);
-        }
-        else
-        {
-            // left here for documentation
-            //QMap<double,QVector<int>> dTm = myPostEngine->getDTM();
-
-            //! ---------------------------------------
-            //! retrieve the solution information item
-            //! ---------------------------------------
-            QStandardItem *itemSolutionInformation = curItem->parent()->child(0,0);
-            SimulationNodeClass *nodeSolutionInformation = itemSolutionInformation->data(Qt::UserRole).value<SimulationNodeClass*>();
-            QMap<double,QVector<int>> dTm = nodeSolutionInformation->getPropertyValue<QMap<double,QVector<int>>>("Discrete time map");
-
-            //! ------------------------------------------------------------------
-            //! execute only if the discrete time map is not empty
-            //! (that is the .frd file exixts and it has been scanned)
-            //! This avoids application crash when requiring "Evaluate result(s)"
-            //! and no result exixts
-            //! ------------------------------------------------------------------
-            if(dTm.isEmpty())
-            {
-                cout<<"----------------------------------------------------------------------------------------------------------------------"<<endl;
-                cout<<"SimulationManager::callPostEngineEvaluateResult_private()->____cannot evaluate results: the discrete time is empty____"<<endl;
-                cout<<"----------------------------------------------------------------------------------------------------------------------"<<endl;
-                QMessageBox::warning(this,APPNAME,"No result available", QMessageBox::Ok);
-                return;
-            }
-
-            //! ---------------------
-            //! set the fatigue algo
-            //! ---------------------
-            int fatigueAlgo = curNode->getPropertyValue<int>("Fatigue algo");
-            myPostEngine->setFatigueModel(fatigueAlgo);
-
-            CustomTableModel *tabData =  this->getAnalysisSettingsNodeFromCurrentItem()->getTabularDataModel();
-
-            QStandardItem *theGeometryRoot=this->getTreeItem(SimulationNodeClass::nodeType_geometry);
-            QMap<int,int> materialBodyMap;
-            for(int k=0; k<theGeometryRoot->rowCount();k++)
-            {
-                QStandardItem *theGeometryItem = theGeometryRoot->child(k,0);
-                SimulationNodeClass *theCurNode = theGeometryItem->data(Qt::UserRole).value<SimulationNodeClass*>();
-                Property::SuppressionStatus theNodeSS = theCurNode->getPropertyValue<Property::SuppressionStatus>("Suppressed");
-                if(theNodeSS==Property::SuppressionStatus_Active)
-                {
-                    int loc = theCurNode->getPropertyValue<int>("Map index");
-                    int matNumber = theCurNode->getPropertyValue<int>("Assignment");
-                    materialBodyMap.insert(loc,matNumber);
-                }
-            }
-            for(int i=0;i<tabData->rowCount();i++) timeList<<tabData->dataRC(i,1).toDouble();
-
-            //! -----------------------------------------------------------------------------
-            //! create the postObject
-            //! the post object retrieves the mesh data sources from the simulation database
-            //! and internally builds its own interactive mesh objects
-            //! -----------------------------------------------------------------------------
-
-            aPostObject = myPostEngine->evaluateFatigueResults(component,vecLoc,timeList,materialBodyMap,NbCycles);
-            aPostObject.update(static_cast<meshDataBase*>(mySimulationDataBase), component);
-        }
-        //! ------------------------------
-        //! set the title of the colorbox
-        //! ------------------------------
-        QVariant data;
-        data.setValue(aPostObject);
-
-        Property prop_postObject("Post object",data,Property::PropertyGroup_GraphicObjects);
-        curNode->removeProperty("Post object");
-        curNode->addProperty(prop_postObject);
-
-        //! ---------------------------------------------------------------------
-        //! color box controls: synchronize the post object min, man, scale type
-        //! with the color box properties
-        //! ---------------------------------------------------------------------
-        if(curNode->getPropertyItem("Scale type")==NULL) cerr<<"____NULL property____"<<endl;
-
-        if(curNode->getPropertyValue<int>("Scale type") == 1)
-        {
-            disconnect(curNode->getModel(),SIGNAL(itemChanged(QStandardItem*)),this,SLOT(handleItemChange(QStandardItem*)));
-            double minValue = aPostObject.getMin();
-            double maxValue = aPostObject.getMax();
-            int NbLevels = aPostObject.getNbLevels();
-
-            data.setValue(minValue);
-            Property prop_min("Min",data,Property::PropertyGroup_ColorBox);
-            data.setValue(maxValue);
-            Property prop_max("Max",data,Property::PropertyGroup_ColorBox);
-            data.setValue(NbLevels);
-            Property prop_intervals("# intervals",data,Property::PropertyGroup_ColorBox);
-            curNode->replaceProperty("Min",prop_min);
-            curNode->replaceProperty("Max",prop_max);
-            curNode->replaceProperty("# intervals",prop_intervals);
-            connect(curNode->getModel(),SIGNAL(itemChanged(QStandardItem*)),this,SLOT(handleItemChange(QStandardItem*)));
-        }
-
-        if(immediatelyDisplay == true)
-        {
-            emit requestHideMeshes();
-            emit requestSetWorkingMode(3);
-            emit requestDisplayResult(aPostObject);
-        }
-    }
-        break;
-    default:
+    if(type!=SimulationNodeClass::nodeType_solutionStructuralFatigueTool)
     {
         int component = curNode->getPropertyValue<int>("Type ");
         int mode = curNode->getPropertyValue<int>("Mode number");
-        //! ---------------------------------------------
-        //! a results is already present into the item
-        //! build the mesh object from the internal data
-        //! ---------------------------------------------
-        postObject aPostObject;
         if(curNode->getPropertyItem("Post object")!=Q_NULLPTR)
         {
-            aPostObject = curNode->getPropertyItem("Post object")->data(Qt::UserRole).value<Property>().getData().value<postObject>();
-            aPostObject.update(static_cast<meshDataBase*>(mySimulationDataBase), component);
+            //! -------------------------------------------
+            //! a results is already present into the item
+            //! -------------------------------------------
+            aPostObject = curNode->getPropertyValue<sharedPostObject>("Post object"); //cesere
+            bool useExteriorMeshForVolumeResults = Global::status().myResultPresentation.useExteriorMeshForVolumeResults;
+            aPostObject->setMode(useExteriorMeshForVolumeResults);     // use the exterior mesh for showing volume results
+            int scaleType = curNode->getPropertyValue<int>("Scale type");
+            double min = aPostObject->getMin();
+            double max = aPostObject->getMax();
+            int NbIntervals = aPostObject->getNbLevels();
+            double magnifyFactor = Global::status().myResultPresentation.theScale;
+            int component = aPostObject->getSolutionDataComponent();    //cesere
+
+            std::map<GeometryTag,std::map<int,gp_Vec>> mapOfNodalDisplacements = aPostObject->getMapOfNodalDisplacements();
+            cout<<"___SIZE OF MAP: "<<mapOfNodalDisplacements.size()<<"____"<<endl;
+
+            if(mapOfNodalDisplacements.size()==0)
+            {
+                cout<<"____REBUILDING NODAL DISPLACEMENTS (FILLING WITH ZERO)____"<<endl;
+                //! rebuild the map of nodal displacements
+                const std::vector<GeometryTag> &tags = curNode->getPropertyValue<std::vector<GeometryTag>>("Tags");
+                for(std::vector<GeometryTag>::const_iterator it = tags.cbegin(); it!=tags.cend(); it++)
+                {
+                    std::map<int,gp_Vec> nmap;
+                    const GeometryTag &aTag = *it;
+                    TColStd_PackedMapOfInteger nodeMap = aPostObject->getMeshDataSources().find(aTag)->second->GetAllNodes();
+                    for(TColStd_MapIteratorOfPackedMapOfInteger it_(nodeMap); it_.More(); it_.Next())
+                    {
+                        nmap.insert(std::make_pair(it_.Key(),gp_Vec(0,0,0)));
+                    }
+                    mapOfNodalDisplacements.insert(std::make_pair(aTag,nmap));
+                }
+                aPostObject->setMapOfNodalDisplacements(mapOfNodalDisplacements);
+            }
+            aPostObject->buildMeshIO(min,max,NbIntervals,scaleType,component,magnifyFactor);
         }
         else
         {
             //! ------------------------------------------------------------
             //! retrieve the time info:
             //! a result is always retrieved using the pair (step, substep)
-            //! ------------------------------------------------------------
-            int subStepNb, stepNb;
-
             //! if "By" is "Time" - "Analysis time" is read from the GUI
-            double analysisTime;
-
             //! if "By" is "Set" - "Set number" is read from the GUI
-            int setNumber;
+            //! ------------------------------------------------------------
+            int subStepNb, stepNb, setNumber;
+            double analysisTime;
             int rmode = curNode->getPropertyValue<int>("By");
-
-            // left here for documentation
-            //QMap<double,QVector<int>> dTm = myPostEngine->getDTM();
 
             //! ---------------------------------------
             //! retrieve the solution information item
@@ -10720,20 +10599,6 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
             QStandardItem *itemSolutionInformation = curItem->parent()->child(0,0);
             SimulationNodeClass *nodeSolutionInformation = itemSolutionInformation->data(Qt::UserRole).value<SimulationNodeClass*>();
             QMap<double,QVector<int>> dTm = nodeSolutionInformation->getPropertyValue<QMap<double,QVector<int>>>("Discrete time map");
-
-
-            for(QMap<double,QVector<int>>::iterator it = dTm.begin(); it!=dTm.end(); ++it)
-            {
-                cout<<"@-------------------------"<<endl;
-                cout<<"@ time: "<<it.key()<<endl;
-                for(int i=0; i<it.value().size(); i++)
-                {
-                    cout<<"@ set: "<<it.value().at(0)<<endl;
-                    cout<<"@ step: "<<it.value().at(1)<<endl;
-                    cout<<"@ substep: "<<it.value().at(2)<<endl;
-                }
-                cout<<"@-------------------------"<<endl;
-            }
 
             //! ------------------------------------------------------------------
             //! execute only if the discrete time map is not empty
@@ -10806,48 +10671,122 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
             cout<<"@____step: "<<stepNb<<"____"<<endl;
             cout<<"@____sub step: "<<subStepNb<<"____\n"<<endl;
 
+            //! ----------------------
+            //! create the postObject
+            //! ----------------------
+            myPostEngine->buildPostObject(keyName,component,subStepNb,stepNb,mode,vecLoc,aPostObject);
+        }
+    }
+    else
+    {
+        QList<double> timeList;
+        int component = curNode->getPropertyValue<int>("Component");
+        int NbCycles = curNode->getPropertyValue<int>("Number of cycles");
+
+        //! --------------------------------------------
+        //! a results is already present into the item
+        //! --------------------------------------------
+        if(curNode->getPropertyItem("Post object")!=Q_NULLPTR)
+        {
+            aPostObject = curNode->getPropertyItem("Post object")->data(Qt::UserRole).value<Property>().getData().value<sharedPostObject>();
+            aPostObject->init(static_cast<meshDataBase*>(mySimulationDataBase));
+        }
+        else
+        {
+            //! ---------------------------------------
+            //! retrieve the solution information item
+            //! ---------------------------------------
+            QStandardItem *itemSolutionInformation = curItem->parent()->child(0,0);
+            SimulationNodeClass *nodeSolutionInformation = itemSolutionInformation->data(Qt::UserRole).value<SimulationNodeClass*>();
+            QMap<double,QVector<int>> dTm = nodeSolutionInformation->getPropertyValue<QMap<double,QVector<int>>>("Discrete time map");
+
+            //! ------------------------------------------------------------------
+            //! execute only if the discrete time map is not empty
+            //! (that is the .frd file exixts and it has been scanned)
+            //! This avoids application crash when requiring "Evaluate result(s)"
+            //! and no result exixts
+            //! ------------------------------------------------------------------
+            if(dTm.isEmpty())
+            {
+                QMessageBox::warning(this,APPNAME,"No result available", QMessageBox::Ok);
+                return;
+            }
+
+            //! ---------------------
+            //! set the fatigue algo
+            //! ---------------------
+            int fatigueAlgo = curNode->getPropertyValue<int>("Fatigue algo");
+            myPostEngine->setFatigueModel(fatigueAlgo);
+
+            CustomTableModel *tabData =  this->getAnalysisSettingsNodeFromCurrentItem()->getTabularDataModel();
+
+            QStandardItem *theGeometryRoot=this->getTreeItem(SimulationNodeClass::nodeType_geometry);
+            QMap<int,int> materialBodyMap;
+            for(int k=0; k<theGeometryRoot->rowCount();k++)
+            {
+                QStandardItem *theGeometryItem = theGeometryRoot->child(k,0);
+                SimulationNodeClass *theCurNode = theGeometryItem->data(Qt::UserRole).value<SimulationNodeClass*>();
+                Property::SuppressionStatus theNodeSS = theCurNode->getPropertyValue<Property::SuppressionStatus>("Suppressed");
+                if(theNodeSS==Property::SuppressionStatus_Active)
+                {
+                    int loc = theCurNode->getPropertyValue<int>("Map index");
+                    int matNumber = theCurNode->getPropertyValue<int>("Assignment");
+                    materialBodyMap.insert(loc,matNumber);
+                }
+            }
+            for(int i=0;i<tabData->rowCount();i++) timeList<<tabData->dataRC(i,1).toDouble();
+
             //! -----------------------------------------------------------------------------
             //! create the postObject
             //! the post object retrieves the mesh data sources from the simulation database
             //! and internally builds its own interactive mesh objects
             //! -----------------------------------------------------------------------------
-            aPostObject = myPostEngine->buildPostObject(keyName,component,subStepNb,stepNb,mode,vecLoc);
-            aPostObject.update(static_cast<meshDataBase*>(mySimulationDataBase), component);
-        }
-
-        QVariant data;
-        data.setValue(aPostObject);
-        Property prop_postObject("Post object",data,Property::PropertyGroup_GraphicObjects);
-
-        curNode->removeProperty("Post object");
-        curNode->addProperty(prop_postObject);
-
-        //! ---------------------------------------------------------------------
-        //! color box controls: synchronize the post object min, man, scale type
-        //! with the color box properties
-        //! ---------------------------------------------------------------------
-        if(curNode->getPropertyItem("Scale type")==Q_NULLPTR) cerr<<"____NULL property____"<<endl;
-
-        if(curNode->getPropertyValue<int>("Scale type") == 1)
-        {
-            disconnect(curNode->getModel(),SIGNAL(itemChanged(QStandardItem*)),this,SLOT(handleItemChange(QStandardItem*)));
-            double minValue = aPostObject.getMin();
-            double maxValue = aPostObject.getMax();
-            int NbLevels = aPostObject.getNbLevels();
-
-            data.setValue(minValue);
-            Property prop_min("Min",data,Property::PropertyGroup_ColorBox);
-            data.setValue(maxValue);
-            Property prop_max("Max",data,Property::PropertyGroup_ColorBox);
-            data.setValue(NbLevels);
-            Property prop_intervals("# intervals",data,Property::PropertyGroup_ColorBox);
-            curNode->replaceProperty("Min",prop_min);
-            curNode->replaceProperty("Max",prop_max);
-            curNode->replaceProperty("# intervals",prop_intervals);
-            connect(curNode->getModel(),SIGNAL(itemChanged(QStandardItem*)),this,SLOT(handleItemChange(QStandardItem*)));
+            aPostObject->init(static_cast<meshDataBase*>(mySimulationDataBase));
+            myPostEngine->evaluateFatigueResults(component,vecLoc,timeList,materialBodyMap,NbCycles,aPostObject);
         }
     }
-        break;
+
+    //! ------------------------------
+    //! insert the into the main tree
+    //! ------------------------------
+    QVariant data;
+    data.setValue(aPostObject);
+
+    Property prop_postObject("Post object",data,Property::PropertyGroup_GraphicObjects);
+    curNode->removeProperty("Post object");
+    curNode->addProperty(prop_postObject);
+
+    //! -------------------------------------------------------------------------------
+    //! synchronize the post object min, man, scale type with the color box properties
+    //! -------------------------------------------------------------------------------
+    if(curNode->getPropertyItem("Scale type")==Q_NULLPTR) cerr<<"____NULL property____"<<endl;
+    if(curNode->getPropertyValue<int>("Scale type") == 1)
+    {
+        disconnect(curNode->getModel(),SIGNAL(itemChanged(QStandardItem*)),this,SLOT(handleItemChange(QStandardItem*)));
+        double minValue = aPostObject->getMin();
+        double maxValue = aPostObject->getMax();
+        int NbLevels = aPostObject->getNbLevels();
+
+        QVariant data;
+        data.setValue(minValue);
+        Property prop_min("Min",data,Property::PropertyGroup_ColorBox);
+        data.setValue(maxValue);
+        Property prop_max("Max",data,Property::PropertyGroup_ColorBox);
+        data.setValue(NbLevels);
+        Property prop_intervals("# intervals",data,Property::PropertyGroup_ColorBox);
+        curNode->replaceProperty("Min",prop_min);
+        curNode->replaceProperty("Max",prop_max);
+        curNode->replaceProperty("# intervals",prop_intervals);
+        connect(curNode->getModel(),SIGNAL(itemChanged(QStandardItem*)),this,SLOT(handleItemChange(QStandardItem*)));
+    }
+
+    //! --------------------
+    //! immedately display?
+    //! --------------------
+    if(immediatelyDisplay == true)
+    {
+        emit requestSetWorkingMode(3);
+        emit requestDisplayResult(aPostObject);
     }
 }
 
@@ -10877,7 +10816,6 @@ void SimulationManager::evaluateAllResults()
     for(int row = 1; row<curItemSolution->rowCount(); row++)
     {
         QStandardItem *itemResult = curItemSolution->child(row,0);
-        SimulationNodeClass *nodeResult = itemResult->data(Qt::UserRole).value<SimulationNodeClass*>();
         this->callPostEngineEvaluateResult_private(itemResult,false);
     }
 }
@@ -10936,9 +10874,8 @@ bool SimulationManager::eventFilter(QObject *object, QEvent *event)
                  }
                  else
                  {
-                     QVector<int> init;
                      double ini=0.0;
-                     init<<0.0<<0.0<<0.0;
+                     QVector<int> init {0, 0, 0};
                      timeinfo.insert(ini,init);
                      data.setValue(timeinfo);
                      nodeSolutionInformation->replaceProperty("Discrete time map",Property("Discrete time map",data,Property::PropertyGroup_Hidden));
@@ -10993,10 +10930,10 @@ TopoDS_Shape SimulationManager::fromTagToShape(const GeometryTag &aTag)
 //! function: fromTagToShape
 //! details:  helper
 //! --------------------------
-TopTools_ListOfShape SimulationManager::fromTagToShape(const QVector<GeometryTag> &vecLoc)
+TopTools_ListOfShape SimulationManager::fromTagToShape(const std::vector<GeometryTag> &vecLoc)
 {
     TopTools_ListOfShape lshapes;
-    for(QVector<GeometryTag>::const_iterator it = vecLoc.cbegin(); it!=vecLoc.cend(); ++it)
+    for(std::vector<GeometryTag>::const_iterator it = vecLoc.cbegin(); it!=vecLoc.cend(); ++it)
     {
         GeometryTag loc = *it;
         int parentShapeIndex = loc.parentShapeNr;
@@ -11256,8 +11193,7 @@ void SimulationManager::clearGeneratedData()
             SimulationNodeClass *nodePostProcessing = itemSolution->child(n,0)->data(Qt::UserRole).value<SimulationNodeClass*>();
             QStandardItem *itemPostObject = nodePostProcessing->getPropertyItem("Post object");
             if(itemPostObject==Q_NULLPTR) continue;
-            postObject curPostObject = itemPostObject->data(Qt::UserRole).value<Property>().getData().value<postObject>();
-            emit requestHideSingleResult(curPostObject);
+            emit requestHideAllResults();
             nodePostProcessing->removeProperty("Post object");
         }
     }
@@ -11269,217 +11205,29 @@ void SimulationManager::clearGeneratedData()
     {
         QStandardItem *itemPostObject = curNode->getPropertyItem("Post object");
         if(itemPostObject==Q_NULLPTR) return;
-        postObject curPostObject = itemPostObject->data(Qt::UserRole).value<Property>().getData().value<postObject>();
-        emit requestHideSingleResult(curPostObject);
+        emit requestHideAllResults();
         curNode->removeProperty("Post object");
     }
-
 }
 
-//! ----------------------------------------------------
-//! function: handleBoltControls
-//! details:  this function enables/disables the "Load"
-//!           and "Adjustment" controls, according to
-//!           the bolt status definition "Define by"
-//! ----------------------------------------------------
-void SimulationManager::handleBoltControls()
-{
-    cout<<"SimulationManager::handleBoltControls()->____function called____"<<endl;
-
-    QWidget *w = tools::getWidgetByName("messagesAndLoadsWidget");
-    TableWidget *tableWidget = static_cast<TableWidget*>(w);
-    CustomTableModel *tabularDataModel = static_cast<CustomTableModel*>(tableWidget->getTableView()->model());
-
-    QExtendedStandardItem *itemBolt = static_cast<QExtendedStandardItem*>(myModel->itemFromIndex(myTreeView->currentIndex()));
-    SimulationNodeClass *nodeBolt = itemBolt->data(Qt::UserRole).value<SimulationNodeClass*>();
-    QExtendedStandardItem *itemBoltStatus = nodeBolt->getPropertyItem("Define by");
-
-    //! ------------------------------------------------------------------------
-    //! act on the Current step number: modify the right column in tabular data
-    //! ------------------------------------------------------------------------
-    int currentRow = this->getAnalysisSettingsNodeFromCurrentItem()->getPropertyValue<int>("Current step number");
-
-    //int SC =this->calculateStartColumn();
-    int SC = mainTreeTools::calculateStartColumn(myTreeView);
-
-    QModelIndex indexBoltStatusDefinedBy = tabularDataModel->makeIndex(currentRow,SC);
-    QVariant data;
-    //Property::boltStatusDefinedBy boltStatusDefineBy = itemBoltStatus->data(Qt::UserRole).value<Property>().getData().value<Property::boltStatusDefinedBy>();
-    Property::defineBy boltStatusDefineBy = itemBoltStatus->data(Qt::UserRole).value<Property>().getData().value<Property::defineBy>();
-    data.setValue(boltStatusDefineBy);
-    tabularDataModel->setData(indexBoltStatusDefinedBy,data,Qt::EditRole);
-}
-
-//! -----------------------
-//! function: showElements
+//! ------------------------------------
+//! function: updateResultsPresentation
 //! details:
-//! -----------------------
-void SimulationManager::showElements()
+//! ------------------------------------
+void SimulationManager::updateResultsPresentation()
 {
-    cout<<"SimulationManager::showElements()->____function called____"<<endl;
+    cout<<"SimulationManager::updateResultsPresentation()->____function called____"<<endl;
 
-    //! ---------------------
-    //! retrieve all results
-    //! ---------------------
-    QList<postObject> postObjectList= this->retrieveAllResults();
-
-    //! ----------------------------------------------------------------
-    //! iterate over the results in order to find the displayed shapes:
-    //! the shapes are shown in wireframe mode, and here must be hidden
-    //! Moreover scanning the list of post object remove the mesh view
-    //! ----------------------------------------------------------------
-    std::vector<int> parentShapeIndexes;
-    for(QList<postObject>::iterator it = postObjectList.begin(); it!=postObjectList.end(); ++it)
+    //! ----------------------------------------------------
+    //! retrieve all results and update their presentations
+    //! ----------------------------------------------------
+    QList<sharedPostObject> postObjectList= this->retrieveAllResults();
+    myPostEngine->updateResultsPresentation(postObjectList);
+    SimulationNodeClass *curNode = this->getCurrentNode();
+    if(curNode->isAnalysisResult())
     {
-        postObject aPostObject = *it;
-
-        QMap<GeometryTag,QList<QMap<int,double>>> theData = aPostObject.getData();
-        for(QMap<GeometryTag,QList<QMap<int,double>>>::iterator it = theData.begin(); it!= theData.end(); ++it)
-        {
-            GeometryTag aLoc = it.key();
-            int bodyIndex = aLoc.parentShapeNr;
-            parentShapeIndexes.push_back(bodyIndex);
-        }
-        bool showElements = true;
-        aPostObject.updateView(showElements);
-    }
-
-    //! ---------------------------------------------------------
-    //! clean from duplicated values the vector of parent shapes
-    //! ---------------------------------------------------------
-    parentShapeIndexes = tools::clearFromDuplicates(parentShapeIndexes);
-
-    //! -------------------------------------------------------------------
-    //! hide all the bodies (which are shown, by default, using wireframe)
-    //! -------------------------------------------------------------------
-    TColStd_ListOfInteger listOfBodies;
-    for(std::vector<int>::iterator it = parentShapeIndexes.begin(); it!=parentShapeIndexes.end(); ++it) listOfBodies.Append(*it);
-    emit requestHideBody(listOfBodies);
-
-    //! ------------------------
-    //! update the mesh context
-    //! ------------------------
-    emit requestUpdateMeshView();
-}
-
-//! ----------------------------------
-//! function: showUndeformedWireframe
-//! details:
-//! ----------------------------------
-void SimulationManager::showUndeformedWireframe()
-{
-    cerr<<"SimulationManager::showUndeformedWireframe()->____function called____"<<endl;
-
-    //! ---------------------
-    //! retrieve all results
-    //! ---------------------
-    QList<postObject> postObjectList= this->retrieveAllResults();
-    std::vector<int> parentShapeIndexes;
-    for(QList<postObject>::iterator it = postObjectList.begin(); it!=postObjectList.end(); ++it)
-    {
-        postObject aPostObject = *it;
-
-        QMap<GeometryTag,QList<QMap<int,double>>> theData = aPostObject.getData();
-        for(QMap<GeometryTag,QList<QMap<int,double>>>::iterator it = theData.begin(); it!= theData.end(); ++it)
-        {
-            GeometryTag aLoc = it.key();
-            int bodyIndex = aLoc.parentShapeNr;
-            parentShapeIndexes.push_back(bodyIndex);
-        }
-        bool showElements = false;
-        aPostObject.updateView(showElements);
-    }
-
-    //! clean the vector of parent shapes
-    parentShapeIndexes = tools::clearFromDuplicates(parentShapeIndexes);
-
-    TColStd_ListOfInteger listOfBodies;
-    for(std::vector<int>::iterator it = parentShapeIndexes.begin(); it!=parentShapeIndexes.end(); ++it) listOfBodies.Append(*it);
-    emit requestShowBody(listOfBodies);
-
-    emit requestUpdateMeshView();
-}
-
-//! ------------------------------
-//! function: showUndeformedModel
-//! details:
-//! ------------------------------
-void SimulationManager::showUndeformedModel()
-{
-    cout<<"SimulationManager::showUndeformedModel()->____function called____"<<endl;
-    //! to do
-}
-
-//! ----------------------
-//! function: noWireframe
-//! details:
-//! ----------------------
-void SimulationManager::noWireframe()
-{
-    cout<<"SimulationManager::noWireframe()->____function called____"<<endl;
-
-    //! ---------------------
-    //! retrieve all results
-    //! ---------------------
-    QList<postObject> postObjectList= this->retrieveAllResults();
-
-    //! ----------------------------------------------------------------
-    //! iterate over the results in order to find the displayed shapes:
-    //! the shapes are shown in wireframe mode, and here must be hidden
-    //! Moreover scanning the list of post object remove the mesh view
-    //! ----------------------------------------------------------------
-    QList<int> parentShapeIndexes;
-    for(QList<postObject>::iterator it = postObjectList.begin(); it!=postObjectList.end(); ++it)
-    {
-        postObject aPostObject = *it;
-        QMap<GeometryTag,QList<QMap<int,double>>> theData = aPostObject.getData();
-        for(QMap<GeometryTag,QList<QMap<int,double>>>::iterator it = theData.begin(); it!= theData.end(); ++it)
-        {
-            const GeometryTag &aLoc = it.key();
-            int bodyIndex = aLoc.parentShapeNr;
-            if(!parentShapeIndexes.contains(bodyIndex))parentShapeIndexes<<bodyIndex;
-        }
-        bool showElements = false;
-        aPostObject.updateView(showElements);
-    }
-
-    //! -------------------------------------------------------------------
-    //! hide all the bodies (which are shown, by default, using wireframe)
-    //! -------------------------------------------------------------------
-    TColStd_ListOfInteger listOfBodies;
-    for(QList<int>::iterator it = parentShapeIndexes.begin(); it!=parentShapeIndexes.end(); ++it) listOfBodies.Append(*it);
-    emit requestHideBody(listOfBodies);
-
-    //! ------------------------
-    //! update the mesh context
-    //! ------------------------
-    emit requestUpdateMeshView();
-}
-
-//! --------------------------------
-//! function: upadtePostObjectScale
-//! details:  experimental
-//! --------------------------------
-void SimulationManager::updatePostObjectScale(double scale)
-{
-    cout<<"SimulationManager::updatePostObjectScale()->____function called. Scale: "<<scale<<"____"<<endl;
-
-    //! -------------------------------------------------
-    //! get the current item and the current post object
-    //! -------------------------------------------------
-    SimulationNodeClass *nodePost = this->getCurrentNode();
-    QExtendedStandardItem *itemPostObject = nodePost->getPropertyItem("Post object");
-    if(itemPostObject!=NULL)
-    {
-        cout<<"SimulationManager::updatePostObjectScale()->____post object found____"<<endl;
-        postObject *aPostObject = &itemPostObject->data(Qt::UserRole).value<Property>().getData().value<postObject>();
-        if(!aPostObject->isEmpty())
-        {
-            cout<<"SimulationManager::updatePostObjectScale()->____the post object contains data____"<<endl;
-            aPostObject->setScale(scale);
-            aPostObject->updateScaledView();
-        }
-        emit requestUpdateMeshView();
+        sharedPostObject aPostObject = curNode->getPropertyValue<sharedPostObject>("Post object");
+        emit requestDisplayResult(aPostObject);
     }
 }
 
@@ -11630,12 +11378,12 @@ bool SimulationManager::previewPrismaticLayer()
     //! --------------------------------------------------
     //! "Tags" of the "Scope" property (should be bodies)
     //! --------------------------------------------------
-    const QVector<GeometryTag> &vecLoc = this->getCurrentNode()->getPropertyValue<QVector<GeometryTag>>("Tags");
+    const std::vector<GeometryTag> &vecLoc = this->getCurrentNode()->getPropertyValue<std::vector<GeometryTag>>("Tags");
 
     //! -------------------------------------------------------------
     //! "Boundary tags" of the "Boundary" property (should be faces)
     //! -------------------------------------------------------------
-    const QVector<GeometryTag> &boundaryVecLoc = this->getCurrentNode()->getPropertyValue<QVector<GeometryTag>>("Boundary tags");
+    const std::vector<GeometryTag> &boundaryVecLoc = this->getCurrentNode()->getPropertyValue<std::vector<GeometryTag>>("Boundary tags");
 
     //! ----------------------------------------------
     //! the prismatic faces:
@@ -11818,9 +11566,9 @@ void SimulationManager::renameItemBasedOnDefinition()
         //! build a name for a contact pair
         //! do not rename if master or slave tags are empty
         //! ------------------------------------------------
-        const QVector<GeometryTag> &vecLocMasterTags = node->getPropertyValue<QVector<GeometryTag>>("Tags master");
+        const std::vector<GeometryTag> &vecLocMasterTags = node->getPropertyValue<std::vector<GeometryTag>>("Tags master");
         if(vecLocMasterTags.size()==0) return;
-        const QVector<GeometryTag> &vecLocSlaveTags = node->getPropertyValue<QVector<GeometryTag>>("Tags slave");
+        const std::vector<GeometryTag> &vecLocSlaveTags = node->getPropertyValue<std::vector<GeometryTag>>("Tags slave");
         if(vecLocSlaveTags.size()==0) return;
 
         //! -------------
@@ -11879,7 +11627,7 @@ void SimulationManager::renameItemBasedOnDefinition()
         //! -------------
         QString locationNames;
         int bodyIndex;
-        const QVector<GeometryTag> &locs = node->getPropertyValue<QVector<GeometryTag>>("Tags");
+        const std::vector<GeometryTag> &locs = node->getPropertyValue<std::vector<GeometryTag>>("Tags");
 
         //! ----------------------------------
         //! do not remane if there is not tag
@@ -11887,7 +11635,7 @@ void SimulationManager::renameItemBasedOnDefinition()
         if(locs.size()==0) return;
 
         int i;
-        for(i=0; i<locs.length()-1; i++)
+        for(i=0; i<locs.size()-1; i++)
         {
             const GeometryTag &aLoc = locs.at(i);
             bodyIndex = aLoc.parentShapeNr;
@@ -12360,9 +12108,9 @@ void SimulationManager::createAutomaticConnections()
 
     SimulationNodeClass *curNode = myTreeView->currentIndex().data(Qt::UserRole).value<SimulationNodeClass*>();
     QExtendedStandardItem *itemTags = curNode->getPropertyItem("Tags");
-    QVector<GeometryTag> vecLoc = itemTags->data(Qt::UserRole).value<Property>().getData().value<QVector<GeometryTag>>();
+    std::vector<GeometryTag> vecLoc = itemTags->data(Qt::UserRole).value<Property>().getData().value<std::vector<GeometryTag>>();
 
-    if(vecLoc.isEmpty()) return;
+    if(vecLoc.size()==0) return;
 
     //! --------------------------------------
     //! tolerance for contact pairs detection
@@ -12420,7 +12168,7 @@ void SimulationManager::createAutomaticConnections()
     //! define the result: a vector of mesh pairs
     //! indexed as the input vector of geometry tags
     //! ---------------------------------------------
-    std::vector<std::pair<QVector<GeometryTag>,QVector<GeometryTag>>> allContactPairs;
+    std::vector<std::pair<std::vector<GeometryTag>,std::vector<GeometryTag>>> allContactPairs;
 
     //! -------------------------------------------------------------
     //! create an instance of contactFinder
@@ -12458,9 +12206,9 @@ void SimulationManager::createAutomaticConnections()
     //! -----------------------
     //! create the model items
     //! -----------------------
-    for(std::vector<std::pair<QVector<GeometryTag>,QVector<GeometryTag>>>::iterator it = allContactPairs.begin(); it!=allContactPairs.end(); it++)
+    for(std::vector<std::pair<std::vector<GeometryTag>,std::vector<GeometryTag>>>::iterator it = allContactPairs.begin(); it!=allContactPairs.end(); it++)
     {
-        const std::pair<QVector<GeometryTag>,QVector<GeometryTag>> &curPair = *it;
+        const std::pair<std::vector<GeometryTag>,std::vector<GeometryTag>> &curPair = *it;
         int masterBodyIndex = curPair.first[0].parentShapeNr;
         int slaveBodyIndex = curPair.second[0].parentShapeNr;
 
@@ -12732,7 +12480,7 @@ void SimulationManager::generateBoundaryConditionsMeshDS(bool computeDual)
             case Property::meshEngine2D_Netgen_STL:
             case Property::meshEngine2D_OCC_ExpressMesh:
             {
-                const QVector<GeometryTag> &vecLoc = meshNode->getPropertyValue<QVector<GeometryTag>>("Tags");
+                const std::vector<GeometryTag> &vecLoc = meshNode->getPropertyValue<std::vector<GeometryTag>>("Tags");
                 for(int k=0; k<vecLoc.size(); k++)
                 {
                     int bodyIndex = vecLoc.at(k).parentShapeNr;
@@ -12746,7 +12494,7 @@ void SimulationManager::generateBoundaryConditionsMeshDS(bool computeDual)
                 if(meshEngine3D == Property::meshEngine3D_Tetgen_BR)
                 {
                     //! Tetgen with boundary recovery
-                    const QVector<GeometryTag> &vecLoc = meshNode->getPropertyValue<QVector<GeometryTag>>("Tags");
+                    const std::vector<GeometryTag> &vecLoc = meshNode->getPropertyValue<std::vector<GeometryTag>>("Tags");
                     for(int k=0; k<vecLoc.size(); k++)
                     {
                         int bodyIndex = vecLoc.at(k).parentShapeNr;
@@ -12757,7 +12505,7 @@ void SimulationManager::generateBoundaryConditionsMeshDS(bool computeDual)
                 {
                     //! TetWild - no boundary recovery. The face mesh datasources
                     //! must be rebuilt
-                    const QVector<GeometryTag> &vecLoc = meshNode->getPropertyValue<QVector<GeometryTag>>("Tags");
+                    const std::vector<GeometryTag> &vecLoc = meshNode->getPropertyValue<std::vector<GeometryTag>>("Tags");
                     for(int k=0; k<vecLoc.size(); k++)
                     {
                         int bodyIndex = vecLoc.at(k).parentShapeNr;
@@ -12810,8 +12558,8 @@ void SimulationManager::generateBoundaryConditionsMeshDS(bool computeDual)
 
     for(int n=1; n<NbRows-1; n++) //skip the analysis settings item
     {
-        QVector<GeometryTag> patchConformingTags;
-        QVector<GeometryTag> nonPatchConformingTags;
+        std::vector<GeometryTag> patchConformingTags;
+        std::vector<GeometryTag> nonPatchConformingTags;
         //! -------------------
         //! working on an item
         //! -------------------
@@ -12838,13 +12586,13 @@ void SimulationManager::generateBoundaryConditionsMeshDS(bool computeDual)
             else
             {
                 cout<<"____valid BC detected____"<<endl;
-                const QVector<GeometryTag> &vecLoc = curNode->getPropertyValue<QVector<GeometryTag>>("Tags");
+                const std::vector<GeometryTag> &vecLoc = curNode->getPropertyValue<std::vector<GeometryTag>>("Tags");
                 for(int i=0; i<vecLoc.size(); i++)
                 {
                     int bodyIndex = vecLoc.at(i).parentShapeNr;
                     bool isMeshDSExactOnBody = mapOfIsMeshDSExact.value(bodyIndex);
-                    if(isMeshDSExactOnBody) patchConformingTags<<vecLoc.at(i);
-                    else nonPatchConformingTags<<vecLoc.at(i);
+                    if(isMeshDSExactOnBody) patchConformingTags.push_back(vecLoc.at(i));
+                    else nonPatchConformingTags.push_back(vecLoc.at(i));
                 }
 
                 //! --------------------------
@@ -12933,8 +12681,8 @@ void SimulationManager::generateBoundaryConditionsMeshDS(bool computeDual)
                 {
                     for(int n=0; n<NbContactPairs; n++)
                     {
-                        QVector<GeometryTag> patchConformingTags;
-                        QVector<GeometryTag> nonPatchConformingTags;
+                        std::vector<GeometryTag> patchConformingTags;
+                        std::vector<GeometryTag> nonPatchConformingTags;
                         //! -------------------
                         //! working on an item
                         //! -------------------
@@ -12944,18 +12692,18 @@ void SimulationManager::generateBoundaryConditionsMeshDS(bool computeDual)
                         Property::SuppressionStatus isSuppressed = curNode->getPropertyItem("Suppressed")->data(Qt::UserRole).value<Property>().getData().value<Property::SuppressionStatus>();
                         if(isSuppressed == Property::SuppressionStatus_Active)
                         {
-                            QVector<GeometryTag> vecLoc;
+                            std::vector<GeometryTag> vecLoc;
                             if(i==0) //Master
-                                vecLoc = curNode->getPropertyValue<QVector<GeometryTag>>("Tags master");
+                                vecLoc = curNode->getPropertyValue<std::vector<GeometryTag>>("Tags master");
                             else //Slave
-                                vecLoc = curNode->getPropertyValue<QVector<GeometryTag>>("Tags slave");
+                                vecLoc = curNode->getPropertyValue<std::vector<GeometryTag>>("Tags slave");
 
                             for(int ii=0; ii<vecLoc.size(); ii++)
                             {
                                 int bodyIndex = vecLoc.at(ii).parentShapeNr;
                                 bool isMeshDSExactOnBody = mapOfIsMeshDSExact.value(bodyIndex);
-                                if(isMeshDSExactOnBody) patchConformingTags<<vecLoc.at(ii);
-                                else nonPatchConformingTags<<vecLoc.at(ii);
+                                if(isMeshDSExactOnBody) patchConformingTags.push_back(vecLoc.at(ii));
+                                else nonPatchConformingTags.push_back(vecLoc.at(ii));
                             }
                             //! --------------------------
                             //! work on exact datasources
@@ -13032,8 +12780,8 @@ void SimulationManager::generateBoundaryConditionsMeshDS(bool computeDual)
     //! -----------------------------------
     for(int n=0; n<Geometry_RootItem->rowCount();n++)
     {
-        QVector<GeometryTag> patchConformingTags;
-        QVector<GeometryTag> nonPatchConformingTags;
+        std::vector<GeometryTag> patchConformingTags;
+        std::vector<GeometryTag> nonPatchConformingTags;
         //! -------------------
         //! working on an item
         //! -------------------
@@ -13045,13 +12793,13 @@ void SimulationManager::generateBoundaryConditionsMeshDS(bool computeDual)
         {
             if(nodeType == SimulationNodeClass::nodeType_pointMass)
             {
-                const QVector<GeometryTag> &vecLoc = curNode->getPropertyValue<QVector<GeometryTag>>("Tags");
+                const std::vector<GeometryTag> &vecLoc = curNode->getPropertyValue<std::vector<GeometryTag>>("Tags");
                 for(int i=0; i<vecLoc.size(); i++)
                 {
                     int bodyIndex = vecLoc.at(i).parentShapeNr;
                     bool isMeshDSExactOnBody = mapOfIsMeshDSExact.value(bodyIndex);
-                    if(isMeshDSExactOnBody) patchConformingTags<<vecLoc.at(i);
-                    else nonPatchConformingTags<<vecLoc.at(i);
+                    if(isMeshDSExactOnBody) patchConformingTags.push_back(vecLoc.at(i));
+                    else nonPatchConformingTags.push_back(vecLoc.at(i));
                 }
                 //! --------------------------
                 //! work on exact datasources
@@ -13136,9 +12884,9 @@ void SimulationManager::replicateBolt()
     //! the current simulation node
     //! ----------------------------
     SimulationNodeClass *curNode = myTreeView->currentIndex().data(Qt::UserRole).value<SimulationNodeClass*>();
-    const QVector<GeometryTag> tags = curNode->getPropertyValue<QVector<GeometryTag>>("Geometry");
-    if(tags.isEmpty() || tags.size()>1) return;
-    TopAbs_ShapeEnum shapeType = tags.first().subShapeType;
+    const std::vector<GeometryTag> &tags = curNode->getPropertyValue<std::vector<GeometryTag>>("Geometry");
+    if(tags.size()==0 || tags.size()>1) return;
+    TopAbs_ShapeEnum shapeType = tags[0].subShapeType;
     if(shapeType!=TopAbs_SOLID) return;
 
     //! ------------------------------------------------
@@ -13305,7 +13053,7 @@ void SimulationManager::replicateBolt()
         //! replace the default scope and tags
         //! -----------------------------------
         ListOfShape listOfShape; listOfShape.Append(curSelectedShape);
-        QVector<GeometryTag> tags = TopologyTools::generateLocationPairs(mySimulationDataBase,listOfShape);
+        std::vector<GeometryTag> tags = TopologyTools::generateLocationPairs(mySimulationDataBase,listOfShape);
         data.setValue(tags);
         Property prop_scope("Geometry",data,Property::PropertyGroup_Scope);
         Property prop_tags("Tags",data,Property::PropertyGroup_Scope);
@@ -13474,8 +13222,8 @@ void SimulationManager::computeAndDisplayMeshMetric()
     SimulationNodeClass *node = modelIndex.data(Qt::UserRole).value<SimulationNodeClass*>();
     if(node->getType()!=SimulationNodeClass::nodeType_meshMeshMetric) return;
 
-    QVector<GeometryTag> vecLoc = node->getPropertyValue<QVector<GeometryTag>>("Tags");
-    if(vecLoc.isEmpty()) return;
+    std::vector<GeometryTag> vecLoc = node->getPropertyValue<std::vector<GeometryTag>>("Tags");
+    if(vecLoc.size()==0) return;
     if(vecLoc.at(0).subShapeType!=TopAbs_SOLID) return;
 
     //! ---------------------------------------
@@ -13498,7 +13246,7 @@ void SimulationManager::computeAndDisplayMeshMetric()
     //! scan the volume meshes
     //! -----------------------
     //TetQualityClass aTetQualityChecker;
-    for(QVector<GeometryTag>::iterator it = vecLoc.begin(); it!=vecLoc.end(); it++)
+    for(std::vector<GeometryTag>::iterator it = vecLoc.begin(); it!=vecLoc.end(); it++)
     {
         int bodyIndex = it->parentShapeNr;
 

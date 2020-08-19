@@ -174,15 +174,10 @@ Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(const QList<meshElementByCoords> 
         }
     }
 
-    //! --------------------------------
+    //! ------------------
     //! elements topology
-    //! TET, PYRAM, PRISM, HEXA
-    //! --------------------------------
-    this->CreatePyramidTopology(4);
-    this->CreatePrismTopology(3);
-    this->CreateTetTopology();
-    this->CreateHexaTopology();
-    this->CreateTet10Topology();
+    //! ------------------
+    this->buildElementsTopology();
 
     cout<<"Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D()->____constructor from a QList of meshElementByCoords: OK____"<<endl;
 }
@@ -258,15 +253,10 @@ Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(const std::vector<mesh::meshEleme
     }
     //fclose(f1);
 
-    //! ---------------------------------
+    //! ------------------
     //! elements topology
-    //! second order elements: to do ...
-    //! ---------------------------------
-    this->CreateTetTopology();
-    this->CreateHexaTopology();
-    this->CreatePrismTopology(3);
-    this->CreatePyramidTopology(4);
-    this->CreateTet10Topology();
+    //! ------------------
+    this->buildElementsTopology();
 
     cout<<"Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D()->____from vector of mesh points and mesh elements: OK____"<<endl;
 }
@@ -347,16 +337,15 @@ Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(const std::string &fileName)
         }
     }
 
-    this->CreateTetTopology();
-    this->CreateTet10Topology();
-    this->CreateHexaTopology();
-    this->CreatePyramidTopology(4);
-    this->CreatePrismTopology(3);
+    //! ------------------
+    //! elements topology
+    //! ------------------
+    this->buildElementsTopology();
 
     //! -------------
     //! connectivity
     //! -------------
-    //this->buildFaceToElementConnectivity();
+    this->buildFaceToElementConnectivity();
 }
 
 //! -----------------------------------------------
@@ -449,35 +438,15 @@ Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(Ng_Mesh *aMesh)
         }
     }
 
-    //! ---------------------------------------------
-    //! topology definition: first order tetrahedron
-    //! ---------------------------------------------
-    this->CreateTetTopology();
-
-    //! ----------------------------------------------
-    //! topology definition: second order tetrahedron
-    //! ----------------------------------------------
-    int TET10_Faces[4][6]={{3,8,2,9,4,10},
-                           {1,7,4,9,2,5},
-                           {1,5,2,8,3,6},
-                           {3,10,4,7,1,6}};
-
-    TET10MeshData = new MeshVS_HArray1OfSequenceOfInteger(1,4);
-    for(int i=0;i<4;i++)
-    {
-        TColStd_SequenceOfInteger faceNodes;
-        for(int k=0;k<6;k++)
-        {
-            Standard_Integer node = TET10_Faces[i][k]-1;
-            faceNodes.Append(node);
-        }
-        TET10MeshData->SetValue(i+1,faceNodes);
-    }
+    //! ------------------
+    //! elements topology
+    //! ------------------
+    this->buildElementsTopology();
 
     //! -----------------------------
     //! face to element connectivity
     //! -----------------------------
-    //this->buildFaceToElementConnectivity();
+    this->buildFaceToElementConnectivity();
 }
 
 //! -------------------------------------------------------
@@ -528,48 +497,10 @@ Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(const tetgenio &aMesh)
         myElemType->SetValue(i,TET);
     }
 
-    //! -------------------------------------------
-    //! topological information
-    //! sequence of nodes for the 3D visualization
-    //! 1st order tet: definition of the faces
-    //! Face 1: 1-2-3
-    //! Face 2: 1-3-2
-    //! Face 3: 2-4-3
-    //! Face 4: 3-4-1
-    //! -------------------------------------------
-    TET4MeshData = new MeshVS_HArray1OfSequenceOfInteger(1,4);
-
-    TColStd_SequenceOfInteger face1, face2, face3, face4;
-    face1.Append(0); face1.Append(1); face1.Append(3);
-    face2.Append(0); face2.Append(2); face2.Append(1);
-    face3.Append(1); face3.Append(2); face3.Append(3);
-    face4.Append(3); face4.Append(2); face4.Append(0);
-
-    TET4MeshData->SetValue(1,face1);
-    TET4MeshData->SetValue(2,face2);
-    TET4MeshData->SetValue(3,face3);
-    TET4MeshData->SetValue(4,face4);
-
-    //! -------------------------------------------
-    //! sequence of nodes for the 3D visualization
-    //! 2nd order tet: definition of the faces
-    //! Face 1: 0-6-1-8-3-5
-    //! Face 2: 0-9-2-7-4-6
-    //! Face 3: 1-7-2-4-3-8
-    //! Face 4: 3-4-2-9-0-5
-    //! -------------------------------------------
-    TET10MeshData = new MeshVS_HArray1OfSequenceOfInteger(1,4);
-
-    face1.Clear(); face2.Clear(); face3.Clear(); face4.Clear();
-    face1.Append(0); face1.Append(6); face1.Append(1); face1.Append(8); face1.Append(3); face1.Append(5);
-    face2.Append(0); face2.Append(9); face2.Append(2); face2.Append(7); face2.Append(4); face2.Append(6);
-    face3.Append(1); face3.Append(7); face3.Append(2); face3.Append(4); face3.Append(3); face3.Append(8);
-    face4.Append(3); face4.Append(4); face4.Append(2); face4.Append(9); face4.Append(0); face4.Append(5);
-
-    TET10MeshData->SetValue(1,face1);
-    TET10MeshData->SetValue(2,face2);
-    TET10MeshData->SetValue(3,face3);
-    TET10MeshData->SetValue(4,face4);
+    //! ------------------
+    //! elements topology
+    //! ------------------
+    this->buildElementsTopology();
 }
 
 //! ----------------------------------------------
@@ -1077,20 +1008,10 @@ Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(const occHandle(Ng_MeshVS_DataSou
         }
     }
 
-    //! --------------------------------
-    //! elements topology - first order
-    //! TET, PYRAM, PRISM, HEXA
-    //! --------------------------------
-    this->CreateTetTopology();
-    this->CreatePyramidTopology(4);
-    this->CreatePrismTopology(3);
-    this->CreateHexaTopology();
-
-    //! ---------------------------------
-    //! elements topology - second order
-    //! TET10, PYRAM13, PRISM15, HEXA20
-    //! ---------------------------------
-    // to do...
+    //! ------------------
+    //! elements topology
+    //! ------------------
+    this->buildElementsTopology();
 
     clock();
 }
@@ -1137,7 +1058,7 @@ Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(const Eigen::MatrixXd &V, const E
     //! -----------------
     //! element topology
     //! -----------------
-    this->CreateTetTopology();
+    this->buildElementsTopology();
 }
 
 //! --------------------------------------------------------------
@@ -1154,13 +1075,21 @@ Standard_Boolean Ng_MeshVS_DataSource3D::Get3DGeom(const Standard_Integer theID,
     {
         switch(myElemType->Value(localElementID))
         {
-        case TET: theNbNodes=4; theData=TET4MeshData; break;
+        //! -----------------
+        //! Surface elements
+        //! -----------------
+        case TRIG: theNbNodes = 3; theData = TRIGMeshData; break;
+        case QUAD: theNbNodes = 4;  theData = QUADMeshData; break;
+        case TRIG6: theNbNodes = 6; theData = TRIG6MeshData; break;
+        case QUAD8: theNbNodes = 8; theData = QUAD8MeshData; break;
+        //! ----------------
+        //! Volume elements
+        //! ----------------
+        case TET: theNbNodes = 4; theData = TET4MeshData; break;
         case HEXA: theNbNodes = 8; theData = HEXA8MeshData; break;
         case PRISM: theNbNodes = 6; theData = PRISM6MeshData; break;
         case PYRAM: theNbNodes = 5; theData = PYRAM5MeshData; break;
-
-        //! second order to do...
-        case TET10: theNbNodes=10; theData= TET10MeshData; break;
+        case TET10: theNbNodes = 10; theData= TET10MeshData; break;
         }
         return true;
     }
@@ -2106,9 +2035,9 @@ void Ng_MeshVS_DataSource3D::buildFaceToElementConnectivity()
         //! second order elements
         //! ----------------------
         case TET10: topology = TET10MeshData; NbFaces = 4; break;
-        //case HEXA20: topology = HEXA20MeshData; NbFaces = 6; break;
-        //case PRISM15: topology = PRISM15MeshData; NbFaces = 5; break;
-        //case PYRAM13: topology = PYRAM13MeshData; NbFaces = 5; break;
+        case HEXA20: topology = HEXA20MeshData; NbFaces = 6; break;
+        case PRISM15: topology = PRISM15MeshData; NbFaces = 5; break;
+        case PYRAM13: topology = PYRAM13MeshData; NbFaces = 5; break;
         }
 
         for(int f=1; f<=NbFaces; f++)
@@ -2164,87 +2093,98 @@ void Ng_MeshVS_DataSource3D::buildFaceToElementConnectivity()
     }
 }
 
-//! ----------------------------------------------------------------------------------------
-//! function: createPyramidTopology
-//! details:  create the topology of a first order pyramid with a base made of NbBasePoints
-//! ----------------------------------------------------------------------------------------
-void Ng_MeshVS_DataSource3D::CreatePyramidTopology(int NbBasePoints)
-{
-    occHandle(MeshVS_HArray1OfSequenceOfInteger) result;
-    if(NbBasePoints>=3)
-    {
-        result = new MeshVS_HArray1OfSequenceOfInteger(1,NbBasePoints+1);
-        for(int i=1; i<=NbBasePoints; i++)
-        {
-            result->ChangeValue(1).Prepend(i);
-            result->ChangeValue(1+i).Append(0);
-            result->ChangeValue(1+i).Append(i);
-            result->ChangeValue(1+i).Append(i%NbBasePoints+1);
-        }
-    }
-    PYRAM5MeshData = result;
-}
-
-//! ---------------------------------------------------------------------------------
-//! function: CreatePrismTopology
-//! details:  create the topology of a first order prism with a base of NbBasePoints
-//! ---------------------------------------------------------------------------------
-void Ng_MeshVS_DataSource3D::CreatePrismTopology(int NbBasePoints)
-{
-    int Nseq = 0;
-    if(NbBasePoints==3) Nseq = 5;
-    PRISM6MeshData = new MeshVS_HArray1OfSequenceOfInteger(1,Nseq);
-    if(NbBasePoints>=3)
-    {
-        PRISM6MeshData = new MeshVS_HArray1OfSequenceOfInteger(1,NbBasePoints+2);
-        int i, next;
-        for(i=0; i<NbBasePoints; i++)
-        {
-            PRISM6MeshData->ChangeValue(1).Prepend(i);
-            PRISM6MeshData->ChangeValue(2).Append(i+NbBasePoints);
-            PRISM6MeshData->ChangeValue(3+i).Prepend(i);
-            PRISM6MeshData->ChangeValue(3+i).Prepend(i+NbBasePoints);
-            next = (i+1)%NbBasePoints;
-            PRISM6MeshData->ChangeValue(3+i).Prepend(next+NbBasePoints);
-            PRISM6MeshData->ChangeValue(3+i).Prepend(next);
-        }
-    }
-
-    /*
-    for(int k=1; k<=NbBasePoints+1; k++) //cesere
-    {
-        cout<<"--------------------"<<endl;
-        for(int i=1; i<=PRISM6MeshData->Value(k).Length(); i++)
-            cout<<PRISM6MeshData->Value(k).Value(i)<<endl;
-        cout<<"--------------------"<<endl;
-    }
-    */
-}
-
-//! ----------------------------
-//! function: CreateTetTopology
+//! --------------------------------
+//! function: buildElementsTopology
 //! details:
-//! ----------------------------
-void Ng_MeshVS_DataSource3D::CreateTetTopology()
+//! --------------------------------
+void Ng_MeshVS_DataSource3D::buildElementsTopology()
 {
+    //! ----------------
+    //! Linear triangle
+    //! ----------------
+    TRIGMeshData = new MeshVS_HArray1OfSequenceOfInteger(1,1);
+    TRIGMeshData->ChangeValue(1).Append(0);
+    TRIGMeshData->ChangeValue(1).Append(1);
+    TRIGMeshData->ChangeValue(1).Append(2);
+
+    //! ------------------
+    //! Linear quadrangle
+    //! ------------------
+    QUADMeshData = new MeshVS_HArray1OfSequenceOfInteger(1,1);
+    QUADMeshData->ChangeValue(1).Append(0);
+    QUADMeshData->ChangeValue(1).Append(1);
+    QUADMeshData->ChangeValue(1).Append(2);
+    QUADMeshData->ChangeValue(1).Append(3);
+
+    //! -------------------
+    //! Quadratic triangle
+    //! -------------------
+    TRIG6MeshData = new MeshVS_HArray1OfSequenceOfInteger(1,1);
+    TRIG6MeshData->ChangeValue(1).Append(0);
+    TRIG6MeshData->ChangeValue(1).Append(3);
+    TRIG6MeshData->ChangeValue(1).Append(1);
+    TRIG6MeshData->ChangeValue(1).Append(4);
+    TRIG6MeshData->ChangeValue(1).Append(2);
+    TRIG6MeshData->ChangeValue(1).Append(5);
+
+    //! ---------------------
+    //! Quadratic quadrangle
+    //! ---------------------
+    QUAD8MeshData = new MeshVS_HArray1OfSequenceOfInteger(1,1);
+    QUAD8MeshData->ChangeValue(1).Append(0);
+    QUAD8MeshData->ChangeValue(1).Append(4);
+    QUAD8MeshData->ChangeValue(1).Append(1);
+    QUAD8MeshData->ChangeValue(1).Append(5);
+    QUAD8MeshData->ChangeValue(1).Append(2);
+    QUAD8MeshData->ChangeValue(1).Append(6);
+    QUAD8MeshData->ChangeValue(1).Append(3);
+    QUAD8MeshData->ChangeValue(1).Append(7);
+
+    //! -------------------
+    //! Linear tetrahedron
+    //! -------------------
     TET4MeshData = new MeshVS_HArray1OfSequenceOfInteger(1,4);
     for(int i=1;i<=4;i++)
     {
         TET4MeshData->ChangeValue(i).Append((i-1)%4);
         TET4MeshData->ChangeValue(i).Append(i%4);
         TET4MeshData->ChangeValue(i).Append((i+1)%4);
-        //cout<<"++++++++++++++++++++++++++++"<<endl;
-        //cout<<"+ "<<(i-1)%4<<" "<<i%4<<" "<<(i+1)%4<<endl;
-        //cout<<"++++++++++++++++++++++++++++"<<endl;
     }
-}
 
-//! -----------------------------
-//! function: CreateHexaTopology
-//! details:
-//! -----------------------------
-void Ng_MeshVS_DataSource3D::CreateHexaTopology()
-{
+    //! ---------------
+    //! Linear pyramid
+    //! ---------------
+    int NbBasePoints = 4;
+    PYRAM5MeshData = new MeshVS_HArray1OfSequenceOfInteger(1,NbBasePoints+1);
+    for(int i=1; i<=NbBasePoints; i++)
+    {
+        PYRAM5MeshData->ChangeValue(1).Prepend(i);
+        PYRAM5MeshData->ChangeValue(1+i).Append(0);
+        PYRAM5MeshData->ChangeValue(1+i).Append(i);
+        PYRAM5MeshData->ChangeValue(1+i).Append(i%NbBasePoints+1);
+    }
+
+    //! -------------
+    //! Linear prism
+    //! -------------
+    NbBasePoints = 3;
+    int Nseq = NbBasePoints + 2;
+    PRISM6MeshData = new MeshVS_HArray1OfSequenceOfInteger(1,Nseq);
+    int i, next;
+    for(i=0; i<NbBasePoints; i++)
+    {
+        PRISM6MeshData->ChangeValue(1).Prepend(i);
+        PRISM6MeshData->ChangeValue(2).Append(i+NbBasePoints);
+        PRISM6MeshData->ChangeValue(3+i).Prepend(i);
+        PRISM6MeshData->ChangeValue(3+i).Prepend(i+NbBasePoints);
+        next = (i+1)%NbBasePoints;
+        PRISM6MeshData->ChangeValue(3+i).Prepend(next+NbBasePoints);
+        PRISM6MeshData->ChangeValue(3+i).Prepend(next);
+    }
+
+    //! ------------------
+    //! Linear hexahedron
+    //! ------------------
     HEXA8MeshData = new MeshVS_HArray1OfSequenceOfInteger(1,6);
     HEXA8MeshData->ChangeValue(1).Append(3); HEXA8MeshData->ChangeValue(1).Append(2); HEXA8MeshData->ChangeValue(1).Append(1); HEXA8MeshData->ChangeValue(1).Append(0);
     HEXA8MeshData->ChangeValue(2).Append(4); HEXA8MeshData->ChangeValue(2).Append(5); HEXA8MeshData->ChangeValue(2).Append(6); HEXA8MeshData->ChangeValue(2).Append(7);
@@ -2252,6 +2192,18 @@ void Ng_MeshVS_DataSource3D::CreateHexaTopology()
     HEXA8MeshData->ChangeValue(4).Append(2); HEXA8MeshData->ChangeValue(4).Append(6); HEXA8MeshData->ChangeValue(4).Append(5); HEXA8MeshData->ChangeValue(4).Append(1);
     HEXA8MeshData->ChangeValue(5).Append(3); HEXA8MeshData->ChangeValue(5).Append(7); HEXA8MeshData->ChangeValue(5).Append(6); HEXA8MeshData->ChangeValue(5).Append(2);
     HEXA8MeshData->ChangeValue(6).Append(0); HEXA8MeshData->ChangeValue(6).Append(4); HEXA8MeshData->ChangeValue(6).Append(7); HEXA8MeshData->ChangeValue(6).Append(3);
+
+    //! ----------------------
+    //! Quadratic tetrahedron
+    //! ----------------------
+    const int mask[4][6] = {{0,4,1,5,2,6},{1,5,2,7,3,8},{0,6,2,7,3,9},{1,8,3,9,0,4}};
+    TET10MeshData = new MeshVS_HArray1OfSequenceOfInteger(1,4);
+    TColStd_SequenceOfInteger face[4];
+    for(int f=0; f<4; f++)
+    {
+        for(int j=0; j<6; j++) face[f].Append(mask[f][j]);
+        TET10MeshData->SetValue(f+1,face[f]);
+    }
 }
 
 //! ----------------------------------
@@ -2263,52 +2215,7 @@ void Ng_MeshVS_DataSource3D::computeNormalAtElements()
 {
     cout<<"Ng_MeshVS_DataSource3D::computeNormalAtElements()->____function called____"<<endl;
 
-#ifndef USE_POLYGON
-    //! -----------------------------------------------------
-    //! calculate the normal vector for each surface element
-    //! for the moment this method handle triangles
-    //! -----------------------------------------------------
-    for(TColStd_MapIteratorOfPackedMapOfInteger it(myElements); it.More(); it.Next())
-    {
-        int globalElementID = it.Key();
-        int localElementID = myElementsMap.FindIndex(globalElementID);
 
-        //cout<<"@____(global element ID, local element ID) = ("<<globalElementID<<", "<<localElementID<<")____"<<endl;
-
-        double x[3],y[3],z[3];
-        double nx,ny,nz,L;
-        for(int n=1; n<=3; n++)
-        {
-            int globalNodeID = myElemNodes->Value(localElementID,n);
-            int localNodeID = myNodesMap.FindIndex(globalNodeID);
-
-            //cout<<" ____(global node ID, local node ID) = ("<<globalNodeID<<", "<<localNodeID<<")____"<<endl;
-
-            x[n-1] = myNodeCoords->Value(localNodeID,1);
-            y[n-1] = myNodeCoords->Value(localNodeID,2);
-            z[n-1] = myNodeCoords->Value(localNodeID,3);
-        }
-
-        //! ----------------------
-        //!   i       j       k
-        //! x1-x0   y1-y0   z1-z0
-        //! x2-x0   y2-y0   z2-z0
-        //! ----------------------
-        nx=(y[1]-y[0])*(z[2]-z[0])-(z[1]-z[0])*(y[2]-y[0]);
-        ny=(z[1]-z[0])*(x[2]-x[0])-(x[1]-x[0])*(z[2]-z[0]);
-        nz=(x[1]-x[0])*(y[2]-y[0])-(y[1]-y[0])*(x[2]-x[0]);
-
-        L = sqrt(pow(nx,2)+pow(ny,2)+pow(nz,2));
-        if(L<1e-20) nx=ny=nz=0.0;
-        else { nx=nx/L; ny=ny/L; nz=nz/L; }
-
-        myElemNormals->SetValue(localElementID,1,nx);
-        myElemNormals->SetValue(localElementID,2,ny);
-        myElemNormals->SetValue(localElementID,3,nz);
-        //cout<<"compute normal at elements____("<<nx<<", "<<ny<<", "<<nz<<")____"<<endl;
-    }
-#endif
-#ifdef USE_POLYGON
     TColStd_MapIteratorOfPackedMapOfInteger it;
     for(it.Initialize(myElements); it.More(); it.Next())
     {
@@ -2341,7 +2248,6 @@ void Ng_MeshVS_DataSource3D::computeNormalAtElements()
         myElemNormals->SetValue(localElementID,3,n.at(2));
         cout<<"compute normal at elements____("<<n.at(0)<<", "<<n.at(1)<<", "<<n.at(2)<<")____"<<endl;
     }
-#endif
 }
 
 //! ---------------------------
@@ -3154,29 +3060,6 @@ void Ng_MeshVS_DataSource3D::renumberNodes(const std::map<std::size_t,int> &mapC
     }
 }
 
-//! ------------------------------
-//! function: createTet10Topology
-//! details:
-//! ------------------------------
-void Ng_MeshVS_DataSource3D::CreateTet10Topology()
-{
-    const int mask[4][6] =
-    {
-        {0,4,1,5,2,6},
-        {1,5,2,7,3,8},
-        {0,6,2,7,3,9},
-        {1,8,3,9,0,4}
-    };
-
-    TET10MeshData = new MeshVS_HArray1OfSequenceOfInteger(1,4);
-    TColStd_SequenceOfInteger face[4];
-    for(int f=0; f<4; f++)
-    {
-        for(int j=0; j<6; j++) face[f].Append(mask[f][j]);
-        TET10MeshData->SetValue(f+1,face[f]);
-    }
-}
-
 //! ------------------------------------------------------------------
 //! function: buildTolerantPoints
 //! details:  return the vector of all the mesh points with tolerance
@@ -3422,5 +3305,133 @@ Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(const occHandle(Ng_MeshVS_DataSou
     //! --------------------
     //! create the topology
     //! --------------------
-    this->CreateTet10Topology();
+    this->buildElementsTopology();
+}
+
+//! ----------------------
+//! function: constructor
+//! details:
+//! ----------------------
+Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(const occHandle(Ng_MeshVS_DataSource3D) &aMesh, const QMap<int,gp_Vec> &displacements)
+{
+    myNumberOfElements = aMesh->GetAllElements().Extent();
+    myNumberOfNodes = aMesh->GetAllNodes().Extent();
+
+    //! ---------------------------
+    //! maps of nodes and elements
+    //! ---------------------------
+    myElements = aMesh->GetAllElements();
+    myElementsMap = aMesh->myNodesMap;
+    myNodes = aMesh->GetAllNodes();
+    myNodesMap = aMesh->myNodesMap;
+
+    myElemType = new TColStd_HArray1OfInteger(1,myNumberOfElements);
+    myNodeCoords = new TColStd_HArray2OfReal(1,myNumberOfNodes,1,3);
+    myElemNodes = new TColStd_HArray2OfInteger(1,myNumberOfElements,1,20);
+
+    //! ----------------------------------
+    //! elements definition through nodes
+    //! ----------------------------------
+    int localElementID = 0;
+    int NbNodes, b[20];
+    TColStd_Array1OfInteger nodeIDs(*b,1,20);
+    for(TColStd_MapIteratorOfPackedMapOfInteger it(aMesh->GetAllElements()); it.More(); it.Next())
+    {
+        localElementID++;
+        int globalElementID = it.Key();
+        aMesh->GetNodesByElement(globalElementID,nodeIDs,NbNodes);
+        for(int c=1; c<=NbNodes; c++) myElemNodes->SetValue(localElementID,c,nodeIDs(c));
+
+        ElemType eType;
+        aMesh->GetElementType(eType,globalElementID,false);
+        myElemType->SetValue(localElementID,eType);
+    }
+
+    //! -----------------
+    //! node coordinates
+    //! -----------------
+    double a[3];
+    TColStd_Array1OfReal coords(*a,1,3);
+    MeshVS_EntityType aType;
+    int localNodeID = 0;
+    for(TColStd_MapIteratorOfPackedMapOfInteger it(aMesh->GetAllNodes()); it.More(); it.Next())
+    {
+        localNodeID ++;
+        int globalNodeID = it.Key();
+        aMesh->GetGeom(globalNodeID,false,coords,NbNodes,aType);
+        const gp_Vec &d = displacements.value(globalNodeID);
+        for(int c=0; c<NbNodes; c++)
+        {
+            int s = 3*c;
+            double x = coords(s+1) + d.X();
+            double y = coords(s+2) + d.Y();
+            double z = coords(s+3) + d.Z();
+            myNodeCoords->SetValue(localNodeID,s+1,x);
+            myNodeCoords->SetValue(localNodeID,s+2,y);
+            myNodeCoords->SetValue(localNodeID,s+3,z);
+        }
+    }
+
+    //! ------------------
+    //! elements topology
+    //! ------------------
+    this->buildElementsTopology();
+}
+
+//! ----------------------
+//! function: constructor
+//! details:  upcast
+//! ----------------------
+Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(const occHandle(MeshVS_DataSource) &aMeshDS)
+{
+    if(aMeshDS.IsNull()) return;
+    if(aMeshDS->GetAllElements().Extent()<1) return;
+    if(aMeshDS->GetAllNodes().Extent()<4) return;
+
+    myNodes = aMeshDS->GetAllNodes();
+    myNumberOfNodes = myNodes.Extent();
+    for(TColStd_MapIteratorOfPackedMapOfInteger it(myNodes); it.More(); it.Next()) myNodesMap.Add(it.Key());
+
+    myElements = aMeshDS->GetAllElements();
+    myNumberOfElements = myElements.Extent();
+    for(TColStd_MapIteratorOfPackedMapOfInteger it(myElements); it.More(); it.Next()) myElementsMap.Add(it.Key());
+
+    myElemType = new TColStd_HArray1OfInteger(1,myNumberOfElements);
+    myNodeCoords = new TColStd_HArray2OfReal(1,myNumberOfNodes,1,3);
+    myElemNodes = new TColStd_HArray2OfInteger(1,myNumberOfElements,1,20);
+
+    int NbNodes, buf[20];
+    double bufd[3];
+    TColStd_Array1OfInteger nodeIDs(*buf,1,20);
+    TColStd_Array1OfReal coords(*bufd,1,3);
+    MeshVS_EntityType aType;
+
+    int localNodeID = 1;
+    for(TColStd_MapIteratorOfPackedMapOfInteger it(myNodes); it.More(); it.Next(), localNodeID++)
+    {
+        int globalNodeID = it.Key();
+        aMeshDS->GetGeom(globalNodeID,false,coords,NbNodes,aType);
+        for(int i=1; i<=3; i++) myNodeCoords->SetValue(localNodeID,i,coords(i));
+    }
+
+    int localElementID = 1;
+    for(TColStd_MapIteratorOfPackedMapOfInteger it(myElements); it.More(); it.Next(),localElementID++)
+    {
+        int globalElementID = it.Key();
+        aMeshDS->GetNodesByElement(globalElementID,nodeIDs,NbNodes);
+        for(int i=1; i<=NbNodes; i++) myElemNodes->SetValue(globalElementID,i,nodeIDs(i));
+        switch(NbNodes)
+        {
+        case 4: myElemType->SetValue(localElementID,TET); break;
+        case 5: myElemType->SetValue(localElementID,PYRAM); break;
+        case 6: myElemType->SetValue(localElementID,PRISM); break;
+        case 8: myElemType->SetValue(localElementID,HEXA); break;
+        case 10: myElemType->SetValue(localElementID,TET10); break;
+        case 13: myElemType->SetValue(localElementID,PYRAM13); break;
+        case 15: myElemType->SetValue(localElementID,PRISM15); break;
+        case 20: myElemType->SetValue(localElementID,HEXA20); break;
+        }
+    }
+
+    this->buildElementsTopology();
 }

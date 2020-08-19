@@ -12,12 +12,14 @@
 #include "frdreader.h"
 #include <meshdatabase.h>
 #include "postobject.h"
+#include "global.h"
 
 //! ----
 //! C++
 //! ----
 #include <iostream>
 #include <fstream>
+#include <memory>
 
 class OCCMeshToCCXmesh;
 
@@ -72,20 +74,7 @@ private:
     //! ---------------------------------------------------
     OCCMeshToCCXmesh *OCCtoCCXinterface;
 
-    void buildMap()
-    {
-        m.insert("DISP",TypeOfResult_U);
-        m.insert("STRESS",TypeOfResult_S);
-        m.insert("TOSTRAIN",TypeOfResult_TOSTRAIN);
-        m.insert("MESTRAIN",TypeOfResult_MESTRAIN);
-        m.insert("NDTEMP",TypeOfResult_NT);
-        m.insert("UDR",TypeOfResult_UDR);
-        m.insert("FORC",TypeOfResult_F);
-        m.insert("PE",TypeOfResult_EPS);
-        m.insert("FLUX",TypeOfResult_HFL);
-        m.insert("CONTACT",TypeOfResult_CONT);
-        m.insert("FORC",TypeOfResult_RF);
-    }
+    void buildMap();
 
 signals:
 
@@ -94,59 +83,64 @@ public slots:
     //! set fatigue model
     void setFatigueModel (int fatigueAlgo);
 
+    //! set mesh data base
     void setDataBase(meshDataBase *mDB);
 
+    //! set results file
     void setResultsFile(QString resultsFilePath);
 
-    //! it calls internally an FrdReader which reads
-    //!
+    //! it calls internally an FrdReader object
     bool perform();
 
-    QMap<GeometryTag,QList<QMap<int,double>>> evaluateResult(const QString &resultKeyName,
-                                                             int requiredSubStepNb,
-                                                             int requiredStepNb,
-                                                             int requiredMode,
-                                                             const QVector<GeometryTag> &vecLoc,
-                                                             double &requiredTime);
+    //! evaluate results
+    std::map<GeometryTag,std::vector<std::map<int,double>>> evaluateResult(const QString &resultKeyName,
+                                                                            int requiredSubStepNb,
+                                                                            int requiredStepNb,
+                                                                            int requiredMode,
+                                                                            const std::vector<GeometryTag> &vecLoc,
+                                                                            double &requiredTime);
 
-    postObject evaluateFatigueResults(int type, QVector<GeometryTag> locs, const QList<double> &times, QMap<int,int> materialBodyMap, int nCycle);
-    //postObject evaluateFatigueResults1(int type, QVector<GeometryTag> locs, const QList<double> &times, QMap<int,int> materialBodyMap, int nCycle);
+    //! evaluate fatigue results
+    bool evaluateFatigueResults(int type, std::vector<GeometryTag> locs, const QList<double> &times, QMap<int,int> materialBodyMap, int nCycle, sharedPostObject &aPostObject);
 
-    postObject buildPostObject(const QString &keyName,
-                               int component,
-                               int requiredSubStepNb,
-                               int requiredStepNb,
-                               int requiredMode,
-                               const QVector<GeometryTag> &vecLoc);
+    //! build a post object
+    bool buildPostObject(const QString &keyName,
+                         int component,
+                         int requiredSubStepNb,
+                         int requiredStepNb,
+                         int requiredMode,
+                         const std::vector<GeometryTag> &vecLoc,
+                         sharedPostObject &aPostObject);
 
 private:
 
     //! create a string title for the colorbox, carrying the type of data
-    QString colorBoxTitle(const QString &keyName, int component, int step, int subStep, double time);
+    QString resultName(const QString &keyName, int component, int step, int subStep, double time);
 
     //! time stamp
     QString timeStamp();
 
     //! read fatigue results
-    QMap<GeometryTag,QMap<int,QList<double>>> readFatigueResults(int type,
-                                                                    const QVector<GeometryTag> &vecLoc,
-                                                                    const QList<double> &times);
+    //QMap<GeometryTag,QMap<int,QList<double>>> readFatigueResults(int type,
+    //                                                             const std::vector<GeometryTag> &vecLoc,
+    //                                                             const QList<double> &times);
 
+    std::map<GeometryTag,std::map<int,QList<double>>> readFatigueResults(int type,
+                                                                 const std::vector<GeometryTag> &vecLoc,
+                                                                 const QList<double> &times);
+
+
+    //! fatigue model
     fatigueModel myFatigueModel;
+
+    //! discrete time map
     QMap<double,QVector<int>> myDTM;
 
 public:
 
-    //! retrieve the discrete time map
-    //QMap<double,QVector<int>> getDTM();
-
     void setDiscreteTimeMap(const QMap<double,QVector<int>> &dtm);
-
-    //! plot data summary
-    static void plotDataSummary(QMap<GeometryTag, QList<QMap<int,double>>> data);
-
-    //! experimental
-    void updateResultScale(postObject &aPostObject, int scaleType, double minValue, double maxValue, int NbIntervals);
+    void updateResultsPresentation(QList<sharedPostObject> &postObjectList);
+    void updateIsostrips(sharedPostObject &aPostObject, int scaleType, double minValue, double maxValue, int NbIntervals);
 };
 
 #endif // POSTENGINE_H

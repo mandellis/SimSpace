@@ -89,6 +89,9 @@ public:
     //! conversion into second order
     Standard_EXPORT Ng_MeshVS_DataSource2D(const occHandle(Ng_MeshVS_DataSource2D) &aMesh, int order);
 
+    //! constructor: a mesh from another mesh with nodal displacements applied
+    Standard_EXPORT Ng_MeshVS_DataSource2D(const occHandle(Ng_MeshVS_DataSource3D) &aMesh, const QMap<int,gp_Vec> &displacements);
+
     Standard_EXPORT virtual Standard_Boolean GetGeom (const Standard_Integer ID,
                                               const Standard_Boolean IsElement,
                                               TColStd_Array1OfReal& Coords,
@@ -113,6 +116,10 @@ public:
     Standard_EXPORT virtual const TColStd_PackedMapOfInteger& GetAllNodes() const Standard_OVERRIDE;
 
     Standard_EXPORT virtual const TColStd_PackedMapOfInteger& GetAllElements() const Standard_OVERRIDE;
+
+    Standard_EXPORT virtual Standard_Boolean Get3DGeom (const Standard_Integer theID,
+                                                        Standard_Integer& NbNodes,
+                                                        occHandle(MeshVS_HArray1OfSequenceOfInteger) &Data) const;
 
     Standard_EXPORT virtual const bool GetElementType(ElemType &eType, int elementID, bool isLocal) const;
 
@@ -187,11 +194,6 @@ public:
     //! ---------------------------------------
     std::vector<double> getNodeCoordinates(int localNodeID);
 
-    //! ------------------------------------
-    //! for storing scalar/vectors at nodes
-    //! ------------------------------------
-    timeHistoryOfDistributions myTimeHistoryOfDistributions;
-
     //! ----------------------
     //! build tolerant points
     //! ----------------------
@@ -207,6 +209,23 @@ public:
     //! ---------------
     std::shared_ptr<std::vector<int>> myMidSideNodes;
     void getMidSideNodes(std::vector<int> *midSideNodes) { midSideNodes=myMidSideNodes.get(); }
+
+    //! ------------------
+    //! elements topology
+    //! ------------------
+    occHandle(MeshVS_HArray1OfSequenceOfInteger) TRIGMeshData;
+    occHandle(MeshVS_HArray1OfSequenceOfInteger) QUADMeshData;
+    occHandle(MeshVS_HArray1OfSequenceOfInteger) TRIG6MeshData;
+    occHandle(MeshVS_HArray1OfSequenceOfInteger) QUAD8MeshData;
+    occHandle(MeshVS_HArray1OfSequenceOfInteger) TET4MeshData;
+    occHandle(MeshVS_HArray1OfSequenceOfInteger) TET10MeshData;
+    occHandle(MeshVS_HArray1OfSequenceOfInteger) HEXA8MeshData;
+    occHandle(MeshVS_HArray1OfSequenceOfInteger) HEXA20MeshData;
+    occHandle(MeshVS_HArray1OfSequenceOfInteger) PRISM6MeshData;
+    occHandle(MeshVS_HArray1OfSequenceOfInteger) PRISM15MeshData;
+    occHandle(MeshVS_HArray1OfSequenceOfInteger) PYRAM5MeshData;
+    occHandle(MeshVS_HArray1OfSequenceOfInteger) PYRAM13MeshData;
+    void buildElementsTopology();
 };
 
 DEFINE_STANDARD_HANDLE(Ng_MeshVS_DataSource2D,MeshVS_DataSource)

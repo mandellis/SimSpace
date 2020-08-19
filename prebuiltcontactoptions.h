@@ -11,8 +11,8 @@
 struct preBuiltContactOptions
 {
     bool isAutomatic;
-    QVector<GeometryTag> vecLocMaster;
-    QVector<GeometryTag> vecLocSlave;
+    std::vector<GeometryTag> vecLocMaster;
+    std::vector<GeometryTag> vecLocSlave;
 };
 
 Q_DECLARE_METATYPE(preBuiltContactOptions)

@@ -718,7 +718,7 @@ void simulationDataBase::createNamedSelectionRootNode()
     //! For this item "Geometry" is empty and also "Tags"
     //! --------------------------------------------------
     QVector<Property> propsEmptyNS;
-    QVector<GeometryTag> vecLoc;
+    std::vector<GeometryTag> vecLoc;
     data.setValue(vecLoc);
     Property property_scope("Geometry",data,Property::PropertyGroup_Scope);
     Property property_tags("Tags",data,Property::PropertyGroup_Scope);

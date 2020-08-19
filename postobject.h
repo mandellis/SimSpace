@@ -14,6 +14,7 @@
 //! ----
 #include <MeshVS_Mesh.hxx>
 #include <MeshVS_DataSource.hxx>
+#include <MeshVS_DeformedDataSource.hxx>
 #include <NCollection_TListIterator.hxx>
 #include <MeshVS_NodalColorPrsBuilder.hxx>
 #include <MeshVS_DataSource.hxx>
@@ -48,25 +49,25 @@ public:
     //! ------------
     //! constructor
     //! ------------
-    postObject(const QMap<GeometryTag, QList<QMap<int, double>>> &resMap);
+    postObject(const std::map<GeometryTag, std::vector<std::map<int, double> > > &resMap);
 
     //! ------------
     //! constructor
     //! ------------
-    postObject(const QMap<GeometryTag, QList<QMap<int, double>>> &resMap, const QVector<GeometryTag> &aVecLoc);
+    postObject(const std::map<GeometryTag, std::vector<std::map<int, double>>> &resMap, const std::vector<GeometryTag> &aVecLoc);
 
     //! ------------
     //! constructor
     //! ------------
-    postObject(const QMap<GeometryTag,QList<QMap<int,double>>> &resMap, const QVector<GeometryTag> &aVecLoc, const QString& aName);
+    postObject(const std::map<GeometryTag,std::vector<std::map<int,double>>> &resMap, const std::vector<GeometryTag> &aVecLoc, const QString& aName);
 
     //! ------------
     //! constructor
     //! ------------
-    postObject(const QMap<GeometryTag,QList<QMap<int,double>>> &resMap,
-               const QVector<GeometryTag> &aVecLoc,
-               const QMap<GeometryTag,QMap<int,gp_Vec>> mapOfMapOfNodalDiplacements,
-               const QString& aName, bool aShowSolidMeshAsSurface);
+    postObject(const std::map<GeometryTag,std::vector<std::map<int,double>>> &resMap,
+               const std::vector<GeometryTag> &aVecLoc,
+               const std::map<GeometryTag,std::map<int,gp_Vec>> mapOfMapOfNodalDiplacements,
+               const QString& aName, bool useSurfaceMeshForVolumeResults);
 
     //! ----------------------
     //! constructor from file
@@ -86,25 +87,25 @@ public:
     //! -----------------
     postObject(const postObject &other)
     {
-        theMeshes = other.theMeshes;            // check if the operator = id defined for the class
-        AISColorScale = other.AISColorScale;    // check if the operator = id defined for the class
+        theMeshes = other.theMeshes;                    // check if the operator = id defined for the class
+        theMeshDataSources = other.theMeshDataSources;  // check if the operator = id defined for the class
+        AISColorScale = other.AISColorScale;            // check if the operator = id defined for the class
         name = other.name;
-        vecLoc = other.vecLoc;
+        myVecLoc = other.myVecLoc;
         theData = other.theData;
         myMapOfNodalDisplacements = other.myMapOfNodalDisplacements;
         mySolutionDataComponent = other.mySolutionDataComponent;
-
         myIsAutoscale = other.myIsAutoscale;
         myMin = other.myMin;
         myMax = other.myMax;
         myNbLevels = other.myNbLevels;
-        myShowSolidMeshAsSurface = other.myShowSolidMeshAsSurface;
+        myUseSurfaceMeshForVolumeResults = other.myUseSurfaceMeshForVolumeResults;
     }
 
     //! -------------------------------------------------
     //! set the map of the vectorial nodal displacements
     //! -------------------------------------------------
-    void setMapOfNodalDisplacements(const QMap<GeometryTag,QMap<int,gp_Vec>> &mapDisplMap)
+    void setMapOfNodalDisplacements(const std::map<GeometryTag,std::map<int,gp_Vec>> &mapDisplMap)
     {
         myMapOfNodalDisplacements = mapDisplMap;
     }
@@ -112,7 +113,7 @@ public:
     //! -------------------------------------------------
     //! get the map of the vectorial nodal displacements
     //! -------------------------------------------------
-    QMap<GeometryTag,QMap<int,gp_Vec>> getMapOfNodalDisplacements()
+    std::map<GeometryTag,std::map<int,gp_Vec>> getMapOfNodalDisplacements()
     {
         return myMapOfNodalDisplacements;
     }
@@ -123,22 +124,19 @@ private:
     //! in case of results on a volume mesh tells
     //! if plot only the surface mesh or the volume mesh
     //! -------------------------------------------------
-    bool myShowSolidMeshAsSurface;
+    bool myUseSurfaceMeshForVolumeResults;
 
     //! ---------
     //! the data
     //! ---------
-    QMap<GeometryTag,QList<QMap<int,double>>> theData;
+    std::map<GeometryTag,std::vector<std::map<int,double>>> theData;
 
-    //! -------------
-    //! the data 2.0
-    //! -------------
-    timeHistoryOfDistributions myTimeHistoryOfDistributions;
-
-    //! -------------------------------------
-    //! MeshVS_Mesh objects (colored meshes)
-    //! -------------------------------------
-    QMap<GeometryTag,occHandle(MeshVS_Mesh)> theMeshes;
+    //! -----------------------------------
+    //! mesh objects and mesh data sources
+    //! -----------------------------------
+    std::map<GeometryTag,occHandle(MeshVS_Mesh)> theMeshes;
+    std::map<GeometryTag,occHandle(MeshVS_DeformedDataSource)> theMeshDataSources;
+    std::map<GeometryTag,occHandle(MeshVS_DeformedDataSource)> theMeshDataSourcesForView;
 
     //! ----------------
     //! the color scale
@@ -153,12 +151,12 @@ private:
     //! ----------
     //! locations
     //! ----------
-    QVector<GeometryTag> vecLoc;
+    std::vector<GeometryTag> myVecLoc;
 
     //! --------------------------------------
     //! map of map of the nodal displacements
     //! --------------------------------------
-    QMap<GeometryTag,QMap<int,gp_Vec>> myMapOfNodalDisplacements;
+    std::map<GeometryTag,std::map<int,gp_Vec>> myMapOfNodalDisplacements;
 
     //! ----------------------------
     //! the solution data component
@@ -172,17 +170,6 @@ private:
     //! deformation scale
     //! ------------------
     double myScale;
-
-    //! --------------------
-    //! automin and automax
-    //! --------------------
-    //double myAutoMin;
-    //double myAutoMax;
-
-    //! -------------
-    //! autoNbLevels
-    //! -------------
-    //int myAutoNbLevels;
 
 private:
 
@@ -201,14 +188,15 @@ public:
     QString getName() const { return name;}
 
     //! get data
-    QMap<GeometryTag,QList<QMap<int,double>>> getData() { return theData; }
+    std::map<GeometryTag,std::vector<std::map<int,double>>> getData() { return theData; }
+
+    //! get locations
+    std::vector<GeometryTag> getLocations() const { return myVecLoc; }
 
     //! NbMeshes
-    int NbMeshes() const { return theData.size(); }
+    int NbMeshes() const { return (int)theData.size(); }
 
-    //! ------
     //! write
-    //! ------
     void write(std::ofstream &file);
 
     //! read: read only the colors
@@ -217,28 +205,28 @@ public:
     //! write mesh
     void writeMesh(ofstream &file, const occHandle(MeshVS_DataSource) &theMeshDS);
 
-    //! ------------------------------
-    //! rebuild "theMeshes" with data
-    //! ------------------------------
-    void buildMeshIO(const mapOfMeshDataSources &aMapOfMeshDataSources,
-                     double min=-1e20, double max=1e20, int Nlevels=9, bool autoscale=true, int component=0, bool showMeshEdges=true);
+    //! build mesh IO
+    void buildMeshIO(double min=-1e20, double max=1e20, int Nlevels=10, bool autoscale=true, int component=0, double deformationScale = 1.0);
 
-    //! update
-    void update(meshDataBase *mDB, int component=0);
-
-    //! update mesh
-    void updateView(bool showMeshEdges);
+    //! init
+    void init(meshDataBase *mDB);
 
     //! clone
     postObject clone(const postObject &other);
 
     //! get colored meshes
-    QMap<GeometryTag,occHandle(MeshVS_Mesh>) getColoredMeshes() const { return theMeshes; }
+    std::map<GeometryTag,occHandle(MeshVS_Mesh>) getColoredMeshes() const { return theMeshes; }
+
+    //! get the mesh data sources
+    std::map<GeometryTag,occHandle(MeshVS_DeformedDataSource)> getMeshDataSources() const { return theMeshDataSources; }
+
+    //! get the mesh data sources for view
+    std::map<GeometryTag,occHandle(MeshVS_DeformedDataSource)> getMeshDataSourcesForView() const { return theMeshDataSourcesForView; }
 
     //! is empty
-    bool isEmpty() const{ return theData.isEmpty(); }
+    bool isEmpty() const{ return (theData.size()==0? true:false); }
 
-    //! update scaled view (read myScale)
+    //! update scaled view (internally read myScale)
     void updateScaledView();
 
 public:
@@ -246,33 +234,52 @@ public:
     //! get the color box
     occHandle(AIS_ColorScaleExtended) getColorBox() const { return AISColorScale; }
 
-    //! set scale
-    void setScale(double scale) { myScale = scale; }
-
     //! get scale
     double getScale() { return myScale; }
 
     //! get solution data component
     int getSolutionDataComponent() {return mySolutionDataComponent; }
 
-    //! ------------------------
-    //! get autoMin and autoMax
-    //! ------------------------
+    //! get min/max
     double getMin() { return myMin; }
     double getMax() { return myMax; }
 
     //! get auto number of levels
     int getNbLevels() { return myNbLevels; }
 
+    //! is autoscale
+    bool IsAutoscale() { return myIsAutoscale; }
+
     //! experimental
     void updateMapping(int mapping);
 
+    //! set scale
+    void setScale(double scale) { myScale = scale; }
+
+    //! set mode
+    void setMode (bool useSurfaceMeshForVolumeResults) { myUseSurfaceMeshForVolumeResults = useSurfaceMeshForVolumeResults; }
+
 private:
 
-    void writeIntoStream(ofstream &os, const opencascade::handle<MeshVS_DataSource> &aMeshDS);
+    void writeIntoStream(ofstream &os, const occHandle(MeshVS_DataSource) &aMeshDS);
     bool readMeshFromStream(ifstream &stream, occHandle(MeshVS_DataSource) &aMeshDS);
+
+    //! -------
+    //! helper
+    //! -------
+    int hueFromValue(int theValue,int theMin,int theMax)
+    {
+        int aMinLimit (0), aMaxLimit (230);
+        int aHue = aMaxLimit;
+        if (theMin!=theMax) aHue = (int)(aMaxLimit -(aMaxLimit-aMinLimit)*(theValue-theMin)/(theMax - theMin));
+        aHue = std::min (std::max (aMinLimit, aHue), aMaxLimit);
+        return aHue;
+    }
 };
 
 Q_DECLARE_METATYPE(postObject)
+
+typedef std::shared_ptr<postObject> sharedPostObject;
+Q_DECLARE_METATYPE(sharedPostObject)
 
 #endif // POSTOBJECT_H

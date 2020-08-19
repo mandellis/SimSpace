@@ -111,15 +111,15 @@ public:
     //! perform
     //! --------
     bool perform(const std::vector<std::pair<GeometryTag,GeometryTag>> &vectorOfBodyPairs,
-                 std::vector<std::pair<QVector<GeometryTag>,QVector<GeometryTag>>> &allContactsPairs,
+                 std::vector<std::pair<std::vector<GeometryTag>,std::vector<GeometryTag>>> &allContactsPairs,
                  double tolerance,
                  int grouping);
 
     //! ---------
     //! group by
     //! ---------
-    void groupBy(const std::vector<std::pair<QVector<GeometryTag>, QVector<GeometryTag>>> &allContactsPairs,
-                  std::vector<std::pair<QVector<GeometryTag>, QVector<GeometryTag> > > &reordered,
+    void groupBy(const std::vector<std::pair<std::vector<GeometryTag>, std::vector<GeometryTag>>> &allContactsPairs,
+                  std::vector<std::pair<std::vector<GeometryTag>, std::vector<GeometryTag> > > &reordered,
                   int grouping);
 
     //! ------------------------------------

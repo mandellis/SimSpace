@@ -8,41 +8,30 @@ using namespace std;
 
 struct resultPresentation
 {
+    //! ----------
+    //! view mode
+    //! ----------
     enum combinedView
     {
         combinedView_resultOnly,
+        combinedView_meshVisible,
         combinedView_undeformedWireFrame,
         combinedView_undeformedModel
     };
 
-    //! ----------
-    //! view mode
-    //! ----------
     combinedView theCombinedView;
-
-    //! ------------------------------
-    //! result mesh is shown deformed
-    //! ------------------------------
-    bool isDeformedView;
+    bool useExteriorMeshForVolumeResults;
     double theScale;
 
-    //! ---------------------
-    //! mesh edge visibility
-    //! ---------------------
-    bool isMeshVisible;
-
-    //! ---------------------------------------------------
+    //! ------------
     //! constructor
-    //! true scale/no undeformed wireframe/no mesh visible
-    //! ---------------------------------------------------
-    resultPresentation(combinedView aCombinedView=combinedView_resultOnly,
-                       bool anIsDeformedView=false,
-                       double aScale=1.0,
-                       bool aMeshVisible=false):
+    //! ------------
+    resultPresentation(combinedView aCombinedView = combinedView_resultOnly,
+                       double aScale = 1.0,
+                       bool aUseExteriorMeshForVolumeResults = true):
         theCombinedView(aCombinedView),
-        isDeformedView(anIsDeformedView),
-        theScale(aScale),
-        isMeshVisible(aMeshVisible)
+        useExteriorMeshForVolumeResults(aUseExteriorMeshForVolumeResults),
+        theScale(aScale)
     {;}
 
     //! -----------------
@@ -51,9 +40,8 @@ struct resultPresentation
     resultPresentation(const resultPresentation &aRP)
     {
         theCombinedView = aRP.theCombinedView;
-        isDeformedView = aRP.isDeformedView;
+        useExteriorMeshForVolumeResults = aRP.useExteriorMeshForVolumeResults;
         theScale = aRP.theScale;
-        isMeshVisible = aRP.isMeshVisible;
     }
 
     //! -----------
@@ -62,10 +50,29 @@ struct resultPresentation
     resultPresentation operator = (const resultPresentation &aRP)
     {
         theCombinedView = aRP.theCombinedView;
-        isDeformedView = aRP.isDeformedView;
+        useExteriorMeshForVolumeResults = aRP.useExteriorMeshForVolumeResults;
         theScale = aRP.theScale;
-        isMeshVisible = aRP.isMeshVisible;
         return *this;
+    }
+
+    //! ------------
+    //! operator ==
+    //! ------------
+    bool operator == (const resultPresentation &aRP)
+    {
+        if(theCombinedView != aRP.theCombinedView) return false;
+        if(useExteriorMeshForVolumeResults != aRP.useExteriorMeshForVolumeResults) return false;
+        if(theScale != aRP.theScale) return false;
+        return true;
+    }
+
+    //! ------------
+    //! operator !=
+    //! ------------
+    bool operator != (const resultPresentation &aRP)
+    {
+        if(*this == aRP) return false;
+        return true;
     }
 };
 

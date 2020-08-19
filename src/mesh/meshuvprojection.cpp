@@ -1,4 +1,5 @@
 #include "meshuvprojection.h"
+#include "occhandle.h"
 
 #include <BRepAdaptor_Surface.hxx>
 #include <Geom_Surface.hxx>
@@ -19,7 +20,7 @@ bool projectUV(const TopoDS_Face &aFace, const Eigen::MatrixXd &V, Eigen::Matrix
     GeomAPI_ProjectPointOnSurf aProjector;
     BRepAdaptor_Surface adaptor(aFace,true);
     const GeomAdaptor_Surface &s_adaptor = adaptor.Surface();
-    opencascade::handle<Geom_Surface> aGeomSurface =  s_adaptor.Surface();
+    occHandle(Geom_Surface) aGeomSurface =  s_adaptor.Surface();
     for(int i=0; i<V.rows();i++)
     {
         gp_Pnt P(V(i,0),V(i,1),V(i,2));  // the point to project

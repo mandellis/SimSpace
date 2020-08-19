@@ -182,7 +182,8 @@ SOURCES += main.cpp\
     src/electrostatic/particlesemitter.cpp \
     src/mesh/meshnodesrenumberingtool.cpp \
     inputfilegenerator.cpp \
-    ccxsolvermanager1.cpp
+    ccxsolvermanager1.cpp \
+    src/mesh/isostripbuilder.cpp
 
 HEADERS  += mainwindow.h \
     actions3d.h \
@@ -415,7 +416,8 @@ HEADERS  += mainwindow.h \
     src/mesh/renumberingtool.h \
     src/mesh/meshnodesrenumberingtool.h \
     inputfilegenerator.h \
-    ccxsolvermanager1.h
+    ccxsolvermanager1.h \
+    src/mesh/isostripbuilder.h
 
 FORMS    += mainwindow.ui
 

@@ -141,16 +141,14 @@ void Mapper3DClass::setTargetMesh(const opencascade::handle<MeshVS_DataSource> &
     double bufn[3];
     for(TColStd_MapIteratorOfPackedMapOfInteger nIter(theTargetMeshDS->GetAllNodes());nIter.More();nIter.Next())
     {
-        QList<double> coor;
         int globalNodeID = nIter.Key();
         int NbNodes;
         MeshVS_EntityType type;
         TColStd_Array1OfReal Coords(*bufn,1,3);
         theTargetMeshDS->GetGeom(globalNodeID,false,Coords,NbNodes,type);
-        coor.push_back(Coords.Value(1));
-        coor.push_back(Coords.Value(2));
-        coor.push_back(Coords.Value(3));
-        myMapOfNodes.insert(globalNodeID,coor);
+        std::vector<double> coor {Coords.Value(1), Coords.Value(2), Coords.Value(3)};
+        //myMapOfNodes.insert(globalNodeID,coor);
+        myMapOfNodes.insert(std::make_pair(globalNodeID,coor));
     }
 
     //! -----------------------------
@@ -202,7 +200,8 @@ double Mapper3DClass::theBiggestElement()
             for(int row=0; row<n; row++)
             {
                 int nodeID = curElem.theNodeIDs.at(row);
-                const QList<double> &x = myMapOfNodes.value(nodeID);
+                //const std::vector<double> &x = myMapOfNodes.value(nodeID);
+                const std::vector<double> &x = myMapOfNodes.at(nodeID);
                 for(int col=0; col<n-1; col++) a[row][col]=x[col];
             }
             for(int row=0; row<n; row++) a[row][n-1]=1.0;
@@ -253,7 +252,8 @@ bool Mapper3DClass::isInner(const mesh::meshElement &anElement, const nodeSource
         for(int row=0; row<n; row++)
         {
             int nodeID = anElement.theNodeIDs.at(row);
-            const QList<double> &x = myMapOfNodes.value(nodeID);
+            //const std::vector<double> &x = myMapOfNodes.value(nodeID);
+            const std::vector<double> &x = myMapOfNodes.at(nodeID);
             for(int col=0; col<n-1; col++)
             {
                 double val = x[col];
@@ -279,7 +279,8 @@ bool Mapper3DClass::isInner(const mesh::meshElement &anElement, const nodeSource
             for(int row=0; row<n; row++)
             {
                 int nodeID = anElement.theNodeIDs.at(row);
-                const QList<double> &x = myMapOfNodes.value(nodeID);
+                //const std::vector<double> &x = myMapOfNodes.value(nodeID);
+                const std::vector<double> &x = myMapOfNodes.at(nodeID);
                 for(int col=0; col<n-1; col++)
                 {
                     double val;
@@ -648,13 +649,16 @@ void Mapper3DClass::performShapeFunctions()
             //! calculate the center of the element
             //! ------------------------------------
             xc= yc= zc = 0.0;
-            std::vector<int> nodeIDs = anElement.theNodeIDs;
-            for(std::vector<int>::iterator aNodeIDIter = nodeIDs.begin(); aNodeIDIter!=nodeIDs.end(); ++aNodeIDIter)
+            const std::vector<int> &nodeIDs = anElement.theNodeIDs;
+            for(std::vector<int>::const_iterator aNodeIDIter = nodeIDs.cbegin(); aNodeIDIter!=nodeIDs.cend(); ++aNodeIDIter)
             {
                 int nodeID = *aNodeIDIter;
-                xc = xc + myMapOfNodes.value(nodeID).at(0);
-                yc = yc + myMapOfNodes.value(nodeID).at(1);
-                zc = zc + myMapOfNodes.value(nodeID).at(2);
+                //xc = xc + myMapOfNodes.value(nodeID).at(0);
+                //yc = yc + myMapOfNodes.value(nodeID).at(1);
+                //zc = zc + myMapOfNodes.value(nodeID).at(2);
+                xc += myMapOfNodes.at(nodeID)[0];
+                yc += myMapOfNodes.at(nodeID)[1];
+                zc += myMapOfNodes.at(nodeID)[2];
             }
             xc = 0.25*xc;
             yc = 0.25*yc;
@@ -688,11 +692,12 @@ void Mapper3DClass::performShapeFunctions()
             {
                 isEmpty = false;
                 nn++;
-                QList<double> val = ns.vecVal;
+                std::vector<double> val = ns.vecVal;
                 for(int i=0;i<IC.size();i++)
                 {
-                    int nodeID = anElement.theNodeIDs.at(i);
-                    myMultiResNodes.insert(nodeID,val);
+                    int nodeID = anElement.theNodeIDs[i];
+                    //myMultiResNodes.insert(nodeID,val);
+                    myMultiResNodes.insert(std::make_pair(nodeID,val));
                 }
                 //! --------------------------------
                 //! remove the node while iterating
@@ -754,10 +759,20 @@ void Mapper3DClass::putScalarOnTargetNode(int interpolationTypeFunction)
     cout<<"Mapper3DClass::putScalarOnTargetNode()->____function called____"<<endl;
     cout<<"Mapper3DClass::putScalarOnTargetNode()->____myMultiresNode size "<<myMultiResNodes.size()<<"____"<<endl;
 
-    for(QMultiMap<int,QList<double>>::iterator it = myMultiResNodes.begin(); it!=myMultiResNodes.end(); ++it)
+    for(std::multimap<int,std::vector<double>>::iterator it = myMultiResNodes.begin(); it!=myMultiResNodes.end(); ++it)
+    //for(QMultiMap<int,std::vector<double>>::iterator it = myMultiResNodes.begin(); it!=myMultiResNodes.end(); ++it)
     {
-        QList<double> vecVal;               //! list of values at node at time
-        const QList<QList<double>> &values = myMultiResNodes.values(it.key());
+        std::vector<double> vecVal;               //! list of values at node at time
+        //const QList<std::vector<double>> &values = myMultiResNodes.values(it.key());
+        QList<std::vector<double>> values;
+        int curKey = it->first;
+        auto itr1 = myMultiResNodes.lower_bound(curKey);
+        auto itr2 = myMultiResNodes.upper_bound(curKey);
+        while (itr1 != itr2)
+        {
+            if (itr1 -> first == curKey) values.push_back(itr1->second);
+            itr1++;
+        }
 
         int sizeList = values.length();     //! number of times
         int m = values.at(0).size();        //!
@@ -772,12 +787,12 @@ void Mapper3DClass::putScalarOnTargetNode(int interpolationTypeFunction)
             for(int i=0;i<m;i++)
             {
                 double S=0;
-                for(QList<QList<double>>::const_iterator li=values.cbegin();li!=values.cend();++li)
+                for(QList<std::vector<double>>::const_iterator li=values.cbegin();li!=values.cend();++li)
                 {
-                    QList<double> value=*li;
+                    std::vector<double> value=*li;
                     S+=value.at(i);
                 }
-                vecVal.append(S/sizeList);
+                vecVal.push_back(S/sizeList);
             }
 
             /*
@@ -805,7 +820,8 @@ void Mapper3DClass::putScalarOnTargetNode(int interpolationTypeFunction)
         }
             break;
         }
-        myMultiRes.insert(it.key(),vecVal);
+        //myMultiRes.insert(it.key(),vecVal);
+        myMultiRes.insert(std::make_pair(it->first,vecVal));
     }
 }
 
@@ -825,7 +841,8 @@ std::pair<double,double> Mapper3DClass::getMinMax() const
 //! function: getResults
 //! details:
 //! ---------------------
-QMap<int,double> Mapper3DClass::getResults()
+//QMap<int,double> Mapper3DClass::getResults()
+std::map<int,double> Mapper3DClass::getResults()
 {
     return myRes;
 }
@@ -855,7 +872,7 @@ int Mapper3DClass::remapByTargetElements()
     for(std::vector<mesh::meshElement>::iterator itElem = myVecEmptyElements.begin(); itElem!=myVecEmptyElements.end(); ++itElem)
     {
         const mesh::meshElement &curElem = *itElem;        
-        std::vector<int> nodeIDs = curElem.theNodeIDs;
+        const std::vector<int> &nodeIDs = curElem.theNodeIDs;
 
         //! ----------------------------------------------
         //! the typical size of the unmapped element
@@ -870,12 +887,12 @@ int Mapper3DClass::remapByTargetElements()
 
         if(curElem.type==TET)
         {
-            for(std::vector<int>::iterator itIDs = nodeIDs.begin(); itIDs!= nodeIDs.end(); ++itIDs)
+            for(std::vector<int>::const_iterator itIDs = nodeIDs.cbegin(); itIDs!= nodeIDs.cend(); ++itIDs)
             {
                 int nodeID = *itIDs;
-                xc = xc + myMapOfNodes.value(nodeID)[0];
-                yc = yc + myMapOfNodes.value(nodeID)[1];
-                zc = zc + myMapOfNodes.value(nodeID)[2];
+                xc += xc + myMapOfNodes.at(nodeID)[0];
+                yc += yc + myMapOfNodes.at(nodeID)[1];
+                zc += zc + myMapOfNodes.at(nodeID)[2];
             }
             xc = xc*0.25;
             yc = yc*0.25;
@@ -889,7 +906,7 @@ int Mapper3DClass::remapByTargetElements()
             for(int row=0; row<n; row++)
             {
                 int nodeID = curElem.theNodeIDs.at(row);
-                const QList<double> &x = myMapOfNodes.value(nodeID);
+                const std::vector<double> &x = myMapOfNodes.at(nodeID);
                 for(int col=0; col<n-1; col++) a[row][col]=x[col];
             }
             for(int row=0; row<n; row++) a[row][n-1]=1.0;
@@ -939,7 +956,8 @@ int Mapper3DClass::remapByTargetElements()
                 for(int i=0;i<curElem.theNodeIDs.size();i++)
                 {
                     int nodeID = curElem.theNodeIDs.at(i);
-                    myMultiResNodes.insert(nodeID,aSN.vecVal);
+                    //myMultiResNodes.insert(nodeID,aSN.vecVal);
+                    myMultiResNodes.insert(std::make_pair(nodeID,aSN.vecVal));
                 }
                 itSourceNodes = vecSourceNodesFiltered.erase(itSourceNodes);
                 nremapped++;
@@ -985,7 +1003,7 @@ int Mapper3DClass::remapByTargetElements()
 //! details:  retrieve the multiRes map for multiInterpolate
 //! added 13/03/19
 //! ---------------------------------------------------------
-QMap<int,QList<double>> Mapper3DClass::getMultiResults()
+std::map<int,std::vector<double>> Mapper3DClass::getMultiResults()
 {
     return myMultiRes;
 }
@@ -1000,18 +1018,18 @@ void Mapper3DClass::retrieveResMap(int pos)
     //! key => nodeID
     //! value => list of values @ node
     //! -------------------------------
-    for(QMap<int,QList<double>>::iterator it = myMultiRes.begin(); it!=myMultiRes.end(); ++it)
+    //for(QMap<int,std::vector<double>>::iterator it = myMultiRes.begin(); it!=myMultiRes.end(); ++it)
+    for(std::map<int,std::vector<double>>::iterator it = myMultiRes.begin(); it!=myMultiRes.end(); ++it)
     {
-        int nodeID = it.key();
-        const QList<double> &vec = myMultiRes.value(nodeID);
-
+        //int nodeID = it.key();
+        int nodeID = it->first;
+        //const std::vector<double> &vec = myMultiRes.value(nodeID);
+        const std::vector<double> &vec = myMultiRes.at(nodeID);
         double scalarVal = vec[pos];
-        //cout<<" scalar value: "<<scalarVal<<"____"<<endl;
-
         if(scalarVal>=myMaxValue) myMaxValue=scalarVal;
         if(scalarVal<=myMinValue) myMinValue=scalarVal;
-
-        myRes.insert(nodeID,scalarVal);
+        //myRes.insert(nodeID,scalarVal);
+        myRes.insert(std::make_pair(nodeID,scalarVal));
     }
 }
 
@@ -1089,9 +1107,9 @@ void Mapper3DClass::performNearest(double pinball)
                 if(aTargetMeshNode.pinball<localPinball)
                 {
                     int nodeID = aTargetMeshNode.nodeID;
-                    const QList<double> &vecVal = aTargetMeshNode.values;
-                    myMultiRes.insert(nodeID,vecVal);
-
+                    const std::vector<double> &vecVal = aTargetMeshNode.values;
+                    //myMultiRes.insert(nodeID,vecVal);
+                    myMultiRes.insert(std::make_pair(nodeID,vecVal));
                     success = true;
                     break;
                 }
@@ -1213,13 +1231,7 @@ void Mapper3DClass::performNearestNeighboring(double pinball)
         for(int NbSteps = 1; NbSteps<=NbMappingSteps; NbSteps++)
         {
             if(NbSteps==1) localPinball = pinball;
-            else
-            {
-                //cout<<"Mapper3DClass::performNearest()->____cannot map nodeID: "<<nodeID<<" increasing pinball from: "<<localPinball;
-                localPinball = localPinball*1.5;  //define parameters somewhere
-                //cout<<" to: "<<localPinball<<"____"<<endl;
-            }
-
+            else localPinball = localPinball*1.5;
             aTargetMeshNode.setPinball(localPinball);
             double minDistance=1e80;
 
@@ -1259,8 +1271,9 @@ void Mapper3DClass::performNearestNeighboring(double pinball)
                     if(curDistance<minDistance)
                     {
                         int nodeID = aTargetMeshNode.nodeID;
-                        const QList<double> &vecVal = aTargetMeshNode.values;
-                        myMultiRes.insert(nodeID,vecVal);
+                        const std::vector<double> &vecVal = aTargetMeshNode.values;
+                        //myMultiRes.insert(nodeID,vecVal);
+                        myMultiRes.insert(std::make_pair(nodeID,vecVal));
                         minDistance = curDistance;
                         success = true;
                     }

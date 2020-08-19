@@ -44,6 +44,7 @@
 #include "detailviewer.h"
 #include <userMessage.h>
 #include <qhistogramdata.h>
+#include "resultpresentation.h"
 
 #ifdef COSTAMP_VERSION
 #include <QProcess>
@@ -157,7 +158,7 @@ private:
     //int calculateStartColumn() const;
 
     TopoDS_Shape fromTagToShape(const GeometryTag &aTag);
-    TopTools_ListOfShape fromTagToShape(const QVector<GeometryTag> &vecLoc);
+    TopTools_ListOfShape fromTagToShape(const std::vector<GeometryTag> &vecLoc);
 
     //! clear generated data
     void clearGeneratedData();
@@ -389,9 +390,6 @@ public slots:
     //! change scope color
     void changeColor();
 
-    //! disable/enable bolt load and adjustment in tabular data
-    void handleBoltControls();
-
     //! clear the tree
     void clearTree()
     {
@@ -491,10 +489,8 @@ signals:
     void requestShowFirstRow();
 
     void requestCreateColorBox(double min, double max, int Nintervals);
-    void requestDisplayResult(const postObject& aPostObject);
-    //void requestDisplayResult(postObject aPostObject);
+    void requestDisplayResult(sharedPostObject &aPostObject);
     void requestHideAllResults();
-    void requestHideSingleResult(const postObject& aPostObject);
     void requestSetActiveCentralTab(const QString& widgetName);
     void requestUpdateConvergenceViewer(const QList<solutionInfo> &solutionInfoList);
 
@@ -505,7 +501,7 @@ signals:
 
 private:
 
-    QList<QStandardItem *> ItemListFromListOfShape(TopTools_ListOfShape *listOfShapes);
+    QList<QStandardItem*> ItemListFromListOfShape(TopTools_ListOfShape *listOfShapes);
     //QExtendedStandardItem* getTreeItem(nodeType theNodeType);
     int getInsertionRow() const;
 
@@ -521,7 +517,6 @@ public:
     QList<QExtendedStandardItem *> getAllTreeItemOfType(SimulationNodeClass::nodeType theNodeType);
     SimulationNodeClass* getAnalysisSettingsNodeFromCurrentItem() const;
     QExtendedStandardItem *getAnalysisSettingsItemFromCurrentItem() const;
-    //int calculateStartColumn() const;
 
 public slots:
 
@@ -561,20 +556,8 @@ public slots:
     //! show healing elements
     void showHealingElements();
 
-    //! show elements on the results
-    void showElements();
-
-    //! show undeformed wireframe
-    void showUndeformedWireframe();
-
-    //! show undeformed model
-    void showUndeformedModel();
-
-    //! no wireframe
-    void noWireframe();
-
-    //! update post object scale
-    void updatePostObjectScale(double scale);
+    //! update results presentation
+    void updateResultsPresentation();
 
     //! read results file
     void readResultsFile(const QString &fileName, const QString &solutionDataDir);
@@ -585,8 +568,11 @@ public slots:
 private:
 
     //! retrieve the result contained into an item in the form of MeshVS_Mesh object
-    bool retrieveCurrentItemResult(postObject &aPostObject);
-    QList<postObject> retrieveAllResults();
+    //bool retrieveCurrentItemResult(postObject aPostObject);
+    bool retrieveCurrentItemResult(sharedPostObject &aPostObject);
+
+    //QList<postObject> retrieveAllResults();
+    QList<sharedPostObject> retrieveAllResults();
 
     //! --
     void callPostEngineEvaluateResult();

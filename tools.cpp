@@ -88,14 +88,14 @@ void tools::clearDir(const QString &path)
 
 //! -------------------------------------
 //! function: writeVectorOfLocations
-//! details:  write QVector<GeometryTag>
+//! details:  write std::vector<GeometryTag>
 //! -------------------------------------
-void tools::writeVectorOfLocations(const QVector<GeometryTag> &vecLocs, std::ofstream &os)
+void tools::writeVectorOfLocations(const std::vector<GeometryTag> &vecLocs, std::ofstream &os)
 {
     //!write the number of components
     os<<vecLocs.size()<<endl;
 
-    for(QVector<GeometryTag>::const_iterator it=vecLocs.begin(); it!=vecLocs.end(); ++it)
+    for(std::vector<GeometryTag>::const_iterator it=vecLocs.begin(); it!=vecLocs.end(); ++it)
     {
         const GeometryTag &loc = *it;
         os<<loc.parentShapeNr<<endl;
@@ -107,16 +107,16 @@ void tools::writeVectorOfLocations(const QVector<GeometryTag> &vecLocs, std::ofs
 
 //! ------------------------------------
 //! function: readVectorOfLocations
-//! details:  read QVector<GeometryTag>
+//! details:  read std::vector<GeometryTag>
 //! ------------------------------------
-QVector<GeometryTag> tools::readVectorOfLocations(std::ifstream &is)
+std::vector<GeometryTag> tools::readVectorOfLocations(std::ifstream &is)
 {
     //! read the number of components
     int N;
     is>>N;
 
     int subShapeTypeInt;
-    QVector<GeometryTag> vecLocs;
+    std::vector<GeometryTag> vecLocs;
     for(int i=0; i<N; i++)
     {
         GeometryTag loc;
@@ -252,17 +252,17 @@ QVariant tools::readQVariant(std::ifstream &is)
 //! function: getScope
 //! details:
 //! -------------------
-QVector<GeometryTag> tools::getScope(SimulationNodeClass *aNode)
+std::vector<GeometryTag> tools::getScope(SimulationNodeClass *aNode)
 {
     cout<<"tools::getScope->____function called____"<<endl;
 
-    QVector<GeometryTag> vecLoc;
+    std::vector<GeometryTag> vecLoc;
     QExtendedStandardItem *item = aNode->getPropertyItem("Scoping method");
     if(item==Q_NULLPTR) return vecLoc;
     Property::ScopingMethod theScopingMethod = item->data(Qt::UserRole).value<Property>().getData().value<Property::ScopingMethod>();
     if(theScopingMethod == Property::ScopingMethod_GeometrySelection)
     {
-        vecLoc = aNode->getPropertyValue<QVector<GeometryTag>>("Tags");
+        vecLoc = aNode->getPropertyValue<std::vector<GeometryTag>>("Tags");
         cout<<"tools::getScope->____function called on \"Geometry\" scope: "<<vecLoc.size()<<" shapes____"<<endl;
     }
     else if(theScopingMethod ==Property::ScopingMethod_NamedSelection)
@@ -270,7 +270,7 @@ QVector<GeometryTag> tools::getScope(SimulationNodeClass *aNode)
         void *p = aNode->getPropertyValue<void*>("Named selection");
         QExtendedStandardItem* item1 = static_cast<QExtendedStandardItem*>(p);
         SimulationNodeClass *node1 = item1->data(Qt::UserRole).value<SimulationNodeClass*>();
-        vecLoc = node1->getPropertyValue<QVector<GeometryTag>>("Tags");
+        vecLoc = node1->getPropertyValue<std::vector<GeometryTag>>("Tags");
         cout<<"tools::getScope->____function called on \"Named selection\"_scope: "<<vecLoc.size()<<" shapes____"<<endl;
     }
     return vecLoc;
@@ -280,9 +280,9 @@ QVector<GeometryTag> tools::getScope(SimulationNodeClass *aNode)
 //! function: getScope
 //! details:
 //! -------------------
-QVector<GeometryTag> tools::getScope(QExtendedStandardItem *item)
+std::vector<GeometryTag> tools::getScope(QExtendedStandardItem *item)
 {
-    QVector<GeometryTag> vecLoc;    
+    std::vector<GeometryTag> vecLoc;    
     if(item==Q_NULLPTR) return vecLoc;
     SimulationNodeClass *node = item->data(Qt::UserRole).value<SimulationNodeClass*>();
     vecLoc = tools::getScope(node);
