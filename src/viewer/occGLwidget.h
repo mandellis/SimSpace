@@ -153,7 +153,7 @@ public:
     QMap<int,occHandle(Graphic3d_ClipPlane)> myMapOfClipPlanes;
 
     //! map of handle planes
-    QMap<int,occHandle(AIS_Plane)> myMapOfHandlePlanes;
+    //QMap<int,occHandle(AIS_Plane)> myMapOfHandlePlanes;
 
 protected:
 

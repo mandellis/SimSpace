@@ -884,6 +884,7 @@ void occGLWidget::onMouseMove(const int theFlags, QPoint thePoint)
             //! -------------
             //! experimental
             //! -------------
+        /*
         case CurAction3D_PlaneDrag:
         {
             int curClipPlaneID = this->getCurrentClipPlaneID();
@@ -914,11 +915,11 @@ void occGLWidget::onMouseMove(const int theFlags, QPoint thePoint)
             occHandle(Geom_Plane) geomPlane = new Geom_Plane(a,b,c,d);
             myMapOfHandlePlanes.value(curClipPlaneID)->SetComponent(geomPlane);
             occContext->Redisplay(myMapOfHandlePlanes.value(curClipPlaneID),true,false);
-            //curClipPlane->SetEquation(aPlane);
 
             occView->Redraw();
         }
             break;
+            */
         }
 
         //! Handling current global selection modes multiple and single
@@ -2396,15 +2397,15 @@ gp_Pnt occGLWidget::hitPoint(long x, long y, TopoDS_Shape shape)
     return resultPoint;
 }
 
-//!---------------------------------------------------------------------//
-//! function: updateCOR                                                 //
-//! details:  update the definition of the center of rotation           //
-//!           update also the view: if a point has been picked up on    //
-//!           a model face, set display the model at the center of      //
-//!           the viewer. If a point on the air has been picked, set    //
-//!           both the origin and both the rotation center to a default //
-//!           value (for the moment O(0,0,0))                           //
-//! --------------------------------------------------------------------//
+//!---------------------------------------------------------------------
+//! function: updateCOR
+//! details:  update the definition of the center of rotation
+//!           update also the view: if a point has been picked up on
+//!           a model face, set display the model at the center of
+//!           the viewer. If a point on the air has been picked, set
+//!           both the origin and both the rotation center to a default
+//!           value (for the moment O(0,0,0))
+//! --------------------------------------------------------------------
 void occGLWidget::updateCOR(gp_Pnt newCOR, bool isOnFace)
 {
     //cout<<"occGLWidget::updateCOR()->____function called____"<<endl;
@@ -3261,7 +3262,6 @@ void occGLWidget::hideAllMarkers(bool updateViewer)
     {
         int signature = *listIt;
         occContext->ObjectsByDisplayStatus(AIS_KOI_Shape,signature,AIS_DS_Displayed,theListOfIO);
-        //for(it.Initialize(theListOfIO); it.More(); it.Next()) occContext->Erase(it.Value(),false);
         for(it.Initialize(theListOfIO); it.More(); it.Next()) occContext->Remove(it.Value(),false);
     }
 
@@ -3284,51 +3284,51 @@ void occGLWidget::hideAllMarkers(bool updateViewer)
 //! ----------------------------------------------------------------
 void occGLWidget::addClipPlane(double A, double B, double C, double D, int ID, bool isOn)
 {
-    //! ------------------------------------------------------------------
-    //! add the clip plane only if it is not already contained in the map
-    //! ------------------------------------------------------------------
+    //! --------------------------------------------
+    //! if the clip plane does not exists create it
+    //! --------------------------------------------
     occHandle(Graphic3d_ClipPlane) aClipPlane;
-    if(myMapOfClipPlanes.value(ID,aClipPlane).IsNull())
-    {
-        aClipPlane = new Graphic3d_ClipPlane();
-    }
-    else
-    {
-        aClipPlane = myMapOfClipPlanes.value(ID);
-    }
-    cout<<"occGLWidget::addClipPlane()->____initial number of clip planes: "<<myMapOfClipPlanes.size()<<"____"<<endl;
+    if(myMapOfClipPlanes.value(ID,aClipPlane).IsNull()) aClipPlane = new Graphic3d_ClipPlane();
+    else aClipPlane = myMapOfClipPlanes.value(ID);
 
     //! --------------------------------------
     //! change equation of the clipping plane
     //! --------------------------------------
-    aClipPlane->SetEquation (gp_Pln (A,B,C,D));
+    aClipPlane->SetEquation (gp_Pln(A,B,C,D));
 
-    //! ------------
-    //! set capping
-    //! ------------
+    //! -----------
+    //! no capping
+    //! -----------
     aClipPlane->SetCapping(false);
 
-    //! ------------------------------------------------
+    //! --------------------------------------
+    //! add/replace the clip plane to the map
+    //! --------------------------------------
+    myMapOfClipPlanes.insert(ID,aClipPlane);
+    cout<<"occGLWidget::addClipPlane()->____number of clip planes: "<<myMapOfClipPlanes.size()<<"____"<<endl;
+
+    //! --------------------------------------------
     //! add the clip plane only to the AIS_Shape(s)
-    //! a new clip plane is created if not existing;
-    //! if already existing the clip plane is retrieved
-    //! and set into the state "On"
-    //! ------------------------------------------------
+    //! a new clip plane is created if not existing
+    //! --------------------------------------------
     AIS_ListOfInteractive listOfAISShapes;
-    occContext->ObjectsInside(listOfAISShapes,AIS_KOI_Shape,0);
+    occContext->ObjectsInside(listOfAISShapes,AIS_KOI_Shape,0); // signatore "0" => Shapes
     for(AIS_ListIteratorOfListOfInteractive it(listOfAISShapes); it.More(); it.Next())
     {
         const occHandle(AIS_Shape) &curShapeObject = occHandle(AIS_Shape)::DownCast(it.Value());
-        if(curShapeObject.IsNull()) continue;
-        if(curShapeObject->ClipPlanes().IsNull())
+        if(curShapeObject->ClipPlanes().IsNull() || curShapeObject->ClipPlanes()->Length()==0)
         {
             curShapeObject->AddClipPlane(aClipPlane);
         }
         else
         {
-            const occHandle(Graphic3d_ClipPlane) &curClipPlane = curShapeObject->ClipPlanes()->Value(ID);
-            if(curClipPlane.IsNull()) curShapeObject->AddClipPlane(aClipPlane);
-            else curShapeObject->ClipPlanes()->Value(ID)->SetOn(true);
+            const occHandle(Graphic3d_SequenceOfHClipPlane) &shapeClipPlanes = curShapeObject->ClipPlanes();
+            for(int n=1; n<shapeClipPlanes->Length(); n++)
+            {
+                const occHandle(Graphic3d_ClipPlane) &curClipPlane = shapeClipPlanes->Value(n);
+                if(curClipPlane==aClipPlane) shapeClipPlanes->Value(n)->SetOn(isOn);
+                break;
+            }
         }
     }
 
@@ -3341,13 +3341,8 @@ void occGLWidget::addClipPlane(double A, double B, double C, double D, int ID, b
     //! ------------------------------------------------
     //! activate the clipping plane and update the view
     //! ------------------------------------------------
-    //aClipPlane->SetOn(isOn);
     occView->Redraw();
 
-    //! --------------------------------------
-    //! add/replace the clip plane to the map
-    //! --------------------------------------
-    myMapOfClipPlanes.insert(ID,aClipPlane);
     cout<<"occGLWidget::addClipPlane()->____final number of clip planes: "<<myMapOfClipPlanes.size()<<"____"<<endl;
 }
 
@@ -3369,11 +3364,6 @@ void occGLWidget::removeClipPlane(int ID)
         const occHandle(AIS_Shape) &curShape = occHandle(AIS_Shape)::DownCast(it.Value());
         curShape->RemoveClipPlane(myMapOfClipPlanes.value(ID));
     }
-
-    //! ---------------------------------------------
-    //! remove the clip plane ID from the whole view
-    //! ---------------------------------------------
-    //occView->RemoveClipPlane(myMapOfClipPlanes.value(ID));
 
     //! -------
     //! redraw
@@ -3435,7 +3425,7 @@ void occGLWidget::updateClipPlaneTranslation(int ID, int zVal, const QVector<dou
 
 //! ------------------------
 //! function: hideAllBodies
-//! details:  slot
+//! details:
 //! ------------------------
 void occGLWidget::hideAllBodies()
 {

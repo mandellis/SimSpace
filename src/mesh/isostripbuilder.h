@@ -223,8 +223,6 @@ public:
         }
     }
 
-    //void getBottomPointsOfIsoStrip(int n, std::vector<isoStripPoint> &bottomPoints){;}
-    //void getTopPointsOfIsoStrip(int n, std::vector<isoStripPoint> &topPoints){;}
 };
 
 class MeshVS_DataSource;
@@ -246,9 +244,7 @@ public:
     bool perform1(std::vector<meshElementByCoords> &vecMeshElements);   // a - for the moment - failed attempt to optimize
 
     void getIsoStripElements(const std::vector<faceTable> &vecFaceTables, std::multimap<int, meshElementByCoords> &meshElementsByIsoStripNb);
-
-    //! new method for iso-surfaces
-    bool performIsoSurface(int NbLevels, std::vector<meshElementByCoords> &vecMeshElements, std::map<int,int> &mapElementLevel);
+    bool performIsoSurface(int NbLevels, std::vector<meshElementByCoords> &vecMeshElements, std::map<int,int> &mapElementLevel, int position = -1);
 
 private:
 
@@ -256,6 +252,7 @@ private:
     std::map<int,double> myValues;
     std::vector<isoStrip> myIsoStrips;
     std::map<int,std::vector<faceTable>> myMapElementFaceTables;
+    std::vector<faceTable> myVecFaceTables;
 
 private:
 

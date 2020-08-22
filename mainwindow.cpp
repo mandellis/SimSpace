@@ -18,7 +18,6 @@
 #include "detailviewer.h"
 #include "shapeselector.h"
 #include "generaldelegate.h"
-#include "boundaryvaluemanager.h"
 
 #include "tabulardataviewerclass1.h"
 

@@ -3736,88 +3736,58 @@ void occPreGLWidget::addClipPlane(double A, double B, double C, double D, int ID
 {
     cout<<"occPreGLWidget::addClipPlane()->____function called____"<<endl;
 
-    //! ------------------------------------------------------------------
-    //! add the clip plane only if it is not already contained in the map
-    //! ------------------------------------------------------------------
-    occHandle(Graphic3d_ClipPlane) aClipPlane;
-    if(myMapOfClipPlanes.value(ID,aClipPlane).IsNull())
-    {
-        aClipPlane = new Graphic3d_ClipPlane();
-        myMapOfClipPlanes.insert(ID,aClipPlane);
-    }
-    else
-    {
-        aClipPlane = myMapOfClipPlanes.value(ID);
-    }
-    aClipPlane->SetEquation (gp_Pln (A,B,C,D));
+    //! ------------------------------
+    //! add clip planes to the shapes
+    //! ------------------------------
+    occGLWidget::addClipPlane(A,B,C,D,ID,isOn);
 
-    //! ------------
-    //! set capping
-    //! ------------
-    bool cappingOn = false;
-    if(myCurWorkingMode == curWorkingMode_onModel || myCurWorkingMode == curWorkingMode_onContact) cappingOn = true;
-    aClipPlane->SetCapping(cappingOn);
+    //! ------------------------
+    //! retrieve the clip plane
+    //! ------------------------
+    const occHandle(Graphic3d_ClipPlane) &aClipPlane = myMapOfClipPlanes.value(ID);
 
-    //! ---------------------------------------
-    //! add the clip plane to the AIS_Shape(s)
-    //! ---------------------------------------
-    for(QMap<int,occHandle(AIS_InteractiveObject)>::iterator it = myMapOfInteractiveShapes.begin(); it!=myMapOfInteractiveShapes.end(); it++)
+    //! --------------------------------------------
+    //! add the clip plane only to the MeshVS_Mesh
+    //! a new clip plane is created if not existing
+    //! --------------------------------------------
+    AIS_ListOfInteractive listOfAISShapes;
+    occMeshContext->ObjectsInside(listOfAISShapes,AIS_KOI_Shape,-1); // signatore "0" => Shapes
+    for(AIS_ListIteratorOfListOfInteractive it(listOfAISShapes); it.More(); it.Next())
     {
-        const occHandle(AIS_InteractiveObject) &curShapeObject = it.value();
-        if(curShapeObject.IsNull()) continue;
-        if(!curShapeObject->ClipPlanes().IsNull()) curShapeObject->ClipPlanes()->Clear();
-        for(QMap<int,occHandle(Graphic3d_ClipPlane)>::iterator it = myMapOfClipPlanes.begin(); it!=myMapOfClipPlanes.end(); it++)
+        const occHandle(AIS_Shape) &curShapeObject = occHandle(AIS_Shape)::DownCast(it.Value());
+        if(curShapeObject->ClipPlanes().IsNull() || curShapeObject->ClipPlanes()->Length()==0)
         {
-            const occHandle(Graphic3d_ClipPlane) &curPlane = it.value();
-            curShapeObject->AddClipPlane(curPlane);
+            curShapeObject->AddClipPlane(aClipPlane);
+        }
+        else
+        {
+            const occHandle(Graphic3d_SequenceOfHClipPlane) &shapeClipPlanes = curShapeObject->ClipPlanes();
+            for(int n=1; n<shapeClipPlanes->Length(); n++)
+            {
+                const occHandle(Graphic3d_ClipPlane) &curClipPlane = shapeClipPlanes->Value(n);
+                if(curClipPlane==aClipPlane) shapeClipPlanes->Value(n)->SetOn(isOn);
+                break;
+            }
         }
     }
-
-    //! ---------------------------------------------------
-    //! add the clip plane to the interactive mesh objects
-    //! ---------------------------------------------------
-    for(QMap<int,occHandle(AIS_InteractiveObject)>::iterator it = myMapOfInteractiveMeshes.begin(); it!=myMapOfInteractiveMeshes.end(); it++)
-    {
-        occHandle(AIS_InteractiveObject) curMeshObject = it.value();
-        if(curMeshObject.IsNull()) continue;
-        if(!curMeshObject->ClipPlanes().IsNull()) curMeshObject->ClipPlanes()->Clear();
-        for(QMap<int,occHandle(Graphic3d_ClipPlane)>::iterator it = myMapOfClipPlanes.begin(); it!=myMapOfClipPlanes.end(); it++)
-        {
-            const occHandle(Graphic3d_ClipPlane) &curPlane = it.value();
-            curMeshObject->AddClipPlane(curPlane);
-        }
-    }
-
-    //! -------------------------------------
-    //! add the clip plane to the whole view
-    //! left here for documentation
-    //! -------------------------------------
-    //occView->AddClipPlane(aClipPlane);
 
     //! ------------------------------------------------
     //! activate the clipping plane and update the view
     //! ------------------------------------------------
-    aClipPlane->SetOn(isOn);
     occView->Redraw();
 
-    //! --------------------------------------
-    //! add/replace the clip plane to the map
-    //! --------------------------------------
-    myMapOfClipPlanes.insert(ID,aClipPlane);
-    cout<<"____final number of clip planes: "<<myMapOfClipPlanes.size()<<"____"<<endl;
-
-    occHandle(AIS_Plane) anAISPlane;
-    if(!myMapOfHandlePlanes.contains(ID))
-    {
-        occHandle(Geom_Plane) aGeomPlane = new Geom_Plane(A,B,C,D);
-        anAISPlane = new AIS_Plane(aGeomPlane);
-        myMapOfHandlePlanes.insert(ID,anAISPlane);
-        occContext->Display(anAISPlane,AIS_Shaded);
-    }
-    else
-    {
-        occHandle(Geom_Plane) aGeomPlane = new Geom_Plane(A,B,C,D);
-    }
+    //occHandle(AIS_Plane) anAISPlane;
+    //if(!myMapOfHandlePlanes.contains(ID))
+    //{
+    //    occHandle(Geom_Plane) aGeomPlane = new Geom_Plane(A,B,C,D);
+    //    anAISPlane = new AIS_Plane(aGeomPlane);
+    //    myMapOfHandlePlanes.insert(ID,anAISPlane);
+    //    occContext->Display(anAISPlane,AIS_Shaded);
+    //}
+    //else
+    //{
+    //    occHandle(Geom_Plane) aGeomPlane = new Geom_Plane(A,B,C,D);
+    //}
 }
 
 //! ----------------------------------------------------------
@@ -3910,12 +3880,6 @@ void occPreGLWidget::removeClipPlane(int ID)
         if(curMeshObject.IsNull()) continue;
         curMeshObject->RemoveClipPlane(clipPlane);
     }
-
-    //! ---------------------------------------------
-    //! remove the clip plane ID from the whole view
-    //! left here for documentation
-    //! ---------------------------------------------
-    //occView->RemoveClipPlane(clipPlane);
 
     //! -------
     //! redraw

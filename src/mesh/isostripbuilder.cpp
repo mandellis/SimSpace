@@ -106,7 +106,6 @@ bool isoStripBuilder::perform(std::vector<meshElementByCoords> &vecMeshElements)
         myMeshDS->Get3DGeom(globalElementID,NbNodes,topology);
 
         int NbFaces = topology->Length();
-        //cout<<"____NbFaces: "<<NbFaces<<"____"<<endl;
 
         int NbNodesOfElement, b[20];
         TColStd_Array1OfInteger nodeIDs(*b,1,20);
@@ -416,220 +415,8 @@ bool isoStripBuilder::perform1(std::vector<meshElementByCoords> &vecMeshElements
     //! ------------------------
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
-    //! ---------------------------------------------------------
-    //! classify the nodes according to the isostrip definitions
-    //! ---------------------------------------------------------
-    myMultiMap<int,int> pointToIsoStrip;
-    this->classifyNodes(pointToIsoStrip);
-
-    //! ----------------------
-    //! vector of face tables
-    //! ----------------------
-    std::vector<faceTable> vecFaces;
-    std::map<meshElement2D,int> mapProcessedFaces;  // "1" processed
-
-    //! -------------------------------------------------------------
-    //! iterate over the elements and over the faces of each element
-    //! -------------------------------------------------------------
-    TColStd_MapIteratorOfPackedMapOfInteger it(myMeshDS->GetAllElements());
-    int NbElements = myMeshDS->GetAllElements().Extent();
-    for(int localElementID = 1; localElementID<=NbElements; localElementID++,it.Next())
-    {
-        int globalElementID = it.Key();
-
-        int NbNodes;
-        occHandle(MeshVS_HArray1OfSequenceOfInteger) topology;
-        myMeshDS->Get3DGeom(globalElementID,NbNodes,topology);
-
-        int NbFaces = topology->Length();
-
-        int NbNodesOfElement, b[20];
-        TColStd_Array1OfInteger nodeIDs(*b,1,20);
-        myMeshDS->GetNodesByElement(globalElementID,nodeIDs,NbNodesOfElement);
-
-        for(int f = 1; f<=NbFaces; f++)
-        {
-            faceTable aFaceTable;
-            QList<int> nodeIDs_;
-
-            //! --------------------------------------------------
-            //! put the existing nodes of the face into the table
-            //! --------------------------------------------------
-            TColStd_SequenceOfInteger aSeq = topology->Value(f);
-            int N = aSeq.Length();
-            for(int i = 0; i<N; i++)
-            {
-                //! -------------------------------------------------------
-                //! put the face points into the columns of the face table
-                //! -------------------------------------------------------
-                int index = aSeq.Value(i+1)+1;
-                int globalNodeID = nodeIDs(index);
-                nodeIDs_<<globalNodeID;
-
-                const isoStripList &isoStripOf = pointToIsoStrip.values(globalNodeID);
-
-                for(int i=0; i<isoStripOf.size(); i++)
-                {
-                    int curIsoStripNb = isoStripOf[i];
-                    double c[3];
-                    this->pointCoord(c,globalNodeID);
-                    isoStripPoint aP(c[0],c[1],c[2],myValues.at(globalNodeID));
-                    aFaceTable.appendAtCol(curIsoStripNb,aP);
-                }
-            }
-
-            meshElement2D aFaceMesh_(nodeIDs_);
-            if(mapProcessedFaces.count(aFaceMesh_)!=0) continue;
-            mapProcessedFaces.insert(std::make_pair(aFaceMesh_,1));
-
-            //! ------------------------------
-            //! scan the segments of the face
-            //! ------------------------------
-            for(int i = 0; i<N; i++)
-            {
-                //cout<<"____scanning segment n: "<<i+1<<"____"<<endl;
-
-                //! --------------
-                //! recompute ...
-                //! --------------
-                int index1 = aSeq.Value(i%N+1)+1;
-                int globalNodeID1 = nodeIDs(index1);
-
-                const isoStripList &isoStripOf1 = pointToIsoStrip.values(globalNodeID1);
-                int maxIsoStrip1 = -1e10;
-                int minIsoStrip1 = 1e10;
-                for(int i=0; i<isoStripOf1.size(); i++)
-                {
-                    int curIsoStripNb = isoStripOf1[i];
-                    if(curIsoStripNb<=minIsoStrip1) minIsoStrip1 = curIsoStripNb;
-                    if(curIsoStripNb>=maxIsoStrip1) maxIsoStrip1 = curIsoStripNb;
-                }
-
-                //! --------------
-                //! recompute ...
-                //! --------------
-                int index2 = aSeq.Value((i+1)%N+1)+1;
-                int globalNodeID2 = nodeIDs(index2);
-
-                const isoStripList &isoStripOf2 = pointToIsoStrip.values(globalNodeID2);
-
-                int maxIsoStrip2 = -1e10;
-                int minIsoStrip2 = 1e10;
-
-                for(int i=0; i<isoStripOf2.size(); i++)
-                {
-                    int curIsoStripNb = isoStripOf2[i];
-                    if(curIsoStripNb<=minIsoStrip2) minIsoStrip2 = curIsoStripNb;
-                    if(curIsoStripNb>=maxIsoStrip2) maxIsoStrip2 = curIsoStripNb;
-                }
-
-                double valueOfPoint1 = myValues.at(globalNodeID1);
-                double valueOfPoint2 = myValues.at(globalNodeID2);
-
-                //cout<<"____"<<globalNodeID1<<", "<<valueOfPoint1<<"____"<<endl;
-                //cout<<"____"<<globalNodeID2<<", "<<valueOfPoint2<<"____"<<endl;
-
-                //! ---------------------------------
-                //! zero gradient between two points
-                //! ---------------------------------
-                if(valueOfPoint1 == valueOfPoint2) continue;
-
-                //! ------------------
-                //! increasing values
-                //! ------------------
-                if(valueOfPoint2-valueOfPoint1>0)
-                {
-                    int deltaStrip = minIsoStrip2 - maxIsoStrip1;
-
-                    if(deltaStrip==0) continue;
-
-                    double csp[3];
-                    this->pointCoord(csp,globalNodeID1);
-                    isoStripPoint sP(csp[0],csp[1],csp[2],myValues.at(maxIsoStrip1));
-
-                    double cep[3];
-                    this->pointCoord(cep,globalNodeID2);
-                    isoStripPoint eP(cep[0],cep[1],cep[2],myValues.at(globalNodeID2));
-
-                    int startIndex = maxIsoStrip1;
-                    for(int k=0; k<abs(deltaStrip); k++,startIndex++)
-                    {
-                        //cout<<"____startIndex case >: "<<startIndex<<"____"<<endl;
-                        double newPointValue = myIsoStrips.at(startIndex).vmax;
-                        //cout<<"____"<<newPointValue<<"____"<<endl;
-                        double t = (newPointValue-valueOfPoint1)/(valueOfPoint2-valueOfPoint1);
-                        //cout<<"____t = "<<t<<"____"<<endl;
-                        double P1[3], P2[3];
-                        this->pointCoord(P1,globalNodeID1);
-                        this->pointCoord(P2,globalNodeID2);
-                        double xP = P1[0] + t * (P2[0]-P1[0]);
-                        double yP = P1[1] + t * (P2[1]-P1[1]);
-                        double zP = P1[2] + t * (P2[2]-P1[2]);
-
-                        isoStripPoint aP(xP,yP,zP,newPointValue);
-
-                        //cout<<"_>___trying inserting after____"<<endl;
-                        aFaceTable.insertAfter(startIndex,sP,aP);
-                        //cout<<"_>___insert after done____"<<endl;
-
-                        //cout<<"_>___trying inserting before____"<<endl;
-                        bool isDone = aFaceTable.insertBefore(startIndex+1,eP,aP);
-                        if(isDone==false) aFaceTable.appendAtCol(startIndex+1,aP);
-                        //cout<<"_>___insert before done____"<<endl;
-                        sP = aP;
-                    }
-                }
-                //! ------------------
-                //! decreasing values
-                //! ------------------
-                else
-                {
-                    int deltaStrip = minIsoStrip1 - maxIsoStrip2;
-                    if(deltaStrip==0) continue;
-
-                    double csp[3];
-                    this->pointCoord(csp,globalNodeID2);
-                    isoStripPoint sP(csp[0],csp[1],csp[2],myValues.at(globalNodeID2));
-
-                    double cep[3];
-                    this->pointCoord(cep,globalNodeID1);
-                    isoStripPoint eP(cep[0],cep[1],cep[2],myValues.at(globalNodeID1));
-
-                    int startIndex = maxIsoStrip2;
-                    for(int k=0; k<abs(deltaStrip); k++, startIndex++)
-                    {
-                        //cout<<"____startIndex  case <: "<<startIndex<<"____"<<endl;
-                        double newPointValue = myIsoStrips.at(startIndex).vmax;
-                        double t = (newPointValue-valueOfPoint2)/(valueOfPoint1-valueOfPoint2);
-                        double P1[3], P2[3];
-                        this->pointCoord(P1,globalNodeID2);
-                        this->pointCoord(P2,globalNodeID1);
-                        double xP = P1[0] + t * (P2[0]-P1[0]);
-                        double yP = P1[1] + t * (P2[1]-P1[1]);
-                        double zP = P1[2] + t * (P2[2]-P1[2]);
-
-                        //cout<<"____case deltastrip < 0: t = "<<t<<" newPoint("<<xP<<", "<<yP<<", "<<zP<<")____"<<endl;
-
-                        isoStripPoint aP(xP,yP,zP,newPointValue);
-
-                        //cout<<"_<___trying inserting before____"<<endl;
-                        aFaceTable.insertBefore(startIndex,sP,aP);
-                        //cout<<"_<___insert before done____"<<endl;
-
-                        //cout<<"_<___trying inserting after____"<<endl;
-                        bool isDone = aFaceTable.insertAfter(startIndex+1,eP,aP);
-                        if(isDone==false) aFaceTable.appendAtCol(startIndex+1,aP);
-                        //cout<<"_<___insert after done____"<<endl;
-                        sP = aP;
-                    }
-                }
-            }
-            //! ------------------------
-            //! pile up the face tables
-            //! ------------------------
-            vecFaces.push_back(aFaceTable);
-        }
-    }
+    bool isDone = this->computeFaceTables();
+    if(isDone==false) return isDone;
 
     //! ------------------------
     //! performance measurement
@@ -637,17 +424,10 @@ bool isoStripBuilder::perform1(std::vector<meshElementByCoords> &vecMeshElements
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
     std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[microseconds]" << std::endl;
 
-    //! --------
-    //! testing
-    //! --------
-    this->getAllElements(vecFaces,vecMeshElements);
-
-    //! ----------
-    //! testing 1
-    //! ----------
-    //myMultiMap<int,meshElementByCoords> mm;
-    //this->getIsoStripElements(vecFaces,mm);
-
+    //! ------------------------------------------------
+    //! retrieve the mesh elements from the face tables
+    //! ------------------------------------------------
+    this->getAllElements(myVecFaceTables,vecMeshElements);
     return true;
 }
 
@@ -665,23 +445,17 @@ bool isoStripBuilder::computeFaceTables()
         return false;
     }
 
+    //! -----------------
+    //! reset inner data
+    //! -----------------
     myMapElementFaceTables.clear();
-
-    //! ------------------------
-    //! performance measurement
-    //! ------------------------
-    //std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+    myVecFaceTables.clear();
 
     //! ---------------------------------------------------------
     //! classify the nodes according to the isostrip definitions
     //! ---------------------------------------------------------
     myMultiMap<int,int> pointToIsoStrip;
     this->classifyNodes(pointToIsoStrip);
-
-    //! ----------------------
-    //! vector of face tables
-    //! ----------------------
-    std::vector<faceTable> vecFaces;
 
     //! -------------------------------------------------------------
     //! iterate over the elements and over the faces of each element
@@ -728,24 +502,24 @@ bool isoStripBuilder::computeFaceTables()
 
                     double c[3];
                     this->pointCoord(c,globalNodeID);
-                    isoStripPoint aP(c[0],c[1],c[2],myValues[globalNodeID],0);
+                    isoStripPoint aP(c[0],c[1],c[2],myValues.at(globalNodeID),0);
 
                     //! ---------------------------------------------------------------------
                     //! determine the type of point
                     //! The code below has been commented since an existing mesh point with
-                    //! value could belong to two isostrips if the value is suitable
+                    //! value could belong to two isostrips if the value is at intersection
                     //! ---------------------------------------------------------------------
-                    if(myValues[globalNodeID]==myIsoStrips[curIsoStripNb].vmin)
+                    if(myValues.at(globalNodeID)==myIsoStrips.at(curIsoStripNb).vmin)
                     {
-                        isoStripPoint aP(c[0],c[1],c[2],myValues[globalNodeID],-1);
+                        isoStripPoint aP(c[0],c[1],c[2],myValues.at(globalNodeID),-1);
                         aFaceTable.appendAtCol(curIsoStripNb,aP);
                         if(curIsoStripNb>=maxIsoStrip1) maxIsoStrip1 = curIsoStripNb;
                         if(curIsoStripNb<=minIsoStrip1) minIsoStrip1 = curIsoStripNb;
                         continue;
                     }
-                    if(myValues[globalNodeID]==myIsoStrips[curIsoStripNb].vmax)
+                    if(myValues.at(globalNodeID)==myIsoStrips.at(curIsoStripNb).vmax)
                     {
-                        isoStripPoint aP(c[0],c[1],c[2],myValues[globalNodeID],1);
+                        isoStripPoint aP(c[0],c[1],c[2],myValues.at(globalNodeID),1);
                         aFaceTable.appendAtCol(curIsoStripNb,aP);
                         if(curIsoStripNb>=maxIsoStrip1) maxIsoStrip1 = curIsoStripNb;
                         if(curIsoStripNb<=minIsoStrip1) minIsoStrip1 = curIsoStripNb;
@@ -791,8 +565,8 @@ bool isoStripBuilder::computeFaceTables()
                     if(curIsoStripNb<=minIsoStrip2) minIsoStrip2 = curIsoStripNb;
                     if(curIsoStripNb>=maxIsoStrip2) maxIsoStrip2 = curIsoStripNb;
                 }
-                double valueOfPoint1 = myValues[globalNodeID1];
-                double valueOfPoint2 = myValues[globalNodeID2];
+                double valueOfPoint1 = myValues.at(globalNodeID1);
+                double valueOfPoint2 = myValues.at(globalNodeID2);
 
                 //! ---------------------------------
                 //! zero gradient between two points
@@ -809,16 +583,16 @@ bool isoStripBuilder::computeFaceTables()
 
                     double csp[3];
                     this->pointCoord(csp,globalNodeID1);
-                    isoStripPoint sP(csp[0],csp[1],csp[2],myValues[maxIsoStrip1]);
+                    isoStripPoint sP(csp[0],csp[1],csp[2],myValues.at(maxIsoStrip1));
 
                     double cep[3];
                     this->pointCoord(cep,globalNodeID2);
-                    isoStripPoint eP(cep[0],cep[1],cep[2],myValues[globalNodeID2]);
+                    isoStripPoint eP(cep[0],cep[1],cep[2],myValues.at(globalNodeID2));
 
                     int startIndex = maxIsoStrip1;
                     for(int k=0; k<abs(deltaStrip); k++,startIndex++)
                     {
-                        double newPointValue = myIsoStrips[startIndex].vmax;
+                        double newPointValue = myIsoStrips.at(startIndex).vmax;
                         double t = (newPointValue-valueOfPoint1)/(valueOfPoint2-valueOfPoint1);
                         double P1[3], P2[3];
                         this->pointCoord(P1,globalNodeID1);
@@ -845,16 +619,16 @@ bool isoStripBuilder::computeFaceTables()
 
                     double csp[3];
                     this->pointCoord(csp,globalNodeID2);
-                    isoStripPoint sP(csp[0],csp[1],csp[2],myValues[globalNodeID2]);
+                    isoStripPoint sP(csp[0],csp[1],csp[2],myValues.at(globalNodeID2));
 
                     double cep[3];
                     this->pointCoord(cep,globalNodeID1);
-                    isoStripPoint eP(cep[0],cep[1],cep[2],myValues[globalNodeID1]);
+                    isoStripPoint eP(cep[0],cep[1],cep[2],myValues.at(globalNodeID1));
 
                     int startIndex = maxIsoStrip2;
                     for(int k=0; k<abs(deltaStrip); k++, startIndex++)
                     {
-                        double newPointValue = myIsoStrips[startIndex].vmax;
+                        double newPointValue = myIsoStrips.at(startIndex).vmax;
                         double t = (newPointValue-valueOfPoint2)/(valueOfPoint1-valueOfPoint2);
                         double P1[3], P2[3];
                         this->pointCoord(P1,globalNodeID2);
@@ -875,7 +649,7 @@ bool isoStripBuilder::computeFaceTables()
             //! ------------------------
             //! pile up the face tables
             //! ------------------------
-            vecFaces.push_back(aFaceTable);
+            myVecFaceTables.push_back(aFaceTable);
             elementFaceTables.push_back(aFaceTable);
         }
         myMapElementFaceTables.insert(std::make_pair(globalElementID,elementFaceTables));
@@ -888,7 +662,7 @@ bool isoStripBuilder::computeFaceTables()
 //! details:  the returning map binds an element global ID with a level
 //! --------------------------------------------------------------------
 bool isoStripBuilder::performIsoSurface(int NbLevels, std::vector<meshElementByCoords> &vecMeshElements,
-                                        std::map<int,int> &mapElementLevel)
+                                        std::map<int,int> &mapElementLevel, int position)
 {
     //! ----------------------------------
     //! strip table for each element face
@@ -899,7 +673,7 @@ bool isoStripBuilder::performIsoSurface(int NbLevels, std::vector<meshElementByC
     //! ---------------------------
     //! isostrip selection - dummy
     //! ---------------------------
-    int aType = -1;  // bottom
+    int aType = position;
     int localElementID  = 0;
     for(int level = 2; level<NbLevels+2; level++)
     {
@@ -935,7 +709,7 @@ bool isoStripBuilder::performIsoSurface(int NbLevels, std::vector<meshElementByC
                 {
                 case 3: ame.type = TRIG; break;
                 case 4: ame.type = QUAD; break;
-                case 5: ame.type = PENTA; break;
+                case 5: ame.type = PENTA ;break;
                 case 6: ame.type = TRIG6; break;
                 case 7: ame.type = EPTA; break;
                 case 8: ame.type = QUAD8; break;

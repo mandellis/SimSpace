@@ -525,17 +525,8 @@ bool MeshTools::buildIsoStrip(const occHandle(MeshVS_DataSource) &theMeshDS,    
     anIsoStripBuilder.setIsoStrips(vecIsoStrip);
 
     std::vector<meshElementByCoords> allElements;
-    bool isDone = anIsoStripBuilder.perform(allElements);
-    //bool isDone = anIsoStripBuilder.perform1(allElements);    // an attempt to optimize ::perform()
-
-    /*
-    //! ------------------------
-    //! for testing isosurfaces
-    //! ------------------------
-    std::map<int,int> mapElementLevel;
-    bool isDone = anIsoStripBuilder.performIsoSurface(NbLevels,allElements,mapElementLevel);
-    if(isDone == false) return false;
-    */
+    //bool isDone = anIsoStripBuilder.perform(allElements);
+    bool isDone = anIsoStripBuilder.perform1(allElements);
 
     occHandle(Ng_MeshVS_DataSourceFace) finalMesh = new Ng_MeshVS_DataSourceFace(allElements,true,true);
 
@@ -648,7 +639,7 @@ bool MeshTools::buildIsoSurfaces(const occHandle(MeshVS_DataSource) &theMeshDS, 
     aColoredMesh->AddBuilder(aPrsBuilder);
     aColoredMesh->GetDrawer()->SetBoolean(MeshVS_DA_DisplayNodes, false);
     aColoredMesh->GetDrawer()->SetColor(MeshVS_DA_EdgeColor,Quantity_NOC_BLACK);
-    aColoredMesh->GetDrawer()->SetBoolean(MeshVS_DA_ShowEdges, false);
+    aColoredMesh->GetDrawer()->SetBoolean(MeshVS_DA_ShowEdges, showEdges);
     return true;
 }
 

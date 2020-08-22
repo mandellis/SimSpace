@@ -417,8 +417,9 @@ void clipTool::addItemToTable()
     //! --------------------------------
     this->setSelectionMode(QAbstractItemView::SingleSelection);
     //this->setSelectionMode(QAbstractItemView::NoSelection);
-    this->resizeColumnsToContents();
-    this->resizeRowsToContents();
+
+    //this->resizeColumnsToContents();
+    //this->resizeRowsToContents();
 
     //this->horizontalHeader()->setStretchLastSection(true);
 }
@@ -484,7 +485,7 @@ void clipTool::updateCSDefinition()
 }
 
 //! ------------------------------------------------------------
-//! function: updateCSDataByExternalCSChange()
+//! function: updateCSDataByExternalCSChange
 //! details:  the definition of a coordinate system is changed:
 //!           update all the clipPlanes containing that CS
 //! ------------------------------------------------------------
