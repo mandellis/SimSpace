@@ -303,7 +303,7 @@ std::map<GeometryTag,std::vector<std::map<int,double>>> postEngine::evaluateResu
                     break;
                 case TypeOfResult_RF:
                 {
-                    QMap<int,double> resComp_X,resComp_Y,resComp_Z,resComp_Total;
+                    std::map<int,double> resComp_X,resComp_Y,resComp_Z,resComp_Total;
                     double compXtotal,compYtotal,compZtotal,compTtotal;
                     //! <>::eof(): call getline before while, then inside {}, @ as last instruction
                     std::getline(curFile,val);
@@ -314,14 +314,15 @@ std::map<GeometryTag,std::vector<std::map<int,double>>> postEngine::evaluateResu
                         sscanf(val.c_str(),"%d%lf%lf%lf",&ni,&cxx,&cyy,&czz);
 
                         //! nodeIDs defining the MeshVS_dataSource
-                        int OCCnodeID = indexedMapOfNodes.value(ni,-1);
-                        if(OCCnodeID!=-1)
+                        std::map<int,int>::iterator it = indexedMapOfNodes.find(ni);
+                        if(it!=indexedMapOfNodes.end())
                         {
+                            int OCCnodeID = it->second;
                             total = sqrt(pow(cxx,2)+pow(cyy,2)+pow(czz,2));
-                            resComp_Total.insert(OCCnodeID,total);
-                            resComp_X.insert(OCCnodeID,cxx);
-                            resComp_Y.insert(OCCnodeID,cyy);
-                            resComp_Z.insert(OCCnodeID,czz);
+                            resComp_Total.insert(std::make_pair(OCCnodeID,total));
+                            resComp_X.insert(std::make_pair(OCCnodeID,cxx));
+                            resComp_Y.insert(std::make_pair(OCCnodeID,cyy));
+                            resComp_Z.insert(std::make_pair(OCCnodeID,czz));
                             compXtotal+=cxx;
                             compYtotal+=cyy;
                             compZtotal+=czz;
@@ -331,8 +332,10 @@ std::map<GeometryTag,std::vector<std::map<int,double>>> postEngine::evaluateResu
                     }
                     //totalRForces<<compXtotal<<compYtotal<<compZtotal<<compTtotal;
                     //! result
-                    res<<resComp_Total<<resComp_X<<resComp_Y<<resComp_Z;
-                    //cout<<"postEngine::evaluateResult()->____Number of components: "<<res.length()<<"____"<<endl;
+                    res.push_back(resComp_Total);
+                    res.push_back(resComp_X);
+                    res.push_back(resComp_Y);
+                    res.push_back(resComp_Z);
                 }
                     break;
                 case TypeOfResult_S:
@@ -614,10 +617,10 @@ QString postEngine::resultName(const QString &keyName, int component, int step, 
     case TypeOfResult_RF:
         switch(component)
         {
-        case 0: colorBoxTitle="Total reaction force"; break;
-        case 1: colorBoxTitle="Directional reaction force X"; break;
-        case 2: colorBoxTitle="Directional reaction force Y"; break;
-        case 3: colorBoxTitle="Directional reaction force Z"; break;
+        case 0: resultName="Total reaction force"; break;
+        case 1: resultName="Directional reaction force X"; break;
+        case 2: resultName="Directional reaction force Y"; break;
+        case 3: resultName="Directional reaction force Z"; break;
         }
         break;
     case TypeOfResult_EPS:

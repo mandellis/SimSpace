@@ -2153,7 +2153,7 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
             TopoDS_Solid aSolid = TopoDS::Solid(mDB->bodyMap.value(i));
             scope.Append(aSolid);
         }
-        QVector<GeometryTag> vecLocAllBodies = TopologyTools::generateLocationPairs(mDB, scope);
+        std::vector<GeometryTag> vecLocAllBodies = TopologyTools::generateLocationPairs(mDB, scope);
 
         data.setValue(vecLocAllBodies);
         Property prop_scopeAllBodies("Geometry",data,Property::PropertyGroup_Scope);
@@ -2240,7 +2240,7 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
             TopoDS_Solid aSolid = TopoDS::Solid(mDB->bodyMap.value(i));
             scope.Append(aSolid);
         }
-        QVector<GeometryTag> vecLocAllBodies = TopologyTools::generateLocationPairs(mDB, scope);
+        std::vector<GeometryTag> vecLocAllBodies = TopologyTools::generateLocationPairs(mDB, scope);
 
         data.setValue(vecLocAllBodies);
         Property prop_scopeAllBodies("Geometry",data,Property::PropertyGroup_Scope);
@@ -2379,7 +2379,7 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
         case 3: name = "Directional reaction force Z"; break;
         }
 
-        for(QVector<GeometryTag>::iterator it = vecLoc.begin(); it!=vecLoc.end(); ++it)
+        for(std::vector<GeometryTag>::iterator it = vecLoc.begin(); it!=vecLoc.end(); ++it)
         {
             const GeometryTag curLoc = *it;
             int parentShapeNr = curLoc.parentShapeNr;
@@ -2602,7 +2602,7 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
             TopoDS_Solid aSolid = TopoDS::Solid(mDB->bodyMap.value(i));
             scope.Append(aSolid);
         }
-        QVector<GeometryTag> vecLocAllBodies = TopologyTools::generateLocationPairs(mDB, scope);
+        std::vector<GeometryTag> vecLocAllBodies = TopologyTools::generateLocationPairs(mDB, scope);
 
         data.setValue(vecLocAllBodies);
         Property prop_scopeAllBodies("Geometry",data,Property::PropertyGroup_Scope);
