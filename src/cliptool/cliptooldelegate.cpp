@@ -34,7 +34,8 @@ const QString sliderStyleSheet = QString("QSlider::groove:horizontal { "
 //! ----------------------
 clipToolDelegate::clipToolDelegate(QWidget *parent):QStyledItemDelegate(parent)
 {
-    cout<<"clipToolDelegate::clipToolDelegate()->____CONSTRUCTOR CALLED____"<<endl;
+    ;
+    //cout<<"clipToolDelegate::clipToolDelegate()->____CONSTRUCTOR CALLED____"<<endl;
 }
 
 //! -----------------------
@@ -51,8 +52,8 @@ QWidget* clipToolDelegate::createEditor(QWidget *parent, const QStyleOptionViewI
     //! -----------------
     //! resize the cells
     //! -----------------
-    //theClipTool->resizeRowsToContents();
-    //theClipTool->resizeColumnsToContents();
+    theClipTool->resizeRowsToContents();
+    theClipTool->resizeColumnsToContents();
 
     switch(index.column())
     {
@@ -129,7 +130,6 @@ QWidget* clipToolDelegate::createEditor(QWidget *parent, const QStyleOptionViewI
             //! ------------------
             QSlider *editor = new QSlider(parent);
             editor->setStyleSheet(sliderStyleSheet);
-            //editor->setFixedWidth(75);
             editor->setOrientation(Qt::Horizontal);
             editor->setMinimum(-100);
             editor->setMaximum(100);
@@ -137,6 +137,7 @@ QWidget* clipToolDelegate::createEditor(QWidget *parent, const QStyleOptionViewI
         }
         else return 0;
     }
+
         break;
 
     default:
@@ -317,9 +318,9 @@ void clipToolDelegate::handleCSStatusChanged()
 //! function: handleCSTranslation
 //! details:
 //! ------------------------------
-void clipToolDelegate::handleCSTranslation(int curZ)
+void clipToolDelegate::handleCSTranslation(int sliderValue)
 {
-    emit currentCSTranslationApplied(curZ);
+    emit currentCSTranslationApplied(sliderValue);
 }
 
 //! --------------------------------------------

@@ -79,7 +79,7 @@ protected:
     QMap<int,occHandle(AIS_InteractiveObject)> myMapOfInteractivePrismaticMeshes;
 
     //! Map of sliced meshes
-    QMap<int,occHandle(MeshVS_Mesh)> mySlicedMeshesIO;
+    //QMap<int,occHandle(MeshVS_Mesh)> mySlicedMeshesIO;
 
     //! Shape colors: an array of colors for the shapes
     ArrayOfColors myShapeColor;
@@ -116,7 +116,7 @@ public:
     //! constructor
     occPreGLWidget(QWidget *parent=0);
 
-    //! Destructor
+    //! destructor
     virtual ~occPreGLWidget();
 
     //! Display the CAD model
@@ -133,6 +133,9 @@ public:
 
     //! get the interactive objects (AIS_Shape)
     QMap<int,occHandle(AIS_InteractiveObject)> getInteractiveObjects() { return myMapOfInteractiveShapes; }
+
+    //! get the mesh objects (MeshVS_Mesh)
+    QMap<int,occHandle(AIS_InteractiveObject)> getMeshObjects() { return myMapOfInteractiveMeshes; }
 
     //! get current working mode
     inline curWorkingMode getWorkingMode() { return myCurWorkingMode; }
@@ -201,6 +204,9 @@ public slots:
     //! build the sliced mesh interactive object
     void buildSlicedMeshIO(const QMap<int, opencascade::handle<MeshVS_DataSource> > &slicedMeshDS);
 
+    //! set hidden elements
+    void setHiddenElements(const std::map<int,occHandle(TColStd_HPackedMapOfInteger)> &hiddenElements);
+
     //! build the prismatic mesh interactive object
     void buildPrismaticMeshIO();
 
@@ -213,12 +219,7 @@ public slots:
     //! hide all the meshes
     void hideAllMeshes(bool updateViewer=true);
 
-    //! erase the sliced meshes
-    void eraseSlicedMeshes();
-
-    //! ------------------
     //! refresh mesh view
-    //! ------------------
     virtual void refreshMeshView(bool onlyExterior);
 
     //! Reset all

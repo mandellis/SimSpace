@@ -30,6 +30,9 @@
 #include <MeshVS_Drawer.hxx>
 #include <MeshVS_DrawerAttribute.hxx>
 #include <AIS_Plane.hxx>
+#include <TColStd_HPackedMapOfInteger.hxx>
+#include <TColStd_MapIteratorOfPackedMapOfInteger.hxx>
+#include <TColStd_PackedMapOfInteger.hxx>
 
 //! ----------------------
 //! function: constructor
@@ -106,7 +109,6 @@ clipTool::clipTool(QWidget *parent):QTableView(parent),
 //! --------------------------
 void clipTool::setMeshDataBase(meshDataBase *aMeshDataBase)
 {
-    //cout<<"clipTool::setMeshDataBase()->____function called____"<<endl;
     myMDB = aMeshDataBase;
 }
 
@@ -159,8 +161,6 @@ void clipTool::setWorkingMode(int workingMode)
     {
         bool isActive = internalModel->index(row,CLIPPLANE_STATUS_COLUMN).data(Qt::UserRole).toBool();
         int planeID = internalModel->index(row,CLIPPLANE_ID_COLUMN).data(Qt::UserRole).toInt();
-        cout<<"____plane ID: "<<planeID<<(isActive? " is active____":" is not active____")<<endl;
-
         if(!isActive) continue;
         activeClipPlanes.push_back(planeID);
     }
@@ -175,7 +175,6 @@ void clipTool::setWorkingMode(int workingMode)
             return;
         }
         QMap<int,occHandle(Graphic3d_ClipPlane)> mapOfClipPlanes = myOCCViewer->getClipPlanes();
-
         for(QMap<int,occHandle(Graphic3d_ClipPlane)>::iterator it = mapOfClipPlanes.begin(); it!= mapOfClipPlanes.end(); ++it)
         {
             int clipPlaneNr = it.key();
@@ -186,28 +185,25 @@ void clipTool::setWorkingMode(int workingMode)
             double c = *(coeff+2);
             double d = *(coeff+3);
 
-            for(QMap<int,occHandle(MeshVS_DataSource)>::iterator it=myMDB->ArrayOfMeshDS.begin(); it!=myMDB->ArrayOfMeshDS.end(); ++it)
+            const QMap<int,occHandle(AIS_InteractiveObject)> &meshObjects = myOCCViewer->getMeshObjects();
+            for(QMap<int,occHandle(AIS_InteractiveObject)>::const_iterator it = meshObjects.cbegin(); it!=meshObjects.cend(); it++)
             {
-                const occHandle(Ng_MeshVS_DataSource3D) &aVolumeMeshDS = occHandle(Ng_MeshVS_DataSource3D)::DownCast(it.value());
-                if(aVolumeMeshDS.IsNull()) continue;
-
-                //! ----------------------------------------
-                //! retrieve the color of the current shape
-                //! ----------------------------------------
+                const occHandle(MeshVS_Mesh) &aMeshObject = occHandle(MeshVS_Mesh)::DownCast(it.value());
+                const occHandle(MeshVS_DataSource) &aMeshDS = aMeshObject->GetDataSource();
+                if(aMeshDS.IsNull()) continue;
                 int bodyIndex = it.key();
-
-                meshSlicer aMeshSlicer(aVolumeMeshDS);
-                occHandle(Ng_MeshVS_DataSource3D) slicedMesh;
-
-                aMeshSlicer.perform(a,b,c,d,slicedMesh);
-                mySlicedMeshedDS.insert(bodyIndex,slicedMesh);
+                meshSlicer aMeshSlicer(aMeshDS);
+                occHandle(TColStd_HPackedMapOfInteger) hiddenElementIDs;
+                aMeshSlicer.perform(a,b,c,d,hiddenElementIDs);
+                std::map<int,occHandle(TColStd_HPackedMapOfInteger)>::iterator itt = myHiddenElements.find(bodyIndex);
+                if(itt==myHiddenElements.end()) myHiddenElements.insert(std::make_pair(bodyIndex,hiddenElementIDs));
+                else itt->second = hiddenElementIDs;
             }
         }
-
-        //! ------------------------------------------------------
-        //! build and display the interactive sliced mesh objects
-        //! ------------------------------------------------------
-        myOCCViewer->buildSlicedMeshIO(mySlicedMeshedDS);
+        //! --------------------------------------------------
+        //! send to the viewer the map of element IDs to hide
+        //! --------------------------------------------------
+        myOCCViewer->setHiddenElements(myHiddenElements);
     }
         break;
 
@@ -418,10 +414,32 @@ void clipTool::addItemToTable()
     this->setSelectionMode(QAbstractItemView::SingleSelection);
     //this->setSelectionMode(QAbstractItemView::NoSelection);
 
-    //this->resizeColumnsToContents();
-    //this->resizeRowsToContents();
+    this->resizeColumnsToContents();
+    this->resizeRowsToContents();
 
     //this->horizontalHeader()->setStretchLastSection(true);
+}
+
+//! -----------------------------
+//! function: retrieveClipPlanes
+//! details:
+//! -----------------------------
+void clipTool::retrieveClipPlanes()
+{
+    int Nb = internalModel->rowCount();
+    for(int row = 0; row<Nb; row++)
+    {
+        QModelIndex index2 = internalModel->index(row,CLIPPLANE_STATUS_COLUMN);
+        bool isActive = index2.data(Qt::UserRole).toBool();
+        if(isActive==false) continue;
+
+        QModelIndex index = internalModel->index(row,CLIPPLANE_BASE_COORDINATE_SYSTEM_COLUMN);
+        void *CSp = internalModel->data(index,Qt::UserRole).value<void*>();
+        QStandardItem* CS = (QStandardItem*)CSp;
+        SimulationNodeClass *aNode = CS->data(Qt::UserRole).value<SimulationNodeClass*>();
+
+        QModelIndex index1 = internalModel->index(row,CLIPPLANE_TRANSLATION_COLUMN);
+    }
 }
 
 //! ------------------------------
@@ -458,19 +476,21 @@ void clipTool::updateCSDefinition()
 
     QModelIndex index = internalModel->index(this->currentIndex().row(),this->currentIndex().column());
     void *p = index.data(Qt::UserRole).value<void*>();
-    QExtendedStandardItem *curItemCS = static_cast<QExtendedStandardItem*>(p);
+    QStandardItem *curItemCS = static_cast<QStandardItem*>(p);
 
-    QVector<double> coeffs = this->getPlaneCoefficients(curItemCS);
+    const QVector<double> &coeffs = this->getPlaneCoefficients(curItemCS);
     QVariant data;
     data.setValue(coeffs);
     QModelIndex indexPlaneCoeffs = internalModel->index(this->currentIndex().row(),CLIPPLANE_BASE_PLANE_DATA_COLUMN);
     internalModel->setData(indexPlaneCoeffs,data,Qt::UserRole);
-    double A = coeffs.at(0);
-    double B = coeffs.at(1);
-    double C = coeffs.at(2);
-    double D = coeffs.at(3);
+    double A = coeffs[0];
+    double B = coeffs[1];
+    double C = coeffs[2];
+    double D = coeffs[3];
     data.setValue(QString("(%1, %2, %3, %4").arg(A).arg(B).arg(C).arg(D));
     internalModel->setData(indexPlaneCoeffs,data,Qt::DisplayRole);
+
+    cout<<"____(A,B,C,D) = ("<<A<<", "<<B<<", "<<C<<", "<<D<<")____"<<endl;
 
     QModelIndex indexID = internalModel->index(this->currentIndex().row(),CLIPPLANE_ID_COLUMN);
     int ID = indexID.data(Qt::UserRole).toInt();
@@ -510,16 +530,17 @@ void clipTool::updateCSDataByExternalCSChange(QStandardItem *theCurrentModifiedC
     }
 }
 
-//! ---------------------------------------------------------------
+//! -------------------------------
 //! function: getPlaneCoefficients
-//! details:  return the coefficients defining the plabne equation
-//! ---------------------------------------------------------------
-QVector<double> clipTool::getPlaneCoefficients(QExtendedStandardItem *aCSItem)
+//! details:
+//! -------------------------------
+QVector<double> clipTool::getPlaneCoefficients(QStandardItem *aCSItem)
 {
     //cout<<"clipTool::getPlaneCoefficients()->____function called____"<<endl;
-    //! ----------------------------------------------------------------------
-    //! create an adjacent cell with the data of the global coordinate system
-    //! ----------------------------------------------------------------------
+
+    //! -----------------------------------------
+    //! item from the coordinate system selector
+    //! -----------------------------------------
     SimulationNodeClass *curCSNode = aCSItem->data(Qt::UserRole).value<SimulationNodeClass*>();
     double X_origin, Y_origin, Z_origin;
     QVector<double> XaxisData, YaxisData, ZaxisData;
@@ -528,7 +549,7 @@ QVector<double> clipTool::getPlaneCoefficients(QExtendedStandardItem *aCSItem)
     {
     case SimulationNodeClass::nodeType_coordinateSystem_global:
     {
-        //cout<<"____global coordinate system selected____"<<endl;
+        cout<<"clipTool::getPlaneCoefficients()->____global coordinate system selected____"<<endl;
         X_origin = curCSNode->getPropertyValue<double>("Origin X");
         Y_origin = curCSNode->getPropertyValue<double>("Origin Y");
         Z_origin = curCSNode->getPropertyValue<double>("Origin Z");
@@ -540,22 +561,22 @@ QVector<double> clipTool::getPlaneCoefficients(QExtendedStandardItem *aCSItem)
 
     case SimulationNodeClass::nodeType_coordinateSystem:
     {
-        //cout<<"____coordinate system selected____"<<endl;
+        cout<<"clipTool::getPlaneCoefficients()->____coordinate system selected____"<<endl;
         QVector<double> baseOrigin = curCSNode->getPropertyValue<QVector<double>>("Base origin");
-        X_origin = baseOrigin.at(0);
-        Y_origin = baseOrigin.at(1);
-        Z_origin = baseOrigin.at(2);
+        X_origin = baseOrigin[0];
+        Y_origin = baseOrigin[1];
+        Z_origin = baseOrigin[2];
         QVector<QVector<double>> axisData = curCSNode->getPropertyValue<QVector<QVector<double>>>("Base directional data");
-        XaxisData = axisData.at(0);
-        YaxisData = axisData.at(1);
-        ZaxisData = axisData.at(2);
+        XaxisData = axisData[0];
+        YaxisData = axisData[1];
+        ZaxisData = axisData[2];
     }
         break;
     }
 
-    double axx = XaxisData.at(0); double axy = XaxisData.at(1); double axz = XaxisData.at(2);
-    //double ayx = YaxisData.at(0); double ayy = YaxisData.at(1); double ayz = YaxisData.at(2);
-    double azx = ZaxisData.at(0); double azy = ZaxisData.at(1); double azz = ZaxisData.at(2);
+    double axx = XaxisData[0]; double axy = XaxisData[1]; double axz = XaxisData[2];
+    //double ayx = YaxisData[0]; double ayy = YaxisData[1]; double ayz = YaxisData[2];
+    double azx = ZaxisData[0]; double azy = ZaxisData[1]; double azz = ZaxisData[2];
 
     //! -------------------------------------------------------
     //! definition of N - "Main direction" normal to the plane
@@ -582,11 +603,6 @@ QVector<double> clipTool::getPlaneCoefficients(QExtendedStandardItem *aCSItem)
     double A,B,C,D;
     plane.Coefficients(A,B,C,D);
     QVector<double> coeff{A,B,C,D};
-    //QVector<double> coeff;
-    //coeff.push_back(A);
-    //coeff.push_back(B);
-    //coeff.push_back(C);
-    //coeff.push_back(D);
     return coeff;
 }
 
@@ -605,7 +621,7 @@ void clipTool::setClipPlaneActive()
 //! function: updateCSTranslation
 //! details:
 //! ------------------------------
-void clipTool::updateCSTranslation(int curZ)
+void clipTool::updateCSTranslation(int sliderPosition)
 {
     //! ------------------------------------------
     //! get the current CS undergoing translation
@@ -618,8 +634,7 @@ void clipTool::updateCSTranslation(int curZ)
     //! -------------------------------------------------
     //! this moves the plane and redraw the clipped view
     //! -------------------------------------------------
-    cout<<"clipTool::updateCSTranslation()->____("<<coeffs.at(0)<<", "<<coeffs.at(1)<<", "<<coeffs.at(2)<<", "<<coeffs.at(3)<<")____"<<endl;
-    myOCCViewer->updateClipPlaneTranslation(ID,curZ,coeffs);
+    myOCCViewer->updateClipPlaneTranslation(ID,sliderPosition,coeffs);
 
     if(myMDB==NULL)
     {
@@ -629,46 +644,42 @@ void clipTool::updateCSTranslation(int curZ)
 
     if(myWorkingMode==0)
     {
-        //! -------------------------------
-        //! delete the sliced mesh objects
-        //! -------------------------------
-        myOCCViewer->eraseSlicedMeshes();
-
         const QMap<int,occHandle(Graphic3d_ClipPlane)> &clipPlanes = myOCCViewer->getClipPlanes();
         for(int row =0; row<internalModel->rowCount(); row++)
         {
             int clipPlaneID = internalModel->index(row,CLIPPLANE_ID_COLUMN).data(Qt::UserRole).toInt();
             bool clipPlaneIsOn = internalModel->index(row,CLIPPLANE_STATUS_COLUMN).data(Qt::UserRole).toBool();
             if(!clipPlaneIsOn) continue;
+            const occHandle(Graphic3d_ClipPlane) &curClipPlane = clipPlanes.value(clipPlaneID);
+            Graphic3d_ClipPlane::Equation planeEquation = curClipPlane->GetEquation();
+            double a = *planeEquation.GetData();
+            double b = *(planeEquation.GetData()+1);
+            double c = *(planeEquation.GetData()+2);
+            double d = *(planeEquation.GetData()+3);
 
-            //! ---------------------------
-            //! build the new mesh objects
-            //! ---------------------------
-            for(QMap<int,occHandle(MeshVS_DataSource)>::iterator it = myMDB->ArrayOfMeshDS.begin(); it!=myMDB->ArrayOfMeshDS.end(); it++)
+            //! --------------------------------
+            //! compute the element IDs to hide
+            //! --------------------------------
+            const QMap<int,occHandle(AIS_InteractiveObject)> &meshObjects = myOCCViewer->getMeshObjects();
+            for(QMap<int,occHandle(AIS_InteractiveObject)>::const_iterator it = meshObjects.cbegin(); it!=meshObjects.cend(); it++)
             {
                 int bodyIndex = it.key();
-                const occHandle(Ng_MeshVS_DataSource3D) &curVolumeMeshDS = occHandle(Ng_MeshVS_DataSource3D)::DownCast(it.value());
-                if(curVolumeMeshDS.IsNull()) continue;
+                const occHandle(MeshVS_Mesh) &aMeshObject = occHandle(MeshVS_Mesh)::DownCast(it.value());
+                const occHandle(MeshVS_DataSource) &aMeshDS = aMeshObject->GetDataSource();
+                if(aMeshDS.IsNull()) continue;
 
-                const occHandle(Graphic3d_ClipPlane) &curClipPlane = clipPlanes.value(clipPlaneID);
-                Graphic3d_ClipPlane::Equation planeEquation = curClipPlane->GetEquation();
-                double a = *planeEquation.GetData();
-                double b = *(planeEquation.GetData()+1);
-                double c = *(planeEquation.GetData()+2);
-                double d = *(planeEquation.GetData()+3);
-
-                meshSlicer aMeshSlicer(curVolumeMeshDS);
-                occHandle(Ng_MeshVS_DataSource3D) slicedMesh;
-                aMeshSlicer.perform(a,b,c,d,slicedMesh);
-
-                if(slicedMesh.IsNull()) continue;
-                mySlicedMeshedDS.insert(bodyIndex,slicedMesh);
+                meshSlicer aMeshSlicer(aMeshDS);
+                occHandle(TColStd_HPackedMapOfInteger) hiddenElementIDs;
+                aMeshSlicer.perform(a,b,c,d,hiddenElementIDs);
+                std::map<int,occHandle(TColStd_HPackedMapOfInteger)>::iterator itt = myHiddenElements.find(bodyIndex);
+                if(itt==myHiddenElements.end()) myHiddenElements.insert(std::make_pair(bodyIndex,hiddenElementIDs));
+                else itt->second = hiddenElementIDs;
             }
         }
-        //! ------------------------------
-        //! build the interactive objects
-        //! ------------------------------
-        myOCCViewer->buildSlicedMeshIO(mySlicedMeshedDS);
+        //! --------------------------------------------------
+        //! send to the viewer the map of element IDs to hide
+        //! --------------------------------------------------
+        myOCCViewer->setHiddenElements(myHiddenElements);
     }
 }
 

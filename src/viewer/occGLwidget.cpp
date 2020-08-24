@@ -3276,73 +3276,59 @@ void occGLWidget::hideAllMarkers(bool updateViewer)
     this->reactivateCurrentStandardSelectionMode();
 }
 
-//! ----------------------------------------------------------------
+//! --------------------------------------------------------------
 //! function: addClipPlane
-//! details:  add a clip plane to the viewer, using the assigned ID
-//!           and the coefficients {A,B,C,D} if the clip plane ID
+//! details:  add a clip plane to the viewer if the clip plane ID
 //!           already exists, update it
-//! ----------------------------------------------------------------
+//! --------------------------------------------------------------
 void occGLWidget::addClipPlane(double A, double B, double C, double D, int ID, bool isOn)
 {
     //! --------------------------------------------
     //! if the clip plane does not exists create it
     //! --------------------------------------------
     occHandle(Graphic3d_ClipPlane) aClipPlane;
-    if(myMapOfClipPlanes.value(ID,aClipPlane).IsNull()) aClipPlane = new Graphic3d_ClipPlane();
-    else aClipPlane = myMapOfClipPlanes.value(ID);
-
-    //! --------------------------------------
-    //! change equation of the clipping plane
-    //! --------------------------------------
-    aClipPlane->SetEquation (gp_Pln(A,B,C,D));
-
-    //! -----------
-    //! no capping
-    //! -----------
-    aClipPlane->SetCapping(false);
-
-    //! --------------------------------------
-    //! add/replace the clip plane to the map
-    //! --------------------------------------
-    myMapOfClipPlanes.insert(ID,aClipPlane);
-    cout<<"occGLWidget::addClipPlane()->____number of clip planes: "<<myMapOfClipPlanes.size()<<"____"<<endl;
-
-    //! --------------------------------------------
-    //! add the clip plane only to the AIS_Shape(s)
-    //! a new clip plane is created if not existing
-    //! --------------------------------------------
-    AIS_ListOfInteractive listOfAISShapes;
-    occContext->ObjectsInside(listOfAISShapes,AIS_KOI_Shape,0); // signatore "0" => Shapes
-    for(AIS_ListIteratorOfListOfInteractive it(listOfAISShapes); it.More(); it.Next())
+    if(myMapOfClipPlanes.value(ID,aClipPlane).IsNull())
     {
-        const occHandle(AIS_Shape) &curShapeObject = occHandle(AIS_Shape)::DownCast(it.Value());
-        if(curShapeObject->ClipPlanes().IsNull() || curShapeObject->ClipPlanes()->Length()==0)
+        cout<<"occGLWidget::addClipPlane()->____creating a new clip plane____"<<endl;
+        aClipPlane = new Graphic3d_ClipPlane();
+        aClipPlane->SetEquation (gp_Pln(A,B,C,D));
+        aClipPlane->SetCapping(false);
+        myMapOfClipPlanes.insert(ID,aClipPlane);
+        AIS_ListOfInteractive listOfAISShapes;
+        occContext->ObjectsInside(listOfAISShapes,AIS_KOI_Shape,0); // signatore "0" => Shapes
+        for(AIS_ListIteratorOfListOfInteractive it(listOfAISShapes); it.More(); it.Next())
         {
+            const occHandle(AIS_Shape) &curShapeObject = occHandle(AIS_Shape)::DownCast(it.Value());
             curShapeObject->AddClipPlane(aClipPlane);
         }
-        else
+    }
+    else
+    {
+        cout<<"occGLWidget::addClipPlane()->____the clip plane with ID: "<<ID<<" already exists____"<<endl;
+        aClipPlane = myMapOfClipPlanes.value(ID);
+        AIS_ListOfInteractive listOfAISShapes;
+        occContext->ObjectsInside(listOfAISShapes,AIS_KOI_Shape,0); // signatore "0" => Shapes
+        for(AIS_ListIteratorOfListOfInteractive it(listOfAISShapes); it.More(); it.Next())
         {
+            const occHandle(AIS_Shape) &curShapeObject = occHandle(AIS_Shape)::DownCast(it.Value());
             const occHandle(Graphic3d_SequenceOfHClipPlane) &shapeClipPlanes = curShapeObject->ClipPlanes();
             for(int n=1; n<shapeClipPlanes->Length(); n++)
             {
                 const occHandle(Graphic3d_ClipPlane) &curClipPlane = shapeClipPlanes->Value(n);
-                if(curClipPlane==aClipPlane) shapeClipPlanes->Value(n)->SetOn(isOn);
-                break;
+                if(curClipPlane==aClipPlane)
+                {
+                    shapeClipPlanes->Value(n)->SetOn(isOn);
+                    aClipPlane->SetEquation (gp_Pln(A,B,C,D));
+                    aClipPlane->SetCapping(false);
+                    break;
+                }
             }
         }
     }
-
-    //! -------------------------------------
-    //! add the clip plane to the whole view
-    //! left here for documentation
-    //! -------------------------------------
-    //occView->AddClipPlane(aClipPlane);
-
     //! ------------------------------------------------
     //! activate the clipping plane and update the view
     //! ------------------------------------------------
     occView->Redraw();
-
     cout<<"occGLWidget::addClipPlane()->____final number of clip planes: "<<myMapOfClipPlanes.size()<<"____"<<endl;
 }
 
@@ -3405,21 +3391,42 @@ void occGLWidget::updateClipPlaneTranslation(int ID, int zVal, const QVector<dou
 {
     //cout<<"occGLWidget::updateClipPlaneTranslation()->____function called. ID: "<<ID<<" zVal: "<<zVal<<"____"<<endl;
 
-    double a = coeffs.at(0);
-    double b = coeffs.at(1);
-    double c = coeffs.at(2);
-    double d = coeffs.at(3);
-
-    gp_Pln aPlane(a,b,c,d);
-    gp_Ax1 planeAxis = aPlane.Axis();
-    gp_Dir translationDirection = planeAxis.Direction();
-    gp_Vec translationVector(translationDirection);
-    double deltaZ = double(zVal)*1000.0/1000.0;
-
-    translationVector.Scale(deltaZ);
-
+    //! --------------------------------
+    //! compute the scene boundaing box
+    //! --------------------------------
+    AIS_ListOfInteractive listOfShapes;
+    occContext->ObjectsInside(listOfShapes,AIS_KOI_Shape,0);
+    double xmin,ymin,zmin; xmin = ymin = zmin = 1e10;
+    double xmax,ymax,zmax; xmax = ymax = zmax = -1e10;
+    for(AIS_ListIteratorOfListOfInteractive it(listOfShapes); it.More(); it.Next())
+    {
+        Bnd_Box aBB;
+        it.Value()->BoundingBox(aBB);
+        const gp_Pnt &CornerMin = aBB.CornerMin();
+        const gp_Pnt &CornerMax = aBB.CornerMax();
+        double xcmin = CornerMin.X();
+        double ycmin = CornerMin.Y();
+        double zcmin = CornerMin.Z();
+        double xcmax = CornerMax.X();
+        double ycmax = CornerMax.Y();
+        double zcmax = CornerMax.Z();
+        if(xmin<=xcmin) xmin = xcmin;
+        if(ymin<=ycmin) xmin = ycmin;
+        if(zmin<=zcmin) xmin = zcmin;
+        if(xmax>=xcmax) xmin = xcmax;
+        if(ymax>=ycmax) ymax = ycmax;
+        if(zmax>=zcmax) zmax = zcmax;
+    }
+    double lx = xmax-xmin;
+    double ly = ymax-ymin;
+    double lz = zmax-zmin;
+    double D = sqrt(lx*lx+ly*ly+lz*lz);
+    Graphic3d_ClipPlane::Equation eq;
+    double k = double(zVal/100.0)*(D/1000.0);
+    cout<<"____diagonal BBX: "<<D<<" plane translation: "<<k<<"____"<<endl;
+    eq.SetValues(coeffs[0],coeffs[1],coeffs[2],coeffs[3]+k);
     const occHandle(Graphic3d_ClipPlane) &curClipPlane = myMapOfClipPlanes.value(ID);
-    curClipPlane->SetEquation(aPlane.Translated(translationVector));
+    curClipPlane->SetEquation(eq);
     occView->Redraw();
 }
 

@@ -436,7 +436,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 //! ------------------------------------------------------------
                 emit requestSetWorkingMode(2);
                 emit requestHideAllResults();
-                emit requestHideSlicedMeshes();
+                //emit requestHideSlicedMeshes();
 
                 //! --------------------------------------------
                 //! prepare for highlighting: this version uses
@@ -465,7 +465,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 emit requestUnhighlightBodies(false);
                 emit requestSetWorkingMode(2);
                 emit requestHideAllResults();
-                emit requestHideSlicedMeshes();
+                //emit requestHideSlicedMeshes();
                 emit requestClearGraph();
                 this->changeColor();
             }
@@ -480,7 +480,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 emit requestUnhighlightBodies(false);
                 emit requestSetWorkingMode(2);
                 emit requestHideAllResults();
-                emit requestHideSlicedMeshes();
+                //emit requestHideSlicedMeshes();
                 emit requestClearGraph();
                 this->changeColor();
             }
@@ -499,7 +499,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 //! ---------------------------------------------------------------------
                 emit requestHideMeshes();
                 emit requestHideAllResults();
-                emit requestHideSlicedMeshes();
+                //emit requestHideSlicedMeshes();
 
                 SimulationNodeClass *node = index.data(Qt::UserRole).value<SimulationNodeClass*>();
                 QStandardItem *itemTemperature = (QStandardItem*)(node->getPropertyValue<void*>("Imported body temperature"));
@@ -529,7 +529,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 //! ---------------------------------------------------------------------
                 emit requestHideMeshes();
                 emit requestHideAllResults();
-                emit requestHideSlicedMeshes();
+                //emit requestHideSlicedMeshes();
 
                 //! -------------------------------------------------------
                 //! in the working mode "3" "Solution" the selection modes
@@ -569,7 +569,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 //! ---------------------------------------------------------------------
                 emit requestHideMeshes();
                 emit requestHideAllResults();
-                emit requestHideSlicedMeshes();
+                //emit requestHideSlicedMeshes();
 
                 //! -------------------------------------------------------
                 //! in the working mode "3" "Solution" the selection modes
@@ -599,7 +599,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 emit requestSetWorkingMode(3);
                 emit requestShowAllBodies();
                 emit requestHideAllResults();
-                emit requestHideSlicedMeshes();
+                //emit requestHideSlicedMeshes();
                 this->changeColor();
 
                 //! switch the tab
@@ -611,7 +611,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
             {
                 emit requestUnhighlightBodies(false);
                 emit requestHideMeshes();
-                emit requestHideSlicedMeshes();
+                //emit requestHideSlicedMeshes();
                 emit requestSetWorkingMode(2);
                 emit requestHideAllResults();
                 this->changeColor();
@@ -621,7 +621,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
             case SimulationNodeClass::nodeType_geometry:
             {
                 emit requestUnhighlightBodies(false);
-                emit requestHideSlicedMeshes();
+                //emit requestHideSlicedMeshes();
                 emit requestSetWorkingMode(2);
                 emit requestHideAllResults();
                 this->changeColor();
@@ -633,7 +633,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 emit requestHideAllResults();
                 emit requestUnhighlightBodies(true);
                 emit requestHideMeshes();
-                emit requestHideSlicedMeshes();
+                //emit requestHideSlicedMeshes();
                 emit requestSetWorkingMode(2);
                 this->changeColor();
             }
@@ -644,7 +644,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 emit requestHideAllResults();
                 emit requestUnhighlightBodies(Standard_True);
                 emit requestHideMeshes();
-                emit requestHideSlicedMeshes();
+                //emit requestHideSlicedMeshes();
                 emit requestSetWorkingMode(2);
 
                 //! -------------------------------------
@@ -668,7 +668,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 emit requestHideAllResults();
                 emit requestUnhighlightBodies(Standard_True);
                 emit requestHideMeshes();
-                emit requestHideSlicedMeshes();
+                //emit requestHideSlicedMeshes();
                 emit requestSetWorkingMode(2);
                 this->changeColor();
 
@@ -690,7 +690,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 emit requestHideAllResults();
                 emit requestUnhighlightBodies(true);
                 emit requestHideMeshes();
-                emit requestHideSlicedMeshes();
+                //emit requestHideSlicedMeshes();
                 emit requestSetWorkingMode(2);
             }
                 break;
@@ -700,7 +700,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 emit requestHideAllResults();
                 emit requestUnhighlightBodies(false);
                 emit requestHideMeshes();
-                emit requestHideSlicedMeshes();
+                //emit requestHideSlicedMeshes();
                 emit requestSetWorkingMode(2);
 
                 theNode->getModel()->blockSignals(true);    //! avoids calling handleItemChange()
@@ -715,7 +715,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
             {
                 emit requestSetWorkingMode(2);
                 emit requestHideAllResults();
-                emit requestHideSlicedMeshes();
+                //emit requestHideSlicedMeshes();
                 theNode->getModel()->blockSignals(true);    //! avoids calling handleItemChange()
                 bool isDone = markerBuilder::addMarker(this->getCurrentNode(), mySimulationDataBase);
                 theNode->getModel()->blockSignals(false);   //! reconnect - unblock signals
@@ -752,7 +752,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 emit requestUnhighlightBodies(Standard_True);
                 emit requestSetWorkingMode(0);
                 emit requestHideMeshes();
-                emit requestHideSlicedMeshes();
+                //emit requestHideSlicedMeshes();
                 this->changeColor();
                 emit requestClearGraph();
             }
@@ -766,7 +766,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 emit requestUnhighlightBodies(Standard_True);
                 emit requestSetWorkingMode(2);
                 emit requestHideMeshes();
-                emit requestHideSlicedMeshes();
+                //emit requestHideSlicedMeshes();
                 this->changeColor();
                 emit requestClearGraph();
             }
@@ -781,7 +781,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 emit requestUnhighlightBodies(Standard_True);
                 emit requestSetWorkingMode(2);
                 emit requestHideMeshes();
-                emit requestHideSlicedMeshes();
+                //emit requestHideSlicedMeshes();
                 this->changeColor();
 
                 //! -------------------------------------------------------------
@@ -820,7 +820,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 emit requestHideAllResults();
                 emit requestUnhighlightBodies(true);
                 emit requestHideMeshes();
-                emit requestHideSlicedMeshes();
+                //emit requestHideSlicedMeshes();
                 emit requestSetWorkingMode(2);
                 this->changeColor();
                 emit requestClearGraph();
@@ -847,7 +847,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 emit requestHideAllResults();
                 emit requestUnhighlightBodies(true);
                 emit requestHideMeshes();
-                emit requestHideSlicedMeshes();
+                //emit requestHideSlicedMeshes();
                 emit requestSetWorkingMode(2);
                 this->changeColor();
 
@@ -891,7 +891,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 emit requestHideAllResults();
                 emit requestUnhighlightBodies(true);
                 emit requestHideMeshes();
-                emit requestHideSlicedMeshes();
+                //emit requestHideSlicedMeshes();
                 emit requestSetWorkingMode(2);
                 this->changeColor();
 
@@ -927,7 +927,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 emit requestHideAllResults();
                 emit requestUnhighlightBodies(true);
                 emit requestHideMeshes();
-                emit requestHideSlicedMeshes();
+                //emit requestHideSlicedMeshes();
                 emit requestSetWorkingMode(2);
                 this->changeColor();
 
@@ -972,7 +972,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 emit requestHideAllResults();
                 emit requestUnhighlightBodies(Standard_True);
                 emit requestHideMeshes();
-                emit requestHideSlicedMeshes();
+                //emit requestHideSlicedMeshes();
                 emit requestSetWorkingMode(2);
                 this->changeColor();
 
@@ -1011,7 +1011,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 emit requestHideAllResults();
                 emit requestUnhighlightBodies(Standard_True);
                 emit requestSetWorkingMode(1);
-                emit requestHideSlicedMeshes();
+                //emit requestHideSlicedMeshes();
                 this->changeColor();
                 emit requestClearGraph();
             }
@@ -1023,7 +1023,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 emit requestUnhighlightBodies(Standard_True);
                 emit requestHideMeshes();
                 emit requestSetWorkingMode(1);
-                emit requestHideSlicedMeshes();
+                //emit requestHideSlicedMeshes();
                 this->changeColor();
                 emit requestClearGraph();
             }
@@ -1033,7 +1033,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
             {
                 emit requestHideAllResults();
                 emit requestSetWorkingMode(1);
-                emit requestHideSlicedMeshes();
+                //emit requestHideSlicedMeshes();
                 //this->changeColor();
                 emit requestClearGraph();
                 //! -----------------------------------------
@@ -1101,7 +1101,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 emit requestHideAllResults();
                 emit requestUnhighlightBodies(Standard_True);
                 emit requestHideMeshes();
-                emit requestHideSlicedMeshes();
+                //emit requestHideSlicedMeshes();
                 emit requestSetWorkingMode(2);
                 this->changeColor();
                 emit requestClearGraph();
@@ -1115,7 +1115,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 emit requestHideAllResults();
                 emit requestUnhighlightBodies(Standard_True);
                 emit requestHideMeshes();
-                emit requestHideSlicedMeshes();
+                //emit requestHideSlicedMeshes();
                 emit requestSetWorkingMode(2);
                 this->changeColor();
                 emit requestClearGraph();
@@ -1128,7 +1128,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 emit requestUnhighlightBodies(Standard_True);
                 emit requestSetWorkingMode(0);  //! "On mesh" working mode
                 emit requestHideMeshes();
-                emit requestHideSlicedMeshes();
+                //emit requestHideSlicedMeshes();
                 emit requestClearGraph();
 
                 QStandardItem *item = theNode->getPropertyItem("Selected elements");

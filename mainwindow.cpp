@@ -2655,7 +2655,7 @@ void MainWindow::setUpConnections()
     connect(mySimulationManager,SIGNAL(request0DBodySelectionMode(bool)),this,SLOT(toggleVertexSelectionMode(bool)));
     connect(mySimulationManager,SIGNAL(requestBuildMeshIOs()),myMainOCCViewer,SLOT(buildMeshIOs()));
     connect(mySimulationManager,SIGNAL(requestHideMeshes()),myMainOCCViewer,SLOT(hideAllMeshes()));
-    connect(mySimulationManager,SIGNAL(requestHideSlicedMeshes()),myMainOCCViewer,SLOT(eraseSlicedMeshes()));
+    //connect(mySimulationManager,SIGNAL(requestHideSlicedMeshes()),myMainOCCViewer,SLOT(eraseSlicedMeshes()));
     connect(mySimulationManager,SIGNAL(requestShowMeshes(bool)),myMainOCCViewer,SLOT(displayAllMeshes(bool)));
     connect(mySimulationManager,SIGNAL(requestSetWorkingMode(int)),this,SLOT(setWorkingMode(int)));
     connect(mySimulationManager,SIGNAL(requestHideBody(TColStd_ListOfInteger)),myMainOCCViewer,SLOT(hideBody(TColStd_ListOfInteger)));

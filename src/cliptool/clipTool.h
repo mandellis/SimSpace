@@ -15,6 +15,7 @@
 #include <MeshVS_DataSource.hxx>
 #include <MeshVS_Mesh.hxx>
 #include <Quantity_NameOfColor.hxx>
+#include <TColStd_HPackedMapOfInteger.hxx>
 
 //! ---
 //! Qt
@@ -36,7 +37,7 @@
 //! ----
 //! C++
 //! ----
-
+#include <map>
 #include <iostream>
 using namespace std;
 
@@ -79,7 +80,7 @@ private slots:
 
     void showContextMenu(QPoint aPoint);
     void setClipPlaneActive();
-    void updateCSTranslation(int);
+    void updateCSTranslation(int sliderPosition);
     void updateCSDefinition();
 
 public slots:
@@ -110,6 +111,7 @@ private:
     meshDataBase *myMDB;
     QMap<int,occHandle(MeshVS_DataSource)> mySlicedMeshedDS;
     QMap<int,occHandle(MeshVS_Mesh)> mySlicedMeshIO;
+    std::map<int,occHandle(TColStd_HPackedMapOfInteger)> myHiddenElements;
 
     //! --------------------------------------------------
     //! key => plane ID
@@ -151,7 +153,7 @@ public:
 private:
 
     //! return the plane equation coefficients
-    QVector<double> getPlaneCoefficients(QExtendedStandardItem *aCSItem);
+    QVector<double> getPlaneCoefficients(QStandardItem *aCSItem);
 
     //! ------------------------------------------------
     //! working mode
@@ -186,6 +188,8 @@ protected:
     }
 
 private:
+
+    void retrieveClipPlanes();
 
     void setCurrentClipPlane(int curClipPlaneID)
     {

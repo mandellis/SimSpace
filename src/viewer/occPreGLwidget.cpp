@@ -104,6 +104,7 @@
 #include <CPnts_AbscissaPoint.hxx>
 #include <BRepAdaptor_Curve.hxx>
 #include <GeomAdaptor_Curve.hxx>
+#include <TColStd_HPackedMapOfInteger.hxx>
 
 using namespace std;
 
@@ -3725,13 +3726,10 @@ void occPreGLWidget::displayMesh(const occHandle(MeshVS_DataSource) &aMeshDS,
     occContext->Display(meshIO,true);
 }
 
-//! ----------------------------------------------------------------------------------
+//! -----------------------
 //! function: addClipPlane
-//! details:  overrides the base class function. Here the clipped objects
-//!           are retrieved not using the context functions (such ::ObjectsInside
-//!           because there is not an AIS_KOI for MeshVS_Mesh), but using the
-//!           private map members myMapOfInteractiveShapes & myMapOfInteractiveMeshes
-//! ----------------------------------------------------------------------------------
+//! details:
+//! -----------------------
 void occPreGLWidget::addClipPlane(double A, double B, double C, double D, int ID, bool isOn)
 {
     cout<<"occPreGLWidget::addClipPlane()->____function called____"<<endl;
@@ -3740,36 +3738,6 @@ void occPreGLWidget::addClipPlane(double A, double B, double C, double D, int ID
     //! add clip planes to the shapes
     //! ------------------------------
     occGLWidget::addClipPlane(A,B,C,D,ID,isOn);
-
-    //! ------------------------
-    //! retrieve the clip plane
-    //! ------------------------
-    const occHandle(Graphic3d_ClipPlane) &aClipPlane = myMapOfClipPlanes.value(ID);
-
-    //! --------------------------------------------
-    //! add the clip plane only to the MeshVS_Mesh
-    //! a new clip plane is created if not existing
-    //! --------------------------------------------
-    AIS_ListOfInteractive listOfAISShapes;
-    occMeshContext->ObjectsInside(listOfAISShapes,AIS_KOI_Shape,-1); // signatore "0" => Shapes
-    for(AIS_ListIteratorOfListOfInteractive it(listOfAISShapes); it.More(); it.Next())
-    {
-        const occHandle(AIS_Shape) &curShapeObject = occHandle(AIS_Shape)::DownCast(it.Value());
-        if(curShapeObject->ClipPlanes().IsNull() || curShapeObject->ClipPlanes()->Length()==0)
-        {
-            curShapeObject->AddClipPlane(aClipPlane);
-        }
-        else
-        {
-            const occHandle(Graphic3d_SequenceOfHClipPlane) &shapeClipPlanes = curShapeObject->ClipPlanes();
-            for(int n=1; n<shapeClipPlanes->Length(); n++)
-            {
-                const occHandle(Graphic3d_ClipPlane) &curClipPlane = shapeClipPlanes->Value(n);
-                if(curClipPlane==aClipPlane) shapeClipPlanes->Value(n)->SetOn(isOn);
-                break;
-            }
-        }
-    }
 
     //! ------------------------------------------------
     //! activate the clipping plane and update the view
@@ -3859,69 +3827,34 @@ void occPreGLWidget::updateClipPlanes(const std::vector<int> &activeClipPlanes)
 void occPreGLWidget::removeClipPlane(int ID)
 {
     cout<<"occPreGLWidget::removeClipPlane()->____removing clip plane ID: "<<ID<<"____"<<endl;
-
-    const occHandle(Graphic3d_ClipPlane) &clipPlane = myMapOfClipPlanes.value(ID);
-
-    //! -------------------------------------------------
-    //! remove the clip plane from each of the AIS_Shape
-    //! -------------------------------------------------
-    for(QMap<int,occHandle(AIS_InteractiveObject)>::iterator it = myMapOfInteractiveShapes.begin(); it!=myMapOfInteractiveShapes.end(); it++)
+    occGLWidget::removeClipPlane(ID);
+    TColStd_PackedMapOfInteger emptyMap;
+    occHandle(TColStd_HPackedMapOfInteger) emptyHMap = new TColStd_HPackedMapOfInteger();
+    emptyHMap->ChangeMap() = emptyMap;
+    //std::map<int,occHandle(TColStd_HPackedMapOfInteger)> aMap;
+    for(int i=0; i<myMapOfInteractiveMeshes.size(); i++)
     {
-        const occHandle(AIS_InteractiveObject) &curShapeObject = it.value();
-        if(curShapeObject.IsNull()) continue;
-        curShapeObject->RemoveClipPlane(clipPlane);
+        const occHandle(MeshVS_Mesh) &meshObject = occHandle(MeshVS_Mesh)::DownCast(myMapOfInteractiveMeshes.value(i));
+        meshObject->SetHiddenElems(emptyHMap);
+        occMeshContext->RecomputePrsOnly(meshObject,false,false);
     }
-    //! --------------------------------------------------
-    //! remove the clip plane frm the MeshVS_Mesh objects
-    //! --------------------------------------------------
-    for(QMap<int,occHandle(AIS_InteractiveObject)>::iterator it = myMapOfInteractiveMeshes.begin(); it!=myMapOfInteractiveMeshes.end(); it++)
-    {
-        const occHandle(AIS_InteractiveObject) &curMeshObject = it.value();
-        if(curMeshObject.IsNull()) continue;
-        curMeshObject->RemoveClipPlane(clipPlane);
-    }
-
-    //! -------
-    //! redraw
-    //! -------
-    occView->Redraw();
-
-    //! -----------------------------------
-    //! remove the clip plane from the map
-    //! -----------------------------------
-    myMapOfClipPlanes.remove(ID);
-    cout<<"____final number of clip planes: "<<myMapOfClipPlanes.size()<<"____"<<endl;
+    occMeshContext->UpdateCurrentViewer();
+    //cout<<"____final number of clip planes: "<<myMapOfClipPlanes.size()<<"____"<<endl;
 }
 
-//! ------------------------------------------
+//! -------------------------------------
 //! function: updateClipPlaneTranslation
-//! details:  overrides the base class method
-//! ------------------------------------------
+//! details:
+//! -------------------------------------
 void occPreGLWidget::updateClipPlaneTranslation(int ID, int zVal, const QVector<double> &coeffs)
 {
     //cout<<"occGLWidget::updateClipPlaneTranslation()->____function called. ID: "<<ID<<" zVal: "<<zVal<<"____"<<endl;
-
-    double a = coeffs.at(0);
-    double b = coeffs.at(1);
-    double c = coeffs.at(2);
-    double d = coeffs.at(3);
-
-    gp_Pln aPlane(a,b,c,d);
-    gp_Ax1 planeAxis = aPlane.Axis();
-    gp_Dir translationDirection = planeAxis.Direction();
-    gp_Vec translationVector(translationDirection);
-    double deltaZ = double(zVal)*1000.0/1000.0;
-
-    translationVector.Scale(deltaZ);
-
-    const occHandle(Graphic3d_ClipPlane) &curClipPlane = myMapOfClipPlanes.value(ID);
-    curClipPlane->SetEquation(aPlane.Translated(translationVector));
-    occView->Redraw();
+    occGLWidget::updateClipPlaneTranslation(ID,zVal,coeffs);
 }
 
 //! ----------------------------
 //! function: buildSlicedMeshIO
-//! details:
+//! details:  probably unused
 //! ----------------------------
 void occPreGLWidget::buildSlicedMeshIO(const QMap<int,occHandle(MeshVS_DataSource)> &slicedMeshDS)
 {
@@ -3950,24 +3883,28 @@ void occPreGLWidget::buildSlicedMeshIO(const QMap<int,occHandle(MeshVS_DataSourc
         meshIO->GetDrawer()->SetBoolean(MeshVS_DA_ShowEdges,true);
         meshIO->GetDrawer()->SetColor(MeshVS_DA_EdgeColor,Quantity_NOC_BLACK);
         meshIO->SetDisplayMode(MeshVS_DMF_Shading);
-
-        mySlicedMeshesIO.insert(bodyIndex,meshIO);
-        occContext->Display(meshIO,true);
+        occContext->Display(meshIO,false);
     }
+    occContext->UpdateCurrentViewer();
     cout<<"occPreGLWidget::buildSlicedMeshIO()->____exiting function____"<<endl;
 }
 
 //! ----------------------------
-//! function: eraseSlicedMeshes
+//! function: setHiddenElements
 //! details:
 //! ----------------------------
-void occPreGLWidget::eraseSlicedMeshes()
+void occPreGLWidget::setHiddenElements(const std::map<int,occHandle(TColStd_HPackedMapOfInteger)> &hiddenElements)
 {
-    bool updateViewer = false;
-    for(QMap<int,occHandle(MeshVS_Mesh)>::iterator it=mySlicedMeshesIO.begin(); it!=mySlicedMeshesIO.end(); ++it)
+    cout<<"occPreGLWidget::setHiddenElements()->____overloaded function____"<<endl;
+    for(std::map<int,occHandle(TColStd_HPackedMapOfInteger)>::const_iterator it = hiddenElements.cbegin(); it!=hiddenElements.cend(); it++)
     {
-        occContext->Erase(it.value(),updateViewer);
+        int bodyIndex = it->first;
+        const occHandle(TColStd_HPackedMapOfInteger) &amap = it->second;
+        const occHandle(MeshVS_Mesh) &aMeshObject = occHandle(MeshVS_Mesh)::DownCast(myMapOfInteractiveMeshes.value(bodyIndex));
+        aMeshObject->SetHiddenElems(amap);
+        occMeshContext->RecomputePrsOnly(aMeshObject,false,false);
     }
+    occMeshContext->UpdateCurrentViewer();
 }
 
 //! ----------------------------

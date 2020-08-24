@@ -444,7 +444,7 @@ signals:
     void requestRemoveObsoleteMeshes();
     void requestBuildMeshIOs();
     void requestHideMeshes();
-    void requestHideSlicedMeshes();
+    //void requestHideSlicedMeshes();
     void requestShowMeshes(bool areMeshNodesVisible);
     void requestShowBody(TColStd_ListOfInteger ListOfBodyNumbers);
     void updatedetailViewer(QModelIndex);
