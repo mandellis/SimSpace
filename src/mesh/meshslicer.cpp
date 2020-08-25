@@ -56,7 +56,7 @@ bool meshSlicer::perform(double a, double b, double c, double d, occHandle(TColS
             int globalNodeID = nodeIDs(i);
             myMeshDS->GetGeom(globalNodeID,false,coords,NbNodes,aType);
             double distance = polygon::pointPlaneDistance(polygon::Point(coords(1),coords(2),coords(3)),a,b,c,d);
-            if(distance>=0)
+            if(distance<0)
             {
                 amap.Add(globalElementID);
                 break;

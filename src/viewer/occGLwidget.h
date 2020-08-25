@@ -137,7 +137,7 @@ public:
     //! update clip plane definition
     virtual void updateClipPlaneTranslation(int ID, int zVal, const QVector<double> &coeffs);
 
-    //! set the current clip plane ID - experimental
+    //! set the current clip plane
     virtual void setCurrentClipPlane(int curClipPlaneID)
     {
         myCurClipPlaneID = curClipPlaneID;
@@ -415,6 +415,9 @@ public:
 
     //! get clip planes
     QMap<int,occHandle(Graphic3d_ClipPlane)> getClipPlanes() { return myMapOfClipPlanes; }
+
+    //! get scene bounding box
+    void getSceneBoundingBox(double &lx, double &ly, double &lz);
 
 signals:
 

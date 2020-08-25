@@ -3276,15 +3276,16 @@ void occGLWidget::hideAllMarkers(bool updateViewer)
     this->reactivateCurrentStandardSelectionMode();
 }
 
-//! --------------------------------------------------------------
+//! ---------------------------------------------------------------
 //! function: addClipPlane
-//! details:  add a clip plane to the viewer if the clip plane ID
+//! details:  add a clip plane to the viewer; if the clip plane ID
 //!           already exists, update it
-//! --------------------------------------------------------------
+//! ---------------------------------------------------------------
 void occGLWidget::addClipPlane(double A, double B, double C, double D, int ID, bool isOn)
 {
     //! --------------------------------------------
     //! if the clip plane does not exists create it
+    //! the clip plane is added to the AIS_Shape(s)
     //! --------------------------------------------
     occHandle(Graphic3d_ClipPlane) aClipPlane;
     if(myMapOfClipPlanes.value(ID,aClipPlane).IsNull())
@@ -3383,6 +3384,30 @@ void occGLWidget::setClipPlaneOn(int ID, bool isOn)
     occView->Redraw();
 }
 
+//! ------------------------------
+//! function: getSceneBoundingBox
+//! details:
+//! ------------------------------
+void occGLWidget::getSceneBoundingBox(double &lx, double &ly, double &lz)
+{
+    AIS_ListOfInteractive listOfShapes;
+    occContext->ObjectsInside(listOfShapes,AIS_KOI_Shape,0);
+    Bnd_Box boundingBox;
+    for(AIS_ListIteratorOfListOfInteractive it(listOfShapes); it.More(); it.Next())
+    {
+        const occHandle(AIS_Shape) &anAISShape = occHandle(AIS_Shape)::DownCast(it.Value());
+        if(anAISShape.IsNull()) continue;
+        const TopoDS_Shape &aShape = anAISShape->Shape();
+        if(aShape.IsNull()) continue;
+        BRepBndLib::Add(aShape, boundingBox);
+    }
+    double Xmin,Ymin,Zmin,Xmax,Ymax,Zmax;
+    boundingBox.Get(Xmin,Ymin,Zmin,Xmax,Ymax,Zmax);
+    lx = fabs(Xmax-Xmin);
+    ly = fabs(Ymax-Ymin);
+    lz = fabs(Zmax-Zmin);
+}
+
 //! -------------------------------------
 //! function: updateClipPlaneTranslation
 //! details:
@@ -3391,38 +3416,15 @@ void occGLWidget::updateClipPlaneTranslation(int ID, int zVal, const QVector<dou
 {
     //cout<<"occGLWidget::updateClipPlaneTranslation()->____function called. ID: "<<ID<<" zVal: "<<zVal<<"____"<<endl;
 
-    //! --------------------------------
-    //! compute the scene boundaing box
-    //! --------------------------------
-    AIS_ListOfInteractive listOfShapes;
-    occContext->ObjectsInside(listOfShapes,AIS_KOI_Shape,0);
-    double xmin,ymin,zmin; xmin = ymin = zmin = 1e10;
-    double xmax,ymax,zmax; xmax = ymax = zmax = -1e10;
-    for(AIS_ListIteratorOfListOfInteractive it(listOfShapes); it.More(); it.Next())
-    {
-        Bnd_Box aBB;
-        it.Value()->BoundingBox(aBB);
-        const gp_Pnt &CornerMin = aBB.CornerMin();
-        const gp_Pnt &CornerMax = aBB.CornerMax();
-        double xcmin = CornerMin.X();
-        double ycmin = CornerMin.Y();
-        double zcmin = CornerMin.Z();
-        double xcmax = CornerMax.X();
-        double ycmax = CornerMax.Y();
-        double zcmax = CornerMax.Z();
-        if(xmin<=xcmin) xmin = xcmin;
-        if(ymin<=ycmin) xmin = ycmin;
-        if(zmin<=zcmin) xmin = zcmin;
-        if(xmax>=xcmax) xmin = xcmax;
-        if(ymax>=ycmax) ymax = ycmax;
-        if(zmax>=zcmax) zmax = zcmax;
-    }
-    double lx = xmax-xmin;
-    double ly = ymax-ymin;
-    double lz = zmax-zmin;
+    //! --------------------------
+    //! bounding box of the scene
+    //! --------------------------
+    double lx,ly,lz;
+    this->getSceneBoundingBox(lx,ly,lz);
+
     double D = sqrt(lx*lx+ly*ly+lz*lz);
     Graphic3d_ClipPlane::Equation eq;
-    double k = double(zVal/100.0)*(D/1000.0);
+    double k = double(zVal/100.0)*(D/1.0);
     cout<<"____diagonal BBX: "<<D<<" plane translation: "<<k<<"____"<<endl;
     eq.SetValues(coeffs[0],coeffs[1],coeffs[2],coeffs[3]+k);
     const occHandle(Graphic3d_ClipPlane) &curClipPlane = myMapOfClipPlanes.value(ID);

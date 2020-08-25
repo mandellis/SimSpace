@@ -163,15 +163,14 @@ private:
 
 public slots:
 
-    //! -------------------------------
     //! set the geometry/mesh database
-    //! -------------------------------
     void setMeshDataBase(meshDataBase *aMeshDataBase);
 
-    //! ---------------------
     //! set the working mode
-    //! ---------------------
     void setWorkingMode(int workingMode);
+
+    //! compute hidden elements
+    void computeHiddenElements();
 
 signals:
 
@@ -189,7 +188,8 @@ protected:
 
 private:
 
-    void retrieveClipPlanes();
+    //! retrieve the map of clip planes (ID, {coefficients}
+    int retrieveActiveClipPlanes(std::map<int, std::vector<double> > &mapOfClipPlanes);
 
     void setCurrentClipPlane(int curClipPlaneID)
     {

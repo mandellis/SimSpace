@@ -3743,19 +3743,28 @@ void occPreGLWidget::addClipPlane(double A, double B, double C, double D, int ID
     //! activate the clipping plane and update the view
     //! ------------------------------------------------
     occView->Redraw();
+}
 
-    //occHandle(AIS_Plane) anAISPlane;
-    //if(!myMapOfHandlePlanes.contains(ID))
-    //{
-    //    occHandle(Geom_Plane) aGeomPlane = new Geom_Plane(A,B,C,D);
-    //    anAISPlane = new AIS_Plane(aGeomPlane);
-    //    myMapOfHandlePlanes.insert(ID,anAISPlane);
-    //    occContext->Display(anAISPlane,AIS_Shaded);
-    //}
-    //else
-    //{
-    //    occHandle(Geom_Plane) aGeomPlane = new Geom_Plane(A,B,C,D);
-    //}
+//! -------------------------------
+//! function: setAllElementVisible
+//! details:
+//! -------------------------------
+void occPreGLWidget::setAllElementsVisible()
+{
+    occHandle(TColStd_HPackedMapOfInteger) emptyHMap = new TColStd_HPackedMapOfInteger;
+    TColStd_PackedMapOfInteger emptyMap;
+    emptyHMap->ChangeMap() = emptyMap;
+
+    AIS_ListOfInteractive listOfMeshes;
+    occMeshContext->ObjectsInside(listOfMeshes);
+    for(AIS_ListIteratorOfListOfInteractive it(listOfMeshes); it.More(); it.Next())
+    {
+        const occHandle(MeshVS_Mesh) &aMeshObject = occHandle(MeshVS_Mesh)::DownCast(it.Value());
+        if(aMeshObject.IsNull()) continue;
+        aMeshObject->SetHiddenElems(emptyHMap);
+        occMeshContext->RecomputePrsOnly(aMeshObject,false,false);
+    }
+    occMeshContext->UpdateCurrentViewer();
 }
 
 //! ----------------------------------------------------------

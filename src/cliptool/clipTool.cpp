@@ -381,12 +381,22 @@ void clipTool::addItemToTable()
         item->setData(data,Qt::DisplayRole);
         itemList<<item;
 
+        //! -----------------------------------
+        //! append to to the table the new row
+        //! -----------------------------------
+        internalModel->appendRow(itemList);
+
         //! ---------------------------------
         //! add the clip plane to the viewer
         //! ---------------------------------
         myOCCViewer->addClipPlane(A,B,C,D,clipPlaneID,true);
 
-        internalModel->appendRow(itemList);
+        //! --------------------------------------------------
+        //! recompute the hidden elements
+        //! send to the viewer the map of element IDs to hide
+        //! --------------------------------------------------
+        this->computeHiddenElements();
+        myOCCViewer->setHiddenElements(myHiddenElements);
 
         //! ------------------------------
         //! labels for horizontal headers
@@ -424,22 +434,35 @@ void clipTool::addItemToTable()
 //! function: retrieveClipPlanes
 //! details:
 //! -----------------------------
-void clipTool::retrieveClipPlanes()
+int clipTool::retrieveActiveClipPlanes(std::map<int,std::vector<double>> &mapOfClipPlanes)
 {
-    int Nb = internalModel->rowCount();
-    for(int row = 0; row<Nb; row++)
+    double lx,ly,lz;
+    myOCCViewer->getSceneBoundingBox(lx,ly,lz);
+    double BBXdiagonal = sqrt(lx*lx+ly*ly+lz*lz);
+
+    int NbClipPlanes = internalModel->rowCount();
+    if(NbClipPlanes==0) return 0;
+
+    for(int row = 0; row<NbClipPlanes; row++)
     {
-        QModelIndex index2 = internalModel->index(row,CLIPPLANE_STATUS_COLUMN);
-        bool isActive = index2.data(Qt::UserRole).toBool();
+        QModelIndex index1 = internalModel->index(row,CLIPPLANE_STATUS_COLUMN);
+        bool isActive = index1.data(Qt::UserRole).toBool();
         if(isActive==false) continue;
 
-        QModelIndex index = internalModel->index(row,CLIPPLANE_BASE_COORDINATE_SYSTEM_COLUMN);
-        void *CSp = internalModel->data(index,Qt::UserRole).value<void*>();
-        QStandardItem* CS = (QStandardItem*)CSp;
-        SimulationNodeClass *aNode = CS->data(Qt::UserRole).value<SimulationNodeClass*>();
+        QModelIndex index2 = internalModel->index(row,CLIPPLANE_BASE_PLANE_DATA_COLUMN);
+        const QVector<double> &coeffs = index2.data(Qt::UserRole).value<QVector<double>>();
 
-        QModelIndex index1 = internalModel->index(row,CLIPPLANE_TRANSLATION_COLUMN);
+        QModelIndex index3 = internalModel->index(row,CLIPPLANE_TRANSLATION_COLUMN);
+        int sliderValue = index3.data(Qt::UserRole).toInt();
+
+        QModelIndex index4 = internalModel->index(row,CLIPPLANE_ID_COLUMN);
+        int planeID = index4.data(Qt::UserRole).toInt();
+
+        double k = double(sliderValue/100.0)*(BBXdiagonal/1.0);
+        std::vector<double> aPlaneCoeffs {coeffs[0],coeffs[1],coeffs[2],coeffs[3]+k};
+        mapOfClipPlanes.insert(std::make_pair(planeID,aPlaneCoeffs));
     }
+    return (int)mapOfClipPlanes.size();
 }
 
 //! ------------------------------
@@ -460,10 +483,15 @@ void clipTool::removeItemFromTable()
         myCurNumberOfClipPlanes--;
     }
 
+    //! --------------------------
+    //! recompute hidden elements
+    //! --------------------------
+    //cesere
+
     //! ------------------------------
     //! set the current clip plane ID
     //! ------------------------------
-    myOCCViewer->setCurrentClipPlane(-1);
+    //myOCCViewer->setCurrentClipPlane(-1);
 }
 
 //! -----------------------------
@@ -615,6 +643,11 @@ void clipTool::setClipPlaneActive()
     int ID = internalModel->index(this->currentIndex().row(),CLIPPLANE_ID_COLUMN).data(Qt::UserRole).toInt();
     bool isOn = internalModel->index(this->currentIndex().row(),CLIPPLANE_STATUS_COLUMN).data(Qt::UserRole).toBool();
     myOCCViewer->setClipPlaneOn(ID, isOn);
+
+    //! --------------------------
+    //! recompute hidden elements
+    //! --------------------------
+    //cesere
 }
 
 //! ------------------------------
@@ -734,3 +767,79 @@ void clipTool::displayMesh(const occHandle(MeshVS_DataSource) &aMeshDS,
     mySlicedMeshIO.insert(bodyIndex,aMeshIO);
 }
 */
+
+//! --------------------------------
+//! function: computeHiddenElements
+//! details:
+//! --------------------------------
+void clipTool::computeHiddenElements()
+{
+    //! ------------------------------------------------------
+    //! in case no clip plane is active or there are not clip
+    //! planes defined, show all elements
+    //! ------------------------------------------------------
+    std::map<int,std::vector<double>> mapOfClipPlanes;
+    int NbActiveClipPlanes = this->retrieveActiveClipPlanes(mapOfClipPlanes);
+    if(NbActiveClipPlanes==0)
+    {
+        myOCCViewer->setAllElementsVisible();
+        return;
+    }
+
+    //! ---------------------
+    //! mesh slicer instance
+    //! ---------------------
+    meshSlicer aMeshSlicer;
+
+    //! ------------------------
+    //! iterate over the meshes
+    //! ------------------------
+    const QMap<int,occHandle(AIS_InteractiveObject)> &mapOfMeshObjects = myOCCViewer->getMeshObjects();
+    for(QMap<int,occHandle(AIS_InteractiveObject)>::const_iterator it = mapOfMeshObjects.cbegin(); it != mapOfMeshObjects.cend(); it++)
+    {
+        const occHandle(MeshVS_Mesh) &aMeshObject = occHandle(MeshVS_Mesh)::DownCast(it.value());
+        if(aMeshObject.IsNull()) continue;
+        const occHandle(MeshVS_DataSource) &aMeshDS = aMeshObject->GetDataSource();
+        if(aMeshDS.IsNull()) continue;
+
+        //! -------------------
+        //! current body index
+        //! -------------------
+        int bodyIndex = it.key();
+
+        //! ---------------------------------
+        //! elements that are already hidden
+        //! ---------------------------------
+        //occHandle(TColStd_HPackedMapOfInteger) initialHiddenElementsH = aMeshObject->GetHiddenElems();
+        //TColStd_PackedMapOfInteger initialHiddenElementes = initialHiddenElementsH->Map();
+
+        //! ---------------------------
+        //! initialize the mesh slicer
+        //! ---------------------------
+        aMeshSlicer.setMeshDataSource(aMeshDS);
+
+        //! -----------------------------------------
+        //! the hidden elements for the current mesh
+        //! -----------------------------------------
+        TColStd_PackedMapOfInteger hiddenElementsForCurrentMesh;
+
+        //! ------------------------
+        //! iterate over the planes
+        //! ------------------------
+        for(std::map<int,std::vector<double>>::const_iterator itplanes = mapOfClipPlanes.cbegin(); itplanes !=mapOfClipPlanes.cend() ; itplanes++)
+        {
+            //int planeID = itPlanes->first;
+            const std::vector<double> &c = itplanes->second;
+            occHandle(TColStd_HPackedMapOfInteger) hiddenElementsIDs;
+            bool isDone = aMeshSlicer.perform(c[0],c[1],c[2],c[3],hiddenElementsIDs);
+            if(isDone==false) continue;
+            hiddenElementsForCurrentMesh.Unite(hiddenElementsIDs->Map());
+        }
+        occHandle(TColStd_HPackedMapOfInteger) hiddenHElementsForCurrentMesh = new TColStd_HPackedMapOfInteger;
+        hiddenHElementsForCurrentMesh->ChangeMap() = hiddenElementsForCurrentMesh;
+
+        std::map<int,occHandle(TColStd_HPackedMapOfInteger)>::iterator itt = myHiddenElements.find(bodyIndex);
+        if(itt==myHiddenElements.end()) myHiddenElements.insert(std::make_pair(bodyIndex,hiddenHElementsForCurrentMesh));
+        else itt->second = hiddenHElementsForCurrentMesh;
+    }
+}

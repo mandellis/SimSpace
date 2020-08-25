@@ -171,6 +171,10 @@ public:
         return acolor;
     }
 
+    //! set all elements visible
+    void setAllElementsVisible();
+
+
 public:
 
     //! The simulation database
