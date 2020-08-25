@@ -1197,8 +1197,6 @@ void occPreGLWidget::buildMeshIOs()
             {
                 //! use the volume mesh datasource for generating the AI mesh object
                 aMeshDS = myDS2->ArrayOfMeshDS.value(bodyIndex);
-                //cout<<"____number of nodes: "<<aMeshDS->GetAllNodes().Extent()<<"____"<<endl;
-                //cout<<"____number of elements: "<<aMeshDS->GetAllElements().Extent()<<"____"<<endl;
             }
         }
         else
@@ -1257,7 +1255,8 @@ void occPreGLWidget::buildMeshIOs()
             //! ----------------------------------------------------------------
             //! Insert the mesh object into the array of Mesh IO for displaying
             //! ----------------------------------------------------------------
-            if(myMapOfInteractiveMeshes.value(bodyIndex).IsNull()) myMapOfInteractiveMeshes.insert(bodyIndex,aMesh);
+            //if(myMapOfInteractiveMeshes.value(bodyIndex).IsNull()) myMapOfInteractiveMeshes.insert(bodyIndex,aMesh);
+            myMapOfInteractiveMeshes.insert(bodyIndex,aMesh);
         }
         else
         {
@@ -1336,10 +1335,10 @@ void occPreGLWidget::buildPrismaticMeshIO()
     }
 }
 
-//!--------------------------------------------------
+//!-------------------------------
 //! function: show all the bodies
-//! details:  overrides occGLWidget::showAllBodies()
-//!--------------------------------------------------
+//! details:
+//!-------------------------------
 void occPreGLWidget::showAllBodies()
 {
     cout<<"occPreGLWidget::showAllBodies()->____function called____"<<endl;
@@ -1397,7 +1396,7 @@ void occPreGLWidget::showAllBodies()
     }
     occView->ZFitAll();
     occContext->UpdateCurrentViewer();
-    //occMeshContext->UpdateCurrentViewer();
+    occMeshContext->UpdateCurrentViewer();
 
     if(curAction3D()!=CurAction3D_Nothing) occContext->SetAutomaticHilight(Standard_False);
 
@@ -3751,20 +3750,29 @@ void occPreGLWidget::addClipPlane(double A, double B, double C, double D, int ID
 //! -------------------------------
 void occPreGLWidget::setAllElementsVisible()
 {
+    cout<<"occPreGLWidget::setAllElementsVisible()->____function called____"<<endl;
+    /*
     occHandle(TColStd_HPackedMapOfInteger) emptyHMap = new TColStd_HPackedMapOfInteger;
     TColStd_PackedMapOfInteger emptyMap;
     emptyHMap->ChangeMap() = emptyMap;
 
-    AIS_ListOfInteractive listOfMeshes;
-    occMeshContext->ObjectsInside(listOfMeshes);
-    for(AIS_ListIteratorOfListOfInteractive it(listOfMeshes); it.More(); it.Next())
+    //AIS_ListOfInteractive listOfMeshes;
+    //occMeshContext->ObjectsInside(listOfMeshes);
+    //for(AIS_ListIteratorOfListOfInteractive it(listOfMeshes); it.More(); it.Next())
+    for(QMap<int,occHandle(AIS_InteractiveObject)>::iterator it = myMapOfInteractiveMeshes.begin(); it!=myMapOfInteractiveMeshes.end(); it++)
     {
-        const occHandle(MeshVS_Mesh) &aMeshObject = occHandle(MeshVS_Mesh)::DownCast(it.Value());
+        const occHandle(MeshVS_Mesh) &aMeshObject = occHandle(MeshVS_Mesh)::DownCast(it.value());
+        //const occHandle(MeshVS_Mesh) &aMeshObject = occHandle(MeshVS_Mesh)::DownCast(it.Value());
+        cout<<"occPreGLWidget::setAllElementsVisible()->___Number of hidden elements: "<<aMeshObject->GetHiddenElems()->Map().Extent()<<"____"<<endl;
         if(aMeshObject.IsNull()) continue;
         aMeshObject->SetHiddenElems(emptyHMap);
-        occMeshContext->RecomputePrsOnly(aMeshObject,false,false);
+        //occMeshContext->Redisplay(aMeshObject,true,true);
+        cout<<"occPreGLWidget::setAllElementsVisible()->____Number of hidden elements: "<<aMeshObject->GetHiddenElems()->Map().Extent()<<"____"<<endl;
     }
-    occMeshContext->UpdateCurrentViewer();
+    */
+    this->buildMeshIOs();
+    this->displayAllMeshes();
+    //occMeshContext->UpdateCurrentViewer();
 }
 
 //! ----------------------------------------------------------
@@ -3829,26 +3837,14 @@ void occPreGLWidget::updateClipPlanes(const std::vector<int> &activeClipPlanes)
     }
 }
 
-//! ------------------------------------------
+//! --------------------------
 //! function: removeClipPlane
-//! details:  overrides the base class method
-//! ------------------------------------------
+//! details:
+//! --------------------------
 void occPreGLWidget::removeClipPlane(int ID)
 {
     cout<<"occPreGLWidget::removeClipPlane()->____removing clip plane ID: "<<ID<<"____"<<endl;
     occGLWidget::removeClipPlane(ID);
-    TColStd_PackedMapOfInteger emptyMap;
-    occHandle(TColStd_HPackedMapOfInteger) emptyHMap = new TColStd_HPackedMapOfInteger();
-    emptyHMap->ChangeMap() = emptyMap;
-    //std::map<int,occHandle(TColStd_HPackedMapOfInteger)> aMap;
-    for(int i=0; i<myMapOfInteractiveMeshes.size(); i++)
-    {
-        const occHandle(MeshVS_Mesh) &meshObject = occHandle(MeshVS_Mesh)::DownCast(myMapOfInteractiveMeshes.value(i));
-        meshObject->SetHiddenElems(emptyHMap);
-        occMeshContext->RecomputePrsOnly(meshObject,false,false);
-    }
-    occMeshContext->UpdateCurrentViewer();
-    //cout<<"____final number of clip planes: "<<myMapOfClipPlanes.size()<<"____"<<endl;
 }
 
 //! -------------------------------------
@@ -3904,7 +3900,7 @@ void occPreGLWidget::buildSlicedMeshIO(const QMap<int,occHandle(MeshVS_DataSourc
 //! ----------------------------
 void occPreGLWidget::setHiddenElements(const std::map<int,occHandle(TColStd_HPackedMapOfInteger)> &hiddenElements)
 {
-    cout<<"occPreGLWidget::setHiddenElements()->____overloaded function____"<<endl;
+    cout<<"occPreGLWidget::setHiddenElements()->____function called____"<<endl;
     for(std::map<int,occHandle(TColStd_HPackedMapOfInteger)>::const_iterator it = hiddenElements.cbegin(); it!=hiddenElements.cend(); it++)
     {
         int bodyIndex = it->first;

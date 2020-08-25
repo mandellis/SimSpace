@@ -301,10 +301,10 @@ void clipToolDelegate::handleCSChanged()
     emit currentCSChanged();
 }
 
-//! ----------------------------------
-//! function: handleCSStatusChanged()
+//! --------------------------------
+//! function: handleCSStatusChanged
 //! details:
-//! -----------------------------------
+//! --------------------------------
 void clipToolDelegate::handleCSStatusChanged()
 {
     cout<<"clipToolDelegate::handleCSStatusChanged()->____function called____"<<endl;

@@ -79,7 +79,7 @@ protected:
 private slots:
 
     void showContextMenu(QPoint aPoint);
-    void setClipPlaneActive();
+    void updateClipPlane();
     void updateCSTranslation(int sliderPosition);
     void updateCSDefinition();
 

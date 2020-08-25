@@ -85,12 +85,13 @@ clipTool::clipTool(QWidget *parent):QTableView(parent),
     //! -----------------------------------------------------
     //! automatic update of the plane data in the table cell
     //! -----------------------------------------------------
-    connect(theDelegate,SIGNAL(currentCSChanged()),this,SLOT(updateCSDefinition()));
+    //connect(theDelegate,SIGNAL(currentCSChanged()),this,SLOT(updateCSDefinition()));
+    connect(theDelegate,SIGNAL(currentCSChanged()),this,SLOT(updateClipPlane()));
 
     //! --------------------------------
     //! update of the clip plane status
     //! --------------------------------
-    connect(theDelegate,SIGNAL(currentCSStatusChanged()),this,SLOT(setClipPlaneActive()));
+    //connect(theDelegate,SIGNAL(currentCSStatusChanged()),this,SLOT(updateClipPlane()));
 
     //! --------------------------------------------
     //! dynamic update after clip plane translation
@@ -138,20 +139,12 @@ void clipTool::setWorkingMode(int workingMode)
 
     myWorkingMode = workingMode;
 
-    //! ----------------------------------
-    //! avoid crash at the very beginning
-    //! (click on a mesh item)
-    //! ----------------------------------
-    if(myMDB==Q_NULLPTR)
-    {
-        cout<<"clipTool::setWorkingMode()->____cannot change the cliptool working mode: the mesh data base is null____"<<endl;
-        return;
-    }
-    if(internalModel==Q_NULLPTR)
-    {
-        cerr<<"____the internal model pointer of the clip tool is NULL____"<<endl;
-        return;
-    }
+    //! --------------------------------
+    //! prevent null pointer exceptions
+    //! --------------------------------
+    if(myOCCViewer==Q_NULLPTR) return;
+    if(myMDB==Q_NULLPTR) return;
+    if(internalModel==Q_NULLPTR) return;
 
     //! ----------------------------------------
     //! retrieve the the active clipping planes
@@ -167,65 +160,22 @@ void clipTool::setWorkingMode(int workingMode)
 
     switch(myWorkingMode)
     {
-    case 0:
+    case 0: // on mesh
     {
-        if(myOCCViewer==Q_NULLPTR)
-        {
-            cerr<<"____the viewer pointer for the clip tool has not been set____"<<endl;
-            return;
-        }
-        QMap<int,occHandle(Graphic3d_ClipPlane)> mapOfClipPlanes = myOCCViewer->getClipPlanes();
-        for(QMap<int,occHandle(Graphic3d_ClipPlane)>::iterator it = mapOfClipPlanes.begin(); it!= mapOfClipPlanes.end(); ++it)
-        {
-            int clipPlaneNr = it.key();
-            const occHandle(Graphic3d_ClipPlane) &curClipPlane = mapOfClipPlanes.value(clipPlaneNr);
-            const double *coeff = curClipPlane->GetEquation().GetData();
-            double a = *coeff;
-            double b = *(coeff+1);
-            double c = *(coeff+2);
-            double d = *(coeff+3);
-
-            const QMap<int,occHandle(AIS_InteractiveObject)> &meshObjects = myOCCViewer->getMeshObjects();
-            for(QMap<int,occHandle(AIS_InteractiveObject)>::const_iterator it = meshObjects.cbegin(); it!=meshObjects.cend(); it++)
-            {
-                const occHandle(MeshVS_Mesh) &aMeshObject = occHandle(MeshVS_Mesh)::DownCast(it.value());
-                const occHandle(MeshVS_DataSource) &aMeshDS = aMeshObject->GetDataSource();
-                if(aMeshDS.IsNull()) continue;
-                int bodyIndex = it.key();
-                meshSlicer aMeshSlicer(aMeshDS);
-                occHandle(TColStd_HPackedMapOfInteger) hiddenElementIDs;
-                aMeshSlicer.perform(a,b,c,d,hiddenElementIDs);
-                std::map<int,occHandle(TColStd_HPackedMapOfInteger)>::iterator itt = myHiddenElements.find(bodyIndex);
-                if(itt==myHiddenElements.end()) myHiddenElements.insert(std::make_pair(bodyIndex,hiddenElementIDs));
-                else itt->second = hiddenElementIDs;
-            }
-        }
-        //! --------------------------------------------------
-        //! send to the viewer the map of element IDs to hide
-        //! --------------------------------------------------
+        //! ----------------------------------------------------------
+        //! recompute the hidden elements and send them to the viewer
+        //! ----------------------------------------------------------
+        this->computeHiddenElements();
         myOCCViewer->setHiddenElements(myHiddenElements);
     }
         break;
 
-    default:
+    default:    // other working modes
     {
-        if(myOCCViewer==Q_NULLPTR)
-        {
-            cerr<<"____the viewer pointer for the clip tool has not been set____"<<endl;
-            return;
-        }
-        if(!myOCCViewer->getMeshContext().IsNull())
-        {
-            cout<<"____removing sliced meshes____"<<endl;
-            myOCCViewer->getMeshContext()->EraseAll(true);
-        }
+        if(!myOCCViewer->getMeshContext().IsNull()) myOCCViewer->getMeshContext()->RemoveAll(true);
     }
         break;
     }
-    //! ----------------------------------------------------
-    //! change the status on/off of the defined clip planes
-    //! ----------------------------------------------------
-    myOCCViewer->updateClipPlanes(activeClipPlanes);
 }
 
 //! --------------------------
@@ -467,7 +417,7 @@ int clipTool::retrieveActiveClipPlanes(std::map<int,std::vector<double>> &mapOfC
 
 //! ------------------------------
 //! function: removeItemFromTable
-//! details:
+//! details:  remove a clip plane
 //! ------------------------------
 void clipTool::removeItemFromTable()
 {
@@ -486,7 +436,8 @@ void clipTool::removeItemFromTable()
     //! --------------------------
     //! recompute hidden elements
     //! --------------------------
-    //cesere
+    this->computeHiddenElements();
+    myOCCViewer->setHiddenElements(myHiddenElements);
 
     //! ------------------------------
     //! set the current clip plane ID
@@ -501,7 +452,9 @@ void clipTool::removeItemFromTable()
 void clipTool::updateCSDefinition()
 {
     cout<<"clipTool::updateCSDefinition()->____function called____"<<endl;
-
+    this->computeHiddenElements();
+    myOCCViewer->setHiddenElements(myHiddenElements);
+    /*
     QModelIndex index = internalModel->index(this->currentIndex().row(),this->currentIndex().column());
     void *p = index.data(Qt::UserRole).value<void*>();
     QStandardItem *curItemCS = static_cast<QStandardItem*>(p);
@@ -530,6 +483,7 @@ void clipTool::updateCSDefinition()
 
     myOCCViewer->addClipPlane(A,B,C,D,ID,true);
     myOCCViewer->updateClipPlaneTranslation(ID,zVal,coeffs);
+    */
 }
 
 //! ------------------------------------------------------------
@@ -634,20 +588,30 @@ QVector<double> clipTool::getPlaneCoefficients(QStandardItem *aCSItem)
     return coeff;
 }
 
-//! -----------------------------
-//! function: switchOffClipPlane
+//! --------------------------
+//! function: updateClipPlane
 //! details:
-//! -----------------------------
-void clipTool::setClipPlaneActive()
+//! --------------------------
+void clipTool::updateClipPlane()
 {
-    int ID = internalModel->index(this->currentIndex().row(),CLIPPLANE_ID_COLUMN).data(Qt::UserRole).toInt();
-    bool isOn = internalModel->index(this->currentIndex().row(),CLIPPLANE_STATUS_COLUMN).data(Qt::UserRole).toBool();
-    myOCCViewer->setClipPlaneOn(ID, isOn);
+    cout<<"clipTool::updateClipPlane()->____function called____"<<endl;
+    //bool isOn = internalModel->index(this->currentIndex().row(),CLIPPLANE_STATUS_COLUMN).data(Qt::UserRole).toBool();
+    //if(isOn==false) return;
+
+    std::map<int,std::vector<double>> mapOfClipPlanes;
+    this->retrieveActiveClipPlanes(mapOfClipPlanes);
+    for(std::map<int,std::vector<double>>::iterator it = mapOfClipPlanes.begin(); it!=mapOfClipPlanes.end(); it++)
+    {
+        int clipPlaneID = it->first;
+        const std::vector<double> &coeff = it->second;
+        myOCCViewer->addClipPlane(coeff[0],coeff[1],coeff[2],coeff[3],clipPlaneID,true);
+    }
 
     //! --------------------------
     //! recompute hidden elements
     //! --------------------------
-    //cesere
+    this->computeHiddenElements();
+    myOCCViewer->setHiddenElements(myHiddenElements);
 }
 
 //! ------------------------------
@@ -774,6 +738,8 @@ void clipTool::displayMesh(const occHandle(MeshVS_DataSource) &aMeshDS,
 //! --------------------------------
 void clipTool::computeHiddenElements()
 {
+    cout<<"clipTool::computeHiddenElements()->____function called____"<<endl;
+
     //! ------------------------------------------------------
     //! in case no clip plane is active or there are not clip
     //! planes defined, show all elements
@@ -782,7 +748,19 @@ void clipTool::computeHiddenElements()
     int NbActiveClipPlanes = this->retrieveActiveClipPlanes(mapOfClipPlanes);
     if(NbActiveClipPlanes==0)
     {
-        myOCCViewer->setAllElementsVisible();
+        cout<<"____no clip plane left: showing all elements and returning____"<<endl;
+
+        TColStd_PackedMapOfInteger emptyMap;
+        occHandle(TColStd_HPackedMapOfInteger) emptyHMap = new TColStd_HPackedMapOfInteger;
+        emptyHMap->ChangeMap()=emptyMap;
+        const QMap<int,occHandle(AIS_InteractiveObject)> &mapOfMeshObjects = myOCCViewer->getMeshObjects();
+        for(QMap<int,occHandle(AIS_InteractiveObject)>::const_iterator it = mapOfMeshObjects.cbegin(); it != mapOfMeshObjects.cend(); it++)
+        {
+            int bodyIndex = it.key();
+            std::map<int,occHandle(TColStd_HPackedMapOfInteger)>::iterator itt = myHiddenElements.find(bodyIndex);
+            if(itt==myHiddenElements.end()) myHiddenElements.insert(std::make_pair(bodyIndex,emptyHMap));
+            else itt->second = emptyHMap;
+        }
         return;
     }
 
@@ -806,12 +784,6 @@ void clipTool::computeHiddenElements()
         //! current body index
         //! -------------------
         int bodyIndex = it.key();
-
-        //! ---------------------------------
-        //! elements that are already hidden
-        //! ---------------------------------
-        //occHandle(TColStd_HPackedMapOfInteger) initialHiddenElementsH = aMeshObject->GetHiddenElems();
-        //TColStd_PackedMapOfInteger initialHiddenElementes = initialHiddenElementsH->Map();
 
         //! ---------------------------
         //! initialize the mesh slicer
