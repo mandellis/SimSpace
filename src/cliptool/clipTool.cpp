@@ -85,7 +85,6 @@ clipTool::clipTool(QWidget *parent):QTableView(parent),
     //! -----------------------------------------------------
     //! automatic update of the plane data in the table cell
     //! -----------------------------------------------------
-    //connect(theDelegate,SIGNAL(currentCSChanged()),this,SLOT(updateCSDefinition()));
     connect(theDelegate,SIGNAL(currentCSChanged()),this,SLOT(updateClipPlane()));
 
     //! --------------------------------
@@ -595,17 +594,68 @@ QVector<double> clipTool::getPlaneCoefficients(QStandardItem *aCSItem)
 void clipTool::updateClipPlane()
 {
     cout<<"clipTool::updateClipPlane()->____function called____"<<endl;
-    //bool isOn = internalModel->index(this->currentIndex().row(),CLIPPLANE_STATUS_COLUMN).data(Qt::UserRole).toBool();
-    //if(isOn==false) return;
+    bool isOn = internalModel->index(this->currentIndex().row(),CLIPPLANE_STATUS_COLUMN).data(Qt::UserRole).toBool();
+    if(isOn==false) return;
 
-    std::map<int,std::vector<double>> mapOfClipPlanes;
-    this->retrieveActiveClipPlanes(mapOfClipPlanes);
-    for(std::map<int,std::vector<double>>::iterator it = mapOfClipPlanes.begin(); it!=mapOfClipPlanes.end(); it++)
+    void* p = this->currentIndex().data(Qt::UserRole).value<void*>();
+    QStandardItem *itemCS = (QStandardItem*)p;
+    SimulationNodeClass *nodeCS = itemCS->data(Qt::UserRole).value<SimulationNodeClass*>();
+    QVector<double> ZAxisData, origin;
+    switch(nodeCS->getType())
     {
-        int clipPlaneID = it->first;
-        const std::vector<double> &coeff = it->second;
-        myOCCViewer->addClipPlane(coeff[0],coeff[1],coeff[2],coeff[3],clipPlaneID,true);
+    case SimulationNodeClass::nodeType_coordinateSystem_global:
+        ZAxisData = nodeCS->getPropertyValue<QVector<double>>("Z axis data");
+        origin.push_back(0); origin.push_back(0); origin.push_back(0);
+        break;
+    case SimulationNodeClass::nodeType_coordinateSystem:
+        ZAxisData = nodeCS->getPropertyValue<QVector<QVector<double>>>("Base directional data")[2];
+        origin = nodeCS->getPropertyValue<QVector<double>>("Base origin");
+        break;
     }
+
+    //! ------------------------------
+    //! normalized plane coefficients
+    //! ------------------------------
+    double a = ZAxisData[0]; double b = ZAxisData[1]; double c = ZAxisData[2];
+    double d = -(a*origin[0]+b*origin[1]+c*origin[2]);
+    double l = sqrt(a*a+b*b+c*c);
+    a /= l; b /=l; c /=l; d/=l;
+
+    QModelIndex index = this->currentIndex();   // cell of clip plane selector
+
+    //! -------------------------------------------------------------------
+    //! sei andato a scuola, per favore scrivi le equazioni esplicitamente
+    //! -------------------------------------------------------------------
+    gp_Pln aPlane(a,b,c,d);
+    gp_Dir aDir(a,b,c);
+    gp_Vec aVec(aDir);
+    QModelIndex indexTranslation = internalModel->index(index.row(),CLIPPLANE_STATUS_COLUMN);
+    int sliderPosition = indexTranslation.data(Qt::UserRole).toInt();
+
+    double lx,ly,lz;
+    myOCCViewer->getSceneBoundingBox(lx,ly,lz);
+    double translation = sqrt(lx*lx+ly*ly+lz*lz)*double(sliderPosition/100.0);
+    aVec.Scale(translation);
+
+    aPlane.Translate(aVec);
+    aPlane.Coefficients(a,b,c,d);
+    l = sqrt(a*a+b*b+c*c);
+    a /= l; b /=l; c /=l; d/=l;
+    QVector<double> coeffs {a,b,c,d};
+
+    //! ----------------
+    //! update the cell
+    //! ----------------
+    QModelIndex index1 = index.sibling(index.row(),CLIPPLANE_BASE_PLANE_DATA_COLUMN);
+
+    QVariant value;
+    value.setValue(coeffs);
+    internalModel->setData(index1,value,Qt::UserRole);
+    value.setValue(QString("(%1 ,%2 ,%3 , %4").arg(a).arg(b).arg(c).arg(d));
+    internalModel->setData(index1,value,Qt::DisplayRole);
+
+    int clipPlaneID = internalModel->index(this->currentIndex().row(),CLIPPLANE_ID_COLUMN).data(Qt::UserRole).toInt();
+    myOCCViewer->addClipPlane(a,b,c,d,clipPlaneID,true);
 
     //! --------------------------
     //! recompute hidden elements

@@ -3313,14 +3313,18 @@ void occGLWidget::addClipPlane(double A, double B, double C, double D, int ID, b
         {
             const occHandle(AIS_Shape) &curShapeObject = occHandle(AIS_Shape)::DownCast(it.Value());
             const occHandle(Graphic3d_SequenceOfHClipPlane) &shapeClipPlanes = curShapeObject->ClipPlanes();
-            for(int n=1; n<shapeClipPlanes->Length(); n++)
+            for(int n=1; n<=shapeClipPlanes->Length(); n++)
             {
                 const occHandle(Graphic3d_ClipPlane) &curClipPlane = shapeClipPlanes->Value(n);
                 if(curClipPlane==aClipPlane)
                 {
+                    Graphic3d_ClipPlane::Equation eq = curClipPlane->GetEquation();
+                    cout<<"____("<<eq.GetData()[0]<<", "<<eq.GetData()[1]<<", "<<eq.GetData()[2]<<", "<<eq.GetData()[3]<<")____"<<endl;
                     shapeClipPlanes->Value(n)->SetOn(isOn);
                     aClipPlane->SetEquation (gp_Pln(A,B,C,D));
                     aClipPlane->SetCapping(false);
+                    cout<<"____FOUND____"<<endl;
+                    cout<<"____("<<A<<", "<<B<<", "<<C<<", "<<D<<")____"<<endl;
                     break;
                 }
             }
