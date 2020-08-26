@@ -52,15 +52,16 @@ QWidget* clipToolDelegate::createEditor(QWidget *parent, const QStyleOptionViewI
     //! -----------------
     //! resize the cells
     //! -----------------
-    theClipTool->resizeRowsToContents();
-    theClipTool->resizeColumnsToContents();
+    //theClipTool->resizeRowsToContents();
+    //theClipTool->resizeColumnsToContents();
 
     switch(index.column())
     {
     case CLIPPLANE_NAME_COLUMN:
     {
-        QLineEdit *le = new QLineEdit(parent);
-        return le;
+        //QLineEdit *le = new QLineEdit(parent);
+        //return le;
+        return 0;
     }
         break;
 
@@ -131,9 +132,9 @@ QWidget* clipToolDelegate::createEditor(QWidget *parent, const QStyleOptionViewI
             QSlider *editor = new QSlider(parent);
             editor->setStyleSheet(sliderStyleSheet);
             editor->setOrientation(Qt::Horizontal);
+            editor->setTracking(true);
             editor->setMinimum(-100);
             editor->setMaximum(100);
-            editor->setTracking(true);
             editor->setValue(0);
             return editor;
         }
@@ -162,8 +163,8 @@ void clipToolDelegate::setEditorData(QWidget *editor, const QModelIndex &index) 
         //! ---------------------------------------------
         //! initialize th editor for the clip plane name
         //! ---------------------------------------------
-        QLineEdit *le = static_cast<QLineEdit*>(editor);
-        le->setText(index.data(Qt::UserRole).toString());
+        //QLineEdit *le = static_cast<QLineEdit*>(editor);
+        //le->setText(index.data(Qt::UserRole).toString());
     }
         break;
 
@@ -216,9 +217,8 @@ void clipToolDelegate::setEditorData(QWidget *editor, const QModelIndex &index) 
         //! ------------------
         QSlider *slider = static_cast<QSlider*>(editor);
         slider->setValue(index.data(Qt::UserRole).toInt());
-        //connect(slider,SIGNAL(sliderMoved(int)),this,SLOT(handleCSTranslation(int)));
-        connect(slider,SIGNAL(sliderReleased()),this,SLOT(handleCSTranslationHandleReleased()));
         connect(slider,SIGNAL(valueChanged(int)),this,SLOT(handleCSTranslation(int)));
+        //connect(slider,SIGNAL(sliderReleased()),this,SLOT(handleCSTranslationHandleReleased()));
     }
         break;
     }
@@ -235,9 +235,9 @@ void clipToolDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, 
     {
     case CLIPPLANE_NAME_COLUMN:
     {
-        QLineEdit *le = static_cast<QLineEdit*>(editor);
-        data.setValue(le->text());
-        model->setData(index,data,Qt::UserRole);
+        //QLineEdit *le = static_cast<QLineEdit*>(editor);
+        //data.setValue(le->text());
+        //model->setData(index,data,Qt::UserRole);
     }
         break;
 

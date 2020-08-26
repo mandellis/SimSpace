@@ -3847,14 +3847,14 @@ void occPreGLWidget::removeClipPlane(int ID)
     occGLWidget::removeClipPlane(ID);
 }
 
-//! -------------------------------------
-//! function: updateClipPlaneTranslation
+//! --------------------------------------
+//! function: updateClipPlaneCoefficients
 //! details:
-//! -------------------------------------
-void occPreGLWidget::updateClipPlaneTranslation(int ID, int zVal, const QVector<double> &coeffs)
+//! --------------------------------------
+void occPreGLWidget::updateClipPlaneCoefficients(int ID, const QVector<double> &coeffs)
 {
-    //cout<<"occGLWidget::updateClipPlaneTranslation()->____function called. ID: "<<ID<<" zVal: "<<zVal<<"____"<<endl;
-    occGLWidget::updateClipPlaneTranslation(ID,zVal,coeffs);
+    //cout<<"occGLWidget::updateClipPlaneCoefficients()->____function called. ID: "<<ID<<"____"<<endl;
+    occGLWidget::updateClipPlaneCoefficients(ID,coeffs);
 }
 
 //! ----------------------------

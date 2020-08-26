@@ -91,12 +91,6 @@ public slots:
     void updateCSDataByExternalCSChange(QStandardItem *theCurrentModifiedCS);
     void updateClippedMeshView(bool onlyExterior);
 
-    /*
-    void displayMesh(const occHandle(MeshVS_DataSource) &aMeshDS,
-                     Quantity_NameOfColor aColorName = Quantity_NOC_ALICEBLUE,
-                     bool showMeshEdges = true);
-    */
-
 private:
 
     void addItemToTable();
@@ -200,7 +194,7 @@ private:
     }
 
     //! translate plane
-    void translatePlane(double &a, double &b,double &c,double &d, const double t);
+    void translatePlane(double &a, double &b, double &c, double &d, const double &t);
 };
 
 #endif // CLIPTOOL_H

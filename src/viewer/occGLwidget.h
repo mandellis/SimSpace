@@ -135,7 +135,7 @@ public:
     void setClipPlaneOn(int ID, bool isOn);
 
     //! update clip plane definition
-    virtual void updateClipPlaneTranslation(int ID, int zVal, const QVector<double> &coeffs);
+    virtual void occGLWidget::updateClipPlaneCoefficients(int ID, const QVector<double> &coeffs);
 
     //! set the current clip plane
     virtual void setCurrentClipPlane(int curClipPlaneID)

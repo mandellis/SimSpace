@@ -3412,24 +3412,14 @@ void occGLWidget::getSceneBoundingBox(double &lx, double &ly, double &lz)
 }
 
 //! -------------------------------------
-//! function: updateClipPlaneTranslation
+//! function: updateClipPlaneCoefficients
 //! details:
 //! -------------------------------------
-void occGLWidget::updateClipPlaneTranslation(int ID, int zVal, const QVector<double> &coeffs)
+void occGLWidget::updateClipPlaneCoefficients(int ID, const QVector<double> &coeffs)
 {
-    //cout<<"occGLWidget::updateClipPlaneTranslation()->____function called. ID: "<<ID<<" zVal: "<<zVal<<"____"<<endl;
-
-    //! --------------------------
-    //! bounding box of the scene
-    //! --------------------------
-    double lx,ly,lz;
-    this->getSceneBoundingBox(lx,ly,lz);
-
-    double D = sqrt(lx*lx+ly*ly+lz*lz);
+    //cout<<"occGLWidget::updateClipPlaneCoefficients()->____function called. ID: "<<ID<<"____"<<endl;
     Graphic3d_ClipPlane::Equation eq;
-    double k = double(zVal/100.0)*(D/1.0);
-    cout<<"____diagonal BBX: "<<D<<" plane translation: "<<k<<"____"<<endl;
-    eq.SetValues(coeffs[0],coeffs[1],coeffs[2],coeffs[3]+k);
+    eq.SetValues(coeffs[0],coeffs[1],coeffs[2],coeffs[3]);
     const occHandle(Graphic3d_ClipPlane) &curClipPlane = myMapOfClipPlanes.value(ID);
     curClipPlane->SetEquation(eq);
     occView->Redraw();

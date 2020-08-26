@@ -100,7 +100,7 @@ clipTool::clipTool(QWidget *parent):QTableView(parent),
     //! ------------------------
     //! the table fits the view
     //! ------------------------
-    this->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    //this->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
 }
 
 //! --------------------------
@@ -242,8 +242,8 @@ void clipTool::addItemToTable()
     //! ------------------------------
     myOCCViewer->setCurrentClipPlane(clipPlaneID);
 
-    cout<<"clipTool::addItemToTable()->____set current plane ID: "<<clipPlaneID<<"____"<<endl;
-    cout<<"clipTool::addItemToTable()->____function called: clip plane ID: "<<clipPlaneID<<"____"<<endl;
+    //cout<<"clipTool::addItemToTable()->____set current plane ID: "<<clipPlaneID<<"____"<<endl;
+    //cout<<"clipTool::addItemToTable()->____function called: clip plane ID: "<<clipPlaneID<<"____"<<endl;
 
     //! -------
     //! create
@@ -256,7 +256,7 @@ void clipTool::addItemToTable()
     //! name: col = 0
     //! --------------
     item = new QStandardItem();
-    QString clipPlaneName = QString("Clip plane %1").arg(clipPlaneID);
+    QString clipPlaneName = QString("Clip plane %1").arg(myCurNumberOfClipPlanes+1);
     data.setValue(clipPlaneName);
     item->setData(data,Qt::UserRole);
     item->setData(data,Qt::DisplayRole);
@@ -297,13 +297,15 @@ void clipTool::addItemToTable()
     //! ---------------------------------------------------------------------------------
     //! create an adjacent cell with the data of the (global) coordinate system: col = 4
     //! ---------------------------------------------------------------------------------
-    QVector<double> coeff = this->getPlaneCoefficients(static_cast<QExtendedStandardItem*>(myCoordinateSystemRoot->child(0,0)));
+    //QVector<double> coeff = this->getPlaneCoefficients(static_cast<QExtendedStandardItem*>(myCoordinateSystemRoot->child(0,0)));
+    const QVector<double> &coeff = this->getPlaneCoefficients(myCoordinateSystemRoot->child(0,0));
+
     data.setValue(coeff);
 
     item = new QStandardItem();
     item->setData(data,Qt::UserRole);
     double A,B,C,D;
-    A = coeff.at(0); B = coeff.at(1); C = coeff.at(2); D = coeff.at(3);
+    A = coeff[0]; B = coeff[1]; C = coeff[2]; D = coeff[3];
     data.setValue(QString("(%1, %2, %3, %4)").arg(A).arg(B).arg(C).arg(D));
     item->setData(data,Qt::DisplayRole);
     itemList<<item;
@@ -361,11 +363,13 @@ void clipTool::addItemToTable()
     this->verticalScrollBar()->setVisible(true);
     this->setAlternatingRowColors(true);
 
+
     //! ------------------
     //! hide some columns
     //! ------------------
-    //this->setColumnHidden(CLIPPLANE_ID_COLUMN,true);
-    //this->setColumnHidden(CLIPPLANE_BASE_PLANE_DATA_COLUMN,true);
+    this->setColumnHidden(CLIPPLANE_ID_COLUMN,true);
+    this->setColumnHidden(CLIPPLANE_BASE_PLANE_DATA_COLUMN,true);
+    this->setColumnHidden(CLIPPLANE_SHIFTED_PLANE_COEFFICIENTS,true);
 
     myCurNumberOfClipPlanes++;
 
@@ -373,12 +377,9 @@ void clipTool::addItemToTable()
     //! disable all the selection modes
     //! --------------------------------
     this->setSelectionMode(QAbstractItemView::SingleSelection);
-    //this->setSelectionMode(QAbstractItemView::NoSelection);
 
-    //this->resizeColumnsToContents();
-    //this->resizeRowsToContents();
-
-    //this->horizontalHeader()->setStretchLastSection(true);
+    this->horizontalHeader()->resizeSections(QHeaderView::ResizeToContents);
+    this->horizontalHeader()->setSectionResizeMode(1,QHeaderView::Interactive);
 }
 
 //! -----------------------------
@@ -387,10 +388,6 @@ void clipTool::addItemToTable()
 //! -----------------------------
 int clipTool::retrieveActiveClipPlanes(std::map<int,std::vector<double>> &mapOfClipPlanes)
 {
-    double lx,ly,lz;
-    myOCCViewer->getSceneBoundingBox(lx,ly,lz);
-    double BBXdiagonal = sqrt(lx*lx+ly*ly+lz*lz);
-
     int NbClipPlanes = internalModel->rowCount();
     if(NbClipPlanes==0) return 0;
 
@@ -400,17 +397,13 @@ int clipTool::retrieveActiveClipPlanes(std::map<int,std::vector<double>> &mapOfC
         bool isActive = index1.data(Qt::UserRole).toBool();
         if(isActive==false) continue;
 
-        QModelIndex index2 = internalModel->index(row,CLIPPLANE_BASE_PLANE_DATA_COLUMN);
-        const QVector<double> &coeffs = index2.data(Qt::UserRole).value<QVector<double>>();
-
-        QModelIndex index3 = internalModel->index(row,CLIPPLANE_TRANSLATION_COLUMN);
-        int sliderValue = index3.data(Qt::UserRole).toInt();
-
         QModelIndex index4 = internalModel->index(row,CLIPPLANE_ID_COLUMN);
         int planeID = index4.data(Qt::UserRole).toInt();
 
-        double k = double(sliderValue/100.0)*(BBXdiagonal/1.0);
-        std::vector<double> aPlaneCoeffs {coeffs[0],coeffs[1],coeffs[2],coeffs[3]+k};
+        QModelIndex index = internalModel->index(row,CLIPPLANE_SHIFTED_PLANE_COEFFICIENTS);
+        const QVector<double> &coeffs = index.data(Qt::UserRole).value<QVector<double>>();
+
+        std::vector<double> aPlaneCoeffs {coeffs[0],coeffs[1],coeffs[2],coeffs[3]};
         mapOfClipPlanes.insert(std::make_pair(planeID,aPlaneCoeffs));
     }
     return (int)mapOfClipPlanes.size();
@@ -428,7 +421,6 @@ void clipTool::removeItemFromTable()
     {
         int row = curClickedIndex.row();
         int clipPlaneID = internalModel->index(row,CLIPPLANE_ID_COLUMN).data(Qt::UserRole).toInt();
-        cout<<"____removing: "<<clipPlaneID<<"____"<<endl;
         internalModel->removeRow(curClickedIndex.row());
         myOCCViewer->removeClipPlane(clipPlaneID);
         myCurNumberOfClipPlanes--;
@@ -439,11 +431,6 @@ void clipTool::removeItemFromTable()
     //! --------------------------
     this->computeHiddenElements();
     myOCCViewer->setHiddenElements(myHiddenElements);
-
-    //! ------------------------------
-    //! set the current clip plane ID
-    //! ------------------------------
-    //myOCCViewer->setCurrentClipPlane(-1);
 }
 
 //! -----------------------------
@@ -453,49 +440,19 @@ void clipTool::removeItemFromTable()
 void clipTool::updateCSDefinition()
 {
     cout<<"clipTool::updateCSDefinition()->____function called____"<<endl;
+
+
     this->computeHiddenElements();
     myOCCViewer->setHiddenElements(myHiddenElements);
-    /*
-    QModelIndex index = internalModel->index(this->currentIndex().row(),this->currentIndex().column());
-    void *p = index.data(Qt::UserRole).value<void*>();
-    QStandardItem *curItemCS = static_cast<QStandardItem*>(p);
-
-    const QVector<double> &coeffs = this->getPlaneCoefficients(curItemCS);
-    QVariant data;
-    data.setValue(coeffs);
-    QModelIndex indexPlaneCoeffs = internalModel->index(this->currentIndex().row(),CLIPPLANE_BASE_PLANE_DATA_COLUMN);
-    internalModel->setData(indexPlaneCoeffs,data,Qt::UserRole);
-    double A = coeffs[0];
-    double B = coeffs[1];
-    double C = coeffs[2];
-    double D = coeffs[3];
-    data.setValue(QString("(%1, %2, %3, %4").arg(A).arg(B).arg(C).arg(D));
-    internalModel->setData(indexPlaneCoeffs,data,Qt::DisplayRole);
-
-    cout<<"____(A,B,C,D) = ("<<A<<", "<<B<<", "<<C<<", "<<D<<")____"<<endl;
-
-    QModelIndex indexID = internalModel->index(this->currentIndex().row(),CLIPPLANE_ID_COLUMN);
-    int ID = indexID.data(Qt::UserRole).toInt();
-    //cout<<"clipTool::updateCSDefinition()->____ID: "<<ID<<"____"<<endl;
-
-    QModelIndex indexZTranslation = internalModel->index(this->currentIndex().row(),CLIPPLANE_TRANSLATION_COLUMN);
-    int zVal = indexZTranslation.data(Qt::UserRole).toInt();
-    //cout<<"clipTool::updateCSDefinition()->____z val: "<<zVal<<"____"<<endl;
-
-    myOCCViewer->addClipPlane(A,B,C,D,ID,true);
-    myOCCViewer->updateClipPlaneTranslation(ID,zVal,coeffs);
-    */
 }
 
-//! ------------------------------------------------------------
-//! function: updateCSDataByExternalCSChange
-//! details:  the definition of a coordinate system is changed:
-//!           update all the clipPlanes containing that CS
-//! ------------------------------------------------------------
+//! -------------------------------------------
+//! function: updateClipPlanesByExternalChange
+//! details:
+//! -------------------------------------------
 void clipTool::updateCSDataByExternalCSChange(QStandardItem *theCurrentModifiedCS)
 {
     SimulationNodeClass *nodeCS = theCurrentModifiedCS->data(Qt::UserRole).value<SimulationNodeClass*>();
-    cerr<<"clipTool::updateCSDataByExternalCSChange()->____current changed CS: "<<nodeCS->getName().toStdString()<<"____"<<endl;
 
     //! --------------
     //! scan the rows
@@ -507,8 +464,11 @@ void clipTool::updateCSDataByExternalCSChange(QStandardItem *theCurrentModifiedC
         QStandardItem *curItem = static_cast<QStandardItem*>(p);
         if(curItem == theCurrentModifiedCS)
         {
-            cerr<<"+++++++++++++++"<<endl;
-            this->updateCSDefinition();
+            //! ----------------------------
+            //! update the row of the table
+            //! ----------------------------
+            //! ...
+            break;
         }
     }
 }
@@ -673,6 +633,12 @@ void clipTool::updateClipPlaneOfRow()
 //! ------------------------------
 void clipTool::updateCSTranslation(int sliderPosition)
 {
+    cout<<"clipTool::updateCSTranslation()->____slider position: "<<sliderPosition<<"____"<<endl;
+
+    double lx,ly,lz;
+    myOCCViewer->getSceneBoundingBox(lx,ly,lz);
+    double BBXDiagonal = sqrt(lx*lx+ly*ly+lz*lz);
+
     //! ------------------------------------------
     //! get the current CS undergoing translation
     //! and the plane coefficients
@@ -681,19 +647,38 @@ void clipTool::updateCSTranslation(int sliderPosition)
     const QVector<double> &coeffs = internalModel->index(this->currentIndex().row(),CLIPPLANE_BASE_PLANE_DATA_COLUMN).data(Qt::UserRole).
             value<QVector<double>>();
 
+    //! --------------------
+    //! compute translation
+    //! --------------------
+    double translation = double(sliderPosition/100.0)*(BBXDiagonal/1.0);
+
+    double a = coeffs[0];
+    double b = coeffs[1];
+    double c = coeffs[2];
+    double d = coeffs[3];
+    this->translatePlane(a,b,c,d,translation);
+
+    //! --------------------------------------------
+    //! update the table shifted plane coefficients
+    //! --------------------------------------------
+    QVariant value;
+    QVector<double> shifted_plane_coeffs {a,b,c,d};
+    QModelIndex index = this->currentIndex().sibling(this->currentIndex().row(),CLIPPLANE_SHIFTED_PLANE_COEFFICIENTS);
+    value.setValue(shifted_plane_coeffs);
+    internalModel->setData(index,value,Qt::UserRole);
+    value.setValue(QString("%1, %2, %3, %4").arg(a).arg(b).arg(c).arg(d));
+    internalModel->setData(index,value,Qt::DisplayRole);
+
     //! -------------------------------------------------
     //! this moves the plane and redraw the clipped view
     //! -------------------------------------------------
-    myOCCViewer->updateClipPlaneTranslation(ID,sliderPosition,coeffs);
+    myOCCViewer->updateClipPlaneCoefficients(ID,shifted_plane_coeffs);
 
-    if(myMDB==NULL)
+    if(myWorkingMode==0)    // on mesh
     {
-        cout<<"clipTool::setWorkingMode()->____cannot change the cliptool working mode: the mesh data base is null____"<<endl;
-        return;
-    }
+        if(myMDB==Q_NULLPTR) return;
 
-    if(myWorkingMode==0)
-    {
+        /*
         const QMap<int,occHandle(Graphic3d_ClipPlane)> &clipPlanes = myOCCViewer->getClipPlanes();
         for(int row =0; row<internalModel->rowCount(); row++)
         {
@@ -726,9 +711,12 @@ void clipTool::updateCSTranslation(int sliderPosition)
                 else itt->second = hiddenElementIDs;
             }
         }
+        */
+
         //! --------------------------------------------------
         //! send to the viewer the map of element IDs to hide
         //! --------------------------------------------------
+        this->computeHiddenElements();
         myOCCViewer->setHiddenElements(myHiddenElements);
     }
 }
@@ -741,49 +729,6 @@ void clipTool::updateClippedMeshView(bool onlyExterior)
 {
     cout<<"clipTool::updateClippedMeshView()->____"<<onlyExterior<<"____"<<endl;
 }
-
-/*
-//! -----------------------
-//! function: displayMesh
-//! details:  display tool
-//! -----------------------
-void clipTool::displayMesh(const occHandle(MeshVS_DataSource) &aMeshDS,
-                           Quantity_NameOfColor aColorName,
-                           bool showMeshEdges)
-{
-    cout<<"occPreGLWidget::displayMesh()->____function called____"<<endl;
-
-    static int bodyIndex;
-    bodyIndex++;
-
-    //! ----------------------------
-    //! the mesh interactive object
-    //! ----------------------------
-    occHandle(MeshVS_Mesh) aMeshIO = new MeshVS_Mesh();
-    aMeshIO->SetDataSource(aMeshDS);
-
-    //! ----------------------------------------
-    //! create and add the presentation builder
-    //! ----------------------------------------
-    occHandle(MeshVS_MeshPrsBuilder) aBuilder = new MeshVS_MeshPrsBuilder(aMeshIO);
-    aMeshIO->AddBuilder(aBuilder,Standard_False);
-
-    //! --------------------------------------
-    //! cosmetic for displaying the face mesh
-    //! --------------------------------------
-    Graphic3d_MaterialAspect myAspect(Graphic3d_NOM_GOLD);
-    myAspect.SetColor(static_cast<Quantity_Color>(aColorName));
-
-    aMeshIO->GetDrawer()->SetMaterial(MeshVS_DA_FrontMaterial, myAspect);
-    aMeshIO->GetDrawer()->SetBoolean(MeshVS_DA_DisplayNodes, Standard_False);
-    aMeshIO->GetDrawer()->SetBoolean(MeshVS_DA_ShowEdges, showMeshEdges);
-    aMeshIO->GetDrawer()->SetColor(MeshVS_DA_EdgeColor,Quantity_NOC_BLACK);
-    aMeshIO->SetDisplayMode(MeshVS_DMF_Shading);
-
-    myOCCViewer->getContext()->Display(aMeshIO,Standard_True);
-    mySlicedMeshIO.insert(bodyIndex,aMeshIO);
-}
-*/
 
 //! --------------------------------
 //! function: computeHiddenElements
@@ -891,10 +836,13 @@ void clipTool::handleClipPlaneOfRowStatus()
 //! function: translatePlane
 //! details:
 //! -------------------------
-void clipTool::translatePlane(double &a, double &b,double &c,double &d, const double t)
+void clipTool::translatePlane(double &a, double &b,double &c,double &d, const double &t)
 {
+    cout<<"____function called____"<<endl;
+    cout<<"1____("<<a<<", "<<b<<", "<<c<<", "<<d<<")____"<<endl;
     //! normalize
     double l = sqrt(a*a+b*b+c*c);
     a /= l; b/=l; c/=l; d/=l;
     d += t;
+    cout<<"1____("<<a<<", "<<b<<", "<<c<<", "<<d<<")____"<<endl;
 }

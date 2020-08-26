@@ -157,7 +157,7 @@ public:
     virtual void removeClipPlane(int ID) override;
 
     //! update clip plane translation
-    virtual void updateClipPlaneTranslation(int ID, int zVal, const QVector<double> &coeffs) override;
+    virtual void updateClipPlaneCoefficients(int ID, const QVector<double> &coeffs) override;
 
     //! update clip planes
     void updateClipPlanes(const std::vector<int> &activeClipPlanes);
