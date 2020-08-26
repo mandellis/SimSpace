@@ -7,6 +7,7 @@
 #define CLIPPLANE_BASE_COORDINATE_SYSTEM_COLUMN 3
 #define CLIPPLANE_BASE_PLANE_DATA_COLUMN 4
 #define CLIPPLANE_TRANSLATION_COLUMN 5
+#define CLIPPLANE_SHIFTED_PLANE_COEFFICIENTS 6
 
 //! ----
 //! OCC
@@ -79,7 +80,9 @@ protected:
 private slots:
 
     void showContextMenu(QPoint aPoint);
-    void updateClipPlane();
+    void updateClipPlaneOfRow();
+    void handleClipPlaneOfRowStatus();
+
     void updateCSTranslation(int sliderPosition);
     void updateCSDefinition();
 
@@ -195,6 +198,9 @@ private:
     {
         myOCCViewer->setCurrentClipPlane(curClipPlaneID);
     }
+
+    //! translate plane
+    void translatePlane(double &a, double &b,double &c,double &d, const double t);
 };
 
 #endif // CLIPTOOL_H

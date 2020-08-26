@@ -3383,7 +3383,6 @@ Standard_Integer occGLWidget::getClipPlanesNbLimit()
 void occGLWidget::setClipPlaneOn(int ID, bool isOn)
 {
     const occHandle(Graphic3d_ClipPlane)& aClipPlane = myMapOfClipPlanes.value(ID);
-    //const occHandle(Graphic3d_ClipPlane)& aClipPlane = myMapOfClipPlanes.at(ID);
     aClipPlane->SetOn(isOn);
     occView->Redraw();
 }

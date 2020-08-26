@@ -133,6 +133,8 @@ QWidget* clipToolDelegate::createEditor(QWidget *parent, const QStyleOptionViewI
             editor->setOrientation(Qt::Horizontal);
             editor->setMinimum(-100);
             editor->setMaximum(100);
+            editor->setTracking(true);
+            editor->setValue(0);
             return editor;
         }
         else return 0;

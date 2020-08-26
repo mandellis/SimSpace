@@ -85,12 +85,12 @@ clipTool::clipTool(QWidget *parent):QTableView(parent),
     //! -----------------------------------------------------
     //! automatic update of the plane data in the table cell
     //! -----------------------------------------------------
-    connect(theDelegate,SIGNAL(currentCSChanged()),this,SLOT(updateClipPlane()));
+    connect(theDelegate,SIGNAL(currentCSChanged()),this,SLOT(updateClipPlaneOfRow()));
 
     //! --------------------------------
     //! update of the clip plane status
     //! --------------------------------
-    //connect(theDelegate,SIGNAL(currentCSStatusChanged()),this,SLOT(updateClipPlane()));
+    connect(theDelegate,SIGNAL(currentCSStatusChanged()),this,SLOT(handleClipPlaneOfRowStatus()));
 
     //! --------------------------------------------
     //! dynamic update after clip plane translation
@@ -144,18 +144,6 @@ void clipTool::setWorkingMode(int workingMode)
     if(myOCCViewer==Q_NULLPTR) return;
     if(myMDB==Q_NULLPTR) return;
     if(internalModel==Q_NULLPTR) return;
-
-    //! ----------------------------------------
-    //! retrieve the the active clipping planes
-    //! ----------------------------------------
-    std::vector<int> activeClipPlanes;
-    for(int row=0; row<internalModel->rowCount(); row++)
-    {
-        bool isActive = internalModel->index(row,CLIPPLANE_STATUS_COLUMN).data(Qt::UserRole).toBool();
-        int planeID = internalModel->index(row,CLIPPLANE_ID_COLUMN).data(Qt::UserRole).toInt();
-        if(!isActive) continue;
-        activeClipPlanes.push_back(planeID);
-    }
 
     switch(myWorkingMode)
     {
@@ -235,146 +223,160 @@ void clipTool::showContextMenu(QPoint aPoint)
 //! -------------------------
 void clipTool::addItemToTable()
 {
-    if(myCoordinateSystemRoot!=Q_NULLPTR && myOCCViewer!=Q_NULLPTR)
+    if(myCoordinateSystemRoot==Q_NULLPTR) return;
+    if(myOCCViewer==Q_NULLPTR) return;
+
+    if(myCurNumberOfClipPlanes>myMaxClipPlanes)
     {
-        if(myCurNumberOfClipPlanes>myMaxClipPlanes)
-        {
-            QMessageBox::critical(this,APPNAME,"Maximum number of clippig planes reached",QMessageBox::Ok);
-            return;
-        }
-
-        //! ----------------------------------
-        //! generate the ID of the clip plane
-        //! ----------------------------------
-        int clipPlaneID = rand();
-
-        //! ------------------------------
-        //! set the current clip plane ID
-        //! ------------------------------
-        myOCCViewer->setCurrentClipPlane(clipPlaneID);
-
-        cout<<"clipTool::addItemToTable()->____set current plane ID: "<<clipPlaneID<<"____"<<endl;
-        cout<<"clipTool::addItemToTable()->____function called: clip plane ID: "<<clipPlaneID<<"____"<<endl;
-
-        //! -------
-        //! create
-        //! -------
-        QList<QStandardItem*> itemList;
-        QStandardItem *item;
-        QVariant data;
-
-        //! --------------
-        //! name: col = 0
-        //! --------------
-        item = new QStandardItem();
-        QString clipPlaneName = QString("Clip plane %1").arg(clipPlaneID);
-        data.setValue(clipPlaneName);
-        item->setData(data,Qt::UserRole);
-        item->setData(data,Qt::DisplayRole);
-        itemList<<item;
-
-        //! ------------
-        //! ID: col = 1
-        //! ------------
-        item = new QStandardItem();
-        data.setValue(clipPlaneID);
-        item->setData(clipPlaneID,Qt::UserRole);
-        data.setValue(QString("%1").arg(clipPlaneID));
-        item->setData(data,Qt::DisplayRole);
-        itemList<<item;
-
-        //! ------------------------------------
-        //! status: "0" => Off => "1" On: col 2
-        //! ------------------------------------
-        item = new QStandardItem();
-        data.setValue(true);
-        item->setData(data,Qt::UserRole);
-        data.setValue(QString("On"));
-        item->setData(data,Qt::DisplayRole);
-        itemList<<item;
-
-        //! --------------------------------
-        //! "base" coordinate system: col 3
-        //! --------------------------------
-        item = new QStandardItem();
-        QExtendedStandardItem *itemCSGlobal = static_cast<QExtendedStandardItem*>(myCoordinateSystemRoot->child(0,0));
-        void *p = (void*)itemCSGlobal;
-        data.setValue(p);
-        item->setData(data,Qt::UserRole);
-        data.setValue(itemCSGlobal->data(Qt::UserRole).value<SimulationNodeClass*>()->getName());
-        item->setData(data,Qt::DisplayRole);
-        itemList<<item;
-
-        //! -------------------------------------------------------------------------------
-        //! create an adjacent cell with the data of the (global) coordinate system: col 4
-        //! -------------------------------------------------------------------------------
-        QVector<double> coeff = this->getPlaneCoefficients(static_cast<QExtendedStandardItem*>(myCoordinateSystemRoot->child(0,0)));
-        data.setValue(coeff);
-
-        item = new QStandardItem();
-        item->setData(data,Qt::UserRole);
-        double A,B,C,D;
-        A = coeff.at(0); B = coeff.at(1); C = coeff.at(2); D = coeff.at(3);
-        data.setValue(QString("(%1, %2, %3, %4)").arg(A).arg(B).arg(C).arg(D));
-        item->setData(data,Qt::DisplayRole);
-        itemList<<item;
-
-        //! ---------------------
-        //! "Translation": col 5
-        //! ---------------------
-        item = new QStandardItem();
-        double deltaZ = 0.0;
-        data.setValue(deltaZ);
-        item->setData(data,Qt::UserRole);
-        data.setValue(QString("%1").arg(deltaZ));
-        item->setData(data,Qt::DisplayRole);
-        itemList<<item;
-
-        //! -----------------------------------
-        //! append to to the table the new row
-        //! -----------------------------------
-        internalModel->appendRow(itemList);
-
-        //! ---------------------------------
-        //! add the clip plane to the viewer
-        //! ---------------------------------
-        myOCCViewer->addClipPlane(A,B,C,D,clipPlaneID,true);
-
-        //! --------------------------------------------------
-        //! recompute the hidden elements
-        //! send to the viewer the map of element IDs to hide
-        //! --------------------------------------------------
-        this->computeHiddenElements();
-        myOCCViewer->setHiddenElements(myHiddenElements);
-
-        //! ------------------------------
-        //! labels for horizontal headers
-        //! ------------------------------
-        QList<QString> horizontalHeaderLabels;
-        horizontalHeaderLabels<<"Clip plane"<<"ID"<<"Status"<<"Coordinate system"<<"Plane coeff"<<"Z position";
-        internalModel->setHorizontalHeaderLabels(horizontalHeaderLabels);
-
-        this->verticalHeader()->hide();
-        this->horizontalHeader()->setVisible(true);
-        this->verticalScrollBar()->setVisible(true);
-        this->setAlternatingRowColors(true);
-
-        //! ------------------
-        //! hide some columns
-        //! ------------------
-        //this->setColumnHidden(CLIPPLANE_ID_COLUMN,true);
-        //this->setColumnHidden(CLIPPLANE_BASE_PLANE_DATA_COLUMN,true);
-
-        myCurNumberOfClipPlanes++;
+        QMessageBox::critical(this,APPNAME,"Maximum number of clippig planes reached",QMessageBox::Ok);
+        return;
     }
+
+    //! ----------------------------------
+    //! generate the ID of the clip plane
+    //! ----------------------------------
+    int clipPlaneID = rand();
+
+    //! ------------------------------
+    //! set the current clip plane ID
+    //! ------------------------------
+    myOCCViewer->setCurrentClipPlane(clipPlaneID);
+
+    cout<<"clipTool::addItemToTable()->____set current plane ID: "<<clipPlaneID<<"____"<<endl;
+    cout<<"clipTool::addItemToTable()->____function called: clip plane ID: "<<clipPlaneID<<"____"<<endl;
+
+    //! -------
+    //! create
+    //! -------
+    QList<QStandardItem*> itemList;
+    QStandardItem *item;
+    QVariant data;
+
+    //! --------------
+    //! name: col = 0
+    //! --------------
+    item = new QStandardItem();
+    QString clipPlaneName = QString("Clip plane %1").arg(clipPlaneID);
+    data.setValue(clipPlaneName);
+    item->setData(data,Qt::UserRole);
+    item->setData(data,Qt::DisplayRole);
+    itemList<<item;
+
+    //! ------------
+    //! ID: col = 1
+    //! ------------
+    item = new QStandardItem();
+    data.setValue(clipPlaneID);
+    item->setData(clipPlaneID,Qt::UserRole);
+    data.setValue(QString("%1").arg(clipPlaneID));
+    item->setData(data,Qt::DisplayRole);
+    itemList<<item;
+
+    //! ----------------------------------------
+    //! "Status": "0" => Off => "1" On: col = 2
+    //! ----------------------------------------
+    item = new QStandardItem();
+    data.setValue(true);
+    item->setData(data,Qt::UserRole);
+    data.setValue(QString("On"));
+    item->setData(data,Qt::DisplayRole);
+    itemList<<item;
+
+    //! ----------------------------------
+    //! "Base" coordinate system: col = 3
+    //! ----------------------------------
+    item = new QStandardItem();
+    QExtendedStandardItem *itemCSGlobal = static_cast<QExtendedStandardItem*>(myCoordinateSystemRoot->child(0,0));
+    void *p = (void*)itemCSGlobal;
+    data.setValue(p);
+    item->setData(data,Qt::UserRole);
+    data.setValue(itemCSGlobal->data(Qt::UserRole).value<SimulationNodeClass*>()->getName());
+    item->setData(data,Qt::DisplayRole);
+    itemList<<item;
+
+    //! ---------------------------------------------------------------------------------
+    //! create an adjacent cell with the data of the (global) coordinate system: col = 4
+    //! ---------------------------------------------------------------------------------
+    QVector<double> coeff = this->getPlaneCoefficients(static_cast<QExtendedStandardItem*>(myCoordinateSystemRoot->child(0,0)));
+    data.setValue(coeff);
+
+    item = new QStandardItem();
+    item->setData(data,Qt::UserRole);
+    double A,B,C,D;
+    A = coeff.at(0); B = coeff.at(1); C = coeff.at(2); D = coeff.at(3);
+    data.setValue(QString("(%1, %2, %3, %4)").arg(A).arg(B).arg(C).arg(D));
+    item->setData(data,Qt::DisplayRole);
+    itemList<<item;
+
+    //! -----------------------
+    //! "Translation": col = 5
+    //! -----------------------
+    item = new QStandardItem();
+    double deltaZ = 0.0;
+    data.setValue(deltaZ);
+    item->setData(data,Qt::UserRole);
+    data.setValue(QString("%1").arg(deltaZ));
+    item->setData(data,Qt::DisplayRole);
+    itemList<<item;
+
+    //! --------------------------------------
+    //! "Shifted plane coefficients": col = 6
+    //! At the beginning the same of 4-th col
+    //! --------------------------------------
+    item = new QStandardItem();
+    data.setValue(coeff);
+
+    item = new QStandardItem();
+    item->setData(data,Qt::UserRole);
+    data.setValue(QString("(%1, %2, %3, %4)").arg(A).arg(B).arg(C).arg(D));
+    item->setData(data,Qt::DisplayRole);
+    itemList<<item;
+
+    //! -----------------------------------
+    //! append to to the table the new row
+    //! -----------------------------------
+    internalModel->appendRow(itemList);
+
+    //! ---------------------------------
+    //! add the clip plane to the viewer
+    //! ---------------------------------
+    myOCCViewer->addClipPlane(A,B,C,D,clipPlaneID,true);
+
+    //! --------------------------------------------------
+    //! recompute the hidden elements
+    //! send to the viewer the map of element IDs to hide
+    //! --------------------------------------------------
+    this->computeHiddenElements();
+    myOCCViewer->setHiddenElements(myHiddenElements);
+
+    //! ------------------------------
+    //! labels for horizontal headers
+    //! ------------------------------
+    QList<QString> horizontalHeaderLabels;
+    horizontalHeaderLabels<<"Clip plane"<<"ID"<<"Status"<<"Coordinate system"<<"Base plane coeffs"<<"Z position"<<"Shifted plane coeffs";
+    internalModel->setHorizontalHeaderLabels(horizontalHeaderLabels);
+
+    this->verticalHeader()->hide();
+    this->horizontalHeader()->setVisible(true);
+    this->verticalScrollBar()->setVisible(true);
+    this->setAlternatingRowColors(true);
+
+    //! ------------------
+    //! hide some columns
+    //! ------------------
+    //this->setColumnHidden(CLIPPLANE_ID_COLUMN,true);
+    //this->setColumnHidden(CLIPPLANE_BASE_PLANE_DATA_COLUMN,true);
+
+    myCurNumberOfClipPlanes++;
+
     //! --------------------------------
     //! disable all the selection modes
     //! --------------------------------
     this->setSelectionMode(QAbstractItemView::SingleSelection);
     //this->setSelectionMode(QAbstractItemView::NoSelection);
 
-    this->resizeColumnsToContents();
-    this->resizeRowsToContents();
+    //this->resizeColumnsToContents();
+    //this->resizeRowsToContents();
 
     //this->horizontalHeader()->setStretchLastSection(true);
 }
@@ -587,13 +589,13 @@ QVector<double> clipTool::getPlaneCoefficients(QStandardItem *aCSItem)
     return coeff;
 }
 
-//! --------------------------
-//! function: updateClipPlane
+//! -------------------------------
+//! function: updateClipPlaneOfRow
 //! details:
-//! --------------------------
-void clipTool::updateClipPlane()
+//! -------------------------------
+void clipTool::updateClipPlaneOfRow()
 {
-    cout<<"clipTool::updateClipPlane()->____function called____"<<endl;
+    cout<<"clipTool::updateClipPlaneOfRow()->____function called____"<<endl;
     bool isOn = internalModel->index(this->currentIndex().row(),CLIPPLANE_STATUS_COLUMN).data(Qt::UserRole).toBool();
     if(isOn==false) return;
 
@@ -619,40 +621,41 @@ void clipTool::updateClipPlane()
     double a = ZAxisData[0]; double b = ZAxisData[1]; double c = ZAxisData[2];
     double d = -(a*origin[0]+b*origin[1]+c*origin[2]);
     double l = sqrt(a*a+b*b+c*c);
-    a /= l; b /=l; c /=l; d/=l;
+    a /= l; b /=l; c /=l; d /=l;
 
     QModelIndex index = this->currentIndex();   // cell of clip plane selector
 
+    //! ----------------------------------
+    //! update the cell of the base plane
+    //! ----------------------------------
+    QModelIndex index1 = index.sibling(index.row(),CLIPPLANE_BASE_PLANE_DATA_COLUMN);
+    QVariant value;
+    QVector<double> coeffs_base_plane{a,b,c,d};
+    value.setValue(coeffs_base_plane);
+    internalModel->setData(index1,value,Qt::UserRole);
+    value.setValue(QString("(%1 ,%2 ,%3 , %4").arg(a).arg(b).arg(c).arg(d));
+    internalModel->setData(index1,value,Qt::DisplayRole);
+
     //! -------------------------------------------------------------------
-    //! sei andato a scuola, per favore scrivi le equazioni esplicitamente
+    //! sei andato a squola, per favore scrivi le equazioni esplicitamente
     //! -------------------------------------------------------------------
-    gp_Pln aPlane(a,b,c,d);
-    gp_Dir aDir(a,b,c);
-    gp_Vec aVec(aDir);
     QModelIndex indexTranslation = internalModel->index(index.row(),CLIPPLANE_STATUS_COLUMN);
-    int sliderPosition = indexTranslation.data(Qt::UserRole).toInt();
+    int sliderPosition = indexTranslation.data(Qt::UserRole).toInt()-1;
 
     double lx,ly,lz;
     myOCCViewer->getSceneBoundingBox(lx,ly,lz);
     double translation = sqrt(lx*lx+ly*ly+lz*lz)*double(sliderPosition/100.0);
-    aVec.Scale(translation);
+    this->translatePlane(a,b,c,d,translation);
+    QVector<double> coeffs_shifted_plane {a,b,c,d};
 
-    aPlane.Translate(aVec);
-    aPlane.Coefficients(a,b,c,d);
-    l = sqrt(a*a+b*b+c*c);
-    a /= l; b /=l; c /=l; d/=l;
-    QVector<double> coeffs {a,b,c,d};
-
-    //! ----------------
-    //! update the cell
-    //! ----------------
-    QModelIndex index1 = index.sibling(index.row(),CLIPPLANE_BASE_PLANE_DATA_COLUMN);
-
-    QVariant value;
-    value.setValue(coeffs);
+    //! -------------------------------------
+    //! update the cell of the shifted plane
+    //! -------------------------------------
+    QModelIndex index2 = index.sibling(index.row(),CLIPPLANE_SHIFTED_PLANE_COEFFICIENTS);
+    value.setValue(coeffs_shifted_plane);
     internalModel->setData(index1,value,Qt::UserRole);
     value.setValue(QString("(%1 ,%2 ,%3 , %4").arg(a).arg(b).arg(c).arg(d));
-    internalModel->setData(index1,value,Qt::DisplayRole);
+    internalModel->setData(index2,value,Qt::DisplayRole);
 
     int clipPlaneID = internalModel->index(this->currentIndex().row(),CLIPPLANE_ID_COLUMN).data(Qt::UserRole).toInt();
     myOCCViewer->addClipPlane(a,b,c,d,clipPlaneID,true);
@@ -798,8 +801,6 @@ void clipTool::computeHiddenElements()
     int NbActiveClipPlanes = this->retrieveActiveClipPlanes(mapOfClipPlanes);
     if(NbActiveClipPlanes==0)
     {
-        cout<<"____no clip plane left: showing all elements and returning____"<<endl;
-
         TColStd_PackedMapOfInteger emptyMap;
         occHandle(TColStd_HPackedMapOfInteger) emptyHMap = new TColStd_HPackedMapOfInteger;
         emptyHMap->ChangeMap()=emptyMap;
@@ -864,4 +865,36 @@ void clipTool::computeHiddenElements()
         if(itt==myHiddenElements.end()) myHiddenElements.insert(std::make_pair(bodyIndex,hiddenHElementsForCurrentMesh));
         else itt->second = hiddenHElementsForCurrentMesh;
     }
+}
+
+//! -------------------------------------
+//! function: handleClipPlaneOfRowStatus
+//! details:
+//! -------------------------------------
+void clipTool::handleClipPlaneOfRowStatus()
+{
+    //! --------------------------
+    //! handle the view of shapes
+    //! --------------------------
+    int clipPlaneID = internalModel->index(this->currentIndex().row(),CLIPPLANE_ID_COLUMN).data(Qt::UserRole).toInt();
+    bool isOn = internalModel->index(this->currentIndex().row(),this->currentIndex().column()).data(Qt::UserRole).toBool();
+    myOCCViewer->setClipPlaneOn(clipPlaneID,isOn);
+
+    //! ----------------------
+    //! handle the mesh slice
+    //! ----------------------
+    this->computeHiddenElements();
+    myOCCViewer->setHiddenElements(myHiddenElements);
+}
+
+//! -------------------------
+//! function: translatePlane
+//! details:
+//! -------------------------
+void clipTool::translatePlane(double &a, double &b,double &c,double &d, const double t)
+{
+    //! normalize
+    double l = sqrt(a*a+b*b+c*c);
+    a /= l; b/=l; c/=l; d/=l;
+    d += t;
 }
