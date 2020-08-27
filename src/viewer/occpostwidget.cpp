@@ -7,6 +7,7 @@
 #include "simulationdatabase.h"
 #include "simulationmanager.h"
 #include "resultstoolbar.h"
+#include <meshslicer.h>
 
 //! ----
 //! OCC
@@ -204,6 +205,69 @@ void occPostWidget::displayResult(sharedPostObject &aPostObject)
     occContext->UpdateCurrentViewer();
 
     aResultPresentationOld = myResultPresentation;
+}
+
+//! ---------------------
+//! function: clipResult
+//! details:
+//! ---------------------
+void occPostWidget::clipResult()
+{
+    cout<<"occPostWidget::clipResult()->____function called____"<<endl;
+
+    //! ----------------------
+    //! an empty map of nodes
+    //! ----------------------
+    TColStd_PackedMapOfInteger e;
+    occHandle(TColStd_HPackedMapOfInteger) eh = new TColStd_HPackedMapOfInteger;
+    eh->ChangeMap() = e;
+
+    //! --------------
+    //! a mesh slicer
+    //! --------------
+    meshSlicer aSlicer;
+
+    //! ------------------------------
+    //! iterate over the post objects
+    //! ------------------------------
+    AIS_ListOfInteractive listOfIO;
+    occPostContext->ObjectsInside(listOfIO);
+    for(AIS_ListIteratorOfListOfInteractive it(listOfIO); it.More(); it.Next())
+    {
+        const occHandle(MeshVS_Mesh) &aMesh = occHandle(MeshVS_Mesh)::DownCast(it.Value());
+        if(aMesh.IsNull()) continue;
+
+        //! --------------------------
+        //! reset the hidden elements
+        //! --------------------------
+        aMesh->SetHiddenNodes(eh);
+
+        const occHandle(MeshVS_DataSource) &aMeshDS = aMesh->GetDataSource();
+        if(aMeshDS.IsNull()) continue;
+        aSlicer.setMeshDataSource(aMeshDS);
+
+        TColStd_PackedMapOfInteger hiddenElementIDs;
+        for(QMap<int,occHandle(Graphic3d_ClipPlane)>::const_iterator itplane = myMapOfClipPlanes.cbegin(); itplane != myMapOfClipPlanes.cend(); itplane++)
+        {
+            const occHandle(Graphic3d_ClipPlane) &aClipPlane = itplane.value();
+            if(aClipPlane->IsOn()==false) continue;
+            Graphic3d_ClipPlane::Equation eq = aClipPlane->GetEquation();
+            double a = eq.GetData()[0];
+            double b = eq.GetData()[1];
+            double c = eq.GetData()[2];
+            double d = eq.GetData()[3];
+
+            occHandle(TColStd_HPackedMapOfInteger) HHiddenElementIDs;
+            bool isDone = aSlicer.perform(a,b,c,d,HHiddenElementIDs);
+            if(isDone == false) return;
+            hiddenElementIDs.Unite(HHiddenElementIDs->Map());
+        }
+        occHandle(TColStd_HPackedMapOfInteger) mapOfHiddenElements = new TColStd_HPackedMapOfInteger;
+        mapOfHiddenElements->ChangeMap() = hiddenElementIDs;
+        aMesh->SetHiddenElems(mapOfHiddenElements);
+        occPostContext->RecomputePrsOnly(aMesh,false,false);
+    }
+    occPostContext->UpdateCurrentViewer();
 }
 
 //! -------------------------------------

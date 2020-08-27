@@ -479,8 +479,14 @@ MainWindow::MainWindow(QWidget *parent):QMainWindow(parent),ui(new Ui::MainWindo
     //! clip tool and its dockable window
     //! ----------------------------------
     myClipTool = new clipTool(this);
+
+    QWidget *container = new QWidget(this);
+    QHBoxLayout *h = new QHBoxLayout;
+    container->setLayout(h);
+    h->addWidget(myClipTool);
+
     myClipToolDock = new QDockWidget("Clipping planes");
-    myClipToolDock->setWidget(myClipTool);
+    myClipToolDock->setWidget(container);
     this->addDockWidget(Qt::LeftDockWidgetArea, myClipToolDock);
     myClipToolDock->setVisible(false);
 
@@ -2033,11 +2039,7 @@ void MainWindow::setWorkingMode(int workingModeNumber)
     //! ---------------------------------------
     //! set the working mode for the clip tool
     //! ---------------------------------------
-    cout<<"MainWindow::setWorkingMode()->____working mode: "<<workingModeNumber<<"____"<<endl;
-
     if(myClipTool!=Q_NULLPTR) myClipTool->setWorkingMode(workingModeNumber);
-    cout<<"MainWindow::setWorkingMode()->____working mode: "<<workingModeNumber<<"____"<<endl;
-
 }
 
 //! ------------------------------------------------------------
@@ -2825,7 +2827,7 @@ void MainWindow::setUpConnections()
     //! mesh tool bar connections
     //! --------------------------
     connect(meshToolBar,SIGNAL(showExteriorMeshRequest(bool)),myMainOCCViewer,SLOT(refreshMeshView(bool)));
-    connect(meshToolBar,SIGNAL(showExteriorMeshRequest(bool)),myClipTool,SLOT(updateClippedMeshView(bool)));
+    //connect(meshToolBar,SIGNAL(showExteriorMeshRequest(bool)),myClipTool,SLOT(updateClippedMeshView(bool)));
     connect(meshToolBar,SIGNAL(requestClearMesh()),myMainOCCViewer,SLOT(clearMeshFromViewer()));
     connect(meshToolBar,SIGNAL(requestGenerateVolumeMesh()),mySimulationManager,SLOT(buildVolumeMesh()));
     connect(meshToolBar,SIGNAL(requestGenerateSurfaceMesh()),mySimulationManager,SLOT(buildSurfaceMesh()));

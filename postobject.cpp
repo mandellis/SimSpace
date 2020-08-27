@@ -10,6 +10,7 @@
 #include <ng_meshvs_deformeddatasource2d.h>
 #include <isostripbuilder.h>
 #include <isostrip.h>
+#include <meshslicer.h>
 
 //! ----
 //! OCC
@@ -924,4 +925,66 @@ bool postObject::readMeshFromStream(ifstream &stream, occHandle(MeshVS_DataSourc
         break;
     }
     return true;
+}
+
+//! --------------------------------
+//! function: computeHiddenElements
+//! details:
+//! --------------------------------
+void postObject::computeHiddenElements(const std::map<int,std::vector<double>> &mapOfClipPlanes)
+{
+    //std::map<GeometryTag,occHandle(TColStd_HPackedMapOfInteger)> hiddenElementsIDs;
+
+    //! ---------------------------------------
+    //! check the number of active clip planes
+    //! ---------------------------------------
+    int NbClipPlanes = (int)mapOfClipPlanes.size();
+    if(NbClipPlanes==0)
+    {
+       TColStd_PackedMapOfInteger e;
+       occHandle(TColStd_HPackedMapOfInteger) he = new TColStd_HPackedMapOfInteger;
+       he->ChangeMap() = e;
+       for(std::map<GeometryTag,occHandle(MeshVS_Mesh)>::iterator it = theMeshes.begin(); it!=theMeshes.end(); it++)
+       {
+           const GeometryTag &aTag = it->first;
+           myMapOfHiddenElements.insert(std::make_pair(aTag,he));
+       }
+       return;
+    }
+
+    //! ------------
+    //! mesh slicer
+    //! ------------
+    meshSlicer aMeshSlicer;
+
+    //! ------------------------
+    //! iterate over the meshes
+    //! ------------------------
+    for(std::map<GeometryTag,occHandle(MeshVS_Mesh)>::iterator it_ = theMeshes.begin(); it_ != theMeshes.end(); it_++)
+    {
+        const GeometryTag &aTag = it_->first;
+        const occHandle(MeshVS_Mesh) &aMeshObject = it_->second;
+        const occHandle(MeshVS_DataSource) &aMeshDS = aMeshObject->GetDataSource();
+        aMeshSlicer.setMeshDataSource(aMeshDS);
+
+        TColStd_PackedMapOfInteger hiddenElementsIDsForTag;
+
+        //! ------------------------
+        //! iterate over the planes
+        //! ------------------------
+        for(std::map<int,std::vector<double>>::const_iterator it = mapOfClipPlanes.cbegin(); it != mapOfClipPlanes.cend(); it++)
+        {
+            //int clipPlaneID = it->first;
+            const std::vector<double> &coeffs = it->second;
+            occHandle(TColStd_HPackedMapOfInteger) HMapOfIDs;
+            bool isDone = aMeshSlicer.perform(coeffs[0],coeffs[1],coeffs[2],coeffs[3],HMapOfIDs);
+            if(isDone==false) continue;
+            const TColStd_PackedMapOfInteger &mapOfIDs = HMapOfIDs->Map();
+            hiddenElementsIDsForTag.Unite(mapOfIDs);
+        }
+
+        occHandle(TColStd_HPackedMapOfInteger) HHiddenElementsIDsForTag = new TColStd_HPackedMapOfInteger;
+        HHiddenElementsIDsForTag->ChangeMap() = hiddenElementsIDsForTag;
+        myMapOfHiddenElements.insert(std::make_pair(aTag,HHiddenElementsIDsForTag));
+    }
 }

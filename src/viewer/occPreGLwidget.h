@@ -174,6 +174,8 @@ public:
     //! set all elements visible
     void setAllElementsVisible();
 
+    //! clip mesh
+    void clipMesh();
 
 public:
 

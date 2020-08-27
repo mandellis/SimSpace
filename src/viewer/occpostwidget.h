@@ -64,8 +64,10 @@ public slots:
     void createColorBox(double min, double max, int Nintervals);
 
     //! it read the private member myResultPresentation before displaying
-    //void displayResult(postObject &aPostObject);
     void displayResult(sharedPostObject &aPostObject);
+
+    //! display the result when clipping planes are active
+    void clipResult();
 
     void hideAllResults();
 

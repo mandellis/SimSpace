@@ -26,12 +26,13 @@
 #include <QStandardItemModel>
 #include <qextendedstandarditem.h> //! this type is registered
 #include <QMouseEvent>
+#include <QHBoxLayout>
 
 //! ----------------
 //! custom includes
 //! ----------------
-//#include "occpostwidget.h"
-#include "occPreGLwidget.h"
+#include "occpostwidget.h"
+//#include "occPreGLwidget.h"
 #include <meshdatabase.h>
 
 
@@ -89,7 +90,7 @@ private slots:
 public slots:
 
     void updateCSDataByExternalCSChange(QStandardItem *theCurrentModifiedCS);
-    void updateClippedMeshView(bool onlyExterior);
+    //void updateClippedMeshView(bool onlyExterior);
 
 private:
 
@@ -101,20 +102,21 @@ private:
     QPoint myCurPoint;
     QStandardItemModel *internalModel;
     QExtendedStandardItem *myCoordinateSystemRoot;
-    occPreGLWidget *myOCCViewer;
+    //occPreGLWidget *myOCCViewer;
+    occPostWidget *myOCCViewer;
     int myMaxClipPlanes;
     int myCurNumberOfClipPlanes;
 
     meshDataBase *myMDB;
-    QMap<int,occHandle(MeshVS_DataSource)> mySlicedMeshedDS;
-    QMap<int,occHandle(MeshVS_Mesh)> mySlicedMeshIO;
+    //QMap<int,occHandle(MeshVS_DataSource)> mySlicedMeshedDS;
+    //QMap<int,occHandle(MeshVS_Mesh)> mySlicedMeshIO;
     std::map<int,occHandle(TColStd_HPackedMapOfInteger)> myHiddenElements;
 
     //! --------------------------------------------------
     //! key => plane ID
     //! value => pair(body index,sliced mesh data source)
     //! --------------------------------------------------
-    QMap<int,std::vector<std::pair<int,occHandle(MeshVS_DataSource)>>> myPlaneToSlicedMeshes;
+    //QMap<int,std::vector<std::pair<int,occHandle(MeshVS_DataSource)>>> myPlaneToSlicedMeshes;
 
 public:
 
@@ -129,7 +131,8 @@ public:
     //! ---------------
     //! set the viewer
     //! ---------------
-    void setViewer(occPreGLWidget *anOCCViewer)
+    //void setViewer(occPreGLWidget *anOCCViewer)
+    void setViewer(occPostWidget *anOCCViewer)
     {
         myOCCViewer = anOCCViewer;
 

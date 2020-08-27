@@ -80,7 +80,7 @@ clipTool::clipTool(QWidget *parent):QTableView(parent),
     //! ----------------------------
     //! hide the horizontal headers
     //! ----------------------------
-    this->horizontalHeader()->hide();
+    //this->horizontalHeader()->hide();
 
     //! -----------------------------------------------------
     //! automatic update of the plane data in the table cell
@@ -96,11 +96,6 @@ clipTool::clipTool(QWidget *parent):QTableView(parent),
     //! dynamic update after clip plane translation
     //! --------------------------------------------
     connect(theDelegate,SIGNAL(currentCSTranslationApplied(int)),this,SLOT(updateCSTranslation(int)));
-
-    //! ------------------------
-    //! the table fits the view
-    //! ------------------------
-    //this->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
 }
 
 //! --------------------------
@@ -152,11 +147,17 @@ void clipTool::setWorkingMode(int workingMode)
         //! ----------------------------------------------------------
         //! recompute the hidden elements and send them to the viewer
         //! ----------------------------------------------------------
-        this->computeHiddenElements();
-        myOCCViewer->setHiddenElements(myHiddenElements);
+        //this->computeHiddenElements();
+        //myOCCViewer->setHiddenElements(myHiddenElements);
+
+        myOCCViewer->clipMesh();
     }
         break;
 
+    case 3: // on solution
+    {
+        myOCCViewer->clipResult();
+    }
     default:    // other working modes
     {
         if(!myOCCViewer->getMeshContext().IsNull()) myOCCViewer->getMeshContext()->RemoveAll(true);
@@ -242,9 +243,6 @@ void clipTool::addItemToTable()
     //! ------------------------------
     myOCCViewer->setCurrentClipPlane(clipPlaneID);
 
-    //cout<<"clipTool::addItemToTable()->____set current plane ID: "<<clipPlaneID<<"____"<<endl;
-    //cout<<"clipTool::addItemToTable()->____function called: clip plane ID: "<<clipPlaneID<<"____"<<endl;
-
     //! -------
     //! create
     //! -------
@@ -297,9 +295,7 @@ void clipTool::addItemToTable()
     //! ---------------------------------------------------------------------------------
     //! create an adjacent cell with the data of the (global) coordinate system: col = 4
     //! ---------------------------------------------------------------------------------
-    //QVector<double> coeff = this->getPlaneCoefficients(static_cast<QExtendedStandardItem*>(myCoordinateSystemRoot->child(0,0)));
     const QVector<double> &coeff = this->getPlaneCoefficients(myCoordinateSystemRoot->child(0,0));
-
     data.setValue(coeff);
 
     item = new QStandardItem();
@@ -324,6 +320,7 @@ void clipTool::addItemToTable()
     //! --------------------------------------
     //! "Shifted plane coefficients": col = 6
     //! At the beginning the same of 4-th col
+    //! since translation is zero
     //! --------------------------------------
     item = new QStandardItem();
     data.setValue(coeff);
@@ -355,14 +352,13 @@ void clipTool::addItemToTable()
     //! labels for horizontal headers
     //! ------------------------------
     QList<QString> horizontalHeaderLabels;
-    horizontalHeaderLabels<<"Clip plane"<<"ID"<<"Status"<<"Coordinate system"<<"Base plane coeffs"<<"Z position"<<"Shifted plane coeffs";
+    horizontalHeaderLabels<<"Plane"<<"ID"<<"Status"<<"Csys"<<"Base plane"<<"Shift"<<"Shifted plane";
     internalModel->setHorizontalHeaderLabels(horizontalHeaderLabels);
 
     this->verticalHeader()->hide();
     this->horizontalHeader()->setVisible(true);
     this->verticalScrollBar()->setVisible(true);
     this->setAlternatingRowColors(true);
-
 
     //! ------------------
     //! hide some columns
@@ -373,13 +369,15 @@ void clipTool::addItemToTable()
 
     myCurNumberOfClipPlanes++;
 
-    //! --------------------------------
-    //! disable all the selection modes
-    //! --------------------------------
+    //! -----------------
+    //! single selection
+    //! -----------------
     this->setSelectionMode(QAbstractItemView::SingleSelection);
 
-    this->horizontalHeader()->resizeSections(QHeaderView::ResizeToContents);
-    this->horizontalHeader()->setSectionResizeMode(1,QHeaderView::Interactive);
+    //! ---------------------------
+    //! hide the horizontal header
+    //! ---------------------------
+    this->horizontalHeader()->setVisible(true);
 }
 
 //! -----------------------------
@@ -429,8 +427,11 @@ void clipTool::removeItemFromTable()
     //! --------------------------
     //! recompute hidden elements
     //! --------------------------
-    this->computeHiddenElements();
-    myOCCViewer->setHiddenElements(myHiddenElements);
+    //this->computeHiddenElements();
+    //myOCCViewer->setHiddenElements(myHiddenElements);
+
+    myOCCViewer->clipMesh();
+    myOCCViewer->clipResult();
 }
 
 //! -----------------------------
@@ -441,9 +442,10 @@ void clipTool::updateCSDefinition()
 {
     cout<<"clipTool::updateCSDefinition()->____function called____"<<endl;
 
-
-    this->computeHiddenElements();
-    myOCCViewer->setHiddenElements(myHiddenElements);
+    //this->computeHiddenElements();
+    //myOCCViewer->setHiddenElements(myHiddenElements);
+    myOCCViewer->clipMesh();
+    myOCCViewer->clipResult();
 }
 
 //! -------------------------------------------
@@ -555,7 +557,7 @@ QVector<double> clipTool::getPlaneCoefficients(QStandardItem *aCSItem)
 //! -------------------------------
 void clipTool::updateClipPlaneOfRow()
 {
-    cout<<"clipTool::updateClipPlaneOfRow()->____function called____"<<endl;
+    //cout<<"clipTool::updateClipPlaneOfRow()->____function called____"<<endl;
     bool isOn = internalModel->index(this->currentIndex().row(),CLIPPLANE_STATUS_COLUMN).data(Qt::UserRole).toBool();
     if(isOn==false) return;
 
@@ -586,21 +588,21 @@ void clipTool::updateClipPlaneOfRow()
     QModelIndex index = this->currentIndex();   // cell of clip plane selector
 
     //! ----------------------------------
-    //! update the cell of the base plane
+    //! update the cell of the base plane //cesere
     //! ----------------------------------
     QModelIndex index1 = index.sibling(index.row(),CLIPPLANE_BASE_PLANE_DATA_COLUMN);
     QVariant value;
     QVector<double> coeffs_base_plane{a,b,c,d};
     value.setValue(coeffs_base_plane);
     internalModel->setData(index1,value,Qt::UserRole);
-    value.setValue(QString("(%1 ,%2 ,%3 , %4").arg(a).arg(b).arg(c).arg(d));
+    value.setValue(QString("(%1 ,%2 ,%3 , %4)").arg(a).arg(b).arg(c).arg(d));
     internalModel->setData(index1,value,Qt::DisplayRole);
 
-    //! -------------------------------------------------------------------
-    //! sei andato a squola, per favore scrivi le equazioni esplicitamente
-    //! -------------------------------------------------------------------
-    QModelIndex indexTranslation = internalModel->index(index.row(),CLIPPLANE_STATUS_COLUMN);
-    int sliderPosition = indexTranslation.data(Qt::UserRole).toInt()-1;
+    //! -------------------------------------
+    //! update the cell of the shifted plane
+    //! -------------------------------------
+    QModelIndex indexTranslation = internalModel->index(index.row(),CLIPPLANE_TRANSLATION_COLUMN);
+    int sliderPosition = indexTranslation.data(Qt::UserRole).toInt();
 
     double lx,ly,lz;
     myOCCViewer->getSceneBoundingBox(lx,ly,lz);
@@ -608,12 +610,9 @@ void clipTool::updateClipPlaneOfRow()
     this->translatePlane(a,b,c,d,translation);
     QVector<double> coeffs_shifted_plane {a,b,c,d};
 
-    //! -------------------------------------
-    //! update the cell of the shifted plane
-    //! -------------------------------------
     QModelIndex index2 = index.sibling(index.row(),CLIPPLANE_SHIFTED_PLANE_COEFFICIENTS);
     value.setValue(coeffs_shifted_plane);
-    internalModel->setData(index1,value,Qt::UserRole);
+    internalModel->setData(index2,value,Qt::UserRole);
     value.setValue(QString("(%1 ,%2 ,%3 , %4").arg(a).arg(b).arg(c).arg(d));
     internalModel->setData(index2,value,Qt::DisplayRole);
 
@@ -623,8 +622,11 @@ void clipTool::updateClipPlaneOfRow()
     //! --------------------------
     //! recompute hidden elements
     //! --------------------------
-    this->computeHiddenElements();
-    myOCCViewer->setHiddenElements(myHiddenElements);
+    //this->computeHiddenElements();
+    //myOCCViewer->setHiddenElements(myHiddenElements);
+
+    myOCCViewer->clipMesh();
+    myOCCViewer->clipResult();
 }
 
 //! ------------------------------
@@ -633,8 +635,7 @@ void clipTool::updateClipPlaneOfRow()
 //! ------------------------------
 void clipTool::updateCSTranslation(int sliderPosition)
 {
-    cout<<"clipTool::updateCSTranslation()->____slider position: "<<sliderPosition<<"____"<<endl;
-
+    //cout<<"clipTool::updateCSTranslation()->____slider position: "<<sliderPosition<<"____"<<endl;
     double lx,ly,lz;
     myOCCViewer->getSceneBoundingBox(lx,ly,lz);
     double BBXDiagonal = sqrt(lx*lx+ly*ly+lz*lz);
@@ -674,60 +675,23 @@ void clipTool::updateCSTranslation(int sliderPosition)
     //! -------------------------------------------------
     myOCCViewer->updateClipPlaneCoefficients(ID,shifted_plane_coeffs);
 
-    if(myWorkingMode==0)    // on mesh
+    switch(myWorkingMode)
+    {
+    case 0:
     {
         if(myMDB==Q_NULLPTR) return;
-
-        /*
-        const QMap<int,occHandle(Graphic3d_ClipPlane)> &clipPlanes = myOCCViewer->getClipPlanes();
-        for(int row =0; row<internalModel->rowCount(); row++)
-        {
-            int clipPlaneID = internalModel->index(row,CLIPPLANE_ID_COLUMN).data(Qt::UserRole).toInt();
-            bool clipPlaneIsOn = internalModel->index(row,CLIPPLANE_STATUS_COLUMN).data(Qt::UserRole).toBool();
-            if(!clipPlaneIsOn) continue;
-            const occHandle(Graphic3d_ClipPlane) &curClipPlane = clipPlanes.value(clipPlaneID);
-            Graphic3d_ClipPlane::Equation planeEquation = curClipPlane->GetEquation();
-            double a = *planeEquation.GetData();
-            double b = *(planeEquation.GetData()+1);
-            double c = *(planeEquation.GetData()+2);
-            double d = *(planeEquation.GetData()+3);
-
-            //! --------------------------------
-            //! compute the element IDs to hide
-            //! --------------------------------
-            const QMap<int,occHandle(AIS_InteractiveObject)> &meshObjects = myOCCViewer->getMeshObjects();
-            for(QMap<int,occHandle(AIS_InteractiveObject)>::const_iterator it = meshObjects.cbegin(); it!=meshObjects.cend(); it++)
-            {
-                int bodyIndex = it.key();
-                const occHandle(MeshVS_Mesh) &aMeshObject = occHandle(MeshVS_Mesh)::DownCast(it.value());
-                const occHandle(MeshVS_DataSource) &aMeshDS = aMeshObject->GetDataSource();
-                if(aMeshDS.IsNull()) continue;
-
-                meshSlicer aMeshSlicer(aMeshDS);
-                occHandle(TColStd_HPackedMapOfInteger) hiddenElementIDs;
-                aMeshSlicer.perform(a,b,c,d,hiddenElementIDs);
-                std::map<int,occHandle(TColStd_HPackedMapOfInteger)>::iterator itt = myHiddenElements.find(bodyIndex);
-                if(itt==myHiddenElements.end()) myHiddenElements.insert(std::make_pair(bodyIndex,hiddenElementIDs));
-                else itt->second = hiddenElementIDs;
-            }
-        }
-        */
-
-        //! --------------------------------------------------
-        //! send to the viewer the map of element IDs to hide
-        //! --------------------------------------------------
-        this->computeHiddenElements();
-        myOCCViewer->setHiddenElements(myHiddenElements);
+        //this->computeHiddenElements();
+        //myOCCViewer->setHiddenElements(myHiddenElements);
+        myOCCViewer->clipMesh();
     }
-}
-
-//! --------------------------------
-//! function: updateClippedMeshView
-//! details:
-//! --------------------------------
-void clipTool::updateClippedMeshView(bool onlyExterior)
-{
-    cout<<"clipTool::updateClippedMeshView()->____"<<onlyExterior<<"____"<<endl;
+        break;
+    case 3:
+    {
+        myOCCViewer->clipMesh();
+        myOCCViewer->clipResult();
+    }
+        break;
+    }
 }
 
 //! --------------------------------
@@ -737,7 +701,6 @@ void clipTool::updateClippedMeshView(bool onlyExterior)
 void clipTool::computeHiddenElements()
 {
     cout<<"clipTool::computeHiddenElements()->____function called____"<<endl;
-
     //! ------------------------------------------------------
     //! in case no clip plane is active or there are not clip
     //! planes defined, show all elements
@@ -828,8 +791,11 @@ void clipTool::handleClipPlaneOfRowStatus()
     //! ----------------------
     //! handle the mesh slice
     //! ----------------------
-    this->computeHiddenElements();
-    myOCCViewer->setHiddenElements(myHiddenElements);
+    //this->computeHiddenElements();
+    //myOCCViewer->setHiddenElements(myHiddenElements);
+
+    myOCCViewer->clipMesh();
+    myOCCViewer->clipResult();
 }
 
 //! -------------------------
@@ -838,11 +804,7 @@ void clipTool::handleClipPlaneOfRowStatus()
 //! -------------------------
 void clipTool::translatePlane(double &a, double &b,double &c,double &d, const double &t)
 {
-    cout<<"____function called____"<<endl;
-    cout<<"1____("<<a<<", "<<b<<", "<<c<<", "<<d<<")____"<<endl;
-    //! normalize
     double l = sqrt(a*a+b*b+c*c);
     a /= l; b/=l; c/=l; d/=l;
     d += t;
-    cout<<"1____("<<a<<", "<<b<<", "<<c<<", "<<d<<")____"<<endl;
 }
