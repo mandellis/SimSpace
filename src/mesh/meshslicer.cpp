@@ -46,13 +46,13 @@ bool meshSlicer::perform(double a, double b, double c, double d, occHandle(TColS
     double buf[3];
     TColStd_Array1OfReal coords(*buf,1,3);
 
-    bool found = false;
+    bool toBeAddded = false;
     TColStd_MapIteratorOfPackedMapOfInteger it(myMeshDS->GetAllElements());
     for(int localElementID = 1; localElementID<=myMeshDS->GetAllElements().Extent(); localElementID++, it.Next())
     {
         int globalElementID = it.Key();
         myMeshDS->GetNodesByElement(globalElementID,nodeIDs,NbNodes);
-        found = false;
+        toBeAddded = false;
         for(int i=1; i<=NbNodes; i++)
         {
             int globalNodeID = nodeIDs(i);
@@ -60,11 +60,11 @@ bool meshSlicer::perform(double a, double b, double c, double d, occHandle(TColS
             double distance = polygon::pointPlaneDistance(polygon::Point(coords(1),coords(2),coords(3)),a,b,c,d);
             if(distance<0)
             {
-                found = true;
-                break;
+                toBeAddded = true;
+                //break;
             }
         }
-        if(found == true) amap.Add(globalElementID);
+        if(toBeAddded == true) amap.Add(globalElementID);
     }
     if(hiddenElementIDs.IsNull()) hiddenElementIDs = new TColStd_HPackedMapOfInteger;
     hiddenElementIDs->ChangeMap() = amap;
