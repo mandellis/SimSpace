@@ -780,6 +780,7 @@ void occPreGLWidget::displayAllMeshes(bool meshNodesVisible, Graphic3d_NameOfMat
         occMeshContext->Display(aMesh,false);
     }
 */
+    this->clipMesh();
 
     //! -------------------
     //! update the viewers
@@ -1354,7 +1355,7 @@ void occPreGLWidget::showAllBodies()
     //! show only the "active" bodies
     //! the bodies are shown wireframe mode
     //! ------------------------------------
-    if(myCurWorkingMode == curWorkingMode_onSolution) occContext->SetDisplayMode(AIS_WireFrame,Standard_True);
+    if(myCurWorkingMode == curWorkingMode_onSolution) occContext->SetDisplayMode(AIS_WireFrame,true);
 
     for(QMap<int,occHandle(AIS_InteractiveObject)>::iterator it = myMapOfInteractiveShapes.begin(); it!=myMapOfInteractiveShapes.end(); ++it)
     {
@@ -1370,7 +1371,7 @@ void occPreGLWidget::showAllBodies()
     this->reactivateCurrentStandardSelectionMode();
 
     AIS_ListOfInteractive thelistOfDIsplayed;
-    occContext->DisplayedObjects(AIS_KOI_Shape,0,thelistOfDIsplayed, Standard_False);
+    occContext->DisplayedObjects(AIS_KOI_Shape,0,thelistOfDIsplayed, false);
     AIS_ListIteratorOfListOfInteractive it;
     for(it.Initialize(thelistOfDIsplayed);it.More();it.Next())
     {
@@ -1435,6 +1436,7 @@ void occPreGLWidget::refreshMeshView(bool onlyExterior)
         myMapOfInteractiveMeshes.insert(it.key(),occHandle(MeshVS_Mesh)());
     }
     this->buildMeshIOs();
+    //this->clipMesh();
     this->showAllBodies();
 }
 

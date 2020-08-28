@@ -80,7 +80,7 @@ clipTool::clipTool(QWidget *parent):QTableView(parent),
     //! ----------------------------
     //! hide the horizontal headers
     //! ----------------------------
-    //this->horizontalHeader()->hide();
+    this->horizontalHeader()->hide();
 
     //! -----------------------------------------------------
     //! automatic update of the plane data in the table cell
@@ -365,7 +365,7 @@ void clipTool::addItemToTable()
     //! ------------------
     this->setColumnHidden(CLIPPLANE_ID_COLUMN,true);
     this->setColumnHidden(CLIPPLANE_BASE_PLANE_DATA_COLUMN,true);
-    this->setColumnHidden(CLIPPLANE_SHIFTED_PLANE_COEFFICIENTS,true);
+    this->setColumnHidden(CLIPPLANE_SHIFTED_PLANE_COEFFICIENTS_COLUMN,true);
 
     myCurNumberOfClipPlanes++;
 
@@ -377,7 +377,9 @@ void clipTool::addItemToTable()
     //! ---------------------------
     //! hide the horizontal header
     //! ---------------------------
-    this->horizontalHeader()->setVisible(true);
+    this->horizontalHeader()->setVisible(false);
+    this->resizeColumnsToContents();
+    this->setColumnWidth(CLIPPLANE_TRANSLATION_COLUMN,80);
 }
 
 //! -----------------------------
@@ -398,7 +400,7 @@ int clipTool::retrieveActiveClipPlanes(std::map<int,std::vector<double>> &mapOfC
         QModelIndex index4 = internalModel->index(row,CLIPPLANE_ID_COLUMN);
         int planeID = index4.data(Qt::UserRole).toInt();
 
-        QModelIndex index = internalModel->index(row,CLIPPLANE_SHIFTED_PLANE_COEFFICIENTS);
+        QModelIndex index = internalModel->index(row,CLIPPLANE_SHIFTED_PLANE_COEFFICIENTS_COLUMN);
         const QVector<double> &coeffs = index.data(Qt::UserRole).value<QVector<double>>();
 
         std::vector<double> aPlaneCoeffs {coeffs[0],coeffs[1],coeffs[2],coeffs[3]};
@@ -427,9 +429,6 @@ void clipTool::removeItemFromTable()
     //! --------------------------
     //! recompute hidden elements
     //! --------------------------
-    //this->computeHiddenElements();
-    //myOCCViewer->setHiddenElements(myHiddenElements);
-
     myOCCViewer->clipMesh();
     myOCCViewer->clipResult();
 }
@@ -441,9 +440,6 @@ void clipTool::removeItemFromTable()
 void clipTool::updateCSDefinition()
 {
     cout<<"clipTool::updateCSDefinition()->____function called____"<<endl;
-
-    //this->computeHiddenElements();
-    //myOCCViewer->setHiddenElements(myHiddenElements);
     myOCCViewer->clipMesh();
     myOCCViewer->clipResult();
 }
@@ -453,25 +449,81 @@ void clipTool::updateCSDefinition()
 //! details:
 //! -------------------------------------------
 void clipTool::updateCSDataByExternalCSChange(QStandardItem *theCurrentModifiedCS)
-{
-    SimulationNodeClass *nodeCS = theCurrentModifiedCS->data(Qt::UserRole).value<SimulationNodeClass*>();
-
-    //! --------------
-    //! scan the rows
-    //! --------------
+{    
+    cout<<"clipTool::updateCSDataByExternalCSChange()->____function called____"<<endl;
     for(int row = 0; row< this->internalModel->rowCount(); row++)
     {
-        QModelIndex index = this->internalModel->index(row,CLIPPLANE_BASE_COORDINATE_SYSTEM_COLUMN);
-        void *p = index.data(Qt::UserRole).value<void*>();
-        QStandardItem *curItem = static_cast<QStandardItem*>(p);
-        if(curItem == theCurrentModifiedCS)
+        QModelIndex index = internalModel->index(row,CLIPPLANE_BASE_COORDINATE_SYSTEM_COLUMN);
+        if(index.data(Qt::UserRole).canConvert<void*>() == false) cout<<"____ERROR IN CONVERSION____"<<endl;
+        else
         {
-            //! ----------------------------
-            //! update the row of the table
-            //! ----------------------------
-            //! ...
-            break;
+            cout<<"____CONVERSION OK____"<<endl;
+            void *p = index.data(Qt::UserRole).value<void*>();
+            QStandardItem *item = static_cast<QStandardItem*>(p);
+            cout<<"____"<<item->data(Qt::DisplayRole).toString().toStdString()<<"____"<<endl;
         }
+    }
+
+    SimulationNodeClass *nodeCS = theCurrentModifiedCS->data(Qt::UserRole).value<SimulationNodeClass*>();
+    const QString &extTimeTag = nodeCS->getPropertyValue<QString>("Time tag");
+
+    cout<<"____modified CS tag: "<<extTimeTag.toStdString()<<"____"<<endl;
+
+    //! -------------------------------------------------
+    //! coefficients of CLIPPLANE_BASE_PLANE_DATA_COLUMN
+    //! -------------------------------------------------
+    const QVector<double> &coeffs = this->getPlaneCoefficients(theCurrentModifiedCS);
+    cout<<"____new coefficients("<<coeffs[0]<<", "<<coeffs[1]<<", "<<coeffs[2]<<", "<<coeffs[3]<<")____"<<endl;
+
+    //! ---------------------------
+    //! scan the rows of the table
+    //! ---------------------------
+    for(int row = 0; row< this->internalModel->rowCount(); row++)
+    {
+        QModelIndex index = internalModel->index(row,CLIPPLANE_BASE_COORDINATE_SYSTEM_COLUMN);
+        void *p = index.data(Qt::UserRole).value<void*>();
+        QStandardItem *curItem = (QStandardItem*)p;
+        if(p==NULL) cout<<"____nullptr____"<<endl;
+        SimulationNodeClass *curNode = curItem->data(Qt::UserRole).value<SimulationNodeClass*>();
+        const QString &curTimeTag = curNode->getPropertyValue<QString>("Time tag");
+        cout<<"____scanning CS with tag: "<<curTimeTag.toStdString()<<"____"<<endl;
+        if(curTimeTag!=extTimeTag) continue;
+        cout<<"____FOUND____"<<endl;
+
+        //! ----------------------------
+        //! update the row of the table
+        //! ----------------------------
+        QModelIndex indexBasePlaneCoeffs = internalModel->index(row,CLIPPLANE_BASE_COORDINATE_SYSTEM_COLUMN);
+        QVariant value;
+        value.setValue(coeffs);
+        internalModel->setData(indexBasePlaneCoeffs,value,Qt::UserRole);
+        value.setValue(QString("(%1, %2, %3, %4)").arg(coeffs[0]).arg(coeffs[1]).arg(coeffs[2]).arg(coeffs[3]));
+        cout<<"____old coefficients: "<<value.toString().toStdString()<<"____"<<endl;
+        internalModel->setData(indexBasePlaneCoeffs,value,Qt::DisplayRole);
+
+        //! --------------------
+        //! translate the plane
+        //! --------------------
+        QModelIndex indexPlaneTranslation = internalModel->index(row,CLIPPLANE_TRANSLATION_COLUMN);
+        int sliderValue = indexPlaneTranslation.data(Qt::UserRole).toInt();
+        double lx,ly,lz;
+        myOCCViewer->getSceneBoundingBox(lx,ly,lz);
+        double D = sqrt(lx*lx+ly*ly+lz*lz);
+        double translation = double(sliderValue/100.0)*(D/1.0);
+        cout<<"____slider bar position: "<<sliderValue<<"____"<<endl;
+        double a = coeffs[0];
+        double b = coeffs[1];
+        double c = coeffs[2];
+        double d = coeffs[3];
+        this->translatePlane(a,b,c,d,translation);
+
+        QVector<double> coeffs_trans {a,b,c,d};
+        QModelIndex indexShiftedPlane = internalModel->index(row,CLIPPLANE_SHIFTED_PLANE_COEFFICIENTS_COLUMN);
+        value.setValue(coeffs_trans);
+        internalModel->setData(indexShiftedPlane,value,Qt::UserRole);
+        value.setValue(QString("(%1, %2, %3, %4").arg(a).arg(b).arg(c).arg(d));
+        cout<<"____updated coefficients: "<<QString("(%1, %2, %3, %4").arg(a).arg(b).arg(c).arg(d).toStdString()<<"____"<<endl;
+        internalModel->setData(indexShiftedPlane,value,Qt::DisplayRole);
     }
 }
 
@@ -610,7 +662,7 @@ void clipTool::updateClipPlaneOfRow()
     this->translatePlane(a,b,c,d,translation);
     QVector<double> coeffs_shifted_plane {a,b,c,d};
 
-    QModelIndex index2 = index.sibling(index.row(),CLIPPLANE_SHIFTED_PLANE_COEFFICIENTS);
+    QModelIndex index2 = index.sibling(index.row(),CLIPPLANE_SHIFTED_PLANE_COEFFICIENTS_COLUMN);
     value.setValue(coeffs_shifted_plane);
     internalModel->setData(index2,value,Qt::UserRole);
     value.setValue(QString("(%1 ,%2 ,%3 , %4").arg(a).arg(b).arg(c).arg(d));
@@ -622,9 +674,6 @@ void clipTool::updateClipPlaneOfRow()
     //! --------------------------
     //! recompute hidden elements
     //! --------------------------
-    //this->computeHiddenElements();
-    //myOCCViewer->setHiddenElements(myHiddenElements);
-
     myOCCViewer->clipMesh();
     myOCCViewer->clipResult();
 }
@@ -664,7 +713,7 @@ void clipTool::updateCSTranslation(int sliderPosition)
     //! --------------------------------------------
     QVariant value;
     QVector<double> shifted_plane_coeffs {a,b,c,d};
-    QModelIndex index = this->currentIndex().sibling(this->currentIndex().row(),CLIPPLANE_SHIFTED_PLANE_COEFFICIENTS);
+    QModelIndex index = this->currentIndex().sibling(this->currentIndex().row(),CLIPPLANE_SHIFTED_PLANE_COEFFICIENTS_COLUMN);
     value.setValue(shifted_plane_coeffs);
     internalModel->setData(index,value,Qt::UserRole);
     value.setValue(QString("%1, %2, %3, %4").arg(a).arg(b).arg(c).arg(d));
@@ -680,8 +729,6 @@ void clipTool::updateCSTranslation(int sliderPosition)
     case 0:
     {
         if(myMDB==Q_NULLPTR) return;
-        //this->computeHiddenElements();
-        //myOCCViewer->setHiddenElements(myHiddenElements);
         myOCCViewer->clipMesh();
     }
         break;
@@ -791,9 +838,6 @@ void clipTool::handleClipPlaneOfRowStatus()
     //! ----------------------
     //! handle the mesh slice
     //! ----------------------
-    //this->computeHiddenElements();
-    //myOCCViewer->setHiddenElements(myHiddenElements);
-
     myOCCViewer->clipMesh();
     myOCCViewer->clipResult();
 }

@@ -373,10 +373,7 @@ void occPostWidget::setWorkingMode_Solution()
 //! --------------------------
 void occPostWidget::refreshMeshView(bool onlyExterior)
 {
-    //! ------------------------------------------------------
-    //! replace all the post object meshes with volume meshes
-    //! (when they are defined)
-    //! ------------------------------------------------------
     occPreGLWidget::refreshMeshView(onlyExterior);
+    //this->clipResult();
     isMeshViewVolume = (onlyExterior == true? false:true);
 }
