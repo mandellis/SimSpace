@@ -52,6 +52,26 @@ occPostWidget::occPostWidget(meshDataBase *mDB, QWidget *parent):occPreGLWidget(
     myResultPresentation = Global::status().myResultPresentation;
 }
 
+//! ---------------
+//! function: init
+//! details:
+//! ---------------
+void occPostWidget::init()
+{
+    occPreGLWidget::init();
+}
+
+//! ---------------------
+//! function: paintEvent
+//! details:
+//! ---------------------
+void occPostWidget::paintEvent(QPaintEvent *e)
+{
+    Q_UNUSED(e);
+    occPreGLWidget::paintEvent(e);
+    if(occPostContext.IsNull()) occPostContext = new AIS_InteractiveContext(occViewer);
+}
+
 //! -------------------------
 //! function: createColorBox
 //! detail:
@@ -215,13 +235,6 @@ void occPostWidget::clipResult()
 {
     cout<<"occPostWidget::clipResult()->____function called____"<<endl;
 
-    //! ----------------------
-    //! an empty map of nodes
-    //! ----------------------
-    TColStd_PackedMapOfInteger e;
-    occHandle(TColStd_HPackedMapOfInteger) eh = new TColStd_HPackedMapOfInteger;
-    eh->ChangeMap() = e;
-
     //! --------------
     //! a mesh slicer
     //! --------------
@@ -240,7 +253,7 @@ void occPostWidget::clipResult()
         //! --------------------------
         //! reset the hidden elements
         //! --------------------------
-        aMesh->SetHiddenNodes(eh);
+        aMesh->SetHiddenNodes(new TColStd_HPackedMapOfInteger());
 
         const occHandle(MeshVS_DataSource) &aMeshDS = aMesh->GetDataSource();
         if(aMeshDS.IsNull()) continue;
@@ -376,4 +389,13 @@ void occPostWidget::refreshMeshView(bool onlyExterior)
     occPreGLWidget::refreshMeshView(onlyExterior);
     //this->clipResult();
     isMeshViewVolume = (onlyExterior == true? false:true);
+}
+
+//! ----------------
+//! function: reset
+//! details:
+//! ----------------
+void occPostWidget::reset()
+{
+    occPreGLWidget::reset();
 }

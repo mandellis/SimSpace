@@ -37,8 +37,10 @@
 #include <QMainWindow>
 #include <QAction>
 
+class occGLWidget;
 class occPreGLWidget;
 class occPostWidget;
+
 class QToolBar;
 class QComboBox;
 class QLabel;
@@ -165,6 +167,7 @@ private:
     //! ---------------------
     //! Preprocessing window
     //! ----------------------
+    //occGLWidget *myMainOCCViewer;
     //occPreGLWidget *myMainOCCViewer;
     occPostWidget *myMainOCCViewer;
     dockableViewPort *myDockableMasterViewPort;
@@ -484,6 +487,8 @@ private slots:
 
     void setSelectionModeBox();
     void setSelectionModeSingle();
+    void setSelectionModeGeometry();
+    void setSelectionModeMesh();
 
     void showOptionsWidget();
 

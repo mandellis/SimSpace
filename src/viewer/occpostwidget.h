@@ -17,6 +17,7 @@
 //! Qt
 //! ---
 #include <QWidget>
+#include <QPaintEvent>
 
 //! ----
 //! OCC
@@ -28,6 +29,17 @@
 class occPostWidget: public occPreGLWidget
 {
     Q_OBJECT
+
+protected:
+
+    //! the occ context for the results view
+    occHandle(AIS_InteractiveContext) occPostContext;
+
+    //! init
+    virtual void init() override;
+
+    //! paint event
+    virtual void paintEvent(QPaintEvent *e) override;
 
 public:
 
@@ -81,6 +93,9 @@ public slots:
 
     //! set the status variable
     void updateViewerStatus();
+
+    //! reset
+    virtual void reset() override;
 
 private:
 

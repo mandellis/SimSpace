@@ -657,11 +657,7 @@ bool MeshTools::buildIsoStrip(const occHandle(MeshVS_DataSource) &theMeshDS,    
                               occHandle(MeshVS_Mesh) &aColoredMesh,                 //! result
                               bool showEdges)                                       //! option
 {
-    if(theMeshDS.IsNull())
-    {
-        exit(9999);
-        return false;
-    }
+    if(theMeshDS.IsNull()) return false;
 
     //! --------------------------------------------
     //! adjust the scale in case of negative values
@@ -718,7 +714,8 @@ bool MeshTools::buildIsoStrip(const occHandle(MeshVS_DataSource) &theMeshDS,    
     anIsoStripBuilder.setIsoStrips(vecIsoStrip);
 
     std::vector<meshElementByCoords> allElements;
-    bool isDone = anIsoStripBuilder.perform(allElements);
+    //bool isDone = anIsoStripBuilder.perform(allElements);
+    bool isDone = anIsoStripBuilder.perform1(allElements);
 
     Q_UNUSED (isDone)
 

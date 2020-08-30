@@ -403,28 +403,17 @@ void occGLWidget::init()
     //! create AIS_InteractiveContext
     //! ------------------------------
     occContext = new AIS_InteractiveContext(occViewer);
-
-    occHandle(Prs3d_LineAspect) aHiddenLineAspect = new Prs3d_LineAspect(Quantity_NOC_GRAY,Aspect_TOL_DASH,1.0);
-    occContext->DefaultDrawer()->SetHiddenLineAspect(aHiddenLineAspect);
-
-    //! --------------------
-    //! the selection style
-    //! --------------------
-    //const occHandle(Prs3d_Drawer) selectionStyle = new Prs3d_Drawer();
-    //occHandle(Prs3d_ShadingAspect) shadingAspect = new Prs3d_ShadingAspect();
-    //selectionStyle->SetColor(static_cast<Quantity_NameOfColor>(Quantity_NOC_RED));
-    //selectionStyle->SetShadingAspect(shadingAspect);
-    //occContext->SetSelectionStyle(selectionStyle);
+    occContext->Display(myFloatingLabel,true);
 
     //! -----------------------------------------------
     //! create an additional context for the mesh view
     //! -----------------------------------------------
-    occMeshContext = new AIS_InteractiveContext(occViewer);
+    //occMeshContext = new AIS_InteractiveContext(occViewer);
 
     //! --------------------------------------------------
     //! create an additional context for the results view
     //! --------------------------------------------------
-    occPostContext = new AIS_InteractiveContext(occViewer);
+    //occPostContext = new AIS_InteractiveContext(occViewer);
 
     //! -------------------------------
     //! Set up lights - default lights
@@ -445,25 +434,18 @@ void occGLWidget::init()
     //! Update the visualization in this View
     occView->Redraw();
 
-    //! The text label and the (NULL) floating (x, y, z) label
-    occContext->Display(myFloatingLabel,true);
-
     //! a z-layer
     occViewer->AddZLayer(my_zLayer);
 }
 
-//! ----------------------
-//! function: paint event
+//! ---------------------
+//! function: paintEvent
 //! details:
-//! ----------------------
+//! ---------------------
 void occGLWidget::paintEvent(QPaintEvent* e)
 {
     Q_UNUSED(e);
-
-    if (occContext.IsNull())
-    {
-        this->init();
-    }
+    if(occContext.IsNull()) this->init();
     Standard_CString theContent = timeStamp().toStdString().c_str();
     myTextLabel->SetText(theContent);
     occView->Redraw();
@@ -655,12 +637,12 @@ void occGLWidget::onLButtonDown(const int theFlags,const QPoint thePoint)
         setCursor(cursor);
     }
     //! experimental
-    else if(myCurAction3D==CurAction3D_PlaneDrag)
-    {
-        occContext->MoveTo(thePoint.x(),thePoint.y(),occView,true);
-        occContext->Select(true);
-        cout<<"____"<<occContext->SelectedInteractive()->get_type_name()<<"____"<<endl;
-    }
+    //else if(myCurAction3D==CurAction3D_PlaneDrag)
+    //{
+    //    occContext->MoveTo(thePoint.x(),thePoint.y(),occView,true);
+    //    occContext->Select(true);
+    //    cout<<"____"<<occContext->SelectedInteractive()->get_type_name()<<"____"<<endl;
+    //}
 }
 
 //! -----------------------------
@@ -3486,4 +3468,37 @@ Standard_Boolean occGLWidget::ConvertToPlane(const Standard_Integer Xs,
         }
     }
     return Standard_False;
+}
+
+//! ----------------
+//! function: reset
+//! details:
+//! ----------------
+void occGLWidget::reset()
+{
+    //! since there will be no body on the screen the item
+    //! "pick point" in the context sub-menu must disappear
+    myCursorModeMenu->removeAction(selectPickPointCoordinates);
+
+    QList<QAction *>listOfActions = myCursorModeMenu->actions();
+
+    for(int i=0;i<listOfActions.size();i++)
+    {
+        listOfActions.value(i)->setChecked(false);
+    }
+
+    //! unset selection modes (internal OCC engine)
+    unsetSelectionModes();
+
+    //! unset the view operations (internal widget status)
+    unsetViewOperations();
+
+    //! close all the contexts and clear the scene
+    occContext->CloseAllContexts(false);
+    myLocalCtxNumber = occContext->IndexOfCurrentLocal();
+    occContext->RemoveAll(true);
+
+    //! Mesh context: closes all the contexts and clear the mesh scene
+    //occMeshContext->CloseAllContexts(false);
+    //occMeshContext->RemoveAll(true);
 }

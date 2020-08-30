@@ -55,6 +55,19 @@ class occPreGLWidget: public occGLWidget
 
 protected:
 
+    virtual void mousePressEvent(QMouseEvent *e) override;
+
+protected:
+
+    //! the occ context for the mesh view
+    occHandle(AIS_InteractiveContext) occMeshContext;
+
+    //! init
+    virtual void init() override;
+
+    //! paint event
+    virtual void paintEvent(QPaintEvent *e) override;
+
     virtual void focusInEvent(QFocusEvent *focusEvent);
 
     //! interactive context for the mesh
@@ -77,9 +90,6 @@ protected:
 
     //! Map of prismatic meshes
     QMap<int,occHandle(AIS_InteractiveObject)> myMapOfInteractivePrismaticMeshes;
-
-    //! Map of sliced meshes
-    //QMap<int,occHandle(MeshVS_Mesh)> mySlicedMeshesIO;
 
     //! Shape colors: an array of colors for the shapes
     ArrayOfColors myShapeColor;
@@ -229,7 +239,7 @@ public slots:
     virtual void refreshMeshView(bool onlyExterior);
 
     //! Reset all
-    void reset();
+    virtual void reset() override;
 
     //! Activates the operating mode "model"
     void setWorkingMode_Model();
@@ -246,9 +256,13 @@ public slots:
     //! Activate the operating mode "solution"
     //void setWorkingMode_Solution();
 
-    //! ----------------
+    //! set selection mode mesh
+    void setMeshSelectionMode();
+
+    //! set selection mode geometry
+    void setGeometrySelectionMode();
+
     //! invalidate mesh
-    //! ----------------
     void invalidateMesh(int bodyIndex, Standard_Boolean updateViewer=Standard_False);
     void invalidateMeshes(const std::vector<int> &indexes);
     void invalidateAllMeshes();

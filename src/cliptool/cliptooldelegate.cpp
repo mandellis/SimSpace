@@ -7,9 +7,10 @@
 //! ---
 //! Qt
 //! ---
-#include<QComboBox>
-#include<QLineEdit>
-#include<QSlider>
+#include <QComboBox>
+//#include <QCheckBox>
+#include <QLineEdit>
+#include <QSlider>
 
 //! ----
 //! C++
@@ -49,30 +50,15 @@ QWidget* clipToolDelegate::createEditor(QWidget *parent, const QStyleOptionViewI
     if(!index.isValid()) return 0;
     clipTool *theClipTool = static_cast<clipTool*>(this->parent());
 
-    //! -----------------
-    //! resize the cells
-    //! -----------------
-    //theClipTool->resizeRowsToContents();
-    //theClipTool->resizeColumnsToContents();
-
     switch(index.column())
     {
-    case CLIPPLANE_NAME_COLUMN:
-    {
-        //QLineEdit *le = new QLineEdit(parent);
-        //return le;
-        return 0;
-    }
-        break;
-
-    case CLIPPLANE_ID_COLUMN:
-    {
-        return 0;
-    }
-        break;
-
+    case CLIPPLANE_NAME_COLUMN: return 0; break;
+    case CLIPPLANE_ID_COLUMN: return 0; break;
     case CLIPPLANE_STATUS_COLUMN:
     {
+        //QCheckBox *cb = new QCheckBox(parent);
+        //cb->setChecked(false);
+        //return cb;
         QVariant data;
         QComboBox *comboBox = new QComboBox(parent);
         data.setValue(false); comboBox->addItem("Off",data); //! combo-box index "0"
@@ -107,14 +93,7 @@ QWidget* clipToolDelegate::createEditor(QWidget *parent, const QStyleOptionViewI
     }
         break;
 
-    case CLIPPLANE_BASE_PLANE_DATA_COLUMN:
-    {
-        //! ----------------
-        //! clip plane data
-        //! ----------------
-        return 0;
-    }
-        break;
+    case CLIPPLANE_BASE_PLANE_DATA_COLUMN: return 0; break;
 
     case CLIPPLANE_TRANSLATION_COLUMN:
     {
@@ -156,9 +135,8 @@ void clipToolDelegate::setEditorData(QWidget *editor, const QModelIndex &index) 
     case CLIPPLANE_ID_COLUMN: break;
     case CLIPPLANE_STATUS_COLUMN:
     {
-        //! --------------------------------------------
-        //! initialize the editor for clip plane status
-        //! --------------------------------------------
+        //QCheckBox *cb = static_cast<QCheckBox*>(editor);
+        //connect(cb,SIGNAL(stateChanged(int)),this,SLOT(handleCSStatusChanged()));
         QComboBox *comboBox = static_cast<QComboBox*>(editor);
         comboBox->setCurrentIndex(index.data(Qt::UserRole).toInt());
         connect(comboBox,SIGNAL(currentIndexChanged(int)),this,SLOT(handleCSStatusChanged()));
@@ -167,9 +145,6 @@ void clipToolDelegate::setEditorData(QWidget *editor, const QModelIndex &index) 
 
     case CLIPPLANE_BASE_COORDINATE_SYSTEM_COLUMN:
     {
-        //! ------------------------------------------------
-        //! initialize the editor for clip plane definition
-        //! ------------------------------------------------
         QComboBox *comboBox = static_cast<QComboBox*>(editor);
         QVariant data = index.data(Qt::UserRole);
         int comboBoxIndex = comboBox->findData(data,Qt::UserRole);
@@ -207,6 +182,9 @@ void clipToolDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, 
     case CLIPPLANE_ID_COLUMN: break;
     case CLIPPLANE_STATUS_COLUMN:
     {
+        //QCheckBox *cb = static_cast<QCheckBox*>(editor);
+        //data.setValue(cb->isChecked());
+        //model->setData(index,data,Qt::UserRole);
         QComboBox *comboBox = static_cast<QComboBox*>(editor);
         data = comboBox->currentData(Qt::UserRole);
         model->setData(index,data,Qt::UserRole);

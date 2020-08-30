@@ -636,7 +636,6 @@ void MainWindow::showBodiesOnMasterViewPort(const TColStd_ListOfInteger &listOfA
     {
         int bodyIndex = it.Value();
         const occHandle(AIS_ExtendedShape)& curAIS = occHandle(AIS_ExtendedShape)::DownCast(myDockableMasterViewPort->getViewPort()->getInteractiveObjects().value(bodyIndex));
-        //const occHandle(AIS_ExtendedShape)& curAIS = occHandle(AIS_ExtendedShape)::DownCast(myDockableMasterViewPort->getViewPort()->getInteractiveObjects().at(bodyIndex));
         myDockableMasterViewPort->getContext()->SetDisplayMode(curAIS,AIS_Shaded,false);
         myDockableMasterViewPort->getContext()->Display(curAIS,false);
     }
@@ -1082,6 +1081,23 @@ void MainWindow::createToolBars()
     viewAndSelectionToolbar->setVisible(true);
     viewAndSelectionToolbar->setMovable(true);
 
+    //! add the select geometry/select mesh button
+    QPushButtonExtended *buttonToggleSelectGeometryMesh = new QPushButtonExtended(this);
+    buttonToggleSelectGeometryMesh->setIcon(QIcon(":/icons/icon_select geometry.png"));
+    viewAndSelectionToolbar->addWidget(buttonToggleSelectGeometryMesh);
+
+    QMenu *menuToggleSelectGeometryMesh = new QMenu(this);
+    buttonToggleSelectGeometryMesh->setMenu(menuToggleSelectGeometryMesh);
+
+    QAction *actionToggleSelectGeometry = new QAction(QIcon(":/icons/icon_select geometry.png"),"Select geometry",this);
+    connect(actionToggleSelectGeometry,SIGNAL(triggered(bool)),this,SLOT(setSelectionModeGeometry()));
+
+    QAction *actionToggleSelectMesh = new QAction(QIcon(":/icons/icon_select mesh.png"),"Select mesh",this);
+    connect(actionToggleSelectMesh,SIGNAL(triggered(bool)),this,SLOT(setSelectionModeMesh()));
+
+    menuToggleSelectGeometryMesh->addAction(actionToggleSelectGeometry);
+    menuToggleSelectGeometryMesh->addAction(actionToggleSelectMesh);
+
     //! add the pick point coordinates
     viewAndSelectionToolbar->addAction(actionTogglePickPointCoordinates);
 
@@ -1094,10 +1110,8 @@ void MainWindow::createToolBars()
     //! add a separator
     viewAndSelectionToolbar->addSeparator();
 
-    //! -------------------------------------------------------
     //! add the "type of selection" menu button to the toolbar
-    //! -------------------------------------------------------
-    myPushButtonTypeOfSelection = new QPushButtonExtended();
+    myPushButtonTypeOfSelection = new QPushButtonExtended(this);
     myPushButtonTypeOfSelection->setIcon(QIcon(":/icons/icon_single select.png"));
     viewAndSelectionToolbar->addWidget(myPushButtonTypeOfSelection);
     QMenu *menuButtonTypeOfSelection = new QMenu(this);
@@ -1209,6 +1223,26 @@ void MainWindow::setSelectionModeSingle()
     myMainOCCViewer->setGlobalCurSelectionMode(0);
     myPushButtonTypeOfSelection->setIcon(QIcon(":/icons/icon_single select.png"));
     statusBar()->showMessage("Single selection",TRANSIENT_MESSAGE_TIMEOUT);
+}
+
+//! -----------------------------------
+//! function: setSelectionModeGeometry
+//! details:
+//! -----------------------------------
+void MainWindow::setSelectionModeGeometry()
+{
+    cout<<"setSelectionModeGeometry()->____function called____"<<endl;
+    myMainOCCViewer->setGeometrySelectionMode();
+}
+
+//! -------------------------------
+//! function: setSelectionModeMesh
+//! details:
+//! -------------------------------
+void MainWindow::setSelectionModeMesh()
+{
+    cout<<"setSelectionModeMesh()->____function called____"<<endl;
+    myMainOCCViewer->setMeshSelectionMode();
 }
 
 //! ------------------------------

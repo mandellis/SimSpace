@@ -345,8 +345,10 @@ void clipTool::addItemToTable()
     //! recompute the hidden elements
     //! send to the viewer the map of element IDs to hide
     //! --------------------------------------------------
-    this->computeHiddenElements();
-    myOCCViewer->setHiddenElements(myHiddenElements);
+    //this->computeHiddenElements();
+    //myOCCViewer->setHiddenElements(myHiddenElements);
+    myOCCViewer->clipMesh();
+    myOCCViewer->clipResult();
 
     //! ------------------------------
     //! labels for horizontal headers
@@ -508,9 +510,9 @@ void clipTool::updateCSDataByExternalCSChange(QStandardItem *theCurrentModifiedC
         int sliderValue = indexPlaneTranslation.data(Qt::UserRole).toInt();
         double lx,ly,lz;
         myOCCViewer->getSceneBoundingBox(lx,ly,lz);
-        double D = sqrt(lx*lx+ly*ly+lz*lz);
+        //double D = sqrt(lx*lx+ly*ly+lz*lz);
+        double D = fabs(lx*coeffs[0]+ly*coeffs[1]+lz*coeffs[2]);
         double translation = double(sliderValue/100.0)*(D/1.0);
-        cout<<"____slider bar position: "<<sliderValue<<"____"<<endl;
         double a = coeffs[0];
         double b = coeffs[1];
         double c = coeffs[2];
@@ -522,7 +524,7 @@ void clipTool::updateCSDataByExternalCSChange(QStandardItem *theCurrentModifiedC
         value.setValue(coeffs_trans);
         internalModel->setData(indexShiftedPlane,value,Qt::UserRole);
         value.setValue(QString("(%1, %2, %3, %4").arg(a).arg(b).arg(c).arg(d));
-        cout<<"____updated coefficients: "<<QString("(%1, %2, %3, %4").arg(a).arg(b).arg(c).arg(d).toStdString()<<"____"<<endl;
+        //cout<<"____updated coefficients: "<<QString("(%1, %2, %3, %4").arg(a).arg(b).arg(c).arg(d).toStdString()<<"____"<<endl;
         internalModel->setData(indexShiftedPlane,value,Qt::DisplayRole);
     }
 }
@@ -658,7 +660,9 @@ void clipTool::updateClipPlaneOfRow()
 
     double lx,ly,lz;
     myOCCViewer->getSceneBoundingBox(lx,ly,lz);
-    double translation = sqrt(lx*lx+ly*ly+lz*lz)*double(sliderPosition/100.0);
+    //double D = sqrt(lx*lx+ly*ly+lz*lz);
+    double D = fabs(lx*a+ly*b+lz*c);
+    double translation = D*double(sliderPosition/100.0);
     this->translatePlane(a,b,c,d,translation);
     QVector<double> coeffs_shifted_plane {a,b,c,d};
 
@@ -676,6 +680,7 @@ void clipTool::updateClipPlaneOfRow()
     //! --------------------------
     myOCCViewer->clipMesh();
     myOCCViewer->clipResult();
+    //myOCCViewer->getView()->Redraw();
 }
 
 //! ------------------------------
@@ -687,7 +692,6 @@ void clipTool::updateCSTranslation(int sliderPosition)
     //cout<<"clipTool::updateCSTranslation()->____slider position: "<<sliderPosition<<"____"<<endl;
     double lx,ly,lz;
     myOCCViewer->getSceneBoundingBox(lx,ly,lz);
-    double BBXDiagonal = sqrt(lx*lx+ly*ly+lz*lz);
 
     //! ------------------------------------------
     //! get the current CS undergoing translation
@@ -700,12 +704,14 @@ void clipTool::updateCSTranslation(int sliderPosition)
     //! --------------------
     //! compute translation
     //! --------------------
-    double translation = double(sliderPosition/100.0)*(BBXDiagonal/1.0);
-
     double a = coeffs[0];
     double b = coeffs[1];
     double c = coeffs[2];
     double d = coeffs[3];
+
+    //double D = sqrt(lx*lx+ly*ly+lz*lz);
+    double D = fabs(lx*coeffs[0]+ly*coeffs[1]+lz*coeffs[2]);
+    double translation = double(sliderPosition/100.0)*(D/1.0);
     this->translatePlane(a,b,c,d,translation);
 
     //! --------------------------------------------
@@ -716,7 +722,7 @@ void clipTool::updateCSTranslation(int sliderPosition)
     QModelIndex index = this->currentIndex().sibling(this->currentIndex().row(),CLIPPLANE_SHIFTED_PLANE_COEFFICIENTS_COLUMN);
     value.setValue(shifted_plane_coeffs);
     internalModel->setData(index,value,Qt::UserRole);
-    value.setValue(QString("%1, %2, %3, %4").arg(a).arg(b).arg(c).arg(d));
+    value.setValue(QString("(%1, %2, %3, %4)").arg(a).arg(b).arg(c).arg(d));
     internalModel->setData(index,value,Qt::DisplayRole);
 
     //! -------------------------------------------------
@@ -739,6 +745,7 @@ void clipTool::updateCSTranslation(int sliderPosition)
     }
         break;
     }
+    //myOCCViewer->getView()->Redraw();
 }
 
 //! --------------------------------
@@ -748,6 +755,7 @@ void clipTool::updateCSTranslation(int sliderPosition)
 void clipTool::computeHiddenElements()
 {
     cout<<"clipTool::computeHiddenElements()->____function called____"<<endl;
+
     //! ------------------------------------------------------
     //! in case no clip plane is active or there are not clip
     //! planes defined, show all elements

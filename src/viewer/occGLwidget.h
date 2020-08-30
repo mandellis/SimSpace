@@ -170,10 +170,10 @@ protected:
     occHandle(AIS_InteractiveContext) occContext;
 
     //! the occ context for the mesh view
-    occHandle(AIS_InteractiveContext) occMeshContext;
+    //occHandle(AIS_InteractiveContext) occMeshContext;
 
     //! the occ context for the results view
-    occHandle(AIS_InteractiveContext) occPostContext;
+    //occHandle(AIS_InteractiveContext) occPostContext;
 
     //! init
     virtual void init();
@@ -332,6 +332,9 @@ public slots:
 
     //! hide all markers, including triads
     void hideAllMarkers(bool updateViewer = true);
+
+    //! reset
+    virtual void reset();
 
 protected slots:
 
