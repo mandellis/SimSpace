@@ -71,8 +71,6 @@ protected:
                 edit(index);
             }
         }
-        cout<<"____left button pressed____"<<endl;
-        myOCCViewer->setAction3D_PlaneDrag();
 
         // pass on other buttons to base class
         QTableView::mousePressEvent(event);

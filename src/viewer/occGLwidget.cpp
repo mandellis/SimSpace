@@ -1,4 +1,3 @@
-#define ValZWMin 1
 #define TRANSPARENCY 0.0
 #define limitAngle 30.1     //! the limit angle for adjacent selection
 
@@ -146,6 +145,7 @@ occGLWidget::occGLWidget(QWidget* parent):QGLWidget(parent),
     myRectBand(NULL),
     myDisplayQuality(displayQuality_Medium),
     myRotationPointType(RotationPointType_gravity),
+    myCurSelectionType(SelectionType_Geometry),
     myCurClipPlaneID(-1) //! experimental
 {
     cout<<"occGLWidget::occGLWidget()->____CONSTRUCTOR CALLED____"<<endl;
@@ -531,22 +531,18 @@ void occGLWidget::onMouseWheel(const int theFlags, const int theDelta, const QPo
 //! ----------------------------
 void occGLWidget::mousePressEvent(QMouseEvent *e)
 {
-    //cout<<"occGLWidget::mousePressEvent()->____mouse button pressed____"<<endl;
-    //! if the left button has been pressed
-    if (e->button() == Qt::LeftButton)
+    switch(e->button())
     {
+    case Qt::LeftButton:
         if(myCurAction3D==CurAction3D_Panning) setCursor(Qt::SizeAllCursor);
         onLButtonDown((e->buttons() | e->modifiers()), e->pos());
-    }
-    //! if the mid button has been pressed
-    else if (e->button() == Qt::MidButton)
-    {
+        break;
+    case Qt::MidButton:
         onMButtonDown((e->buttons() | e->modifiers()), e->pos());
-    }
-    //! if the right button has been pressed
-    else if (e->button() == Qt::RightButton)
-    {
+        break;
+    case Qt::RightButton:
         onRButtonDown((e->buttons() | e->modifiers()), e->pos());
+        break;
     }
 }
 
@@ -559,39 +555,21 @@ void occGLWidget::wheelEvent(QWheelEvent *e)
     onMouseWheel(e->buttons(),e->delta(),e->pos());
 }
 
-//! ------------------------------
-//! function: mouse release event
+//! ----------------------------
+//! function: mouseReleaseEvent
 //! details:
-//! ------------------------------
+//! ----------------------------
 void occGLWidget::mouseReleaseEvent(QMouseEvent *e)
 {
-    if (e->button() == Qt::LeftButton)
+    switch(e->button())
     {
-        //! ----------------------------------------------------------
-        //! back from a pan operation - returns to the default cursor
-        //! ----------------------------------------------------------
-        if(myCurAction3D==CurAction3D_Panning ||
-                myCurAction3D==CurAction3D_Rotation ||
-                myCurAction3D==CurAction3D_WindowZooming)
-        {
+    case Qt::LeftButton:
+        if(myCurAction3D==CurAction3D_Panning || myCurAction3D==CurAction3D_Rotation || myCurAction3D==CurAction3D_WindowZooming)
             setCursor(Qt::ArrowCursor);
-        }
-
-        //! experimental
-        if(myCurAction3D==CurAction3D_PlaneDrag)
-        {
-            myCurAction3D = myCurAction3D_old;
-        }
-
         onLButtonUp(e->buttons() | e->modifiers(), e->pos());
-    }
-    else if (e->button() == Qt::MidButton)
-    {
-        onMButtonUp(e->buttons() | e->modifiers(), e->pos());
-    }
-    else if (e->button() == Qt::RightButton)
-    {
-        onRButtonUp(e->buttons() | e->modifiers(), e->pos());
+        break;
+    case Qt::MidButton: onMButtonUp(e->buttons() | e->modifiers(), e->pos()); break;
+    case Qt::RightButton: onRButtonUp(e->buttons() | e->modifiers(), e->pos()); break;
     }
 }
 
@@ -623,7 +601,6 @@ void occGLWidget::onLButtonDown(const int theFlags,const QPoint thePoint)
     //! Change the cursor type
     //! ------------------------
     QBitmap mask(":/cursors/mask.bmp");
-
     if(myCurAction3D==CurAction3D_Rotation)
     {
         QPixmap cursor(":/cursors/cursor_rotate.png",".png",Qt::AutoColor);
@@ -636,28 +613,22 @@ void occGLWidget::onLButtonDown(const int theFlags,const QPoint thePoint)
         cursor.setMask(mask);
         setCursor(cursor);
     }
-    //! experimental
-    //else if(myCurAction3D==CurAction3D_PlaneDrag)
-    //{
-    //    occContext->MoveTo(thePoint.x(),thePoint.y(),occView,true);
-    //    occContext->Select(true);
-    //    cout<<"____"<<occContext->SelectedInteractive()->get_type_name()<<"____"<<endl;
-    //}
 }
 
-//! -----------------------------
+//! ------------------------
 //! function: onMButtonDown
-//! details:  mid button pressed
-//! -----------------------------
+//! details:
+//! ------------------------
 void occGLWidget::onMButtonDown(const int theFlags,const QPoint thePoint)
 {
     Q_UNUSED(theFlags);
     Q_UNUSED(thePoint);
 }
 
-//! -------------------------------
-//! function: right button pressed
-//! -------------------------------
+//! ------------------------
+//! function: onRButtonDown
+//! details:
+//! ------------------------
 void occGLWidget::onRButtonDown(const int theFlags,const QPoint thePoint)
 {
     Q_UNUSED(theFlags);
@@ -677,8 +648,6 @@ void occGLWidget::onRButtonDown(const int theFlags,const QPoint thePoint)
 void occGLWidget::onLButtonUp(const int theFlags,const QPoint thePoint)
 {
     Q_UNUSED(theFlags);
-
-    //static occHandle(AIS_Shape) detectedShape;
 
     //! -----------------------------------------------------------
     //! Handling the 3D actions window zooming, rotation, panning
@@ -723,7 +692,7 @@ void occGLWidget::onLButtonUp(const int theFlags,const QPoint thePoint)
                     //! -------------------------
                     //! click on the empty space
                     //! -------------------------
-                    double X_gravity, Y_gravity, Z_gravity;                    
+                    double X_gravity, Y_gravity, Z_gravity;
                     X_gravity = Y_gravity = Z_gravity = 0.0;
 
                     gp_Pnt newCOR(X_gravity, Y_gravity, Z_gravity);
@@ -828,16 +797,6 @@ void occGLWidget::onMouseMove(const int theFlags, QPoint thePoint)
 
     occContext->MoveTo(x_cur,y_cur,occView, true);
 
-    //! -------------
-    //! experimental
-    //! -------------
-    //double Xp,Yp,Zp;
-    //occView->Convert(x_cur,y_cur,Xp,Yp,Zp);
-    //cout<<"____("<<Xp<<", "<<Yp<<", "<<Zp<<")____"<<endl;
-    //! -----------------
-    //! end experimental
-    //! -----------------
-
     static TopoDS_Shape theOldDetectedShape;
 
     //! The 3D actions: rotation, panning, window zooming
@@ -860,48 +819,8 @@ void occGLWidget::onMouseMove(const int theFlags, QPoint thePoint)
         case CurAction3D_WindowZooming:
             myXmax = x_cur;
             myYmax = y_cur;
-            drawRubberBand(myXmin, myYmin, x_cur, y_cur);
+            this->drawRubberBand(myXmin, myYmin, x_cur, y_cur);
             break;
-
-            //! -------------
-            //! experimental
-            //! -------------
-        /*
-        case CurAction3D_PlaneDrag:
-        {
-            int curClipPlaneID = this->getCurrentClipPlaneID();
-            int delta = int(sqrt(pow(x_cur-myXmin,2)+pow(y_cur-myYmin,2)));
-            cout<<"____dragging clip plane ID: "<<curClipPlaneID<<" delta: "<<delta<<"____"<<endl;
-            myXmax = x_cur;
-            myYmax = y_cur;
-
-            //! --------------------------------
-            //! retrieve the current clip plane
-            //! --------------------------------
-            const occHandle(Graphic3d_ClipPlane) &curClipPlane = myMapOfClipPlanes.value(curClipPlaneID);
-            Graphic3d_ClipPlane::Equation planeEquation = curClipPlane->GetEquation();
-            double a = *planeEquation.GetData();
-            double b = *(planeEquation.GetData()+1);
-            double c = *(planeEquation.GetData()+2);
-            double d = *(planeEquation.GetData()+3);
-
-            gp_Pln aPlane(a,b,c,d);
-            gp_Ax1 planeAxis = aPlane.Axis();
-            gp_Dir translationDirection = planeAxis.Direction();
-            gp_Vec translationVector(translationDirection);
-            double deltaZ = double(delta)*1000.0/1000.0;
-            translationVector.Scale(deltaZ);
-            aPlane.Translate(translationVector);
-
-            aPlane.Coefficients(a,b,c,d);
-            occHandle(Geom_Plane) geomPlane = new Geom_Plane(a,b,c,d);
-            myMapOfHandlePlanes.value(curClipPlaneID)->SetComponent(geomPlane);
-            occContext->Redisplay(myMapOfHandlePlanes.value(curClipPlaneID),true,false);
-
-            occView->Redraw();
-        }
-            break;
-            */
         }
 
         //! Handling current global selection modes multiple and single
@@ -910,16 +829,18 @@ void occGLWidget::onMouseMove(const int theFlags, QPoint thePoint)
         switch(myCurGlobalSelectionMode)
         {
         case CurGlobalSelectionMode_Multiple:
+        {
             if(myCurAction3D == CurAction3D_Nothing)
             {
-                //cout<<"doing multiple selection"<<endl;
                 myXmax = x_cur;
                 myYmax = y_cur;
-                drawRubberBand(myXmin, myYmin, x_cur, y_cur);
+                this->drawRubberBand(myXmin, myYmin, x_cur, y_cur);
             }
+        }
             break;
 
         case CurGlobalSelectionMode_Single:
+        {
             //!------------------------------------------------------------------------------
             //! "if" statement explanation:
             //! 1)  A local context must be open, otherwise the "occContext->DetectedShape()"
@@ -967,12 +888,14 @@ void occGLWidget::onMouseMove(const int theFlags, QPoint thePoint)
                     emit selectionChanged();
                 }
             }
+        }
             break;
 
         default:
             break;
         }
     }
+
     //! -------------------------------------------------------------------
     //! If the mouse is moving and the pick point coordinate selection mode
     //! is active, write the coordinates of the picked point on the screen.
@@ -1018,7 +941,7 @@ void occGLWidget::onMouseMove(const int theFlags, QPoint thePoint)
                 //! no point picked: write on the screen only the label with time and date
                 myFloatingLabel->SetText("");
             }
-            occContext->RecomputePrsOnly(myFloatingLabel,Standard_True, Standard_False);
+            occContext->RecomputePrsOnly(myFloatingLabel,Standard_True,Standard_False);
         }
     }
 }
@@ -1221,119 +1144,100 @@ void occGLWidget::drawRubberBand(const int minX,const int minY,const int maxX,co
     */
 }
 
-//! --------------------------------
-//! function: setAction3D_PlaneDrag
-//! details:
-//! --------------------------------
-void occGLWidget::setAction3D_PlaneDrag()
-{
-    myCurAction3D_old = myCurAction3D;
-    myCurAction3D =CurAction3D_PlaneDrag;
-    switch(myCurSelectionMode)
-    {
-    case(CurSelection_Vertex): occContext->DeactivateStandardMode(TopAbs_VERTEX); break;
-    case(CurSelection_Edge): occContext->DeactivateStandardMode(TopAbs_EDGE); break;
-    case(CurSelection_Face): occContext->DeactivateStandardMode(TopAbs_FACE); break;
-    case(CurSelection_Solid): occContext->DeactivateStandardMode(TopAbs_SOLID); break;
-    case(CurSelection_PointCoordinatesPicking): break;
-    }
-}
-
-//! --------------------------------------------------
+//! -------------------------------
 //! function: setAction3D_Rotation
-//! details:  set "rotation" as current the 3D action
-//! --------------------------------------------------
+//! details:
+//! -------------------------------
 void occGLWidget::setAction3D_Rotation()
 {
     myCurAction3D=CurAction3D_Rotation;
     myAllowSinglePick = Standard_True;
 
+    //! -----------------------------------------------------
+    //! deactivate all the selection modes of all the shapes
+    //! activate selection mode for FACEs
+    //! -----------------------------------------------------
+    AIS_ListOfInteractive listOfIO;
+    occContext->ObjectsInside(listOfIO,AIS_KOI_Shape,0);
+    for(AIS_ListIteratorOfListOfInteractive it(listOfIO); it.More(); it.Next())
+    {
+        occContext->Deactivate(it.Value());
+        occContext->Activate(it.Value(),TopAbs_FACE);
+    }
+    occContext->SetAutomaticHilight(Standard_False);
+
+    /*
     switch(myCurSelectionMode)
     {
-    case(CurSelection_Vertex):
-        occContext->DeactivateStandardMode(TopAbs_VERTEX);
-        break;
-    case(CurSelection_Edge):
-        occContext->DeactivateStandardMode(TopAbs_EDGE);
-        break;
-    case(CurSelection_Face):
-        // do nothing
-        break;
-    case(CurSelection_Solid):
-        occContext->DeactivateStandardMode(TopAbs_SOLID);
-        break;
-    case(CurSelection_PointCoordinatesPicking):
-        // do nothing
-        break;
-    default:
-        break;
+    case(CurSelection_Vertex): occContext->DeactivateStandardMode(TopAbs_VERTEX); break;
+    case(CurSelection_Edge): occContext->DeactivateStandardMode(TopAbs_EDGE); break;
+    case(CurSelection_Face):  break;
+    case(CurSelection_Solid): occContext->DeactivateStandardMode(TopAbs_SOLID); break;
+    case(CurSelection_PointCoordinatesPicking): break;
     }
     occContext->ActivateStandardMode(TopAbs_FACE);
     occContext->SetAutomaticHilight(Standard_False);
+    */
 }
 
-//! ---------------------------------------------
+//! --------------------------
 //! function: setAction3D_Pan
-//! details:  set "pan" as current the 3D action
-//! ---------------------------------------------
+//! details:
+//! --------------------------
 void occGLWidget::setAction3D_Pan()
 {
     myCurAction3D=CurAction3D_Panning;
     myAllowSinglePick = Standard_True;
 
-    switch(myCurSelectionMode)
+    //! -----------------------------------------------------
+    //! deactivate all the selection modes of all the shapes
+    //! activate selection mode for FACEs
+    //! -----------------------------------------------------
+    AIS_ListOfInteractive listOfIO;
+    occContext->ObjectsInside(listOfIO,AIS_KOI_Shape,0);
+    for(AIS_ListIteratorOfListOfInteractive it(listOfIO); it.More(); it.Next())
     {
-    case(CurSelection_Vertex):
-        occContext->DeactivateStandardMode(TopAbs_VERTEX);
-        break;
-    case(CurSelection_Edge):
-        occContext->DeactivateStandardMode(TopAbs_EDGE);
-        break;
-    case(CurSelection_Face):
-        // do nothing
-        break;
-    case(CurSelection_Solid):
-        occContext->DeactivateStandardMode(TopAbs_SOLID);
-        break;
-    case(CurSelection_PointCoordinatesPicking):
-        // do nothing
-        break;
-    default:
-        break;
+        occContext->Deactivate(it.Value());
+        occContext->Activate(it.Value(),TopAbs_FACE);
     }
-    occContext->ActivateStandardMode(TopAbs_FACE);
     occContext->SetAutomaticHilight(Standard_False);
+
+    //switch(myCurSelectionMode)
+    //{
+    //case(CurSelection_Vertex): occContext->DeactivateStandardMode(TopAbs_VERTEX); break;
+    //case(CurSelection_Edge): occContext->DeactivateStandardMode(TopAbs_EDGE); break;
+    //case(CurSelection_Face): break;
+    //case(CurSelection_Solid): occContext->DeactivateStandardMode(TopAbs_SOLID); break;
+    //case(CurSelection_PointCoordinatesPicking): break;
+    //}
+    //occContext->ActivateStandardMode(TopAbs_FACE);
 }
 
-//! --------------------------------------------------------
+//! ------------------------------------
 //! function: setAction3D_WindowZooming
-//! details:  set "window zooming" as current the 3D action
-//! --------------------------------------------------------
+//! details:
+//! ------------------------------------
 void occGLWidget::setAction3D_WindowZooming()
 {
     myCurAction3D=CurAction3D_WindowZooming;
     myAllowSinglePick = Standard_False;
 
-    switch(myCurSelectionMode)
-    {
-    case(CurSelection_Vertex):
-        occContext->DeactivateStandardMode(TopAbs_VERTEX);
-        break;
-    case(CurSelection_Face):
-        occContext->DeactivateStandardMode(TopAbs_FACE);
-        break;
-    case(CurSelection_Edge):
-        occContext->DeactivateStandardMode(TopAbs_EDGE);
-        break;
-    case(CurSelection_Solid):
-        occContext->DeactivateStandardMode(TopAbs_SOLID);
-        break;
-    case(CurSelection_PointCoordinatesPicking):
-        occContext->DeactivateStandardMode(TopAbs_FACE);
-        break;
-    default:
-        break;
-    }
+    //switch(myCurSelectionMode)
+    //{
+    //case(CurSelection_Vertex): occContext->DeactivateStandardMode(TopAbs_VERTEX); break;
+    //case(CurSelection_Face): occContext->DeactivateStandardMode(TopAbs_FACE); break;
+    //case(CurSelection_Edge): occContext->DeactivateStandardMode(TopAbs_EDGE); break;
+    //case(CurSelection_Solid): occContext->DeactivateStandardMode(TopAbs_SOLID); break;
+    //case(CurSelection_PointCoordinatesPicking): occContext->DeactivateStandardMode(TopAbs_FACE); break;
+    //}
+
+    //! -----------------------------------------------------
+    //! deactivate all the selection modes of all the shapes
+    //! -----------------------------------------------------
+    AIS_ListOfInteractive listOfIO;
+    occContext->ObjectsInside(listOfIO,AIS_KOI_Shape,0);
+    for(AIS_ListIteratorOfListOfInteractive it(listOfIO); it.More(); it.Next()) occContext->Deactivate(it.Value());
+
     occContext->SetAutomaticHilight(Standard_False);
     myCurSelectionMode=CurSelection_Nothing;
 }
@@ -1360,48 +1264,35 @@ void occGLWidget::isometricView()
     occView->SetProj(V3d_XposYposZpos);
 }
 
-//! ------------------------------------
+//! ---------------------------
 //! function: setSelectionMode
-//! details:  activate a selection mode
-//! ------------------------------------
-#include <Aspect_TypeOfFacingModel.hxx>
-#include <Graphic3d_MaterialAspect.hxx>
+//! details:
+//! ---------------------------
 void occGLWidget::setSelectionMode(CurSelectionMode selectionMode)
 {
-    //! EXPERIMENTAL
-    //! if(occContext->IndexOfCurrentLocal()<1)myLocalCtxNumber==occContext->OpenLocalContext();
-
+    //! -------------------------------------------------------
     //! during the selection the 3D operations are not allowed
+    //! -------------------------------------------------------
     myCurAction3D=CurAction3D_Nothing;
 
-    //! After pressing a 3D view operation button the current selection
+    //! ----------------------------------------------------------------
+    //! After pushing a 3D view operation button the current selection
     //! mode is not changed, so the previous selection is kept active
-    //! If, returning from a 3D view operation, the selection
-    //! mode is changed, the previous selection is cleared
-    if(selectionMode!=myCurSelectionMode)
-    {
-        //cout<<"occGLWidget::setSelectionMode->____CURRENT SELECTION MODE CHANGED____"<<endl;
-        emptyTheSelection();
-    }
+    //! If, returning from a 3D view operation, the selection mode is
+    //! changed, the previous selection is cleared
+    //! ----------------------------------------------------------------
+    if(selectionMode!=myCurSelectionMode) this->clearGeometrySelection();
 
-    //! ---------------------------------------------
-    //! activate one of the standard selection modes
-    //! try and error lead to the following setting
-    //! for Prs3D_TypeOgHighlight
-    //! ---------------------------------------------
-    Prs3d_TypeOfHighlight toh = Prs3d_TypeOfHighlight_LocalSelected;
+    TopAbs_ShapeEnum theMode;
     Aspect_TypeOfHighlightMethod atoh = Aspect_TOHM_COLOR;
+    myCurSelectionMode = selectionMode;
     switch(selectionMode)
     {
     case CurSelection_Solid:
     {
-        myCurSelectionMode = CurSelection_Solid;
+        theMode = TopAbs_SOLID;
         myAllowSinglePick = Standard_False;
-        occContext->ActivateStandardMode(TopAbs_SOLID);
-        occContext->DeactivateStandardMode(TopAbs_FACE);
-        occContext->DeactivateStandardMode(TopAbs_EDGE);
-        occContext->DeactivateStandardMode(TopAbs_VERTEX);
-        if(!occContext->AutomaticHilight()) occContext->SetAutomaticHilight(Standard_True);
+        occContext->SetAutomaticHilight(Standard_True);
 
         occHandle(Prs3d_Drawer) selectionDrawer = new Prs3d_Drawer();
         selectionDrawer->SetDisplayMode(AIS_Shaded);
@@ -1414,13 +1305,9 @@ void occGLWidget::setSelectionMode(CurSelectionMode selectionMode)
 
     case CurSelection_Face:
     {
-        myCurSelectionMode = CurSelection_Face;
+        theMode = TopAbs_FACE;
         myAllowSinglePick = Standard_False;
-        occContext->DeactivateStandardMode(TopAbs_SOLID);
-        occContext->ActivateStandardMode(TopAbs_FACE);
-        occContext->DeactivateStandardMode(TopAbs_EDGE);
-        occContext->DeactivateStandardMode(TopAbs_VERTEX);
-        if(!occContext->AutomaticHilight()) occContext->SetAutomaticHilight(Standard_True);
+        occContext->SetAutomaticHilight(Standard_True);
 
         occHandle(Prs3d_Drawer) selectionDrawer = new Prs3d_Drawer();
         selectionDrawer->SetDisplayMode(AIS_Shaded);
@@ -1434,13 +1321,8 @@ void occGLWidget::setSelectionMode(CurSelectionMode selectionMode)
 
     case CurSelection_Edge:
     {
-        myCurSelectionMode = CurSelection_Edge;
         myAllowSinglePick = Standard_False;
-        occContext->DeactivateStandardMode(TopAbs_SOLID);
-        occContext->DeactivateStandardMode(TopAbs_FACE);
-        occContext->ActivateStandardMode(TopAbs_EDGE);
-        occContext->DeactivateStandardMode(TopAbs_VERTEX);
-        if(!occContext->AutomaticHilight())  occContext->SetAutomaticHilight(Standard_True);
+        occContext->SetAutomaticHilight(Standard_True);
 
         occHandle(Prs3d_Drawer) selectionDrawer = new Prs3d_Drawer();
         selectionDrawer->SetDisplayMode(AIS_Shaded);
@@ -1452,13 +1334,8 @@ void occGLWidget::setSelectionMode(CurSelectionMode selectionMode)
 
     case CurSelection_Vertex:
     {
-        myCurSelectionMode = CurSelection_Vertex;
         myAllowSinglePick = Standard_False;
-        occContext->DeactivateStandardMode(TopAbs_SOLID);
-        occContext->DeactivateStandardMode(TopAbs_FACE);
-        occContext->DeactivateStandardMode(TopAbs_EDGE);
-        occContext->ActivateStandardMode(TopAbs_VERTEX);
-        if(!occContext->AutomaticHilight()) occContext->SetAutomaticHilight(Standard_True);
+        occContext->SetAutomaticHilight(Standard_True);
 
         occHandle(Prs3d_Drawer) selectionDrawer = new Prs3d_Drawer();
         selectionDrawer->SetDisplayMode(AIS_Shaded);
@@ -1469,42 +1346,54 @@ void occGLWidget::setSelectionMode(CurSelectionMode selectionMode)
 
     case CurSelection_PointCoordinatesPicking:
     {
+        theMode = theMode = TopAbs_FACE;
         myCurSelectionMode = CurSelection_PointCoordinatesPicking;
         myAllowSinglePick = Standard_False;
-        occContext->DeactivateStandardMode(TopAbs_SOLID);
-        occContext->ActivateStandardMode(TopAbs_FACE);
-        occContext->DeactivateStandardMode(TopAbs_EDGE);
-        occContext->DeactivateStandardMode(TopAbs_VERTEX);
         occContext->SetAutomaticHilight(Standard_False);
     }
         break;
 
-    default: break;
-    }
-}
-
-//! ---------------------------------------------------
-//! function: emptyTheSelection
-//! details:  the function does not change the context
-//! ---------------------------------------------------
-void occGLWidget::emptyTheSelection()
-{
-    if(occContext->IndexOfCurrentLocal()>0)
+    case CurSelection_Nothing:
     {
-        cout<<"occGLWidget::emptyTheSelection()->____function called____"<<endl;
-        // deselect the subshapes
-        for(occContext->InitSelected();occContext->MoreSelected();occContext->InitSelected())
-        {
-            occContext->ClearSelected(Standard_False);
-        }
+        myAllowSinglePick = Standard_False;
+        occContext->SetAutomaticHilight(Standard_False);
+    }
+        break;
+    }
+
+    //! --------------------------------------------------------
+    //! deactivate all the selection modes and activate theMode
+    //! --------------------------------------------------------
+    AIS_ListOfInteractive listOfIO;
+    occContext->ObjectsInside(listOfIO,AIS_KOI_Shape,0);
+    if(myCurSelectionMode == CurSelection_Nothing)
+    {
+        for(AIS_ListIteratorOfListOfInteractive it(listOfIO); it.More(); it.Next()) occContext->Deactivate(it.Value());
     }
     else
     {
-        cout<<"occGLWidget::emptyTheSelection()->____function called____"<<endl;
-        for(occContext->InitCurrent();occContext->MoreCurrent();occContext->InitCurrent())
+        for(AIS_ListIteratorOfListOfInteractive it(listOfIO); it.More(); it.Next())
         {
-            occContext->ClearCurrents(Standard_False);
+            occContext->Deactivate(it.Value());
+            occContext->Activate(it.Value(),theMode);
         }
+    }
+}
+
+//! ----------------------------
+//! function: clearGeometrySelection
+//! details:
+//! ----------------------------
+void occGLWidget::clearGeometrySelection()
+{
+    if(occContext->IndexOfCurrentLocal()>0)
+    {
+        cout<<"occGLWidget::clearGeometrySelection()->____function called____"<<endl;
+        for(occContext->InitSelected();occContext->MoreSelected();occContext->InitSelected()) occContext->ClearSelected(Standard_False);
+    }
+    else
+    {
+        for(occContext->InitCurrent();occContext->MoreCurrent();occContext->InitCurrent()) occContext->ClearCurrents(Standard_False);
     }
     occContext->UpdateCurrentViewer();
 }
@@ -1808,7 +1697,7 @@ void occGLWidget::hideSelectedBodies()
     //! Reactivate the current selection mode (when the context
     //! is closed the selection modes and the selection list are lost)
     //! ---------------------------------------------------------------
-    this->reactivateCurrentStandardSelectionMode();
+    this->reactivateSelectionMode();
 }
 
 //! ------------------------
@@ -1827,7 +1716,7 @@ void occGLWidget::showAllBodies()
     //! Reactivate the current selection mode (when the context
     //! is closed the selection modes and the selection list are lost)
     //! ---------------------------------------------------------------
-    this->reactivateCurrentStandardSelectionMode();
+    this->reactivateSelectionMode();
 
     //! ---------------------------------------------
     //! Mark all the AIS_ExtendedShape(s) as visible
@@ -1900,40 +1789,41 @@ void occGLWidget::hideAllTheOtherBodies()
     //! Now the selection modes must be reactivated, because when the
     //! context is closed, the selection modes are lost (and the list
     //! of the selected objects is empty)
-    this->reactivateCurrentStandardSelectionMode();
+    this->reactivateSelectionMode();
 }
 
 //! -------------------------------------------------
-//! function: reactivateCurrentStandardSelectionMode
+//! function: reactivateSelectionMode
 //! details:
 //! -------------------------------------------------
-void occGLWidget::reactivateCurrentStandardSelectionMode()
+void occGLWidget::reactivateSelectionMode()
 {
-    //cout<<"occGLWidget::reactivateCurrentStandardSelectionMode()->____function called____"<<endl;
+    bool setOneOfTheSelectionModes = true;
+    TopAbs_ShapeEnum theMode;
     switch(myCurSelectionMode)
     {
-    case CurSelection_Solid:
-        occContext->ActivateStandardMode(TopAbs_SOLID);
-        occContext->SetAutomaticHilight(true);
-        //setTypeOfHighlight(Standard_True);
-        break;
-    case CurSelection_Face:
-        occContext->ActivateStandardMode(TopAbs_FACE);
-        occContext->SetAutomaticHilight(true);
-        //setTypeOfHighlight(Standard_False);
-        break;
-    case CurSelection_Edge:
-        occContext->ActivateStandardMode(TopAbs_EDGE);
-        occContext->SetAutomaticHilight(true);
-        //setTypeOfHighlight(Standard_False);
-        break;
-    case CurSelection_Vertex:
-        occContext->ActivateStandardMode(TopAbs_VERTEX);
-        occContext->SetAutomaticHilight(true);
-        //setTypeOfHighlight(Standard_False);
-        break;
-    default:
-        break;
+    case CurSelection_Solid: theMode = TopAbs_SOLID; break;
+    case CurSelection_Face: theMode = TopAbs_FACE; break;
+    case CurSelection_Edge: theMode = TopAbs_EDGE; break;
+    case CurSelection_Vertex: theMode = TopAbs_VERTEX; break;
+    case CurSelection_PointCoordinatesPicking: theMode = TopAbs_FACE; break;
+    case CurSelection_Nothing: setOneOfTheSelectionModes = false; break;
+    }
+
+    AIS_ListOfInteractive listOfIO;
+    occContext->ObjectsInside(listOfIO,AIS_KOI_Shape,0);
+    if(setOneOfTheSelectionModes==false)
+    {
+        for(AIS_ListIteratorOfListOfInteractive it(listOfIO); it.More(); it.Next())
+            occContext->Deactivate(it.Value());
+        if(myCurSelectionMode==CurSelection_PointCoordinatesPicking) occContext->SetAutomaticHilight(false);
+        else occContext->SetAutomaticHilight(true);
+    }
+    else
+    {
+        for(AIS_ListIteratorOfListOfInteractive it(listOfIO); it.More(); it.Next())
+            occContext->Activate(it.Value(),theMode);
+        occContext->SetAutomaticHilight(false);
     }
 }
 
@@ -1950,11 +1840,11 @@ void occGLWidget::buildMinimalContexetMenu()
     //! adds a separator
     myContextMenu->addSeparator();
 
-    //! ---------------------------------------------------------------- //
-    //! Something is selected in the viewer -> enriches the context menu //
-    //! The number of displayed and hidden shapes must be calculated     //
-    //! before building the submenu                                      //
-    //! ---------------------------------------------------------------- //
+    //! ----------------------------------------------------------------
+    //! Something is selected in the viewer -> enriches the context menu
+    //! The number of displayed and hidden shapes must be calculated
+    //! before building the submenu
+    //! ----------------------------------------------------------------
     AIS_ListOfInteractive theListOfDisplayedShapes, theListOfHiddenShapes;
 
     Standard_Integer objectSignature = -1;
@@ -2858,7 +2748,7 @@ void occGLWidget::removeTrihedron()
     occContext->UpdateCurrentViewer();
 
     myLocalCtxNumber = occContext->OpenLocalContext();
-    this->reactivateCurrentStandardSelectionMode();
+    this->reactivateSelectionMode();
 }
 
 //! --------------------------
@@ -3255,7 +3145,7 @@ void occGLWidget::hideAllMarkers(bool updateViewer)
     if(updateViewer) occContext->UpdateCurrentViewer();
 
     myLocalCtxNumber = occContext->OpenLocalContext();
-    this->reactivateCurrentStandardSelectionMode();
+    this->reactivateSelectionMode();
 }
 
 //! ---------------------------------------------------------------
@@ -3424,7 +3314,7 @@ void occGLWidget::hideAllBodies()
         occContext->Erase(curAISShape,false);
     }
     myLocalCtxNumber = occContext->OpenLocalContext(true);
-    this->reactivateCurrentStandardSelectionMode();
+    this->reactivateSelectionMode();
 }
 
 //! -------------------------

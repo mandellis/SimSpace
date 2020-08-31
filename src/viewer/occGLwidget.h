@@ -1,6 +1,8 @@
 #ifndef OCCGLWIDGET_H
 #define OCCGLWIDGET_H
 
+#define ValZWMin 1
+
 //! ---
 //! Qt
 //! ---
@@ -66,6 +68,9 @@ protected:
     //! the selection mode
     CurSelectionMode myCurSelectionMode;
 
+    //! the selection type
+    SelectionType myCurSelectionType;
+
     //! the global selection mode - can be "single selection" or "multiple selection"
     CurGlobalSelectionMode myCurGlobalSelectionMode;    
 
@@ -114,7 +119,7 @@ public:
     TopAbs_ShapeEnum curSelectionMode();
 
     //! set the selection mode
-    void setSelectionMode(CurSelectionMode selectionMode);
+    virtual void setSelectionMode(CurSelectionMode selectionMode);
 
     //! get the current selection mode
     CurSelectionMode getCurrentSelectionMode(){ return myCurSelectionMode; }
@@ -152,9 +157,6 @@ public:
     //! map of clipping planes
     QMap<int,occHandle(Graphic3d_ClipPlane)> myMapOfClipPlanes;
 
-    //! map of handle planes
-    //QMap<int,occHandle(AIS_Plane)> myMapOfHandlePlanes;
-
 protected:
 
     //! active opened context - "0" is neutral, ">0" is for selection
@@ -179,7 +181,7 @@ protected:
     virtual void init();
 
     //! clear the "current" or "selected" shapes
-    void emptyTheSelection();
+    void clearGeometrySelection();
 
     //! the left upper label content
     occHandle(AIS_TextLabel) myTextLabel;
@@ -286,9 +288,7 @@ public slots:
     void setAction3D_Pan();
     void setAction3D_WindowZooming();
 
-    //!experimental
-    void setAction3D_PlaneDrag();
-
+    //! fit all
     void FitAll();
 
     //! select all: select all according to the current selection mode
@@ -303,11 +303,14 @@ public slots:
     //! sets the view mode shaded and wireframe
     virtual void setShadedExteriorAndEdgesView();
 
+    //! set selection type
+    virtual void setSelectionType(SelectionType &aSelectionType) { myCurSelectionType = aSelectionType; }
+
     //! sets the global selection mode
     virtual void setGlobalCurSelectionMode(int);
 
     //! reactivate the current standard selection mode
-    void reactivateCurrentStandardSelectionMode();
+    virtual void reactivateSelectionMode();
 
     //! set a gradient bakground
     void setBackgroundColor(double R1, double G1, double B1, double R2, double G2, double B2, int tof);
@@ -421,6 +424,9 @@ public:
 
     //! get scene bounding box
     void getSceneBoundingBox(double &lx, double &ly, double &lz);
+
+    //! get selection type
+    SelectionType getSelectionType() const { return myCurSelectionType; }
 
 signals:
 

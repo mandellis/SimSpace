@@ -56,6 +56,15 @@ class occPreGLWidget: public occGLWidget
 protected:
 
     virtual void mousePressEvent(QMouseEvent *e) override;
+    virtual void mouseReleaseEvent(QMouseEvent *e) override;
+    virtual void mouseMoveEvent(QMouseEvent *e) override;
+    virtual void onLButtonDown(const int theFlags, const QPoint thePoint) override;
+    virtual void onRButtonDown(const int theFlags, const QPoint thePoint) override;
+    virtual void onMButtonDown(const int theFlags, const QPoint thePoint) override;
+    virtual void onLButtonUp(const int theFlags, const QPoint thePoint) override;
+    virtual void onRButtonUp(const int theFlags, const QPoint thePoint) override;
+    virtual void onMButtonUp(const int theFlags, const QPoint thePoint) override;
+    virtual void onMouseMove(const int theFlags, QPoint thePoint) override;
 
 protected:
 
@@ -68,13 +77,8 @@ protected:
     //! paint event
     virtual void paintEvent(QPaintEvent *e) override;
 
+    //! ... experimental ...
     virtual void focusInEvent(QFocusEvent *focusEvent);
-
-    //! interactive context for the mesh
-    //occHandle(AIS_InteractiveContext) occMeshContext;
-
-    //! The display mode
-    //! CurDisplayMode myCurDisplayMode, my_CurDisplayMode_old;
 
     //! The mesh view mode
     bool isMeshViewVolume;
@@ -112,15 +116,6 @@ protected:
     //! print a summary
     void printSummary();
 
-    //! ------------------------------------------------------------
-    //! onLButtonUp: add to this event a the body highlight removal
-    //! ------------------------------------------------------------
-    virtual void onLButtonUp(const int theFlags,const QPoint thePoint)
-    {
-        occGLWidget::onLButtonUp(theFlags,thePoint);
-        //this->unhighlightBody(true);
-    }
-
 public:
 
     //! constructor
@@ -128,6 +123,9 @@ public:
 
     //! destructor
     virtual ~occPreGLWidget();
+
+    //! set the selection mode
+    virtual void setSelectionMode(CurSelectionMode selectionMode) override;
 
     //! Display the CAD model
     void displayCAD(bool onlyLoad=false);

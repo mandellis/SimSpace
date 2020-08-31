@@ -2165,11 +2165,11 @@ void MainWindow::enableSelectionButtons()
     //! ------------------------------------
     //! reactive the current selection mode
     //! ------------------------------------
-    myMainOCCViewer->reactivateCurrentStandardSelectionMode();
+    myMainOCCViewer->reactivateSelectionMode();
 }
 
 //! --------------------------------------------------------------
-//! function: startEditingScope()
+//! function: startEditingScope
 //! details:  simulate a double click event on the shape selector
 //! --------------------------------------------------------------
 void MainWindow::startEditingScope()
@@ -2706,7 +2706,7 @@ void MainWindow::setUpConnections()
     connect(mySimulationManager,SIGNAL(requestUnhighlightBodies(bool)),myMainOCCViewer,SLOT(unhighlightBody(bool)));
 
 
-    connect(mySimulationManager,SIGNAL(requestReactivateCurrentStandardSelectionMode()),myMainOCCViewer,SLOT(reactivateCurrentStandardSelectionMode()));
+    connect(mySimulationManager,SIGNAL(requestreactivateSelectionMode()),myMainOCCViewer,SLOT(reactivateSelectionMode()));
 
     connect(mySimulationManager,SIGNAL(requestDisplayShapeCopy(TopTools_ListOfShape,TopTools_ListOfShape,Quantity_NameOfColor,Quantity_NameOfColor,QVariant)),
             myMainOCCViewer,SLOT(displayShapeCopy(TopTools_ListOfShape,TopTools_ListOfShape,Quantity_NameOfColor,Quantity_NameOfColor,QVariant)));
