@@ -1268,6 +1268,8 @@ void occGLWidget::isometricView()
 //! function: setSelectionMode
 //! details:
 //! ---------------------------
+#include <Aspect_TypeOfFacingModel.hxx>
+#include <Graphic3d_MaterialAspect.hxx>
 void occGLWidget::setSelectionMode(CurSelectionMode selectionMode)
 {
     //! -------------------------------------------------------
@@ -1276,23 +1278,31 @@ void occGLWidget::setSelectionMode(CurSelectionMode selectionMode)
     myCurAction3D=CurAction3D_Nothing;
 
     //! ----------------------------------------------------------------
-    //! After pushing a 3D view operation button the current selection
+    //! After pressing a 3D view operation button the current selection
     //! mode is not changed, so the previous selection is kept active
     //! If, returning from a 3D view operation, the selection mode is
     //! changed, the previous selection is cleared
     //! ----------------------------------------------------------------
     if(selectionMode!=myCurSelectionMode) this->clearGeometrySelection();
 
-    TopAbs_ShapeEnum theMode;
+    //! ---------------------------------------------
+    //! activate one of the standard selection modes
+    //! try and error lead to the following setting
+    //! for Prs3D_TypeOgHighlight
+    //! ---------------------------------------------
+    //Prs3d_TypeOfHighlight toh = Prs3d_TypeOfHighlight_LocalSelected;
     Aspect_TypeOfHighlightMethod atoh = Aspect_TOHM_COLOR;
-    myCurSelectionMode = selectionMode;
     switch(selectionMode)
     {
     case CurSelection_Solid:
     {
-        theMode = TopAbs_SOLID;
+        myCurSelectionMode = CurSelection_Solid;
         myAllowSinglePick = Standard_False;
-        occContext->SetAutomaticHilight(Standard_True);
+        occContext->ActivateStandardMode(TopAbs_SOLID);
+        occContext->DeactivateStandardMode(TopAbs_FACE);
+        occContext->DeactivateStandardMode(TopAbs_EDGE);
+        occContext->DeactivateStandardMode(TopAbs_VERTEX);
+        if(!occContext->AutomaticHilight()) occContext->SetAutomaticHilight(Standard_True);
 
         occHandle(Prs3d_Drawer) selectionDrawer = new Prs3d_Drawer();
         selectionDrawer->SetDisplayMode(AIS_Shaded);
@@ -1305,9 +1315,13 @@ void occGLWidget::setSelectionMode(CurSelectionMode selectionMode)
 
     case CurSelection_Face:
     {
-        theMode = TopAbs_FACE;
+        myCurSelectionMode = CurSelection_Face;
         myAllowSinglePick = Standard_False;
-        occContext->SetAutomaticHilight(Standard_True);
+        occContext->DeactivateStandardMode(TopAbs_SOLID);
+        occContext->ActivateStandardMode(TopAbs_FACE);
+        occContext->DeactivateStandardMode(TopAbs_EDGE);
+        occContext->DeactivateStandardMode(TopAbs_VERTEX);
+        if(!occContext->AutomaticHilight()) occContext->SetAutomaticHilight(Standard_True);
 
         occHandle(Prs3d_Drawer) selectionDrawer = new Prs3d_Drawer();
         selectionDrawer->SetDisplayMode(AIS_Shaded);
@@ -1321,8 +1335,13 @@ void occGLWidget::setSelectionMode(CurSelectionMode selectionMode)
 
     case CurSelection_Edge:
     {
+        myCurSelectionMode = CurSelection_Edge;
         myAllowSinglePick = Standard_False;
-        occContext->SetAutomaticHilight(Standard_True);
+        occContext->DeactivateStandardMode(TopAbs_SOLID);
+        occContext->DeactivateStandardMode(TopAbs_FACE);
+        occContext->ActivateStandardMode(TopAbs_EDGE);
+        occContext->DeactivateStandardMode(TopAbs_VERTEX);
+        if(!occContext->AutomaticHilight())  occContext->SetAutomaticHilight(Standard_True);
 
         occHandle(Prs3d_Drawer) selectionDrawer = new Prs3d_Drawer();
         selectionDrawer->SetDisplayMode(AIS_Shaded);
@@ -1334,8 +1353,13 @@ void occGLWidget::setSelectionMode(CurSelectionMode selectionMode)
 
     case CurSelection_Vertex:
     {
+        myCurSelectionMode = CurSelection_Vertex;
         myAllowSinglePick = Standard_False;
-        occContext->SetAutomaticHilight(Standard_True);
+        occContext->DeactivateStandardMode(TopAbs_SOLID);
+        occContext->DeactivateStandardMode(TopAbs_FACE);
+        occContext->DeactivateStandardMode(TopAbs_EDGE);
+        occContext->ActivateStandardMode(TopAbs_VERTEX);
+        if(!occContext->AutomaticHilight()) occContext->SetAutomaticHilight(Standard_True);
 
         occHandle(Prs3d_Drawer) selectionDrawer = new Prs3d_Drawer();
         selectionDrawer->SetDisplayMode(AIS_Shaded);
@@ -1346,44 +1370,24 @@ void occGLWidget::setSelectionMode(CurSelectionMode selectionMode)
 
     case CurSelection_PointCoordinatesPicking:
     {
-        theMode = theMode = TopAbs_FACE;
         myCurSelectionMode = CurSelection_PointCoordinatesPicking;
         myAllowSinglePick = Standard_False;
+        occContext->DeactivateStandardMode(TopAbs_SOLID);
+        occContext->ActivateStandardMode(TopAbs_FACE);
+        occContext->DeactivateStandardMode(TopAbs_EDGE);
+        occContext->DeactivateStandardMode(TopAbs_VERTEX);
         occContext->SetAutomaticHilight(Standard_False);
     }
         break;
 
-    case CurSelection_Nothing:
-    {
-        myAllowSinglePick = Standard_False;
-        occContext->SetAutomaticHilight(Standard_False);
-    }
-        break;
-    }
-
-    //! --------------------------------------------------------
-    //! deactivate all the selection modes and activate theMode
-    //! --------------------------------------------------------
-    AIS_ListOfInteractive listOfIO;
-    occContext->ObjectsInside(listOfIO,AIS_KOI_Shape,0);
-    if(myCurSelectionMode == CurSelection_Nothing)
-    {
-        for(AIS_ListIteratorOfListOfInteractive it(listOfIO); it.More(); it.Next()) occContext->Deactivate(it.Value());
-    }
-    else
-    {
-        for(AIS_ListIteratorOfListOfInteractive it(listOfIO); it.More(); it.Next())
-        {
-            occContext->Deactivate(it.Value());
-            occContext->Activate(it.Value(),theMode);
-        }
+    default: break;
     }
 }
 
-//! ----------------------------
+//! ---------------------------------
 //! function: clearGeometrySelection
 //! details:
-//! ----------------------------
+//! ---------------------------------
 void occGLWidget::clearGeometrySelection()
 {
     if(occContext->IndexOfCurrentLocal()>0)
@@ -1736,7 +1740,7 @@ void occGLWidget::showAllBodies()
 
     //! If a showAllBodies() is called when an action3D is active
     //! the automatic highlight should be deactivated
-    if(myCurAction3D!=CurAction3D_Nothing)occContext->SetAutomaticHilight(Standard_False);
+    if(myCurAction3D!=CurAction3D_Nothing) occContext->SetAutomaticHilight(Standard_False);
 }
 
 //! -------------------------------------------------------------
@@ -1760,7 +1764,6 @@ void occGLWidget::hideAllTheOtherBodies()
     occContext->DisplayedObjects(AIS_KOI_Shape, objectSignature, theListOfDisplayedShapes, Standard_False);
 
     AIS_ListOfInteractive theListToBeHidden;
-
     for(AIS_ListIteratorOfListOfInteractive it(theListOfDisplayedShapes);it.More();it.Next())
     {
         int k = 0;
@@ -1792,13 +1795,12 @@ void occGLWidget::hideAllTheOtherBodies()
     this->reactivateSelectionMode();
 }
 
-//! -------------------------------------------------
+//! ----------------------------------
 //! function: reactivateSelectionMode
 //! details:
-//! -------------------------------------------------
+//! ----------------------------------
 void occGLWidget::reactivateSelectionMode()
 {
-    bool setOneOfTheSelectionModes = true;
     TopAbs_ShapeEnum theMode;
     switch(myCurSelectionMode)
     {
@@ -1807,24 +1809,14 @@ void occGLWidget::reactivateSelectionMode()
     case CurSelection_Edge: theMode = TopAbs_EDGE; break;
     case CurSelection_Vertex: theMode = TopAbs_VERTEX; break;
     case CurSelection_PointCoordinatesPicking: theMode = TopAbs_FACE; break;
-    case CurSelection_Nothing: setOneOfTheSelectionModes = false; break;
     }
 
     AIS_ListOfInteractive listOfIO;
     occContext->ObjectsInside(listOfIO,AIS_KOI_Shape,0);
-    if(setOneOfTheSelectionModes==false)
-    {
-        for(AIS_ListIteratorOfListOfInteractive it(listOfIO); it.More(); it.Next())
-            occContext->Deactivate(it.Value());
-        if(myCurSelectionMode==CurSelection_PointCoordinatesPicking) occContext->SetAutomaticHilight(false);
-        else occContext->SetAutomaticHilight(true);
-    }
-    else
-    {
-        for(AIS_ListIteratorOfListOfInteractive it(listOfIO); it.More(); it.Next())
-            occContext->Activate(it.Value(),theMode);
-        occContext->SetAutomaticHilight(false);
-    }
+    for(AIS_ListIteratorOfListOfInteractive it(listOfIO); it.More(); it.Next()) occContext->Activate(it.Value(),theMode);
+    occContext->SetAutomaticHilight(true);
+    if(myCurSelectionMode==CurSelection_PointCoordinatesPicking) occContext->SetAutomaticHilight(false);
+    occContext->SetAutomaticHilight(true);
 }
 
 //! -----------------------------------

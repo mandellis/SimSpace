@@ -1146,6 +1146,8 @@ void occPreGLWidget::buildMeshIOs()
             //! ------------------------------------------------------
             occHandle(MeshVS_MeshPrsBuilder) aBuilder = new MeshVS_MeshPrsBuilder(aMesh);
             aMesh->AddBuilder(aBuilder,Standard_True);
+            aBuilder->GetDrawer()->SetColor(MeshVS_DA_BackInteriorColor,Quantity_NOC_RED);
+            //aMesh->AddBuilder(aBuilder,Standard_False);
 
             //! ---------------------------------------------------------------------
             //! retrieve the color of the underlying shape and assign it to the mesh
@@ -1851,37 +1853,23 @@ void occPreGLWidget::ShowContextMenu1(const QPoint& pos)
         //! -----------------------------------------------
         QAction* selectedItem = myContextMenu->exec(globalPos);
 
-        //! check if the selection is valid
-        if(selectedItem)
+        if(selectedItem)    //! check if the selected item is valid
         {
             cout<<"____action nr. "<<selectedItem->data().toInt()<<" called____"<<endl;
             switch(selectedItem->data().toInt())
             {
+            //! ---------------------------------------------------------------------------
             //! For cases {0, 1, 2, 3, 4} which handle the change of the selection mode
             //! a signal is emitted: it is received by the MainWindow class, which in turn
             //! calls the slots toggle<..>SelectionMode(), which in turn calls the slot
             //! slot setSelectionMode(). Passing through the MainWindow is for
             //! handling the status (checked/unchecked) of the buttons in the toolbar
-            case 0:
-                //! selection mode vertex
-                emit selectionModeVertex(true);
-                break;
-            case 1:
-                //! selection mode edge
-                emit selectionModeEdge(true);
-                break;
-            case 2:
-                //! selection mode face
-                emit selectionModeFace(true);
-                break;
-            case 3:
-                //! selection mode solid
-                emit selectionModeSolid(true);
-                break;
-            case 4:
-                //! pick coordinates mode (the TopABS_FACE selection mode is activated)
-                emit selectionModePickPointCoordinates(true);
-                break;
+            //! ---------------------------------------------------------------------------
+            case 0: emit selectionModeVertex(true); break;
+            case 1: emit selectionModeEdge(true); break;
+            case 2: emit selectionModeFace(true); break;
+            case 3: emit selectionModeSolid(true); break;
+            case 4: emit selectionModePickPointCoordinates(true); break;
             case 5:
                 occView->SetProj(V3d_Xpos);
                 this->FitAll();
@@ -3950,7 +3938,34 @@ void occPreGLWidget::clipMesh()
 void occPreGLWidget::init()
 {
     occGLWidget::init();
-    if(occMeshContext.IsNull()) occMeshContext = new AIS_InteractiveContext(occViewer);
+    if(occMeshContext.IsNull())
+    {
+        occMeshContext = new AIS_InteractiveContext(occViewer);
+
+        //! ----------------------------------------------
+        //! set selection and highlight mode for the mesh
+        //! ----------------------------------------------
+        /*
+        occHandle(Prs3d_Drawer) selectionDrawer = new Prs3d_Drawer();
+        selectionDrawer->SetDisplayMode(AIS_Shaded);
+        selectionDrawer->SetColor(static_cast<Quantity_NameOfColor>(Quantity_NOC_GREEN));
+        occMeshContext->SetHighlightStyle(Prs3d_TypeOfHighlight_Selected,selectionDrawer);
+        occMeshContext->SetSelectionStyle(selectionDrawer);
+        occMeshContext->SetToHilightSelected(false);
+        */
+//cesere
+        Handle(Prs3d_Drawer) t_hilight_style = occMeshContext->HighlightStyle(); // Get highlight style
+        t_hilight_style->SetMethod(Aspect_TOHM_COLOR); // color display mode
+        t_hilight_style->SetColor(Quantity_NOC_LIGHTYELLOW); // Set the highlight color
+        t_hilight_style->SetDisplayMode(1); // Overall highlighting
+        t_hilight_style->SetTransparency(0.2f); // Set transparency
+
+        Handle(Prs3d_Drawer) t_select_style = occMeshContext->SelectionStyle(); // Get the selection style
+        t_select_style->SetMethod(Aspect_TOHM_COLOR); // Color display mode
+        t_select_style->SetColor(Quantity_NOC_LIGHTSEAGREEN); // Set the selected color
+        t_select_style->SetDisplayMode(1); // Overall highlighting
+        t_select_style->SetTransparency(0.4f); // Set transparency
+    }
 }
 
 //! ---------------------
@@ -4275,6 +4290,7 @@ void occPreGLWidget::onMButtonUp(const int theFlags, const QPoint thePoint)
 //! -------------------------
 void occPreGLWidget::mouseMoveEvent(QMouseEvent *e)
 {
+    //! no differences
     onMouseMove(e->buttons(),e->pos());
 }
 
@@ -4340,12 +4356,19 @@ void occPreGLWidget::onMouseMove(const int theFlags, QPoint thePoint)
 //! ---------------------------
 void occPreGLWidget::setSelectionMode(CurSelectionMode selectionMode)
 {
+    //occGLWidget::setSelectionMode(selectionMode);
+
+    //! status
+    myCurSelectionMode = selectionMode;
+
     switch(myCurSelectionType)
     {
     case SelectionType_Geometry:
     {
+        //! clear mesh selection
         occMeshContext->ClearCurrents(false);
         occMeshContext->ClearSelected(false);
+
         occMeshContext->UpdateCurrentViewer();
         occGLWidget::setSelectionMode(selectionMode);
     }
@@ -4353,7 +4376,9 @@ void occPreGLWidget::setSelectionMode(CurSelectionMode selectionMode)
 
     case SelectionType_Mesh:
     {
+        //! clear geometry selection
         this->clearGeometrySelection();
+
         bool isAutomaticHighlight = true;
         MeshVS_SelectionModeFlags theMode;
         switch(selectionMode)
@@ -4377,8 +4402,8 @@ void occPreGLWidget::setSelectionMode(CurSelectionMode selectionMode)
         {
             for(AIS_ListIteratorOfListOfInteractive it(listOfIO); it.More(); it.Next())
             {
-                occMeshContext->Load(it.Value(),MeshVS_SMF_Node,true);
-                occMeshContext->Activate(it.Value(),MeshVS_SMF_Node);
+                occMeshContext->Load(it.Value(),theMode,true);
+                occMeshContext->Activate(it.Value(),theMode);
             }
             occMeshContext->SetAutomaticHilight(isAutomaticHighlight);
         }

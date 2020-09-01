@@ -359,20 +359,21 @@ void occPostWidget::setWorkingMode_Solution()
         //! --------------------------------------
         this->clearGeometrySelection();
 
+        /*
         AIS_ListOfInteractive listOfIO;
         for(AIS_ListIteratorOfListOfInteractive it(listOfIO); it.More(); it.Next())
         {
             this->setSelectionMode(CurSelection_Nothing);
         }
-
-        //switch(myCurSelectionMode)
-        //{
-        //case CurSelection_Solid: occContext->DeactivateStandardMode(TopAbs_SOLID); break;
-        //case CurSelection_Face: occContext->DeactivateStandardMode(TopAbs_FACE); break;
-        //case CurSelection_Edge: occContext->DeactivateStandardMode(TopAbs_EDGE); break;
-        //case CurSelection_Vertex: occContext->DeactivateStandardMode(TopAbs_VERTEX); break;
-        //default: break;
-        //}
+        */
+        switch(myCurSelectionMode)
+        {
+        case CurSelection_Solid: occContext->DeactivateStandardMode(TopAbs_SOLID); break;
+        case CurSelection_Face: occContext->DeactivateStandardMode(TopAbs_FACE); break;
+        case CurSelection_Edge: occContext->DeactivateStandardMode(TopAbs_EDGE); break;
+        case CurSelection_Vertex: occContext->DeactivateStandardMode(TopAbs_VERTEX); break;
+        default: break;
+        }
 
         //! --------------------------
         //! show the results tool bar

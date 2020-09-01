@@ -1783,7 +1783,8 @@ void MainWindow::toggleSolidSelectionMode(bool isActivated)
     {
         handleViewAndSelectionButtons(actionToggleSolidSelect);
         myMainOCCViewer->setSelectionMode(CurSelection_Solid);
-        //! experimental
+
+        //! same selection mode in additional viewports
         myDockableMasterViewPort->setSelectionMode(CurSelection_Solid);
         myDockableSlaveViewPort->setSelectionMode(CurSelection_Solid);
         statusBar()->showMessage("Select Solids",TRANSIENT_MESSAGE_TIMEOUT);
@@ -1800,6 +1801,8 @@ void MainWindow::toggleFaceSelectionMode(bool isActivated)
     {
         handleViewAndSelectionButtons(actionToggleFaceSelect);
         myMainOCCViewer->setSelectionMode(CurSelection_Face);
+
+        //! same selection mode in additional viewports
         myDockableMasterViewPort->setSelectionMode(CurSelection_Face);
         myDockableSlaveViewPort->setSelectionMode(CurSelection_Face);
         statusBar()->showMessage("Select Faces",TRANSIENT_MESSAGE_TIMEOUT);
@@ -1816,6 +1819,8 @@ void MainWindow::toggleEdgeSelectionMode(bool isActivated)
     {
         handleViewAndSelectionButtons(actionToggleEdgeSelect);
         myMainOCCViewer->setSelectionMode(CurSelection_Edge);
+
+        //! same selection mode in additional viewports
         myDockableMasterViewPort->setSelectionMode(CurSelection_Edge);
         myDockableSlaveViewPort->setSelectionMode(CurSelection_Edge);
         statusBar()->showMessage("Select Edges",TRANSIENT_MESSAGE_TIMEOUT);
@@ -1832,7 +1837,8 @@ void MainWindow::toggleVertexSelectionMode(bool isActivated)
     {
         handleViewAndSelectionButtons(actionToggleVertexSelect);
         myMainOCCViewer->setSelectionMode(CurSelection_Vertex);
-        //! experimental
+
+        //! same selection mode in additional viewports
         myDockableMasterViewPort->setSelectionMode(CurSelection_Vertex);
         myDockableSlaveViewPort->setSelectionMode(CurSelection_Vertex);
         statusBar()->showMessage("Select Points",TRANSIENT_MESSAGE_TIMEOUT);
@@ -1849,6 +1855,8 @@ void MainWindow::togglePointCoordinatesPickingMode(bool isActivated)
     {
         handleViewAndSelectionButtons(actionTogglePickPointCoordinates);
         myMainOCCViewer->setSelectionMode(CurSelection_PointCoordinatesPicking);
+
+        //! same selection mode in additional viewports
         myDockableMasterViewPort->setSelectionMode(CurSelection_PointCoordinatesPicking);
         myDockableSlaveViewPort->setSelectionMode(CurSelection_PointCoordinatesPicking);
         statusBar()->showMessage("Pick point coordinates",TRANSIENT_MESSAGE_TIMEOUT);
@@ -2647,14 +2655,20 @@ void MainWindow::setUpConnections()
 
     connect(mySimulationManager,SIGNAL(requestUpdateConvergenceViewer(const QList<solutionInfo> &)), myConvergenceDataChart1,SLOT(plotConvergenceData(const QList<solutionInfo> &)));
 
+    //! ----------------
+    //! selection modes
+    //! ----------------
     connect(myMainOCCViewer,SIGNAL(selectionModeVertex(bool)),this,SLOT(toggleVertexSelectionMode(bool)));
     connect(myMainOCCViewer,SIGNAL(selectionModeEdge(bool)),this,SLOT(toggleEdgeSelectionMode(bool)));
     connect(myMainOCCViewer,SIGNAL(selectionModeFace(bool)),this,SLOT(toggleFaceSelectionMode(bool)));
     connect(myMainOCCViewer,SIGNAL(selectionModeSolid(bool)),this,SLOT(toggleSolidSelectionMode(bool)));
     connect(myMainOCCViewer,SIGNAL(selectionModePickPointCoordinates(bool)),this,SLOT(togglePointCoordinatesPickingMode(bool)));
+
     connect(myMainOCCViewer,SIGNAL(statusBarMessage(QString)),statusLabel,SLOT(setText(QString)));
     connect(myMainOCCViewer,SIGNAL(viewModeChanged(CurDisplayMode)),this,SLOT(checkViewModeItem(CurDisplayMode)));
     connect(this,SIGNAL(requestExtendSelectionToAdjacent()),myMainOCCViewer,SLOT(extendSelectionToAjacent()));
+
+    //! ------------------------------------------------------------------------------
     //! synchronize the checkmark of the menu action and the visibility of the widget
     //! ------------------------------------------------------------------------------
     connect(actionShowGraphViewer,SIGNAL(triggered(bool)),myTabularDataViewerDock,SLOT(setVisible(bool)));
@@ -2706,7 +2720,7 @@ void MainWindow::setUpConnections()
     connect(mySimulationManager,SIGNAL(requestUnhighlightBodies(bool)),myMainOCCViewer,SLOT(unhighlightBody(bool)));
 
 
-    connect(mySimulationManager,SIGNAL(requestreactivateSelectionMode()),myMainOCCViewer,SLOT(reactivateSelectionMode()));
+    connect(mySimulationManager,SIGNAL(requestReactivateSelectionMode()),myMainOCCViewer,SLOT(reactivateSelectionMode()));
 
     connect(mySimulationManager,SIGNAL(requestDisplayShapeCopy(TopTools_ListOfShape,TopTools_ListOfShape,Quantity_NameOfColor,Quantity_NameOfColor,QVariant)),
             myMainOCCViewer,SLOT(displayShapeCopy(TopTools_ListOfShape,TopTools_ListOfShape,Quantity_NameOfColor,Quantity_NameOfColor,QVariant)));
