@@ -843,14 +843,11 @@ void occGLWidget::onMouseMove(const int theFlags, QPoint thePoint)
         {
             //!------------------------------------------------------------------------------
             //! "if" statement explanation:
-            //! 1)  A local context must be open, otherwise the "occContext->DetectedShape()"
-            //!     would make the code crash
-            //! 2)  No action 3D must be active (no panning, no window zooming, no rotating)
-            //! 3)  The current selection mode cannot be point picking, otherwise the entity
+            //! 1)  No action 3D must be active (no panning, no window zooming, no rotation)
+            //! 2)  The current selection mode cannot be point picking, otherwise the entity
             //!     would become "selected" when the mouse is moving over them
             /// -----------------------------------------------------------------------------
-            if(occContext->IndexOfCurrentLocal()>0 && myCurAction3D==CurAction3D_Nothing
-                    && myCurSelectionMode!=CurSelection_PointCoordinatesPicking)
+            if(myCurAction3D==CurAction3D_Nothing && myCurSelectionMode!=CurSelection_PointCoordinatesPicking)
             {
                 if(occContext->DetectedShape()!=theOldDetectedShape)
                 {
@@ -1270,6 +1267,7 @@ void occGLWidget::isometricView()
 //! ---------------------------
 #include <Aspect_TypeOfFacingModel.hxx>
 #include <Graphic3d_MaterialAspect.hxx>
+/*
 void occGLWidget::setSelectionMode(CurSelectionMode selectionMode)
 {
     //! -------------------------------------------------------
@@ -1290,7 +1288,6 @@ void occGLWidget::setSelectionMode(CurSelectionMode selectionMode)
     //! try and error lead to the following setting
     //! for Prs3D_TypeOgHighlight
     //! ---------------------------------------------
-    //Prs3d_TypeOfHighlight toh = Prs3d_TypeOfHighlight_LocalSelected;
     Aspect_TypeOfHighlightMethod atoh = Aspect_TOHM_COLOR;
     switch(selectionMode)
     {
@@ -1383,6 +1380,119 @@ void occGLWidget::setSelectionMode(CurSelectionMode selectionMode)
     default: break;
     }
 }
+*/
+
+void occGLWidget::setSelectionMode(CurSelectionMode selectionMode)
+{
+    cout<<"occGLWidget::setSelectionMode()->____function called____"<<endl;
+
+    //! -------------------------------------------------------
+    //! during the selection the 3D operations are not allowed
+    //! -------------------------------------------------------
+    myCurAction3D=CurAction3D_Nothing;
+
+    //! ----------------------------------------------------------------
+    //! After pressing a 3D view operation button the current selection
+    //! mode is not changed, so the previous selection is kept active
+    //! If, returning from a 3D view operation, the selection mode is
+    //! changed, the previous selection is cleared
+    //! ----------------------------------------------------------------
+    if(selectionMode!=myCurSelectionMode)
+    {
+        exit(1);
+        this->clearGeometrySelection();
+    }
+
+    myCurSelectionMode = selectionMode;
+
+    TopAbs_ShapeEnum theMode;
+    AIS_ListOfInteractive listOfIO;
+    occContext->ObjectsInside(listOfIO,AIS_KOI_Shape,0);
+
+    //! ---------------------------------------------
+    //! activate one of the standard selection modes
+    //! try and error lead to the following setting
+    //! for Prs3D_TypeOgHighlight
+    //! ---------------------------------------------
+    Aspect_TypeOfHighlightMethod atoh = Aspect_TOHM_COLOR;
+    switch(selectionMode)
+    {
+    case CurSelection_Solid:
+    {
+        myAllowSinglePick = Standard_False;
+        theMode = TopAbs_SOLID;
+        if(!occContext->AutomaticHilight()) occContext->SetAutomaticHilight(Standard_True);
+
+        occHandle(Prs3d_Drawer) selectionDrawer = new Prs3d_Drawer();
+        selectionDrawer->SetDisplayMode(AIS_Shaded);
+        selectionDrawer->SetMethod(atoh);
+        selectionDrawer->SetColor(static_cast<Quantity_NameOfColor>(Quantity_NOC_GREEN));
+        occContext->SetSelectionStyle(selectionDrawer);
+    }
+        break;
+
+    case CurSelection_Face:
+    {
+        myAllowSinglePick = Standard_False;
+        theMode = TopAbs_FACE;
+        if(!occContext->AutomaticHilight()) occContext->SetAutomaticHilight(Standard_True);
+
+        occHandle(Prs3d_Drawer) selectionDrawer = new Prs3d_Drawer();
+        selectionDrawer->SetDisplayMode(AIS_Shaded);
+        selectionDrawer->SetMethod(atoh);
+        selectionDrawer->SetColor(static_cast<Quantity_NameOfColor>(Quantity_NOC_GREEN));
+
+        occContext->SetHighlightStyle(Prs3d_TypeOfHighlight_LocalSelected,selectionDrawer);
+        occContext->SetSelectionStyle(selectionDrawer);
+    }
+        break;
+
+    case CurSelection_Edge:
+    {
+        myAllowSinglePick = Standard_False;
+        theMode = TopAbs_EDGE;
+        if(!occContext->AutomaticHilight())  occContext->SetAutomaticHilight(Standard_True);
+
+        occHandle(Prs3d_Drawer) selectionDrawer = new Prs3d_Drawer();
+        selectionDrawer->SetDisplayMode(AIS_Shaded);
+        selectionDrawer->SetColor(static_cast<Quantity_NameOfColor>(Quantity_NOC_GREEN));
+        occContext->SetHighlightStyle(Prs3d_TypeOfHighlight_LocalSelected,selectionDrawer);
+        occContext->SetSelectionStyle(selectionDrawer);
+    }
+        break;
+
+    case CurSelection_Vertex:
+    {
+        myAllowSinglePick = Standard_False;
+        theMode = TopAbs_VERTEX;
+        if(!occContext->AutomaticHilight()) occContext->SetAutomaticHilight(Standard_True);
+
+        occHandle(Prs3d_Drawer) selectionDrawer = new Prs3d_Drawer();
+        selectionDrawer->SetDisplayMode(AIS_Shaded);
+        selectionDrawer->SetColor(static_cast<Quantity_NameOfColor>(Quantity_NOC_GREEN));
+        occContext->SetSelectionStyle(selectionDrawer);
+    }
+        break;
+
+    case CurSelection_PointCoordinatesPicking:
+    {
+        myAllowSinglePick = Standard_False;
+        theMode = TopAbs_FACE;
+        occContext->SetAutomaticHilight(Standard_False);
+    }
+        break;
+    }
+
+    //! -----------------------------------------------------------------------------------------
+    //! use static function below, which returns the selection mode for the specified shape type
+    //! Standard_Integer AIS_Shape::SelectionMode(const TopAbs_ShapeEnum theShapeType)
+    //! -----------------------------------------------------------------------------------------
+    for(AIS_ListIteratorOfListOfInteractive it(listOfIO); it.More(); it.Next())
+    {
+        occContext->Deactivate(it.Value());
+        occContext->Activate(it.Value(),AIS_Shape::SelectionMode(theMode));
+    }
+}
 
 //! ---------------------------------
 //! function: clearGeometrySelection
@@ -1429,10 +1539,10 @@ TopAbs_ShapeEnum occGLWidget::curSelectionMode()
     return value;
 }
 
-//! -----------------------------------------------------------------
-//! function: sets sthe global selection mode (single or box select)
-//! details: change in the internal status of the widget
-//! -----------------------------------------------------------------
+//! ------------------------------------
+//! function: setGlobalCurSelectionMode
+//! details:
+//! ------------------------------------
 void occGLWidget::setGlobalCurSelectionMode(int index)
 {
     switch (index)
@@ -1687,21 +1797,21 @@ void occGLWidget::selectionProperties()
 //! -----------------------------
 void occGLWidget::hideSelectedBodies()
 {
-    //! the for cycle erases also the temporary object used for highlithing the selection
-    for(occContext->InitSelected();occContext->MoreSelected();occContext->InitSelected())
+    cout<<"occGLWidget::hideSelectedBodies()->____function called____"<<endl;
+    AIS_ListOfInteractive listOfShapes;
+    for(occContext->InitSelected();occContext->MoreSelected();occContext->NextSelected())
     {
-        //! the shape visibility flag change must be placed BEFORE the Erase() method
-        (occHandle(AIS_ExtendedShape)::DownCast(occContext->SelectedInteractive()))->setShapeVisibility(Standard_False);
-        occContext->Erase(occContext->SelectedInteractive(),Standard_False);
+        listOfShapes.Append(occContext->SelectedInteractive());
+        const occHandle(AIS_ExtendedShape) &curShape = occHandle(AIS_ExtendedShape)::DownCast(occContext->SelectedInteractive());
+        curShape->setShapeVisibility(false);
     }
-    occContext->CloseLocalContext(occContext->IndexOfCurrentLocal());
-    myLocalCtxNumber=occContext->OpenLocalContext();
-
-    //! ---------------------------------------------------------------
-    //! Reactivate the current selection mode (when the context
-    //! is closed the selection modes and the selection list are lost)
-    //! ---------------------------------------------------------------
-    this->reactivateSelectionMode();
+    for(AIS_ListIteratorOfListOfInteractive it(listOfShapes); it.More(); it.Next())
+    {
+        const occHandle(AIS_ExtendedShape) &curShape = occHandle(AIS_ExtendedShape)::DownCast(it.Value());
+        occContext->Erase(occContext->SelectedInteractive(),false);
+    }
+    occContext->UpdateCurrentViewer();
+    cout<<"occGLWidget::hideSelectedBodies()->____function exiting____"<<endl;
 }
 
 //! ------------------------
@@ -1710,26 +1820,14 @@ void occGLWidget::hideSelectedBodies()
 //! ------------------------
 void occGLWidget::showAllBodies()
 {
-    occContext->CloseLocalContext(occContext->IndexOfCurrentLocal());
-    //! The DisplayAll() works in the neutral point, so the local context must be closed
-
     occContext->DisplayAll(false);
-    myLocalCtxNumber = occContext->OpenLocalContext(true);
-
-    //! ---------------------------------------------------------------
-    //! Reactivate the current selection mode (when the context
-    //! is closed the selection modes and the selection list are lost)
-    //! ---------------------------------------------------------------
-    this->reactivateSelectionMode();
 
     //! ---------------------------------------------
     //! Mark all the AIS_ExtendedShape(s) as visible
     //! ---------------------------------------------
-    AIS_ListOfInteractive thelistOfDIsplayed;
-    Standard_Integer objectSignature = 0;
-    occContext->DisplayedObjects(AIS_KOI_Shape, objectSignature, thelistOfDIsplayed, Standard_False);
-
-    for(AIS_ListIteratorOfListOfInteractive it(thelistOfDIsplayed);it.More();it.Next())
+    AIS_ListOfInteractive listOfDisplayed;
+    occContext->ObjectsByDisplayStatus(AIS_KOI_Shape,0,AIS_DS_Displayed,listOfDisplayed);
+    for(AIS_ListIteratorOfListOfInteractive it(listOfDisplayed);it.More();it.Next())
     {
         const occHandle(AIS_ExtendedShape) &curAISShape = occHandle(AIS_ExtendedShape)::DownCast(it.Value());
         curAISShape->setShapeVisibility(Standard_True);
@@ -1737,18 +1835,53 @@ void occGLWidget::showAllBodies()
     }
     occView->ZFitAll();
     occContext->UpdateCurrentViewer();
+    this->clearGeometrySelection();
 
-    //! If a showAllBodies() is called when an action3D is active
-    //! the automatic highlight should be deactivated
+    //! ------------------------------------------------------
+    //! If this function is called when an action3D is active
+    //! the automatic highlight should be removed
+    //! ------------------------------------------------------
     if(myCurAction3D!=CurAction3D_Nothing) occContext->SetAutomaticHilight(Standard_False);
 }
 
-//! -------------------------------------------------------------
-//! function: hide all the other bodies
-//! details:  among the visible shapes, hide only the unselected
-//!--------------------------------------------------------------
+//! --------------------------------
+//! function: hideAllTheOtherBodies
+//! details:
+//!---------------------------------
 void occGLWidget::hideAllTheOtherBodies()
 {
+    //! ------------------------------
+    //! the shapes visible in context
+    //! ------------------------------
+    AIS_ListOfInteractive listOfVisible;
+    occContext->ObjectsByDisplayStatus(AIS_KOI_Shape,0,AIS_DS_Displayed,listOfVisible);
+
+    //! ------------------------------------
+    //! the list of the shapes in selection
+    //! ------------------------------------
+    AIS_ListOfInteractive listOfSelected;
+    for(occContext->InitSelected();occContext->MoreSelected();occContext->NextSelected())
+    {
+        const occHandle(AIS_ExtendedShape) &aShape = occHandle(AIS_ExtendedShape)::DownCast(occContext->SelectedInteractive());
+        listOfSelected.Append(aShape);
+    }
+
+    //! -------------------------------------------
+    //! hide the shapes which are not in selection
+    //! -------------------------------------------
+    for(AIS_ListIteratorOfListOfInteractive it(listOfVisible); it.More(); it.Next())
+    {
+        const occHandle(AIS_ExtendedShape) &curShape = occHandle(AIS_ExtendedShape)::DownCast(it.Value());
+        if(listOfSelected.Contains(curShape)==false)
+        {
+            curShape->setShapeVisibility(false);
+            occContext->Erase(curShape,false);
+        }
+    }
+    occContext->UpdateCurrentViewer();
+    this->clearGeometrySelection();
+
+    /*
     AIS_ListOfInteractive finalList;
     for(occContext->InitSelected();occContext->MoreSelected();occContext->NextSelected())
     {
@@ -1785,14 +1918,15 @@ void occGLWidget::hideAllTheOtherBodies()
         occContext->Erase(itListToBeHidden.Value(),Standard_False);
     }
 
-    occContext->CloseLocalContext(occContext->IndexOfCurrentLocal());
-    myLocalCtxNumber=occContext->OpenLocalContext();
+    //occContext->CloseLocalContext(occContext->IndexOfCurrentLocal());
+    //myLocalCtxNumber=occContext->OpenLocalContext();
     //!occContext->UpdateCurrentViewer();
 
     //! Now the selection modes must be reactivated, because when the
     //! context is closed, the selection modes are lost (and the list
     //! of the selected objects is empty)
     this->reactivateSelectionMode();
+    */
 }
 
 //! ----------------------------------
@@ -2730,7 +2864,7 @@ void occGLWidget::displayTrihedron(QVector<double> Origin, QVector<QVector<doubl
 //! --------------------------
 void occGLWidget::removeTrihedron()
 {
-    occContext->CloseLocalContext();
+    //occContext->CloseLocalContext();
 
     //! remove the previous, if present
     AIS_ListOfInteractive aList;
@@ -2739,7 +2873,7 @@ void occGLWidget::removeTrihedron()
     for(anIter.Initialize(aList);anIter.More();anIter.Next()) occContext->Remove(anIter.Value(),false);
     occContext->UpdateCurrentViewer();
 
-    myLocalCtxNumber = occContext->OpenLocalContext();
+    //myLocalCtxNumber = occContext->OpenLocalContext();
     this->reactivateSelectionMode();
 }
 
@@ -3105,7 +3239,7 @@ void occGLWidget::setTransparency(bool isActive, bool updateViewer, double level
 void occGLWidget::hideAllMarkers(bool updateViewer)
 {
     //cout<<"occGLWidget::hideAllMarkers()->____function called____"<<endl;
-    occContext->CloseLocalContext(-1,false);
+    //occContext->CloseLocalContext(-1,false);
     AIS_ListOfInteractive theListOfIO;
     AIS_ListIteratorOfListOfInteractive it;
     std::vector<int> listOfSignatures
@@ -3136,7 +3270,7 @@ void occGLWidget::hideAllMarkers(bool updateViewer)
     for(it.Initialize(theListOfIO); it.More(); it.Next()) occContext->Remove(it.Value(),false);
     if(updateViewer) occContext->UpdateCurrentViewer();
 
-    myLocalCtxNumber = occContext->OpenLocalContext();
+    //myLocalCtxNumber = occContext->OpenLocalContext();
     this->reactivateSelectionMode();
 }
 
@@ -3295,7 +3429,7 @@ void occGLWidget::updateClipPlaneCoefficients(int ID, const QVector<double> &coe
 //! ------------------------
 void occGLWidget::hideAllBodies()
 {
-    occContext->CloseAllContexts(false);
+    //occContext->CloseAllContexts(false);
     AIS_ListOfInteractive AISList;
     occContext->ObjectsByDisplayStatus(AIS_KOI_Shape,-1,AIS_DS_Displayed,AISList);
     AIS_ListIteratorOfListOfInteractive it;
@@ -3305,7 +3439,7 @@ void occGLWidget::hideAllBodies()
         curAISShape->setShapeVisibility(false);
         occContext->Erase(curAISShape,false);
     }
-    myLocalCtxNumber = occContext->OpenLocalContext(true);
+    //myLocalCtxNumber = occContext->OpenLocalContext(true);
     this->reactivateSelectionMode();
 }
 

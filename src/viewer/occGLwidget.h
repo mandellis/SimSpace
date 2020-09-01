@@ -171,12 +171,6 @@ protected:
     //! the occ context
     occHandle(AIS_InteractiveContext) occContext;
 
-    //! the occ context for the mesh view
-    //occHandle(AIS_InteractiveContext) occMeshContext;
-
-    //! the occ context for the results view
-    //occHandle(AIS_InteractiveContext) occPostContext;
-
     //! init
     virtual void init();
 
@@ -197,9 +191,6 @@ protected:
 
     //! rotate
     void rotate(int x, int y, RotationPointType theRotationPointType, const gp_Pnt& theSelectedPoint);
-
-    //! set transparency
-    //void setTransparency(bool isActive, bool updateViewer=false, double level = 0.5);
 
     //! my display quality
     displayQuality myDisplayQuality;

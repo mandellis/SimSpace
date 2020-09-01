@@ -301,7 +301,7 @@ void occPreGLWidget::displayCAD(bool onlyLoad)
     for(int i=0;i<listOfActions.size();i++) listOfActions.value(i)->setChecked(false);
 
     //! This closes all contexts - returns to the NEUTRAL POINT
-    occContext->CloseAllContexts(true);
+    //occContext->CloseAllContexts(true);
 
     //! Set the number of the context - now "0", NEUTRAL POINT
     myLocalCtxNumber = occContext->IndexOfCurrentLocal();
@@ -383,7 +383,7 @@ void occPreGLWidget::displayCAD(bool onlyLoad)
     occView->FitAll();
 
     //! open a local context for model access (selection, ...)
-    myLocalCtxNumber=occContext->OpenLocalContext();
+    //myLocalCtxNumber=occContext->OpenLocalContext();
 
     //! set the selection style
     //setSelectionStyle(Quantity_NOC_GREEN,float(0.1));
@@ -1049,47 +1049,46 @@ void occPreGLWidget::setWorkingMode_Contacts()
 
 //! ------------------------
 //! function: hideAllMeshes
-//! details:  slot
+//! details:
 //! ------------------------
 void occPreGLWidget::hideAllMeshes(bool updateViewer)
 {
-    occMeshContext->RemoveAll(updateViewer);
+    occMeshContext->EraseAll(false);
+    if(updateViewer) occMeshContext->UpdateCurrentViewer();
 }
 
 //!------------------------------
 //! function: hideSelectedBodies
 //! details:
-//!-------------------------------
+//!------------------------------
 void occPreGLWidget::hideSelectedBodies()
 {
-    //cout<<"occPreGLWidget::hideSelectedBodies()->____function called____"<<endl;
-    for(occContext->InitSelected();occContext->MoreSelected();occContext->InitSelected())
+    cout<<"occPreGLWidget::hideSelectedBodies()->____function called____"<<endl;
+    //! ------------------------------------
+    //! put the selected shapes into a list
+    //! ------------------------------------
+    AIS_ListOfInteractive listOfShapes;
+    for(occContext->InitSelected();occContext->MoreSelected();occContext->NextSelected())
     {
-        //! -----------------------------------------------------------------
-        //! change the shape visibility. Set the flag BEFORE calling Erase()
-        //! -----------------------------------------------------------------
-        const occHandle(AIS_ExtendedShape) &theShape = (occHandle(AIS_ExtendedShape)::DownCast(occContext->SelectedInteractive()));
-        theShape->setShapeVisibility(Standard_False);
-
-        //! ----------------------------------------------------------------------------
-        //! erase a MeshVS_Mesh interactive object, if present (volume or surface mesh)
-        //! ----------------------------------------------------------------------------
-        int index = theShape->index();
-        if(!myDS2->ArrayOfMeshDS.value(index).IsNull() || !myDS2->ArrayOfMeshDS2D.value(index).IsNull())
-        {
-            occMeshContext->Erase(myMapOfInteractiveMeshes.value(index),false);
-            //occMeshContext->Erase(myMapOfInteractiveMeshes.at(index),false);
-        }
-        occContext->Erase(occContext->SelectedInteractive(),Standard_False);
+        listOfShapes.Append(occContext->SelectedInteractive());
+        const occHandle(AIS_ExtendedShape) &curShape = occHandle(AIS_ExtendedShape)::DownCast(occContext->SelectedInteractive());
+        curShape->setShapeVisibility(false);
     }
-    occContext->CloseLocalContext(occContext->IndexOfCurrentLocal());
-    myLocalCtxNumber=occContext->OpenLocalContext();
 
-    //! -----------------------------------------------------------------
-    //! reactivate the current "Standard selection mode", since when
-    //! the local context is closed, the selection modes are deactivated
-    //! -----------------------------------------------------------------
-    this->reactivateSelectionMode();
+    //! --------------------------------------------
+    //! erase the shapes and the corresponding mesh
+    //! --------------------------------------------
+    for(AIS_ListIteratorOfListOfInteractive it(listOfShapes); it.More(); it.Next())
+    {
+        const occHandle(AIS_ExtendedShape) &curShape = occHandle(AIS_ExtendedShape)::DownCast(it.Value());
+        curShape->setShapeVisibility(false);
+        occContext->Erase(curShape,false);
+        int index = curShape->index();
+        if(myMapOfInteractiveMeshes.value(index,occHandle(MeshVS_Mesh)()).IsNull()) continue;
+        occMeshContext->Erase(myMapOfInteractiveMeshes.value(index),false);
+    }
+    occContext->UpdateCurrentViewer();
+    cout<<"occPreGLWidget::hideSelectedBodies()->____exiting function____"<<endl;
 }
 
 //! --------------------------------------------------------------------
@@ -1272,18 +1271,51 @@ void occPreGLWidget::showAllBodies()
 {
     cout<<"occPreGLWidget::showAllBodies()->____function called____"<<endl;
 
-    //! ---------------------------------------------------------------------------------
-    //! The DisplayAll() works in the neutral point, so the local context must be closed
-    //! 25/08/2017: check ... old note
-    //! ---------------------------------------------------------------------------------
-    occContext->CloseLocalContext(occContext->IndexOfCurrentLocal());
-
     //! ------------------------------------
     //! show only the "active" bodies
     //! the bodies are shown wireframe mode
     //! ------------------------------------
     if(myCurWorkingMode == curWorkingMode_onSolution) occContext->SetDisplayMode(AIS_WireFrame,true);
+    AIS_ListOfInteractive listOfHidden;
+    occContext->ObjectsByDisplayStatus(AIS_KOI_Shape,0,AIS_DS_Erased,listOfHidden);
+    for(AIS_ListIteratorOfListOfInteractive it(listOfHidden); it.More(); it.Next())
+    {
+        const occHandle(AIS_ExtendedShape) &curShape = occHandle(AIS_ExtendedShape)::DownCast(it.Value());
+        int shapeIndex = curShape->index();
+        bool isShapeActive = myDS2->MapOfIsActive.value(shapeIndex);
+        if(isShapeActive==false) continue;
+        curShape->setShapeVisibility(true);
 
+        //! ----------------------
+        //! handling transparency
+        //! ----------------------
+        switch(myCurWorkingMode)
+        {
+        case curWorkingMode_onContact:occContext->SetTransparency(curShape,TRANSPARENCY_IN_WORKING_MODE_CONTACT,Standard_False); break;
+        case curWorkingMode_onModel: occContext->SetTransparency(curShape,TRANSPARENCY_IN_WORKING_MODE_MODEL,Standard_False); break;
+        case curWorkingMode_onMesh: occContext->SetTransparency(curShape,TRANSPARENCY_IN_WORKING_MODE_MESH,Standard_False); break;
+        case curWorkingMode_onSolution: occContext->SetTransparency(curShape,TRANSPARENCY_IN_WORKING_MODE_MODEL,Standard_False); break;
+        default: occContext->SetTransparency(curShape,TRANSPARENCY_IN_WORKING_MODE_MODEL,Standard_False); break;
+        }
+        occContext->Display(curShape,false);
+    }
+
+    switch(myCurWorkingMode)
+    {
+    case curWorkingMode_onMesh: this->displayAllMeshes(false,Graphic3d_NOM_GOLD); break;
+    case curWorkingMode_onSolution: this->hideAllMeshes(); break;
+    }
+
+    //! --------------
+    //! update viewer
+    //! --------------
+    occContext->UpdateCurrentViewer();
+    occMeshContext->UpdateCurrentViewer();
+    this->clearGeometrySelection();
+
+    if(curAction3D()!=CurAction3D_Nothing) occContext->SetAutomaticHilight(Standard_False);
+
+    /*
     for(QMap<int,occHandle(AIS_InteractiveObject)>::iterator it = myMapOfInteractiveShapes.begin(); it!=myMapOfInteractiveShapes.end(); ++it)
     {
         const occHandle(AIS_ExtendedShape) &AIS = occHandle(AIS_ExtendedShape)::DownCast(it.value());
@@ -1294,8 +1326,6 @@ void occPreGLWidget::showAllBodies()
             AIS->setShapeVisibility(Standard_True);
         }
     }
-    myLocalCtxNumber = occContext->OpenLocalContext();
-    this->reactivateSelectionMode();
 
     AIS_ListOfInteractive thelistOfDIsplayed;
     occContext->DisplayedObjects(AIS_KOI_Shape,0,thelistOfDIsplayed, false);
@@ -1339,7 +1369,7 @@ void occPreGLWidget::showAllBodies()
     case curWorkingMode_onMesh: this->displayAllMeshes(false,theMat); break;
     case curWorkingMode_onSolution: this->hideAllMeshes(); break;
     }
-    cout<<"occPreGLWidget::showAllBodies()->____function exiting____"<<endl;
+    */
 }
 
 //! ---------------------------------------------------------
@@ -1373,6 +1403,39 @@ void occPreGLWidget::refreshMeshView(bool onlyExterior)
 //! --------------------------------
 void occPreGLWidget::hideAllTheOtherBodies()
 {
+    //! ------------------------------
+    //! the shapes visible in context
+    //! ------------------------------
+    AIS_ListOfInteractive listOfVisible;
+    occContext->ObjectsByDisplayStatus(AIS_KOI_Shape,0,AIS_DS_Displayed,listOfVisible);
+
+    //! ------------------------------------
+    //! the list of the shapes in selection
+    //! ------------------------------------
+    AIS_ListOfInteractive listOfSelected;
+    for(occContext->InitSelected();occContext->MoreSelected();occContext->NextSelected())
+    {
+        const occHandle(AIS_ExtendedShape) &aShape = occHandle(AIS_ExtendedShape)::DownCast(occContext->SelectedInteractive());
+        listOfSelected.Append(aShape);
+    }
+
+    //! -------------------------------------------
+    //! hide the shapes which are not in selection
+    //! -------------------------------------------
+    for(AIS_ListIteratorOfListOfInteractive it(listOfVisible); it.More(); it.Next())
+    {
+        const occHandle(AIS_ExtendedShape) &curShape = occHandle(AIS_ExtendedShape)::DownCast(it.Value());
+        if(listOfSelected.Contains(curShape)==false)
+        {
+            curShape->setShapeVisibility(false);
+            occContext->Erase(curShape,false);
+            occMeshContext->Erase(myMapOfInteractiveMeshes.value(curShape->index()),false);
+        }
+    }
+    occContext->UpdateCurrentViewer();
+    this->clearGeometrySelection();
+
+    /*
     AIS_ListOfInteractive list;
     AIS_ListIteratorOfListOfInteractive listIt;
 
@@ -1382,7 +1445,7 @@ void occPreGLWidget::hideAllTheOtherBodies()
     //! -----------------------------------------------------------------------------
     for(occContext->InitSelected();occContext->MoreSelected();occContext->NextSelected())
     {
-        occHandle(AIS_ExtendedShape) aShape = occHandle(AIS_ExtendedShape)::DownCast(occContext->SelectedInteractive());
+        const occHandle(AIS_ExtendedShape) &aShape = occHandle(AIS_ExtendedShape)::DownCast(occContext->SelectedInteractive());
         list.Append(aShape);
     }
     listIt.Initialize(list);
@@ -1419,14 +1482,13 @@ void occPreGLWidget::hideAllTheOtherBodies()
     AIS_ListOfInteractive theListOfDisplayedShapes;
     occContext->DisplayedObjects(AIS_KOI_Shape, 0, theListOfDisplayedShapes, Standard_False);
 
-    AIS_ListIteratorOfListOfInteractive it;
     AIS_ListOfInteractive theListToBeHidden;
     AIS_ListIteratorOfListOfInteractive itListToBeHidden;
 
-    for(it.Initialize(theListOfDisplayedShapes);it.More();it.Next())
+    for(AIS_ListIteratorOfListOfInteractive it(theListOfDisplayedShapes);it.More();it.Next())
     {
         int k = 0;
-        for(itFinalList.Initialize(finalList);itFinalList.More();itFinalList.Next())
+        for(AIS_ListIteratorOfListOfInteractive itFinalList(finalList);itFinalList.More();itFinalList.Next())
         {
             if(it.Value()!=itFinalList.Value())
             {
@@ -1454,7 +1516,6 @@ void occPreGLWidget::hideAllTheOtherBodies()
         if(!myDS2->ArrayOfMeshDS.value(bodyIndex).IsNull())
         {
             const occHandle(MeshVS_Mesh) &theMesh = occHandle(MeshVS_Mesh)::DownCast(myMapOfInteractiveMeshes.value(bodyIndex));
-            //const occHandle(MeshVS_Mesh) &theMesh = occHandle(MeshVS_Mesh)::DownCast(myMapOfInteractiveMeshes.at(bodyIndex));
             occMeshContext->Erase(theMesh,Standard_False);
         }
 
@@ -1462,9 +1523,10 @@ void occPreGLWidget::hideAllTheOtherBodies()
         theAISShape->setShapeVisibility(Standard_False);
         occContext->Erase(itListToBeHidden.Value(),Standard_False);
     }
-    occContext->CloseLocalContext(occContext->IndexOfCurrentLocal());
-    myLocalCtxNumber=occContext->OpenLocalContext();
-    this->reactivateSelectionMode();
+    //occContext->CloseLocalContext(occContext->IndexOfCurrentLocal());
+    //myLocalCtxNumber=occContext->OpenLocalContext();
+    //this->reactivateSelectionMode();
+    */
 }
 
 //! -----------------------
@@ -2730,7 +2792,7 @@ void occPreGLWidget::hideBody(const TColStd_ListOfInteger &listOfBodyNumbers)
 {
     cout<<"occPreGLWidget::hideBody()->____function called____"<<endl;
     cout<<"occPreGLWidget::hideBody()->____number of bodies to hide: "<<listOfBodyNumbers.Extent()<<"____"<<endl;
-    occContext->CloseLocalContext(occContext->IndexOfCurrentLocal());
+    //occContext->CloseLocalContext(occContext->IndexOfCurrentLocal());
     TColStd_ListIteratorOfListOfInteger anIter;
     for(anIter.Initialize(listOfBodyNumbers); anIter.More(); anIter.Next())
     {
@@ -2739,9 +2801,9 @@ void occPreGLWidget::hideBody(const TColStd_ListOfInteger &listOfBodyNumbers)
         //const occHandle(AIS_ExtendedShape) &IO = occHandle(AIS_ExtendedShape)::DownCast(myMapOfInteractiveShapes.at(bodyIndex));
         IO->setShapeVisibility(Standard_False);
         //occContext->Remove(IO,false);
-        occContext->Erase(IO, false);
+        //occContext->Erase(IO, false);
     }
-    myLocalCtxNumber=occContext->OpenLocalContext();
+    //myLocalCtxNumber=occContext->OpenLocalContext();
 
     //! -------------------------------------------------------------------------
     //! now the selection modes must be reactivated, because when the
@@ -2758,7 +2820,7 @@ void occPreGLWidget::hideBody(const TColStd_ListOfInteger &listOfBodyNumbers)
 void occPreGLWidget::showBody(const TColStd_ListOfInteger &listOfBodies)
 {
     cout<<"occPreGLWidget::showBody()->____function called____"<<endl;
-    occContext->CloseLocalContext(occContext->IndexOfCurrentLocal());
+    //occContext->CloseLocalContext(occContext->IndexOfCurrentLocal());
     TColStd_ListIteratorOfListOfInteger anIter;
     for(anIter.Initialize(listOfBodies); anIter.More(); anIter.Next())
     {
@@ -2768,7 +2830,7 @@ void occPreGLWidget::showBody(const TColStd_ListOfInteger &listOfBodies)
         occContext->Display(IO,false);
         IO->setShapeVisibility(Standard_True);
     }
-    myLocalCtxNumber=occContext->OpenLocalContext();
+    //myLocalCtxNumber=occContext->OpenLocalContext();
 
     //! -------------------------------------------------------------------------
     //! now the selection modes must be reactivated, because when the
@@ -3941,7 +4003,6 @@ void occPreGLWidget::init()
     if(occMeshContext.IsNull())
     {
         occMeshContext = new AIS_InteractiveContext(occViewer);
-
         //! ----------------------------------------------
         //! set selection and highlight mode for the mesh
         //! ----------------------------------------------
@@ -3954,7 +4015,8 @@ void occPreGLWidget::init()
         occMeshContext->SetToHilightSelected(false);
         */
 //cesere
-        Handle(Prs3d_Drawer) t_hilight_style = occMeshContext->HighlightStyle(); // Get highlight style
+
+        occHandle(Prs3d_Drawer) t_hilight_style = occMeshContext->HighlightStyle(); // Get highlight style
         t_hilight_style->SetMethod(Aspect_TOHM_COLOR); // color display mode
         t_hilight_style->SetColor(Quantity_NOC_LIGHTYELLOW); // Set the highlight color
         t_hilight_style->SetDisplayMode(1); // Overall highlighting
