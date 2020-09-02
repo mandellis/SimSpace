@@ -363,6 +363,10 @@ private slots:
 
 protected slots:
 
+
+    //! geometric properties of a selection
+    virtual void computeSelectionProperties() override;
+
     void ShowContextMenu1(const QPoint&);
 
     //! Click on a topology -> returns the number

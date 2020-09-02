@@ -332,8 +332,8 @@ public slots:
 
 protected slots:
 
-    //! properties of the selection: length, area, volume, ...
-    void selectionProperties();
+    //! geometric properties of a selection
+    virtual void computeSelectionProperties();
 
     //! build a basic context menu structure
     void buildMinimalContexetMenu();
