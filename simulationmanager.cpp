@@ -5387,6 +5387,7 @@ void SimulationManager::handleItemChange(QStandardItem *item)
                 //! if it was previously removed; in case of a "Frictionless" or "Bonded" contact pair,
                 //! remove it, if it was previously added
                 //! -----------------------------------------------------------------------------------------
+            /*
                 switch(theContactType)
                 {
                 case Property::contactType_frictional:
@@ -5658,8 +5659,10 @@ void SimulationManager::handleItemChange(QStandardItem *item)
                 }
                     break;
                 }
+            */
             }
 
+            /*
             //! ------------------------------
             //! handle the "Behavior" control
             //! ------------------------------
@@ -5834,6 +5837,7 @@ void SimulationManager::handleItemChange(QStandardItem *item)
                 }
             }
             cout<<"____handling contacts: exiting____"<<endl;
+            */
         }
     }
         break;

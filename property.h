@@ -220,6 +220,7 @@ public:
 
     enum contactFormulation
     {
+        contactFormulation_lagrange,
         contactFormulation_penalty,
         contactFormulation_MPC,
     } cf;

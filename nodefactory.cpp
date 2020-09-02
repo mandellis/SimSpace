@@ -1139,6 +1139,14 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
             vecProp.push_back(prop_SlaveTags);
         }
 
+        //! -----------------------------------------------------------------------
+        //! the contact formualation: contact pair initially treated with lagrangian
+        //! -----------------------------------------------------------------------
+        Property::contactFormulation theContactFormulation = Property::contactFormulation_lagrange;
+        data.setValue(theContactFormulation);
+        Property prop_connectionFormulation("Formulation",data,Property::PropertyGroup_Definition);
+        vecProp.push_back(prop_connectionFormulation);
+
         //! ---------------------------------------------------------------
         //! the contact type: contact pair initially created as frictional
         //! ---------------------------------------------------------------
@@ -1148,9 +1156,9 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
         vecProp.push_back(prop_connectionType);
 
         //! ---------------------------------------------
-        //! the contact behavior - asymmetric by default
+        //! the contact behavior - symmetric by default
         //! ---------------------------------------------
-        Property::contactBehavior theContactBehavior = Property::contactBehavior_asymmetric;
+        Property::contactBehavior theContactBehavior = Property::contactBehavior_symmetric;
         data.setValue(theContactBehavior);
         Property prop_contactBehavior("Behavior",data,Property::PropertyGroup_Definition);
         vecProp.push_back(prop_contactBehavior);

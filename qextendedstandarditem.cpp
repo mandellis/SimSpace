@@ -1747,6 +1747,20 @@ QVariant QExtendedStandardItem::data(int role) const
             return data;
         }
         //! -----------
+        //! "Formulation"
+        //! -----------
+        else if(name=="Formulation")
+        {
+            Property::contactFormulation theFormulation = QStandardItem::data(Qt::UserRole).value<Property>().getData().value<Property::contactFormulation>();
+            switch(theFormulation)
+            {
+            case Property::contactFormulation_lagrange: data.setValue(QString("Lagrange")); break;
+            case Property::contactFormulation_penalty: data.setValue(QString("Pure penalty")); break;
+            case Property::contactFormulation_MPC: data.setValue(QString("MPC")); break;
+            }
+            return data;
+        }
+        //! -----------
         //! "Behavior"
         //! -----------
         else if(name=="Behavior")
