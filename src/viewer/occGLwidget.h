@@ -226,6 +226,13 @@ protected:
     //! pick point
     gp_Pnt hitPoint(long x, long y, TopoDS_Shape shape);
 
+    //! create line from view eye
+    gp_Lin createLineFromViewEye(double x, double y);
+
+    //!
+    gp_Pnt convert2DPointTo3DPoint(double x, double y);
+
+
     //! convert to plane
     Standard_Boolean ConvertToPlane(const Standard_Integer Xs,
                                     const Standard_Integer Ys,

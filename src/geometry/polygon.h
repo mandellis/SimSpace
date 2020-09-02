@@ -270,8 +270,8 @@ public:
         //! -----------------
         //! first two points
         //! -----------------
-        Point P0 = points.at(0);
-        Point P1 = points.at(1);
+        Point P0 = points[0];
+        Point P1 = points[1];
         x0 = P0.x; y0 = P0.y; z0 = P0.z;
         x1 = P1.x; y1 = P1.y; z1 = P1.z;
 
@@ -280,7 +280,7 @@ public:
         //! -------------------------------------
         for(int i=2; i<NbPoints; i++)
         {
-            Point P2 = points.at(i);
+            Point P2 = points[i];
             if(!areCollinear(P0,P1,P2))
             {
                 x2 = P2.x; y2 = P2.y; z2 = P2.z;

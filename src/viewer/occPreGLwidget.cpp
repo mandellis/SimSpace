@@ -106,6 +106,9 @@
 #include <BRepAdaptor_Curve.hxx>
 #include <GeomAdaptor_Curve.hxx>
 #include <TColStd_HPackedMapOfInteger.hxx>
+#include <MeshVS_MeshOwner.hxx>
+#include <MeshVS_MeshEntityOwner.hxx>
+#include <polygon.h>
 
 using namespace std;
 
@@ -1138,9 +1141,11 @@ void occPreGLWidget::buildMeshIOs()
             //! presentation builder - use as highlighter (flag true)
             //! ------------------------------------------------------
             occHandle(MeshVS_MeshPrsBuilder) aBuilder = new MeshVS_MeshPrsBuilder(aMesh);
+            //const occHandle(MeshVS_Drawer) &aMeshDrawer = aBuilder->GetDrawer();
+            //aMeshDrawer->SetColor(MeshVS_DA_EdgeColor,static_cast<Quantity_Color>(Quantity_NOC_RED));
+            //aMeshDrawer->SetBoolean(MeshVS_DA_ComputeTime,true);
+            //aBuilder->SetDrawer(aMeshDrawer);
             aMesh->AddBuilder(aBuilder,Standard_True);
-            aBuilder->GetDrawer()->SetColor(MeshVS_DA_EdgeColor,Quantity_NOC_RED);
-            //aMesh->AddBuilder(aBuilder,Standard_False);
 
             //! ---------------------------------------------------------------------
             //! retrieve the color of the underlying shape and assign it to the mesh
@@ -4354,8 +4359,7 @@ void occPreGLWidget::mouseMoveEvent(QMouseEvent *e)
 //! function: onMouseMove
 //! details:
 //! ----------------------
-//#include <MeshVS_MeshOwner.hxx>
-#include <MeshVS_MeshEntityOwner.hxx>
+#include <algorithm>
 void occPreGLWidget::onMouseMove(const int theFlags, QPoint thePoint)
 {
     switch(myCurSelectionType)
@@ -4367,6 +4371,68 @@ void occPreGLWidget::onMouseMove(const int theFlags, QPoint thePoint)
         double y_cur = thePoint.y();
         occMeshContext->MoveTo(x_cur,y_cur,occView, true);
 
+        if(occMeshContext->HasDetected())
+        {
+            const occHandle(MeshVS_MeshEntityOwner) &anEntityOwner = occHandle(MeshVS_MeshEntityOwner)::DownCast(occMeshContext->DetectedOwner());
+            const occHandle(MeshVS_Mesh) &aMeshObject = occHandle(MeshVS_Mesh)::DownCast(anEntityOwner->Selectable());
+            const occHandle(MeshVS_DataSource) &aMeshDS = aMeshObject->GetDataSource();
+            int ID = anEntityOwner->ID();
+            MeshVS_EntityType aType;
+            int NbNodes;
+            double buf[30];
+            TColStd_Array1OfReal coords(*buf,1,30);
+            aMeshDS->GetGeom(ID,true,coords,NbNodes,aType);
+            std::vector<polygon::Point> aPolygon;
+            for(int n=0; n<NbNodes; n++)
+            {
+                int s = 3*n;
+                aPolygon.push_back(polygon::Point(coords(s+1),coords(s+2),coords(s+3)));
+            }
+
+            //! ------------
+            //! ray casting
+            //! ------------
+            //gp_Lin aRay = this->createLineFromViewEye(x_cur,y_cur);
+
+            //! ---------------------
+            //! plane of the polygon
+            //! ---------------------
+            double a,b,c,d;
+            polygon::planeCoefficients(aPolygon,a,b,c,d);
+            double ll = sqrt(a*a+b*b+c*c);
+            a /= ll; b /= ll; c /= ll; d /= ll;
+            cout<<"____plane coefficients("<<a<<", "<<b<<", "<<c<<", "<<d<<")____"<<endl;
+
+            //double Xv,Yv,Zv;
+            gp_Pnt P  = this->convert2DPointTo3DPoint(x_cur,y_cur);
+            cout<<"____P("<<P.X()<<", "<<P.Y()<<", "<<P.Z()<<")____"<<endl;
+
+            double XEye,YEye,ZEye;
+            occView->Eye(XEye,YEye,ZEye);
+            double l = sqrt(pow(XEye-P.X(),2)+pow(YEye-P.Y(),2)+pow(ZEye-P.Z(),2));
+            double kx = (P.X()-XEye)/l;
+            double ky = (P.Y()-YEye)/l;
+            double kz = (P.Z()-ZEye)/l;
+
+            cout<<"____("<<kx<<", "<<ky<<", "<<kz<<")____"<<endl;
+
+            double t = -(a*kx+b*ky+c*kz+d)/(a*P.X()+b*P.Y()+c*P.Z());
+            double x_intersection = XEye+kx*t;
+            double y_intersection = YEye+ky*t;
+            double z_intersection = ZEye+kz*t;
+            polygon::Point intersectionPoint(x_intersection,y_intersection,z_intersection);
+            //std::reverse(aPolygon.begin(), aPolygon.end());
+            bool isPointInsidePolygon = polygon::isPointInside(intersectionPoint,aPolygon,false,1e-5);
+            if(isPointInsidePolygon==true)
+            {
+                cout<<"____INTERSECTION POINT ("<<x_intersection<<", "<<y_intersection<<", "<<z_intersection<<")____"<<endl;
+            }
+            else
+            {
+                cout<<"____intersection point discarded____"<<endl;
+            }
+            //anEntityOwner->HilightWithColor(occMeshContext->MainPrsMgr(),aDrawer);
+        }
         static int theOldDetectedMeshEntity;
 
         //! -----------------------------------------
@@ -4409,8 +4475,8 @@ void occPreGLWidget::onMouseMove(const int theFlags, QPoint thePoint)
                     //! ----------------
                     //! check detection
                     //! ----------------
-                    if(occMeshContext->HasDetected()==false) { cout<<"____no detection____"<<endl; break; }
-                    else { cout<<"____has detection____"<<endl; }
+                    //if(occMeshContext->HasDetected()==false) { cout<<"____no detection____"<<endl; break; }
+                    //else { cout<<"____has detection____"<<endl; }
 
                     const occHandle(SelectMgr_EntityOwner) &anOwnerOfDetection = occMeshContext->DetectedOwner();
                     const occHandle(MeshVS_MeshEntityOwner) &aMeshOwnerOfDetection = occHandle(MeshVS_MeshEntityOwner)::DownCast(anOwnerOfDetection);
@@ -4438,7 +4504,7 @@ void occPreGLWidget::onMouseMove(const int theFlags, QPoint thePoint)
                             if(k == selectedMeshEntities.size())  // equivalent to a multiple logical "And"
                             {
                                 occMeshContext->ShiftSelect(true);
-                                //emit selectionChanged();
+                                emit selectionChanged();
                             }
                         }
                         theOldDetectedMeshEntity = detectedMeshEntityID;
@@ -4450,7 +4516,7 @@ void occPreGLWidget::onMouseMove(const int theFlags, QPoint thePoint)
                     else if(occMeshContext->NbSelected()==0)
                     {
                         occMeshContext->Select(true);
-                        //emit selectionChanged();
+                        emit selectionChanged();
                     }
                 }
             }
@@ -4490,8 +4556,6 @@ void occPreGLWidget::setSelectionMode(CurSelectionMode selectionMode)
     {
         //! clear geometry selection
         this->clearGeometrySelection();
-
-        //bool isAutomaticHighlight = true;
         MeshVS_SelectionModeFlags theMode;
         switch(selectionMode)
         {
@@ -4508,7 +4572,7 @@ void occPreGLWidget::setSelectionMode(CurSelectionMode selectionMode)
         if(myCurSelectionMode == CurSelection_Nothing)
         {
             for(AIS_ListIteratorOfListOfInteractive it(listOfIO); it.More(); it.Next()) occMeshContext->Deactivate(it.Value());
-            occMeshContext->SetAutomaticHilight(false);
+            occMeshContext->SetAutomaticHilight(true);
         }
         else
         {
@@ -4527,10 +4591,20 @@ void occPreGLWidget::setSelectionMode(CurSelectionMode selectionMode)
             for(AIS_ListIteratorOfListOfInteractive it(listOfIO); it.More(); it.Next())
             {
                 occMeshContext->Deactivate(it.Value());
-                //occMeshContext->Load(it.Value(),theMode,true);
+                occMeshContext->Load(it.Value(),theMode,true);
                 occMeshContext->Activate(it.Value(),theMode);
             }
-            occMeshContext->SetAutomaticHilight(true);
+
+            occMeshContext->SetSubIntensityColor(static_cast<Quantity_NameOfColor>(Quantity_NOC_GREEN));
+            occMeshContext->SetAutomaticHilight(false);
+            occHandle(Prs3d_Drawer) selectionDrawer = new Prs3d_Drawer();
+            selectionDrawer->SetDisplayMode(AIS_Shaded);
+            selectionDrawer->SetMethod(Aspect_TOHM_COLOR);
+            selectionDrawer->SetColor(static_cast<Quantity_NameOfColor>(Quantity_NOC_GREEN));
+            occMeshContext->SetHighlightStyle(Prs3d_TypeOfHighlight_SubIntensity,selectionDrawer);
+            occMeshContext->SetSelectionStyle(selectionDrawer);
+
+            //occMeshContext->SetAutomaticHilight(false);
         }
     }
         break;
@@ -4539,23 +4613,20 @@ void occPreGLWidget::setSelectionMode(CurSelectionMode selectionMode)
 
 //! -------------------------------------
 //! function: computeSelectionProperties
-//! details:
+//! details:  abbozzato - da completare
 //! -------------------------------------
-#include <MeshVS_MeshOwner.hxx>
-#include <polygon.h>
 void occPreGLWidget::computeSelectionProperties()
 {
+    QString message("");
+    double totalSelectedArea = 0;
     switch(myCurSelectionType)
     {
     case SelectionType_Geometry: occGLWidget::computeSelectionProperties(); break;
     case SelectionType_Mesh:
     {
         int NbSelected = occMeshContext->NbSelected();
-        if(NbSelected==0)
-        {
-            cout<<"____no selection____"<<endl;
-            return;
-        }
+        if(NbSelected==0) return;
+
         switch(myCurSelectionMode)
         {
         case CurSelection_Vertex:
@@ -4573,14 +4644,14 @@ void occPreGLWidget::computeSelectionProperties()
             //! -----------------------------------------------------
             //! aim: compute the total area of the selected elements
             //! -----------------------------------------------------
-            double totalSelectedArea = 0;
-            for(occContext->InitSelected(); occContext->MoreSelected(); occContext->NextSelected())
+            for(occMeshContext->InitSelected(); occMeshContext->MoreSelected(); occMeshContext->NextSelected())
             {
                 const occHandle(MeshVS_MeshEntityOwner) &anEntityOwner = occHandle(MeshVS_MeshEntityOwner)::DownCast(occMeshContext->SelectedOwner());
-                const occHandle(MeshVS_MeshOwner) &anOwner = occHandle(MeshVS_MeshOwner)::DownCast(anEntityOwner->Selectable());
                 int globalElementID  = anEntityOwner->ID();
-                const occHandle(MeshVS_DataSource) &aDS = anOwner->GetDataSource();
-
+                //cout<<"____ID: "<<globalElementID<<"____"<<endl;
+                const occHandle(MeshVS_Mesh) &aMeshObject = occHandle(MeshVS_Mesh)::DownCast(anEntityOwner->Selectable());
+                const occHandle(MeshVS_DataSource) &aDS = aMeshObject->GetDataSource();
+                //cout<<"____number of elements: "<<aDS->GetAllElements().Extent()<<"____"<<endl;
                 MeshVS_EntityType aType;
                 int NbNodes;
                 double buf[30];
@@ -4592,9 +4663,11 @@ void occPreGLWidget::computeSelectionProperties()
                     int s = 3*n;
                     aPolygon.push_back(polygon::Point(coords(s+1),coords(s+2),coords(s+3)));
                 }
+                //cout<<"____polygon area: "<<polygon::area3D_Polygon(aPolygon)<<"____"<<endl;
                 totalSelectedArea += polygon::area3D_Polygon(aPolygon);
             }
-            cout<<"____total area of the selected surface elements: "<<totalSelectedArea<<"____"<<endl;
+            message = QString("%1 selected mesh elements. Area %2").arg(NbSelected).arg(totalSelectedArea);
+            //cout<<"____total area of the selected surface elements: "<<totalSelectedArea<<"____"<<endl;
         }
             break;
         case CurSelection_Solid:
@@ -4607,6 +4680,7 @@ void occPreGLWidget::computeSelectionProperties()
             {
                 ;
             }
+            message = QString("%1 selected volume elements").arg(NbSelected);
             cout<<"____total volume of the selected volume elements: "<<totalVolume<<"____"<<endl;
         }
             break;
@@ -4614,4 +4688,5 @@ void occPreGLWidget::computeSelectionProperties()
     }
         break;
     }
+    emit statusBarMessage(message);
 }

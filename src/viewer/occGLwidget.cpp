@@ -3527,10 +3527,45 @@ void occGLWidget::reset()
 
     //! close all the contexts and clear the scene
     occContext->CloseAllContexts(false);
-    myLocalCtxNumber = occContext->IndexOfCurrentLocal();
     occContext->RemoveAll(true);
-
-    //! Mesh context: closes all the contexts and clear the mesh scene
-    //occMeshContext->CloseAllContexts(false);
-    //occMeshContext->RemoveAll(true);
 }
+
+//! --------------------------------
+//! function: createLineFromViewEye
+//! details:
+//! --------------------------------
+gp_Lin occGLWidget::createLineFromViewEye(double x, double y)
+{
+    double Xp = x, Yp = y;
+    double Xv, Yv, Zv;
+    double Vx, Vy, Vz;
+    occView->Convert( Xp, Yp, Xv, Yv, Zv );
+    occView->Proj( Vx, Vy, Vz );
+    return gp_Lin(gp_Pnt(Xv, Yv, Zv), gp_Dir(Vx, Vy, Vz));
+}
+
+//! ----------------------------------
+//! function: convert2DPointTo3DPoint
+//! details:
+//! ----------------------------------
+gp_Pnt occGLWidget::convert2DPointTo3DPoint(double x, double y)
+{
+    double XEye,YEye,ZEye,XAt,YAt,ZAt;
+    occView->Eye(XEye,YEye,ZEye);
+    occView->At(XAt,YAt,ZAt);
+    gp_Pnt EyePoint(XEye,YEye,ZEye);
+    gp_Pnt AtPoint(XAt,YAt,ZAt);
+
+    gp_Vec EyeVector(EyePoint,AtPoint);
+    gp_Dir EyeDir(EyeVector);
+
+    gp_Pln PlaneOfTheView = gp_Pln(AtPoint,EyeDir);
+    double X,Y,Z;
+    occView->Convert(int(x),int(y),X,Y,Z);
+    gp_Pnt ConvertedPoint(X,Y,Z);
+    gp_Pnt2d ConvertedPointOnPlane = ProjLib::Project(PlaneOfTheView,ConvertedPoint);
+    gp_Pnt ResultPoint = ElSLib::Value(ConvertedPointOnPlane.X(), ConvertedPointOnPlane.Y(), PlaneOfTheView);
+
+    return ResultPoint;
+}
+
