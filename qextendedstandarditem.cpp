@@ -841,8 +841,8 @@ QVariant QExtendedStandardItem::data(int role) const
             }
             return data;
         }
-        if(name == "K" || name =="Sigma infty" || name =="C0" || name =="Lambda"
-                || name =="P0" || name =="Beta")
+        if(name == "K" || name =="Sigma infinity" || name =="C0" || name =="Lambda"
+                || name =="P0" || name =="Beta" || name == "Thermal conductance")
         {
             double val = QStandardItem::data(Qt::UserRole).value<Property>().getData().toDouble();
             if(val==0.0) data.setValue(QString("Program controlled"));

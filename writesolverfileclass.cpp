@@ -25,6 +25,7 @@
 //! global
 //! -------
 #include "global.h"
+#include "map"
 
 //! ---
 //! Qt
@@ -274,7 +275,7 @@ bool writeSolverFileClass::perform()
             case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_CompressionOnlySupport:
             {
                 double K = theItemNode->getPropertyValue<double>("K");
-                double F = theItemNode->getPropertyValue<double>("Sigma infty");
+                double F = theItemNode->getPropertyValue<double>("Sigma infinity");
 
                 this->writeGapElement(anIndexedMapOfFaceMeshDS,SetName,K,F);
                 myInputFile<<"*INCLUDE, INPUT="<<SetName.toStdString()<<".gap"<<endl;
@@ -717,8 +718,10 @@ bool writeSolverFileClass::perform()
             Property::SuppressionStatus ss = node->getPropertyValue<Property::SuppressionStatus>("Suppressed");
             if(ss==Property::SuppressionStatus_Active)
             {
+                QString timeTag = node->getPropertyValue<QString>("Time tag");
                 Property::contactType theContactType = node->getPropertyValue<Property::contactType>("Type");
                 Property::contactBehavior theContactBehavior = node->getPropertyValue<Property::contactBehavior>("Behavior");
+                Property::contactFormulation theContactFormulation = node->getPropertyValue<Property::contactFormulation>("Formulation");
                 double K,KF;
 
                 switch(theContactBehavior)
@@ -798,7 +801,7 @@ bool writeSolverFileClass::perform()
                         {
                             double C0 = node->getPropertyValue<double>("C0");
                             KF = node->getPropertyValue<double>("K");
-                            double sigmaInfty = node->getPropertyValue<double>("Sigma infty");
+                            double sigmaInfty = node->getPropertyValue<double>("Sigma infinity");
 
                             myInputFile<<"LINEAR"<<endl;
                             if(KF == 0) KF=1;

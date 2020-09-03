@@ -843,10 +843,10 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
         vecProp.push_back(prop_K);
 
         //! --------------------------------------------
-        //! sigma infty: if "0" => "Program controlled"
+        //! sigma infinity: if "0" => "Program controlled"
         //! --------------------------------------------
         data.setValue(0.0);
-        Property prop_sigmaInf("Sigma infty",data,Property::PropertyGroup_Advanced);
+        Property prop_sigmaInf("Sigma infinity",data,Property::PropertyGroup_Advanced);
         vecProp.push_back(prop_sigmaInf);
 
         //! -------------------
@@ -1193,11 +1193,18 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
         vecProp.push_back(prop_K);
 
         //! --------------------------------------------
-        //! sigma infty: if "0" => "Program controlled"
+        //! sigma infinity: if "0" => "Program controlled"
         //! --------------------------------------------
         data.setValue(0.0);
-        Property prop_sigmaInf("Sigma infty",data,Property::PropertyGroup_Advanced);
+        Property prop_sigmaInf("Sigma infinity",data,Property::PropertyGroup_Advanced);
         vecProp.push_back(prop_sigmaInf);
+
+        //! ----------------------------------------------------
+        //! thermal conductance: if "0" => "Program controlled"
+        //! ----------------------------------------------------
+        data.setValue(0.0);
+        Property prop_thermalCond("Thermal conductance",data,Property::PropertyGroup_Advanced);
+        vecProp.push_back(prop_thermalCond);
 
         //! --------------------------------------------
         //! constant C0: if "0" => "Program controlled"

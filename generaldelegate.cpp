@@ -1043,8 +1043,8 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
         //! --------------------------------------
         //! Advanced properties for contact group
         //! --------------------------------------
-        else if(propertyName =="K" || propertyName=="Sigma infty" || propertyName =="C0" ||
-                propertyName =="Lambda" || propertyName =="P0")
+        else if(propertyName =="K" || propertyName=="Sigma infinity" || propertyName =="C0" ||
+                propertyName =="Lambda" || propertyName =="P0" || propertyName == "Thermal conductance")
         {
             //SimulationNodeClass *curNode = this->getCurrentNode();
 
@@ -1068,9 +1068,9 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
                     case Property::overpressureFunction_linear:
                     {
                         //! ------------------------------------------------
-                        //! "C0" "K" "Lambda" "Sigma infty" can be modified
+                        //! "C0" "K" "Lambda" "Sigma infinity" can be modified
                         //! ------------------------------------------------
-                        if(propertyName=="C0" || propertyName =="Lambda" || propertyName =="Sigma infty" || propertyName =="K")
+                        if(propertyName=="C0" || propertyName =="Lambda" || propertyName =="Sigma infinity" || propertyName =="K")
                         {
                             QLineEdit *editor = new QLineEdit(parent);
                             QDoubleValidator *doubleValidator = new QDoubleValidator();
@@ -1110,7 +1110,7 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
                     {
                         //! -----------------------------------------------------------------
                         //! "K" "Lambda" "can be modified. For a symmetric face to face
-                        //! contact "C0" is set to zero by CCX, and "Sigma infty" is not
+                        //! contact "C0" is set to zero by CCX, and "Sigma infinity" is not
                         //! defined (the overpressure function is truly bilinear)
                         //! From CCX routine "springfc_f2f.f" appears that the overpressure
                         //! equation is the same for the two cases. For a "Tied" overpressure
@@ -1169,7 +1169,7 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
             }
 */
             //! ---------------------------------------------
-            //! "K" and "Sigma infty" are also properties of
+            //! "K" and "Sigma infinity" are also properties of
             //! the "Compression only support"
             //! ---------------------------------------------
             /*
@@ -2133,7 +2133,7 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
         //! --------------
         else if(propertyName =="Formulation")
         {
-            SimulationNodeClass *curNode = this->getCurrentNode();
+            //SimulationNodeClass *curNode = this->getCurrentNode();
             //Property::contactFormulation formulation = curNode->getPropertyItem("Formulation")->data(Qt::UserRole).value<Property>().getData().value<Property::contactType>();
             QComboBox *editor = new QComboBox(parent);
             editor->clear();
@@ -3696,12 +3696,12 @@ void GeneralDelegate::setEditorData(QWidget *editor, const QModelIndex &index) c
     //! ----------------------------------------
     //! Advanced controls for the contact group
     //! ----------------------------------------
-    else if(propertyName =="K" || propertyName=="Sigma infty" || propertyName =="C0" ||
-            propertyName =="Lambda" || propertyName =="P0")
+    else if(propertyName =="K" || propertyName=="Sigma infinity" || propertyName =="C0" ||
+            propertyName =="Lambda" || propertyName =="P0" || propertyName == "Thermal conductance")
     {
         //SimulationNodeClass *curNode = this->getCurrentNode();
         //Property::contactBehavior val = curNode->getPropertyItem("Behavior")->data(Qt::UserRole).value<Property>().getData().value<Property::contactBehavior>();
-        //if(val == Property::contactBehavior_symmetric && propertyName != "C0" && propertyName == "Sigma infty")
+        //if(val == Property::contactBehavior_symmetric && propertyName != "C0" && propertyName == "Sigma infinity")
         //{
             double value = data.value<Property>().getData().toDouble();
             QLineEdit *le = static_cast<QLineEdit*>(editor);
@@ -5768,8 +5768,8 @@ void GeneralDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, c
         //! ----------------------------------------
         //! Advanced controls for the contact group
         //! ----------------------------------------
-        else if(propertyName =="K" || propertyName=="Sigma infty" || /*propertyName =="C0" ||*/
-                propertyName =="Lambda" || propertyName =="P0")
+        else if(propertyName =="K" || propertyName=="Sigma infinity" || /*propertyName =="C0" ||*/
+                propertyName =="Lambda" || propertyName =="P0" || propertyName == "Thermal conductance")
         {
             SimulationNodeClass *curNode = this->getCurrentNode();
 
@@ -5789,7 +5789,7 @@ void GeneralDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, c
                     {
                     case Property::overpressureFunction_linear:
                     {
-                        //! linear: "K", "C0", "Sigma infty", "Lambda" can be modified
+                        //! linear: "K", "C0", "Sigma infinity", "Lambda" can be modified
                         QLineEdit *le = static_cast<QLineEdit*>(editor);
                         data.setValue(le->text().toDouble());
                     }
@@ -5857,7 +5857,7 @@ void GeneralDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, c
                 data.setValue(le->text().toDouble());
             }
             //! ------------------------------------------
-            //! "K" and "Sigma infty" are also properties
+            //! "K" and "Sigma infinity" are also properties
             //! of "Compression only support"
             //! ------------------------------------------
             if(curNode->getType()==SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_CompressionOnlySupport)
@@ -6380,13 +6380,13 @@ void GeneralDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, c
             }
         }
         //! --------------
-        //! to be removed
+        //! "Formulation"
         //! --------------
-        //else if(propertyName=="Formulation")
-        //{
-        //    QComboBox *comboBox = static_cast<QComboBox*>(editor);
-        //    data.setValue(comboBox->currentData(Qt::UserRole).value<Property::contactFormulation>());
-        //}
+        else if(propertyName=="Formulation")
+        {
+            QComboBox *comboBox = static_cast<QComboBox*>(editor);
+            data.setValue(comboBox->currentData(Qt::UserRole).value<Property::contactFormulation>());
+        }
         //! ---------
         //! Behavior
         //! ---------

@@ -5453,7 +5453,7 @@ void SimulationManager::handleItemChange(QStandardItem *item)
 
                     //! ------------------------------------------------------------------
                     //! re-init the contact with "overpressure linear"
-                    //! add "Overpressure", "K", "Sigma infty", "CO" if they were removed
+                    //! add "Overpressure", "K", "Sigma infinity", "CO" if they were removed
                     //! ------------------------------------------------------------------
                     QVariant data;
                     if(curNode->getPropertyItem("K")==NULL)
