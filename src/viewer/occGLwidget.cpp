@@ -226,6 +226,7 @@ occGLWidget::occGLWidget(QWidget* parent):QGLWidget(parent),
 
 //! ---------------------
 //! function: destructor
+//! details:
 //! ---------------------
 occGLWidget::~occGLWidget()
 {    
@@ -657,7 +658,7 @@ void occGLWidget::onLButtonUp(const int theFlags,const QPoint thePoint)
     AIS_StatusOfPick PS;
     switch(myCurAction3D)
     {
-    case(CurAction3D_WindowZooming):
+    case CurAction3D_WindowZooming:
         myXmax = thePoint.x();
         myYmax = thePoint.y();
         if((abs(myXmin - myXmax)>ValZWMin) || (abs(myYmin - myYmax)>ValZWMin))
@@ -666,13 +667,10 @@ void occGLWidget::onLButtonUp(const int theFlags,const QPoint thePoint)
         }
         break;
 
-    case(CurAction3D_Rotation): case (CurAction3D_Panning):
-
+    case CurAction3D_Rotation: case CurAction3D_Panning:
         myXmax = thePoint.x();
         myYmax = thePoint.y();
-        if(myLocalCtxNumber>0)
-        {
-            if(thePoint.x()==myXmax && thePoint.y()==myYmin)
+        if(thePoint.x()==myXmax && thePoint.y()==myYmin)
             {
                 //! One single click when the rotation mode is active.
                 //! Effect: the center ("At" point) of the camera is changed
@@ -680,27 +678,33 @@ void occGLWidget::onLButtonUp(const int theFlags,const QPoint thePoint)
                 //! (0, 0, 0) (the default one?)
                 //! If the a model point P is clicked this is the new "At point"
                 occContext->MoveTo(myXmax, myYmin, occView,true);
-                if(!occContext->DetectedShape().IsNull())
-                {
-                    //! ------------------------------------
-                    //! click on a (visible face of a) body
-                    //! ------------------------------------
-                    gp_Pnt newCOR = hitPoint(thePoint.x(), thePoint.y(), occContext->DetectedShape());
-                    emit CORchanged(newCOR, true);
-                }
-                else
-                {
-                    //! -------------------------
-                    //! click on the empty space
-                    //! -------------------------
-                    double X_gravity, Y_gravity, Z_gravity;
-                    X_gravity = Y_gravity = Z_gravity = 0.0;
 
-                    gp_Pnt newCOR(X_gravity, Y_gravity, Z_gravity);
-                    emit CORchanged(newCOR, false);
+                const occHandle(SelectMgr_EntityOwner) &anOwnerOfDetection = occContext->DetectedOwner();
+                if(anOwnerOfDetection.IsNull()==false)
+                {
+                    const occHandle(StdSelect_BRepOwner) &aBRepOwnerOfDetection = occHandle(StdSelect_BRepOwner)::DownCast(anOwnerOfDetection);
+                    const TopoDS_Shape &detectedShape = aBRepOwnerOfDetection->Shape();
+                    if(!detectedShape.IsNull())
+                    {
+                        //! ------------------------------------
+                        //! click on a (visible face of a) body
+                        //! ------------------------------------
+                        gp_Pnt newCOR = hitPoint(thePoint.x(), thePoint.y(), occContext->DetectedShape());
+                        emit CORchanged(newCOR, true);
+                    }
+                    else
+                    {
+                        //! -------------------------
+                        //! click on the empty space
+                        //! -------------------------
+                        double X_gravity, Y_gravity, Z_gravity;
+                        X_gravity = Y_gravity = Z_gravity = 0.0;
+
+                        gp_Pnt newCOR(X_gravity, Y_gravity, Z_gravity);
+                        emit CORchanged(newCOR, false);
+                    }
                 }
             }
-        }
         break;
 
     default:
@@ -733,6 +737,7 @@ void occGLWidget::onLButtonUp(const int theFlags,const QPoint thePoint)
             //! Emits the selectionChanged()
             emit selectionChanged();
         }
+
         //! if nothing has been picked reset the permanent message
         if(PS==1) emit statusBarMessage("");
     }
@@ -745,22 +750,26 @@ void occGLWidget::onLButtonUp(const int theFlags,const QPoint thePoint)
         if(abs(myXmin-myXmax)>ValZWMin || abs(myYmin-myYmax)>ValZWMin)
         {
             //! actually selects the shapes within the box
-            PS=occContext->Select(myXmin, myYmin, myXmax, myYmax, occView, true);
+            PS = occContext->Select(myXmin, myYmin, myXmax, myYmax, occView, true);
+
             //! Emits selectionChanged()
             emit selectionChanged();
         }
 
+        //! -----------------------------------------
         //! in case of one single click deselect all
+        //! -----------------------------------------
         if(thePoint.x()==myXmin && thePoint.y()==myYmin)
         {
-            //if(this->hasFocus())
-                occContext->ClearSelected(true);
+            occContext->ClearSelected(true);
             emit statusBarMessage("");
         }
     }
 
+    //! ---------------------------------
     //! hide the rubber band, if present
-    if (myRectBand)
+    //! ---------------------------------
+    if(myRectBand)
     {
         myRectBand->hide();
         occView->RedrawImmediate();
@@ -854,54 +863,49 @@ void occGLWidget::onMouseMove(const int theFlags, QPoint thePoint)
             /// -------------------------------------------------------------------------------
             if(myCurAction3D==CurAction3D_Nothing && myCurSelectionMode!=CurSelection_PointCoordinatesPicking)
             {
-                const occHandle(SelectMgr_EntityOwner) &anOwnerOfDetection = occContext->DetectedOwner();
-                const occHandle(StdSelect_BRepOwner) &aBRepOwnerOfDetection = occHandle(StdSelect_BRepOwner)::DownCast(anOwnerOfDetection);
-                TopoDS_Shape aDetectedShape = aBRepOwnerOfDetection->Shape();
-                TopoDS_Shape aLocatedDetectedShape = aDetectedShape.Located(aBRepOwnerOfDetection->Location() * aDetectedShape.Location());
-                if(aLocatedDetectedShape!=theOldDetectedShape)
+                if(occContext->HasDetected())
                 {
-                    cout<<"occGLWidget::onMouseMove()->____new shape detected____"<<endl;
-
-                    //! -----------------------------------------------
-                    //! fills a list of the previously selected shapes
-                    //! -----------------------------------------------
-                    TopoDS_ListOfShape listOfTopoDS_Shapes;
-                    for(occContext->InitSelected();occContext->MoreSelected();occContext->NextSelected())
+                    const occHandle(SelectMgr_EntityOwner) &anOwnerOfDetection = occContext->DetectedOwner();
+                    const occHandle(StdSelect_BRepOwner) &aBRepOwnerOfDetection = occHandle(StdSelect_BRepOwner)::DownCast(anOwnerOfDetection);
+                    TopoDS_Shape aDetectedShape = aBRepOwnerOfDetection->Shape();
+                    TopoDS_Shape aLocatedDetectedShape = aDetectedShape.Located(aBRepOwnerOfDetection->Location() * aDetectedShape.Location());
+                    if(aLocatedDetectedShape!=theOldDetectedShape)
                     {
-                        const occHandle(SelectMgr_EntityOwner) &anEntityOwner = occContext->SelectedOwner();
-                        const occHandle(StdSelect_BRepOwner) &aBRepOwner = occHandle(StdSelect_BRepOwner)::DownCast(anEntityOwner);
-                        TopoDS_Shape aSelShape = aBRepOwner->Shape();
-                        TopoDS_Shape aLocatedShape = aSelShape.Located(aBRepOwner->Location() * aSelShape.Location());
-                        listOfTopoDS_Shapes.Append(aLocatedShape);
-                    }
-                    //cout<<"occGLWidget::onMouseMove()->____list of previously selected entities extent "<<listOfTopoDS_Shapes.Extent()<<"____"<<endl;
+                        //! -----------------------------------------------
+                        //! fills a list of the previously selected shapes
+                        //! -----------------------------------------------
+                        TopoDS_ListOfShape listOfTopoDS_Shapes;
+                        for(occContext->InitSelected();occContext->MoreSelected();occContext->NextSelected())
+                        {
+                            //const occHandle(SelectMgr_EntityOwner) &anEntityOwner = occContext->SelectedOwner();
+                            //const occHandle(StdSelect_BRepOwner) &aBRepOwner = occHandle(StdSelect_BRepOwner)::DownCast(anEntityOwner);
+                            //TopoDS_Shape aSelShape = aBRepOwner->Shape();
+                            //TopoDS_Shape aLocatedShape = aSelShape.Located(aBRepOwner->Location() * aSelShape.Location());
+                            //listOfTopoDS_Shapes.Append(aLocatedShape);
+                            listOfTopoDS_Shapes.Append(this->getSelectedShape());
+                        }
 
-                    TopoDS_ListIteratorOfListOfShape theIt;
-                    theIt.Initialize(listOfTopoDS_Shapes);
-                    for(int k=0;theIt.More();theIt.Next())
+                        int k=0;
+                        for(TopoDS_ListIteratorOfListOfShape theIt(listOfTopoDS_Shapes); theIt.More(); theIt.Next())
+                        {
+                            if(theIt.Value()!=aLocatedDetectedShape) k++;
+                            if(k == listOfTopoDS_Shapes.Extent())  // equivalent to a multiple logical "And"
+                            {
+                                occContext->ShiftSelect(true);
+                                emit selectionChanged();
+                            }
+                        }
+                        theOldDetectedShape = aLocatedDetectedShape;
+                    }
+                    //! ----------------------------------------------------------------
+                    //! This handles the case in which the selection is initially empty
+                    //! selecting what has been detected under the mouse pointer
+                    //! ----------------------------------------------------------------
+                    else if(occContext->NbSelected()==0)
                     {
-                        //if(theIt.Value()!=occContext->DetectedShape())
-                        if(theIt.Value()!=aLocatedDetectedShape)
-                        {
-                            k++;
-                        }
-                        if(k==listOfTopoDS_Shapes.Extent())  // equivalent to a multiple logical "And"
-                        {
-                            occContext->ShiftSelect(true);
-                            emit selectionChanged();
-                        }
+                        occContext->Select(true);
+                        emit selectionChanged();
                     }
-
-                    theOldDetectedShape = aLocatedDetectedShape;
-                }
-                //! ----------------------------------------------------------------
-                //! This handles the case in which the selection is initially empty
-                //! selecting what has been detected under the mouse pointer
-                //! ----------------------------------------------------------------
-                else if(occContext->NbSelected()==0)
-                {
-                    occContext->Select(true);
-                    emit selectionChanged();
                 }
             }
         }
@@ -912,53 +916,46 @@ void occGLWidget::onMouseMove(const int theFlags, QPoint thePoint)
         }
     }
 
-    //! -------------------------------------------------------------------
+    //! --------------------------------------------------------------------
     //! If the mouse is moving and the pick point coordinate selection mode
     //! is active, write the coordinates of the picked point on the screen.
     //! Don't do it if the action3D is panning or rotating
-    //! -------------------------------------------------------------------
+    //! --------------------------------------------------------------------
     if(myCurSelectionMode == CurSelection_PointCoordinatesPicking &&
             myCurAction3D!=CurAction3D_Rotation && myCurAction3D!=CurAction3D_Panning
             && myCurGlobalSelectionMode!=CurGlobalSelectionMode_Multiple)
     {
-        //! moreover a local context is open
-        if(myLocalCtxNumber!=0)
+        const occHandle(SelectMgr_EntityOwner) &anEntityOwner = occContext->DetectedOwner();
+        if(anEntityOwner.IsNull()==false)
         {
-            if(!occContext->DetectedShape().IsNull())
-            {
-                gp_Pnt pickedPoint = hitPoint(x_cur, y_cur, occContext->DetectedShape());
+            const occHandle(StdSelect_BRepOwner) &aBRepOwner = occHandle(StdSelect_BRepOwner)::DownCast(anEntityOwner);
 
-                //!-------------------------------------
-                //! write the coordinates on the screen
-                //!-------------------------------------
-                const QString &theTextLabel = QString("x = %1\ny = %2\nz = %3").
-                        arg(pickedPoint.X()).arg(pickedPoint.Y()).arg(pickedPoint.Z());
+            //! write the coordinates on the screen
+            const gp_Pnt &PP = hitPoint(x_cur, y_cur, aBRepOwner->Shape());
+            const QString &theTextLabel = QString("x = %1\ny = %2\nz = %3"). arg(PP.X()).arg(PP.Y()).arg(PP.Z());
 
-                Standard_CString content = theTextLabel.toStdString().c_str();
-                myFloatingLabel->SetText(content);
+            Standard_CString content = theTextLabel.toStdString().c_str();
+            myFloatingLabel->SetText(content);
 
-                //! set the persistance type
-                occHandle(Graphic3d_TransformPers) trs1 = new Graphic3d_TransformPers(Graphic3d_TMF_2d);
+            //! set the persistance type and the handle point
+            occHandle(Graphic3d_TransformPers) trs1 = new Graphic3d_TransformPers(Graphic3d_TMF_2d);
+            trs1->SetCorner2d(Aspect_TOTP_LEFT_UPPER);
 
-                //! the handle point
-                trs1->SetCorner2d(Aspect_TOTP_LEFT_UPPER);
+            //! apply the transformation
+            Graphic3d_Vec2i offset(x_cur+10,y_cur-10);
+            trs1->SetOffset2d(offset);
+            myFloatingLabel->SetTransformPersistence(trs1);
 
-                //! apply the transformation
-                Graphic3d_Vec2i offset(x_cur+10,y_cur-10);
-                trs1->SetOffset2d(offset);
-                myFloatingLabel->SetTransformPersistence(trs1);
-
-                //! removed since unnecessary [?]: the recompute presentation method slows down
-                //! the update of the label content
-                //! occContext->RecomputePrsOnly(myFloatingLabel, Standard_True, Standard_False);
-            }
-            else //! no face is detected -> erase the label
-            {
-                //! no point picked: write on the screen only the label with time and date
-                myFloatingLabel->SetText("");
-            }
-            occContext->RecomputePrsOnly(myFloatingLabel,Standard_True,Standard_False);
+            //! removed since unnecessary [?]: the recompute presentation method slows down
+            //! the update of the label content
+            //! occContext->RecomputePrsOnly(myFloatingLabel, Standard_True, Standard_False);
         }
+        else //! no face is detected -> erase the label
+        {
+            //! no point picked: write on the screen only the label with time and date
+            myFloatingLabel->SetText("");
+        }
+        occContext->RecomputePrsOnly(myFloatingLabel,Standard_True,Standard_False);
     }
 }
 
@@ -1403,7 +1400,7 @@ void occGLWidget::setSelectionMode(CurSelectionMode selectionMode)
 
 void occGLWidget::setSelectionMode(CurSelectionMode selectionMode)
 {
-    cout<<"occGLWidget::setSelectionMode()->____function called____"<<endl;
+    cout<<"occGLWidget::setSelectionMode()->____function called: "<<selectionMode<<"____"<<endl;
 
     //! -------------------------------------------------------
     //! during the selection the 3D operations are not allowed
@@ -1418,7 +1415,6 @@ void occGLWidget::setSelectionMode(CurSelectionMode selectionMode)
     //! ----------------------------------------------------------------
     if(selectionMode!=myCurSelectionMode)
     {
-        exit(1);
         this->clearGeometrySelection();
     }
 
@@ -1672,138 +1668,133 @@ void occGLWidget::setShadedExteriorView()
     //}
 }
 
+//! ------------------------
+//! function: selectedShape
+//! details:  helper
+//! ------------------------
+TopoDS_Shape occGLWidget::getSelectedShape()
+{
+    if(occContext.IsNull()) return TopoDS_Shape();
+    const occHandle(SelectMgr_EntityOwner) &anOwner = occContext->SelectedOwner();
+    const occHandle(StdSelect_BRepOwner) &aBRepOwner = occHandle(StdSelect_BRepOwner)::DownCast(anOwner);
+    const TopoDS_Shape &aSelectedShape = aBRepOwner->Shape();
+    TopoDS_Shape selectedShape = aSelectedShape.Located(aBRepOwner->Location() * aSelectedShape.Location());
+    return selectedShape;
+}
+
 //! -------------------------------------
 //! function: computeSelectionProperties
 //! details:
 //! -------------------------------------
 void occGLWidget::computeSelectionProperties()
 {
-    QString message;
+    cout<<"occGLWidget::computeSelectionProperties()->____function called____"<<endl;
+
+    QString message("");
     GProp_GProps props;
 
-    TColStd_ListOfInteger listOfActiveModes;
-    TColStd_ListIteratorOfListOfInteger listIt;
+    if(myCurSelectionMode == CurSelection_Nothing) return;
 
-    //! ----------------------------------------------
-    //! loam - "l"ist "o"f "a"ctive "m"odes is a copy
-    //! ----------------------------------------------
-    QList<int> loam;
-
-    //! Searches for the active modes
-    //! First of all checks if a local context is open, otherwise
-    //! "occContext->ActivateddStandardModes()" causes a crash
-    if(occContext->IndexOfCurrentLocal()>0)
-    {
-        //! builds the list of the active modes
-        listOfActiveModes = occContext->ActivatedStandardModes();
-        for(listIt.Initialize(listOfActiveModes);listIt.More();listIt.Next())
-        {
-            // cout<<"____active mode "<<listIt.Value()<<endl;
-            loam.append(listIt.Value());
-        }
-    }
-
-    //! check if the selection is not empty
     occContext->InitSelected();
     if(occContext->MoreSelected())
     {
-        //! 1 - vertices - TopAbs_VERTEX
-        if(loam.contains(1))
+        switch(myCurSelectionMode)
         {
-            //cout<<"vertex"<<endl;
+        case CurSelection_Vertex:
+        {
             if(occContext->NbSelected()==1)   //! one single point selected - retrieve the coordinates
             {
-                //cout<<"occPreGLWidget::computeSelectionProperties->____A SINGLE POINT HAS BEEN SELECTED____"<<endl;
                 occContext->InitSelected();
-                const TopoDS_Shape &selectedShape = occContext->SelectedShape();
+                TopoDS_Shape selectedShape = this->getSelectedShape();
                 const gp_Pnt &pnt = BRep_Tool::Pnt(TopoDS::Vertex(selectedShape));
-                Standard_Real x,y,z;
-                pnt.Coord(x,y,z);
-                message = QString("(x, y, z) = (%1, %2, %3").arg(z).arg(y).arg(z);
-                //cout<<"occPreGLWidget::computeSelectionProperties->____X = "<<x<<" Y = "<<y<<" Z = "<<z<<"____"<<endl;
+                message = QString("(x, y, z) = (%1, %2, %3").arg(pnt.X()).arg(pnt.Y()).arg(pnt.Z());
             }
             else if(occContext->NbSelected()==2) // two points selected - calculate the distance
             {
+                //! -------------------------
+                //! retrieves the two points
+                //! -------------------------
                 occContext->InitSelected();
-                //! retrieves the first point
-                const TopoDS_Shape &selectedShape1=occContext->SelectedShape();
+                const TopoDS_Shape &selectedShape1= occContext->SelectedShape();
                 const gp_Pnt &pnt1 = BRep_Tool::Pnt(TopoDS::Vertex(selectedShape1));
-                //! retrieves the second point
+
                 occContext->NextSelected();
-                const TopoDS_Shape &selectedShape2=occContext->SelectedShape();
+                const TopoDS_Shape &selectedShape2 = this->getSelectedShape();
                 const gp_Pnt &pnt2 = BRep_Tool::Pnt(TopoDS::Vertex(selectedShape2));
-                Standard_Real distance = pnt1.Distance(pnt2);
+
+                //! ---------------------
+                //! compute the distance
+                //! ---------------------
+                double distance = pnt1.Distance(pnt2);
                 message = QString("Distance = %1").arg(distance);
-                //cout<<"occPreGLWidget::computeSelectionProperties->____distance: "<<distance<<"____"<<endl;
             }
             else
             {
+                //! ------------------------------
+                //! more than two points selected
+                //! ------------------------------
                 message = QString("%1 vertex selected").arg(occContext->NbSelected());
             }
+
         }
-        //! 2 - edges - TopAbs_EDGE or 3 - wires - TopAbs_WIRE
-        else if (loam.contains(2) || loam.contains(3))
+            break;
+        case CurSelection_Edge:
         {
-            //cout<<"edge or wire"<<endl;
-            Standard_Real len;
-            for(len =0.0, occContext->InitSelected();occContext->MoreSelected();occContext->NextSelected())
+            double len = 0.0;
+            for(occContext->InitSelected();occContext->MoreSelected();occContext->NextSelected())
             {
-                BRepGProp::LinearProperties(occContext->SelectedShape(),props);
-                len=len+props.Mass();
+                const TopoDS_Shape &selectedShape = this->getSelectedShape();
+                BRepGProp::LinearProperties(selectedShape,props);
+                len += props.Mass();
             }
-            message = QString("%1 edges selected - total length = %2")
-                    .arg(occContext->NbSelected()).arg(len);
-            //cout<<"occPreGLWidget::computeSelectionProperties->____length: "<<len<<"____"<<endl;
+            message = QString("%1 edges selected - total length = %2").arg(occContext->NbSelected()).arg(len);
         }
-        //! 4 - face - TopAbs_FACE
-        else if (loam.contains(4))
+            break;
+        case CurSelection_Face:
         {
-            //cout<<"face"<<endl;
-            Standard_Real area;
-            for(area = 0.0, occContext->InitSelected();occContext->MoreSelected();occContext->NextSelected())
+            double area = 0.0;
+            for(occContext->InitSelected();occContext->MoreSelected();occContext->NextSelected())
             {
-                BRepGProp::SurfaceProperties(occContext->SelectedShape(),props);
-                area=area+props.Mass();
+                const TopoDS_Shape &aSelectedShape = this->getSelectedShape();
+                BRepGProp::SurfaceProperties(aSelectedShape,props);
+                cout<<"____"<<props.Mass()<<"____"<<endl;
+                area += props.Mass();
             }
-            message = QString("%1 surfaces selected - total area = %2")
-                    .arg(occContext->NbSelected()).arg(area);
-            //cout<<"occPreGLWidget::computeSelectionProperties->____area: "<<area<<"____"<<endl;
+            message = QString("%1 surfaces selected - total area = %2").arg(occContext->NbSelected()).arg(area);
+            //cout<<"____"<<message.toStdString()<<"____"<<endl;
         }
-        //! 6 - solid - TopAbs_SOLID or 5 - shell - TopAbs_SHELL
-        else if (loam.contains(5)  || loam.contains(6))
+            break;
+        case CurSelection_Solid:
         {
-            //cout<<"shell or volume"<<endl;
             if(occHandle(AIS_Shape)::DownCast(occContext->SelectedInteractive())
                 ->Shape().ShapeType()==TopAbs_SOLID)
             {
-                //cout<<"solid selected"<<endl;
-                Standard_Real volume;
-                for(volume = 0.0,occContext->InitSelected();occContext->MoreSelected();occContext->NextSelected())
+                double volume = 0.0;
+                for(occContext->InitSelected();occContext->MoreSelected();occContext->NextSelected())
                 {
                     BRepGProp::VolumeProperties(occContext->SelectedShape(),props);
                     volume=volume+props.Mass();
                 }
-                message = QString("%1 volumes selected - total volume = %3")
-                        .arg(occContext->NbSelected()).arg(volume);
-                //cout<<"occPreGLWidget::computeSelectionProperties->____volume: "<<volume<<"____"<<endl;
+                message = QString("%1 volumes selected - total volume = %3").arg(occContext->NbSelected()).arg(volume);
             }
-            else if(occHandle(AIS_Shape)::DownCast(occContext->SelectedInteractive())
-                ->Shape().ShapeType()==TopAbs_SHELL)
+            else if(occHandle(AIS_Shape)::DownCast(occContext->SelectedInteractive())->Shape().ShapeType()==TopAbs_SHELL)
             {
-                //cout<<"shell"<<endl;
                 Standard_Real area;
                 for(area = 0.0, occContext->InitSelected();occContext->MoreSelected();occContext->NextSelected())
                 {
                     BRepGProp::SurfaceProperties(occContext->SelectedShape(),props);
                     area=area+props.Mass();
                 }
-                message = QString("%1 shells selected - total area = %2")
-                        .arg(occContext->NbSelected()).arg(area);
-                //cout<<"occPreGLWidget::computeSelectionProperties->____shell area: "<<area<<"____"<<endl;
+                message = QString("%1 shells selected - total area = %2").arg(occContext->NbSelected()).arg(area);
             }
         }
+            break;
+        }
     }
-    //! emits a system message with the geometry info of the selection
+
+    //! ----------------------------
+    //! send info to the status bar
+    //! ----------------------------
     emit statusBarMessage(message);
 }
 
@@ -1814,18 +1805,20 @@ void occGLWidget::computeSelectionProperties()
 void occGLWidget::hideSelectedBodies()
 {
     cout<<"occGLWidget::hideSelectedBodies()->____function called____"<<endl;
-    AIS_ListOfInteractive listOfShapes;
+    AIS_ListOfInteractive listOfAISShapes;
     for(occContext->InitSelected();occContext->MoreSelected();occContext->NextSelected())
     {
-        listOfShapes.Append(occContext->SelectedInteractive());
-        const occHandle(AIS_ExtendedShape) &curShape = occHandle(AIS_ExtendedShape)::DownCast(occContext->SelectedInteractive());
-        curShape->setShapeVisibility(false);
-    }
-    for(AIS_ListIteratorOfListOfInteractive it(listOfShapes); it.More(); it.Next())
-    {
-        const occHandle(AIS_ExtendedShape) &curShape = occHandle(AIS_ExtendedShape)::DownCast(it.Value());
+        listOfAISShapes.Append(occContext->SelectedInteractive());
+        const occHandle(AIS_ExtendedShape) &curAISShape = occHandle(AIS_ExtendedShape)::DownCast(occContext->SelectedInteractive());
+        curAISShape->setShapeVisibility(false);
         occContext->Erase(occContext->SelectedInteractive(),false);
     }
+    //for(AIS_ListIteratorOfListOfInteractive it(listOfAISShapes); it.More(); it.Next())
+    //{
+    //    const occHandle(AIS_ExtendedShape) &curAISShape = occHandle(AIS_ExtendedShape)::DownCast(it.Value());
+    //    occContext->Erase(occContext->SelectedInteractive(),false);
+    //}
+    this->clearGeometrySelection();
     occContext->UpdateCurrentViewer();
     cout<<"occGLWidget::hideSelectedBodies()->____function exiting____"<<endl;
 }
@@ -1896,53 +1889,6 @@ void occGLWidget::hideAllTheOtherBodies()
     }
     occContext->UpdateCurrentViewer();
     this->clearGeometrySelection();
-
-    /*
-    AIS_ListOfInteractive finalList;
-    for(occContext->InitSelected();occContext->MoreSelected();occContext->NextSelected())
-    {
-        const occHandle(AIS_Shape) &curAISShape = occHandle(AIS_Shape)::DownCast(occContext->SelectedInteractive());
-        if(!finalList.Contains(curAISShape)) finalList.Append(curAISShape);
-    }
-
-    //! -----------------------------
-    //! list of the displayed shapes
-    //! -----------------------------
-    AIS_ListOfInteractive theListOfDisplayedShapes;
-    Standard_Integer objectSignature = 0;
-    occContext->DisplayedObjects(AIS_KOI_Shape, objectSignature, theListOfDisplayedShapes, Standard_False);
-
-    AIS_ListOfInteractive theListToBeHidden;
-    for(AIS_ListIteratorOfListOfInteractive it(theListOfDisplayedShapes);it.More();it.Next())
-    {
-        int k = 0;
-        for(AIS_ListIteratorOfListOfInteractive itFinalList(finalList);itFinalList.More();itFinalList.Next())
-        {
-            if(it.Value()!=itFinalList.Value()) k++;
-
-            //! equivalent to a multiple logical AND
-            if(k==finalList.Extent()) theListToBeHidden.Append(it.Value());
-        }
-    }
-
-    //! ------------------------
-    //! finally hide the shapes
-    //! ------------------------
-    for(AIS_ListIteratorOfListOfInteractive itListToBeHidden(theListToBeHidden);itListToBeHidden.More();itListToBeHidden.Next())
-    {
-        occHandle(AIS_ExtendedShape)::DownCast(itListToBeHidden.Value())->setShapeVisibility(Standard_False);
-        occContext->Erase(itListToBeHidden.Value(),Standard_False);
-    }
-
-    //occContext->CloseLocalContext(occContext->IndexOfCurrentLocal());
-    //myLocalCtxNumber=occContext->OpenLocalContext();
-    //!occContext->UpdateCurrentViewer();
-
-    //! Now the selection modes must be reactivated, because when the
-    //! context is closed, the selection modes are lost (and the list
-    //! of the selected objects is empty)
-    this->reactivateSelectionMode();
-    */
 }
 
 //! ----------------------------------
@@ -1975,11 +1921,13 @@ void occGLWidget::reactivateSelectionMode()
 //! -----------------------------------
 void occGLWidget::buildMinimalContexetMenu()
 {
-    //! adds the "isometric view" action
+    //! add the "isometric view" action
     myContextMenu->addAction(viewIsometric);
-    //! adds the "Zoom to Fit" action
+
+    //! add the "Zoom to Fit" action
     myContextMenu->addAction(actionZoomToFit);
-    //! adds a separator
+
+    //! add a separator
     myContextMenu->addSeparator();
 
     //! ----------------------------------------------------------------
@@ -2001,6 +1949,7 @@ void occGLWidget::buildMinimalContexetMenu()
     else if(theListOfHiddenShapes.Extent()>=1  && theListOfDisplayedShapes.Extent()>=1)  // at least one body is shown
     {
         myContextMenu->addAction(actionShowAllBodies);
+
         //! if something is selected gives the possibility to hide it, or to invert the visibility
         if(occContext->NbSelected()!=0)
         {
@@ -2042,32 +1991,23 @@ void occGLWidget::buildMinimalContexetMenu()
     }
     myCursorModeMenu->addActions(listOfSelectionModes);
 
+    //! ------------------------------------------------------------------
     //! If a selection mode has been activated through the MainWindow
     //! toolbar, here, in the context (sub)menu, the corresponding button
     //! should be in the "checked" status
+    //! ------------------------------------------------------------------
     switch(myCurSelectionMode)
     {
-    case CurSelection_Vertex:
-        selectVertex->setChecked(true);
-        break;
-    case CurSelection_Edge:
-        selectEdge->setChecked(true);
-        break;
-    case CurSelection_Face:
-        selectFace->setChecked(true);
-        break;
-    case CurSelection_Solid:
-        selectSolid->setChecked(true);
-        break;
-    case CurSelection_PointCoordinatesPicking:
-        selectPickPointCoordinates->setChecked(true);
-        break;
-    default:
-        break;
+    case CurSelection_Vertex: selectVertex->setChecked(true); break;
+    case CurSelection_Edge: selectEdge->setChecked(true); break;
+    case CurSelection_Face: selectFace->setChecked(true); break;
+    case CurSelection_Solid: selectSolid->setChecked(true); break;
+    case CurSelection_PointCoordinatesPicking: selectPickPointCoordinates->setChecked(true); break;
     }
 
-    //! However, if a 3D action is active,
-    //! the previous buttons must be unchecked
+    //! --------------------------------------------------------------------------
+    //! However, if a 3D action is active, the previous items should be unckecked
+    //! --------------------------------------------------------------------------
     if(myCurAction3D!=CurAction3D_Nothing)
     {
         selectVertex->setChecked(false);
@@ -2076,6 +2016,7 @@ void occGLWidget::buildMinimalContexetMenu()
         selectSolid->setChecked(false);
         selectPickPointCoordinates->setChecked(false);
     }
+    myContextMenu->addSeparator();
     myContextMenu->addMenu(myCursorModeMenu);
 
     //! -----------------------------
@@ -2880,17 +2821,12 @@ void occGLWidget::displayTrihedron(QVector<double> Origin, QVector<QVector<doubl
 //! --------------------------
 void occGLWidget::removeTrihedron()
 {
-    //occContext->CloseLocalContext();
-
     //! remove the previous, if present
     AIS_ListOfInteractive aList;
     occContext->ObjectsInside(aList,AIS_KOI_Datum,-1);
     AIS_ListIteratorOfListOfInteractive anIter;
     for(anIter.Initialize(aList);anIter.More();anIter.Next()) occContext->Remove(anIter.Value(),false);
     occContext->UpdateCurrentViewer();
-
-    //myLocalCtxNumber = occContext->OpenLocalContext();
-    this->reactivateSelectionMode();
 }
 
 //! --------------------------
@@ -2910,89 +2846,47 @@ void occGLWidget::saveImageToDisk()
     }
 }
 
-//! -------------------------------------------------------------
+//! --------------------
 //! function: selectAll
-//! details:  select all according to the current selection mode
-//!           it works only on visible shapes
-//! -------------------------------------------------------------
+//! details:
+//! --------------------
+#include <StdSelect_ShapeTypeFilter.hxx>
 void occGLWidget::selectAll()
 {
     cout<<"occGLWidget::selectAll()->____function called____"<<endl;
-    AIS_ListOfInteractive theListOfDisplayedAIS_Objects;
+
+    AIS_ListOfInteractive listOfIO;
     AIS_ListIteratorOfListOfInteractive it;
+    occContext->ObjectsByDisplayStatus(AIS_KOI_Shape,0,AIS_DS_Displayed,listOfIO);
+    occHandle(StdSelect_ShapeTypeFilter) shapeTypeFilter;
 
-    //! retrieve the displayed AIS_Shape(s)
-    //! the signature criterion is not accounted for (-1)
-    occContext->DisplayedObjects(AIS_KOI_Shape, -1, theListOfDisplayedAIS_Objects, Standard_False);
-
+    TopAbs_ShapeEnum shapeType;
     switch(myCurSelectionMode)
     {
-    case CurSelection_Solid:
-    {
-        for(it.Initialize(theListOfDisplayedAIS_Objects); it.More(); it.Next())
-        {
-            const occHandle(AIS_Shape) &theCurAIS = occHandle(AIS_Shape)::DownCast(it.Value());
-            const TopoDS_Shape &theShape = theCurAIS->Shape();
-            occContext->AddOrRemoveSelected(theShape,Standard_False);
-        }
-        occContext->UpdateCurrentViewer();
+    case CurSelection_Solid: shapeType = TopAbs_SOLID; break;
+    case CurSelection_Face: shapeType = TopAbs_FACE; break;
+    case CurSelection_Edge: shapeType = TopAbs_EDGE; break;
+    case CurSelection_Vertex: shapeType = TopAbs_VERTEX; break;
     }
-        break;
 
-    case CurSelection_Face:
+    TopTools_ListOfShape l;
+    for(it.Initialize(listOfIO); it.More(); it.Next())
     {
-        for(it.Initialize(theListOfDisplayedAIS_Objects); it.More(); it.Next())
+        const occHandle(AIS_Shape) &theCurAIS = occHandle(AIS_Shape)::DownCast(it.Value());
+        occHandle(SelectMgr_IndexedMapOfOwner) m;
+        occContext->EntityOwners(m,theCurAIS,-1);
+        for(int n=1; n<=m->Extent(); n++)
         {
-            const occHandle(AIS_Shape) &theCurAIS = occHandle(AIS_Shape)::DownCast(it.Value());
-            const TopoDS_Shape &theShape = theCurAIS->Shape();
-            TopExp_Explorer anExp;
-            //! add the faces of the current shape
-            for(anExp.Init(theShape,TopAbs_FACE);anExp.More();anExp.Next())
+            occHandle(SelectMgr_EntityOwner) s = m->FindKey(n);
+            occHandle(StdSelect_BRepOwner) sb  = occHandle(StdSelect_BRepOwner)::DownCast(s);
+            if(sb->Shape().ShapeType()==shapeType && l.Contains(sb->Shape())==false)
             {
-                occContext->AddOrRemoveSelected(anExp.Current(),Standard_False);
+                l.Append(sb->Shape());
+                occContext->AddOrRemoveSelected(sb,false);
             }
         }
-        occContext->UpdateCurrentViewer();
     }
-        break;
-
-    case CurSelection_Edge:
-    {
-        for(it.Initialize(theListOfDisplayedAIS_Objects); it.More(); it.Next())
-        {
-            const occHandle(AIS_Shape) &theCurAIS = occHandle(AIS_Shape)::DownCast(it.Value());
-            const TopoDS_Shape &theShape = theCurAIS->Shape();
-            TopExp_Explorer anExp;
-            //! add the faces of the current shape
-            for(anExp.Init(theShape,TopAbs_EDGE);anExp.More();anExp.Next())
-            {
-                occContext->AddOrRemoveSelected(anExp.Current(),Standard_False);
-            }
-        }
-        occContext->UpdateCurrentViewer();
-    }
-        break;
-
-    case CurSelection_Vertex:
-    {
-        for(it.Initialize(theListOfDisplayedAIS_Objects); it.More(); it.Next())
-        {
-            const occHandle(AIS_Shape) &theCurAIS = occHandle(AIS_Shape)::DownCast(it.Value());
-            const TopoDS_Shape &theShape = theCurAIS->Shape();
-            TopExp_Explorer anExp;
-            //! add the faces of the current shape
-            for(anExp.Init(theShape,TopAbs_VERTEX);anExp.More();anExp.Next())
-            {
-                occContext->AddOrRemoveSelected(anExp.Current(),Standard_False);
-            }
-        }
-        occContext->UpdateCurrentViewer();
-    }
-        break;
-
-    default:
-        break;
-    }
+    occContext->UpdateCurrentViewer();
 }
 
 //! ------------------------
@@ -3255,7 +3149,6 @@ void occGLWidget::setTransparency(bool isActive, bool updateViewer, double level
 void occGLWidget::hideAllMarkers(bool updateViewer)
 {
     //cout<<"occGLWidget::hideAllMarkers()->____function called____"<<endl;
-    //occContext->CloseLocalContext(-1,false);
     AIS_ListOfInteractive theListOfIO;
     AIS_ListIteratorOfListOfInteractive it;
     std::vector<int> listOfSignatures
@@ -3285,9 +3178,6 @@ void occGLWidget::hideAllMarkers(bool updateViewer)
     occContext->ObjectsByDisplayStatus(AIS_KOI_Datum,-1,AIS_DS_Displayed,theListOfIO);
     for(it.Initialize(theListOfIO); it.More(); it.Next()) occContext->Remove(it.Value(),false);
     if(updateViewer) occContext->UpdateCurrentViewer();
-
-    //myLocalCtxNumber = occContext->OpenLocalContext();
-    this->reactivateSelectionMode();
 }
 
 //! ---------------------------------------------------------------
@@ -3445,7 +3335,6 @@ void occGLWidget::updateClipPlaneCoefficients(int ID, const QVector<double> &coe
 //! ------------------------
 void occGLWidget::hideAllBodies()
 {
-    //occContext->CloseAllContexts(false);
     AIS_ListOfInteractive AISList;
     occContext->ObjectsByDisplayStatus(AIS_KOI_Shape,-1,AIS_DS_Displayed,AISList);
     AIS_ListIteratorOfListOfInteractive it;
@@ -3455,8 +3344,7 @@ void occGLWidget::hideAllBodies()
         curAISShape->setShapeVisibility(false);
         occContext->Erase(curAISShape,false);
     }
-    //myLocalCtxNumber = occContext->OpenLocalContext(true);
-    this->reactivateSelectionMode();
+    occContext->UpdateCurrentViewer();
 }
 
 //! -------------------------

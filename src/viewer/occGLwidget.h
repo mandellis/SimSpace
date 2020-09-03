@@ -159,6 +159,9 @@ public:
 
 protected:
 
+    //! helper
+    TopoDS_Shape getSelectedShape();
+
     //! active opened context - "0" is neutral, ">0" is for selection
     Standard_Integer myLocalCtxNumber;
 
