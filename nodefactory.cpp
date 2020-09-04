@@ -1177,6 +1177,13 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
         Property prop_smallSliding("Small sliding",data,Property::PropertyGroup_Definition);
         vecProp.push_back(prop_smallSliding);
 
+        //! --------------------------------------------
+        //! adjust to touch: "0" => inactive "1" => active
+        //! --------------------------------------------
+        data.setValue(int(1));
+        Property prop_adjust("Adjust to touch",data,Property::PropertyGroup_Definition);
+        vecProp.push_back(prop_adjust);
+
         //! ----------------------
         //! Overpressure function
         //! ----------------------

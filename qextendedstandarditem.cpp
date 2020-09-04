@@ -841,6 +841,16 @@ QVariant QExtendedStandardItem::data(int role) const
             }
             return data;
         }
+        if(name =="Adjust to touch")
+        {
+            int val = QStandardItem::data(Qt::UserRole).value<Property>().getData().toInt();
+            switch(val)
+            {
+            case 0: data.setValue(QString("Off")); break;
+            case 1: data.setValue(QString("On")); break;
+            }
+            return data;
+        }
         if(name == "K" || name =="Sigma infinity" || name =="C0" || name =="Lambda"
                 || name =="P0" || name =="Beta" || name == "Thermal conductance")
         {
@@ -1743,6 +1753,7 @@ QVariant QExtendedStandardItem::data(int role) const
             case Property::overpressureFunction_exponential: data.setValue(QString("Exponential")); break;
             case Property::overpressureFunction_linear: data.setValue(QString("Linear")); break;
             case Property::overpressureFunction_tied: data.setValue(QString("Tied")); break;
+            case Property::overpressureFunction_hard: data.setValue(QString("Hard")); break;
             }
             return data;
         }
@@ -1807,7 +1818,7 @@ QVariant QExtendedStandardItem::data(int role) const
                 case Property::contactType_bonded: data.setValue(QString("Bonded")); break;
                 case Property::contactType_frictional: data.setValue(QString("Frictional")); break;
                 case Property::contactType_frictionless: data.setValue(QString("Frictionless")); break;
-                case Property::contactType_tied: data.setValue(QString("Tied")); break;
+                case Property::contactType_noSeparation: data.setValue(QString("No separation")); break;
                 }
             }
                 break;

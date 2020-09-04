@@ -5602,7 +5602,7 @@ void SimulationManager::handleItemChange(QStandardItem *item)
                 }
                     break;
 
-                case Property::contactType_tied:
+                case Property::contactType_noSeparation:
                 {
                     cout<<"____handing tied____"<<endl;
                     //! ------------------

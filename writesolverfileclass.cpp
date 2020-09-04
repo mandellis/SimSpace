@@ -722,19 +722,64 @@ bool writeSolverFileClass::perform()
                 Property::contactType theContactType = node->getPropertyValue<Property::contactType>("Type");
                 Property::contactBehavior theContactBehavior = node->getPropertyValue<Property::contactBehavior>("Behavior");
                 Property::contactFormulation theContactFormulation = node->getPropertyValue<Property::contactFormulation>("Formulation");
-                double K,KF;
+                Property::overpressureFunction theOverPressure = node->getPropertyValue<Property::overpressureFunction>("Overpressure");
 
-                switch(theContactBehavior)
+                //! Normal stiffness
+                double K,KF,KN;
+                KF = node->getPropertyValue<double>("K");
+                if(KF == 0) KF=1;
+
+                std::vector<GeometryTag> tagsMaster = node->getPropertyValue<std::vector<GeometryTag>>("Tags master");
+                std::vector<GeometryTag> tagsSlave = node->getPropertyValue<std::vector<GeometryTag>>("Tags slave");
+                QList<occHandle(Ng_MeshVS_DataSourceFace)> masterFaces,slaveFaces;
+
+                for(std::vector<GeometryTag>::iterator it = tagsMaster.begin(); it!= tagsMaster.end(); ++it)
                 {
-                case Property::contactBehavior_asymmetric:
+                    GeometryTag aLoc = *it;
+                    int bodyIndex = aLoc.parentShapeNr;
+                    int faceIndex = aLoc.subTopNr;
+
+                    const occHandle(Ng_MeshVS_DataSourceFace) &faceMesh = occHandle(Ng_MeshVS_DataSourceFace)::DownCast(myDB->ArrayOfMeshDSOnFaces.getValue(bodyIndex,faceIndex));
+                    masterFaces<<faceMesh;
+                }
+                for(std::vector<GeometryTag>::iterator itt = tagsSlave.begin(); itt!= tagsSlave.end(); ++itt)
                 {
-                    switch(theContactType)
-                    {
-                    case Property::contactType_bonded:
-                    {
-                        //! ---------------------------------------------------
-                        //! asymmetric - bonded contact
-                        //!
+                    GeometryTag aLoc = *itt;
+                    int bodyIndex = aLoc.parentShapeNr;
+                    int faceIndex = aLoc.subTopNr;
+
+                    const occHandle(Ng_MeshVS_DataSourceFace) &faceMesh = occHandle(Ng_MeshVS_DataSourceFace)::DownCast(myDB->ArrayOfMeshDSOnFaces.getValue(bodyIndex,faceIndex));
+                    slaveFaces<<faceMesh;
+                }
+                K = contactParameters::calc_K(masterFaces,slaveFaces);
+                KN = K*KF;
+
+                //! C0
+                double C0 = node->getPropertyValue<double>("C0");
+
+                //! sigmaInfinity
+                double sigmaInfty = node->getPropertyValue<double>("Sigma infinity");
+
+                //! Small sliding
+                int smallSliding = node->getPropertyValue<int>("Small sliding");;
+
+                //! fiction coefficient
+                frictionCoefficient = node->getPropertyValue<double>("Friction coefficient");
+
+                //! lambda
+                lambda = node->getPropertyValue<double>("Lambda");
+                if(lambda == 0)
+                {
+                    lambda = KN/20.0;
+                }
+
+                //! gap conductance
+                gapConductance = node->getPropertyValue<double>("Gap conductance");
+
+                switch(theContactType)
+                {
+                case Property::contactType_bonded:
+                {
                         //! 1st) *TIE,<TOLERANCE: C0>,<NAME OF THE CONNECTION>
                         //! 2st) <SLAVE SURF NAME>,<MASTER SURF NAME>
                         //! ---------------------------------------------------
@@ -806,30 +851,29 @@ bool writeSolverFileClass::perform()
                             myInputFile<<"LINEAR"<<endl;
                             if(KF == 0) KF=1;
                             //{
-                                std::vector<GeometryTag> tagsMaster = node->getPropertyValue<std::vector<GeometryTag>>("Tags master");
-                                std::vector<GeometryTag> tagsSlave = node->getPropertyValue<std::vector<GeometryTag>>("Tags slave");
+                            std::vector<GeometryTag> tagsMaster = node->getPropertyValue<std::vector<GeometryTag>>("Tags master");
+                            std::vector<GeometryTag> tagsSlave = node->getPropertyValue<std::vector<GeometryTag>>("Tags slave");
+                            QList<occHandle(Ng_MeshVS_DataSourceFace)> masterFaces,slaveFaces;
 
-                                QList<occHandle(Ng_MeshVS_DataSourceFace)> masterFaces,slaveFaces;
+                            for(std::vector<GeometryTag>::iterator it = tagsMaster.begin(); it!= tagsMaster.end(); ++it)
+                            {
+                                GeometryTag aLoc = *it;
+                                int bodyIndex = aLoc.parentShapeNr;
+                                int faceIndex = aLoc.subTopNr;
 
-                                for(std::vector<GeometryTag>::iterator it = tagsMaster.begin(); it!= tagsMaster.end(); ++it)
-                                {
-                                    GeometryTag aLoc = *it;
-                                    int bodyIndex = aLoc.parentShapeNr;
-                                    int faceIndex = aLoc.subTopNr;
+                                const occHandle(Ng_MeshVS_DataSourceFace) &faceMesh = occHandle(Ng_MeshVS_DataSourceFace)::DownCast(myDB->ArrayOfMeshDSOnFaces.getValue(bodyIndex,faceIndex));
+                                masterFaces<<faceMesh;
+                            }
+                            for(std::vector<GeometryTag>::iterator itt = tagsSlave.begin(); itt!= tagsSlave.end(); ++itt)
+                            {
+                                GeometryTag aLoc = *itt;
+                                int bodyIndex = aLoc.parentShapeNr;
+                                int faceIndex = aLoc.subTopNr;
 
-                                    const occHandle(Ng_MeshVS_DataSourceFace) &faceMesh = occHandle(Ng_MeshVS_DataSourceFace)::DownCast(myDB->ArrayOfMeshDSOnFaces.getValue(bodyIndex,faceIndex));
-                                    masterFaces<<faceMesh;
-                                }
-                                for(std::vector<GeometryTag>::iterator itt = tagsSlave.begin(); itt!= tagsSlave.end(); ++itt)
-                                {
-                                    GeometryTag aLoc = *itt;
-                                    int bodyIndex = aLoc.parentShapeNr;
-                                    int faceIndex = aLoc.subTopNr;
-
-                                    const occHandle(Ng_MeshVS_DataSourceFace) &faceMesh = occHandle(Ng_MeshVS_DataSourceFace)::DownCast(myDB->ArrayOfMeshDSOnFaces.getValue(bodyIndex,faceIndex));
-                                    slaveFaces<<faceMesh;
-                                }
-                                K = contactParameters::calc_K(masterFaces,slaveFaces);
+                                const occHandle(Ng_MeshVS_DataSourceFace) &faceMesh = occHandle(Ng_MeshVS_DataSourceFace)::DownCast(myDB->ArrayOfMeshDSOnFaces.getValue(bodyIndex,faceIndex));
+                                slaveFaces<<faceMesh;
+                            }
+                            K = contactParameters::calc_K(masterFaces,slaveFaces);
                             //}
                             if(sigmaInfty == 0.0)
                             {
@@ -1034,7 +1078,7 @@ bool writeSolverFileClass::perform()
                         myInputFile<<"1e9,,273 "<<endl;
                     }
                         break;
-                    case Property::contactType_tied:
+                    case Property::contactType_noSeparation:
                     {
                         QString slaveName = itemNameClearSpaces(item->data(Qt::DisplayRole).toString().append("_%1").arg(n).append("%1").arg(k+1).append("_ELEMENT_SLAVE"));
                         QString masterName = itemNameClearSpaces(item->data(Qt::DisplayRole).toString().append("_%1").arg(n).append("%1").arg(k+1).append("_ELEMENT_MASTER"));
