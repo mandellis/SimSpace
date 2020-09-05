@@ -1219,7 +1219,12 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
         data.setValue(0.0);
         Property prop_C0("C0",data,Property::PropertyGroup_Advanced);
         vecProp.push_back(prop_C0);
-
+        //! --------------------------------------------
+        //! constant P0: if "0" => "Program controlled"
+        //! --------------------------------------------
+        data.setValue(0.0);
+        Property prop_P0("P0",data,Property::PropertyGroup_Advanced);
+        vecProp.push_back(prop_P0);
         //! ------------------------------------------------
         //! constant lamdba: if "0" => "Program controlled"
         //! ------------------------------------------------
