@@ -117,7 +117,8 @@ public:
         ScopingMethod_GeometrySelection,
         ScopingMethod_NamedSelection,
         ScopingMethod_RemotePoint,
-        ScopingMethod_Automatic
+        ScopingMethod_Automatic,
+        ScopingMethod_MeshSelection
     } sm;
     Q_ENUM(ScopingMethod)
 

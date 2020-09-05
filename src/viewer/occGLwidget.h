@@ -25,6 +25,7 @@
 #include <Graphic3d_SequenceOfHClipPlane.hxx>
 #include <AIS_Plane.hxx>
 #include <IntAna_IntConicQuad.hxx>
+#include "occhandle.h"
 
 //! ----------------
 //! custom includes

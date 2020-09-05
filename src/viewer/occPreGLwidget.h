@@ -13,6 +13,7 @@
 #include "ais_colorscaleextended.h"
 #include <indexedmapofmeshdatasources.h>
 #include "geometrytag.h"
+#include "occhandle.h"
 
 //! ----
 //! OCC
@@ -363,17 +364,13 @@ private slots:
 
 protected slots:
 
-
     //! geometric properties of a selection
     virtual void computeSelectionProperties() override;
 
     void ShowContextMenu1(const QPoint&);
 
-    //! Click on a topology -> returns the number
+    //! Click on a geometry -> returns the number
     void printTopologyNumber();
-
-    //! Click on a topology -> returns the number
-    void identifyTheSelection(int &vertexIndex, int &edgeIndex, int &faceIndex, int &solidIndex);
 
     //! Clears data on the selected bodies (meshes)
     void clearMeshFromViewer();

@@ -2831,26 +2831,20 @@ void occGLWidget::removeTrihedron()
 
 //! --------------------------
 //! function: saveImageToDisk
-//! details:  slot
+//! details:
 //! --------------------------
 void occGLWidget::saveImageToDisk()
 {
-    //cout<<"occGLWidget()::saveImageToDisk()->____function called____"<<endl;
     QString selectedFilter;
     QString fileName = QFileDialog::getSaveFileName(this,"Save picture as ",tools::getWorkingDir(),
                                                     "*.png;;*.jpg;;*.bmp;;*.gif",&selectedFilter,0);
-    if(!fileName.isEmpty())
-    {
-        //cout<<"occGLWidget()::saveImageToDisk()->____"<<fileName.toStdString()<<"____"<<endl;
-        occView->Dump(fileName.toStdString().c_str());
-    }
+    if(!fileName.isEmpty()) occView->Dump(fileName.toStdString().c_str());
 }
 
 //! --------------------
 //! function: selectAll
 //! details:
 //! --------------------
-#include <StdSelect_ShapeTypeFilter.hxx>
 void occGLWidget::selectAll()
 {
     cout<<"occGLWidget::selectAll()->____function called____"<<endl;
@@ -2858,7 +2852,6 @@ void occGLWidget::selectAll()
     AIS_ListOfInteractive listOfIO;
     AIS_ListIteratorOfListOfInteractive it;
     occContext->ObjectsByDisplayStatus(AIS_KOI_Shape,0,AIS_DS_Displayed,listOfIO);
-    occHandle(StdSelect_ShapeTypeFilter) shapeTypeFilter;
 
     TopAbs_ShapeEnum shapeType;
     switch(myCurSelectionMode)

@@ -139,12 +139,13 @@ private:
     //! -------------------------------------
     QMenu *FileMenu;
     QMenu *GeometryMenu;
+
+    QMenu *MeshMenu;
+    QMenu *MeshMenuInsert;
+
     QMenu *ToolsMenu;
     QMenu *SolutionMenu;
 
-    //! -----------------------
-    //! View menu and sub menu
-    //! -----------------------
     QMenu *ViewMenu;
     QMenu *viewSubMenuDisplayQuality;
     QMenu *viewSubMenuWindows;
@@ -213,6 +214,7 @@ private:
     //! -----------------------------
     QAction* actionPreviewMesh;
     QAction *actionGenerateMesh;
+    QAction *actionLoadMesh;
     QAction *actionClearMesh;
 
     //! -----------------------------------------------
@@ -221,6 +223,8 @@ private:
     QAction *actionInsertMethod;
     QAction *actionInsertBodySizing;
     QAction *actionInsertFaceSizing;
+    QAction *actionInsertEdgeSizing;
+    QAction *actionInsertVertexSizing;
 
     //! -------------------
     //! "Solution" actions
@@ -404,6 +408,21 @@ private:
     //void writeSolverInputFile();
 
 private slots:
+
+    //! create item mesh method
+    void createItemMeshMethod();
+
+    //! create item mesh body sizing
+    void createItemMeshBodySizing();
+
+    //! create item mesh face sizing
+    void createItemMeshFaceSizing();
+
+    //! create item mesh edge sizing
+    void createItemMeshEdgeSizing();
+
+    //! create item mesh vertex sizing
+    void createItemMeshVertexSizing();
 
     //! Handle the "Select all" request from the toolbar
     void HandleSelectAll();

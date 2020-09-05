@@ -184,7 +184,8 @@ SOURCES += main.cpp\
     inputfilegenerator.cpp \
     ccxsolvermanager1.cpp \
     src/mesh/isostripbuilder.cpp \
-    src/mesh/rayintersectmesh.cpp
+    src/mesh/rayintersectmesh.cpp \
+    meshselector.cpp
 
 HEADERS  += mainwindow.h \
     actions3d.h \
@@ -419,7 +420,8 @@ HEADERS  += mainwindow.h \
     inputfilegenerator.h \
     ccxsolvermanager1.h \
     src/mesh/isostripbuilder.h \
-    src/mesh/rayintersectmesh.h
+    src/mesh/rayintersectmesh.h \
+    meshselector.h
 
 FORMS    += mainwindow.ui
 

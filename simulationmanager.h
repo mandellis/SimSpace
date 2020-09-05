@@ -202,9 +202,6 @@ private slots:
     //! prepare for meshing
     TopTools_ListOfShape prepareForMeshing();
 
-    //! build the mesh
-    void buildMesh(bool isVolumeMesh);
-
     //! update the mesh statistics
     void updateMeshStatistics();
 
@@ -284,6 +281,9 @@ public slots:
 
     //! compute and display mesh metric
     void computeAndDisplayMeshMetric();
+
+    //! build the mesh
+    void buildMesh(bool isVolumeMesh);
 
 public:
 

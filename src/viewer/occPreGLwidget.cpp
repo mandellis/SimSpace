@@ -564,7 +564,8 @@ void occPreGLWidget::printTopologyNumber()
     int index;
     for(occContext->InitSelected();occContext->MoreSelected();occContext->NextSelected())
     {
-        const TopoDS_Shape &theSelectedShape = occContext->SelectedShape();
+        //const TopoDS_Shape &theSelectedShape = occContext->SelectedShape();
+        const TopoDS_Shape &theSelectedShape = this->getSelectedShape();
 
         const occHandle(AIS_ExtendedShape) &theSelectedAIS_Shape=
                 occHandle(AIS_ExtendedShape)::DownCast(occContext->SelectedInteractive());
@@ -577,7 +578,7 @@ void occPreGLWidget::printTopologyNumber()
             //! if the data structure contains only solids, when selecting
             //! a solid its index must be equal to the index of the AIS_ExtendedShape
             //! built with it
-            index= myDS2->bodyMap.key(theSelectedShape);
+            index= myDS2->bodyMap.key(this->getSelectedShape());
             cout<<"AIS_Shape index: "<<AIS_shapeIndex<<" - TopoDS_Solid index: "<<index<<endl;
             break;
 
@@ -599,56 +600,6 @@ void occPreGLWidget::printTopologyNumber()
     }
 }
 
-//! -------------------------------
-//! function: identifyTheSelection
-//! details:
-//! -------------------------------
-void occPreGLWidget::identifyTheSelection(int &vertexIndex, int &edgeIndex, int &faceIndex, int &solidIndex)
-{
-    for(occContext->InitSelected();occContext->MoreSelected();occContext->NextSelected())
-    {
-        //! This is the selected topology
-        const TopoDS_Shape &theSelectedShape = occContext->SelectedShape();
-
-        //! This is the AIS_Shape providing the selected topology
-        const occHandle(AIS_ExtendedShape) &theSelectedAIS_Shape=
-                occHandle(AIS_ExtendedShape)::DownCast(occContext->SelectedInteractive());
-
-        //! This is the index of the AIS_ExtendedShape.
-        //! Note: at the loading time the AIS_ExtendedShapes are built
-        //! using the information contained in "myDS" (instance of the
-        //! simulationDataStructure class). The index of the AIS_ExtendedShape
-        //! is set as the same of the element in the map of 3D (2D, or 1D) bodies
-        int index = theSelectedAIS_Shape->index();
-
-        switch(theSelectedShape.ShapeType())
-        {
-        case TopAbs_SOLID:
-            //! if the data structure contains only solids, when selecting
-            //! a solid its index must be equal to the index of the AIS_ExtendedShape
-            //! built with it
-            solidIndex= myDS2->bodyMap.key(theSelectedShape);
-            //cout<<"AIS_Shape index: "<<index<<" - TopoDS_Solid index: "<<solidIndex<<endl;
-            break;
-
-        case TopAbs_FACE:
-            faceIndex= (myDS2->MapOfBodyTopologyMap.value(index)).faceMap.FindIndex(theSelectedShape);
-            cout<<"AIS_SHape index: "<<index<<" - TopoDS_Face index: "<<faceIndex<<endl;
-            break;
-
-        case TopAbs_EDGE:
-            edgeIndex= (myDS2->MapOfBodyTopologyMap.value(index)).edgeMap.FindIndex(theSelectedShape);
-            //cout<<"AIS_Shape index: "<<index<<" - TopoDS_Edge index: "<<edgeIndex<<endl;
-            break;
-
-        case TopAbs_VERTEX:
-            vertexIndex= (myDS2->MapOfBodyTopologyMap.value(index)).vertexMap.FindIndex(theSelectedShape);
-            //cout<<"AIS_Shape index: "<<index<<" - TopoDS_Vertex index: "<<vertexIndex<<endl;
-            break;
-        }
-    }
-}
-
 //! ---------------------------
 //! function: displayAllMeshes
 //! details:
@@ -663,7 +614,7 @@ void occPreGLWidget::displayAllMeshes(bool meshNodesVisible, Graphic3d_NameOfMat
     //! ----------------------------------
     //! establish how to display the mesh
     //! ----------------------------------
-    if(myCurDisplayMode==CurDisplayMode_Wireframe) theMeshDisplayMode = MeshVS_DMF_WireFrame;
+    if(myCurDisplayMode == CurDisplayMode_Wireframe) theMeshDisplayMode = MeshVS_DMF_WireFrame;
     else theMeshDisplayMode = MeshVS_DMF_Shading;
 
     //! -------------------------
@@ -1146,18 +1097,6 @@ void occPreGLWidget::buildMeshIOs()
             const occHandle(MeshVS_Mesh) &aMesh = new MeshVS_Mesh();
             aMesh->SetDataSource(aMeshDS);
 
-            //! ------------------------------------------------------
-            //! presentation builder - use as highlighter (flag true)
-            //! ------------------------------------------------------
-            occHandle(MeshVS_MeshPrsBuilder) aBuilder = new MeshVS_MeshPrsBuilder(aMesh);
-            aMesh->AddBuilder(aBuilder,false);
-
-            //! ---------------------------------------
-            //! builder for highlighting and selection
-            //! ---------------------------------------
-            occHandle(MeshVS_MeshPrsBuilder) aHighLighterBuilder = new MeshVS_MeshPrsBuilder(aMesh);
-            aMesh->AddBuilder(aHighLighterBuilder,true);
-
             //! ---------------------------------------------------------------------
             //! retrieve the color of the underlying shape and assign it to the mesh
             //! ---------------------------------------------------------------------
@@ -1173,6 +1112,13 @@ void occPreGLWidget::buildMeshIOs()
             aMesh->GetDrawer()->SetBoolean(MeshVS_DA_ShowEdges, Standard_True);
             aMesh->GetDrawer()->SetInteger(Aspect_TOM_BALL,1);
             aMesh->GetDrawer()->SetColor(MeshVS_BP_NodalColor,NODE_MESH_COLOR);
+
+            //! ------------------------------------------------------
+            //! presentation builder - use as highlighter (flag true)
+            //! ------------------------------------------------------
+            occHandle(MeshVS_MeshPrsBuilder) aBuilder = new MeshVS_MeshPrsBuilder(aMesh);
+            aMesh->AddBuilder(aBuilder,true);
+            aMesh->SetHilightMode(MeshVS_DMF_WireFrame);
 
             //! --------------------------------------------------------------------
             //! Draw the edges of the volume and surface mesh with different colors
@@ -1248,7 +1194,7 @@ void occPreGLWidget::buildPrismaticMeshIO()
                 //! ---------------------
                 //! presentation builder
                 //! ---------------------
-                aMesh->AddBuilder(aBuilder,Standard_False);
+                aMesh->AddBuilder(aBuilder,true);
 
                 //! ---------------------------------------------------------------------
                 //! retrieve the color of the underlying shape and assign it to the mesh
@@ -1553,14 +1499,16 @@ void occPreGLWidget::showFaceMesh()
     occContext->InitSelected();
     if(occContext->MoreSelected())
     {
-        if(occContext->SelectedShape().ShapeType()==TopAbs_FACE)
+        if(this->getSelectedShape().ShapeType()==TopAbs_FACE)
+        //if(occContext->SelectedShape().ShapeType()==TopAbs_FACE)
         {
             std::pair<int,int> pair;
             for(occContext->InitSelected();occContext->MoreSelected();occContext->NextSelected())
             {
                 const occHandle(AIS_ExtendedShape) &AIS_SHape = occHandle(AIS_ExtendedShape)::DownCast(occContext->SelectedInteractive());
                 const TopoDS_Shape &theParentShape =AIS_SHape->Shape();
-                const TopoDS_Shape &theFace = occContext->SelectedShape();
+                //const TopoDS_Shape &theFace = occContext->SelectedShape();
+                const TopoDS_Shape &theFace = this->getSelectedShape();
                 this->getTopologyNumber(theParentShape,theFace,pair.first,pair.second);
                 vecPairs.push_back(pair);
             }
@@ -1624,11 +1572,12 @@ void occPreGLWidget::showFaceMesh()
     QList<TopoDS_Face> listOfFaces;
     for(occContext->InitSelected();occContext->MoreSelected();occContext->NextSelected())
     {
-        const TopoDS_Shape &selectedShape = occContext->SelectedShape();
+        //const TopoDS_Shape &selectedShape = occContext->SelectedShape();
+        const TopoDS_Shape &selectedShape = this->getSelectedShape();
         if(selectedShape.ShapeType()==TopAbs_FACE)
         {
             //cout<<"occPreGLWidget::showFaceMesh()->____adding a face____"<<endl;
-            listOfFaces<<TopoDS::Face(occContext->SelectedShape());
+            listOfFaces<<TopoDS::Face(slectedShape);
         }
     }
     if(listOfFaces.isEmpty()) return;
@@ -1696,13 +1645,14 @@ void occPreGLWidget::showEdgeMesh()
     if(occContext->MoreSelected())
     {
         std::pair<int,int> pair;
-        if(occContext->SelectedShape().ShapeType()==TopAbs_EDGE)
+        const TopoDS_Shape &selectedShape = this->getSelectedShape();
+        if(selectedShape.ShapeType()==TopAbs_EDGE)
         {
             for(occContext->InitSelected();occContext->MoreSelected();occContext->NextSelected())
             {
                 const occHandle(AIS_ExtendedShape) &AIS_SHape = occHandle(AIS_ExtendedShape)::DownCast(occContext->SelectedInteractive());
                 const TopoDS_Shape &theParentShape =AIS_SHape->Shape();
-                const TopoDS_Shape &theChildShape = occContext->SelectedShape();
+                const TopoDS_Shape &theChildShape = selectedShape;
                 int parentShapeIndex, subShapeIndex;
                 this->getTopologyNumber(theParentShape,theChildShape,parentShapeIndex,subShapeIndex);
                 pair.first=parentShapeIndex;
@@ -1747,13 +1697,9 @@ void occPreGLWidget::getMeshSize()
     int NN =0;
     int NE =0;
     for(QMap<int,occHandle(AIS_InteractiveObject)>::iterator it = myMapOfInteractiveShapes.begin(); it!= myMapOfInteractiveShapes.end(); ++it)
-    //for(std::map<int,occHandle(AIS_InteractiveObject)>::iterator it = myMapOfInteractiveShapes.begin(); it!= myMapOfInteractiveShapes.end(); ++it)
     {
-        //std::pair<int,occHandle(AIS_InteractiveObject)> apair = *it;
-        //const occHandle(AIS_ExtendedShape) &theAISShape = occHandle(AIS_ExtendedShape)::DownCast(apair.second);
         const occHandle(AIS_ExtendedShape) &theAISShape = occHandle(AIS_ExtendedShape)::DownCast(it.value());
         int bodyIndex = theAISShape->index();
-        //! ask for the number of nodes and elements only if the mesh data structure is not null
         if(!myDS2->ArrayOfMeshDS.value(bodyIndex).IsNull())
         {
             NN = NN + myDS2->ArrayOfMeshDS.value(bodyIndex)->GetAllNodes().Extent();
@@ -1802,11 +1748,8 @@ void occPreGLWidget::ShowContextMenu1(const QPoint& pos)
             case SimulationNodeClass::nodeType_meshControl:
             {
                 contextMenuBuilder::buildMeshContextMenu(myContextMenu,false,isEnabled);
-
-                //! ---------------
-                //! add mesh tools
-                //! ---------------
                 if(isEnabled) this->buildMeshToolsContextMenu(myContextMenu);
+                if(myCurSelectionType == SelectionType_Mesh) contextMenuBuilder::addActionCreateMeshNamedSelection(myContextMenu);
             }
                 break;
 
@@ -1830,9 +1773,9 @@ void occPreGLWidget::ShowContextMenu1(const QPoint& pos)
             }
         }
 
-        //! -------------------------------
+        //! ---------------------------
         //! build the suppression menu
-        //! -------------------------------
+        //! ---------------------------
         if(isEnabled) this->buildSuppressionContextMenu();
 
         //! -----------
@@ -1922,6 +1865,7 @@ void occPreGLWidget::ShowContextMenu1(const QPoint& pos)
         //! show tetrahedra                            307
         //! show pyramids                              308
         //! show prism                                 309
+        //! create mesh selection                      311
         //! -----------------------------------------------
         QAction* selectedItem = myContextMenu->exec(globalPos);
 
@@ -2160,19 +2104,21 @@ void occPreGLWidget::ShowContextMenu1(const QPoint& pos)
                 for(occContext->InitSelected(); occContext->MoreSelected(); occContext->NextSelected())
                 {
                     // take only the last face
-                    theSelectedFace = TopoDS::Face(occContext->SelectedShape());
+                    theSelectedFace = TopoDS::Face(this->getSelectedShape());
                 }
                 emit requestBuildFaceMesh(theSelectedFace);
             }
                 break;
 
             case 307:
+            {
                 //! ------------------
                 //! display only tets
                 //! ------------------
                 for(occContext->InitSelected(); occContext->MoreSelected(); occContext->NextSelected())
                 {
-                    const TopoDS_Shape &aSolid = occContext->SelectedShape();
+                    //const TopoDS_Shape &aSolid = occContext->SelectedShape();
+                    const TopoDS_Shape &aSolid = this->getSelectedShape();
                     if(aSolid.ShapeType()==TopAbs_SOLID)
                     {
                         int bodyIndex = myDS2->bodyMap.key(aSolid);
@@ -2189,15 +2135,18 @@ void occPreGLWidget::ShowContextMenu1(const QPoint& pos)
                     }
                 }
                 this->clearSelected();
+            }
                 break;
 
             case 308:
+            {
                 //! ----------------------
                 //! display only pyramids
                 //! ----------------------
                 for(occContext->InitSelected(); occContext->MoreSelected(); occContext->NextSelected())
                 {
-                    const TopoDS_Shape &aSolid = occContext->SelectedShape();
+                    //const TopoDS_Shape &aSolid = occContext->SelectedShape();
+                    const TopoDS_Shape &aSolid = this->getSelectedShape();
                     if(aSolid.ShapeType()==TopAbs_SOLID)
                     {
                         int bodyIndex = myDS2->bodyMap.key(aSolid);
@@ -2214,6 +2163,7 @@ void occPreGLWidget::ShowContextMenu1(const QPoint& pos)
                     }
                 }
                 this->clearSelected();
+            }
                 break;
 
             case 309:
@@ -2222,7 +2172,8 @@ void occPreGLWidget::ShowContextMenu1(const QPoint& pos)
                 //! --------------------
                 for(occContext->InitSelected(); occContext->MoreSelected(); occContext->NextSelected())
                 {
-                    const TopoDS_Shape &aSolid = occContext->SelectedShape();
+                    //const TopoDS_Shape &aSolid = occContext->SelectedShape();
+                    const TopoDS_Shape &aSolid = this->getSelectedShape();
                     if(aSolid.ShapeType()==TopAbs_SOLID)
                     {
                         int bodyIndex = myDS2->bodyMap.key(aSolid);
@@ -2242,12 +2193,14 @@ void occPreGLWidget::ShowContextMenu1(const QPoint& pos)
                 break;
 
             case 310:
+            {
                 //! ------------------
                 //! display only hexa
                 //! ------------------
                 for(occContext->InitSelected(); occContext->MoreSelected(); occContext->NextSelected())
                 {
-                    const TopoDS_Shape &aSolid = occContext->SelectedShape();
+                    //const TopoDS_Shape &aSolid = occContext->SelectedShape();
+                    const TopoDS_Shape &aSolid = this->getSelectedShape();
                     if(aSolid.ShapeType()==TopAbs_SOLID)
                     {
                         int bodyIndex = myDS2->bodyMap.key(aSolid);
@@ -2263,6 +2216,9 @@ void occPreGLWidget::ShowContextMenu1(const QPoint& pos)
                         }
                     }
                 }
+            }
+                break;
+
             }
         }
     }
@@ -3537,14 +3493,16 @@ void occPreGLWidget::displayCurvatureMap()
         //! retrieve the selected face tags
         //! --------------------------------
         std::vector<std::pair<int,int>> vecPairs;
-        if(occContext->SelectedShape().ShapeType()==TopAbs_FACE)
+        //if(occContext->SelectedShape().ShapeType()==TopAbs_FACE)
+        if(this->getSelectedShape().ShapeType()==TopAbs_FACE)
         {
             std::pair<int,int> pair;
             for(occContext->InitSelected();occContext->MoreSelected();occContext->NextSelected())
             {
                 const occHandle(AIS_ExtendedShape) &AIS_SHape = occHandle(AIS_ExtendedShape)::DownCast(occContext->SelectedInteractive());
-                const TopoDS_Shape &theParentShape =AIS_SHape->Shape();
-                const TopoDS_Shape &theFace = occContext->SelectedShape();
+                const TopoDS_Shape &theParentShape = AIS_SHape->Shape();
+                //const TopoDS_Shape &theFace = occContext->SelectedShape();
+                const TopoDS_Shape &theFace = this->getSelectedShape();
                 this->getTopologyNumber(theParentShape,theFace,pair.first,pair.second);
                 vecPairs.push_back(pair);
             }
@@ -3981,7 +3939,6 @@ void occPreGLWidget::clipMesh()
         mapOfHiddenElements->ChangeMap() = hiddenElementIDs;
         aMesh->SetHiddenElems(mapOfHiddenElements);
         occMeshContext->RecomputePrsOnly(aMesh,false,false);
-        //occMeshContext->RecomputePrsOnly(aMesh,false,true);
     }
     occMeshContext->UpdateCurrentViewer();
 }
@@ -3996,29 +3953,21 @@ void occPreGLWidget::init()
     if(occMeshContext.IsNull())
     {
         occMeshContext = new AIS_InteractiveContext(occViewer);
+        occMeshContext->SetAutomaticHilight(true);
+
         //! ----------------------------------------------
         //! set selection and highlight mode for the mesh
         //! ----------------------------------------------
-        /*
-        occHandle(Prs3d_Drawer) selectionDrawer = new Prs3d_Drawer();
-        selectionDrawer->SetDisplayMode(AIS_Shaded);
-        selectionDrawer->SetColor(static_cast<Quantity_NameOfColor>(Quantity_NOC_GREEN));
-        occMeshContext->SetHighlightStyle(Prs3d_TypeOfHighlight_Selected,selectionDrawer);
-        occMeshContext->SetSelectionStyle(selectionDrawer);
-        occMeshContext->SetToHilightSelected(false);
-        */
-//cesere
-
         occHandle(Prs3d_Drawer) t_hilight_style = occMeshContext->HighlightStyle(); // Get highlight style
         t_hilight_style->SetMethod(Aspect_TOHM_COLOR); // color display mode
         t_hilight_style->SetColor(Quantity_NOC_LIGHTYELLOW); // Set the highlight color
-        t_hilight_style->SetDisplayMode(1); // Overall highlighting
+        t_hilight_style->SetDisplayMode(0); // Overall highlighting
         t_hilight_style->SetTransparency(0.2f); // Set transparency
 
         Handle(Prs3d_Drawer) t_select_style = occMeshContext->SelectionStyle(); // Get the selection style
         t_select_style->SetMethod(Aspect_TOHM_COLOR); // Color display mode
         t_select_style->SetColor(Quantity_NOC_LIGHTSEAGREEN); // Set the selected color
-        t_select_style->SetDisplayMode(1); // Overall highlighting
+        t_select_style->SetDisplayMode(0); // Overall highlighting
         t_select_style->SetTransparency(0.4f); // Set transparency
     }
 }
@@ -4063,18 +4012,16 @@ void occPreGLWidget::setMeshSelectionMode()
     case CurSelection_Face: theMeshSelectionMode = MeshVS_SMF_Face; break;
     case CurSelection_PointCoordinatesPicking: theMeshSelectionMode = MeshVS_SMF_Face; break;
     case CurSelection_Solid: theMeshSelectionMode = MeshVS_SMF_Volume; break;
-    case CurSelection_Nothing: exit(888888); break;
+    case CurSelection_Nothing: return; break;
     }
     AIS_ListOfInteractive listOfMeshes;
-    occMeshContext->ObjectsInside(listOfMeshes); occMeshContext->SetSelectionStyle(new Prs3d_Drawer());
+    occMeshContext->ObjectsInside(listOfMeshes);
     for(AIS_ListIteratorOfListOfInteractive it(listOfMeshes); it.More(); it.Next())
     {
         occHandle(MeshVS_Mesh) aMeshObject = occHandle(MeshVS_Mesh)::DownCast(it.Value());
         aMeshObject->SetMeshSelMethod(MeshVS_MSM_PRECISE);
-        //occMeshContext->Load(aMeshObject,theMeshSelectionMode,true);
         occMeshContext->Activate(aMeshObject,theMeshSelectionMode);
     }
-    occMeshContext->SetAutomaticHilight(false);
 }
 
 //! -----------------------------------
@@ -4192,6 +4139,7 @@ void occPreGLWidget::onLButtonUp(const int theFlags, const QPoint thePoint)
                         occMeshContext->MoveTo(thePoint.x(),thePoint.y(),occView,false);
                         PS = occMeshContext->Select(true);
                     }
+
                     cout<<"occGLWidget::onLButtonUp->____STATUS OF PICK "<<PS<<"____"  <<endl;
                 }
                 //! Emits the selectionChanged()
@@ -4458,18 +4406,7 @@ void occPreGLWidget::setSelectionMode(CurSelectionMode selectionMode)
                 occMeshContext->Deactivate(it.Value());
                 occMeshContext->Activate(it.Value(),theMode);
             }
-            if(!occMeshContext->AutomaticHilight()) occMeshContext->SetAutomaticHilight(Standard_True);
-
-            occHandle(Prs3d_Drawer) selectionDrawer = new Prs3d_Drawer();
-            selectionDrawer->SetDisplayMode(AIS_Shaded);
-            selectionDrawer->SetMethod(Aspect_TOHM_COLOR);
-            selectionDrawer->SetColor(static_cast<Quantity_NameOfColor>(Quantity_NOC_GREEN));
-            occMeshContext->SetSelectionStyle(selectionDrawer);
-
-            //occMeshContext->SetAutomaticHilight(true);
-            //occMeshContext->SelectionStyle()->SetColor(Quantity_NameOfColor::Quantity_NOC_YELLOW);
-            //occMeshContext->HighlightStyle(Prs3d_TypeOfHighlight_LocalDynamic)->SetColor(Quantity_NameOfColor::Quantity_NOC_YELLOW);
-            //occMeshContext->HighlightStyle(Prs3d_TypeOfHighlight_LocalSelected)->SetColor(Quantity_NameOfColor::Quantity_NOC_RED);
+            occMeshContext->SetAutomaticHilight(true);
         }
     }
         break;

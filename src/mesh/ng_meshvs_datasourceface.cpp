@@ -1372,7 +1372,7 @@ void Ng_MeshVS_DataSourceFace::computeNormalAtNodes()
             for(int col=1; col<=3; col++)
             {
                 int globalNodeID = myElemNodes->Value(localElementID,col);
-                int localNodeID = myNodesMap.FindIndex(globalNodeID);
+                //int localNodeID = myNodesMap.FindIndex(globalNodeID);
 
                 //! ---------------------------------------------------------
                 //! build the map "nodeNormals" using the global node number

@@ -72,9 +72,6 @@ public:
     //! delegate
     GeneralDelegate *myGeneralDelegate;
 
-    //! set context
-    //void setContext(const occHandle(AIS_InteractiveContext) &aCTX);
-
     //! access function
     SimulationNodeClass *getNode();
 
@@ -117,14 +114,15 @@ public slots:
     //! set context
     void setContext(const occHandle(AIS_InteractiveContext) &aCTX);
 
+    //! set mesh context
+    void setMeshContext(const occHandle(AIS_InteractiveContext) &aMeshCTX);
+
     //! set delegate context
     void setDelegateContext(const occHandle(AIS_InteractiveContext) &aCTX);
 
     //! slot
     void setTheModel(const QModelIndex &anIndex);
-
     void setTheModel(SimulationNodeClass *aNode);
-
 
     //! clear the tree
     void clearTree();
@@ -142,6 +140,9 @@ private:
 
     //! interactive context
     occHandle(AIS_InteractiveContext) myCTX;
+
+    //! interactive mesh context
+    occHandle(AIS_InteractiveContext) myMeshCTX;
 
 private slots:
 
@@ -357,7 +358,6 @@ signals:
     //void requestHandleBoltControls();     to be removed
     void requestHideAllMarkers(bool = false);
     void requestHandleTransparencyChanged(double aLevel);
-    void requestActivateMeshElementSelectionMode();
     void requestHandleMeshMetricChanged();
 
 #ifdef COSTAMP_VERSION

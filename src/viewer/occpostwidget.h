@@ -12,6 +12,7 @@
 #include "frdreader.h"
 #include <meshdatabase.h>
 #include "resultpresentation.h"
+#include "occhandle.h"
 
 //! ---
 //! Qt
@@ -62,9 +63,6 @@ public:
     void setDataDase(meshDataBase *mDB) { myMeshDataBase = mDB; }
 
 private:
-
-    //! Creates an additional context for the mesh view
-    //occHandle(AIS_InteractiveContext) occPostContext;
 
     //! the color box
     occHandle(AIS_ColorScaleExtended) myColorBox;

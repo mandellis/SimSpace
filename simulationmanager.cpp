@@ -1322,10 +1322,10 @@ void SimulationManager::buildCustomMenu(const QModelIndex &modelIndex)
     }
 }
 
-//! --------------------------------
-//! function: show the context menu
+//! --------------------------
+//! function: showContextMenu
 //! details:
-//! --------------------------------
+//! --------------------------
 void SimulationManager::showContextMenu(const QPoint &pos)
 {    
     const QPoint &globalPos = this->mapToGlobal(pos);
@@ -6575,6 +6575,7 @@ void SimulationManager::ChangeElementControl()
     }
 }
 
+/*
 //! ----------------------
 //! function: changeColor
 //! details:
@@ -6657,8 +6658,8 @@ void SimulationManager::changeColor()
         emit requestApplyCustomColor(subShapesMap,aColor,true);
     }
 }
+*/
 
-/*
 //! ----------------------
 //! function: changeColor
 //! details:
@@ -6936,7 +6937,6 @@ void SimulationManager::changeColor()
     emit requestDisplayShapeCopy(list1,list2,color1,color2,options);
     //cout<<"SimulationManager::changeColor()->____exiting____"<<endl;
 }
-*/
 
 //! -----------------------------------------------
 //! function: swapContact

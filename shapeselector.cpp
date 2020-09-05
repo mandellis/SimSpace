@@ -153,10 +153,14 @@ std::vector<GeometryTag> ShapeSelector::getVecLoc() const
     return myVecLoc;
 }
 
-//! -------------------------------------------------
+//! -------------------
 //! function: setShape
-//! details:  set myShapes and activate the selector
-//! -------------------------------------------------
+//! details:
+//! -------------------
+#include <SelectMgr_IndexedMapOfOwner.hxx>
+#include <TopTools_ListOfShape.hxx>
+#include <SelectMgr_EntityOwner.hxx>
+#include <StdSelect_BRepOwner.hxx>
 void ShapeSelector::setShape(const std::vector<GeometryTag> &vecLoc)
 {
     cout<<"ShapeSelector::setShape()->____set shape called____"<<endl;
@@ -167,13 +171,10 @@ void ShapeSelector::setShape(const std::vector<GeometryTag> &vecLoc)
     myShapes.Clear();
     for(int i=0; i<vecLoc.size(); i++)
     {
-        //cout<<"____("<<vecLoc.at(i).parentShapeNr<<", "<<vecLoc.at(i).subTopNr<<"____"<<endl;
-
-        int parentShapeNr = vecLoc.at(i).parentShapeNr;
-        int subTopNr = vecLoc.at(i).subTopNr;
-        bool isParent = vecLoc.at(i).isParent;
-        TopAbs_ShapeEnum type = vecLoc.at(i).subShapeType;
-
+        int parentShapeNr = vecLoc[i].parentShapeNr;
+        int subTopNr = vecLoc[i].subTopNr;
+        bool isParent = vecLoc[i].isParent;
+        TopAbs_ShapeEnum type = vecLoc[i].subShapeType;
         if(isParent) myShapes.Append(gdb->bodyMap.value(parentShapeNr));
         else
         {
@@ -186,13 +187,40 @@ void ShapeSelector::setShape(const std::vector<GeometryTag> &vecLoc)
         }
     }
 
-    TopTools_ListIteratorOfListOfShape anIter;
-    for(anIter.Initialize(myShapes);anIter.More();anIter.Next())
+    for(TopTools_ListIteratorOfListOfShape anIter(myShapes);anIter.More();anIter.Next())
     {
         myCTX->AddOrRemoveSelected(anIter.Value(),false);
     }
+
+    /*
+    TopTools_ListOfShape l;
+    for(TopTools_ListIteratorOfListOfShape anIter(myShapes);anIter.More();anIter.Next())
+    {
+        myCTX->AddOrRemoveSelected(anIter.Value(),false);
+        const occHandle(TopoDS_Shape) &theCurAIS = anIter.Value();
+        occHandle(SelectMgr_IndexedMapOfOwner) m;
+        myCTX->EntityOwners(m,theCurAIS,-1);
+        //! iterate over all the owners
+        for(int n=1; n<=m->Extent(); n++)
+        {
+            occHandle(SelectMgr_EntityOwner) s = m->FindKey(n);
+            occHandle(StdSelect_BRepOwner) sb  = occHandle(StdSelect_BRepOwner)::DownCast(s);
+            const TopoDS_Shape &ownerShape = sb->Shape();
+            TopoDS_Shape locatedShape = ownerShape.Located(sb->Location() * aDetectedShape.Location());
+            if(myShapes.Contains(locatedShape)) continue;
+            if(l.Contains(locatedShape)==false)
+            {
+                l.Append(locatedShape);
+                occContext->AddOrRemoveSelected(sb,false);
+            }
+        }
+    }
+    */
+
+    if(myCTX.IsNull()) cout<<"____NULL CONTEXT____"<<endl;
     myCTX->UpdateCurrentViewer();
-    showPushButtons();
+
+    this->showPushButtons();
 
     cout<<"ShapeSelector::setShape()->____myShapes size: "<<myShapes.Extent()<<"____"<<endl;
     cout<<"ShapeSelector::setShape()->____myVecLoc size: "<<myVecLoc.size()<<"____"<<endl;
@@ -261,15 +289,15 @@ void ShapeSelector::createContent()
 //! function: setContext
 //! details:
 //! ---------------------
-void ShapeSelector::setContext(const opencascade::handle<AIS_InteractiveContext> &aCTX)
+void ShapeSelector::setContext(const occHandle(AIS_InteractiveContext) &aCTX)
 {
     myCTX = aCTX;
 }
 
-//! -----------------------------------------------
+//! -----------------------
 //! function: clearContext
-//! details:  clear the context from the selection
-//! -----------------------------------------------
+//! details:
+//! -----------------------
 void ShapeSelector::clearContext(bool updateViewer)
 {
     if(myCTX->NbSelected()>0) myCTX->ClearSelected(updateViewer);

@@ -716,6 +716,31 @@ void MainWindow::createMenu()
     //! ------------------------
     GeometryMenu = menuBar()->addMenu("Geometry");
 
+    //! --------------------
+    //! "Mesh" menu - setup
+    //! --------------------
+    MeshMenu = menuBar()->addMenu("Mesh");
+
+    //! ----------------------
+    //! Mesh submenu "Insert"
+    //! ----------------------
+    MeshMenuInsert = MeshMenu->addMenu("Insert");
+    MeshMenu->addSeparator();
+
+    MeshMenuInsert->addAction(actionInsertMethod);
+    MeshMenuInsert->addSeparator();
+    MeshMenuInsert->addAction(actionInsertBodySizing);
+    MeshMenuInsert->addAction(actionInsertFaceSizing);
+    MeshMenuInsert->addAction(actionInsertEdgeSizing);
+    MeshMenuInsert->addAction(actionInsertVertexSizing);
+
+    MeshMenu->addAction(actionPreviewMesh);
+    MeshMenu->addAction(actionGenerateMesh);
+    MeshMenu->addSeparator();
+    MeshMenu->addAction(actionLoadMesh);
+    MeshMenu->addSeparator();
+    MeshMenu->addAction(actionClearMesh);
+
     //! -------------
     //! "Tools" menu
     //! -------------
@@ -806,30 +831,53 @@ void MainWindow::createActions()
     //! "Geometry" menu actions
     //!-------------------------
 
-    //!-------------------------------------
-    //! "Mesh" menu actions - to be removed
-    //! ------------------------------------
+    //!---------------------
+    //! "Mesh" menu actions
+    //! --------------------
     actionPreviewMesh = new QAction("Preview the surface mesh", this);
     actionPreviewMesh->setIcon(QIcon(":/icons/icon_surface mesh.png"));
+    //! cannot connect this Action here to simulationManager, since it has not been created yet
+    connect(actionPreviewMesh,SIGNAL(triggered(bool)),mySimulationManager,SLOT(buildSurfaceMesh()));
 
+    //! Generate volume mesh
     actionGenerateMesh = new QAction("Generate the mesh",this);
     actionGenerateMesh->setIcon(QIcon(":/icons/icon_volume mesh.png"));
+    //! cannot connect this Action here to simulationManager, since it has not been created yet
+    connect(actionGenerateMesh,SIGNAL(triggered(bool)),mySimulationManager,SLOT(buildVolumeMesh()));
 
+    //! Clear mesh
     actionClearMesh = new QAction("Clear all the meshes",this);
     actionClearMesh->setIcon(QIcon(":/icons/icon_clear data.png"));
     connect(actionClearMesh,SIGNAL(triggered(bool)),myMainOCCViewer,SLOT(clearMeshFromViewer()));
 
-    //! "Mesh" subMenu - "Insert mesh control" actions
     //! Meshing method
     actionInsertMethod = new QAction("Insert method",this);
     actionInsertMethod->setIcon(QIcon(":/icons/icon_mesh method.png"));
+    connect(actionInsertMethod,SIGNAL(triggered(bool)),this,SLOT(createItemMeshMethod()));
 
-    //! Body sizing, grading
+    //! Body sizing
     actionInsertBodySizing  = new QAction("Insert body sizing",this);
     actionInsertBodySizing->setIcon(QIcon(":/icons/icon_volume mesh.png"));
+    connect(actionInsertBodySizing,SIGNAL(triggered(bool)),this,SLOT(createItemMeshBodySizing()));
 
+    //! Face sizing
     actionInsertFaceSizing = new QAction("Insert face sizing",this);
     actionInsertFaceSizing->setIcon(QIcon(":/icons/icon_mesh face sizing.png"));
+    connect(actionInsertFaceSizing,SIGNAL(triggered(bool)),this,SLOT(createItemMeshFaceSizing()));
+
+    //! Edge sizing
+    actionInsertEdgeSizing = new QAction("Insert edge sizing",this);
+    actionInsertEdgeSizing->setIcon(QIcon(":/icons/icon_mesh edge sizing.png"));
+    connect(actionInsertEdgeSizing,SIGNAL(triggered(bool)),this,SLOT(createItemMeshEdgeSizing()));
+
+    //! Vertex sizing
+    actionInsertVertexSizing = new QAction("Insert face sizing",this);
+    actionInsertVertexSizing->setIcon(QIcon(":/icons/icon_point.png"));
+    connect(actionInsertVertexSizing,SIGNAL(triggered(bool)),this,SLOT(createItemMeshVertexSizing()));
+
+    //! load mesh from file
+    actionLoadMesh = new QAction("Load mesh from file",this);
+    actionLoadMesh->setIcon(QIcon(":/icons/icon_open from file.png"));
 
     //!-------------------------
     //! "Solution" menu actions
@@ -1214,6 +1262,51 @@ void MainWindow::createToolBars()
     connect(myMainOCCViewer,SIGNAL(resultsPresentationChanged()),mySimulationManager,SLOT(updateResultsPresentation()));
 }
 
+//! -------------------------------
+//! function: createItemMeshMethod
+//! details:
+//! -------------------------------
+void MainWindow::createItemMeshMethod()
+{
+    mySimulationManager->createSimulationNode(SimulationNodeClass::nodeType_meshMethod);
+}
+
+//! -----------------------------------
+//! function: createItemMeshBodySizing
+//! function:
+//! -----------------------------------
+void MainWindow::createItemMeshBodySizing()
+{
+    mySimulationManager->createSimulationNode(SimulationNodeClass::nodeType_meshBodyMeshControl);
+}
+
+//! -----------------------------------
+//! function: createItemMeshFaceSizing
+//! details:
+//! -----------------------------------
+void MainWindow::createItemMeshFaceSizing()
+{
+    mySimulationManager->createSimulationNode(SimulationNodeClass::nodeType_meshFaceSize);
+}
+
+//! -----------------------------------
+//! function: createItemMeshEdgeSizing
+//! details:
+//! -----------------------------------
+void MainWindow::createItemMeshEdgeSizing()
+{
+    mySimulationManager->createSimulationNode(SimulationNodeClass::nodeType_meshEdgeSize);
+}
+
+//! -----------------------------------
+//! function: createItemMeshVertexSizing
+//! details:
+//! -----------------------------------
+void MainWindow::createItemMeshVertexSizing()
+{
+    mySimulationManager->createSimulationNode(SimulationNodeClass::nodeType_meshVertexSize);
+}
+
 //! ---------------------------------
 //! function: setSelectionModeSingle
 //! details:
@@ -1455,7 +1548,7 @@ void MainWindow::importFile(QString &fileName)
                 }
                 aProgressIndicator->EndScope();
 
-                if(!shapeFromReader.IsNull())
+                if(shapeFromReader.IsNull()==false)
                 {
                     //! set the selection model - it can be done only when something has been loaded
                     mySimulationManager->setSelectionModel();
@@ -1467,7 +1560,14 @@ void MainWindow::importFile(QString &fileName)
                     if(myMainOCCViewer->getContext().IsNull()) cout<<"MainWindow::importFile()->____error: context is NULL____"<<endl;
 
                     //! set the context for the Detail viewer
-                    myDetailViewer->setContext(myMainOCCViewer->getContext());
+                    if(myMainOCCViewer->getContext().IsNull()) cout<<"____tag01____"<<endl;
+                    if(myMainOCCViewer->getMeshContext().IsNull()) cout<<"____tag02____"<<endl;
+
+                    cout<<"MainWindow::importFile()->____set the context for the detail viewer____"<<endl;
+                    myDetailViewer->setContext(myMainOCCViewer->getContext()); //cesere
+
+                    cout<<"MainWindow::importFile()->____set the mesh context for the detail viewer____"<<endl;
+                    myDetailViewer->setMeshContext(myMainOCCViewer->getMeshContext());
                 }
                 //! ------------------------------------
                 //! change the title of the main window
@@ -1497,15 +1597,13 @@ void MainWindow::importFile(QString &fileName)
     }
 }
 
-//! ----------------------------------------------------------------
+//! -------------------------
 //! function: updateViewport
-//! details:  this function is called when the simulation data base
-//!           is changed by a geometry reload
-//! ----------------------------------------------------------------
+//! details:
+//! -------------------------
 void MainWindow::updateViewport()
 {
     cout<<"MainWindow::updateViewport()->____function called____"<<endl;
-    ccout("MainWindow::updateViewport()->____function called____");
 
     //! --------------------------------------------------------------
     //! reset the maps of the interactive objects (shapes and meshes)
@@ -1543,15 +1641,21 @@ void MainWindow::updateViewport()
     mySimulationManager->setSelectionModel();
 
     //! ----------------------------------------------------------------------------
-    //! experimental - set the interactive context (communication with the display)
+    //! set the interactive context (communication with the display)
     //! ----------------------------------------------------------------------------
     mySimulationManager->setContext(myMainOCCViewer->getContext());
 
-    //! diagnostic - can be removed
+    //! -----------
+    //! diagnostic
+    //! -----------
     if(myMainOCCViewer->getContext().IsNull()) cout<<"MainWindow::importFile()->____error: context is NULL____"<<endl;
+    if(myMainOCCViewer->getMeshContext().IsNull()) cout<<"MainWindow::importFile()->____error: context is NULL____"<<endl;
 
-    //! set the context for the Detail viewer - dould be removed
+    //! ---------------------------------------------------------------------------------
+    //! set the context for the Detail viewer - dould be removed (do not understand why)
+    //! ---------------------------------------------------------------------------------
     myDetailViewer->setContext(myMainOCCViewer->getContext());
+    myDetailViewer->setMeshContext(myMainOCCViewer->getMeshContext());
 
     //! ------------------------------------
     //! change the title of the main window
@@ -1666,10 +1770,11 @@ void MainWindow::openProject()
             myDockableSlaveViewPort->createInteractiveShapes();
             myDockableSlaveViewPort->displayCAD();
 
-            //! --------------------------------------------------
-            //! set the interactive context for the Detail viewer
-            //! --------------------------------------------------
+            //! -----------------------------------------------------------------
+            //! set the interactive shape and mesh context for the Detail viewer
+            //! -----------------------------------------------------------------
             myDetailViewer->setContext(myMainOCCViewer->getContext());
+            myDetailViewer->setMeshContext(myMainOCCViewer->getMeshContext());
 
             //! -------------------------------------------------
             //! feed the clip plane tool with coordinate systems
@@ -2649,6 +2754,9 @@ void MainWindow::HandleSelectAll()
 //! ---------------------------
 void MainWindow::setUpConnections()
 {
+    //connect(actionPreviewMesh,SIGNAL(triggered(bool)),mySimulationManager,SLOT(buildSurfaceMesh()));
+    //connect(actionGenerateMesh,SIGNAL(triggered(bool)),mySimulationManager,SLOT(buildVolumeMesh()));
+
     connect(myCentralTabWidget,SIGNAL(resized()),myMainOCCViewer,SLOT(repaint()));
     connect(mySimulationManager,SIGNAL(requestSetActiveCentralTab(QString)),myCentralTabWidget,SLOT(setCurrentTab(QString)));
     connect(mySimulationManager, SIGNAL(requestMeshInvalidate(std::vector<int>)),myMainOCCViewer, SLOT(invalidateMeshes(std::vector<int>)));
