@@ -1043,10 +1043,16 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
         //! --------------------------------------
         //! Advanced properties for contact group
         //! --------------------------------------
-        else if(propertyName =="K" || propertyName=="Sigma infty" /*|| propertyName =="C0"*/ ||
-                propertyName =="Lambda" || propertyName =="P0")
+        else if(propertyName =="K" || propertyName=="Sigma infinity" || propertyName =="C0" ||
+                propertyName =="Lambda" || propertyName =="P0" || propertyName == "Thermal conductance")
         {
             SimulationNodeClass *curNode = this->getCurrentNode();
+
+            QLineEdit *editor = new QLineEdit(parent);
+            QDoubleValidator *doubleValidator = new QDoubleValidator();
+            doubleValidator->setBottom(0);
+            editor->setValidator(doubleValidator);
+            return editor;
             if(curNode->getType()==SimulationNodeClass::nodeType_connectionPair)
             {
                 Property::contactBehavior behavior = this->getCurrentNode()->getPropertyItem("Behavior")->data(Qt::UserRole).value<Property>().getData().value<Property::contactBehavior>();
@@ -1061,9 +1067,9 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
                     case Property::overpressureFunction_linear:
                     {
                         //! ------------------------------------------------
-                        //! "C0" "K" "Lambda" "Sigma infty" can be modified
+                        //! "C0" "K" "Lambda" "Sigma infinity" can be modified
                         //! ------------------------------------------------
-                        if(propertyName=="C0" || propertyName =="Lambda" || propertyName =="Sigma infty" || propertyName =="K")
+                        if(propertyName=="C0" || propertyName =="Lambda" || propertyName =="Sigma infinity" || propertyName =="K")
                         {
                             QLineEdit *editor = new QLineEdit(parent);
                             QDoubleValidator *doubleValidator = new QDoubleValidator();
@@ -1091,6 +1097,11 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
                         else return 0;
                     }
                         break;
+                    case Property::overpressureFunction_hard:
+                    {
+                        return 0;
+                    }
+                        break;
                     }
                 }
                     break;
@@ -1103,7 +1114,7 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
                     {
                         //! -----------------------------------------------------------------
                         //! "K" "Lambda" "can be modified. For a symmetric face to face
-                        //! contact "C0" is set to zero by CCX, and "Sigma infty" is not
+                        //! contact "C0" is set to zero by CCX, and "Sigma infinity" is not
                         //! defined (the overpressure function is truly bilinear)
                         //! From CCX routine "springfc_f2f.f" appears that the overpressure
                         //! equation is the same for the two cases. For a "Tied" overpressure
@@ -1155,14 +1166,17 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
                         else return 0;
                     }
                         break;
+                    case Property::overpressureFunction_hard:
+                    {
+                        return 0;
+                    }
                     }
                 }
                     break;
                 }
             }
-
             //! ---------------------------------------------
-            //! "K" and "Sigma infty" are also properties of
+            //! "K" and "Sigma infinity" are also properties of
             //! the "Compression only support"
             //! ---------------------------------------------
             if(curNode->getType()==SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_CompressionOnlySupport)
@@ -1173,7 +1187,9 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
                 editor->setValidator(doubleValidator);
                 return editor;
             }
+
         }
+        /*
         //! -----
         //! "C0"
         //! -----
@@ -1185,6 +1201,7 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
             editor->setValidator(doubleValidator);
             return editor;
         }
+        */
         //! ----------------
         //! "Small sliding"
         //! ----------------
@@ -1203,6 +1220,25 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
                 return editor;
             }
             else return 0;
+        }
+        //! ----------------
+        //! "Adjust to touch"
+        //! ----------------
+        else if(propertyName=="Adjust to touch")
+        {
+            SimulationNodeClass *curNode = this->getCurrentNode();
+            Property::contactBehavior val = curNode->getPropertyItem("Behavior")->data(Qt::UserRole).value<Property>().getData().value<Property::contactBehavior>();
+            //if(val == Property::contactBehavior_asymmetric )
+            //{
+                QComboBox *editor = new QComboBox(parent);
+                QVariant data;
+                data.setValue(0);
+                editor->addItem("Off",data);
+                data.setValue(1);
+                editor->addItem("On",data);
+                return editor;
+            //}
+            //else return 0;
         }
         //! --------------------------------------------------------
         //! Line search "0" => "Program controlled" "1" => "Custom"
@@ -2105,7 +2141,7 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
         {
             SimulationNodeClass *curNode = this->getCurrentNode();
             Property::contactType type = curNode->getPropertyItem("Type")->data(Qt::UserRole).value<Property>().getData().value<Property::contactType>();
-            if(type!= Property::contactType_tied && type!= Property::contactType_bonded)
+            if(type!= Property::contactType_noSeparation && type!= Property::contactType_bonded)
             {
                 QComboBox *editor = new QComboBox(parent);
                 QVariant data;
@@ -2113,9 +2149,29 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
                 editor->addItem("Linear",data);
                 data.setValue(Property::overpressureFunction_exponential);
                 editor->addItem("Exponential",data);
+                data.setValue(Property::overpressureFunction_hard);
+                editor->addItem("Hard",data);
                 return editor;
             }
             else return 0;
+        }
+        //! --------------
+        //! "Formulation"
+        //! --------------
+        else if(propertyName =="Formulation")
+        {
+            //SimulationNodeClass *curNode = this->getCurrentNode();
+            //Property::contactFormulation formulation = curNode->getPropertyItem("Formulation")->data(Qt::UserRole).value<Property>().getData().value<Property::contactType>();
+            QComboBox *editor = new QComboBox(parent);
+            editor->clear();
+            QVariant data;
+            data.setValue(Property::contactFormulation_lagrange);
+            editor->addItem("Lagrange",data);
+            data.setValue(Property::contactFormulation_penalty);
+            editor->addItem("Pure penalty",data);
+            data.setValue(Property::contactFormulation_MPC);
+            editor->addItem("MPC",data);
+            return editor;
         }
         //! ---------------------------------------------------------------------
         //! "Behavior"
@@ -2126,7 +2182,7 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
         {
             SimulationNodeClass *curNode = this->getCurrentNode();
             Property::contactType type = curNode->getPropertyItem("Type")->data(Qt::UserRole).value<Property>().getData().value<Property::contactType>();
-            if(type!=Property::contactType_tied)
+            if(type!=Property::contactType_noSeparation)
             {
                 QComboBox *editor = new QComboBox(parent);
                 editor->clear();
@@ -2184,8 +2240,8 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
                 editor->addItem("Frictional",data);
                 data.setValue(Property::contactType_frictionless);
                 editor->addItem("Frictionless",data);
-                data.setValue(Property::contactType_tied);
-                editor->addItem("Tied",data);
+                data.setValue(Property::contactType_noSeparation);
+                editor->addItem("No separation",data);
             }
                 break;
             }
@@ -3667,12 +3723,12 @@ void GeneralDelegate::setEditorData(QWidget *editor, const QModelIndex &index) c
     //! ----------------------------------------
     //! Advanced controls for the contact group
     //! ----------------------------------------
-    else if(propertyName =="K" || propertyName=="Sigma infty" || propertyName =="C0" ||
-            propertyName =="Lambda" || propertyName =="P0")
+    else if(propertyName =="K" || propertyName=="Sigma infinity" || propertyName =="C0" ||
+            propertyName =="Lambda" || propertyName =="P0" || propertyName == "Thermal conductance")
     {
         //SimulationNodeClass *curNode = this->getCurrentNode();
         //Property::contactBehavior val = curNode->getPropertyItem("Behavior")->data(Qt::UserRole).value<Property>().getData().value<Property::contactBehavior>();
-        //if(val == Property::contactBehavior_symmetric && propertyName != "C0" && propertyName == "Sigma infty")
+        //if(val == Property::contactBehavior_symmetric && propertyName != "C0" && propertyName == "Sigma infinity")
         //{
             double value = data.value<Property>().getData().toDouble();
             QLineEdit *le = static_cast<QLineEdit*>(editor);
@@ -3693,6 +3749,21 @@ void GeneralDelegate::setEditorData(QWidget *editor, const QModelIndex &index) c
             cb->setCurrentIndex(value);
             connect(cb,SIGNAL(currentIndexChanged(int)),this,SLOT(commitAndCloseSmallSlidingControl()));
         }
+    }
+    //! ----------------
+    //! "Adjust to touch"
+    //! ----------------
+    else if(propertyName =="Adjust to touch")
+    {
+        SimulationNodeClass *curNode = this->getCurrentNode();
+        Property::contactBehavior val = curNode->getPropertyItem("Behavior")->data(Qt::UserRole).value<Property>().getData().value<Property::contactBehavior>();
+        //if(val == Property::contactBehavior_asymmetric)
+        //{
+            int value = data.value<Property>().getData().toInt();
+            QComboBox *cb = static_cast<QComboBox*>(editor);
+            cb->setCurrentIndex(value);
+            connect(cb,SIGNAL(currentIndexChanged(int)),this,SLOT(commitAndCloseAdjustControl()));
+        //}
     }
     //! --------------
     //! "Line search"
@@ -4361,7 +4432,7 @@ void GeneralDelegate::setEditorData(QWidget *editor, const QModelIndex &index) c
     {
         SimulationNodeClass *curNode = this->getCurrentNode();
         Property::contactType type = curNode->getPropertyItem("Type")->data(Qt::UserRole).value<Property>().getData().value<Property::contactType>();
-        if(type!= Property::contactType_tied && type!= Property::contactType_bonded)
+        if(type!= Property::contactType_noSeparation && type!= Property::contactType_bonded)
         {
             Property::overpressureFunction value = data.value<Property>().getData().value<Property::overpressureFunction>();
             QComboBox *comboBox = static_cast<QComboBox*>(editor);
@@ -4369,24 +4440,27 @@ void GeneralDelegate::setEditorData(QWidget *editor, const QModelIndex &index) c
             {
             case Property::overpressureFunction_linear: comboBox->setCurrentIndex(0); break;
             case Property::overpressureFunction_exponential: comboBox->setCurrentIndex(1); break;
+            case Property::overpressureFunction_hard: comboBox->setCurrentIndex(2); break;
             }
             connect(editor,SIGNAL(currentIndexChanged(int)),this, SLOT(commitAndCloseComboBox()));
         }
     }
-    //! --------------
-    //! to be removed
-    //! --------------
+    //! ------------
+    //! Formulation
+    //! ------------
     else if(propertyName=="Formulation")
     {
         Property::contactFormulation value = data.value<Property>().getData().value<Property::contactFormulation>();
         QComboBox *comboBox = static_cast<QComboBox*>(editor);
         switch(value)
         {
-        case Property::contactFormulation_penalty: comboBox->setCurrentIndex(0); break;
-        case Property::contactFormulation_MPC: comboBox->setCurrentIndex(1); break;
+        case Property::contactFormulation_lagrange: comboBox->setCurrentIndex(0); break;
+        case Property::contactFormulation_penalty: comboBox->setCurrentIndex(1); break;
+        case Property::contactFormulation_MPC: comboBox->setCurrentIndex(2); break;
         }
         connect(editor,SIGNAL(currentIndexChanged(int)),this, SLOT(commitAndCloseComboBox()));
     }
+
     //! ---------
     //! Behavior
     //! ---------
@@ -4394,7 +4468,7 @@ void GeneralDelegate::setEditorData(QWidget *editor, const QModelIndex &index) c
     {
         SimulationNodeClass *curNode = this->getCurrentNode();
         Property::contactType type = curNode->getPropertyItem("Type")->data(Qt::UserRole).value<Property>().getData().value<Property::contactType>();
-        if(type!=Property::contactType_tied)
+        if(type!=Property::contactType_noSeparation)
         {
             Property::contactBehavior value = data.value<Property>().getData().value<Property::contactBehavior>();
             QComboBox *comboBox = static_cast<QComboBox*>(editor);
@@ -4424,7 +4498,7 @@ void GeneralDelegate::setEditorData(QWidget *editor, const QModelIndex &index) c
             case Property::contactType_bonded: comboBox->setCurrentIndex(0); break;
             case Property::contactType_frictional: comboBox->setCurrentIndex(1); break;
             case Property::contactType_frictionless: comboBox->setCurrentIndex(2); break;
-            case Property::contactType_tied: comboBox->setCurrentIndex(3); break;
+            case Property::contactType_noSeparation: comboBox->setCurrentIndex(3); break;
             }
             connect(editor,SIGNAL(currentIndexChanged(int)),this, SLOT(commitAndCloseComboBox()));
         //}
@@ -5737,8 +5811,8 @@ void GeneralDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, c
         //! ----------------------------------------
         //! Advanced controls for the contact group
         //! ----------------------------------------
-        else if(propertyName =="K" || propertyName=="Sigma infty" || /*propertyName =="C0" ||*/
-                propertyName =="Lambda" || propertyName =="P0")
+        else if(propertyName =="K" || propertyName=="Sigma infinity" || /*propertyName =="C0" ||*/
+                propertyName =="Lambda" || propertyName =="P0" || propertyName == "Thermal conductance")
         {
             SimulationNodeClass *curNode = this->getCurrentNode();
 
@@ -5758,7 +5832,7 @@ void GeneralDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, c
                     {
                     case Property::overpressureFunction_linear:
                     {
-                        //! linear: "K", "C0", "Sigma infty", "Lambda" can be modified
+                        //! linear: "K", "C0", "Sigma infinity", "Lambda" can be modified
                         QLineEdit *le = static_cast<QLineEdit*>(editor);
                         data.setValue(le->text().toDouble());
                     }
@@ -5826,7 +5900,7 @@ void GeneralDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, c
                 data.setValue(le->text().toDouble());
             }
             //! ------------------------------------------
-            //! "K" and "Sigma infty" are also properties
+            //! "K" and "Sigma infinity" are also properties
             //! of "Compression only support"
             //! ------------------------------------------
             if(curNode->getType()==SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_CompressionOnlySupport)
@@ -5842,11 +5916,11 @@ void GeneralDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, c
         {
             SimulationNodeClass *curNode = this->getCurrentNode();
             Property::contactBehavior val = curNode->getPropertyValue<Property::contactBehavior>("Behavior");
-            if(val == Property::contactBehavior_asymmetric)
-            {
+            //if(val == Property::contactBehavior_asymmetric)
+            //{
                 QComboBox *cb = static_cast<QComboBox*>(editor);
                 data.setValue(cb->currentData().toInt());
-            }
+            //}
         }
         //! ------------
         //! Line search
@@ -6342,20 +6416,20 @@ void GeneralDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, c
         {
             SimulationNodeClass *curNode = this->getCurrentNode();
             Property::contactType type = curNode->getPropertyItem("Type")->data(Qt::UserRole).value<Property>().getData().value<Property::contactType>();
-            if(type!= Property::contactType_tied &&  type!= Property::contactType_bonded)
+            if(type!= Property::contactType_noSeparation &&  type!= Property::contactType_bonded)
             {
                 QComboBox *comboBox = static_cast<QComboBox*>(editor);
                 data.setValue(comboBox->currentData(Qt::UserRole).value<Property::overpressureFunction>());
             }
         }
         //! --------------
-        //! to be removed
+        //! "Formulation"
         //! --------------
-        //else if(propertyName=="Formulation")
-        //{
-        //    QComboBox *comboBox = static_cast<QComboBox*>(editor);
-        //    data.setValue(comboBox->currentData(Qt::UserRole).value<Property::contactFormulation>());
-        //}
+        else if(propertyName=="Formulation")
+        {
+            QComboBox *comboBox = static_cast<QComboBox*>(editor);
+            data.setValue(comboBox->currentData(Qt::UserRole).value<Property::contactFormulation>());
+        }
         //! ---------
         //! Behavior
         //! ---------
@@ -6363,7 +6437,7 @@ void GeneralDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, c
         {
             SimulationNodeClass *curNode = this->getCurrentNode();
             Property::contactType type = curNode->getPropertyItem("Type")->data(Qt::UserRole).value<Property>().getData().value<Property::contactType>();
-            if(type!=Property::contactType_tied)
+            if(type!=Property::contactType_noSeparation)
             {
                 QComboBox *comboBox = static_cast<QComboBox*>(editor);
                 data.setValue(comboBox->currentData(Qt::UserRole).value<Property::contactBehavior>());
@@ -7901,7 +7975,7 @@ void GeneralDelegate::commitAndCloseComboBoxForOutputSettings()
 
 //! --------------------------------------------------
 //! function: commitAndCloseComboBoxStoreResultsAt()
-//! details:  this closes the "Small sliding" control
+//! details:  this closes the "Store resutl at" control
 //! --------------------------------------------------
 void GeneralDelegate::commitAndCloseStoreResultsAt()
 {

@@ -207,7 +207,7 @@ public:
         contactType_bonded,
         contactType_frictional,
         contactType_frictionless,
-        contactType_tied
+        contactType_noSeparation,
     } ct;
     Q_ENUM(contactType)
 
@@ -220,6 +220,7 @@ public:
 
     enum contactFormulation
     {
+        contactFormulation_lagrange,
         contactFormulation_penalty,
         contactFormulation_MPC,
     } cf;
@@ -230,6 +231,7 @@ public:
         overpressureFunction_linear,
         overpressureFunction_exponential,
         overpressureFunction_tied,
+        overpressureFunction_hard,
     } of;
     Q_ENUM(overpressureFunction)
 

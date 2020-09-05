@@ -843,10 +843,10 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
         vecProp.push_back(prop_K);
 
         //! --------------------------------------------
-        //! sigma infty: if "0" => "Program controlled"
+        //! sigma infinity: if "0" => "Program controlled"
         //! --------------------------------------------
         data.setValue(0.0);
-        Property prop_sigmaInf("Sigma infty",data,Property::PropertyGroup_Advanced);
+        Property prop_sigmaInf("Sigma infinity",data,Property::PropertyGroup_Advanced);
         vecProp.push_back(prop_sigmaInf);
 
         //! -------------------
@@ -1139,6 +1139,14 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
             vecProp.push_back(prop_SlaveTags);
         }
 
+        //! -----------------------------------------------------------------------
+        //! the contact formualation: contact pair initially treated with lagrangian
+        //! -----------------------------------------------------------------------
+        Property::contactFormulation theContactFormulation = Property::contactFormulation_lagrange;
+        data.setValue(theContactFormulation);
+        Property prop_connectionFormulation("Formulation",data,Property::PropertyGroup_Definition);
+        vecProp.push_back(prop_connectionFormulation);
+
         //! ---------------------------------------------------------------
         //! the contact type: contact pair initially created as frictional
         //! ---------------------------------------------------------------
@@ -1148,9 +1156,9 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
         vecProp.push_back(prop_connectionType);
 
         //! ---------------------------------------------
-        //! the contact behavior - asymmetric by default
+        //! the contact behavior - symmetric by default
         //! ---------------------------------------------
-        Property::contactBehavior theContactBehavior = Property::contactBehavior_asymmetric;
+        Property::contactBehavior theContactBehavior = Property::contactBehavior_symmetric;
         data.setValue(theContactBehavior);
         Property prop_contactBehavior("Behavior",data,Property::PropertyGroup_Definition);
         vecProp.push_back(prop_contactBehavior);
@@ -1169,6 +1177,13 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
         Property prop_smallSliding("Small sliding",data,Property::PropertyGroup_Definition);
         vecProp.push_back(prop_smallSliding);
 
+        //! --------------------------------------------
+        //! adjust to touch: "0" => inactive "1" => active
+        //! --------------------------------------------
+        data.setValue(int(1));
+        Property prop_adjust("Adjust to touch",data,Property::PropertyGroup_Definition);
+        vecProp.push_back(prop_adjust);
+
         //! ----------------------
         //! Overpressure function
         //! ----------------------
@@ -1185,11 +1200,18 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
         vecProp.push_back(prop_K);
 
         //! --------------------------------------------
-        //! sigma infty: if "0" => "Program controlled"
+        //! sigma infinity: if "0" => "Program controlled"
         //! --------------------------------------------
         data.setValue(0.0);
-        Property prop_sigmaInf("Sigma infty",data,Property::PropertyGroup_Advanced);
+        Property prop_sigmaInf("Sigma infinity",data,Property::PropertyGroup_Advanced);
         vecProp.push_back(prop_sigmaInf);
+
+        //! ----------------------------------------------------
+        //! thermal conductance: if "0" => "Program controlled"
+        //! ----------------------------------------------------
+        data.setValue(0.0);
+        Property prop_thermalCond("Thermal conductance",data,Property::PropertyGroup_Advanced);
+        vecProp.push_back(prop_thermalCond);
 
         //! --------------------------------------------
         //! constant C0: if "0" => "Program controlled"
@@ -1197,7 +1219,12 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
         data.setValue(0.0);
         Property prop_C0("C0",data,Property::PropertyGroup_Advanced);
         vecProp.push_back(prop_C0);
-
+        //! --------------------------------------------
+        //! constant P0: if "0" => "Program controlled"
+        //! --------------------------------------------
+        data.setValue(0.0);
+        Property prop_P0("P0",data,Property::PropertyGroup_Advanced);
+        vecProp.push_back(prop_P0);
         //! ------------------------------------------------
         //! constant lamdba: if "0" => "Program controlled"
         //! ------------------------------------------------

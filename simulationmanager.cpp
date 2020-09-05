@@ -5387,6 +5387,7 @@ void SimulationManager::handleItemChange(QStandardItem *item)
                 //! if it was previously removed; in case of a "Frictionless" or "Bonded" contact pair,
                 //! remove it, if it was previously added
                 //! -----------------------------------------------------------------------------------------
+            /*
                 switch(theContactType)
                 {
                 case Property::contactType_frictional:
@@ -5452,7 +5453,7 @@ void SimulationManager::handleItemChange(QStandardItem *item)
 
                     //! ------------------------------------------------------------------
                     //! re-init the contact with "overpressure linear"
-                    //! add "Overpressure", "K", "Sigma infty", "CO" if they were removed
+                    //! add "Overpressure", "K", "Sigma infinity", "CO" if they were removed
                     //! ------------------------------------------------------------------
                     QVariant data;
                     if(curNode->getPropertyItem("K")==NULL)
@@ -5601,7 +5602,7 @@ void SimulationManager::handleItemChange(QStandardItem *item)
                 }
                     break;
 
-                case Property::contactType_tied:
+                case Property::contactType_noSeparation:
                 {
                     cout<<"____handing tied____"<<endl;
                     //! ------------------
@@ -5658,8 +5659,10 @@ void SimulationManager::handleItemChange(QStandardItem *item)
                 }
                     break;
                 }
+            */
             }
 
+            /*
             //! ------------------------------
             //! handle the "Behavior" control
             //! ------------------------------
@@ -5834,6 +5837,7 @@ void SimulationManager::handleItemChange(QStandardItem *item)
                 }
             }
             cout<<"____handling contacts: exiting____"<<endl;
+            */
         }
     }
         break;
