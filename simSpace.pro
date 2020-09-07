@@ -428,9 +428,9 @@ DEFINES += WNT  \
            _TURNONFPES_ \
            TETLIBRARY  \
            DEBUG_VERSION   \
-           #COSTAMP_VERSION \
+           COSTAMP_VERSION \
            GENERATE_FACE_MESH_DATASOURCES   \
-           #USE_MESHFIX
+           USE_MESHFIX
 
 DEFINES += QCUSTOMPLOT_USE_LIBRARY
 

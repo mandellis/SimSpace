@@ -1307,9 +1307,13 @@ bool writeSolverFileClass::perform()
     bool initialTempDistr = false;
     for(int k=1; k<mySimulationRoot->rowCount()-1; k++)
     {
-        code = Global::status().code;
-        if(code==0) return;
-
+        //code = Global::status().code;
+        //if(code==0) return;
+        if(Global::status().code==0)
+        {
+            cout<<"writeSolverFileClass::perform()->____process stopped____"<<endl;
+            return false;
+        }
         cout<<" - writing BC "<<mySimulationRoot->child(k,0)->data(Qt::DisplayRole).toString().toStdString()<<endl;
         //QString itemName = itemNameClearSpaces(mySimulationRoot->child(k,0)->data(Qt::DisplayRole).toString());
 

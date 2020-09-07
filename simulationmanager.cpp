@@ -11670,8 +11670,12 @@ void SimulationManager::COSTAMP_startTimeStepBuilder()
     cout<<"SimulationManager::startTimeStepBuilder()->____function called____"<<endl;
     SimulationNodeClass *curNode = myTreeView->currentIndex().data(Qt::UserRole).value<SimulationNodeClass*>();
     const QString &timeHistoryFileLoc = curNode->getPropertyValue<QString>("Time history file");    
-    QString program = QString("D:/Work/Qt/build_pro26.0_OCC7.3.0/release/TimeStepBuilder.exe");
+    QString program = QString("D:/Work/Qt/build_simSpace/release/TimeStepBuilder.exe");
     QStringList arguments;
+    QStandardItem *itemSimulationRoot = mainTreeTools::getCurrentSimulationRoot(myTreeView);
+    QStandardItem *itemSolution = itemSimulationRoot->child(itemSimulationRoot->rowCount()-1);
+    SimulationNodeClass *nodeSolution = itemSolution->data(Qt::UserRole).value<SimulationNodeClass*>();
+    QString myCurrentProjectDir = nodeSolution->getPropertyValue<QString>("Project files dir");
     arguments<<myCurrentProjectDir<<timeHistoryFileLoc;
     QProcess *tsbProcess = new QProcess(this);
     tsbProcess->start(program,arguments);
@@ -11700,6 +11704,11 @@ bool SimulationManager::COSTAMP_addProcessParameters()
     //tSbList.clear();
 
     //! Path of the configuration file
+    QStandardItem *itemSimulationRoot = mainTreeTools::getCurrentSimulationRoot(myTreeView);
+    QStandardItem *itemSolution = itemSimulationRoot->child(itemSimulationRoot->rowCount()-1);
+    SimulationNodeClass *nodeSolution = itemSolution->data(Qt::UserRole).value<SimulationNodeClass*>();
+    QString myCurrentProjectDir = nodeSolution->getPropertyValue<QString>("Project files dir");
+
     QString dirPath = myCurrentProjectDir;
     cout<<"SimulationManager::COSTAMP_addProcessParameters()->____dirPath "<<myCurrentProjectDir.toStdString()<<endl;
     QString tsbFile= dirPath+"/timepoints.out";
