@@ -239,9 +239,11 @@ bool OpenFoamReader::perform()
             cout<<"____found \"Casting0\" in data: jumping over it____"<<endl;
             continue;
         }
-        int nBstep = myTimeFolders.size();
+        int nBstep = int(myTimeFolders.size());
         for(int j=0;j<nBstep;j++)
         {
+            cout<<"____tag00____"<<endl;
+
             double endTime = myTimeFolders.at(j);
             QString dirTime = QString("%1").arg(endTime,0,'g',-1);
             if(entriesInfo.at(i).isDir() && directoryList.at(i) == dirTime)
@@ -274,6 +276,7 @@ bool OpenFoamReader::perform()
     //! ---------------------
     QProgressEvent *e;
     int NbBodies = directoryListFiltered.length();
+    cout<<"____tag01____"<<NbBodies<<endl;
 
     if(myProgressIndicator!=Q_NULLPTR)
     {
@@ -284,6 +287,7 @@ bool OpenFoamReader::perform()
 
     curDir.cdUp();
     curDir.cd("constant");
+    cout<<"____tag02____"<<endl;
 
     //! ------------------------------
     //! entering the data directories

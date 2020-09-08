@@ -11733,7 +11733,7 @@ bool SimulationManager::COSTAMP_addProcessParameters()
     dir.current();
     dir.cd(dirPath);
     dir.mkdir("Mapped");
-    const QString mappedFilePath = dirPath+"Mapped";
+    const QString mappedFilePath = dirPath+"/Mapped";
     cout<<"SimulationManager::COSTAMP_addProcessParameters()->____config file "<<tsbFile.toStdString()<<endl;
     //! ---------------------------------
     //! read the configuration file
@@ -11746,7 +11746,6 @@ bool SimulationManager::COSTAMP_addProcessParameters()
     else
     {
         cout<<"SimulationManager::COSTAMP_addProcessParameters()->____config file "<<tsbFile.toStdString()<<"opened"<<endl;
-
         is.open(tsbFile.toStdString());
         std::string val;
         //! timeStepType
@@ -11755,6 +11754,9 @@ bool SimulationManager::COSTAMP_addProcessParameters()
         //!  2: OpenAssembly,
         std::vector<int> timeStepNr,type;
         std::vector<double>  prevTime,curTime;
+        double closureForceValue, innerPressureValue;
+        int closureForceDir;
+
         int n=0;
         if(is.is_open())
             while(!is.eof())
@@ -11770,6 +11772,19 @@ bool SimulationManager::COSTAMP_addProcessParameters()
                     prevTime.push_back(pTime);
                     curTime.push_back(cTime);
                     n++;
+                }
+                else
+                {
+                    double a,b;
+                    int c;
+                    std::getline(is,val);
+                    std::getline(is,val);
+                    if(2 == sscanf(val.c_str(),"%d%lf",&c,&a))
+                    {
+                        closureForceDir = c;
+                        closureForceValue = a;
+                    }
+                    if(1 ==sscanf(val.c_str(),"%lf",&b)) innerPressureValue = b;
                 }
             }
         is.close();
@@ -11880,9 +11895,9 @@ bool SimulationManager::COSTAMP_addProcessParameters()
         myTreeView->setCurrentIndex(itemSimulationRoot->index().child(0,0));
         for(int i=0; i<NbTstep;i++)
         {
-            //! ------------------------------
-            //! create the force closure node
-            //! ------------------------------
+            //! ----------------------------------
+            //! create the force closureForce node
+            //! ----------------------------------
             if(type.at(i) == 0 && nBclosure == 0)
             {
                 this->createSimulationNode(SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RemoteForce);
@@ -11899,6 +11914,16 @@ bool SimulationManager::COSTAMP_addProcessParameters()
                 data.setValue(Property::loadDefinition_tabularData);
                 Property prop_loadMagnitude("Magnitude",data,Property::PropertyGroup_Definition);
                 curNode->replaceProperty("Magnitude",prop_loadMagnitude);
+                QVector<double> vec;
+                if(closureForceDir==1)
+                {vec.push_back(1.0);vec.push_back(0.0);vec.push_back(0.0);}
+                if(closureForceDir==2)
+                {vec.push_back(0.0);vec.push_back(1.0);vec.push_back(0.0);}
+                if(closureForceDir==3)
+                {vec.push_back(0.0);vec.push_back(0.0);vec.push_back(1.0);}
+                data.setValue(vec);
+                Property prop_loadDirection("Direction",data,Property::PropertyGroup_Definition);
+                curNode->replaceProperty("Direction",prop_loadDirection);
                 nBclosure++;
                 curNode->getModel()->blockSignals(false);
             }
@@ -11957,7 +11982,7 @@ bool SimulationManager::COSTAMP_addProcessParameters()
                 if(closureIndex!=-1)
                 {
                     myTreeView->setCurrentIndex(itemSimulationRoot->index().child(closureIndex,0));
-                    double force = 18000000.0;
+                    double force = closureForceValue;
                     QList<int> columns = mainTreeTools::getColumnsToRead(myTreeView);
                     tabData->setDataRC(force,stepNb,columns.at(0),Qt::EditRole);
                     cout<<"closureIndex "<<closureIndex<<" column n "<<columns.at(0)<<endl;
@@ -11972,7 +11997,7 @@ bool SimulationManager::COSTAMP_addProcessParameters()
                 if(type.at(i)==1)
                 {
                     myTreeView->setCurrentIndex(itemSimulationRoot->index().child(prexIndex,0));
-                    double prex = 60;
+                    double prex = innerPressureValue;
                     QList<int> columns = mainTreeTools::getColumnsToRead(myTreeView);
                     tabData->setDataRC(prex,stepNb,columns.at(0),Qt::EditRole);
                 }
