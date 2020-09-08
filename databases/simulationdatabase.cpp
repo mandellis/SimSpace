@@ -361,7 +361,8 @@ simulationDataBase::simulationDataBase(const QList<SimulationNodeClass*> listOfN
         {
             SimulationNodeClass *curNode = *it;
             bool isSetUpNode = curNode->isSimulationSetUpNode();
-            if(isSetUpNode==false)
+            bool isChildSetUpNode = curNode->isChildSimulationSetUpNode();
+            if(isSetUpNode==false && isChildSetUpNode == false)
             {
                 it++;
                 continue;

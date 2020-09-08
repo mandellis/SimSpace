@@ -1534,6 +1534,7 @@ void SimulationManager::deleteItem(QList<QModelIndex> indexesList)
                     QStandardItem *setUpItem = analysisRoot->child(i,0);
                     SimulationNodeClass *nodeSetUp = setUpItem->data(Qt::UserRole).value<SimulationNodeClass*>();
                     if(nodeSetUp->isSimulationSetUpNode()== false) return;
+                    if(nodeSetUp->isChildSimulationSetUpNode()== false) return;
 
                     //! --------------------------------------------------------------------
                     //! if a named selection is contained replace with a geometry selection
@@ -7918,8 +7919,9 @@ QExtendedStandardItem* SimulationManager::getAnalysisSettingsItemFromCurrentItem
 
     //! ---------------------------------------------------
     //! case 3: the current item is a post processing item
+    //! or a child of a simulation setup node
     //! ---------------------------------------------------
-    if(curNode->isAnalysisResult() || curNode->isSolutionInformation())
+    if(curNode->isAnalysisResult() || curNode->isSolutionInformation() || curNode->isChildSimulationSetUpNode())
     {
         QStandardItem *item = curItem->parent()->parent()->child(0,0);
         return static_cast<QExtendedStandardItem*>(item);
@@ -11819,7 +11821,7 @@ bool SimulationManager::COSTAMP_addProcessParameters()
         //! -------------------------------
         this->createSimulationNode(SimulationNodeClass::nodeType_mapper);
         mapperIndex = curRow;
-        cout<<"curRow= "<<mapperIndex<<endl;
+        cout<<"curRow of mapper Index= "<<mapperIndex<<endl;
         curRow++;
         myTreeView->setCurrentIndex(itemSimulationRoot->index().child(mapperIndex,0));
         SimulationNodeClass *mapperNode = myTreeView->currentIndex().data(Qt::UserRole).value<SimulationNodeClass*>();
@@ -11885,8 +11887,7 @@ bool SimulationManager::COSTAMP_addProcessParameters()
             {
                 this->createSimulationNode(SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RemoteForce);
                 closureIndex = curRow;
-                cout<<"curRow= "<<closureIndex<<endl;
-
+                cout<<"curRow Closure= "<<closureIndex<<endl;
                 curRow++;
                 QStandardItem *curItem =itemSimulationRoot->child(closureIndex,0);
                 SimulationNodeClass *curNode = curItem->data(Qt::UserRole).value<SimulationNodeClass*>();
@@ -11908,7 +11909,7 @@ bool SimulationManager::COSTAMP_addProcessParameters()
             {
                 this->createSimulationNode(SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Pressure);
                 prexIndex = curRow;
-                cout<<"curRow= "<<prexIndex<<endl;
+                cout<<"curRow Pressure= "<<prexIndex<<endl;
 
                 curRow++;
                 QStandardItem *curItem =itemSimulationRoot->child(prexIndex,0);
@@ -11921,7 +11922,6 @@ bool SimulationManager::COSTAMP_addProcessParameters()
                 data.setValue(Property::loadDefinition_tabularData);
                 Property prop_loadMagnitude("Magnitude",data,Property::PropertyGroup_Definition);
                 curNode->replaceProperty("Magnitude",prop_loadMagnitude);
-                curNode->getModel()->blockSignals(false);
                 nBpressure++;
                 curNode->getModel()->blockSignals(false);
             }
@@ -11932,8 +11932,7 @@ bool SimulationManager::COSTAMP_addProcessParameters()
             {
                 this->createSimulationNode(SimulationNodeClass::nodeType_modelChange);
                 modelChangeIndex = curRow;
-                cout<<"curRow= "<<modelChangeIndex<<endl;
-
+                cout<<"curRow Model Change= "<<modelChangeIndex<<endl;
                 curRow++;
                 QStandardItem *curItem =itemSimulationRoot->child(modelChangeIndex,0);
                 SimulationNodeClass *curNode = curItem->data(Qt::UserRole).value<SimulationNodeClass*>();
@@ -12336,7 +12335,7 @@ void SimulationManager::setTheActiveAnalysisBranch()
     //! "Solution information"
     //! a post processing item
     //! -----------------------
-    if(theCurrentNode->isSolutionInformation() || theCurrentNode->isAnalysisResult())
+    if(theCurrentNode->isSolutionInformation() || theCurrentNode->isAnalysisResult()|| theCurrentNode->isChildSimulationSetUpNode())
     {
         myActiveAnalysisBranch = theCurrentItem->parent()->parent();
         theActiveAnalysis_old = myActiveAnalysisBranch;
@@ -13431,7 +13430,7 @@ void SimulationManager::deleteDataSourcesFromModel()
     for(int n=0; n<NbItems; n++)
     {
         SimulationNodeClass *curNode = items[n]->data(Qt::UserRole).value<SimulationNodeClass*>();
-        if(curNode->isSimulationSetUpNode())
+        if(curNode->isSimulationSetUpNode()  || curNode->isChildSimulationSetUpNode())
         {
             bool isDone = curNode->removeProperty("Mesh data sources");
             if(isDone)

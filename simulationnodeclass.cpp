@@ -1344,9 +1344,9 @@ bool SimulationNodeClass::isSimulationSetUpNode()
             myNodeType == SimulationNodeClass::nodeType_structuralAnalysisBoundaryContidion_FixedSupport ||
             myNodeType == SimulationNodeClass::nodeType_structuralAnalysisThermalCondition ||
             myNodeType == SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_ImportedTemperatureDistribution ||
-            myNodeType == SimulationNodeClass::nodeType_importedBodyScalar ||
             myNodeType == SimulationNodeClass::nodeType_mapper ||
-            myNodeType == SimulationNodeClass::nodeType_modelChange)
+            myNodeType == SimulationNodeClass::nodeType_modelChange ||
+            myNodeType == SimulationNodeClass::nodeType_OpenFoamScalarData)
         return true;
 
 #ifdef COSTAMP_VERSION
@@ -1355,6 +1355,20 @@ bool SimulationNodeClass::isSimulationSetUpNode()
 
     return false;
 }
+
+//! -------------------------------------
+//! function: isChildSimulationSetUpNode
+//! details:
+//! -------------------------------------
+bool SimulationNodeClass::isChildSimulationSetUpNode()
+{
+    if(myNodeType == SimulationNodeClass::nodeType_importedBodyScalar ||
+            myNodeType == SimulationNodeClass::nodeType_OpenFoamScalarData
+            )
+        return true;
+    return false;
+}
+
 
 //! -----------------------------
 //! function: isAnalysisSettings
