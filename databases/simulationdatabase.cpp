@@ -1943,9 +1943,15 @@ void simulationDataBase::createStructuralAnalysisRootNode()
 
     name = "Time step builder";
 
+    //! props suppression status
+    data.setValue(Property::SuppressionStatus_Active);
+    Property prop_ss("Suppressed",data,Property::PropertyGroup_Definition);
+    props.push_back(prop_ss);
+
+    //! props time hystory file
     data.setValue(QString(""));
-    Property prop_suppressionStatus("Time history file",data,Property::PropertyGroup_Definition);
-    props.push_back(prop_suppressionStatus);
+    Property prop_timeHystory("Time history file",data,Property::PropertyGroup_Definition);
+    props.push_back(prop_timeHystory);
 
     SimulationNodeClass *node = new SimulationNodeClass(name,SimulationNodeClass::nodeType_timeStepBuilder,props);
 

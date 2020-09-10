@@ -34,9 +34,11 @@ public:
 
     //! set progress indicator
     void setProgressIndicator(QProgressIndicator *aProgressIndicator) { myProgressIndicator = aProgressIndicator; }
+
 #ifdef COSTAMP_VERSION
-    void setTimeFolders(const std::vector<double> timeFolders)
-    {myTimeFolders = timeFolders;}
+    void setTimeFolders(const std::vector<double> &timeFolders)
+    {myTimeFolders = timeFolders;
+    cout<<"timeFolder size "<<myTimeFolders.size()<<endl;}
 #endif
 private slots:
 

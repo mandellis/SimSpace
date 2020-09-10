@@ -10395,6 +10395,15 @@ bool SimulationManager::translateOpenFoamScalarData()
     theItem = theCurNode->getPropertyItem("Split data");
     int fileMode = theItem->data(Qt::UserRole).value<Property>().getData().toInt();
 
+#ifdef COSTAMP_VERSION
+    //! ----------------------------------------------------
+    //! get the timeList
+    //! ----------------------------------------------------
+    SimulationNodeClass *tsbNode = myTreeView->currentIndex().parent().parent().child(1,0).data(Qt::UserRole).value<SimulationNodeClass*>();
+    const QVector<double> &tSbList = tsbNode->getPropertyValue<QVector<double>>("Time list");
+    cout<<" tsbList size "<<tSbList.size()<<endl;
+#endif
+
     if(sourceDirectory.isEmpty() || targetDirectory.isEmpty()) return false;
 
     //! ---------------------------
@@ -10405,10 +10414,12 @@ bool SimulationManager::translateOpenFoamScalarData()
     //! ---------------
     //! another thread
     //! ---------------
-    openFoamController *anOpenFoamController = new openFoamController(sourceDirectory,targetDirectory,fileMode,aProgressIndicator,this);
+    openFoamController *anOpenFoamController = new openFoamController(sourceDirectory,targetDirectory,fileMode,
+                                                                      aProgressIndicator,this);
 
 #ifdef COSTAMP_VERSION
-    anOpenFoamController->setTimeFolders(tSbList);
+    anOpenFoamController->setTimeFolders(tSbList.toStdVector());
+    cout<<"tsbList size "<<tSbList.size()<<endl;
 #endif
 
     //! --------------------------------------------------------------------------
@@ -11691,6 +11702,7 @@ void SimulationManager::COSTAMP_startTimeStepBuilder()
     QProcess *tsbProcess = new QProcess(this);
     tsbProcess->start(program,arguments);
     tsbProcess->waitForFinished(-1);
+
     //! -------------------------------------------
     //! remove previous items if present. To do...
     //! -------------------------------------------
@@ -11788,7 +11800,7 @@ bool SimulationManager::COSTAMP_addProcessParameters()
                 }
             }
         is.close();
-        tSbList = curTime;
+        //tSbList = curTime;
         QVariant data;
         int closureIndex, prexIndex, modelChangeIndex,tSbIndex,mapperIndex;
         closureIndex = -1;
@@ -11854,8 +11866,11 @@ bool SimulationManager::COSTAMP_addProcessParameters()
         data.setValue(0);       //! split in single file
         Property property_split("Split data",data,Property::PropertyGroup_OutputSettings);
         ofNode->replaceProperty("Split data",property_split);
+        //! Time list
+        data.setValue(QVector<double>::fromStdVector(curTime));
+        Property property_timeList("Time list",data,Property::PropertyGroup_Definition);
+        tsbNode->replaceProperty("Time list",property_timeList);
         ofNode->getModel()->blockSignals(false);
-
         myTreeView->setCurrentIndex(itemSimulationRoot->index().child(mapperIndex,0));
         this->createSimulationNode(SimulationNodeClass::nodeType_importedBodyScalar);
         myTreeView->setCurrentIndex(mapperItem->index().child(1,0));
@@ -12607,6 +12622,7 @@ void SimulationManager::generateBoundaryConditionsMeshDS(bool computeDual)
 
     for(int n=1; n<NbRows-1; n++) //skip the analysis settings item
     {
+
         std::vector<GeometryTag> patchConformingTags;
         std::vector<GeometryTag> nonPatchConformingTags;
         //! -------------------

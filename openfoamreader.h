@@ -17,6 +17,7 @@
 #include <fstream>
 //! Custom
 #include <customtablemodel.h>
+#include <simulationnodeclass.h>
 
 using namespace std;
 
@@ -167,7 +168,7 @@ signals:
 public slots:
 
     //! perform
-    bool perform();
+    bool perform(SimulationNodeClass *OFnode);
 
     //! timer
     void updateTimer();

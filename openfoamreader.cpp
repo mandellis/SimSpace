@@ -203,7 +203,7 @@ void OpenFoamReader::setSourceDir(const QString &theSourceDir)
 //! function: perform
 //! details:
 //! ------------------
-bool OpenFoamReader::perform()
+bool OpenFoamReader::perform(SimulationNodeClass *OFnode)
 {
     cout<<"OpenFoamReader::perform()->____function called____"<<endl;
     cout<<"OpenFoamReader::perform()->____"<<mySourceDir.toStdString()<<"____"<<endl;
@@ -239,13 +239,15 @@ bool OpenFoamReader::perform()
             cout<<"____found \"Casting0\" in data: jumping over it____"<<endl;
             continue;
         }
+        //! retrieve the time list from the TSB
+        const QVector<double> timeList = OFnode->getPropertyValue<QVector<double>>("Time list");
+        myTimeFolders = timeList.toStdVector();
         int nBstep = int(myTimeFolders.size());
         for(int j=0;j<nBstep;j++)
         {
-            cout<<"____tag00____"<<endl;
-
             double endTime = myTimeFolders.at(j);
             QString dirTime = QString("%1").arg(endTime,0,'g',-1);
+            cout<<"time "<<endTime<<" dirTime "<<dirTime.toStdString()<<endl;
             if(entriesInfo.at(i).isDir() && directoryList.at(i) == dirTime)
             {
                 directoryListFiltered.append(directoryList.at(i));

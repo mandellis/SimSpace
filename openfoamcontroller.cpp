@@ -43,13 +43,13 @@ openFoamController::openFoamController(const QString &sourceDirPath,
 
 #ifdef COSTAMP_VERSION
     OFReader->setTimeFolders(myTimeFolders);
+    cout<<"time folder size "<<myTimeFolders.size()<<endl;
 #endif
     //! -----------------------------------
     //! connection for starting the thread
     //! -----------------------------------
-    disconnect(this,SIGNAL(operate(SimulationNodeClass*)),OFReader,SLOT(perform()));
-    connect(this,SIGNAL(operate(SimulationNodeClass*)),OFReader,SLOT(perform()));
-
+    disconnect(this,SIGNAL(operate(SimulationNodeClass*)),OFReader,SLOT(perform(SimulationNodeClass*)));
+    connect(this,SIGNAL(operate(SimulationNodeClass*)),OFReader,SLOT(perform(SimulationNodeClass*)));
     connect(this,SIGNAL(operate(SimulationNodeClass*)),this,SLOT(lockNode(SimulationNodeClass*)));
 
     //! ------------------------------------------------------------------------------------
