@@ -176,6 +176,18 @@ QVariant QExtendedStandardItem::data(int role) const
             else data.setValue(QString("%1").arg(dtm.size()));
             return data;
         }
+#ifdef COSTAMP_VERSION
+        //! --------------------
+        //! "Discrete time map"
+        //! --------------------
+        if(name=="Time list")
+        {
+            QVector<double> timeList = QStandardItem::data(Qt::UserRole).value<Property>().getData().value<QVector<double>>();
+            if(timeList.size()==0) data.setValue(QString("Empty"));
+            else data.setValue(QString("%1").arg(timeList.size()));
+            return data;
+        }
+#endif
         //! ---------------
         //! "Solver output
         //! ---------------

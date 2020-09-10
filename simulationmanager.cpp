@@ -603,8 +603,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 emit requestShowAllBodies();
                 emit requestHideAllResults();
                 emit requestHideSlicedMeshes();
-                this->changeColor();
-
+                //this->changeColor();
                 //! switch the tab
                 emit requestSetActiveCentralTab("maingwindow");
             }
@@ -938,13 +937,17 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 //! set the model
                 //! --------------
                 QModelIndex index_analysisSettings = mainTreeTools::getAnalysisSettingsItemFromCurrentItem(myTreeView)->index();
+                cout<<"tag00"<<endl;
+
                 emit requestTabularData(index_analysisSettings);
+                cout<<"tag01"<<endl;
 
                 //! ---------------------------------------------------------------------
                 //! show the first row with Time = 0, apart from the item "Model change"
                 //! ---------------------------------------------------------------------
                 if(theNodeType==SimulationNodeClass::nodeType_modelChange) emit requestHideFirstRow();
                 else emit requestShowFirstRow();
+                cout<<"tag02"<<endl;
 
                 //! -----------------------------------------------------------
                 //! calculate the number of columns to show => in the table <=
@@ -953,6 +956,8 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 columnsToShow << TABULAR_DATA_STEP_NUMBER_COLUMN << TABULAR_DATA_STEP_END_TIME_COLUMN << mainTreeTools::getColumnsToRead(myTreeView);
                 if(columnsToShow.length()>=3)
                 {
+                    cout<<"tag03"<<endl;
+
                     emit requestShowColumns(columnsToShow);
 
                     //! ------------------------------------
@@ -964,9 +969,11 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                     //for(int k=0; k<columnsToShow.length(); k++) cout<<"____column: "<<columnsToShow[k]<<"____"<<endl;
                     emit requestShowGraph(tabData,columnsToShow);
                 }
-
+cout<<"tag04"<<endl;
                 bool isDone = markerBuilder::addMarker(this->getCurrentNode(), mySimulationDataBase);
                 if(isDone == true) this->displayMarker();
+                cout<<"tag05"<<endl;
+
             }
                 break;
 
@@ -1527,6 +1534,7 @@ void SimulationManager::deleteItem(QList<QModelIndex> indexesList)
                     QStandardItem *setUpItem = analysisRoot->child(i,0);
                     SimulationNodeClass *nodeSetUp = setUpItem->data(Qt::UserRole).value<SimulationNodeClass*>();
                     if(nodeSetUp->isSimulationSetUpNode()== false) return;
+                    if(nodeSetUp->isChildSimulationSetUpNode()== false) return;
 
                     //! --------------------------------------------------------------------
                     //! if a named selection is contained replace with a geometry selection
@@ -6596,7 +6604,7 @@ void SimulationManager::ChangeElementControl()
         }
     }
 }
-
+/*
 //! ----------------------
 //! function: changeColor
 //! details:
@@ -6679,8 +6687,8 @@ void SimulationManager::changeColor()
         emit requestApplyCustomColor(subShapesMap,aColor,true);
     }
 }
+*/
 
-/*
 //! ----------------------
 //! function: changeColor
 //! details:
@@ -6958,7 +6966,7 @@ void SimulationManager::changeColor()
     emit requestDisplayShapeCopy(list1,list2,color1,color2,options);
     //cout<<"SimulationManager::changeColor()->____exiting____"<<endl;
 }
-*/
+
 
 //! -----------------------------------------------
 //! function: swapContact
@@ -7911,8 +7919,9 @@ QExtendedStandardItem* SimulationManager::getAnalysisSettingsItemFromCurrentItem
 
     //! ---------------------------------------------------
     //! case 3: the current item is a post processing item
+    //! or a child of a simulation setup node
     //! ---------------------------------------------------
-    if(curNode->isAnalysisResult() || curNode->isSolutionInformation())
+    if(curNode->isAnalysisResult() || curNode->isSolutionInformation() || curNode->isChildSimulationSetUpNode())
     {
         QStandardItem *item = curItem->parent()->parent()->child(0,0);
         return static_cast<QExtendedStandardItem*>(item);
@@ -10386,6 +10395,15 @@ bool SimulationManager::translateOpenFoamScalarData()
     theItem = theCurNode->getPropertyItem("Split data");
     int fileMode = theItem->data(Qt::UserRole).value<Property>().getData().toInt();
 
+/*#ifdef COSTAMP_VERSION
+    //! ----------------------------------------------------
+    //! get the timeList
+    //! ----------------------------------------------------
+    SimulationNodeClass *tsbNode = myTreeView->currentIndex().parent().parent().child(1,0).data(Qt::UserRole).value<SimulationNodeClass*>();
+    const QVector<double> &tSbList = tsbNode->getPropertyValue<QVector<double>>("Time list");
+    cout<<" tsbList size "<<tSbList.size()<<endl;
+#endif*/
+
     if(sourceDirectory.isEmpty() || targetDirectory.isEmpty()) return false;
 
     //! ---------------------------
@@ -10396,11 +10414,13 @@ bool SimulationManager::translateOpenFoamScalarData()
     //! ---------------
     //! another thread
     //! ---------------
-    openFoamController *anOpenFoamController = new openFoamController(sourceDirectory,targetDirectory,fileMode,aProgressIndicator,this);
-
+    openFoamController *anOpenFoamController = new openFoamController(/*sourceDirectory,targetDirectory,*/fileMode,
+                                                                      aProgressIndicator,this);
+/*
 #ifdef COSTAMP_VERSION
-    anOpenFoamController->setTimeFolders(tSbList);
-#endif
+    anOpenFoamController->setTimeFolders(tSbList.toStdVector());
+    cout<<"tsbList size "<<tSbList.size()<<endl;
+#endif*/
 
     //! --------------------------------------------------------------------------
     //! start the thread - this will also lock the items within the detail viewer
@@ -11670,8 +11690,14 @@ void SimulationManager::COSTAMP_startTimeStepBuilder()
     cout<<"SimulationManager::startTimeStepBuilder()->____function called____"<<endl;
     SimulationNodeClass *curNode = myTreeView->currentIndex().data(Qt::UserRole).value<SimulationNodeClass*>();
     const QString &timeHistoryFileLoc = curNode->getPropertyValue<QString>("Time history file");    
-    QString program = QString("D:/Work/Qt/build_pro26.0_OCC7.3.0/release/TimeStepBuilder.exe");
+    QString program = QString("D:/Work/Qt/build_simSpace/release/TimeStepBuilder.exe");
     QStringList arguments;
+
+    QStandardItem *itemSimulationRoot = mainTreeTools::getCurrentSimulationRoot(myTreeView);
+    QStandardItem *itemSolution = itemSimulationRoot->child(itemSimulationRoot->rowCount()-1);
+    SimulationNodeClass *nodeSolution = itemSolution->data(Qt::UserRole).value<SimulationNodeClass*>();
+    QString myCurrentProjectDir = nodeSolution->getPropertyValue<QString>("Project files dir");
+
     arguments<<myCurrentProjectDir<<timeHistoryFileLoc;
     QProcess *tsbProcess = new QProcess(this);
     tsbProcess->start(program,arguments);
@@ -11700,6 +11726,11 @@ bool SimulationManager::COSTAMP_addProcessParameters()
     //tSbList.clear();
 
     //! Path of the configuration file
+    QStandardItem *itemSimulationRoot = mainTreeTools::getCurrentSimulationRoot(myTreeView);
+    QStandardItem *itemSolution = itemSimulationRoot->child(itemSimulationRoot->rowCount()-1);
+    SimulationNodeClass *nodeSolution = itemSolution->data(Qt::UserRole).value<SimulationNodeClass*>();
+    QString myCurrentProjectDir = nodeSolution->getPropertyValue<QString>("Project files dir");
+
     QString dirPath = myCurrentProjectDir;
     cout<<"SimulationManager::COSTAMP_addProcessParameters()->____dirPath "<<myCurrentProjectDir.toStdString()<<endl;
     QString tsbFile= dirPath+"/timepoints.out";
@@ -11707,13 +11738,14 @@ bool SimulationManager::COSTAMP_addProcessParameters()
     SimulationNodeClass *tsbNode = myTreeView->currentIndex().data(Qt::UserRole).value<SimulationNodeClass*>();
     QString &timeHistoryFileLoc = tsbNode->getPropertyValue<QString>("Time history file");
     timeHistoryFileLoc.chop(timeHistoryFileLoc.split("/").last().length());
+    cout<<"SimulationManager::COSTAMP_addProcessParameters()->____ini file "<<timeHistoryFileLoc.toStdString()<<endl;
 
     //! Path of the OF mapped data
     QDir dir;
     dir.current();
-    dir.cd(timeHistoryFileLoc);
+    dir.cd(dirPath);
     dir.mkdir("Mapped");
-    const QString mappedFilePath = timeHistoryFileLoc+"Mapped";
+    const QString mappedFilePath = dirPath+"/Mapped";
     cout<<"SimulationManager::COSTAMP_addProcessParameters()->____config file "<<tsbFile.toStdString()<<endl;
     //! ---------------------------------
     //! read the configuration file
@@ -11725,6 +11757,7 @@ bool SimulationManager::COSTAMP_addProcessParameters()
         return false;
     else
     {
+        cout<<"SimulationManager::COSTAMP_addProcessParameters()->____config file "<<tsbFile.toStdString()<<"opened"<<endl;
         is.open(tsbFile.toStdString());
         std::string val;
         //! timeStepType
@@ -11733,6 +11766,8 @@ bool SimulationManager::COSTAMP_addProcessParameters()
         //!  2: OpenAssembly,
         std::vector<int> timeStepNr,type;
         std::vector<double>  prevTime,curTime;
+        double closureForceValue, innerPressureValue;
+        int closureForceDir;
         int n=0;
         if(is.is_open())
             while(!is.eof())
@@ -11749,23 +11784,37 @@ bool SimulationManager::COSTAMP_addProcessParameters()
                     curTime.push_back(cTime);
                     n++;
                 }
+                else
+                {
+                    double a,b;
+                    int c;
+                    std::getline(is,val);
+                    std::getline(is,val);
+                    if(2 == sscanf(val.c_str(),"%d%lf",&c,&a))
+                    {
+                        closureForceDir = c;
+                        closureForceValue = a;
+                    }
+                    if(1 ==sscanf(val.c_str(),"%lf",&b)) innerPressureValue = b;
+                }
             }
         is.close();
-        tSbList = curTime;
+        //tSbList = curTime;
         QVariant data;
         int closureIndex, prexIndex, modelChangeIndex,tSbIndex,mapperIndex;
         closureIndex = -1;
         prexIndex = -1;
         modelChangeIndex = -1;
 
+        //QStandardItem *theStaticRoot = myTreeView->currentIndex().parent().data(Qt::UserRole).value<QStandardItem*>();
         //! ------------------------------------------------------------
         //! for "createSimulationNode()" which needs the "current" item
         //! ------------------------------------------------------------
-        myTreeView->setCurrentIndex(StaticAnalysis_RootItem->index().child(0,0));
+        myTreeView->setCurrentIndex(itemSimulationRoot->index().child(0,0));
         int curRow = 1;
         tSbIndex = curRow;
         cout<<"curRow= "<<tSbIndex<<endl;
-        SimulationNodeClass *nodeAnalysisSettings = StaticAnalysis_RootItem->child(0,0)->data(Qt::UserRole).value<SimulationNodeClass*>();
+        SimulationNodeClass *nodeAnalysisSettings = itemSimulationRoot->child(0,0)->data(Qt::UserRole).value<SimulationNodeClass*>();
         CustomTableModel *tabData = nodeAnalysisSettings->getTabularDataModel();
 
         //! ------------------------------------------
@@ -11774,6 +11823,7 @@ bool SimulationManager::COSTAMP_addProcessParameters()
         //! -------------------------------------------
         nodeAnalysisSettings->getModel()->blockSignals(true);
         int NbTstep = int(timeStepNr.size());
+        data.setValue(NbTstep);           //! the default Number of steps
         Property property_numberOfSteps("Number of steps",data,Property::PropertyGroup_StepControls);
         nodeAnalysisSettings->replaceProperty("Number of steps",property_numberOfSteps);
         this->resizeTabularData();
@@ -11782,7 +11832,6 @@ bool SimulationManager::COSTAMP_addProcessParameters()
         for(int i=0; i<NbTstep;i++)
         {
             tabData->setDataRC(curTime.at(i),i+1,1,Qt::EditRole);
-            data.setValue(NbTstep);           //! the default Number of steps
         }
         curRow++;
         cout<<"curRow= "<<curRow<<endl;
@@ -11798,27 +11847,33 @@ bool SimulationManager::COSTAMP_addProcessParameters()
         //! -------------------------------
         this->createSimulationNode(SimulationNodeClass::nodeType_mapper);
         mapperIndex = curRow;
-        cout<<"curRow= "<<mapperIndex<<endl;
+        cout<<"curRow of mapper Index= "<<mapperIndex<<endl;
         curRow++;
-        myTreeView->setCurrentIndex(StaticAnalysis_RootItem->index().child(mapperIndex,0));
+        myTreeView->setCurrentIndex(itemSimulationRoot->index().child(mapperIndex,0));
         SimulationNodeClass *mapperNode = myTreeView->currentIndex().data(Qt::UserRole).value<SimulationNodeClass*>();
         QExtendedStandardItem *mapperItem = this->getTreeItem(mapperNode->getType());
         this->createSimulationNode(SimulationNodeClass::nodeType_OpenFoamScalarData);
         myTreeView->setCurrentIndex(mapperItem->index().child(0,0));
         SimulationNodeClass *ofNode = myTreeView->currentIndex().data(Qt::UserRole).value<SimulationNodeClass*>();
         ofNode->getModel()->blockSignals(true);
-        data.setValue(mappedFilePath);       //! target directory
+        //! target directory
+        data.setValue(mappedFilePath);
         Property property_targetDir("Target directory",data,Property::PropertyGroup_Definition);
         ofNode->replaceProperty("Target directory",property_targetDir);
-        data.setValue(timeHistoryFileLoc);       //! source directory
+        //! source directory
+        data.setValue(timeHistoryFileLoc);
         Property property_sourceDir("Source directory",data,Property::PropertyGroup_Definition);
         ofNode->replaceProperty("Source directory",property_sourceDir);
-        data.setValue(0);       //! split in single file
+        //! split in single file
+        data.setValue(0);
         Property property_split("Split data",data,Property::PropertyGroup_OutputSettings);
         ofNode->replaceProperty("Split data",property_split);
+        //! Time list
+        data.setValue(QVector<double>::fromStdVector(curTime));
+        Property property_timeList("Time list",data,Property::PropertyGroup_Definition);
+        ofNode->replaceProperty("Time list",property_timeList);
         ofNode->getModel()->blockSignals(false);
-
-        myTreeView->setCurrentIndex(StaticAnalysis_RootItem->index().child(mapperIndex,0));
+        myTreeView->setCurrentIndex(itemSimulationRoot->index().child(mapperIndex,0));
         this->createSimulationNode(SimulationNodeClass::nodeType_importedBodyScalar);
         myTreeView->setCurrentIndex(mapperItem->index().child(1,0));
         SimulationNodeClass *importedBSNode = myTreeView->currentIndex().data(Qt::UserRole).value<SimulationNodeClass*>();
@@ -11854,20 +11909,19 @@ bool SimulationManager::COSTAMP_addProcessParameters()
         int nBclosure = 0;
         int nBpressure = 0;
         int nBopen = 0;
-        myTreeView->setCurrentIndex(StaticAnalysis_RootItem->index().child(0,0));
+        myTreeView->setCurrentIndex(itemSimulationRoot->index().child(0,0));
         for(int i=0; i<NbTstep;i++)
         {
-            //! ------------------------------
-            //! create the force closure node
-            //! ------------------------------
+            //! ----------------------------------
+            //! create the force closureForce node
+            //! ----------------------------------
             if(type.at(i) == 0 && nBclosure == 0)
             {
                 this->createSimulationNode(SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RemoteForce);
                 closureIndex = curRow;
-                cout<<"curRow= "<<closureIndex<<endl;
-
+                cout<<"curRow Closure= "<<closureIndex<<endl;
                 curRow++;
-                QStandardItem *curItem =StaticAnalysis_RootItem->child(closureIndex,0);
+                QStandardItem *curItem =itemSimulationRoot->child(closureIndex,0);
                 SimulationNodeClass *curNode = curItem->data(Qt::UserRole).value<SimulationNodeClass*>();
                 curNode->getModel()->blockSignals(true);
                 QString newName1="Closure Force";
@@ -11877,6 +11931,16 @@ bool SimulationManager::COSTAMP_addProcessParameters()
                 data.setValue(Property::loadDefinition_tabularData);
                 Property prop_loadMagnitude("Magnitude",data,Property::PropertyGroup_Definition);
                 curNode->replaceProperty("Magnitude",prop_loadMagnitude);
+                QVector<double> vec;
+                if(closureForceDir==1)
+                {vec.push_back(1.0);vec.push_back(0.0);vec.push_back(0.0);}
+                if(closureForceDir==2)
+                {vec.push_back(0.0);vec.push_back(1.0);vec.push_back(0.0);}
+                if(closureForceDir==3)
+                {vec.push_back(0.0);vec.push_back(0.0);vec.push_back(1.0);}
+                data.setValue(vec);
+                Property prop_loadDirection("Direction",data,Property::PropertyGroup_Definition);
+                curNode->replaceProperty("Direction",prop_loadDirection);
                 nBclosure++;
                 curNode->getModel()->blockSignals(false);
             }
@@ -11887,10 +11951,10 @@ bool SimulationManager::COSTAMP_addProcessParameters()
             {
                 this->createSimulationNode(SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Pressure);
                 prexIndex = curRow;
-                cout<<"curRow= "<<prexIndex<<endl;
+                cout<<"curRow Pressure= "<<prexIndex<<endl;
 
                 curRow++;
-                QStandardItem *curItem =StaticAnalysis_RootItem->child(prexIndex,0);
+                QStandardItem *curItem =itemSimulationRoot->child(prexIndex,0);
                 SimulationNodeClass *curNode = curItem->data(Qt::UserRole).value<SimulationNodeClass*>();
                 curNode->getModel()->blockSignals(true);
                 QString newName2="Inner Pressure";
@@ -11900,7 +11964,6 @@ bool SimulationManager::COSTAMP_addProcessParameters()
                 data.setValue(Property::loadDefinition_tabularData);
                 Property prop_loadMagnitude("Magnitude",data,Property::PropertyGroup_Definition);
                 curNode->replaceProperty("Magnitude",prop_loadMagnitude);
-                curNode->getModel()->blockSignals(false);
                 nBpressure++;
                 curNode->getModel()->blockSignals(false);
             }
@@ -11911,10 +11974,9 @@ bool SimulationManager::COSTAMP_addProcessParameters()
             {
                 this->createSimulationNode(SimulationNodeClass::nodeType_modelChange);
                 modelChangeIndex = curRow;
-                cout<<"curRow= "<<modelChangeIndex<<endl;
-
+                cout<<"curRow Model Change= "<<modelChangeIndex<<endl;
                 curRow++;
-                QStandardItem *curItem =StaticAnalysis_RootItem->child(modelChangeIndex,0);
+                QStandardItem *curItem =itemSimulationRoot->child(modelChangeIndex,0);
                 SimulationNodeClass *curNode = curItem->data(Qt::UserRole).value<SimulationNodeClass*>();
                 curNode->getModel()->blockSignals(true);
                 data.setValue(1);   //! contact
@@ -11936,50 +11998,50 @@ bool SimulationManager::COSTAMP_addProcessParameters()
             {
                 if(closureIndex!=-1)
                 {
-                    myTreeView->setCurrentIndex(StaticAnalysis_RootItem->index().child(closureIndex,0));
-                    double force = 18000000.0;
+                    myTreeView->setCurrentIndex(itemSimulationRoot->index().child(closureIndex,0));
+                    double force = closureForceValue;
                     QList<int> columns = mainTreeTools::getColumnsToRead(myTreeView);
                     tabData->setDataRC(force,stepNb,columns.at(0),Qt::EditRole);
                     cout<<"closureIndex "<<closureIndex<<" column n "<<columns.at(0)<<endl;
                 }
                 if(type.at(i)==0 && prexIndex!=-1)
                 {
-                    myTreeView->setCurrentIndex(StaticAnalysis_RootItem->index().child(prexIndex,0));
+                    myTreeView->setCurrentIndex(itemSimulationRoot->index().child(prexIndex,0));
                     double prex = 0;
                     QList<int> columns = mainTreeTools::getColumnsToRead(myTreeView);
                     tabData->setDataRC(prex,stepNb,columns.at(0),Qt::EditRole);
                 }
                 if(type.at(i)==1)
                 {
-                    myTreeView->setCurrentIndex(StaticAnalysis_RootItem->index().child(prexIndex,0));
-                    double prex = 60;
+                    myTreeView->setCurrentIndex(itemSimulationRoot->index().child(prexIndex,0));
+                    double prex = innerPressureValue;
                     QList<int> columns = mainTreeTools::getColumnsToRead(myTreeView);
                     tabData->setDataRC(prex,stepNb,columns.at(0),Qt::EditRole);
                 }
             }
             else if(type.at(i)==2)
             {
-                myTreeView->setCurrentIndex(StaticAnalysis_RootItem->index().child(modelChangeIndex,0));
+                myTreeView->setCurrentIndex(itemSimulationRoot->index().child(modelChangeIndex,0));
                 QList<int> columns = mainTreeTools::getColumnsToRead(myTreeView);
                 int mChangeValue=-1;
                 tabData->setDataRC(mChangeValue,stepNb,columns.at(0),Qt::EditRole);
                 if(prexIndex!=-1)
                 {
-                    myTreeView->setCurrentIndex(StaticAnalysis_RootItem->index().child(prexIndex,0));
+                    myTreeView->setCurrentIndex(itemSimulationRoot->index().child(prexIndex,0));
                     double prex = 0;
                     QList<int> columns = mainTreeTools::getColumnsToRead(myTreeView);
                     tabData->setDataRC(prex,stepNb,columns.at(0),Qt::EditRole);
                 }
                 if(closureIndex!=-1)
                 {
-                    myTreeView->setCurrentIndex(StaticAnalysis_RootItem->index().child(closureIndex,0));
+                    myTreeView->setCurrentIndex(itemSimulationRoot->index().child(closureIndex,0));
                     double load = 0;
                     QList<int> columns = mainTreeTools::getColumnsToRead(myTreeView);
                     tabData->setDataRC(load,stepNb,columns.at(0),Qt::EditRole);
                 }
             }
         }
-        myTreeView->setCurrentIndex(StaticAnalysis_RootItem->index().child(0,0));
+        myTreeView->setCurrentIndex(itemSimulationRoot->index().child(0,0));
         return true;
     }
 }
@@ -12315,7 +12377,7 @@ void SimulationManager::setTheActiveAnalysisBranch()
     //! "Solution information"
     //! a post processing item
     //! -----------------------
-    if(theCurrentNode->isSolutionInformation() || theCurrentNode->isAnalysisResult())
+    if(theCurrentNode->isSolutionInformation() || theCurrentNode->isAnalysisResult()|| theCurrentNode->isChildSimulationSetUpNode())
     {
         myActiveAnalysisBranch = theCurrentItem->parent()->parent();
         theActiveAnalysis_old = myActiveAnalysisBranch;
@@ -12562,6 +12624,7 @@ void SimulationManager::generateBoundaryConditionsMeshDS(bool computeDual)
 
     for(int n=1; n<NbRows-1; n++) //skip the analysis settings item
     {
+
         std::vector<GeometryTag> patchConformingTags;
         std::vector<GeometryTag> nonPatchConformingTags;
         //! -------------------
@@ -13410,7 +13473,7 @@ void SimulationManager::deleteDataSourcesFromModel()
     for(int n=0; n<NbItems; n++)
     {
         SimulationNodeClass *curNode = items[n]->data(Qt::UserRole).value<SimulationNodeClass*>();
-        if(curNode->isSimulationSetUpNode())
+        if(curNode->isSimulationSetUpNode()  || curNode->isChildSimulationSetUpNode())
         {
             bool isDone = curNode->removeProperty("Mesh data sources");
             if(isDone)

@@ -386,6 +386,9 @@ public:
     //! is simulaion set up node
     bool isSimulationSetUpNode();
 
+    //! is child simulation set up node
+    bool isChildSimulationSetUpNode();
+
     //! is Solution node
     bool isSolution();
 

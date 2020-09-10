@@ -819,7 +819,7 @@ void contextMenuBuilder::buildStructuralAnalysisContextMenu(QMenu *contextMenu, 
     //! --------------------------------------------
     //! add the button Run for the Open Foam reader
     //! --------------------------------------------
-    if(nodeType==SimulationNodeClass::nodeType_OpenFoamScalarData)
+    if(nodeType==SimulationNodeClass::nodeType_OpenFoamScalarData || nodeType==SimulationNodeClass::nodeType_importedBodyScalar)
     {
         QAction *actionRun = contextMenu->addAction("Run");
         actionRun->setIcon(QIcon(":/icons/icon_solve.png"));

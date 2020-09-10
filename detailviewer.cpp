@@ -1705,6 +1705,7 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
     if(myCurNode->isSolution()) nodeAnalysisSettings = myCurModelIndex.parent().child(0,0).data(Qt::UserRole).value<SimulationNodeClass*>();
     if(myCurNode->isSolutionInformation()) nodeAnalysisSettings = myCurModelIndex.parent().parent().child(0,0).data(Qt::UserRole).value<SimulationNodeClass*>();
     if(myCurNode->isAnalysisResult()) nodeAnalysisSettings = myCurModelIndex.parent().parent().child(0,0).data(Qt::UserRole).value<SimulationNodeClass*>();
+    if(myCurNode->isChildSimulationSetUpNode()) nodeAnalysisSettings = myCurModelIndex.parent().parent().child(0,0).data(Qt::UserRole).value<SimulationNodeClass*>();
 
     if(nodeAnalysisSettings==Q_NULLPTR)
     {
@@ -1715,6 +1716,7 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
     }
 
     int currentStepNumber = nodeAnalysisSettings->getPropertyValue<int>("Current step number");
+    cerr<<"@- current step number -@  "<<currentStepNumber<<endl;
     tabularDataModel = nodeAnalysisSettings->getTabularDataModel();
 
     //! -------------------------------------------------------------------------------------------------------------------------

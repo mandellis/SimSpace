@@ -633,6 +633,11 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
         //data.setValue(false);
         //Property prop_translate("Translate",data,Property::PropertyGroup_Definition);
         //vecProp.push_back(prop_translate);
+        //! props timeList
+        QVector<double> timeList;
+        data.setValue(timeList);
+        Property prop_timeList("Time list",data,Property::PropertyGroup_Definition);
+        vecProp.push_back(prop_timeList);
 
         //! under ouptup settings
         data.setValue(1);
