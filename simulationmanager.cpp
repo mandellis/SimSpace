@@ -10395,14 +10395,14 @@ bool SimulationManager::translateOpenFoamScalarData()
     theItem = theCurNode->getPropertyItem("Split data");
     int fileMode = theItem->data(Qt::UserRole).value<Property>().getData().toInt();
 
-#ifdef COSTAMP_VERSION
+/*#ifdef COSTAMP_VERSION
     //! ----------------------------------------------------
     //! get the timeList
     //! ----------------------------------------------------
     SimulationNodeClass *tsbNode = myTreeView->currentIndex().parent().parent().child(1,0).data(Qt::UserRole).value<SimulationNodeClass*>();
     const QVector<double> &tSbList = tsbNode->getPropertyValue<QVector<double>>("Time list");
     cout<<" tsbList size "<<tSbList.size()<<endl;
-#endif
+#endif*/
 
     if(sourceDirectory.isEmpty() || targetDirectory.isEmpty()) return false;
 
@@ -10414,13 +10414,13 @@ bool SimulationManager::translateOpenFoamScalarData()
     //! ---------------
     //! another thread
     //! ---------------
-    openFoamController *anOpenFoamController = new openFoamController(sourceDirectory,targetDirectory,fileMode,
+    openFoamController *anOpenFoamController = new openFoamController(/*sourceDirectory,targetDirectory,*/fileMode,
                                                                       aProgressIndicator,this);
-
+/*
 #ifdef COSTAMP_VERSION
     anOpenFoamController->setTimeFolders(tSbList.toStdVector());
     cout<<"tsbList size "<<tSbList.size()<<endl;
-#endif
+#endif*/
 
     //! --------------------------------------------------------------------------
     //! start the thread - this will also lock the items within the detail viewer
@@ -11768,7 +11768,6 @@ bool SimulationManager::COSTAMP_addProcessParameters()
         std::vector<double>  prevTime,curTime;
         double closureForceValue, innerPressureValue;
         int closureForceDir;
-
         int n=0;
         if(is.is_open())
             while(!is.eof())
@@ -11857,19 +11856,22 @@ bool SimulationManager::COSTAMP_addProcessParameters()
         myTreeView->setCurrentIndex(mapperItem->index().child(0,0));
         SimulationNodeClass *ofNode = myTreeView->currentIndex().data(Qt::UserRole).value<SimulationNodeClass*>();
         ofNode->getModel()->blockSignals(true);
-        data.setValue(mappedFilePath);       //! target directory
+        //! target directory
+        data.setValue(mappedFilePath);
         Property property_targetDir("Target directory",data,Property::PropertyGroup_Definition);
         ofNode->replaceProperty("Target directory",property_targetDir);
-        data.setValue(timeHistoryFileLoc);       //! source directory
+        //! source directory
+        data.setValue(timeHistoryFileLoc);
         Property property_sourceDir("Source directory",data,Property::PropertyGroup_Definition);
         ofNode->replaceProperty("Source directory",property_sourceDir);
-        data.setValue(0);       //! split in single file
+        //! split in single file
+        data.setValue(0);
         Property property_split("Split data",data,Property::PropertyGroup_OutputSettings);
         ofNode->replaceProperty("Split data",property_split);
         //! Time list
         data.setValue(QVector<double>::fromStdVector(curTime));
         Property property_timeList("Time list",data,Property::PropertyGroup_Definition);
-        tsbNode->replaceProperty("Time list",property_timeList);
+        ofNode->replaceProperty("Time list",property_timeList);
         ofNode->getModel()->blockSignals(false);
         myTreeView->setCurrentIndex(itemSimulationRoot->index().child(mapperIndex,0));
         this->createSimulationNode(SimulationNodeClass::nodeType_importedBodyScalar);

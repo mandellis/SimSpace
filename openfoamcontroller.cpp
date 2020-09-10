@@ -21,8 +21,8 @@
 //! function: constructor
 //! details:
 //! ----------------------
-openFoamController::openFoamController(const QString &sourceDirPath,
-                                       const QString &targetDirPath,
+openFoamController::openFoamController(/*const QString &sourceDirPath,
+                                       const QString &targetDirPath,*/
                                        int fileMode,
                                        QProgressIndicator *aProgressIndicator,
                                        QObject *parent): QObject(parent)
@@ -32,19 +32,18 @@ openFoamController::openFoamController(const QString &sourceDirPath,
     //! ---------------------
     //! the target directory
     //! ---------------------
-    myTargetDirectory = targetDirPath;
+    //myTargetDirectory = targetDirPath;
 
     //! --------------
     //! Worker thread
     //! --------------
-    OpenFoamReader *OFReader = new OpenFoamReader(sourceDirPath,targetDirPath,fileMode);
+    OpenFoamReader *OFReader = new OpenFoamReader(/*sourceDirPath,targetDirPath,*/fileMode);
     OFReader->setProgressIndicator(myProgressIndicator);
     OFReader->moveToThread(&workerThread);
-
+/*
 #ifdef COSTAMP_VERSION
     OFReader->setTimeFolders(myTimeFolders);
-    cout<<"time folder size "<<myTimeFolders.size()<<endl;
-#endif
+#endif*/
     //! -----------------------------------
     //! connection for starting the thread
     //! -----------------------------------
