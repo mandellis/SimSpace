@@ -222,10 +222,11 @@ bool OpenFoamReader::perform(SimulationNodeClass *OFnode)
     }
     cout<<"OpenFoamReader::perform()->____"<<mySourceDir.toStdString()<<"____"<<endl;
 
+#ifdef COSTAMP_VERSION
     //! retrieve the time list from the node
     const QVector<double> timeList = OFnode->getPropertyValue<QVector<double>>("Time list");
     myTimeFolders = timeList.toStdVector();
-
+#endif
     QDir curDir(mySourceDir);
 
     cout<<(QString("OpenFoamReader::OpenFoamReader->____starting dir: ").append(curDir.absolutePath()).append("____")).toStdString()<<endl;
