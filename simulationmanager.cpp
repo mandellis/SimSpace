@@ -11738,6 +11738,8 @@ bool SimulationManager::COSTAMP_addProcessParameters()
     SimulationNodeClass *tsbNode = myTreeView->currentIndex().data(Qt::UserRole).value<SimulationNodeClass*>();
     QString &timeHistoryFileLoc = tsbNode->getPropertyValue<QString>("Time history file");
     timeHistoryFileLoc.chop(timeHistoryFileLoc.split("/").last().length());
+    timeHistoryFileLoc.chop(timeHistoryFileLoc.split("/").first().length());
+    timeHistoryFileLoc.chop(timeHistoryFileLoc.split("/").last().length());
     cout<<"SimulationManager::COSTAMP_addProcessParameters()->____ini file "<<timeHistoryFileLoc.toStdString()<<endl;
 
     //! Path of the OF mapped data
