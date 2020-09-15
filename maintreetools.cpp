@@ -397,7 +397,7 @@ QStandardItem* mainTreeTools::getCurrentSimulationRoot(QTreeView *treeView)
 
     if(node->isAnalysisRoot()) return curItem;
     if(node->isAnalysisSettings() || node->isSolution() || node->isSimulationSetUpNode()) return curItem->parent();
-    if(node->isAnalysisResult() || node->isChildSimulationSetUpNode()) return curItem->parent()->parent();
+    if(node->isAnalysisResult()) return curItem->parent()->parent();
     return Q_NULLPTR;
 }
 
@@ -626,7 +626,7 @@ void mainTreeTools::getAllBoundaryConditionsTags(QTreeView *tree, int type, std:
             {
                 QStandardItem *itemBC = item->child(j,0);
                 SimulationNodeClass *nodeBC = itemBC->data(Qt::UserRole).value<SimulationNodeClass*>();
-                if(nodeBC->isSimulationSetUpNode()==false || nodeBC->isChildSimulationSetUpNode()) continue;
+                if(nodeBC->isSimulationSetUpNode()==false) continue;
                 std::vector<GeometryTag> BCTags = nodeBC->getPropertyValue<std::vector<GeometryTag>>("Tags");
                 for(int m=0; m<BCTags.size(); m++)
                 {
@@ -678,7 +678,6 @@ SimulationNodeClass* mainTreeTools::getAnalysisSettingsNodeFromIndex(QModelIndex
     if(curNode->isSolution()) nodeAnalysisSettings = curIndex.parent().child(0,0).data(Qt::UserRole).value<SimulationNodeClass*>();
     if(curNode->isSolutionInformation()) nodeAnalysisSettings = curIndex.parent().parent().child(0,0).data(Qt::UserRole).value<SimulationNodeClass*>();
     if(curNode->isAnalysisResult()) nodeAnalysisSettings = curIndex.parent().parent().child(0,0).data(Qt::UserRole).value<SimulationNodeClass*>();
-    if(curNode->isChildSimulationSetUpNode()) nodeAnalysisSettings = curIndex.parent().parent().child(0,0).data(Qt::UserRole).value<SimulationNodeClass*>();
     return nodeAnalysisSettings;
 }
 
@@ -714,7 +713,7 @@ QStandardItem* mainTreeTools::getAnalysisSettingsItemFromCurrentItem(QTreeView *
     //! ---------------------------------------------------
     //! case 3: the current item is a post processing item
     //! ---------------------------------------------------
-    if(curNode->isAnalysisResult() || curNode->isSolutionInformation() || curNode->isChildSimulationSetUpNode())
+    if(curNode->isAnalysisResult() || curNode->isSolutionInformation())
     {
         QStandardItem *item = curItem->parent()->parent()->child(0,0);
         return static_cast<QExtendedStandardItem*>(item);

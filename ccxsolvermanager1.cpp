@@ -91,8 +91,8 @@ void CCXSolverManager1::run()
             emit CCXRunFinished();
             return;
         }
-        //program.append("/ccx_215Pardiso.exe");
-        program.append("/ccx.exe");
+        program.append("/ccx_215Pardiso.exe");
+        //program.append("/ccx.exe");
     }
 
     //! --------------------------
