@@ -1,11 +1,15 @@
 #ifndef RESULTSTOOLBAR_H
 #define RESULTSTOOLBAR_H
 
+//! ---
 //! Qt
+//! ---
 #include <QToolBar>
 #include <QWidget>
 
+//! ----
 //! C++
+//! ----
 #include <iostream>
 using namespace std;
 
@@ -28,26 +32,28 @@ public:
 
 private:
 
-    //! --------
-    //! actions
-    //! --------
+    //! --------------------------------
+    //! type of presentation
+    //! menu for the button and actions
+    //! --------------------------------
+    QPushButtonExtended *typeOfPresentationButton;
+    QMenu *typeOfPresentationMenu;
+
+    QAction *actionUseIsoStrips;
+    QAction *actionUseIsoSurfaces;
+    QAction *actionUseSmoothNodal;
+    QAction *actionUseIsoLines;
+
+    //! --------------------------------
+    //! combined views
+    //! menu for the button and actions
+    //! --------------------------------
+    QPushButtonExtended *combinedViewSelectorButton;
+    QMenu *combinedViewSelectorMenu;
     QAction *actionNoWireframe;
     QAction *actionShowUndeformedWireframe;
     QAction *actionShowUndeformedModel;
     QAction *actionShowElements;
-
-    //! -----------------
-    //! button with menu
-    //! -----------------
-    QPushButtonExtended *combinedViewSelectorButton;
-
-    //! --------------------
-    //! menu for the button
-    //! --------------------
-    QMenu *combinedViewSelectorMenu;
-
-    //! status variable
-    //resultPresentation myResultPresentation;
 
     //! ------------
     //! save status
@@ -66,6 +72,11 @@ private slots:
     void emitRequestShowUndeformedWireframe();
     void emitRequestShowMeshElements();
     void emitRequestUpdatePostObjectScale(double scale);
+
+    void emitRequstUseIsoStrips();
+    void emitRequestUseIsoSurface();
+    void emitRequestUseSmoothNodal();
+    void emitRequestUseIsoLines();
 
     void updateIcon(QAction *action);
 

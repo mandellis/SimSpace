@@ -17,6 +17,7 @@
 //! Qt
 //! ---
 #include <QWidget>
+#include <QPaintEvent>
 
 //! ----
 //! OCC
@@ -28,6 +29,17 @@
 class occPostWidget: public occPreGLWidget
 {
     Q_OBJECT
+
+protected:
+
+    //! the occ context for the results view
+    occHandle(AIS_InteractiveContext) occPostContext;
+
+    //! init
+    virtual void init() override;
+
+    //! paint event
+    virtual void paintEvent(QPaintEvent *e) override;
 
 public:
 
@@ -64,8 +76,10 @@ public slots:
     void createColorBox(double min, double max, int Nintervals);
 
     //! it read the private member myResultPresentation before displaying
-    //void displayResult(postObject &aPostObject);
     void displayResult(sharedPostObject &aPostObject);
+
+    //! display the result when clipping planes are active
+    void clipResult();
 
     void hideAllResults();
 
@@ -79,6 +93,9 @@ public slots:
 
     //! set the status variable
     void updateViewerStatus();
+
+    //! reset
+    virtual void reset() override;
 
 private:
 

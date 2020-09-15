@@ -401,14 +401,10 @@ bool MeshTools::buildColoredMesh(const occHandle(MeshVS_DataSource) &theMeshVS_D
         max = -1e80;
         min = -max;
 
-        //for(QMap<int,double>::const_iterator it = res.cbegin(); it!=res.cend(); it++)
         for(std::map<int,double>::const_iterator it = res.cbegin(); it!=res.cend(); it++)
         {
-            //double curVal = it.value();
-            //int index = it.key();
             double curVal = it->second;
             int index = it->first;
-
             if(curVal>=max) { max = curVal; indexOfMax = index; }
             if(curVal<=min) { min = curVal; indexOfMin = index; }
         }
@@ -449,16 +445,13 @@ bool MeshTools::buildColoredMesh(const occHandle(MeshVS_DataSource) &theMeshVS_D
     //! scan the result of type (nodeID, scalarValue)
     //! ------------------------------------------------------------------
     std::map<int, double>::const_iterator itNodes;
-    //QMap<int, double>::const_iterator itNodes;
 
     TColStd_DataMapOfIntegerReal aScaleMap;
 
     for(itNodes = res.cbegin(); itNodes!= res.cend(); ++itNodes)
     {
-        //int nodeID = itNodes.key();
         int nodeID = itNodes->first;
         double aValue;
-        //if(range != 0.0) aValue = (itNodes.value()-min)/range;
         if(range != 0.0) aValue = (itNodes->second-min)/range;
         else aValue = 0.0;
         aScaleMap.Bind(nodeID, aValue);
@@ -476,11 +469,10 @@ bool MeshTools::buildColoredMesh(const occHandle(MeshVS_DataSource) &theMeshVS_D
     //! ---------------------------------------
     //! configure the drawer: other properties
     //! ---------------------------------------
-    aColoredMesh->GetDrawer()->SetBoolean(MeshVS_DMF_Shading, Standard_True);
-    aColoredMesh->GetDrawer()->SetBoolean(MeshVS_DA_DisplayNodes, Standard_False);
+    aColoredMesh->GetDrawer()->SetBoolean(MeshVS_DMF_Shading, true);
+    aColoredMesh->GetDrawer()->SetBoolean(MeshVS_DA_DisplayNodes, false);
     aColoredMesh->GetDrawer()->SetBoolean(MeshVS_DA_ShowEdges, showEdges);
     aColoredMesh->GetDrawer()->SetColor(MeshVS_DA_EdgeColor,Quantity_NOC_BLACK);
-    //aColoredMesh->GetDrawer()->SetBoolean(MeshVS_DA_ColorReflection,Standard_False);    //delete?
 
     return true;
 }
@@ -533,9 +525,88 @@ bool MeshTools::buildIsoStrip(const occHandle(MeshVS_DataSource) &theMeshDS,    
     anIsoStripBuilder.setIsoStrips(vecIsoStrip);
 
     std::vector<meshElementByCoords> allElements;
-    bool isDone = anIsoStripBuilder.perform(allElements);
-    //bool isDone = anIsoStripBuilder.perform1(allElements);
+    //bool isDone = anIsoStripBuilder.perform(allElements);
+    bool isDone = anIsoStripBuilder.perform1(allElements);
 
+    occHandle(Ng_MeshVS_DataSourceFace) finalMesh = new Ng_MeshVS_DataSourceFace(allElements,true,true);
+
+    cout<<"@ --------------------------"<<endl;
+    cout<<"@ - overall strip mesh"<<endl;
+    cout<<"@ - elements: "<<finalMesh->GetAllElements().Extent()<<endl;
+    cout<<"@ - nodes: "<<finalMesh->GetAllNodes().Extent()<<endl;
+    cout<<"@ --------------------------"<<endl;
+
+    //! -----------------------------------------
+    //! build the MeshVS_Mesh interactive object
+    //! -----------------------------------------
+    aColoredMesh = new MeshVS_Mesh();
+    aColoredMesh->SetDataSource(finalMesh);
+    occHandle(MeshVS_ElementalColorPrsBuilder) aPrsBuilder =
+            new MeshVS_ElementalColorPrsBuilder(aColoredMesh, MeshVS_DMF_ElementalColorDataPrs | MeshVS_DMF_OCCMask);
+
+    int n = 0;
+    for(TColStd_MapIteratorOfPackedMapOfInteger it(finalMesh->GetAllElements()); it.More(); it.Next(), n++)
+    {
+        int isoStripNb = allElements[n].ID;
+        int hue = hueFromValue(isoStripNb,1,(int)vecIsoStrip.size()-2);
+        if(isoStripNb<1 || isoStripNb > vecIsoStrip.size()-2) hue = 310;
+        Quantity_Color aColor(hue,1.0,1.0,Quantity_TOC_HLS);
+        aPrsBuilder->SetColor1(it.Key(),aColor);
+    }
+    aColoredMesh->AddBuilder(aPrsBuilder);
+    aColoredMesh->GetDrawer()->SetBoolean(MeshVS_DA_DisplayNodes, false);
+    aColoredMesh->GetDrawer()->SetColor(MeshVS_DA_EdgeColor,Quantity_NOC_BLACK);
+    aColoredMesh->GetDrawer()->SetBoolean(MeshVS_DA_ShowEdges, false);
+
+    return true;
+}
+
+//! ---------------------------
+//! function: buildIsoSurfaces
+//! details:
+//! ---------------------------
+bool MeshTools::buildIsoSurfaces(const occHandle(MeshVS_DataSource) &theMeshDS,        //! input mesh data source
+                                 const std::map<int,double> &res,                          //! nodal results
+                                 double min,                                           //! used for isostrips generation
+                                 double max,                                           //! used for isostrips generation
+                                 int NbLevels,                                         //! user for isostrip generation
+                                 occHandle(MeshVS_Mesh) &aColoredMesh,                 //! result
+                                 bool showEdges)
+{
+    if(theMeshDS.IsNull()) return false;
+
+    //! ---------------------
+    //! prepare the isostrip
+    //! ---------------------
+    cout<<"@ --------------------------"<<endl;
+    cout<<"@ - preparing isostrips "<<endl;
+
+    std::vector<isoStrip> vecIsoStrip;
+    vecIsoStrip.push_back(isoStrip(-1e10,min));
+    double delta = (max-min)/NbLevels;
+    for(int n = 0; n<NbLevels; n++)
+    {
+        double ys = min + n*delta;
+        double ye = ys + delta;
+        isoStrip anIsoStrip(ys,ye);
+        vecIsoStrip.push_back(anIsoStrip);
+        cout<<"@ - "<<ys<<"\t"<<ye<<endl;
+    }
+    vecIsoStrip.push_back(isoStrip(max,1e10));
+    cout<<"@ --------------------------"<<endl;
+
+    //! -------------------------------------------------
+    //! run the isostrip builder on the mesh data source
+    //! -------------------------------------------------
+    isoStripBuilder anIsoStripBuilder;
+    anIsoStripBuilder.setMeshDataSource(theMeshDS);
+    anIsoStripBuilder.setValues(res);
+    anIsoStripBuilder.setIsoStrips(vecIsoStrip);
+
+    int NbIsoSurfaces = NbLevels;
+    std::map<int,int> mapElementLevel;
+    std::vector<meshElementByCoords> allElements;
+    bool isDone = anIsoStripBuilder.performIsoSurface(NbIsoSurfaces,allElements,mapElementLevel);
     if(isDone == false) return false;
 
     occHandle(Ng_MeshVS_DataSourceFace) finalMesh = new Ng_MeshVS_DataSourceFace(allElements,true,true);
@@ -551,25 +622,24 @@ bool MeshTools::buildIsoStrip(const occHandle(MeshVS_DataSource) &theMeshDS,    
     //! -----------------------------------------
     aColoredMesh = new MeshVS_Mesh();
     aColoredMesh->SetDataSource(finalMesh);
-
-    occHandle(MeshVS_ElementalColorPrsBuilder) aPrsBuilder = new MeshVS_ElementalColorPrsBuilder(aColoredMesh, MeshVS_DMF_ElementalColorDataPrs | MeshVS_DMF_OCCMask);
+    occHandle(MeshVS_ElementalColorPrsBuilder) aPrsBuilder =
+            new MeshVS_ElementalColorPrsBuilder(aColoredMesh, MeshVS_DMF_ElementalColorDataPrs | MeshVS_DMF_OCCMask);
 
     int n = 0;
     for(TColStd_MapIteratorOfPackedMapOfInteger it(finalMesh->GetAllElements()); it.More(); it.Next(), n++)
     {
-        int isoStripNb = allElements[n].ID;
+        std::map<int,int>::iterator itmap = mapElementLevel.find(it.Key());
+        if(itmap==mapElementLevel.end()) continue;
+        int isoStripNb = itmap->second;
         int hue = hueFromValue(isoStripNb,1,(int)vecIsoStrip.size()-2);
-
         if(isoStripNb<1 || isoStripNb > vecIsoStrip.size()-2) hue = 310;
-
         Quantity_Color aColor(hue,1.0,1.0,Quantity_TOC_HLS);
         aPrsBuilder->SetColor1(it.Key(),aColor);
     }
     aColoredMesh->AddBuilder(aPrsBuilder);
     aColoredMesh->GetDrawer()->SetBoolean(MeshVS_DA_DisplayNodes, false);
     aColoredMesh->GetDrawer()->SetColor(MeshVS_DA_EdgeColor,Quantity_NOC_BLACK);
-    aColoredMesh->GetDrawer()->SetBoolean(MeshVS_DA_ShowEdges, false);
-
+    aColoredMesh->GetDrawer()->SetBoolean(MeshVS_DA_ShowEdges, showEdges);
     return true;
 }
 
@@ -587,11 +657,7 @@ bool MeshTools::buildIsoStrip(const occHandle(MeshVS_DataSource) &theMeshDS,    
                               occHandle(MeshVS_Mesh) &aColoredMesh,                 //! result
                               bool showEdges)                                       //! option
 {
-    if(theMeshDS.IsNull())
-    {
-        exit(9999);
-        return false;
-    }
+    if(theMeshDS.IsNull()) return false;
 
     //! --------------------------------------------
     //! adjust the scale in case of negative values
@@ -648,7 +714,8 @@ bool MeshTools::buildIsoStrip(const occHandle(MeshVS_DataSource) &theMeshDS,    
     anIsoStripBuilder.setIsoStrips(vecIsoStrip);
 
     std::vector<meshElementByCoords> allElements;
-    bool isDone = anIsoStripBuilder.perform(allElements);
+    //bool isDone = anIsoStripBuilder.perform(allElements);
+    bool isDone = anIsoStripBuilder.perform1(allElements);
 
     Q_UNUSED (isDone)
 
@@ -673,9 +740,7 @@ bool MeshTools::buildIsoStrip(const occHandle(MeshVS_DataSource) &theMeshDS,    
     {
         int isoStripNb = allElements[n].ID;
         int hue = hueFromValue(isoStripNb,1,(int)vecIsoStrip.size()-2);
-
         if(isoStripNb<1 || isoStripNb > vecIsoStrip.size()-2) hue = 310;
-
         Quantity_Color aColor(hue,1.0,1.0,Quantity_TOC_HLS);
         aPrsBuilder->SetColor1(it.Key(),aColor);
     }
@@ -717,7 +782,6 @@ bool MeshTools::buildDeformedColoredMesh(const occHandle(MeshVS_DataSource) &the
     for(TColStd_MapIteratorOfPackedMapOfInteger nodeIt(deformedDS->GetAllNodes());nodeIt.More();nodeIt.Next())
     {
         int nodeID = nodeIt.Key();
-        //deformedDS->SetVector(nodeID,displacementMap.value(nodeID));
         deformedDS->SetVector(nodeID,displacementMap.at(nodeID));
     }
     deformedDS->SetMagnify(scale);
@@ -764,16 +828,12 @@ bool MeshTools::buildDeformedColoredMesh(const occHandle(MeshVS_DataSource) &the
     //! -----------------------------------------------------
     //! iterate through the nodes and add a node id and an appropriate value to the map
     //! scan the result of type (nodeID, scalarValue)
-    //QMap<int, double>::const_iterator itNodes;
-    //std::map<int, double>::const_iterator itNodes;
     TColStd_DataMapOfIntegerReal aScaleMap;
 
     for(std::map<int, double>::const_iterator itNodes = res.cbegin(); itNodes!= res.cend(); ++itNodes)
     {
-        //int nodeID = itNodes.key();
         int nodeID = itNodes->first;
         double aValue;
-        //if(Delta!=0.0) aValue = (itNodes.value()-min)/Delta;
         if(Delta!=0.0) aValue = (itNodes->first-min)/Delta;
         else aValue = 0.0;
         aScaleMap.Bind(nodeID, aValue);
@@ -1109,7 +1169,7 @@ void MeshTools::sortPointsOnEdge(const QList<mesh::meshPoint> &pointsOfTheEdge,
 }
 
 //! -----------------------------------------
-//! function: MeshTools::buildPLC
+//! function: buildPLC
 //! details:  write a .node and a .poly file
 //! -----------------------------------------
 bool MeshTools::buildPLC(const NCollection_Array1<occHandle(Ng_MeshVS_DataSourceFace)> &arrayOfFaceDS,
@@ -1450,7 +1510,10 @@ void MeshTools::filterVolumeElementsByType(const occHandle(MeshVS_DataSource) &i
     outputMesh = new Ng_MeshVS_DataSource3D(listOfElements);
 }
 
-
+//! -----------------------------
+//! function: toListOf3DElements
+//! details:
+//! -----------------------------
 void MeshTools::toListOf3DElements(const occHandle(Ng_MeshVS_DataSource3D) &inputMesh, QList<meshElementByCoords> &elements)
 {
     if(inputMesh.IsNull()) return;

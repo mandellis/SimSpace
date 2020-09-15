@@ -21,6 +21,7 @@
 #include <TColStd_PackedMapOfInteger.hxx>
 #include <TColStd_MapIteratorOfPackedMapOfInteger.hxx>
 #include <gp_Vec.hxx>
+#include <TColStd_HPackedMapOfInteger.hxx>
 
 //! --------------------------------------
 //! replacement for opencascade::handle<>
@@ -171,6 +172,11 @@ private:
     //! ------------------
     double myScale;
 
+    //! ----------------
+    //! hidden elements
+    //! ----------------
+    std::map<GeometryTag,occHandle(TColStd_HPackedMapOfInteger)> myMapOfHiddenElements;
+
 private:
 
     //! reset meshes
@@ -211,9 +217,6 @@ public:
     //! init
     void init(meshDataBase *mDB);
 
-    //! clone
-    postObject clone(const postObject &other);
-
     //! get colored meshes
     std::map<GeometryTag,occHandle(MeshVS_Mesh>) getColoredMeshes() const { return theMeshes; }
 
@@ -228,6 +231,11 @@ public:
 
     //! update scaled view (internally read myScale)
     void updateScaledView();
+
+    //! set/get hidden elements
+    //void setHiddenElements(setHiddenElements(const std::map<GeometryTag,occHandle(TColStd_HPackedMapOfInteger)> &mapOfHiddenElements));
+    void computeHiddenElements(const std::map<int,std::vector<double>> &mapOfClipPlanes);
+
 
 public:
 

@@ -10,6 +10,7 @@
 #include <ng_meshvs_deformeddatasource2d.h>
 #include <isostripbuilder.h>
 #include <isostrip.h>
+#include <meshslicer.h>
 
 //! ----
 //! OCC
@@ -276,9 +277,9 @@ void postObject::write(ofstream &file)
         case TopAbs_VERTEX: /* to be implemented */ break;
         }
     }
-    //! ------------------
-    //! write min and max
-    //! ------------------
+    //! ----------------------------
+    //! write generation paramaters
+    //! ----------------------------
     file<<mySolutionDataComponent<<endl;
     file<<myMin<<endl;
     file<<myMax<<endl;
@@ -404,7 +405,6 @@ postObject::postObject(ifstream &file)
     //! --------------
     //! read the mesh
     //! --------------
-    //std::map<GeometryTag, occHandle(MeshVS_DataSource)> aMapOfMeshDataSources;
     for(int i=0; i<NbMeshes; i++)
     {
         //! -------------
@@ -430,15 +430,11 @@ postObject::postObject(ifstream &file)
         //! fill the map of mesh data sources
         //! ----------------------------------
         occHandle(MeshVS_DeformedDataSource) aDefMeshDS = new MeshVS_DeformedDataSource(aMeshDS,1.0);
-        //aMapOfMeshDataSources.insert(std::make_pair(aTag,aDefMeshDS));
-        //aMapOfMeshDataSources.insert(std::make_pair(aTag,aMeshDS));
-        cout<<"____"<<aDefMeshDS->GetAllElements().Extent()<<"____"<<endl;
-        cout<<"____"<<aDefMeshDS->GetAllNodes().Extent()<<"____"<<endl;
         theMeshDataSources.insert(std::make_pair(aTag,aDefMeshDS));
     }
-    //! -----------------
-    //! read min and max
-    //! -----------------
+    //! -------------------------------
+    //! read the generation parameters
+    //! -------------------------------
     file>>mySolutionDataComponent;
     file>>myMin;
     file>>myMax;
@@ -491,10 +487,7 @@ void postObject::buildMeshIO(double min, double max, int Nlevels, bool autoscale
         }
         else
         {
-            cout<<"____USING THE WHOLE MESH____"<<endl;
             curMeshDS = anIt->second->GetNonDeformedDataSource();
-            cout<<"____ELEMENTS: "<<curMeshDS->GetAllElements().Extent()<<"____"<<endl;
-            cout<<"____NODES: "<<curMeshDS->GetAllNodes().Extent()<<"____"<<endl;
         }
 
         //! ----------------------------------
@@ -502,27 +495,20 @@ void postObject::buildMeshIO(double min, double max, int Nlevels, bool autoscale
         //! ----------------------------------
         occHandle(MeshVS_DeformedDataSource) theDeformedDS = new MeshVS_DeformedDataSource(curMeshDS,deformationScale);
         const std::map<int,gp_Vec> &displacementMap = myMapOfNodalDisplacements.at(loc);
-        cout<<"____displacement map size: "<<displacementMap.size()<<"____"<<endl;
-        //exit(9999);
         theDeformedDS->SetNonDeformedDataSource(curMeshDS);
-        cout<<"____tag00____"<<endl;
+
         for(TColStd_MapIteratorOfPackedMapOfInteger it(curMeshDS->GetAllNodes()); it.More(); it.Next())
         {
             int globalNodeID = it.Key();
             const gp_Vec &d = displacementMap.at(globalNodeID);
             theDeformedDS->SetVector(globalNodeID,d);
         }
-        cout<<"____tag01____"<<endl;
         theDeformedDS->SetMagnify(deformationScale);
-        cout<<"____tag02____"<<endl;
         theMeshDataSourcesForView[loc]=theDeformedDS;   //! abruptly replace - do not use "insert"
-        cout<<"____tag03____"<<endl;
 
         const std::vector<std::map<int, double>> &listOfRes = theData.at(loc);
-        cout<<"____tag04____"<<endl;
-        cout<<"____tag04: component: "<<component<<"____"<<endl;
         const std::map<int, double> &res = listOfRes.at(component);
-        cout<<"____tag5____"<<endl;
+
         //! -------------------------------------------
         //! min and max for the colorbox and isostrips
         //! -------------------------------------------
@@ -535,7 +521,21 @@ void postObject::buildMeshIO(double min, double max, int Nlevels, bool autoscale
         else { myMin = min; myMax = max; }
 
         occHandle(MeshVS_Mesh) aColoredMesh;
-        MeshTools::buildIsoStrip(theDeformedDS,res,myMin,myMax,myNbLevels,aColoredMesh);
+        switch(Global::status().myResultPresentation.theTypeOfPresentation)
+        {
+        case resultPresentation::typeOfPresentation_isostrips:
+            MeshTools::buildIsoStrip(theDeformedDS,res,myMin,myMax,myNbLevels,aColoredMesh);
+            break;
+        case resultPresentation::typeOfPresentation_nodalresults:
+            MeshTools::buildColoredMesh(theDeformedDS,res,aColoredMesh,myMin,myMax,myNbLevels);
+            break;
+        case resultPresentation::typeOfPresentation_isosurfaces:
+            MeshTools::buildIsoSurfaces(theDeformedDS,res,myMin,myMax,myNbLevels,aColoredMesh,false);
+            break;
+        case resultPresentation::typeOfPresentation_isolines:
+            break;
+        }
+
         theMeshes.insert(std::make_pair(loc,aColoredMesh));
     }
 
@@ -925,4 +925,66 @@ bool postObject::readMeshFromStream(ifstream &stream, occHandle(MeshVS_DataSourc
         break;
     }
     return true;
+}
+
+//! --------------------------------
+//! function: computeHiddenElements
+//! details:
+//! --------------------------------
+void postObject::computeHiddenElements(const std::map<int,std::vector<double>> &mapOfClipPlanes)
+{
+    //std::map<GeometryTag,occHandle(TColStd_HPackedMapOfInteger)> hiddenElementsIDs;
+
+    //! ---------------------------------------
+    //! check the number of active clip planes
+    //! ---------------------------------------
+    int NbClipPlanes = (int)mapOfClipPlanes.size();
+    if(NbClipPlanes==0)
+    {
+       TColStd_PackedMapOfInteger e;
+       occHandle(TColStd_HPackedMapOfInteger) he = new TColStd_HPackedMapOfInteger;
+       he->ChangeMap() = e;
+       for(std::map<GeometryTag,occHandle(MeshVS_Mesh)>::iterator it = theMeshes.begin(); it!=theMeshes.end(); it++)
+       {
+           const GeometryTag &aTag = it->first;
+           myMapOfHiddenElements.insert(std::make_pair(aTag,he));
+       }
+       return;
+    }
+
+    //! ------------
+    //! mesh slicer
+    //! ------------
+    meshSlicer aMeshSlicer;
+
+    //! ------------------------
+    //! iterate over the meshes
+    //! ------------------------
+    for(std::map<GeometryTag,occHandle(MeshVS_Mesh)>::iterator it_ = theMeshes.begin(); it_ != theMeshes.end(); it_++)
+    {
+        const GeometryTag &aTag = it_->first;
+        const occHandle(MeshVS_Mesh) &aMeshObject = it_->second;
+        const occHandle(MeshVS_DataSource) &aMeshDS = aMeshObject->GetDataSource();
+        aMeshSlicer.setMeshDataSource(aMeshDS);
+
+        TColStd_PackedMapOfInteger hiddenElementsIDsForTag;
+
+        //! ------------------------
+        //! iterate over the planes
+        //! ------------------------
+        for(std::map<int,std::vector<double>>::const_iterator it = mapOfClipPlanes.cbegin(); it != mapOfClipPlanes.cend(); it++)
+        {
+            //int clipPlaneID = it->first;
+            const std::vector<double> &coeffs = it->second;
+            occHandle(TColStd_HPackedMapOfInteger) HMapOfIDs;
+            bool isDone = aMeshSlicer.perform(coeffs[0],coeffs[1],coeffs[2],coeffs[3],HMapOfIDs);
+            if(isDone==false) continue;
+            const TColStd_PackedMapOfInteger &mapOfIDs = HMapOfIDs->Map();
+            hiddenElementsIDsForTag.Unite(mapOfIDs);
+        }
+
+        occHandle(TColStd_HPackedMapOfInteger) HHiddenElementsIDsForTag = new TColStd_HPackedMapOfInteger;
+        HHiddenElementsIDsForTag->ChangeMap() = hiddenElementsIDsForTag;
+        myMapOfHiddenElements.insert(std::make_pair(aTag,HHiddenElementsIDsForTag));
+    }
 }

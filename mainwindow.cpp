@@ -18,7 +18,6 @@
 #include "detailviewer.h"
 #include "shapeselector.h"
 #include "generaldelegate.h"
-#include "boundaryvaluemanager.h"
 
 #include "tabulardataviewerclass1.h"
 
@@ -480,8 +479,14 @@ MainWindow::MainWindow(QWidget *parent):QMainWindow(parent),ui(new Ui::MainWindo
     //! clip tool and its dockable window
     //! ----------------------------------
     myClipTool = new clipTool(this);
+
+    QWidget *container = new QWidget(this);
+    QHBoxLayout *h = new QHBoxLayout;
+    container->setLayout(h);
+    h->addWidget(myClipTool);
+
     myClipToolDock = new QDockWidget("Clipping planes");
-    myClipToolDock->setWidget(myClipTool);
+    myClipToolDock->setWidget(container);
     this->addDockWidget(Qt::LeftDockWidgetArea, myClipToolDock);
     myClipToolDock->setVisible(false);
 
@@ -631,7 +636,6 @@ void MainWindow::showBodiesOnMasterViewPort(const TColStd_ListOfInteger &listOfA
     {
         int bodyIndex = it.Value();
         const occHandle(AIS_ExtendedShape)& curAIS = occHandle(AIS_ExtendedShape)::DownCast(myDockableMasterViewPort->getViewPort()->getInteractiveObjects().value(bodyIndex));
-        //const occHandle(AIS_ExtendedShape)& curAIS = occHandle(AIS_ExtendedShape)::DownCast(myDockableMasterViewPort->getViewPort()->getInteractiveObjects().at(bodyIndex));
         myDockableMasterViewPort->getContext()->SetDisplayMode(curAIS,AIS_Shaded,false);
         myDockableMasterViewPort->getContext()->Display(curAIS,false);
     }
@@ -1077,6 +1081,23 @@ void MainWindow::createToolBars()
     viewAndSelectionToolbar->setVisible(true);
     viewAndSelectionToolbar->setMovable(true);
 
+    //! add the select geometry/select mesh button
+    QPushButtonExtended *buttonToggleSelectGeometryMesh = new QPushButtonExtended(this);
+    buttonToggleSelectGeometryMesh->setIcon(QIcon(":/icons/icon_select geometry.png"));
+    viewAndSelectionToolbar->addWidget(buttonToggleSelectGeometryMesh);
+
+    QMenu *menuToggleSelectGeometryMesh = new QMenu(this);
+    buttonToggleSelectGeometryMesh->setMenu(menuToggleSelectGeometryMesh);
+
+    QAction *actionToggleSelectGeometry = new QAction(QIcon(":/icons/icon_select geometry.png"),"Select geometry",this);
+    connect(actionToggleSelectGeometry,SIGNAL(triggered(bool)),this,SLOT(setSelectionModeGeometry()));
+
+    QAction *actionToggleSelectMesh = new QAction(QIcon(":/icons/icon_select mesh.png"),"Select mesh",this);
+    connect(actionToggleSelectMesh,SIGNAL(triggered(bool)),this,SLOT(setSelectionModeMesh()));
+
+    menuToggleSelectGeometryMesh->addAction(actionToggleSelectGeometry);
+    menuToggleSelectGeometryMesh->addAction(actionToggleSelectMesh);
+
     //! add the pick point coordinates
     viewAndSelectionToolbar->addAction(actionTogglePickPointCoordinates);
 
@@ -1089,10 +1110,8 @@ void MainWindow::createToolBars()
     //! add a separator
     viewAndSelectionToolbar->addSeparator();
 
-    //! -------------------------------------------------------
     //! add the "type of selection" menu button to the toolbar
-    //! -------------------------------------------------------
-    myPushButtonTypeOfSelection = new QPushButtonExtended();
+    myPushButtonTypeOfSelection = new QPushButtonExtended(this);
     myPushButtonTypeOfSelection->setIcon(QIcon(":/icons/icon_single select.png"));
     viewAndSelectionToolbar->addWidget(myPushButtonTypeOfSelection);
     QMenu *menuButtonTypeOfSelection = new QMenu(this);
@@ -1204,6 +1223,26 @@ void MainWindow::setSelectionModeSingle()
     myMainOCCViewer->setGlobalCurSelectionMode(0);
     myPushButtonTypeOfSelection->setIcon(QIcon(":/icons/icon_single select.png"));
     statusBar()->showMessage("Single selection",TRANSIENT_MESSAGE_TIMEOUT);
+}
+
+//! -----------------------------------
+//! function: setSelectionModeGeometry
+//! details:
+//! -----------------------------------
+void MainWindow::setSelectionModeGeometry()
+{
+    cout<<"setSelectionModeGeometry()->____function called____"<<endl;
+    myMainOCCViewer->setGeometrySelectionMode();
+}
+
+//! -------------------------------
+//! function: setSelectionModeMesh
+//! details:
+//! -------------------------------
+void MainWindow::setSelectionModeMesh()
+{
+    cout<<"setSelectionModeMesh()->____function called____"<<endl;
+    myMainOCCViewer->setMeshSelectionMode();
 }
 
 //! ------------------------------
@@ -1744,7 +1783,8 @@ void MainWindow::toggleSolidSelectionMode(bool isActivated)
     {
         handleViewAndSelectionButtons(actionToggleSolidSelect);
         myMainOCCViewer->setSelectionMode(CurSelection_Solid);
-        //! experimental
+
+        //! same selection mode in additional viewports
         myDockableMasterViewPort->setSelectionMode(CurSelection_Solid);
         myDockableSlaveViewPort->setSelectionMode(CurSelection_Solid);
         statusBar()->showMessage("Select Solids",TRANSIENT_MESSAGE_TIMEOUT);
@@ -1761,6 +1801,8 @@ void MainWindow::toggleFaceSelectionMode(bool isActivated)
     {
         handleViewAndSelectionButtons(actionToggleFaceSelect);
         myMainOCCViewer->setSelectionMode(CurSelection_Face);
+
+        //! same selection mode in additional viewports
         myDockableMasterViewPort->setSelectionMode(CurSelection_Face);
         myDockableSlaveViewPort->setSelectionMode(CurSelection_Face);
         statusBar()->showMessage("Select Faces",TRANSIENT_MESSAGE_TIMEOUT);
@@ -1777,6 +1819,8 @@ void MainWindow::toggleEdgeSelectionMode(bool isActivated)
     {
         handleViewAndSelectionButtons(actionToggleEdgeSelect);
         myMainOCCViewer->setSelectionMode(CurSelection_Edge);
+
+        //! same selection mode in additional viewports
         myDockableMasterViewPort->setSelectionMode(CurSelection_Edge);
         myDockableSlaveViewPort->setSelectionMode(CurSelection_Edge);
         statusBar()->showMessage("Select Edges",TRANSIENT_MESSAGE_TIMEOUT);
@@ -1793,7 +1837,8 @@ void MainWindow::toggleVertexSelectionMode(bool isActivated)
     {
         handleViewAndSelectionButtons(actionToggleVertexSelect);
         myMainOCCViewer->setSelectionMode(CurSelection_Vertex);
-        //! experimental
+
+        //! same selection mode in additional viewports
         myDockableMasterViewPort->setSelectionMode(CurSelection_Vertex);
         myDockableSlaveViewPort->setSelectionMode(CurSelection_Vertex);
         statusBar()->showMessage("Select Points",TRANSIENT_MESSAGE_TIMEOUT);
@@ -1810,6 +1855,8 @@ void MainWindow::togglePointCoordinatesPickingMode(bool isActivated)
     {
         handleViewAndSelectionButtons(actionTogglePickPointCoordinates);
         myMainOCCViewer->setSelectionMode(CurSelection_PointCoordinatesPicking);
+
+        //! same selection mode in additional viewports
         myDockableMasterViewPort->setSelectionMode(CurSelection_PointCoordinatesPicking);
         myDockableSlaveViewPort->setSelectionMode(CurSelection_PointCoordinatesPicking);
         statusBar()->showMessage("Pick point coordinates",TRANSIENT_MESSAGE_TIMEOUT);
@@ -2034,11 +2081,7 @@ void MainWindow::setWorkingMode(int workingModeNumber)
     //! ---------------------------------------
     //! set the working mode for the clip tool
     //! ---------------------------------------
-    cout<<"MainWindow::setWorkingMode()->____working mode: "<<workingModeNumber<<"____"<<endl;
-
     if(myClipTool!=Q_NULLPTR) myClipTool->setWorkingMode(workingModeNumber);
-    cout<<"MainWindow::setWorkingMode()->____working mode: "<<workingModeNumber<<"____"<<endl;
-
 }
 
 //! ------------------------------------------------------------
@@ -2130,11 +2173,11 @@ void MainWindow::enableSelectionButtons()
     //! ------------------------------------
     //! reactive the current selection mode
     //! ------------------------------------
-    myMainOCCViewer->reactivateCurrentStandardSelectionMode();
+    myMainOCCViewer->reactivateSelectionMode();
 }
 
 //! --------------------------------------------------------------
-//! function: startEditingScope()
+//! function: startEditingScope
 //! details:  simulate a double click event on the shape selector
 //! --------------------------------------------------------------
 void MainWindow::startEditingScope()
@@ -2612,14 +2655,20 @@ void MainWindow::setUpConnections()
 
     connect(mySimulationManager,SIGNAL(requestUpdateConvergenceViewer(const QList<solutionInfo> &)), myConvergenceDataChart1,SLOT(plotConvergenceData(const QList<solutionInfo> &)));
 
+    //! ----------------
+    //! selection modes
+    //! ----------------
     connect(myMainOCCViewer,SIGNAL(selectionModeVertex(bool)),this,SLOT(toggleVertexSelectionMode(bool)));
     connect(myMainOCCViewer,SIGNAL(selectionModeEdge(bool)),this,SLOT(toggleEdgeSelectionMode(bool)));
     connect(myMainOCCViewer,SIGNAL(selectionModeFace(bool)),this,SLOT(toggleFaceSelectionMode(bool)));
     connect(myMainOCCViewer,SIGNAL(selectionModeSolid(bool)),this,SLOT(toggleSolidSelectionMode(bool)));
     connect(myMainOCCViewer,SIGNAL(selectionModePickPointCoordinates(bool)),this,SLOT(togglePointCoordinatesPickingMode(bool)));
+
     connect(myMainOCCViewer,SIGNAL(statusBarMessage(QString)),statusLabel,SLOT(setText(QString)));
     connect(myMainOCCViewer,SIGNAL(viewModeChanged(CurDisplayMode)),this,SLOT(checkViewModeItem(CurDisplayMode)));
     connect(this,SIGNAL(requestExtendSelectionToAdjacent()),myMainOCCViewer,SLOT(extendSelectionToAjacent()));
+
+    //! ------------------------------------------------------------------------------
     //! synchronize the checkmark of the menu action and the visibility of the widget
     //! ------------------------------------------------------------------------------
     connect(actionShowGraphViewer,SIGNAL(triggered(bool)),myTabularDataViewerDock,SLOT(setVisible(bool)));
@@ -2656,7 +2705,7 @@ void MainWindow::setUpConnections()
     connect(mySimulationManager,SIGNAL(request0DBodySelectionMode(bool)),this,SLOT(toggleVertexSelectionMode(bool)));
     connect(mySimulationManager,SIGNAL(requestBuildMeshIOs()),myMainOCCViewer,SLOT(buildMeshIOs()));
     connect(mySimulationManager,SIGNAL(requestHideMeshes()),myMainOCCViewer,SLOT(hideAllMeshes()));
-    connect(mySimulationManager,SIGNAL(requestHideSlicedMeshes()),myMainOCCViewer,SLOT(eraseSlicedMeshes()));
+    //connect(mySimulationManager,SIGNAL(requestHideSlicedMeshes()),myMainOCCViewer,SLOT(eraseSlicedMeshes()));
     connect(mySimulationManager,SIGNAL(requestShowMeshes(bool)),myMainOCCViewer,SLOT(displayAllMeshes(bool)));
     connect(mySimulationManager,SIGNAL(requestSetWorkingMode(int)),this,SLOT(setWorkingMode(int)));
     connect(mySimulationManager,SIGNAL(requestHideBody(TColStd_ListOfInteger)),myMainOCCViewer,SLOT(hideBody(TColStd_ListOfInteger)));
@@ -2671,7 +2720,7 @@ void MainWindow::setUpConnections()
     connect(mySimulationManager,SIGNAL(requestUnhighlightBodies(bool)),myMainOCCViewer,SLOT(unhighlightBody(bool)));
 
 
-    connect(mySimulationManager,SIGNAL(requestReactivateCurrentStandardSelectionMode()),myMainOCCViewer,SLOT(reactivateCurrentStandardSelectionMode()));
+    connect(mySimulationManager,SIGNAL(requestReactivateSelectionMode()),myMainOCCViewer,SLOT(reactivateSelectionMode()));
 
     connect(mySimulationManager,SIGNAL(requestDisplayShapeCopy(TopTools_ListOfShape,TopTools_ListOfShape,Quantity_NameOfColor,Quantity_NameOfColor,QVariant)),
             myMainOCCViewer,SLOT(displayShapeCopy(TopTools_ListOfShape,TopTools_ListOfShape,Quantity_NameOfColor,Quantity_NameOfColor,QVariant)));
@@ -2826,7 +2875,7 @@ void MainWindow::setUpConnections()
     //! mesh tool bar connections
     //! --------------------------
     connect(meshToolBar,SIGNAL(showExteriorMeshRequest(bool)),myMainOCCViewer,SLOT(refreshMeshView(bool)));
-    connect(meshToolBar,SIGNAL(showExteriorMeshRequest(bool)),myClipTool,SLOT(updateClippedMeshView(bool)));
+    //connect(meshToolBar,SIGNAL(showExteriorMeshRequest(bool)),myClipTool,SLOT(updateClippedMeshView(bool)));
     connect(meshToolBar,SIGNAL(requestClearMesh()),myMainOCCViewer,SLOT(clearMeshFromViewer()));
     connect(meshToolBar,SIGNAL(requestGenerateVolumeMesh()),mySimulationManager,SLOT(buildVolumeMesh()));
     connect(meshToolBar,SIGNAL(requestGenerateSurfaceMesh()),mySimulationManager,SLOT(buildSurfaceMesh()));

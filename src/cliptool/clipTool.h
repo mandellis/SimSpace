@@ -7,6 +7,7 @@
 #define CLIPPLANE_BASE_COORDINATE_SYSTEM_COLUMN 3
 #define CLIPPLANE_BASE_PLANE_DATA_COLUMN 4
 #define CLIPPLANE_TRANSLATION_COLUMN 5
+#define CLIPPLANE_SHIFTED_PLANE_COEFFICIENTS_COLUMN 6
 
 //! ----
 //! OCC
@@ -15,6 +16,7 @@
 #include <MeshVS_DataSource.hxx>
 #include <MeshVS_Mesh.hxx>
 #include <Quantity_NameOfColor.hxx>
+#include <TColStd_HPackedMapOfInteger.hxx>
 
 //! ---
 //! Qt
@@ -24,19 +26,20 @@
 #include <QStandardItemModel>
 #include <qextendedstandarditem.h> //! this type is registered
 #include <QMouseEvent>
+#include <QHBoxLayout>
 
 //! ----------------
 //! custom includes
 //! ----------------
-//#include "occpostwidget.h"
-#include "occPreGLwidget.h"
+#include "occpostwidget.h"
+//#include "occPreGLwidget.h"
 #include <meshdatabase.h>
 
 
 //! ----
 //! C++
 //! ----
-
+#include <map>
 #include <iostream>
 using namespace std;
 
@@ -68,8 +71,6 @@ protected:
                 edit(index);
             }
         }
-        cout<<"____left button pressed____"<<endl;
-        myOCCViewer->setAction3D_PlaneDrag();
 
         // pass on other buttons to base class
         QTableView::mousePressEvent(event);
@@ -78,20 +79,16 @@ protected:
 private slots:
 
     void showContextMenu(QPoint aPoint);
-    void setClipPlaneActive();
-    void updateCSTranslation(int);
+    void updateClipPlaneOfRow();
+    void handleClipPlaneOfRowStatus();
+
+    void updateCSTranslation(int sliderPosition);
     void updateCSDefinition();
 
 public slots:
 
     void updateCSDataByExternalCSChange(QStandardItem *theCurrentModifiedCS);
-    void updateClippedMeshView(bool onlyExterior);
-
-    /*
-    void displayMesh(const occHandle(MeshVS_DataSource) &aMeshDS,
-                     Quantity_NameOfColor aColorName = Quantity_NOC_ALICEBLUE,
-                     bool showMeshEdges = true);
-    */
+    //void updateClippedMeshView(bool onlyExterior);
 
 private:
 
@@ -103,19 +100,21 @@ private:
     QPoint myCurPoint;
     QStandardItemModel *internalModel;
     QExtendedStandardItem *myCoordinateSystemRoot;
-    occPreGLWidget *myOCCViewer;
+    //occPreGLWidget *myOCCViewer;
+    occPostWidget *myOCCViewer;
     int myMaxClipPlanes;
     int myCurNumberOfClipPlanes;
 
     meshDataBase *myMDB;
-    QMap<int,occHandle(MeshVS_DataSource)> mySlicedMeshedDS;
-    QMap<int,occHandle(MeshVS_Mesh)> mySlicedMeshIO;
+    //QMap<int,occHandle(MeshVS_DataSource)> mySlicedMeshedDS;
+    //QMap<int,occHandle(MeshVS_Mesh)> mySlicedMeshIO;
+    std::map<int,occHandle(TColStd_HPackedMapOfInteger)> myHiddenElements;
 
     //! --------------------------------------------------
     //! key => plane ID
     //! value => pair(body index,sliced mesh data source)
     //! --------------------------------------------------
-    QMap<int,std::vector<std::pair<int,occHandle(MeshVS_DataSource)>>> myPlaneToSlicedMeshes;
+    //QMap<int,std::vector<std::pair<int,occHandle(MeshVS_DataSource)>>> myPlaneToSlicedMeshes;
 
 public:
 
@@ -130,7 +129,8 @@ public:
     //! ---------------
     //! set the viewer
     //! ---------------
-    void setViewer(occPreGLWidget *anOCCViewer)
+    //void setViewer(occPreGLWidget *anOCCViewer)
+    void setViewer(occPostWidget *anOCCViewer)
     {
         myOCCViewer = anOCCViewer;
 
@@ -151,7 +151,7 @@ public:
 private:
 
     //! return the plane equation coefficients
-    QVector<double> getPlaneCoefficients(QExtendedStandardItem *aCSItem);
+    QVector<double> getPlaneCoefficients(QStandardItem *aCSItem);
 
     //! ------------------------------------------------
     //! working mode
@@ -161,15 +161,14 @@ private:
 
 public slots:
 
-    //! -------------------------------
     //! set the geometry/mesh database
-    //! -------------------------------
     void setMeshDataBase(meshDataBase *aMeshDataBase);
 
-    //! ---------------------
     //! set the working mode
-    //! ---------------------
     void setWorkingMode(int workingMode);
+
+    //! compute hidden elements
+    void computeHiddenElements();
 
 signals:
 
@@ -187,10 +186,16 @@ protected:
 
 private:
 
+    //! retrieve the map of clip planes (ID, {coefficients}
+    int retrieveActiveClipPlanes(std::map<int, std::vector<double> > &mapOfClipPlanes);
+
     void setCurrentClipPlane(int curClipPlaneID)
     {
         myOCCViewer->setCurrentClipPlane(curClipPlaneID);
     }
+
+    //! translate plane
+    void translatePlane(double &a, double &b, double &c, double &d, const double &t);
 };
 
 #endif // CLIPTOOL_H

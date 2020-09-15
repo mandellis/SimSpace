@@ -117,6 +117,14 @@ public:
                               occHandle(MeshVS_Mesh) &aColoredMesh,
                               bool showEdges = false);
 
+    static bool buildIsoSurfaces(const occHandle(MeshVS_DataSource) &theMeshVS_DataSource,
+                                 const std::map<int,double> &res,
+                                 double min,
+                                 double max,
+                                 int NbLevels,
+                                 occHandle(MeshVS_Mesh) &aColoredMesh,
+                                 bool showEdges = false);
+
     static bool buildIsoStrip(const occHandle(MeshVS_DataSource) &theMeshVS_DataSource,
                               const std::map<int,double> &res,
                               double min,
