@@ -202,9 +202,6 @@ private slots:
     //! prepare for meshing
     TopTools_ListOfShape prepareForMeshing();
 
-    //! build the mesh
-    void buildMesh(bool isVolumeMesh);
-
     //! update the mesh statistics
     void updateMeshStatistics();
 
@@ -284,6 +281,9 @@ public slots:
 
     //! compute and display mesh metric
     void computeAndDisplayMeshMetric();
+
+    //! build the mesh
+    void buildMesh(bool isVolumeMesh);
 
 public:
 
@@ -444,7 +444,6 @@ signals:
     void requestRemoveObsoleteMeshes();
     void requestBuildMeshIOs();
     void requestHideMeshes();
-    void requestHideSlicedMeshes();
     void requestShowMeshes(bool areMeshNodesVisible);
     void requestShowBody(TColStd_ListOfInteger ListOfBodyNumbers);
     void updatedetailViewer(QModelIndex);
@@ -452,7 +451,7 @@ signals:
     void requestUnhighlightBodies(bool updateViewer);
     void requestHideBody(TColStd_ListOfInteger listOfBodies);
     void requestShowAllBodies();
-    void requestReactivateCurrentStandardSelectionMode();
+    void requestReactivateSelectionMode();
     void requestDisplayShapeCopy(const TopTools_ListOfShape &list1, const TopTools_ListOfShape &list2,
                                  Quantity_NameOfColor color1, Quantity_NameOfColor color2, QVariant options = QVariant());
 

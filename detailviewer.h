@@ -54,7 +54,6 @@ private:
     //! connect/disconnect to simulation manager - helper4
     void connectToSimulationManager(bool toConnect);
 
-
 public:
 
     //! constructor
@@ -64,16 +63,10 @@ public:
     DetailViewer(const occHandle(AIS_InteractiveContext) &aCTX, QWidget *parent=0);
 
     //! destructor
-    virtual ~DetailViewer()
-    {
-        cout<<"DetailViewer::~DetailViewer()->____DESTRUCTOR CALLED____"<<endl;
-    }
+    virtual ~DetailViewer() { cout<<"DetailViewer::~DetailViewer()->____DESTRUCTOR CALLED____"<<endl; }
 
     //! delegate
     GeneralDelegate *myGeneralDelegate;
-
-    //! set context
-    //void setContext(const occHandle(AIS_InteractiveContext) &aCTX);
 
     //! access function
     SimulationNodeClass *getNode();
@@ -104,27 +97,21 @@ private:
 
 public:
 
-    //! experimental
+    //! experimental - functions to be completed ...
     void setCurrentMultipleSelectionNode(SimulationNodeClass* aNode){ myCurMultipleSelectionNode = aNode; }
     SimulationNodeClass* getCurrentMultipleSelectionNode() { return myCurMultipleSelectionNode; }
-
-protected:
-
-    //QStandardItemModel* getModel();
 
 public slots:
 
     //! set context
     void setContext(const occHandle(AIS_InteractiveContext) &aCTX);
 
-    //! set delegate context
-    void setDelegateContext(const occHandle(AIS_InteractiveContext) &aCTX);
+    //! set mesh context
+    void setMeshContext(const occHandle(AIS_InteractiveContext) &aMeshCTX);
 
     //! slot
     void setTheModel(const QModelIndex &anIndex);
-
     void setTheModel(SimulationNodeClass *aNode);
-
 
     //! clear the tree
     void clearTree();
@@ -142,6 +129,9 @@ private:
 
     //! interactive context
     occHandle(AIS_InteractiveContext) myCTX;
+
+    //! interactive mesh context
+    occHandle(AIS_InteractiveContext) myMeshCTX;
 
 private slots:
 
@@ -357,7 +347,6 @@ signals:
     //void requestHandleBoltControls();     to be removed
     void requestHideAllMarkers(bool = false);
     void requestHandleTransparencyChanged(double aLevel);
-    void requestActivateMeshElementSelectionMode();
     void requestHandleMeshMetricChanged();
 
 #ifdef COSTAMP_VERSION

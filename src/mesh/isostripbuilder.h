@@ -16,7 +16,6 @@
 //! Qt
 //! ---
 #include <QObject>
-//#include <QMap>
 
 //! ----------------
 //! custom includes
@@ -88,6 +87,21 @@ private:
 
 public:
 
+    //! ----------
+    //! getColumn
+    //! ----------
+    std::vector<isoStripPoint> getColumn(int col) const
+    {
+        std::vector<isoStripPoint> vecPoints;
+        std::map<int,std::vector<isoStripPoint>>::const_iterator it = mdata.find(col);
+        if(it!=mdata.cend())
+        {
+            const std::vector<isoStripPoint> &vp = it->second;
+            for(int k=0; k<vp.size(); k++) vecPoints.push_back(vp[k]);
+        }
+        return vecPoints;
+    }
+
     //! -----------------------------------------------
     //! append a value at the end of a specific column
     //! -----------------------------------------------
@@ -97,14 +111,11 @@ public:
         if(it==mdata.end())
         {
             std::vector<isoStripPoint> v{theValue};
-            std::pair<int,std::vector<isoStripPoint>> apair;
-            apair.first = aCol;
-            apair.second = v;
-            mdata.insert(apair);
+            mdata.insert(std::make_pair(aCol,v));
         }
         else
         {
-            (*it).second.push_back(theValue);
+            it->second.push_back(theValue);
         }
     }
 
@@ -119,13 +130,10 @@ public:
 
         std::vector<isoStripPoint>::iterator it_ = std::find((*it).second.begin(),(*it).second.end(),thePoint);
 
-        if(it_==(*it).second.end())
-        {
-            return false;
-        }
+        if(it_==it->second.end()) return false;
         else
         {
-            (*it).second.insert(it_,theValue);
+            it->second.insert(it_,theValue);
             return true;
         }
     }
@@ -141,13 +149,10 @@ public:
 
         std::vector<isoStripPoint>::iterator it_ = std::find((*it).second.begin(),(*it).second.end(),thePoint);
 
-        if(it_==(*it).second.end())
-        {
-            return false;
-        }
+        if(it_==it->second.end()) return false;
         else
         {
-            (*it).second.insert(it_+1,theValue);
+            it->second.insert(it_+1,theValue);
             return true;
         }
     }
@@ -208,6 +213,7 @@ public:
             theElement.pointList<<mesh::meshPoint(aPoint.x,aPoint.y,aPoint.z);
         }
     }
+
 };
 
 class MeshVS_DataSource;
@@ -225,22 +231,29 @@ public:
     void setValues(const std::map<int,double> &values);
     void setIsoStrips(const std::vector<isoStrip> &theIsoStrips);
 
-    bool perform(std::vector<meshElementByCoords> &vecMeshElements);
+    //bool perform(std::vector<meshElementByCoords> &vecMeshElements);
     bool perform1(std::vector<meshElementByCoords> &vecMeshElements);
 
-    void getAllElements(const std::vector<faceTable> &vecFaceTables, std::vector<meshElementByCoords> &vecMeshElements);
     void getIsoStripElements(const std::vector<faceTable> &vecFaceTables, std::multimap<int, meshElementByCoords> &meshElementsByIsoStripNb);
+    bool performIsoSurface(int NbLevels, std::vector<meshElementByCoords> &vecMeshElements, std::map<int,int> &mapElementLevel, int position = -1);
 
 private:
 
     occHandle(MeshVS_DataSource) myMeshDS;
     std::map<int,double> myValues;
     std::vector<isoStrip> myIsoStrips;
+    std::map<int,std::vector<faceTable>> myMapElementFaceTables;
+    std::vector<faceTable> myVecFaceTables;
+    std::set<meshElement2D> myFaceElements;
 
 private:
 
     void classifyNodes(myMultiMap<int, int> &pointToIsoStrip);
     void pointCoord(double *c, int globalNodeID);
+    void getAllElements(const std::vector<faceTable> &vecFaceTables, std::vector<meshElementByCoords> &vecMeshElements);
+    bool computeFaceTables();
+
+    void computeFaceElements();
 
 private:
 

@@ -198,7 +198,6 @@ void contextMenuBuilder::buildMeshContextMenu(QMenu *contextMenu, bool addCommon
         ActionPreviewInflation->setIcon(QIcon(":/icons/icon_prismatic layer.png"));
         ActionPreviewInflation->setData(67);
     }
-
     if(addCommonActions==true)
     {
         //! add a separator
@@ -207,6 +206,9 @@ void contextMenuBuilder::buildMeshContextMenu(QMenu *contextMenu, bool addCommon
         //! a mesh control is selected
         if(node->getType()!=node->getFamily()) contextMenuBuilder::buildCommonActions(contextMenu);
     }
+
+    //! add a separator
+    contextMenu->addSeparator();
 
     //! add a separator
     contextMenu->addSeparator();
@@ -1991,6 +1993,14 @@ void contextMenuBuilder::addActionCreateNamedSelection(QMenu *contextMenu)
     ActionCreateNamedSelection->setIcon(QIcon(":/icons/icon_named selection geometry.png"));
     ActionCreateNamedSelection->setData(106);
 }
+
+void contextMenuBuilder::addActionCreateMeshNamedSelection(QMenu *contextMenu)
+{
+    QAction *actionCreateMeshElementSelection = contextMenu->addAction("Create mesh selection");
+    actionCreateMeshElementSelection->setIcon(QIcon(":/icons/icon_volume mesh.png"));
+    actionCreateMeshElementSelection->setData(311);
+}
+
 //! -----------------------------------------------
 //! remote displacement                         28
 //! remote force                                29

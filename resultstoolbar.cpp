@@ -22,6 +22,44 @@ ResultsToolBar::ResultsToolBar(const QString &title, QWidget *parent):QToolBar(t
     //! ----------------
     this->setObjectName("resultsToolBar");
 
+    this->setContentsMargins(0,0,0,0);
+
+    //! ---------------------
+    //! type of presentation
+    //! ---------------------
+    typeOfPresentationButton = new QPushButtonExtended(this);
+    typeOfPresentationButton->setIcon(QIcon(":/icons/icon_isostrips.png"));
+
+    //! -----------------------------
+    //! create a menu for the button
+    //! -----------------------------
+    typeOfPresentationMenu = new QMenu(this);
+
+    actionUseIsoStrips = typeOfPresentationMenu->addAction("Countouring");
+    actionUseIsoStrips->setIcon(QIcon(":/icons/icon_isostrips.png"));
+    actionUseIsoStrips->setToolTip("Iso-strips");
+    connect(actionUseIsoStrips,SIGNAL(triggered(bool)),this,SLOT(emitRequstUseIsoStrips()));
+
+    //! icon stolen from FREECAD - please change it
+    actionUseIsoSurfaces = typeOfPresentationMenu->addAction("Isosurfaces");
+    actionUseIsoSurfaces->setIcon(QIcon(":/icons/icon_isosurfaces.svg"));
+    actionUseIsoSurfaces->setToolTip("Iso-surfaces");
+    connect(actionUseIsoSurfaces,SIGNAL(triggered(bool)),this,SLOT(emitRequestUseIsoSurface()));
+
+    actionUseSmoothNodal = typeOfPresentationMenu->addAction("Smooth nodal");
+    actionUseSmoothNodal->setIcon(QIcon(":/icons/icon_color gradient 1.jpg"));
+    actionUseSmoothNodal->setToolTip("Use nodal results");
+    connect(actionUseSmoothNodal,SIGNAL(triggered(bool)),this,SLOT(emitRequestUseSmoothNodal()));
+
+    actionUseIsoLines = typeOfPresentationMenu->addAction("Isolines");
+    actionUseIsoLines->setIcon(QIcon(":/icons/icon_isolines.png"));
+    actionUseIsoLines->setToolTip("Iso-lines");
+    connect(actionUseIsoLines,SIGNAL(triggered(bool)),this,SLOT(emitRequestUseIsoLines()));
+
+    typeOfPresentationButton->setMenu(typeOfPresentationMenu);
+
+    this->addWidget(typeOfPresentationButton);
+
     //! ------------------------------
     //! add the scale selector widget
     //! ------------------------------
@@ -158,22 +196,49 @@ void ResultsToolBar::updateIcon(QAction *action)
     button->setIcon(icon);
 }
 
-/*
-//! ---------------------
-//! function: saveStatus
+//! ---------------------------------
+//! function: emitRequstUseIsoStrips
 //! details:
-//! ---------------------
-bool ResultsToolBar::saveStatus(const std::string &fileName)
+//! ---------------------------------
+void ResultsToolBar::emitRequstUseIsoStrips()
 {
-    FILE *f = fopen(fileName.c_str(),"w");
-    if(f==NULL) return false;
-    fprintf(f,"%d\t%d\t%lf\n",
-            myResultPresentation.theCombinedView,
-            myResultPresentation.isDeformedView,
-            myResultPresentation.theScale);
-    return true;
+    typeOfPresentationButton->setIcon(QIcon(":/icons/icon_isostrips.png"));
+    Global::status().myResultPresentation.theTypeOfPresentation = resultPresentation::typeOfPresentation_isostrips;
+    emit requestUpdateViewerStatus();
 }
-*/
+
+//! ----------------------------------
+//! function: emitRequstUseIsoSurface
+//! details:
+//! ----------------------------------
+void ResultsToolBar::emitRequestUseIsoSurface()
+{
+    typeOfPresentationButton->setIcon(QIcon(":/icons/icon_isosurfaces.svg"));
+    Global::status().myResultPresentation.theTypeOfPresentation = resultPresentation::typeOfPresentation_isosurfaces;
+    emit requestUpdateViewerStatus();
+}
+
+//! -----------------------------------
+//! function: emitRequstUseSmoothNodal
+//! details:
+//! -----------------------------------
+void ResultsToolBar::emitRequestUseSmoothNodal()
+{
+    typeOfPresentationButton->setIcon(QIcon(":/icons/icon_color gradient 1.jpg"));
+    Global::status().myResultPresentation.theTypeOfPresentation = resultPresentation::typeOfPresentation_nodalresults;
+    emit requestUpdateViewerStatus();
+}
+
+//! --------------------------------
+//! function: emitRequstUseIsoLines
+//! details:
+//! --------------------------------
+void ResultsToolBar::emitRequestUseIsoLines()
+{
+    typeOfPresentationButton->setIcon(QIcon(":/icons/icon_isolines.png"));
+    Global::status().myResultPresentation.theTypeOfPresentation = resultPresentation::typeOfPresentation_isolines;
+    emit requestUpdateViewerStatus();
+}
 
 //! --------------------
 //! function: setStatus

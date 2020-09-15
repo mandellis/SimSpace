@@ -1372,7 +1372,7 @@ void Ng_MeshVS_DataSourceFace::computeNormalAtNodes()
             for(int col=1; col<=3; col++)
             {
                 int globalNodeID = myElemNodes->Value(localElementID,col);
-                int localNodeID = myNodesMap.FindIndex(globalNodeID);
+                //int localNodeID = myNodesMap.FindIndex(globalNodeID);
 
                 //! ---------------------------------------------------------
                 //! build the map "nodeNormals" using the global node number
@@ -4171,6 +4171,7 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const std::vector<meshElement
         myNodeCoords->SetValue(localNodeID,2,aMeshPoint.y);
         myNodeCoords->SetValue(localNodeID,3,aMeshPoint.z);
     }
+
     //! ---------------------------
     //! compute normal at elements
     //! ---------------------------

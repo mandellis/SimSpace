@@ -1346,7 +1346,8 @@ bool SimulationNodeClass::isSimulationSetUpNode()
             myNodeType == SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_ImportedTemperatureDistribution ||
             myNodeType == SimulationNodeClass::nodeType_mapper ||
             myNodeType == SimulationNodeClass::nodeType_modelChange ||
-            myNodeType == SimulationNodeClass::nodeType_OpenFoamScalarData)
+            myNodeType == SimulationNodeClass::nodeType_mapper ||
+            myNodeType == SimulationNodeClass::nodeType_modelChange)
         return true;
 
 #ifdef COSTAMP_VERSION

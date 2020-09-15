@@ -1,11 +1,20 @@
+//! ----------------
 //! custom includes
+//! ----------------
 #include "ng_meshvs_datasource1d.h"
 
+//! ----
 //! OCC
+//! ----
 #include <TColStd_MapIteratorOfPackedMapOfInteger.hxx>
 #include <TColStd_HArray2OfReal.hxx>
 #include <TColStd_HArray1OfInteger.hxx>
 #include <TColStd_IndexedMapOfInteger.hxx>
+
+//! ----
+//! C++
+//! ----
+#include <vector>
 
 IMPLEMENT_STANDARD_HANDLE(Ng_MeshVS_DataSource1D,MeshVS_DataSourceExtended)
 IMPLEMENT_STANDARD_RTTIEXT(Ng_MeshVS_DataSource1D,MeshVS_DataSourceExtended)
@@ -16,36 +25,20 @@ IMPLEMENT_STANDARD_RTTIEXT(Ng_MeshVS_DataSource1D,MeshVS_DataSourceExtended)
 //! ----------------------
 Ng_MeshVS_DataSource1D::Ng_MeshVS_DataSource1D(const TColStd_PackedMapOfInteger &theNodes,
                                                const occHandle(TColStd_HArray2OfReal) &theCoords,
-                                               Standard_Integer theMeshOrder)
+                                               int theMeshOrder)
 {
-#ifdef VERBOSE
-    cout<<"Ng_MeshVS_DataSource1D::Ng_MeshVS_DataSource1D()->____CONSTRUCTOR CALLED____"<<endl;
-    for(int n=1; n<=theCoords->UpperRow();n++)
-        cout<<"n = "<<n<<" x ="<<theCoords->Value(n,1)<<" y= "<<theCoords->Value(n,2)<<" z= "<<theCoords->Value(n,3)<<endl;
-#endif
+    if(theNodes.Extent()<2) return;
 
-    if(theNodes.Extent()>1)
-    {
-    //! the mesh order
     myMeshOrder = theMeshOrder;
-
-    //! add the nodes (map of nodes)
     myNodes = theNodes;
-
-    //! the number of nodes
     myNumberOfNodes = theNodes.Extent();
 
-    //! the number of elements
-    if(myMeshOrder == 1) myNumberOfEdgeElements = theNodes.Extent()-1;
-    else myNumberOfEdgeElements= (theNodes.Extent()-1)/2;
+    if(myMeshOrder == 1) myNumberOfElements = theNodes.Extent()-1;
+    else myNumberOfElements= (theNodes.Extent()-1)/2;
 
-    //! my nodes coordinates
     myNodeCoords = new TColStd_HArray2OfReal(1,myNumberOfNodes,1,3);
 
-    //! fill the node map and add the coordinates
-    TColStd_MapIteratorOfPackedMapOfInteger aNodeIter;
-
-    for(aNodeIter.Initialize(myNodes);aNodeIter.More();aNodeIter.Next()) myNodesMap.Add(aNodeIter.Key());
+    for(TColStd_MapIteratorOfPackedMapOfInteger aNodeIter(myNodes);aNodeIter.More();aNodeIter.Next()) myNodesMap.Add(aNodeIter.Key());
     for(int i=1; i<=myNumberOfNodes; i++)
     {
         Standard_Real x = theCoords->Value(i, 1);
@@ -54,36 +47,27 @@ Ng_MeshVS_DataSource1D::Ng_MeshVS_DataSource1D(const TColStd_PackedMapOfInteger 
         myNodeCoords->SetValue(i,1,x);
         myNodeCoords->SetValue(i,2,y);
         myNodeCoords->SetValue(i,3,z);
-
-#ifdef VERBOSE
-        int aKey = myNodesMap.FindKey(i);
-        cout<<"Ng_MeshVS_DataSource1D::Ng_MeshVS_DataSource1D->____Node index: "<<i<<" ID: "<<aKey<<" x= "<<theCoords->Value(i,1)
-           <<" y = "<<theCoords->Value(i,2)<<" z = "<<theCoords->Value(1,3)<<"____"<<endl;
-#endif
     }
 
     std::vector<int> vecID;
-    for(aNodeIter.Initialize(myNodes);aNodeIter.More();aNodeIter.Next())
+    for(TColStd_MapIteratorOfPackedMapOfInteger aNodeIter(myNodes);aNodeIter.More();aNodeIter.Next())
     {
         Standard_Integer aKey = aNodeIter.Key();
         vecID.push_back(aKey);
     }
 
-    if(myMeshOrder==1) myElemNodes = new TColStd_HArray2OfInteger(1,myNumberOfEdgeElements,1,2);
+    if(myMeshOrder==1) myElemNodes = new TColStd_HArray2OfInteger(1,myNumberOfElements,1,2);
     else myElemNodes = new TColStd_HArray2OfInteger(1,(theNodes.Extent()-1)/2,1,3);
 
     if(myMeshOrder==1)
     {
         //! first order mesh
-        for(int i=0; i<myNumberOfEdgeElements;i++)
+        for(int i=1; i<=myNumberOfElements;i++)
         {
-#ifdef VERBOSE
-            cout<<"("<<vecID.at(i)<<", "<<vecID.at(i+1)<<")"<<endl;
-#endif
-            myElements.Add(i+1);
-            myElementsMap.Add(i+1);
-            myElemNodes->SetValue(i+1,1,vecID.at(i));
-            myElemNodes->SetValue(i+1,2,vecID.at(i+1));
+            myElements.Add(i);
+            myElementsMap.Add(i);
+            myElemNodes->SetValue(i,1,vecID.at(i-1));
+            myElemNodes->SetValue(i,2,vecID.at(i));
         }
     }
     else
@@ -100,12 +84,7 @@ Ng_MeshVS_DataSource1D::Ng_MeshVS_DataSource1D(const TColStd_PackedMapOfInteger 
             myElemNodes->SetValue(i,1,vecID.at(l));
             myElemNodes->SetValue(i,2,vecID.at(r));
             myElemNodes->SetValue(i,3,vecID.at(m));
-            //cout<<"(l, r, m) = ("<<vecID.at(l)<<", "<<vecID.at(r)<<", "<<vecID.at(m)<<")"<<endl;
         }
-    }
-#ifdef VERBOSE
-    cout<<"Ng_MeshVS_DataSource1D::Ng_MeshVS_DataSource1D->____Number of 1D elements for the edge: "<<myNumberOfEdgeElements<<"____"<<endl;
-#endif
     }
 }
 
@@ -114,33 +93,30 @@ Ng_MeshVS_DataSource1D::Ng_MeshVS_DataSource1D(const TColStd_PackedMapOfInteger 
 //! details:
 //! ------------------
 Standard_Boolean Ng_MeshVS_DataSource1D::GetGeom (const Standard_Integer ID,
-                          const Standard_Boolean IsElement,
-                          TColStd_Array1OfReal& Coords,
-                          Standard_Integer& NbNodes,
-                          MeshVS_EntityType& Type) const
+                                                  const Standard_Boolean IsElement,
+                                                  TColStd_Array1OfReal& Coords,
+                                                  Standard_Integer& NbNodes,
+                                                  MeshVS_EntityType& Type) const
 {
-    Standard_Boolean RV = Standard_False;
-    if(IsElement==Standard_True)
+    if(IsElement==true)
     {
-        if(ID>=1 && ID<=myNumberOfEdgeElements)
+        if(ID>=1 && ID<=myNumberOfElements)
         {
             Type = MeshVS_ET_Link;
             myMeshOrder == 1 ? NbNodes = 2: 3;
             for(Standard_Integer i=1,k=1;i<=NbNodes;i++)
             {
-                //! i spans the nodes of the element
-                //! j spans {x, y, z}
                 for(Standard_Integer j=1;j<=3;j++)
                 {
                     Coords(k)=myNodeCoords->Value(ID,j);
                     k++;
                 }
             }
-            RV = Standard_True;
+            return true;
         }
-        else RV = Standard_False;
+        else return false;
     }
-    else if (IsElement==Standard_False)
+    else
     {
         if(ID>=myNodes.GetMinimalMapped() && ID<=myNodes.GetMaximalMapped())
         {
@@ -150,11 +126,10 @@ Standard_Boolean Ng_MeshVS_DataSource1D::GetGeom (const Standard_Integer ID,
             Coords(1)=myNodeCoords->Value(nodeNr,1);
             Coords(2)=myNodeCoords->Value(nodeNr,2);
             Coords(3)=myNodeCoords->Value(nodeNr,3);
-            RV = Standard_True;
+            return true;
         }
-        else RV = Standard_False;
+        else return false;
     }
-    return RV;
 }
 
 //! ---------------------
@@ -184,25 +159,21 @@ Standard_Boolean Ng_MeshVS_DataSource1D::GetGeomType(const Standard_Integer ID,
                                              MeshVS_EntityType& Type)
                                              const
 {
-    //!cout<<"Ng_MeshVS_DataSource1D::GetGeomType()->____called____"<<endl;
-    Standard_Boolean RV = Standard_False;
-    if(IsElement == Standard_False)
+    if(IsElement == false)
     {
         if(ID>=1 && ID<=myNumberOfNodes)
         {
-            RV = Standard_True;
             Type = MeshVS_ET_Node;
+            return true;
         }
+        return false;
     }
-    else
+    if(ID>=1 && ID<=myNumberOfElements)
     {
-        if(ID>=1 && ID<=myNumberOfEdgeElements)
-        {
-            RV = Standard_True;
-            Type = MeshVS_ET_Link;
-        }
+        Type = MeshVS_ET_Link;
+        return true;
     }
-    return RV;
+    return false;
 }
 
 //! ------------------
@@ -223,9 +194,9 @@ Standard_Boolean Ng_MeshVS_DataSource1D::GetNodesByElement(const Standard_Intege
                                                           TColStd_Array1OfInteger& theNodeIDs,
                                                           Standard_Integer& theNbNodes) const
 {
-    if(ID>=1 && ID<=myNumberOfEdgeElements && theNodeIDs.Length()>=2)
+    if(ID>=1 && ID<=myNumberOfElements && theNodeIDs.Length()>=2)
     {
-        Standard_Integer aLow = theNodeIDs.Lower();
+        int aLow = theNodeIDs.Lower();
         switch(theNodeIDs.Length())
         {
         case 2:
@@ -240,9 +211,9 @@ Standard_Boolean Ng_MeshVS_DataSource1D::GetNodesByElement(const Standard_Intege
             theNodeIDs(aLow+2)=myElemNodes->Value(ID,3);
             break;
         }
-        return Standard_True;
+        return true;
     }
-    return Standard_False;
+    return false;
 }
 
 occHandle(TColStd_HArray2OfReal) Ng_MeshVS_DataSource1D::getNodesCoords() const

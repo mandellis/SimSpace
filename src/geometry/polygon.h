@@ -110,8 +110,6 @@ public:
             cout<<"polygon::getNormal()->____wrong number of nodes____"<<endl;
             return zeroNormal;
         }
-        //Point P0 = points[0];
-        //Point P1 = points[1];
         int start = 1;
         Point P0 = points[start%NbPoints];
         Point P1 = points[(start+1)%NbPoints];
@@ -272,8 +270,8 @@ public:
         //! -----------------
         //! first two points
         //! -----------------
-        Point P0 = points.at(0);
-        Point P1 = points.at(1);
+        Point P0 = points[0];
+        Point P1 = points[1];
         x0 = P0.x; y0 = P0.y; z0 = P0.z;
         x1 = P1.x; y1 = P1.y; z1 = P1.z;
 
@@ -282,7 +280,7 @@ public:
         //! -------------------------------------
         for(int i=2; i<NbPoints; i++)
         {
-            Point P2 = points.at(i);
+            Point P2 = points[i];
             if(!areCollinear(P0,P1,P2))
             {
                 x2 = P2.x; y2 = P2.y; z2 = P2.z;
@@ -321,9 +319,7 @@ public:
             size_t NbPoints = aPolygon.size();
             for(int n=0; n<NbPoints; n++)
             {
-                //const polygon::Point aP = aPolygon.at(n);
                 const polygon::Point aP = aPolygon[n];
-
                 double d = sqrt(pow(aP.x-P.x,2)+pow(aP.y-P.y,2)+pow(aP.z-P.z,2));
                 if(d>proximity) return false;
             }
@@ -592,9 +588,6 @@ public:
 
         for(int i=0; i<NbPoints-1; i++)
         {
-            //const polygon::Point &Pi = transfPointList.at(0);
-            //const polygon::Point &Pii = transfPointList.at(1);
-
             const polygon::Point &Pi = transfPointList[0];
             const polygon::Point &Pii = transfPointList[1];
 
@@ -657,23 +650,16 @@ public:
         //! point plane distance
         //! ---------------------
         const polygon::Point &aP = aPolygon[0];
-
-        //double L = sqrt(a*a+b*b+c*c);
-        //double d_old = (a*aP.x+b*aP.y+c*aP.z+d)/L;
         double d_old = (a*aP.x+b*aP.y+c*aP.z+d);
-
         for(int i=1; i<aPolygon.size(); i++)
         {
             const polygon::Point &aP = aPolygon[i];
-
-            //double d_new = (a*aP.x+b*aP.y+c*aP.z+d)/L;
             double d_new = (a*aP.x+b*aP.y+c*aP.z+d);
 
             //! -----
             //! sign
             //! -----
             if(d_new*d_old<=0)
-            //if(SIGN(d_new)*SIGN(d_old)<1)
             {
                 intersection = true;
                 break;

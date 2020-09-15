@@ -7,9 +7,10 @@
 //! ---
 //! Qt
 //! ---
-#include<QComboBox>
-#include<QLineEdit>
-#include<QSlider>
+#include <QComboBox>
+//#include <QCheckBox>
+#include <QLineEdit>
+#include <QSlider>
 
 //! ----
 //! C++
@@ -34,7 +35,8 @@ const QString sliderStyleSheet = QString("QSlider::groove:horizontal { "
 //! ----------------------
 clipToolDelegate::clipToolDelegate(QWidget *parent):QStyledItemDelegate(parent)
 {
-    cout<<"clipToolDelegate::clipToolDelegate()->____CONSTRUCTOR CALLED____"<<endl;
+    ;
+    //cout<<"clipToolDelegate::clipToolDelegate()->____CONSTRUCTOR CALLED____"<<endl;
 }
 
 //! -----------------------
@@ -48,29 +50,15 @@ QWidget* clipToolDelegate::createEditor(QWidget *parent, const QStyleOptionViewI
     if(!index.isValid()) return 0;
     clipTool *theClipTool = static_cast<clipTool*>(this->parent());
 
-    //! -----------------
-    //! resize the cells
-    //! -----------------
-    //theClipTool->resizeRowsToContents();
-    //theClipTool->resizeColumnsToContents();
-
     switch(index.column())
     {
-    case CLIPPLANE_NAME_COLUMN:
-    {
-        QLineEdit *le = new QLineEdit(parent);
-        return le;
-    }
-        break;
-
-    case CLIPPLANE_ID_COLUMN:
-    {
-        return 0;
-    }
-        break;
-
+    case CLIPPLANE_NAME_COLUMN: return 0; break;
+    case CLIPPLANE_ID_COLUMN: return 0; break;
     case CLIPPLANE_STATUS_COLUMN:
     {
+        //QCheckBox *cb = new QCheckBox(parent);
+        //cb->setChecked(false);
+        //return cb;
         QVariant data;
         QComboBox *comboBox = new QComboBox(parent);
         data.setValue(false); comboBox->addItem("Off",data); //! combo-box index "0"
@@ -81,61 +69,50 @@ QWidget* clipToolDelegate::createEditor(QWidget *parent, const QStyleOptionViewI
 
     case CLIPPLANE_BASE_COORDINATE_SYSTEM_COLUMN:
     {
-        cout<<"clipToolDelegate::createEditor()->____create editor for column: "<<index.column()<<"____"<<endl;
+        //cout<<"clipToolDelegate::createEditor()->____create editor for column: "<<index.column()<<"____"<<endl;
         //! -----------------------------------------------
         //! return the editor only if the status is active
         //! -----------------------------------------------
-        if(theClipTool->isCurrentRowActive())
+        if(theClipTool->isCurrentRowActive()==false) return 0;
+
+        //! -----------------------------
+        //! clip plane coordinate system
+        //! -----------------------------
+        QComboBox *comboBox = new QComboBox(parent);
+        QVariant data;
+        QExtendedStandardItem *itemCSRoot = theClipTool->getCoordinateSystemRoot();
+        for(int row=0; row<itemCSRoot->rowCount(); row++)
         {
-            //! -----------------------------
-            //! clip plane coordinate system
-            //! -----------------------------
-            QComboBox *comboBox = new QComboBox(parent);
-
-            QVariant data;
-            QExtendedStandardItem *itemCSRoot = theClipTool->getCoordinateSystemRoot();
-            for(int row=0; row<itemCSRoot->rowCount(); row++)
-            {
-                QExtendedStandardItem *curCSItem = static_cast<QExtendedStandardItem*>(itemCSRoot->child(row,0));
-                void *p = (void*)curCSItem;
-                data.setValue(p);
-                const QIcon &anIcon = curCSItem->data(Qt::DecorationRole).value<QIcon>();
-                comboBox->addItem(anIcon,curCSItem->data(Qt::DisplayRole).toString(),data);
-            }
-            return comboBox;
+            QExtendedStandardItem *curCSItem = static_cast<QExtendedStandardItem*>(itemCSRoot->child(row,0));
+            void *p = (void*)curCSItem;
+            data.setValue(p);
+            const QIcon &anIcon = curCSItem->data(Qt::DecorationRole).value<QIcon>();
+            comboBox->addItem(anIcon,curCSItem->data(Qt::DisplayRole).toString(),data);
         }
-        else return 0;
+        return comboBox;
     }
         break;
 
-    case CLIPPLANE_BASE_PLANE_DATA_COLUMN:
-    {
-        //! ----------------
-        //! clip plane data
-        //! ----------------
-        return 0;
-    }
-        break;
+    case CLIPPLANE_BASE_PLANE_DATA_COLUMN: return 0; break;
 
     case CLIPPLANE_TRANSLATION_COLUMN:
     {
         //! -----------------------------------------------
         //! return the editor only if the status is active
         //! -----------------------------------------------
-        if(theClipTool->isCurrentRowActive())
-        {
-            //! ------------------
-            //! plane translation
-            //! ------------------
-            QSlider *editor = new QSlider(parent);
-            editor->setStyleSheet(sliderStyleSheet);
-            //editor->setFixedWidth(75);
-            editor->setOrientation(Qt::Horizontal);
-            editor->setMinimum(-100);
-            editor->setMaximum(100);
-            return editor;
-        }
-        else return 0;
+        if(theClipTool->isCurrentRowActive() == false) return 0;
+
+        //! ------------------
+        //! plane translation
+        //! ------------------
+        QSlider *editor = new QSlider(parent);
+        editor->setStyleSheet(sliderStyleSheet);
+        editor->setOrientation(Qt::Horizontal);
+        editor->setTracking(true);
+        editor->setMinimum(-100);
+        editor->setMaximum(100);
+        editor->setValue(0);
+        return editor;
     }
         break;
 
@@ -154,30 +131,12 @@ void clipToolDelegate::setEditorData(QWidget *editor, const QModelIndex &index) 
     int col = index.column();
     switch(col)
     {
-    case CLIPPLANE_NAME_COLUMN:
-    {
-        //! ---------------------------------------------
-        //! initialize th editor for the clip plane name
-        //! ---------------------------------------------
-        QLineEdit *le = static_cast<QLineEdit*>(editor);
-        le->setText(index.data(Qt::UserRole).toString());
-    }
-        break;
-
-    case CLIPPLANE_ID_COLUMN:
-    {
-        //! --------------------------
-        //! clip plane ID: do nothing
-        //! --------------------------
-        ;
-    }
-        break;
-
+    case CLIPPLANE_NAME_COLUMN: break;
+    case CLIPPLANE_ID_COLUMN: break;
     case CLIPPLANE_STATUS_COLUMN:
     {
-        //! --------------------------------------------
-        //! initialize the editor for clip plane status
-        //! --------------------------------------------
+        //QCheckBox *cb = static_cast<QCheckBox*>(editor);
+        //connect(cb,SIGNAL(stateChanged(int)),this,SLOT(handleCSStatusChanged()));
         QComboBox *comboBox = static_cast<QComboBox*>(editor);
         comboBox->setCurrentIndex(index.data(Qt::UserRole).toInt());
         connect(comboBox,SIGNAL(currentIndexChanged(int)),this,SLOT(handleCSStatusChanged()));
@@ -186,9 +145,6 @@ void clipToolDelegate::setEditorData(QWidget *editor, const QModelIndex &index) 
 
     case CLIPPLANE_BASE_COORDINATE_SYSTEM_COLUMN:
     {
-        //! ------------------------------------------------
-        //! initialize the editor for clip plane definition
-        //! ------------------------------------------------
         QComboBox *comboBox = static_cast<QComboBox*>(editor);
         QVariant data = index.data(Qt::UserRole);
         int comboBoxIndex = comboBox->findData(data,Qt::UserRole);
@@ -198,14 +154,7 @@ void clipToolDelegate::setEditorData(QWidget *editor, const QModelIndex &index) 
     }
         break;
 
-    case CLIPPLANE_BASE_PLANE_DATA_COLUMN:
-    {
-        //! ----------------------------
-        //! clip plane data: do nothing
-        //! ----------------------------
-    }
-        break;
-
+    case CLIPPLANE_BASE_PLANE_DATA_COLUMN: break;
     case CLIPPLANE_TRANSLATION_COLUMN:
     {
         //! ------------------
@@ -213,9 +162,8 @@ void clipToolDelegate::setEditorData(QWidget *editor, const QModelIndex &index) 
         //! ------------------
         QSlider *slider = static_cast<QSlider*>(editor);
         slider->setValue(index.data(Qt::UserRole).toInt());
-        //connect(slider,SIGNAL(sliderMoved(int)),this,SLOT(handleCSTranslation(int)));
-        connect(slider,SIGNAL(sliderReleased()),this,SLOT(handleCSTranslationHandleReleased()));
         connect(slider,SIGNAL(valueChanged(int)),this,SLOT(handleCSTranslation(int)));
+        //connect(slider,SIGNAL(sliderReleased()),this,SLOT(handleCSTranslationHandleReleased()));
     }
         break;
     }
@@ -230,22 +178,13 @@ void clipToolDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, 
     QVariant data;
     switch(index.column())
     {
-    case CLIPPLANE_NAME_COLUMN:
-    {
-        QLineEdit *le = static_cast<QLineEdit*>(editor);
-        data.setValue(le->text());
-        model->setData(index,data,Qt::UserRole);
-    }
-        break;
-
-    case CLIPPLANE_ID_COLUMN:
-    {
-        ;
-    }
-        break;
-
+    case CLIPPLANE_NAME_COLUMN: break;
+    case CLIPPLANE_ID_COLUMN: break;
     case CLIPPLANE_STATUS_COLUMN:
     {
+        //QCheckBox *cb = static_cast<QCheckBox*>(editor);
+        //data.setValue(cb->isChecked());
+        //model->setData(index,data,Qt::UserRole);
         QComboBox *comboBox = static_cast<QComboBox*>(editor);
         data = comboBox->currentData(Qt::UserRole);
         model->setData(index,data,Qt::UserRole);
@@ -259,6 +198,14 @@ void clipToolDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, 
     {
         QComboBox *comboBox = static_cast<QComboBox*>(editor);
         QVariant data = comboBox->currentData(Qt::UserRole);
+
+        if(data.canConvert<void*>()==true) cout<<"____delegate can convert to void*____"<<endl;
+        else cout<<"____delegate CANNOT convert to void*"<<"____"<<endl;
+        if((QStandardItem*)data.value<void*>()==NULL) cout<<"____error in convertion to QStandardItem*____"<<endl;
+        else cout<<"____can convert void* to QStandardItem____"<<endl;
+        if((QExtendedStandardItem*)data.value<void*>()==NULL) cout<<"____error in convertion to QExtendedStandardItem*____"<<endl;
+        else cout<<"____can convert void* to QExtendedStandardItem*____"<<endl;
+
         model->setData(index,data,Qt::UserRole);
         QExtendedStandardItem *itemInVoidPointer = static_cast<QExtendedStandardItem*>(data.value<void*>());
         SimulationNodeClass *nodeInItem = itemInVoidPointer->data(Qt::UserRole).value<SimulationNodeClass*>();
@@ -267,12 +214,7 @@ void clipToolDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, 
     }
         break;
 
-    case CLIPPLANE_BASE_PLANE_DATA_COLUMN:
-    {
-        ;
-    }
-        break;
-
+    case CLIPPLANE_BASE_PLANE_DATA_COLUMN: break;
     case CLIPPLANE_TRANSLATION_COLUMN:
     {
         QSlider *slider = static_cast<QSlider*>(editor);
@@ -300,10 +242,10 @@ void clipToolDelegate::handleCSChanged()
     emit currentCSChanged();
 }
 
-//! ----------------------------------
-//! function: handleCSStatusChanged()
+//! --------------------------------
+//! function: handleCSStatusChanged
 //! details:
-//! -----------------------------------
+//! --------------------------------
 void clipToolDelegate::handleCSStatusChanged()
 {
     cout<<"clipToolDelegate::handleCSStatusChanged()->____function called____"<<endl;
@@ -317,9 +259,9 @@ void clipToolDelegate::handleCSStatusChanged()
 //! function: handleCSTranslation
 //! details:
 //! ------------------------------
-void clipToolDelegate::handleCSTranslation(int curZ)
+void clipToolDelegate::handleCSTranslation(int sliderValue)
 {
-    emit currentCSTranslationApplied(curZ);
+    emit currentCSTranslationApplied(sliderValue);
 }
 
 //! --------------------------------------------

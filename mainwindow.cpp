@@ -18,7 +18,6 @@
 #include "detailviewer.h"
 #include "shapeselector.h"
 #include "generaldelegate.h"
-#include "boundaryvaluemanager.h"
 
 #include "tabulardataviewerclass1.h"
 
@@ -459,9 +458,9 @@ MainWindow::MainWindow(QWidget *parent):QMainWindow(parent),ui(new Ui::MainWindo
     myDetailViewer->setObjectName("detailViewer");
     mySimulationManager->setDetailViewer(myDetailViewer);
 
-    //! ------------------------------
-    //! ...its non-dockable container
-    //! ------------------------------
+    //! -------------------------------
+    //! ... its non-dockable container
+    //! -------------------------------
     myDetailViewerContainer = new QTabWidget(this);
     myDetailViewerContainer->setTabShape(QTabWidget::Triangular);
     myDetailViewerContainer->setTabPosition(QTabWidget::South);
@@ -480,8 +479,14 @@ MainWindow::MainWindow(QWidget *parent):QMainWindow(parent),ui(new Ui::MainWindo
     //! clip tool and its dockable window
     //! ----------------------------------
     myClipTool = new clipTool(this);
+
+    QWidget *container = new QWidget(this);
+    QHBoxLayout *h = new QHBoxLayout;
+    container->setLayout(h);
+    h->addWidget(myClipTool);
+
     myClipToolDock = new QDockWidget("Clipping planes");
-    myClipToolDock->setWidget(myClipTool);
+    myClipToolDock->setWidget(container);
     this->addDockWidget(Qt::LeftDockWidgetArea, myClipToolDock);
     myClipToolDock->setVisible(false);
 
@@ -631,7 +636,6 @@ void MainWindow::showBodiesOnMasterViewPort(const TColStd_ListOfInteger &listOfA
     {
         int bodyIndex = it.Value();
         const occHandle(AIS_ExtendedShape)& curAIS = occHandle(AIS_ExtendedShape)::DownCast(myDockableMasterViewPort->getViewPort()->getInteractiveObjects().value(bodyIndex));
-        //const occHandle(AIS_ExtendedShape)& curAIS = occHandle(AIS_ExtendedShape)::DownCast(myDockableMasterViewPort->getViewPort()->getInteractiveObjects().at(bodyIndex));
         myDockableMasterViewPort->getContext()->SetDisplayMode(curAIS,AIS_Shaded,false);
         myDockableMasterViewPort->getContext()->Display(curAIS,false);
     }
@@ -711,6 +715,34 @@ void MainWindow::createMenu()
     //! "Geometry" menu - setup
     //! ------------------------
     GeometryMenu = menuBar()->addMenu("Geometry");
+
+    //! --------------------
+    //! "Mesh" menu - setup
+    //! --------------------
+    MeshMenu = menuBar()->addMenu("Mesh");
+
+    //! ----------------------
+    //! Mesh submenu "Insert"
+    //! ----------------------
+    MeshMenuInsert = MeshMenu->addMenu("Insert");
+    MeshMenuInsert->setIcon(QIcon(":/icons/icon_insert.png"));
+    MeshMenu->addSeparator();
+
+    MeshMenuInsert->addAction(actionInsertMethod);
+    MeshMenuInsert->addSeparator();
+    MeshMenuInsert->addAction(actionInsertBodySizing);
+    MeshMenuInsert->addAction(actionInsertFaceSizing);
+    MeshMenuInsert->addAction(actionInsertEdgeSizing);
+    MeshMenuInsert->addAction(actionInsertVertexSizing);
+    MeshMenuInsert->addSeparator();
+    MeshMenuInsert->addAction(actionInsertPrismaticLayer);
+
+    MeshMenu->addAction(actionPreviewMesh);
+    MeshMenu->addAction(actionGenerateMesh);
+    MeshMenu->addSeparator();
+    MeshMenu->addAction(actionLoadMesh);
+    MeshMenu->addSeparator();
+    MeshMenu->addAction(actionClearMesh);
 
     //! -------------
     //! "Tools" menu
@@ -802,30 +834,56 @@ void MainWindow::createActions()
     //! "Geometry" menu actions
     //!-------------------------
 
-    //!-------------------------------------
-    //! "Mesh" menu actions - to be removed
-    //! ------------------------------------
+    //!---------------------
+    //! "Mesh" menu actions
+    //! --------------------
     actionPreviewMesh = new QAction("Preview the surface mesh", this);
     actionPreviewMesh->setIcon(QIcon(":/icons/icon_surface mesh.png"));
+    connect(actionPreviewMesh,SIGNAL(triggered(bool)),mySimulationManager,SLOT(buildSurfaceMesh()));
 
+    //! Generate volume mesh
     actionGenerateMesh = new QAction("Generate the mesh",this);
     actionGenerateMesh->setIcon(QIcon(":/icons/icon_volume mesh.png"));
+    connect(actionGenerateMesh,SIGNAL(triggered(bool)),mySimulationManager,SLOT(buildVolumeMesh()));
 
+    //! Clear mesh
     actionClearMesh = new QAction("Clear all the meshes",this);
     actionClearMesh->setIcon(QIcon(":/icons/icon_clear data.png"));
     connect(actionClearMesh,SIGNAL(triggered(bool)),myMainOCCViewer,SLOT(clearMeshFromViewer()));
 
-    //! "Mesh" subMenu - "Insert mesh control" actions
     //! Meshing method
     actionInsertMethod = new QAction("Insert method",this);
     actionInsertMethod->setIcon(QIcon(":/icons/icon_mesh method.png"));
+    connect(actionInsertMethod,SIGNAL(triggered(bool)),this,SLOT(createItemMeshMethod()));
 
-    //! Body sizing, grading
-    actionInsertBodySizing  = new QAction("Insert body sizing",this);
+    //! Body sizing
+    actionInsertBodySizing  = new QAction("Body sizing",this);
     actionInsertBodySizing->setIcon(QIcon(":/icons/icon_volume mesh.png"));
+    connect(actionInsertBodySizing,SIGNAL(triggered(bool)),this,SLOT(createItemMeshBodySizing()));
 
-    actionInsertFaceSizing = new QAction("Insert face sizing",this);
+    //! Face sizing
+    actionInsertFaceSizing = new QAction("Face sizing",this);
     actionInsertFaceSizing->setIcon(QIcon(":/icons/icon_mesh face sizing.png"));
+    connect(actionInsertFaceSizing,SIGNAL(triggered(bool)),this,SLOT(createItemMeshFaceSizing()));
+
+    //! Edge sizing
+    actionInsertEdgeSizing = new QAction("Edge sizing",this);
+    actionInsertEdgeSizing->setIcon(QIcon(":/icons/icon_mesh edge sizing.png"));
+    connect(actionInsertEdgeSizing,SIGNAL(triggered(bool)),this,SLOT(createItemMeshEdgeSizing()));
+
+    //! Vertex sizing
+    actionInsertVertexSizing = new QAction("Vertex sizing",this);
+    actionInsertVertexSizing->setIcon(QIcon(":/icons/icon_point.png"));
+    connect(actionInsertVertexSizing,SIGNAL(triggered(bool)),this,SLOT(createItemMeshVertexSizing()));
+
+    //! Prismatic layer
+    actionInsertPrismaticLayer = new QAction("Insert prismatic layer",this);
+    actionInsertPrismaticLayer->setIcon(QIcon(":/icons/icon_prismatic layer.png"));
+    connect(actionInsertPrismaticLayer,SIGNAL(triggered(bool)),this,SLOT(createItemMeshPrismaticLayer()));
+
+    //! load mesh from file
+    actionLoadMesh = new QAction("Load mesh from file",this);
+    actionLoadMesh->setIcon(QIcon(":/icons/icon_open from file.png"));
 
     //!-------------------------
     //! "Solution" menu actions
@@ -1077,6 +1135,23 @@ void MainWindow::createToolBars()
     viewAndSelectionToolbar->setVisible(true);
     viewAndSelectionToolbar->setMovable(true);
 
+    //! add the select geometry/select mesh button
+    QPushButtonExtended *buttonToggleSelectGeometryMesh = new QPushButtonExtended(this);
+    buttonToggleSelectGeometryMesh->setIcon(QIcon(":/icons/icon_select geometry.png"));
+    viewAndSelectionToolbar->addWidget(buttonToggleSelectGeometryMesh);
+
+    QMenu *menuToggleSelectGeometryMesh = new QMenu(this);
+    buttonToggleSelectGeometryMesh->setMenu(menuToggleSelectGeometryMesh);
+
+    QAction *actionToggleSelectGeometry = new QAction(QIcon(":/icons/icon_select geometry.png"),"Select geometry",this);
+    connect(actionToggleSelectGeometry,SIGNAL(triggered(bool)),this,SLOT(setSelectionModeGeometry()));
+
+    QAction *actionToggleSelectMesh = new QAction(QIcon(":/icons/icon_select mesh.png"),"Select mesh",this);
+    connect(actionToggleSelectMesh,SIGNAL(triggered(bool)),this,SLOT(setSelectionModeMesh()));
+
+    menuToggleSelectGeometryMesh->addAction(actionToggleSelectGeometry);
+    menuToggleSelectGeometryMesh->addAction(actionToggleSelectMesh);
+
     //! add the pick point coordinates
     viewAndSelectionToolbar->addAction(actionTogglePickPointCoordinates);
 
@@ -1089,10 +1164,8 @@ void MainWindow::createToolBars()
     //! add a separator
     viewAndSelectionToolbar->addSeparator();
 
-    //! -------------------------------------------------------
     //! add the "type of selection" menu button to the toolbar
-    //! -------------------------------------------------------
-    myPushButtonTypeOfSelection = new QPushButtonExtended();
+    myPushButtonTypeOfSelection = new QPushButtonExtended(this);
     myPushButtonTypeOfSelection->setIcon(QIcon(":/icons/icon_single select.png"));
     viewAndSelectionToolbar->addWidget(myPushButtonTypeOfSelection);
     QMenu *menuButtonTypeOfSelection = new QMenu(this);
@@ -1195,6 +1268,60 @@ void MainWindow::createToolBars()
     connect(myMainOCCViewer,SIGNAL(resultsPresentationChanged()),mySimulationManager,SLOT(updateResultsPresentation()));
 }
 
+//! -------------------------------
+//! function: createItemMeshMethod
+//! details:
+//! -------------------------------
+void MainWindow::createItemMeshMethod()
+{
+    mySimulationManager->createSimulationNode(SimulationNodeClass::nodeType_meshMethod);
+}
+
+//! -----------------------------------
+//! function: createItemMeshBodySizing
+//! function:
+//! -----------------------------------
+void MainWindow::createItemMeshBodySizing()
+{
+    mySimulationManager->createSimulationNode(SimulationNodeClass::nodeType_meshBodyMeshControl);
+}
+
+//! -----------------------------------
+//! function: createItemMeshFaceSizing
+//! details:
+//! -----------------------------------
+void MainWindow::createItemMeshFaceSizing()
+{
+    mySimulationManager->createSimulationNode(SimulationNodeClass::nodeType_meshFaceSize);
+}
+
+//! -----------------------------------
+//! function: createItemMeshEdgeSizing
+//! details:
+//! -----------------------------------
+void MainWindow::createItemMeshEdgeSizing()
+{
+    mySimulationManager->createSimulationNode(SimulationNodeClass::nodeType_meshEdgeSize);
+}
+
+//! -----------------------------------
+//! function: createItemMeshVertexSizing
+//! details:
+//! -----------------------------------
+void MainWindow::createItemMeshVertexSizing()
+{
+    mySimulationManager->createSimulationNode(SimulationNodeClass::nodeType_meshVertexSize);
+}
+
+//! ---------------------------------------
+//! function: createItemMeshPrismaticLayer
+//! details:
+//! ---------------------------------------
+void MainWindow::createItemMeshPrismaticLayer()
+{
+    mySimulationManager->createSimulationNode(SimulationNodeClass::nodeType_meshPrismaticLayer);
+}
+
 //! ---------------------------------
 //! function: setSelectionModeSingle
 //! details:
@@ -1204,6 +1331,26 @@ void MainWindow::setSelectionModeSingle()
     myMainOCCViewer->setGlobalCurSelectionMode(0);
     myPushButtonTypeOfSelection->setIcon(QIcon(":/icons/icon_single select.png"));
     statusBar()->showMessage("Single selection",TRANSIENT_MESSAGE_TIMEOUT);
+}
+
+//! -----------------------------------
+//! function: setSelectionModeGeometry
+//! details:
+//! -----------------------------------
+void MainWindow::setSelectionModeGeometry()
+{
+    cout<<"setSelectionModeGeometry()->____function called____"<<endl;
+    myMainOCCViewer->setGeometrySelectionMode();
+}
+
+//! -------------------------------
+//! function: setSelectionModeMesh
+//! details:
+//! -------------------------------
+void MainWindow::setSelectionModeMesh()
+{
+    cout<<"setSelectionModeMesh()->____function called____"<<endl;
+    myMainOCCViewer->setMeshSelectionMode();
 }
 
 //! ------------------------------
@@ -1297,10 +1444,10 @@ void MainWindow::closeTheModel()
     //! delete <project name>_files
 }
 
-//! -----------------------------------------------------
+//! ---------------------
 //! function: importFile
-//! details:  open a modal dialog for the file selection
-//! -----------------------------------------------------
+//! details:
+//! ---------------------
 void MainWindow::importFile(QString &fileName)
 {
     //!cout<<"MainWindow::importFile()->____function called: "<<fileName.toStdString()<<"____"<<endl;
@@ -1416,20 +1563,30 @@ void MainWindow::importFile(QString &fileName)
                 }
                 aProgressIndicator->EndScope();
 
-                if(!shapeFromReader.IsNull())
+                if(shapeFromReader.IsNull()==false)
                 {
                     //! set the selection model - it can be done only when something has been loaded
                     mySimulationManager->setSelectionModel();
 
-                    //! experimental - set the interactive context (communication with the display)
+                    const occHandle(AIS_InteractiveContext) &aCTX = myMainOCCViewer->getContext();
+                    if(aCTX.IsNull())
+                    {
+                        cout<<"MainWindow::importFile()->____error: context is NULL____"<<endl;
+                        exit(1);
+                    }
+
+                    //! set the interactive context for simulation manager
+                    cout<<"MainWindow::importFile()->____set the context for the simulation manager____"<<endl;
                     mySimulationManager->setContext(myMainOCCViewer->getContext());
 
-                    //! diagnostic
-                    if(myMainOCCViewer->getContext().IsNull()) cout<<"MainWindow::importFile()->____error: context is NULL____"<<endl;
-
                     //! set the context for the Detail viewer
+                    cout<<"MainWindow::importFile()->____set the context for the detail viewer____"<<endl;
                     myDetailViewer->setContext(myMainOCCViewer->getContext());
+
+                    cout<<"MainWindow::importFile()->____set the mesh context for the detail viewer____"<<endl;
+                    myDetailViewer->setMeshContext(myMainOCCViewer->getMeshContext());
                 }
+
                 //! ------------------------------------
                 //! change the title of the main window
                 //! ------------------------------------
@@ -1458,15 +1615,13 @@ void MainWindow::importFile(QString &fileName)
     }
 }
 
-//! ----------------------------------------------------------------
+//! -------------------------
 //! function: updateViewport
-//! details:  this function is called when the simulation data base
-//!           is changed by a geometry reload
-//! ----------------------------------------------------------------
+//! details:
+//! -------------------------
 void MainWindow::updateViewport()
 {
     cout<<"MainWindow::updateViewport()->____function called____"<<endl;
-    ccout("MainWindow::updateViewport()->____function called____");
 
     //! --------------------------------------------------------------
     //! reset the maps of the interactive objects (shapes and meshes)
@@ -1504,15 +1659,21 @@ void MainWindow::updateViewport()
     mySimulationManager->setSelectionModel();
 
     //! ----------------------------------------------------------------------------
-    //! experimental - set the interactive context (communication with the display)
+    //! set the interactive context (communication with the display)
     //! ----------------------------------------------------------------------------
     mySimulationManager->setContext(myMainOCCViewer->getContext());
 
-    //! diagnostic - can be removed
+    //! -----------
+    //! diagnostic
+    //! -----------
     if(myMainOCCViewer->getContext().IsNull()) cout<<"MainWindow::importFile()->____error: context is NULL____"<<endl;
+    if(myMainOCCViewer->getMeshContext().IsNull()) cout<<"MainWindow::importFile()->____error: context is NULL____"<<endl;
 
-    //! set the context for the Detail viewer - dould be removed
+    //! ---------------------------------------------------------------------------------
+    //! set the context for the Detail viewer - could be removed (do not understand why)
+    //! ---------------------------------------------------------------------------------
     myDetailViewer->setContext(myMainOCCViewer->getContext());
+    myDetailViewer->setMeshContext(myMainOCCViewer->getMeshContext());
 
     //! ------------------------------------
     //! change the title of the main window
@@ -1608,8 +1769,10 @@ void MainWindow::openProject()
 
             //! ----------------------------
             //! set the interactive context
-            //! ----------------------------
-            if(myMainOCCViewer->getContext().IsNull()) cout<<"MainWindow::openProject()->____error: context is NULL____"<<endl;
+            //! ----------------------------            
+            const occHandle(AIS_InteractiveContext) &aCTX = myMainOCCViewer->getContext();
+            if(aCTX.IsNull()) exit(9999);
+
             mySimulationManager->setContext(myMainOCCViewer->getContext());
 
             myMainOCCViewer->setSimulationdataBase(mySimulationManager->getDataBase());
@@ -1627,10 +1790,11 @@ void MainWindow::openProject()
             myDockableSlaveViewPort->createInteractiveShapes();
             myDockableSlaveViewPort->displayCAD();
 
-            //! --------------------------------------------------
-            //! set the interactive context for the Detail viewer
-            //! --------------------------------------------------
+            //! -----------------------------------------------------------------
+            //! set the interactive shape and mesh context for the Detail viewer
+            //! -----------------------------------------------------------------
             myDetailViewer->setContext(myMainOCCViewer->getContext());
+            myDetailViewer->setMeshContext(myMainOCCViewer->getMeshContext());
 
             //! -------------------------------------------------
             //! feed the clip plane tool with coordinate systems
@@ -1744,7 +1908,8 @@ void MainWindow::toggleSolidSelectionMode(bool isActivated)
     {
         handleViewAndSelectionButtons(actionToggleSolidSelect);
         myMainOCCViewer->setSelectionMode(CurSelection_Solid);
-        //! experimental
+
+        //! same selection mode in additional viewports
         myDockableMasterViewPort->setSelectionMode(CurSelection_Solid);
         myDockableSlaveViewPort->setSelectionMode(CurSelection_Solid);
         statusBar()->showMessage("Select Solids",TRANSIENT_MESSAGE_TIMEOUT);
@@ -1761,6 +1926,8 @@ void MainWindow::toggleFaceSelectionMode(bool isActivated)
     {
         handleViewAndSelectionButtons(actionToggleFaceSelect);
         myMainOCCViewer->setSelectionMode(CurSelection_Face);
+
+        //! same selection mode in additional viewports
         myDockableMasterViewPort->setSelectionMode(CurSelection_Face);
         myDockableSlaveViewPort->setSelectionMode(CurSelection_Face);
         statusBar()->showMessage("Select Faces",TRANSIENT_MESSAGE_TIMEOUT);
@@ -1777,6 +1944,8 @@ void MainWindow::toggleEdgeSelectionMode(bool isActivated)
     {
         handleViewAndSelectionButtons(actionToggleEdgeSelect);
         myMainOCCViewer->setSelectionMode(CurSelection_Edge);
+
+        //! same selection mode in additional viewports
         myDockableMasterViewPort->setSelectionMode(CurSelection_Edge);
         myDockableSlaveViewPort->setSelectionMode(CurSelection_Edge);
         statusBar()->showMessage("Select Edges",TRANSIENT_MESSAGE_TIMEOUT);
@@ -1793,7 +1962,8 @@ void MainWindow::toggleVertexSelectionMode(bool isActivated)
     {
         handleViewAndSelectionButtons(actionToggleVertexSelect);
         myMainOCCViewer->setSelectionMode(CurSelection_Vertex);
-        //! experimental
+
+        //! same selection mode in additional viewports
         myDockableMasterViewPort->setSelectionMode(CurSelection_Vertex);
         myDockableSlaveViewPort->setSelectionMode(CurSelection_Vertex);
         statusBar()->showMessage("Select Points",TRANSIENT_MESSAGE_TIMEOUT);
@@ -1810,6 +1980,8 @@ void MainWindow::togglePointCoordinatesPickingMode(bool isActivated)
     {
         handleViewAndSelectionButtons(actionTogglePickPointCoordinates);
         myMainOCCViewer->setSelectionMode(CurSelection_PointCoordinatesPicking);
+
+        //! same selection mode in additional viewports
         myDockableMasterViewPort->setSelectionMode(CurSelection_PointCoordinatesPicking);
         myDockableSlaveViewPort->setSelectionMode(CurSelection_PointCoordinatesPicking);
         statusBar()->showMessage("Pick point coordinates",TRANSIENT_MESSAGE_TIMEOUT);
@@ -2034,11 +2206,7 @@ void MainWindow::setWorkingMode(int workingModeNumber)
     //! ---------------------------------------
     //! set the working mode for the clip tool
     //! ---------------------------------------
-    cout<<"MainWindow::setWorkingMode()->____working mode: "<<workingModeNumber<<"____"<<endl;
-
     if(myClipTool!=Q_NULLPTR) myClipTool->setWorkingMode(workingModeNumber);
-    cout<<"MainWindow::setWorkingMode()->____working mode: "<<workingModeNumber<<"____"<<endl;
-
 }
 
 //! ------------------------------------------------------------
@@ -2130,11 +2298,11 @@ void MainWindow::enableSelectionButtons()
     //! ------------------------------------
     //! reactive the current selection mode
     //! ------------------------------------
-    myMainOCCViewer->reactivateCurrentStandardSelectionMode();
+    myMainOCCViewer->reactivateSelectionMode();
 }
 
 //! --------------------------------------------------------------
-//! function: startEditingScope()
+//! function: startEditingScope
 //! details:  simulate a double click event on the shape selector
 //! --------------------------------------------------------------
 void MainWindow::startEditingScope()
@@ -2612,14 +2780,20 @@ void MainWindow::setUpConnections()
 
     connect(mySimulationManager,SIGNAL(requestUpdateConvergenceViewer(const QList<solutionInfo> &)), myConvergenceDataChart1,SLOT(plotConvergenceData(const QList<solutionInfo> &)));
 
+    //! ----------------
+    //! selection modes
+    //! ----------------
     connect(myMainOCCViewer,SIGNAL(selectionModeVertex(bool)),this,SLOT(toggleVertexSelectionMode(bool)));
     connect(myMainOCCViewer,SIGNAL(selectionModeEdge(bool)),this,SLOT(toggleEdgeSelectionMode(bool)));
     connect(myMainOCCViewer,SIGNAL(selectionModeFace(bool)),this,SLOT(toggleFaceSelectionMode(bool)));
     connect(myMainOCCViewer,SIGNAL(selectionModeSolid(bool)),this,SLOT(toggleSolidSelectionMode(bool)));
     connect(myMainOCCViewer,SIGNAL(selectionModePickPointCoordinates(bool)),this,SLOT(togglePointCoordinatesPickingMode(bool)));
+
     connect(myMainOCCViewer,SIGNAL(statusBarMessage(QString)),statusLabel,SLOT(setText(QString)));
     connect(myMainOCCViewer,SIGNAL(viewModeChanged(CurDisplayMode)),this,SLOT(checkViewModeItem(CurDisplayMode)));
     connect(this,SIGNAL(requestExtendSelectionToAdjacent()),myMainOCCViewer,SLOT(extendSelectionToAjacent()));
+
+    //! ------------------------------------------------------------------------------
     //! synchronize the checkmark of the menu action and the visibility of the widget
     //! ------------------------------------------------------------------------------
     connect(actionShowGraphViewer,SIGNAL(triggered(bool)),myTabularDataViewerDock,SLOT(setVisible(bool)));
@@ -2656,7 +2830,6 @@ void MainWindow::setUpConnections()
     connect(mySimulationManager,SIGNAL(request0DBodySelectionMode(bool)),this,SLOT(toggleVertexSelectionMode(bool)));
     connect(mySimulationManager,SIGNAL(requestBuildMeshIOs()),myMainOCCViewer,SLOT(buildMeshIOs()));
     connect(mySimulationManager,SIGNAL(requestHideMeshes()),myMainOCCViewer,SLOT(hideAllMeshes()));
-    connect(mySimulationManager,SIGNAL(requestHideSlicedMeshes()),myMainOCCViewer,SLOT(eraseSlicedMeshes()));
     connect(mySimulationManager,SIGNAL(requestShowMeshes(bool)),myMainOCCViewer,SLOT(displayAllMeshes(bool)));
     connect(mySimulationManager,SIGNAL(requestSetWorkingMode(int)),this,SLOT(setWorkingMode(int)));
     connect(mySimulationManager,SIGNAL(requestHideBody(TColStd_ListOfInteger)),myMainOCCViewer,SLOT(hideBody(TColStd_ListOfInteger)));
@@ -2671,7 +2844,7 @@ void MainWindow::setUpConnections()
     connect(mySimulationManager,SIGNAL(requestUnhighlightBodies(bool)),myMainOCCViewer,SLOT(unhighlightBody(bool)));
 
 
-    connect(mySimulationManager,SIGNAL(requestReactivateCurrentStandardSelectionMode()),myMainOCCViewer,SLOT(reactivateCurrentStandardSelectionMode()));
+    connect(mySimulationManager,SIGNAL(requestReactivateSelectionMode()),myMainOCCViewer,SLOT(reactivateSelectionMode()));
 
     connect(mySimulationManager,SIGNAL(requestDisplayShapeCopy(TopTools_ListOfShape,TopTools_ListOfShape,Quantity_NameOfColor,Quantity_NameOfColor,QVariant)),
             myMainOCCViewer,SLOT(displayShapeCopy(TopTools_ListOfShape,TopTools_ListOfShape,Quantity_NameOfColor,Quantity_NameOfColor,QVariant)));
@@ -2758,7 +2931,6 @@ void MainWindow::setUpConnections()
     connect(myDetailViewer,SIGNAL(requestChangeMeshNodesVisibility(bool)),myMainOCCViewer,SLOT(displayAllMeshes(bool)));
     connect(myDetailViewer,SIGNAL(requestInvalidateAllMeshes()),myMainOCCViewer,SLOT(invalidateAllMeshes()));
     connect(myDetailViewer,SIGNAL(requestGlobalMeshControlChange()),mySimulationManager,SLOT(handleGlobalMeshControlChange()));
-    //connect(myDetailViewer,SIGNAL(requestHandleSolutionComponentChanged()),mySimulationManager,SLOT(handleSolutionComponentChanged())); to be deleted
     connect(myDetailViewer,SIGNAL(requestHandleSolutionInformationUpdateIntervalChanged()),mySimulationManager,SLOT(updateTimer()));
 
     // to be removed
@@ -2783,22 +2955,15 @@ void MainWindow::setUpConnections()
     //! ----------------------------------------------
     //! connections for updating the delegate context
     //! ----------------------------------------------
-    connect(myDockableMasterViewPort,SIGNAL(requestChangeDelegateContext(opencascade::handle<AIS_InteractiveContext>)),myDetailViewer,SLOT(setDelegateContext(opencascade::handle<AIS_InteractiveContext>)));
-    connect(myDockableSlaveViewPort,SIGNAL(requestChangeDelegateContext(opencascade::handle<AIS_InteractiveContext>)),myDetailViewer,SLOT(setDelegateContext(opencascade::handle<AIS_InteractiveContext>)));
-    connect(myMainOCCViewer,SIGNAL(requestChangeDelegateContext(opencascade::handle<AIS_InteractiveContext>)),myDetailViewer,SLOT(setDelegateContext(opencascade::handle<AIS_InteractiveContext>)));
+    connect(myDockableMasterViewPort,SIGNAL(requestChangeDelegateContext(opencascade::handle<AIS_InteractiveContext>)),myDetailViewer,SLOT(setContext(opencascade::handle<AIS_InteractiveContext>)));
+    connect(myDockableSlaveViewPort,SIGNAL(requestChangeDelegateContext(opencascade::handle<AIS_InteractiveContext>)),myDetailViewer,SLOT(setContext(opencascade::handle<AIS_InteractiveContext>)));
+    connect(myMainOCCViewer,SIGNAL(requestChangeDelegateContext(opencascade::handle<AIS_InteractiveContext>)),myDetailViewer,SLOT(setContext(opencascade::handle<AIS_InteractiveContext>)));
 
     //! -----------------------------------------------------------------------------------
     //! connection for displaying a selection of bodies on the master and slave view ports
     //! -----------------------------------------------------------------------------------
     connect(mySimulationManager,SIGNAL(requestShowBodyOnMasterViewPort(TColStd_ListOfInteger, TColStd_ListOfInteger)),this,SLOT(showBodiesOnMasterViewPort(TColStd_ListOfInteger, TColStd_ListOfInteger)));
     connect(mySimulationManager,SIGNAL(requestShowBodyOnSlaveViewPort(TColStd_ListOfInteger, TColStd_ListOfInteger)),this,SLOT(showBodiesOnSlaveViewPort(TColStd_ListOfInteger, TColStd_ListOfInteger)));
-
-    //! ----------------------------------------------
-    //! connections for updating the delegate context
-    //! ----------------------------------------------
-    connect(myDockableMasterViewPort,SIGNAL(requestChangeDelegateContext(opencascade::handle<AIS_InteractiveContext>)),myDetailViewer,SLOT(setDelegateContext(opencascade::handle<AIS_InteractiveContext>)));
-    connect(myDockableSlaveViewPort,SIGNAL(requestChangeDelegateContext(opencascade::handle<AIS_InteractiveContext>)),myDetailViewer,SLOT(setDelegateContext(opencascade::handle<AIS_InteractiveContext>)));
-    connect(myMainOCCViewer,SIGNAL(requestChangeDelegateContext(opencascade::handle<AIS_InteractiveContext>)),myDetailViewer,SLOT(setDelegateContext(opencascade::handle<AIS_InteractiveContext>)));
 
     //! ---------------------------------------------------------
     //! connection for show/hide the master and slave view ports
@@ -2826,7 +2991,6 @@ void MainWindow::setUpConnections()
     //! mesh tool bar connections
     //! --------------------------
     connect(meshToolBar,SIGNAL(showExteriorMeshRequest(bool)),myMainOCCViewer,SLOT(refreshMeshView(bool)));
-    connect(meshToolBar,SIGNAL(showExteriorMeshRequest(bool)),myClipTool,SLOT(updateClippedMeshView(bool)));
     connect(meshToolBar,SIGNAL(requestClearMesh()),myMainOCCViewer,SLOT(clearMeshFromViewer()));
     connect(meshToolBar,SIGNAL(requestGenerateVolumeMesh()),mySimulationManager,SLOT(buildVolumeMesh()));
     connect(meshToolBar,SIGNAL(requestGenerateSurfaceMesh()),mySimulationManager,SLOT(buildSurfaceMesh()));
