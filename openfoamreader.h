@@ -17,7 +17,6 @@
 #include <fstream>
 //! Custom
 #include <customtablemodel.h>
-#include <simulationnodeclass.h>
 
 using namespace std;
 
@@ -52,13 +51,13 @@ public:
     //! fileMode= 1 - multiple files, one for each time
     //! fileMode= 2 - performed in memory - not implemented yet
     //! --------------------------------------------------------
-    OpenFoamReader(/*const QString &sourceDirPath, const QString &targetDirPath,*/ int fileMode=0, QObject *parent=0);
+    OpenFoamReader(const QString &sourceDirPath, const QString &targetDirPath, int fileMode=0, QObject *parent=0);
 
     //! -----------------------------------------
     //! set the target and source directory path
     //! -----------------------------------------
-    //void setTargetDir(const QString &theTargetDir);
-    //void setSourceDir(const QString &theSourceDir);
+    void setTargetDir(const QString &theTargetDir);
+    void setSourceDir(const QString &theSourceDir);
 
     //! ---------------------------
     //! set the progress indicator
@@ -168,7 +167,7 @@ signals:
 public slots:
 
     //! perform
-    bool perform(SimulationNodeClass *OFnode);
+    bool perform();
 
     //! timer
     void updateTimer();

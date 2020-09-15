@@ -612,7 +612,7 @@ private:
      std::vector<qint64> timeStepBuilderPids;
 
      //! times selected from time step builder
-     //std::vector<double> tSbList;
+     std::vector<double> tSbList;
 #endif
 
 signals:
