@@ -1527,7 +1527,7 @@ void SimulationManager::deleteItem(QList<QModelIndex> indexesList)
                 if(nodeAnalysisRoot->isAnalysisRoot()==false) continue;
 
                 //! --------------------------------------------------------------
-                //! scan the simulation setup nodes of tthe current analysis root
+                //! scan the simulation setup nodes of the current analysis root
                 //! --------------------------------------------------------------
                 for(int i=1; i<analysisRoot->rowCount()-1; i++)
                 {
@@ -1535,6 +1535,7 @@ void SimulationManager::deleteItem(QList<QModelIndex> indexesList)
                     SimulationNodeClass *nodeSetUp = setUpItem->data(Qt::UserRole).value<SimulationNodeClass*>();
                     if(nodeSetUp->isSimulationSetUpNode()== false) return;
                     if(nodeSetUp->isChildSimulationSetUpNode()== false) return;
+                    if(nodeSetUp->isNephewSimulationSetUpNode()== false) return;
 
                     //! --------------------------------------------------------------------
                     //! if a named selection is contained replace with a geometry selection
@@ -7926,6 +7927,15 @@ QExtendedStandardItem* SimulationManager::getAnalysisSettingsItemFromCurrentItem
         QStandardItem *item = curItem->parent()->parent()->child(0,0);
         return static_cast<QExtendedStandardItem*>(item);
     }
+
+    //! ----------------------------------------------------------
+    //! case 4: the current item is a nephew of a simulation node
+    //! ----------------------------------------------------------
+    if(curNode->isNephewSimulationSetUpNode())
+    {
+        QStandardItem *item = curItem->parent()->parent()->parent()->child(0,0);
+        return static_cast<QExtendedStandardItem*>(item);
+    }
     return Q_NULLPTR;
 }
 
@@ -12375,13 +12385,29 @@ void SimulationManager::setTheActiveAnalysisBranch()
         cout<<"@ ------------------------------------------------------------@"<<endl;
         return;
     }
-    //! -----------------------
+    //! -------------------------
     //! "Solution information"
     //! a post processing item
-    //! -----------------------
+    //! or a child of simulation
+    //! node
+    //! -------------------------
     if(theCurrentNode->isSolutionInformation() || theCurrentNode->isAnalysisResult()|| theCurrentNode->isChildSimulationSetUpNode())
     {
         myActiveAnalysisBranch = theCurrentItem->parent()->parent();
+        theActiveAnalysis_old = myActiveAnalysisBranch;
+        cout<<"@ ------------------------------------------------------------@"<<endl;
+        cout<<"@ the current analysis branch is: "<<myActiveAnalysisBranch->data(Qt::UserRole).value<SimulationNodeClass*>()->getName().toStdString()<<endl;
+        cout<<"@ ------------------------------------------------------------@"<<endl;
+        return;
+    }
+
+    //! -----------------------
+    //! nephew of a simulation
+    //! node
+    //! -----------------------
+    if(theCurrentNode->isNephewSimulationSetUpNode())
+    {
+        myActiveAnalysisBranch = theCurrentItem->parent()->parent()->parent();
         theActiveAnalysis_old = myActiveAnalysisBranch;
         cout<<"@ ------------------------------------------------------------@"<<endl;
         cout<<"@ the current analysis branch is: "<<myActiveAnalysisBranch->data(Qt::UserRole).value<SimulationNodeClass*>()->getName().toStdString()<<endl;

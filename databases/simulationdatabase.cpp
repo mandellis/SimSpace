@@ -350,7 +350,7 @@ simulationDataBase::simulationDataBase(const QList<SimulationNodeClass*> listOfN
         //! an analysis root has been found within the tree
         //! ------------------------------------------------
         QString analysisRootTimeTag = curSimulationNodeRoot->getPropertyValue<QString>("Time tag");
-        //cout<<"____ANALYSIS ROOT: "<<analysisRootTimeTag.toStdString()<<"____"<<endl;
+        cout<<"____ANALYSIS ROOT: "<<analysisRootTimeTag.toStdString()<<"____"<<endl;
 
         //! ---------------------------------------------------
         //! retrieve the nodes belonging to the current branch
@@ -362,13 +362,15 @@ simulationDataBase::simulationDataBase(const QList<SimulationNodeClass*> listOfN
             SimulationNodeClass *curNode = *it;
             bool isSetUpNode = curNode->isSimulationSetUpNode();
             bool isChildSetUpNode = curNode->isChildSimulationSetUpNode();
-            if(isSetUpNode==false && isChildSetUpNode == false)
+
+            QString curParentTimeTag = curNode->getPropertyValue<QString>("Parent time tag");
+            QString curTimeTag = curNode->getPropertyValue<QString>("Time tag");
+
+            if(isSetUpNode==false)
             {
                 it++;
                 continue;
             }
-            QString curParentTimeTag = curNode->getPropertyValue<QString>("Parent time tag");
-            QString curTimeTag = curNode->getPropertyValue<QString>("Time tag");
 
             if(curParentTimeTag!=analysisRootTimeTag)
             {
@@ -393,12 +395,64 @@ simulationDataBase::simulationDataBase(const QList<SimulationNodeClass*> listOfN
 
             timeTagToNodeMap.insert(element);
             vecKeys.push_back(curTimeTag.toULongLong());
-            //cout<<"____a check =>"<<curTimeTag.toULongLong()<<"____"<<endl;
+            cout<<"____a check =>"<<curTimeTag.toULongLong()<<"____"<<endl;
         }
         //! ---------------------------
         //! sort the map using the key
         //! ---------------------------
         std::sort(vecKeys.begin(),vecKeys.end());
+
+
+        //! ---------------------------------------------------------
+        //! retrieve the child nodes belonging to the current branch
+        //! ---------------------------------------------------------
+        std::map<QString,std::pair<QString,SimulationNodeClass*>> timeTagToChildNodeMap;
+        for(QList<SimulationNodeClass*>::iterator it=listOfNodes_.begin(); it!=listOfNodes_.end();)
+        {
+            SimulationNodeClass *curNode = *it;
+            //bool isSetUpNode = curNode->isSimulationSetUpNode();
+            bool isChildSetUpNode = curNode->isChildSimulationSetUpNode();
+
+            if(isChildSetUpNode == false)
+            {
+                continue;
+            }
+
+            QString curChildParentTimeTag = curNode->getPropertyValue<QString>("Parent time tag");
+            QString curChildTimeTag = curNode->getPropertyValue<QString>("Time tag");
+
+            if(curChildParentTimeTag!=analysisRootTimeTag)
+            {
+                it++;
+                continue;
+            }
+            //cout<<"____NODE TO ATTACH FOUND____"<<endl;
+            //cout<<"____PARENT TIME TAG: "<<curParentTimeTag.toStdString()<<"____"<<endl;
+            //cout<<"____TIME TAG: "<<curTimeTag.toStdString()<<"____"<<endl;
+
+            for(int n=0; n<vecKeys.size(); n++)
+            {
+                //QString key = QString("%1").arg(vecKeys[n]);
+                unsigned long long int parentKey = vecKeys[n];
+                if(parentKey == curChildParentTimeTag.toLongLong())
+                {
+                    //! ------------------------------------
+                    //! store the current node into the map
+                    //! ------------------------------------
+                    std::pair<QString,SimulationNodeClass*> element;
+                    element.first = curChildTimeTag;
+                    element.second = curNode;
+
+                    timeTagToNodeMap.insert(curChildParentTimeTag,element);
+                }
+            }
+
+            //! ------------------------------
+            //! remove the node from the list
+            //! ------------------------------
+            it = listOfNodes_.erase(it);
+            //cout<<"____a check =>"<<curTimeTag.toULongLong()<<"____"<<endl;
+        }
 
         //! -----------------------------
         //! append in the original order
@@ -420,6 +474,8 @@ simulationDataBase::simulationDataBase(const QList<SimulationNodeClass*> listOfN
                 item->setData(data, Qt::UserRole);
                 item->setData(aNode->getName(),Qt::DisplayRole);
                 curSimulationRootItem->appendRow(item);
+
+
             }
         }
     }
