@@ -267,11 +267,11 @@ DetailViewer::DetailViewer(QWidget *parent): QTreeView(parent)
 {
     cout<<"DetailViewer::DetailViewer()->____default constructor called____"<<endl;
 
-    //! delegate
-    myGeneralDelegate = new GeneralDelegate(this);
-
+    //! drawing style
     this->setAlternatingRowColors(true);
 
+    //! delegate
+    myGeneralDelegate = new GeneralDelegate(this);
     this->setItemDelegate(myGeneralDelegate);
 
     //! items with child(ren) have an expander
@@ -304,7 +304,7 @@ DetailViewer::DetailViewer(const occHandle(AIS_InteractiveContext) &aCTX, QWidge
 {
     cout<<"DetailViewer::DetailViewer()->____CONSTRUCTOR I CALLED____"<<endl;
 
-    //! delegate
+    //! delegate    
     myGeneralDelegate = new GeneralDelegate(myCTX, this);
     this->setItemDelegate(myGeneralDelegate);
 
@@ -331,7 +331,11 @@ DetailViewer::DetailViewer(const occHandle(AIS_InteractiveContext) &aCTX, QWidge
 void DetailViewer::setContext(const occHandle(AIS_InteractiveContext) &aCTX)
 {
     cout<<"DetailViewer::setContext()->____function called____"<<endl;
-    if(aCTX.IsNull()==false) return;
+    if(aCTX.IsNull()==true)
+    {
+        cout<<"DetailViewer::setContext()->____NULL CONTEXT____"<<endl;
+        return;
+    }
     myCTX = aCTX;
     myGeneralDelegate->setContext(myCTX);
     cout<<"DetailViewer::setContext()->____context OK____"<<endl;
@@ -341,27 +345,17 @@ void DetailViewer::setContext(const occHandle(AIS_InteractiveContext) &aCTX)
 //! function: setMeshContext
 //! details:  also for the delegate
 //! --------------------------------
-void DetailViewer::setMeshContext(const opencascade::handle<AIS_InteractiveContext> &aMeshCTX)
+void DetailViewer::setMeshContext(const occHandle(AIS_InteractiveContext) &aMeshCTX)
 {
     cout<<"DetailViewer::setMeshContext()->____function called____"<<endl;
-    if(aMeshCTX.IsNull()==false) return;
+    if(aMeshCTX.IsNull()==true)
+    {
+        cout<<"DetailViewer::setMeshContext()->____NULL MESH CONTEXT____"<<endl;
+        return;
+    }
     myMeshCTX = aMeshCTX;
     myGeneralDelegate->setMeshContext(aMeshCTX);
     cout<<"DetailViewer::setMeshContext()->____mesh context OK____"<<endl;
-}
-
-//! -----------------------------
-//! function: setDelegateContext
-//! details:
-//! -----------------------------
-void DetailViewer::setDelegateContext(const occHandle(AIS_InteractiveContext) &aCTX)
-{
-    cout<<"DetailViewer::setDelegateContext()->____function called____"<<endl;
-    if(!aCTX.IsNull())
-    {
-        myCTX = aCTX;
-        myGeneralDelegate->setContext(aCTX);
-    }
 }
 
 //! ----------------------
@@ -413,14 +407,8 @@ void DetailViewer::setTheModel(const QModelIndex &anIndex)
 
     case SimulationNodeClass::nodeType_namedSelectionGeometry:
     {
-        //cout<<"********************"<<endl;
         QExtendedStandardItem *item = myCurNode->getPropertyItem("Scoping method");
-        if(item!=Q_NULLPTR)
-        {
-            //this->setRowHidden(item->row(),item->parent()->index(),true);
-        }
-        else exit(99999);
-        //cout<<"********************"<<endl;
+        if(item!=Q_NULLPTR) this->setRowHidden(item->row(),item->parent()->index(),true);
     }
         break;
 

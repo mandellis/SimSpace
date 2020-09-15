@@ -9,6 +9,14 @@
 #include "detailviewer.h"
 #include "ccout.h"
 
+//! ----
+//! OCC
+//! ----
+#include <SelectMgr_IndexedMapOfOwner.hxx>
+#include <TopTools_ListOfShape.hxx>
+#include <SelectMgr_EntityOwner.hxx>
+#include <StdSelect_BRepOwner.hxx>
+
 //! ---
 //! Qt
 //! ---
@@ -27,10 +35,11 @@ using namespace std;
 //! function: constructor I
 //! details:
 //! ------------------------
-ShapeSelector::ShapeSelector(const opencascade::handle<AIS_InteractiveContext> &aCTX, QWidget *parent):
+ShapeSelector::ShapeSelector(const occHandle(AIS_InteractiveContext) &aCTX, QWidget *parent):
     ShapeSelectorBox(parent), myCTX(aCTX)
 {
     cout<<"ShapeSelector::ShapeSelector()->____constructor I called____"<<endl;
+    if(myCTX.IsNull()) { cout<<"ShapeSelector::ShapeSelector()->____THE CONTEXT IS NOT INIZIALIZED____"<<endl; }
     this->createContent();
 }
 
@@ -96,21 +105,26 @@ void ShapeSelector::hidePushButtons()
 void ShapeSelector::setAccepted()
 {
     cout<<"ShapeSelector::setAccepted()->____function called____"<<endl;
-    hidePushButtons();
+    this->hidePushButtons();
 
     myShapes.Clear();
     myVecLoc.clear();
     for(myCTX->InitSelected();myCTX->MoreSelected();myCTX->NextSelected())
     {
-        const TopoDS_Shape &curSelectedShape = myCTX->SelectedShape();
-        myShapes.Append(curSelectedShape);
+        // DEPRECATED METHOD
+        //const TopoDS_Shape &curSelectedShape = myCTX->SelectedShape();
+
+        occHandle(StdSelect_BRepOwner) sb  = occHandle(StdSelect_BRepOwner)::DownCast(myCTX->SelectedOwner());
+        const TopoDS_Shape &ownerShape = sb->Shape();
+        TopoDS_Shape selectedShape = ownerShape.Located(sb->Location() * ownerShape.Location());
+        myShapes.Append(selectedShape);
     }
 
     myVecLoc = TopologyTools::generateLocationPairs(gdb,myShapes);
 
-    for(int i=0; i<myVecLoc.size(); i++) cout<<"____("<<myVecLoc.at(i).parentShapeNr<<", "<<myVecLoc.at(i).subTopNr<<")____"<<endl;
-    cout<<"ShapeSelector::setAccepted()->____number of current selected shapes: "<<myShapes.Extent()<<"____"<<endl;
-    cout<<"ShapeSelector::setAccepted()->____number of shapes in vecLoc: "<<myVecLoc.size()<<"____"<<endl;
+    //for(int i=0; i<myVecLoc.size(); i++) cout<<"____("<<myVecLoc.at(i).parentShapeNr<<", "<<myVecLoc.at(i).subTopNr<<")____"<<endl;
+    //cout<<"ShapeSelector::setAccepted()->____number of current selected shapes: "<<myShapes.Extent()<<"____"<<endl;
+    //cout<<"ShapeSelector::setAccepted()->____number of shapes in vecLoc: "<<myVecLoc.size()<<"____"<<endl;
 
     //emit editingSelectionFinished();    //new position
     this->clearContext();
@@ -126,10 +140,9 @@ void ShapeSelector::setAccepted()
 void ShapeSelector::setRejected()
 {
     cout<<"ShapeSelector::setRejected()->____set rejected called____"<<endl;
-    cout<<"ShapeSelector::setRejected()->____number of shapes: "<<myShapes.Extent()<<"____"<<endl;
     myVecLoc = TopologyTools::generateLocationPairs(gdb,myShapes);
     cout<<"ShapeSelector::setAccepted()->____number of shapes in vecLoc: "<<myVecLoc.size()<<"____"<<endl;
-    hidePushButtons();
+    this->hidePushButtons();
     this->clearContext();
     emit editingSelectionFinished();
 }
@@ -140,7 +153,6 @@ void ShapeSelector::setRejected()
 //! -------------------
 ListOfShape ShapeSelector::getShape() const
 {
-    //cout<<"ShapeSelector:getShape()->___get shape called. Number of shapes: "<<myShapes.Extent()<<"____"<<endl;
     return myShapes;
 }
 
@@ -157,10 +169,6 @@ std::vector<GeometryTag> ShapeSelector::getVecLoc() const
 //! function: setShape
 //! details:
 //! -------------------
-#include <SelectMgr_IndexedMapOfOwner.hxx>
-#include <TopTools_ListOfShape.hxx>
-#include <SelectMgr_EntityOwner.hxx>
-#include <StdSelect_BRepOwner.hxx>
 void ShapeSelector::setShape(const std::vector<GeometryTag> &vecLoc)
 {
     cout<<"ShapeSelector::setShape()->____set shape called____"<<endl;
@@ -186,45 +194,50 @@ void ShapeSelector::setShape(const std::vector<GeometryTag> &vecLoc)
             }
         }
     }
-
+    /*
+    //! -----------------------------------------------
+    //! uses the deprecated method AddOrRemoveSelected
+    //! -----------------------------------------------
     for(TopTools_ListIteratorOfListOfShape anIter(myShapes);anIter.More();anIter.Next())
     {
         myCTX->AddOrRemoveSelected(anIter.Value(),false);
     }
+    */
 
-    /*
-    TopTools_ListOfShape l;
-    for(TopTools_ListIteratorOfListOfShape anIter(myShapes);anIter.More();anIter.Next())
+    //! -------------------------------------------------------------------------
+    //! removal of deprecated method AIS_InteractiveContext::AddOrRemoveSelected
+    //! -------------------------------------------------------------------------
+    AIS_ListOfInteractive listIO;
+    myCTX->ObjectsInside(listIO,AIS_KOI_Shape,0);
+    for(AIS_ListIteratorOfListOfInteractive it(listIO); it.More(); it.Next())
     {
-        myCTX->AddOrRemoveSelected(anIter.Value(),false);
-        const occHandle(TopoDS_Shape) &theCurAIS = anIter.Value();
+        const occHandle(AIS_Shape) &curAISShape = occHandle(AIS_Shape)::DownCast(it.Value());
+
+        //! ----------------------------------------
+        //! all the owners of the current AIS_Shape
+        //! ----------------------------------------
         occHandle(SelectMgr_IndexedMapOfOwner) m;
-        myCTX->EntityOwners(m,theCurAIS,-1);
+        myCTX->EntityOwners(m,curAISShape,-1);
+
+        //! ----------------------------
         //! iterate over all the owners
+        //! ----------------------------
         for(int n=1; n<=m->Extent(); n++)
         {
             occHandle(SelectMgr_EntityOwner) s = m->FindKey(n);
             occHandle(StdSelect_BRepOwner) sb  = occHandle(StdSelect_BRepOwner)::DownCast(s);
             const TopoDS_Shape &ownerShape = sb->Shape();
-            TopoDS_Shape locatedShape = ownerShape.Located(sb->Location() * aDetectedShape.Location());
-            if(myShapes.Contains(locatedShape)) continue;
-            if(l.Contains(locatedShape)==false)
-            {
-                l.Append(locatedShape);
-                occContext->AddOrRemoveSelected(sb,false);
-            }
+            TopoDS_Shape locatedShape = ownerShape.Located(sb->Location() * ownerShape.Location());
+            if(myShapes.Contains(locatedShape)==false) continue;
+            myCTX->AddOrRemoveSelected(sb,false);
         }
     }
-    */
-
-    if(myCTX.IsNull()) cout<<"____NULL CONTEXT____"<<endl;
     myCTX->UpdateCurrentViewer();
-
     this->showPushButtons();
 
-    cout<<"ShapeSelector::setShape()->____myShapes size: "<<myShapes.Extent()<<"____"<<endl;
-    cout<<"ShapeSelector::setShape()->____myVecLoc size: "<<myVecLoc.size()<<"____"<<endl;
-    cout<<"ShapeSelector::setShape()->____exiting function____"<<endl;
+    //cout<<"ShapeSelector::setShape()->____myShapes size: "<<myShapes.Extent()<<"____"<<endl;
+    //cout<<"ShapeSelector::setShape()->____myVecLoc size: "<<myVecLoc.size()<<"____"<<endl;
+    //cout<<"ShapeSelector::setShape()->____exiting function____"<<endl;
 }
 
 //! ------------------------
@@ -301,9 +314,4 @@ void ShapeSelector::setContext(const occHandle(AIS_InteractiveContext) &aCTX)
 void ShapeSelector::clearContext(bool updateViewer)
 {
     if(myCTX->NbSelected()>0) myCTX->ClearSelected(updateViewer);
-    //for(myCTX->InitSelected();myCTX->MoreSelected();myCTX->InitSelected())
-    //{
-    //    myCTX->ClearSelected(false);
-    //}
-    //if(updateViewer) myCTX->UpdateCurrentViewer();
 }

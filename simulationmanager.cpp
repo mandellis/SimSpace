@@ -568,7 +568,6 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 //! ---------------------------------------------------------------------
                 emit requestHideMeshes();
                 emit requestHideAllResults();
-                //emit requestHideSlicedMeshes();
 
                 //! -------------------------------------------------------
                 //! in the working mode "3" "Solution" the selection modes
@@ -598,7 +597,6 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 emit requestSetWorkingMode(3);
                 emit requestShowAllBodies();
                 emit requestHideAllResults();
-                //emit requestHideSlicedMeshes();
                 this->changeColor();
 
                 //! switch the tab
@@ -610,7 +608,6 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
             {
                 emit requestUnhighlightBodies(false);
                 emit requestHideMeshes();
-                //emit requestHideSlicedMeshes();
                 emit requestSetWorkingMode(2);
                 emit requestHideAllResults();
                 this->changeColor();
@@ -620,7 +617,6 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
             case SimulationNodeClass::nodeType_geometry:
             {
                 emit requestUnhighlightBodies(false);
-                //emit requestHideSlicedMeshes();
                 emit requestSetWorkingMode(2);
                 emit requestHideAllResults();
                 this->changeColor();
@@ -632,7 +628,6 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 emit requestHideAllResults();
                 emit requestUnhighlightBodies(true);
                 emit requestHideMeshes();
-                //emit requestHideSlicedMeshes();
                 emit requestSetWorkingMode(2);
                 this->changeColor();
             }
@@ -667,7 +662,6 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 emit requestHideAllResults();
                 emit requestUnhighlightBodies(Standard_True);
                 emit requestHideMeshes();
-                //emit requestHideSlicedMeshes();
                 emit requestSetWorkingMode(2);
                 this->changeColor();
 
@@ -956,8 +950,6 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                     //! ------------------------------------
                     columnsToShow.removeFirst();
                     CustomTableModel *tabData = index_analysisSettings.data(Qt::UserRole).value<SimulationNodeClass*>()->getTabularDataModel();
-                    //cout<<"____"<<tabData->rowCount()<<", "<<tabData->columnCount()<<"____"<<endl;
-                    //for(int k=0; k<columnsToShow.length(); k++) cout<<"____column: "<<columnsToShow[k]<<"____"<<endl;
                     emit requestShowGraph(tabData,columnsToShow);
                 }
 
@@ -1157,15 +1149,14 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
 //! ---------------------
 void SimulationManager::setContext(const occHandle(AIS_InteractiveContext) &aCTX)
 {
-    if(!aCTX.IsNull())
+    cout<<"SimulationManager::setMeshContext()->____function called____"<<endl;
+    if(aCTX.IsNull()==true)
     {
-        myCTX = aCTX;
-        theTextWriter = new writeLabelClass(aCTX,this);
+        cout<<"SimulationManager::setContext()->____NULL GEOMETRY CONTEXT____"<<endl;
+        return;
     }
-    else
-    {
-        QMessageBox::critical(this, tr("SimulationManager::setContext()"),tr("Error: the context is null"));
-    }
+    myCTX = aCTX;
+    theTextWriter = new writeLabelClass(aCTX,this);
 }
 
 //! -----------------------------------------
@@ -11986,7 +11977,6 @@ void SimulationManager::resetAndUpdateModel()
     //!   inner maps; it does not remove the mesh items
     //! ----------------------------------------------------------
     cout<<"SimulationManager::updateModel()->____resetting database____"<<endl;
-    ccout("SimulationManager::updateModel()->____resetting database____");
     mySimulationDataBase->resetDataBase();
 
     //! -------------------------
@@ -12033,7 +12023,7 @@ void SimulationManager::resetAndUpdateModel()
         {
             const QString &name = listOfNames.at(i);
             mySimulationDataBase->MapOfBodyNames.insert(index,name);
-            ccout(QString("SimulationManager::createSimulationDataBase()->____found body with name: ").append(name).append("____"));
+            cout<<"SimulationManager::createSimulationDataBase()->____found body with name: "<<name.toStdString()<<"____"<<endl;
         }
         //! -----------------------------------------------
         //! update the names of the items and of the nodes

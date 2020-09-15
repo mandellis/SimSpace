@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core opengl gui #charts
+QT       += core opengl gui
 
 ##############
 # QCustomPlot

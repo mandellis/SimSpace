@@ -62,6 +62,9 @@ public:
     //! set database
     void setDataDase(meshDataBase *mDB) { myMeshDataBase = mDB; }
 
+    //! get the post context
+    const occHandle(AIS_InteractiveContext)& getPostContext() const;
+
 private:
 
     //! the color box

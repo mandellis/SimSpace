@@ -358,7 +358,7 @@ void occGLWidget::init()
     //! Set background color: read it from the "settings.txt" file
     //! -----------------------------------------------------------
     QString fileSettingName = QString(SYSTEM_PROGRAM_DATA)+"/WB/settings.txt";
-    cout<<"occGLWidget::init()->____"<<fileSettingName.toStdString()<<"____"<<endl;
+    //cout<<"occGLWidget::init()->____"<<fileSettingName.toStdString()<<"____"<<endl;
 
     ifstream fileSettings;
     fileSettings.open(fileSettingName.toStdString());
@@ -405,17 +405,9 @@ void occGLWidget::init()
     //! create AIS_InteractiveContext
     //! ------------------------------
     occContext = new AIS_InteractiveContext(occViewer);
+    cout<<"____GEOMETRY CONTEXT CREATED____"<<endl;
+
     occContext->Display(myFloatingLabel,true);
-
-    //! -----------------------------------------------
-    //! create an additional context for the mesh view
-    //! -----------------------------------------------
-    //occMeshContext = new AIS_InteractiveContext(occViewer);
-
-    //! --------------------------------------------------
-    //! create an additional context for the results view
-    //! --------------------------------------------------
-    //occPostContext = new AIS_InteractiveContext(occViewer);
 
     //! -------------------------------
     //! Set up lights - default lights
@@ -1715,7 +1707,7 @@ void occGLWidget::computeSelectionProperties()
                 //! retrieves the two points
                 //! -------------------------
                 occContext->InitSelected();
-                const TopoDS_Shape &selectedShape1= occContext->SelectedShape();
+                const TopoDS_Shape &selectedShape1= this->getSelectedShape();
                 const gp_Pnt &pnt1 = BRep_Tool::Pnt(TopoDS::Vertex(selectedShape1));
 
                 occContext->NextSelected();
@@ -1757,11 +1749,10 @@ void occGLWidget::computeSelectionProperties()
             {
                 const TopoDS_Shape &aSelectedShape = this->getSelectedShape();
                 BRepGProp::SurfaceProperties(aSelectedShape,props);
-                cout<<"____"<<props.Mass()<<"____"<<endl;
+                //cout<<"____"<<props.Mass()<<"____"<<endl;
                 area += props.Mass();
             }
             message = QString("%1 surfaces selected - total area = %2").arg(occContext->NbSelected()).arg(area);
-            //cout<<"____"<<message.toStdString()<<"____"<<endl;
         }
             break;
         case CurSelection_Solid:
@@ -1772,8 +1763,8 @@ void occGLWidget::computeSelectionProperties()
                 double volume = 0.0;
                 for(occContext->InitSelected();occContext->MoreSelected();occContext->NextSelected())
                 {
-                    BRepGProp::VolumeProperties(occContext->SelectedShape(),props);
-                    volume=volume+props.Mass();
+                    BRepGProp::VolumeProperties(this->getSelectedShape(),props);
+                    volume += props.Mass();
                 }
                 message = QString("%1 volumes selected - total volume = %3").arg(occContext->NbSelected()).arg(volume);
             }
@@ -1782,8 +1773,8 @@ void occGLWidget::computeSelectionProperties()
                 Standard_Real area;
                 for(area = 0.0, occContext->InitSelected();occContext->MoreSelected();occContext->NextSelected())
                 {
-                    BRepGProp::SurfaceProperties(occContext->SelectedShape(),props);
-                    area=area+props.Mass();
+                    BRepGProp::SurfaceProperties(this->getSelectedShape(),props);
+                    area += props.Mass();
                 }
                 message = QString("%1 shells selected - total area = %2").arg(occContext->NbSelected()).arg(area);
             }
@@ -1813,11 +1804,6 @@ void occGLWidget::hideSelectedBodies()
         curAISShape->setShapeVisibility(false);
         occContext->Erase(occContext->SelectedInteractive(),false);
     }
-    //for(AIS_ListIteratorOfListOfInteractive it(listOfAISShapes); it.More(); it.Next())
-    //{
-    //    const occHandle(AIS_ExtendedShape) &curAISShape = occHandle(AIS_ExtendedShape)::DownCast(it.Value());
-    //    occContext->Erase(occContext->SelectedInteractive(),false);
-    //}
     this->clearGeometrySelection();
     occContext->UpdateCurrentViewer();
     cout<<"occGLWidget::hideSelectedBodies()->____function exiting____"<<endl;
@@ -2517,25 +2503,96 @@ static void getNormal(const TopoDS_Face& aFace, gp_Dir& aDNS)
 
 //! -----------------------------------
 //! function: extendSelectionToAjacent
-//! details:  private slot
+//! details:
 //! -----------------------------------
+/*
 void occGLWidget::extendSelectionToAjacent()
 {
     cout<<"occGLWidget::extendSelectionToAjacent()->____function called____"<<endl;
 
-    TopTools_ListOfShape selection;
+    std::vector<AIS_InteractiveObject> listIO;
+    for(occContext->InitSelected();occContext->MoreSelected(); occContext->NextSelected())
+        listIO.push_back(occContext->SelectedInteractive());
+
+    for(std::vector<AIS_InteractiveObject>::iterator it = listIO.begin(); it!=listIO.end(); )
+    {
+        const occHandle(AIS_Shape) &curAISShape = occHandle(AIS_Shape)::DownCast(*it);
+
+    }
+
+
+    for(occContext->InitSelected();occContext->MoreSelected();occContext->NextSelected())
+    {
+        occHandle(StdSelect_BRepOwner) &bro = occHandle(StdSelect_BRepOwner)::DownCast(occContext->SelectedOwner());
+
+        const TopoDS_Shape &ownerShape = bro->Shape();
+        TopoDS_Shape selShape = ownerShape.Located(bro->Location() * ownerShape.Location());
+        TopAbs_ShapeEnum shapeType = selShape.ShapeType();
+
+        switch(shapeType)
+        {
+        case TopAbs_FACE:
+        {
+            //! ------------------------------------
+            //! scans the edges of the current face
+            //! ------------------------------------
+            for(TopExp_Explorer edgeExp(selShape,TopAbs_EDGE);edgeExp.More();edgeExp.Next())
+            {
+                const TopoDS_Edge &theCurEdge= TopoDS::Edge(edgeExp.Current());
+
+                //! ---------------------------------------------------------------
+                //! the normal to the selected face calculated on the current edge
+                //! ---------------------------------------------------------------
+                gp_Vec NSF;
+                TopOpeBRepBuild_Tools::GetNormalToFaceOnEdge(theSelectedFace,theCurEdge, NSF);
+
+                //! -----------------------
+                //! find the adjacent face
+                //! -----------------------
+                TopoDS_Shape theAdjacentFace;
+                TopTools_IndexedDataMapOfShapeListOfShape edgeFaceMap;
+                bool faceFound = TopOpeBRepBuild_Tools::GetAdjacentFace(theSelectedFace,theCurEdge,edgeFaceMap,theAdjacentFace);
+                if(faceFound==false) continue;
+
+                //! ---------------
+                //! evaluate angle
+                //! ---------------
+                bool isAngleInRange = true;
+                if(isAngleInRange==false) continue;
+                TopTools_ListOfShape faceList = edgeFaceMap.FindFromKey(theSelectedFace);
+                for(TopTools_ListIteratorOfListOfShape it(faceList); it.More(); it.Next())
+                {
+                    TopoDS_Face aFace = TopoDS::Face(it.Value());
+
+                }
+            }
+        }
+            break;
+        case TopAbs_EDGE:
+        {
+            ;
+        }
+            break;
+        }
+    }
+}
+*/
+
+void occGLWidget::extendSelectionToAjacent()
+{
+    cout<<"occGLWidget::extendSelectionToAjacent()->____function called____"<<endl;
 
     //! ------------------------------------------------
     //! put the selected interactive shapes into a list
     //! ------------------------------------------------
+    TopTools_ListOfShape selection;
     AIS_ListOfInteractive list;
     for(occContext->InitSelected();occContext->MoreSelected();occContext->NextSelected())
     {
         list.Append(occContext->SelectedInteractive());
     }
 
-    AIS_ListIteratorOfListOfInteractive it;
-    for(it.Initialize(list);it.More();it.Next())
+    for(AIS_ListIteratorOfListOfInteractive it(list);it.More();it.Next())
     {
         const occHandle(AIS_Shape) &theAISShape = occHandle(AIS_Shape)::DownCast(it.Value());
         const TopoDS_Shape &theShape = theAISShape->Shape();
@@ -2566,8 +2623,6 @@ void occGLWidget::extendSelectionToAjacent()
 
                     //! find the adjacent face
                     TopoDS_Shape theAdjacentFace;
-
-                    //! get the adjacent face
                     bool faceFound = TopOpeBRepBuild_Tools::GetAdjacentFace(theSelectedFace,theCurEdge,edgeFaceMap,theAdjacentFace);
 
                     if(faceFound)
@@ -2717,19 +2772,19 @@ void occGLWidget::extendSelectionToAjacent()
     emit selectionChanged();
 }
 
-//! ------------------------------------
-//! function: get the current action 3D
+//! --------------------------
+//! function: currentAction3D
 //! details:
-//! ------------------------------------
+//! --------------------------
 CurAction3D occGLWidget::currentAction3D()
 {
     return myCurAction3D;
 }
 
-//! --------------------------
-//! function: get the context
-//! details:  access function
-//! --------------------------
+//! ---------------------
+//! function: getContext
+//! details:
+//! ---------------------
 const occHandle(AIS_InteractiveContext)& occGLWidget::getContext() const
 {
     return occContext;

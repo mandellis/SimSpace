@@ -2269,12 +2269,9 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
             //! non standard treatment of the dummy node for multiple selections
             //! -----------------------------------------------------------------
             DetailViewer *theDetailViewer = static_cast<DetailViewer*>(parent->parent());
-            //cout<<"____"<<theDetailViewer->objectName().toStdString()<<"____"<<endl;
-
             SimulationNodeClass *aNode = theDetailViewer->getCurrentMultipleSelectionNode();
             if(aNode!=Q_NULLPTR)
             {
-                //cout<<"____node: "<<aNode->getName().toStdString()<<"____"<<endl;
                 if(aNode->getPropertyItem("Master")->data(Qt::UserRole).value<Property>().getData().isValid()==false) return Q_NULLPTR;
                 if(aNode->getPropertyItem("Slave")->data(Qt::UserRole).value<Property>().getData().isValid()==false) return Q_NULLPTR;
             }
@@ -4483,14 +4480,6 @@ void GeneralDelegate::setEditorData(QWidget *editor, const QModelIndex &index) c
     //! ----------------
     else if(propertyName =="Remote points")
     {
-        //void *p = data.value<Property>().getData().value<void*>();
-        //QComboBox *comboBox = static_cast<QComboBox*>(editor);
-        //QVariant data;
-        //data.setValue(p);
-        //int index = comboBox->findData(data);
-        //if(index!=-1) comboBox->setCurrentIndex(index);
-        //else comboBox->setCurrentIndex(0);
-
         void *p = data.value<Property>().getData().value<void*>();
         QComboBox *comboBox = static_cast<QComboBox*>(editor);
         QStandardItem *item = (QStandardItem*)(p);
@@ -4578,15 +4567,6 @@ void GeneralDelegate::setEditorData(QWidget *editor, const QModelIndex &index) c
         }
         if(found == true) comboBox->setCurrentIndex(n);
         else comboBox->setCurrentIndex(0);
-
-        //void *p = data.value<Property>().getData().value<void*>();
-        //QComboBox *comboBox = static_cast<QComboBox*>(editor);
-        //QVariant t;
-        //t.setValue(p);
-        //int index = comboBox->findData(t);
-        //if(index!=-1) comboBox->setCurrentIndex(index);
-        //else comboBox->setCurrentIndex(0);
-
         connect(editor,SIGNAL(currentIndexChanged(int)),SLOT(commitAndCloseContactPairSelector()));
     }
     //! ---------------------------
@@ -4618,13 +4598,6 @@ void GeneralDelegate::setEditorData(QWidget *editor, const QModelIndex &index) c
         }
         if(found == true) comboBox->setCurrentIndex(n);
         else comboBox->setCurrentIndex(0);
-        //void *p = data.value<Property>().getData().value<void*>();
-        //QComboBox *comboBox = static_cast<QComboBox*>(editor);
-        //QVariant t;
-        //t.setValue(p);
-        //int index = comboBox->findData(t);
-        //if(index!=-1) comboBox->setCurrentIndex(index);
-        //else comboBox->setCurrentIndex(0);
         connect(editor,SIGNAL(currentIndexChanged(int)),SLOT(commitAndCloseShapeSelectorEditor_boundaryPrismaticLayer()));
     }
     //! -----------------

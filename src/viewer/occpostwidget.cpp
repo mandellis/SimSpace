@@ -52,6 +52,15 @@ occPostWidget::occPostWidget(meshDataBase *mDB, QWidget *parent):occPreGLWidget(
     myResultPresentation = Global::status().myResultPresentation;
 }
 
+//! -------------------------
+//! function: getPostContext
+//! details:
+//! -------------------------
+const occHandle(AIS_InteractiveContext)& occPostWidget::getPostContext() const
+{
+    return occPostContext;
+}
+
 //! ---------------
 //! function: init
 //! details:
@@ -59,6 +68,7 @@ occPostWidget::occPostWidget(meshDataBase *mDB, QWidget *parent):occPreGLWidget(
 void occPostWidget::init()
 {
     occPreGLWidget::init();
+    if(occPostContext.IsNull()) occPostContext = new AIS_InteractiveContext(occViewer);
 }
 
 //! ---------------------
@@ -69,7 +79,6 @@ void occPostWidget::paintEvent(QPaintEvent *e)
 {
     Q_UNUSED(e);
     occPreGLWidget::paintEvent(e);
-    if(occPostContext.IsNull()) occPostContext = new AIS_InteractiveContext(occViewer);
 }
 
 //! -------------------------

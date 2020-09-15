@@ -54,7 +54,6 @@ private:
     //! connect/disconnect to simulation manager - helper4
     void connectToSimulationManager(bool toConnect);
 
-
 public:
 
     //! constructor
@@ -64,10 +63,7 @@ public:
     DetailViewer(const occHandle(AIS_InteractiveContext) &aCTX, QWidget *parent=0);
 
     //! destructor
-    virtual ~DetailViewer()
-    {
-        cout<<"DetailViewer::~DetailViewer()->____DESTRUCTOR CALLED____"<<endl;
-    }
+    virtual ~DetailViewer() { cout<<"DetailViewer::~DetailViewer()->____DESTRUCTOR CALLED____"<<endl; }
 
     //! delegate
     GeneralDelegate *myGeneralDelegate;
@@ -101,13 +97,9 @@ private:
 
 public:
 
-    //! experimental
+    //! experimental - functions to be completed ...
     void setCurrentMultipleSelectionNode(SimulationNodeClass* aNode){ myCurMultipleSelectionNode = aNode; }
     SimulationNodeClass* getCurrentMultipleSelectionNode() { return myCurMultipleSelectionNode; }
-
-protected:
-
-    //QStandardItemModel* getModel();
 
 public slots:
 
@@ -116,9 +108,6 @@ public slots:
 
     //! set mesh context
     void setMeshContext(const occHandle(AIS_InteractiveContext) &aMeshCTX);
-
-    //! set delegate context
-    void setDelegateContext(const occHandle(AIS_InteractiveContext) &aCTX);
 
     //! slot
     void setTheModel(const QModelIndex &anIndex);

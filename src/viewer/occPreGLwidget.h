@@ -138,7 +138,7 @@ public:
     void createInteractiveShapes();
 
     //! return the mesh context
-    occHandle(AIS_InteractiveContext) getMeshContext() {return occMeshContext; }
+    const occHandle(AIS_InteractiveContext)& getMeshContext() const;
 
     //! get the interactive objects (AIS_Shape)
     QMap<int,occHandle(AIS_InteractiveObject)> getInteractiveObjects() { return myMapOfInteractiveShapes; }

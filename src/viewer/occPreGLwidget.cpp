@@ -222,6 +222,15 @@ void occPreGLWidget::buildMeshToolsContextMenu(QMenu *aContextMenu)
     actionDisplayCurvature->setData(305);
 }
 
+//! -------------------------
+//! function: getMeshContext
+//! details:
+//! -------------------------
+const occHandle(AIS_InteractiveContext)& occPreGLWidget::getMeshContext() const
+{
+    return occMeshContext;
+}
+
 //! ---------------------
 //! function: destructor
 //! details:
@@ -3436,10 +3445,10 @@ void occPreGLWidget::exportCloud()
     exportingTools::exportCloud(occContext, myDS2);
 }
 
-//! ----------------------
-//! function: exportCloud
+//! ----------------
+//! function: event
 //! details:
-//! ----------------------
+//! ----------------
 bool occPreGLWidget::event(QEvent *event)
 {
     //cout<<"occPreGLWidget::event()->____event: "<<event->type()<<"____"<<endl;
@@ -3599,6 +3608,7 @@ void occPreGLWidget::updateViewerAfterDataBaseChange()
         //! ------------------------------------------------
         myMapOfInteractiveShapes.clear();
         myMapOfInteractiveShapes.clear();
+
         //! -----------------------------------------------
         //! remove the interactive objects from the viewer
         //! -----------------------------------------------
