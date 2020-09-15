@@ -90,7 +90,6 @@ SOURCES += main.cpp\
     meshworker.cpp \
     systemConsole/systemconsole.cpp \
     ccout.cpp \
-    ccxsolvermanager.cpp \
     solutionworker.cpp \
     src/post/frdreader.cpp \
     src/post/occmeshtoccxmesh.cpp \
@@ -265,7 +264,6 @@ HEADERS  += mainwindow.h \
     systemConsole/systemconsole.h \
     ccout.h \
     qconsoleevent.h \
-    ccxsolvermanager.h \
     solutionworker.h \
     src/post/frdreader.h \
     src/post/occmeshtoccxmesh.h \

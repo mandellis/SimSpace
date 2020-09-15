@@ -505,24 +505,18 @@ void postObject::buildMeshIO(double min, double max, int Nlevels, bool autoscale
         cout<<"____displacement map size: "<<displacementMap.size()<<"____"<<endl;
         //exit(9999);
         theDeformedDS->SetNonDeformedDataSource(curMeshDS);
-        cout<<"____tag00____"<<endl;
         for(TColStd_MapIteratorOfPackedMapOfInteger it(curMeshDS->GetAllNodes()); it.More(); it.Next())
         {
             int globalNodeID = it.Key();
             const gp_Vec &d = displacementMap.at(globalNodeID);
             theDeformedDS->SetVector(globalNodeID,d);
         }
-        cout<<"____tag01____"<<endl;
         theDeformedDS->SetMagnify(deformationScale);
-        cout<<"____tag02____"<<endl;
         theMeshDataSourcesForView[loc]=theDeformedDS;   //! abruptly replace - do not use "insert"
-        cout<<"____tag03____"<<endl;
 
         const std::vector<std::map<int, double>> &listOfRes = theData.at(loc);
-        cout<<"____tag04____"<<endl;
-        cout<<"____tag04: component: "<<component<<"____"<<endl;
         const std::map<int, double> &res = listOfRes.at(component);
-        cout<<"____tag5____"<<endl;
+
         //! -------------------------------------------
         //! min and max for the colorbox and isostrips
         //! -------------------------------------------
@@ -535,7 +529,8 @@ void postObject::buildMeshIO(double min, double max, int Nlevels, bool autoscale
         else { myMin = min; myMax = max; }
 
         occHandle(MeshVS_Mesh) aColoredMesh;
-        MeshTools::buildIsoStrip(theDeformedDS,res,myMin,myMax,myNbLevels,aColoredMesh);
+        MeshTools::buildIsoStrip(theDeformedDS,res,myMin,myMax,myNbLevels,aColoredMesh,true);
+        //MeshTools::buildDeformedColoredMesh(curMeshDS,res,displacementMap,1.0,myMin,myMax,Nlevels,aColoredMesh,true);
         theMeshes.insert(std::make_pair(loc,aColoredMesh));
     }
 
@@ -590,10 +585,10 @@ std::pair<double,double> postObject::getMinMax(int component)
     return minmax;
 }
 
-//! ----------------------------------------
+//! ---------------
 //! function: init
-//! details:  provide the mesh data sources
-//! ----------------------------------------
+//! details:
+//! ---------------
 void postObject::init(meshDataBase *mDB)
 {
     cout<<"postObject::init()->____function called____"<<endl;

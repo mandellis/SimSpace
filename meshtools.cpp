@@ -770,10 +770,8 @@ bool MeshTools::buildDeformedColoredMesh(const occHandle(MeshVS_DataSource) &the
 
     for(std::map<int, double>::const_iterator itNodes = res.cbegin(); itNodes!= res.cend(); ++itNodes)
     {
-        //int nodeID = itNodes.key();
         int nodeID = itNodes->first;
         double aValue;
-        //if(Delta!=0.0) aValue = (itNodes.value()-min)/Delta;
         if(Delta!=0.0) aValue = (itNodes->first-min)/Delta;
         else aValue = 0.0;
         aScaleMap.Bind(nodeID, aValue);
