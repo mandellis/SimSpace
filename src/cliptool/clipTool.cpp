@@ -144,12 +144,6 @@ void clipTool::setWorkingMode(int workingMode)
     {
     case 0: // on mesh
     {
-        //! ----------------------------------------------------------
-        //! recompute the hidden elements and send them to the viewer
-        //! ----------------------------------------------------------
-        //this->computeHiddenElements();
-        //myOCCViewer->setHiddenElements(myHiddenElements);
-
         myOCCViewer->clipMesh();
     }
         break;
@@ -345,8 +339,6 @@ void clipTool::addItemToTable()
     //! recompute the hidden elements
     //! send to the viewer the map of element IDs to hide
     //! --------------------------------------------------
-    //this->computeHiddenElements();
-    //myOCCViewer->setHiddenElements(myHiddenElements);
     myOCCViewer->clipMesh();
     myOCCViewer->clipResult();
 
@@ -510,7 +502,6 @@ void clipTool::updateCSDataByExternalCSChange(QStandardItem *theCurrentModifiedC
         int sliderValue = indexPlaneTranslation.data(Qt::UserRole).toInt();
         double lx,ly,lz;
         myOCCViewer->getSceneBoundingBox(lx,ly,lz);
-        //double D = sqrt(lx*lx+ly*ly+lz*lz);
         double D = fabs(lx*coeffs[0]+ly*coeffs[1]+lz*coeffs[2]);
         double translation = double(sliderValue/100.0)*(D/1.0);
         double a = coeffs[0];
@@ -660,7 +651,6 @@ void clipTool::updateClipPlaneOfRow()
 
     double lx,ly,lz;
     myOCCViewer->getSceneBoundingBox(lx,ly,lz);
-    //double D = sqrt(lx*lx+ly*ly+lz*lz);
     double D = fabs(lx*a+ly*b+lz*c);
     double translation = D*double(sliderPosition/100.0);
     this->translatePlane(a,b,c,d,translation);
@@ -709,7 +699,6 @@ void clipTool::updateCSTranslation(int sliderPosition)
     double c = coeffs[2];
     double d = coeffs[3];
 
-    //double D = sqrt(lx*lx+ly*ly+lz*lz);
     double D = fabs(lx*coeffs[0]+ly*coeffs[1]+lz*coeffs[2]);
     double translation = double(sliderPosition/100.0)*(D/1.0);
     this->translatePlane(a,b,c,d,translation);
@@ -747,7 +736,7 @@ void clipTool::updateCSTranslation(int sliderPosition)
     }
     //myOCCViewer->getView()->Redraw();
 }
-
+/*
 //! --------------------------------
 //! function: computeHiddenElements
 //! details:
@@ -829,7 +818,7 @@ void clipTool::computeHiddenElements()
         else itt->second = hiddenHElementsForCurrentMesh;
     }
 }
-
+*/
 //! -------------------------------------
 //! function: handleClipPlaneOfRowStatus
 //! details:

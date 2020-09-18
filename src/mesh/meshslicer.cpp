@@ -19,6 +19,7 @@
 //! ----
 #include <vector>
 #include <iostream>
+#include <ppl.h>
 using namespace std;
 
 //! ----------------------
@@ -29,7 +30,7 @@ meshSlicer::meshSlicer(const occHandle(MeshVS_DataSource) &aMeshDS):myMeshDS(aMe
 {
     ;
 }
-
+/*
 //! ------------------
 //! function: perform
 //! details:
@@ -46,31 +47,65 @@ bool meshSlicer::perform(double a, double b, double c, double d, occHandle(TColS
     double buf[3];
     TColStd_Array1OfReal coords(*buf,1,3);
 
-    //double L = sqrt(a*a+b*b+c*c);
-
-    //bool toBeAdded = false;
+    bool toBeAdded = false;
     TColStd_MapIteratorOfPackedMapOfInteger it(myMeshDS->GetAllElements());
-    for(int localElementID = 1; localElementID<=myMeshDS->GetAllElements().Extent(); localElementID++, it.Next())
+    int NbElements = myMeshDS->GetAllElements().Extent();
+    for(int localElementID = 1; localElementID<=NbElements; localElementID++, it.Next())
     {
         int globalElementID = it.Key();
         myMeshDS->GetNodesByElement(globalElementID,nodeIDs,NbNodes);
-        //toBeAdded = false;
-        //int k = 0;
+        toBeAdded = true;
+        int k=0;
         for(int i=1; i<=NbNodes; i++)
         {
             int globalNodeID = nodeIDs(i);
             myMeshDS->GetGeom(globalNodeID,false,coords,NbNodes,aType);
-            //double distance = (a*coords(1)+b*coords(2)+c*coords(3)+d)/L;
-            double distance = (a*coords(1)+b*coords(2)+c*coords(3)+d);
-            //double distance = polygon::pointPlaneDistance(polygon::Point(coords(1),coords(2),coords(3)),a,b,c,d);
-            //if(distance>=0) { toBeAdded = false; break; } else toBeAdded=true;
-            //if(distance<0) k++;
-            if(distance>=0) continue;
-            amap.Add(globalElementID);
-            break;
+            double distance = polygon::pointPlaneDistance(polygon::Point(coords(1),coords(2),coords(3)),a,b,c,d);
+            //if(distance>=0) { toBeAdded = false; break; }
+            if(distance>=0) { break; }
+            k++;
         }
         //if(toBeAdded == true) amap.Add(globalElementID);
-        //if(k==NbNodes) amap.Add(globalElementID);
+        if(k==NbNodes) amap.Add(globalElementID);
+    }
+    if(hiddenElementIDs.IsNull()) hiddenElementIDs = new TColStd_HPackedMapOfInteger;
+    hiddenElementIDs->ChangeMap() = amap;
+    if(amap.IsEmpty()) return false;
+    return true;
+}
+*/
+//! ---------------------------
+//! function: perform
+//! details:  try optimization
+//! ---------------------------
+bool meshSlicer::perform(double a, double b, double c, double d, occHandle(TColStd_HPackedMapOfInteger) &hiddenElementIDs)
+{
+    //cout<<"meshSlicer::perform()->____function called____"<<endl;
+    if(myMeshDS.IsNull()) return false;
+
+    TColStd_PackedMapOfInteger amap;
+    int NbNodes, bufi[20];
+    TColStd_Array1OfInteger nodeIDs(*bufi,1,20);
+    MeshVS_EntityType aType;
+    double buf[3];
+    TColStd_Array1OfReal coords(*buf,1,3);
+
+    TColStd_MapIteratorOfPackedMapOfInteger it(myMeshDS->GetAllElements());
+    int NbElements = myMeshDS->GetAllElements().Extent();
+    for(int localElementID = 1; localElementID<=NbElements; localElementID++, it.Next())
+    {
+        int globalElementID = it.Key();
+        myMeshDS->GetNodesByElement(globalElementID,nodeIDs,NbNodes);
+        int k=0;
+        for(int i=1; i<=NbNodes; i++)
+        {
+            int globalNodeID = nodeIDs(i);
+            myMeshDS->GetGeom(globalNodeID,false,coords,NbNodes,aType);
+            double distance = (a*coords(1)+b*coords(2)+c*coords(3)+d)/sqrt(a*a+b*b+c*c);
+            if(distance>=0) break;
+            k++;
+        }
+        if(k>=1) amap.Add(globalElementID);
     }
     if(hiddenElementIDs.IsNull()) hiddenElementIDs = new TColStd_HPackedMapOfInteger;
     hiddenElementIDs->ChangeMap() = amap;

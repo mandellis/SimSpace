@@ -8,7 +8,6 @@
 //! Qt
 //! ---
 #include <QComboBox>
-//#include <QCheckBox>
 #include <QLineEdit>
 #include <QSlider>
 
@@ -163,7 +162,6 @@ void clipToolDelegate::setEditorData(QWidget *editor, const QModelIndex &index) 
         QSlider *slider = static_cast<QSlider*>(editor);
         slider->setValue(index.data(Qt::UserRole).toInt());
         connect(slider,SIGNAL(valueChanged(int)),this,SLOT(handleCSTranslation(int)));
-        //connect(slider,SIGNAL(sliderReleased()),this,SLOT(handleCSTranslationHandleReleased()));
     }
         break;
     }
@@ -261,6 +259,9 @@ void clipToolDelegate::handleCSStatusChanged()
 //! ------------------------------
 void clipToolDelegate::handleCSTranslation(int sliderValue)
 {
+    QComboBox *editor = qobject_cast<QComboBox*>(sender());
+    emit commitData(editor);
+    emit closeEditor(editor);
     emit currentCSTranslationApplied(sliderValue);
 }
 

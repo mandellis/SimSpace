@@ -3918,7 +3918,11 @@ void occPreGLWidget::clipMesh()
     for(AIS_ListIteratorOfListOfInteractive it(listOfIO); it.More(); it.Next())
     {
         const occHandle(MeshVS_Mesh) &aMesh = occHandle(MeshVS_Mesh)::DownCast(it.Value());
-        if(aMesh.IsNull()) continue;
+        if(aMesh.IsNull())
+        {
+            cerr<<"____NULL MESH____"<<endl;
+            continue;
+        }
 
         //! ----------------------------------------------
         //! reset the hidden elements of the current mesh
@@ -3926,7 +3930,6 @@ void occPreGLWidget::clipMesh()
         aMesh->SetHiddenElems(new TColStd_HPackedMapOfInteger());
 
         const occHandle(MeshVS_DataSource) &aMeshDS = aMesh->GetDataSource();
-        if(aMeshDS.IsNull()) continue;
         aSlicer.setMeshDataSource(aMeshDS);
 
         TColStd_PackedMapOfInteger hiddenElementIDs;
@@ -3943,7 +3946,8 @@ void occPreGLWidget::clipMesh()
             occHandle(TColStd_HPackedMapOfInteger) HHiddenElementIDs;
             bool isDone = aSlicer.perform(a,b,c,d,HHiddenElementIDs);
             if(isDone == false) return;
-            hiddenElementIDs.Unite(HHiddenElementIDs->Map());
+            hiddenElementIDs.Union(hiddenElementIDs,HHiddenElementIDs->Map());
+            //hiddenElementIDs.Unite(HHiddenElementIDs->Map());
         }
         occHandle(TColStd_HPackedMapOfInteger) mapOfHiddenElements = new TColStd_HPackedMapOfInteger;
         mapOfHiddenElements->ChangeMap() = hiddenElementIDs;
@@ -4487,8 +4491,50 @@ void occPreGLWidget::computeSelectionProperties()
             double totalVolume = 0;
             for(occContext->InitSelected(); occContext->MoreSelected(); occContext->NextSelected())
             {
+                const occHandle(MeshVS_MeshEntityOwner) &anEntityOwner = occHandle(MeshVS_MeshEntityOwner)::DownCast(occMeshContext->SelectedOwner());
+                int globalElementID  = anEntityOwner->ID();
+                const occHandle(MeshVS_Mesh) &aMeshObject = occHandle(MeshVS_Mesh)::DownCast(anEntityOwner->Selectable());
+                const occHandle(MeshVS_DataSource) &aDS = aMeshObject->GetDataSource();
+
+                //! --------------------------------
                 //! implement polyhedron volume
+                //! (1/3) sum_F Q_F dot N_F Area(F)
+                //! --------------------------------
+
+                int NbNodes;
+                occHandle(MeshVS_HArray1OfSequenceOfInteger) topology;
+                aDS->Get3DGeom(globalElementID,NbNodes,topology);
+                int NbFaces = topology->Length();
+
+                int b[20];
+                TColStd_Array1OfInteger nodeIDs(*b,1,20);
+                aDS->GetNodesByElement(globalElementID,nodeIDs,NbNodes);
+
+                for(int f = 1; f<=NbFaces; f++)
+                {
+                    cout<<"____nb faces: "<<NbFaces<<"____"<<endl;
+                    std::vector<polygon::Point> aPolygon;
+                    TColStd_SequenceOfInteger aSeq = topology->Value(f);
+                    int N = aSeq.Length();
+                    polygon::Point aPoint;
+                    for(int i = 0; i<N; i++)
+                    {
+                        int index = aSeq.Value(i%N+1)+1;
+                        int N;
+                        MeshVS_EntityType aType;
+                        double bufd[3];
+                        TColStd_Array1OfReal coords(*bufd,1,3);
+                        aDS->GetGeom(index,false,coords,N,aType);
+                        aPoint.x = coords(1); aPoint.y = coords(2); aPoint.z = coords(3);
+                        aPolygon.push_back(aPoint);
+                    }
+                    const std::vector<double> &n = polygon::getNormal(aPolygon);
+                    double area = polygon::area3D_Polygon(aPolygon);
+
+                    totalVolume += area*(n[0]*aPoint.x+n[1]*aPoint.y+n[2]*aPoint.z);
+                }
             }
+            totalVolume /= 3.0;
             message = QString("%1 selected volume elements").arg(NbSelected);
             cout<<"____total volume of the selected volume elements: "<<totalVolume<<"____"<<endl;
         }

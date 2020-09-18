@@ -479,7 +479,6 @@ simulationDataBase::simulationDataBase(const QList<SimulationNodeClass*> listOfN
         }
         cout<<"____Solution information found____"<<endl;
         QString curParentTimeTag = curNode->getPropertyValue<QString>("Parent time tag");
-        //exit(20);
 
         //! ---------------------------------
         //! search for an Analysis root item
@@ -557,8 +556,6 @@ simulationDataBase::simulationDataBase(const QList<SimulationNodeClass*> listOfN
             QStandardItem *curSimulationRootItem = myRootItem->child(n,0);
             SimulationNodeClass *curSimulationNodeRoot = curSimulationRootItem->data(Qt::UserRole).value<SimulationNodeClass*>();
             if(curSimulationNodeRoot->isAnalysisRoot()==false) continue;
-
-
 
             //! -----------------------------
             //! retrieve the "Solution" item

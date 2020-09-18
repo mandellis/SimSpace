@@ -52,7 +52,7 @@ public:
     //! -------------------------------------
     //! retrieve the list of values of a key
     //! -------------------------------------
-    std::vector<V> values(const K &key)
+    std::vector<V> values(const K &key) const
     {
         /* linear search O(N)
         std::vector<V> values;
@@ -69,8 +69,8 @@ public:
         //! https://thispointer.com/finding-all-values-for-a-key-in-multimap-using-equals_range-example/
         //! ---------------------------------------------------------------------------------------------
         std::vector<V> values;
-        std::pair<std::unordered_multimap<K,V>::iterator, std::unordered_multimap<K,V>::iterator> r = this->equal_range(key);
-        for (std::unordered_multimap<K,V>::iterator it = r.first; it != r.second; it++) values.push_back(it->second);
+        std::pair<std::unordered_multimap<K,V>::const_iterator, std::unordered_multimap<K,V>::const_iterator> r = this->equal_range(key);
+        for (std::unordered_multimap<K,V>::const_iterator it = r.first; it != r.second; it++) values.push_back(it->second);
         return values;
     }
 };
@@ -252,6 +252,7 @@ private:
     void pointCoord(double *c, int globalNodeID);
     void getAllElements(const std::vector<faceTable> &vecFaceTables, std::vector<meshElementByCoords> &vecMeshElements);
     bool computeFaceTables();
+    void processElementFaces(occHandle(MeshVS_HArray1OfSequenceOfInteger) &topology, const myMultiMap<int,int> &pointToIsoStrip, std::vector<faceTable> &elementFaceTables);
 
     void computeFaceElements();
 

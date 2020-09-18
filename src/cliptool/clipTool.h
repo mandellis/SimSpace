@@ -168,7 +168,7 @@ public slots:
     void setWorkingMode(int workingMode);
 
     //! compute hidden elements
-    void computeHiddenElements();
+    //void computeHiddenElements();
 
 signals:
 
