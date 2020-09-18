@@ -361,17 +361,15 @@ simulationDataBase::simulationDataBase(const QList<SimulationNodeClass*> listOfN
         {
             SimulationNodeClass *curNode = *it;
             bool isSetUpNode = curNode->isSimulationSetUpNode();
-            bool isChildSetUpNode = curNode->isChildSimulationSetUpNode();
-
-            QString curParentTimeTag = curNode->getPropertyValue<QString>("Parent time tag");
-            QString curTimeTag = curNode->getPropertyValue<QString>("Time tag");
-
+            //bool isChildSetUpNode = curNode->isChildSimulationSetUpNode();
             if(isSetUpNode==false)
             {
                 it++;
                 continue;
             }
 
+            QString curParentTimeTag = curNode->getPropertyValue<QString>("Parent time tag");
+            QString curTimeTag = curNode->getPropertyValue<QString>("Time tag");
             if(curParentTimeTag!=analysisRootTimeTag)
             {
                 it++;
@@ -395,65 +393,14 @@ simulationDataBase::simulationDataBase(const QList<SimulationNodeClass*> listOfN
 
             timeTagToNodeMap.insert(element);
             vecKeys.push_back(curTimeTag.toULongLong());
-            cout<<"____a check =>"<<curTimeTag.toULongLong()<<"____"<<endl;
+            //cout<<"____a check =>"<<curTimeTag.toULongLong()<<"____"<<endl;
         }
+
         //! ---------------------------
         //! sort the map using the key
         //! ---------------------------
         std::sort(vecKeys.begin(),vecKeys.end());
 
-/*
-        //! ---------------------------------------------------------
-        //! retrieve the child nodes belonging to the current branch
-        //! ---------------------------------------------------------
-        std::map<QString,std::pair<QString,SimulationNodeClass*>> timeTagToChildNodeMap;
-        for(QList<SimulationNodeClass*>::iterator it=listOfNodes_.begin(); it!=listOfNodes_.end();)
-        {
-            SimulationNodeClass *curNode = *it;
-            //bool isSetUpNode = curNode->isSimulationSetUpNode();
-            bool isChildSetUpNode = curNode->isChildSimulationSetUpNode();
-
-            if(isChildSetUpNode == false)
-            {
-                continue;
-            }
-
-            QString curChildParentTimeTag = curNode->getPropertyValue<QString>("Parent time tag");
-            QString curChildTimeTag = curNode->getPropertyValue<QString>("Time tag");
-
-            if(curChildParentTimeTag!=analysisRootTimeTag)
-            {
-                it++;
-                continue;
-            }
-            //cout<<"____NODE TO ATTACH FOUND____"<<endl;
-            //cout<<"____PARENT TIME TAG: "<<curParentTimeTag.toStdString()<<"____"<<endl;
-            //cout<<"____TIME TAG: "<<curTimeTag.toStdString()<<"____"<<endl;
-
-            for(int n=0; n<vecKeys.size(); n++)
-            {
-                //QString key = QString("%1").arg(vecKeys[n]);
-                unsigned long long int parentKey = vecKeys[n];
-                if(parentKey == curChildParentTimeTag.toLongLong())
-                {
-                    //! ------------------------------------
-                    //! store the current node into the map
-                    //! ------------------------------------
-                    std::pair<QString,SimulationNodeClass*> element;
-                    element.first = curChildTimeTag;
-                    element.second = curNode;
-
-                    //timeTagToNodeMap.insert(curChildParentTimeTag,element);
-                }
-            }
-
-            //! ------------------------------
-            //! remove the node from the list
-            //! ------------------------------
-            it = listOfNodes_.erase(it);
-            //cout<<"____a check =>"<<curTimeTag.toULongLong()<<"____"<<endl;
-        }
-*/
         //! -----------------------------
         //! append in the original order
         //! -----------------------------
@@ -461,7 +408,7 @@ simulationDataBase::simulationDataBase(const QList<SimulationNodeClass*> listOfN
         {
             QString key = QString("%1").arg(vecKeys[n]);
 
-            //cout<<"____Attaching node with time tag: "<<key.toStdString()<<"____"<<endl;
+            cout<<"____Attaching node with time tag: "<<key.toStdString()<<"____"<<endl;
 
             std::map<QString,SimulationNodeClass*>::iterator mapit = timeTagToNodeMap.find(key);
             if(mapit!=timeTagToNodeMap.end())
@@ -474,8 +421,165 @@ simulationDataBase::simulationDataBase(const QList<SimulationNodeClass*> listOfN
                 item->setData(data, Qt::UserRole);
                 item->setData(aNode->getName(),Qt::DisplayRole);
                 curSimulationRootItem->appendRow(item);
+            }
+        }
 
+        //! ------------------------------------
+        //! retrieve the child and nephew nodes
+        //! ------------------------------------
+        for(int nn=0; nn<curSimulationRootItem->rowCount();nn++)
+        {
+            QStandardItem *curSimulationItem = curSimulationRootItem->child(nn,0);
+            SimulationNodeClass *curSimulationNode = curSimulationItem->data(Qt::UserRole).value<SimulationNodeClass*>();
+            QString curSimulationNodeTimeTag = curSimulationNode->getPropertyValue<QString>("Time tag");
 
+            std::map<QString,SimulationNodeClass*> timeTagToChildNodeMap;
+            std::vector<unsigned long long int> vecChildKeys;
+
+            for(QList<SimulationNodeClass*>::iterator it=listOfNodes_.begin(); it!=listOfNodes_.end();)
+            {
+                SimulationNodeClass *curNode = *it;
+                bool isChildSetUpNode = curNode->isChildSimulationSetUpNode();
+
+                if(isChildSetUpNode == false)
+                {
+                    it++;
+                    continue;
+                }
+
+                QString curChildParentTimeTag = curNode->getPropertyValue<QString>("Parent time tag");
+                QString curChildTimeTag = curNode->getPropertyValue<QString>("Time tag");
+
+                if(curChildParentTimeTag!=curSimulationNodeTimeTag)
+                {
+                    it++;
+                    continue;
+                }
+                //cout<<"____NODE TO ATTACH FOUND____"<<endl;
+                //cout<<"____PARENT TIME TAG: "<<curParentTimeTag.toStdString()<<"____"<<endl;
+                //cout<<"____TIME TAG: "<<curTimeTag.toStdString()<<"____"<<endl;
+
+                //! ------------------------------
+                //! remove the node from the list
+                //! ------------------------------
+                it = listOfNodes_.erase(it);
+
+                //! ------------------------------------
+                //! store the current node into the map
+                //! ------------------------------------
+                std::pair<QString,SimulationNodeClass*> element;
+                element.first = curChildTimeTag;
+                element.second = curNode;
+
+                timeTagToChildNodeMap.insert(element);
+                vecChildKeys.push_back(curChildTimeTag.toULongLong());
+                //cout<<"____a check =>"<<curChildTimeTag.toULongLong()<<"____"<<endl;
+            }
+
+            //! ---------------------------
+            //! sort the map using the key
+            //! ---------------------------
+            std::sort(vecChildKeys.begin(),vecChildKeys.end());
+
+            //! -----------------------------
+            //! append in the original order
+            //! -----------------------------
+            for(int n=0; n<vecChildKeys.size(); n++)
+            {
+                QString key = QString("%1").arg(vecChildKeys[n]);
+
+                //cout<<"____Attaching node with time tag: "<<key.toStdString()<<"____"<<endl;
+
+                std::map<QString,SimulationNodeClass*>::iterator mapit = timeTagToChildNodeMap.find(key);
+                if(mapit!=timeTagToChildNodeMap.end())
+                {
+                    std::pair<QString,SimulationNodeClass*> element = *mapit;
+                    SimulationNodeClass* aNode = element.second;
+
+                    QExtendedStandardItem *item = new QExtendedStandardItem();
+                    data.setValue(aNode);
+                    item->setData(data, Qt::UserRole);
+                    item->setData(aNode->getName(),Qt::DisplayRole);
+                    curSimulationItem->appendRow(item);
+                }
+            }
+
+            for(int p=0;p<curSimulationItem->rowCount();p++)
+            {
+                QStandardItem *curChildSimulationItem = curSimulationItem->child(p,0);
+                SimulationNodeClass *curChildSimulationNode = curChildSimulationItem->data(Qt::UserRole).value<SimulationNodeClass*>();
+                QString curChildSimulationNodeTimeTag = curChildSimulationNode->getPropertyValue<QString>("Time tag");
+
+                std::map<QString,SimulationNodeClass*> timeTagToNephewNodeMap;
+                std::vector<unsigned long long int> vecNephewKeys;
+
+                for(QList<SimulationNodeClass*>::iterator it=listOfNodes_.begin(); it!=listOfNodes_.end();)
+                {
+                    SimulationNodeClass *curNode = *it;
+                    bool isNephewSetUpNode = curNode->isNephewSimulationSetUpNode();
+
+                    if(isNephewSetUpNode == false)
+                    {
+                        it++;
+                        continue;
+                    }
+
+                    QString curNephewParentTimeTag = curNode->getPropertyValue<QString>("Parent time tag");
+                    QString curNephewTimeTag = curNode->getPropertyValue<QString>("Time tag");
+
+                    if(curNephewParentTimeTag!=curChildSimulationNodeTimeTag)
+                    {
+                        it++;
+                        continue;
+                    }
+                    //cout<<"____NODE TO ATTACH FOUND____"<<endl;
+                    //cout<<"____PARENT TIME TAG: "<<curParentTimeTag.toStdString()<<"____"<<endl;
+                    //cout<<"____TIME TAG: "<<curTimeTag.toStdString()<<"____"<<endl;
+
+                    //! ------------------------------
+                    //! remove the node from the list
+                    //! ------------------------------
+                    it = listOfNodes_.erase(it);
+
+                    //! ------------------------------------
+                    //! store the current node into the map
+                    //! ------------------------------------
+                    std::pair<QString,SimulationNodeClass*> element;
+                    element.first = curNephewTimeTag;
+                    element.second = curNode;
+
+                    timeTagToNephewNodeMap.insert(element);
+                    vecNephewKeys.push_back(curNephewTimeTag.toULongLong());
+                    //cout<<"____a check =>"<<curChildTimeTag.toULongLong()<<"____"<<endl;
+                }
+
+                //! ---------------------------
+                //! sort the map using the key
+                //! ---------------------------
+                std::sort(vecNephewKeys.begin(),vecNephewKeys.end());
+
+                //! -----------------------------
+                //! append in the original order
+                //! -----------------------------
+                for(int n=0; n<vecNephewKeys.size(); n++)
+                {
+                    QString key = QString("%1").arg(vecNephewKeys[n]);
+
+                    //cout<<"____Attaching node with time tag: "<<key.toStdString()<<"____"<<endl;
+
+                    std::map<QString,SimulationNodeClass*>::iterator mapit = timeTagToNephewNodeMap.find(key);
+                    if(mapit!=timeTagToNephewNodeMap.end())
+                    {
+                        std::pair<QString,SimulationNodeClass*> element = *mapit;
+                        SimulationNodeClass* aNode = element.second;
+
+                        QExtendedStandardItem *item = new QExtendedStandardItem();
+                        data.setValue(aNode);
+                        item->setData(data, Qt::UserRole);
+                        item->setData(aNode->getName(),Qt::DisplayRole);
+                        curChildSimulationItem->appendRow(item);
+                    }
+                }
             }
         }
     }
@@ -614,9 +718,6 @@ simulationDataBase::simulationDataBase(const QList<SimulationNodeClass*> listOfN
             QStandardItem *curSimulationRootItem = myRootItem->child(n,0);
             SimulationNodeClass *curSimulationNodeRoot = curSimulationRootItem->data(Qt::UserRole).value<SimulationNodeClass*>();
             if(curSimulationNodeRoot->isAnalysisRoot()==false) continue;
-
-
-
             //! -----------------------------
             //! retrieve the "Solution" item
             //! -----------------------------

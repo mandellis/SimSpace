@@ -1440,8 +1440,7 @@ bool SimulationNodeClass::isAnalysisResult()
             myNodeType == SimulationNodeClass::nodeType_solutionStructuralTotalStrain ||
             myNodeType == SimulationNodeClass::nodeType_solutionThermalTemperature ||
             myNodeType == SimulationNodeClass::nodeType_solutionThermalFlux ||
-            myNodeType == SimulationNodeClass::nodeType_solutionStructuralContact ||
-            myNodeType == SimulationNodeClass::nodeType_postObject)
+            myNodeType == SimulationNodeClass::nodeType_solutionStructuralContact)
         return true;
     return false;
 }
