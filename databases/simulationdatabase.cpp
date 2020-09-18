@@ -402,7 +402,7 @@ simulationDataBase::simulationDataBase(const QList<SimulationNodeClass*> listOfN
         //! ---------------------------
         std::sort(vecKeys.begin(),vecKeys.end());
 
-
+/*
         //! ---------------------------------------------------------
         //! retrieve the child nodes belonging to the current branch
         //! ---------------------------------------------------------
@@ -443,7 +443,7 @@ simulationDataBase::simulationDataBase(const QList<SimulationNodeClass*> listOfN
                     element.first = curChildTimeTag;
                     element.second = curNode;
 
-                    timeTagToNodeMap.insert(curChildParentTimeTag,element);
+                    //timeTagToNodeMap.insert(curChildParentTimeTag,element);
                 }
             }
 
@@ -453,7 +453,7 @@ simulationDataBase::simulationDataBase(const QList<SimulationNodeClass*> listOfN
             it = listOfNodes_.erase(it);
             //cout<<"____a check =>"<<curTimeTag.toULongLong()<<"____"<<endl;
         }
-
+*/
         //! -----------------------------
         //! append in the original order
         //! -----------------------------
