@@ -74,6 +74,7 @@ bool meshSlicer::perform(double a, double b, double c, double d, occHandle(TColS
     return true;
 }
 */
+
 //! ---------------------------
 //! function: perform
 //! details:  try optimization
@@ -105,7 +106,7 @@ bool meshSlicer::perform(double a, double b, double c, double d, occHandle(TColS
             if(distance>=0) break;
             k++;
         }
-        if(k>=1) amap.Add(globalElementID);
+        if(k==NbNodes) amap.Add(globalElementID);
     }
     if(hiddenElementIDs.IsNull()) hiddenElementIDs = new TColStd_HPackedMapOfInteger;
     hiddenElementIDs->ChangeMap() = amap;

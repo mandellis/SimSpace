@@ -25,11 +25,6 @@
 occPostWidget::occPostWidget(QWidget *parent):occPreGLWidget(parent)
 {
     cout<<"occPostWidget::occPostWidget()->____CONSTRUCTOR CALLED I____"<<endl;
-
-    //! -------------------------------------
-    //! the occ context for the results view
-    //! -------------------------------------
-    //occPostContext = new AIS_InteractiveContext(occViewer);
 }
 
 //! ----------------------
@@ -40,11 +35,6 @@ occPostWidget::occPostWidget(meshDataBase *mDB, QWidget *parent):occPreGLWidget(
     myMeshDataBase(mDB)
 {
     cout<<"occPostWidget::occPostWidget()->____CONSTRUCTOR CALLED II____"<<endl;
-
-    //! -------------------------------------
-    //! the occ context for the results view
-    //! -------------------------------------
-    //occPostContext = new AIS_InteractiveContext(occViewer);
 
     //! ---------------------------------
     //! the result presentation settings
@@ -282,7 +272,7 @@ void occPostWidget::clipResult()
             occHandle(TColStd_HPackedMapOfInteger) HHiddenElementIDs;
             bool isDone = aSlicer.perform(a,b,c,d,HHiddenElementIDs);
             if(isDone == false) return;
-            hiddenElementIDs.Unite(HHiddenElementIDs->Map());
+            hiddenElementIDs.Union(hiddenElementIDs,HHiddenElementIDs->Map());
         }
         occHandle(TColStd_HPackedMapOfInteger) mapOfHiddenElements = new TColStd_HPackedMapOfInteger;
         mapOfHiddenElements->ChangeMap() = hiddenElementIDs;
@@ -300,14 +290,16 @@ void occPostWidget::updateViewerStatus()
 {
     myResultPresentation = Global::status().myResultPresentation;
 
-    //switch(myResultPresentation.theCombinedView)
-    //{
-    //case resultPresentation::combinedView_resultOnly: cout<<"occPostWidget::updateViewerStatus()->____results only____"<<endl; break;
-    //case resultPresentation::combinedView_meshVisible: cout<<"occPostWidget::updateViewerStatus()->____results with mesh____"<<endl; break;
-    //case resultPresentation::combinedView_undeformedModel: cout<<"occPostWidget::updateViewerStatus()->____results and undeformed model____"<<endl; break;
-    //case resultPresentation::combinedView_undeformedWireFrame: cout<<"occPostWidget::updateViewerStatus()->____results and undeformed wireframe____"<<endl; break;
-    //}
-    //cout<<"occPostWidget::updateViewerStatus()->____scale: "<<myResultPresentation.theScale<<"____"<<endl;
+    /*
+    switch(myResultPresentation.theCombinedView)
+    {
+    case resultPresentation::combinedView_resultOnly: cout<<"occPostWidget::updateViewerStatus()->____results only____"<<endl; break;
+    case resultPresentation::combinedView_meshVisible: cout<<"occPostWidget::updateViewerStatus()->____results with mesh____"<<endl; break;
+    case resultPresentation::combinedView_undeformedModel: cout<<"occPostWidget::updateViewerStatus()->____results and undeformed model____"<<endl; break;
+    case resultPresentation::combinedView_undeformedWireFrame: cout<<"occPostWidget::updateViewerStatus()->____results and undeformed wireframe____"<<endl; break;
+    }
+    cout<<"occPostWidget::updateViewerStatus()->____scale: "<<myResultPresentation.theScale<<"____"<<endl;
+    */
 
     //! --------------------------------------------------------------
     //! this method calls the simulation manager, which in turn calls

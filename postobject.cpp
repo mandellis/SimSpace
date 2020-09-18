@@ -150,6 +150,16 @@ postObject::postObject(const std::map<GeometryTag,std::vector<std::map<int,doubl
     myNbLevels = INITIAL_NUMBER_OF_COLORBOX_LEVELS;
 }
 
+//! -------------------------------------
+//! function: setMapOfNodalDisplacements
+//! details:
+//! -------------------------------------
+void postObject::setMapOfNodalDisplacements(const std::map<GeometryTag,std::map<int,gp_Vec>> &mapDisplMap)
+{
+    myMapOfNodalDisplacements = mapDisplMap;
+}
+
+
 //! ----------------
 //! function: write
 //! details:
@@ -277,6 +287,40 @@ void postObject::write(ofstream &file)
         case TopAbs_VERTEX: /* to be implemented */ break;
         }
     }
+
+    //! ----------------------------------------------------------------------
+    //! write the map of nodal displacements
+    //! std::map<GeometryTag,std::map<int,gp_Vec>> myMapOfNodalDisplacements;
+    //! ----------------------------------------------------------------------
+    size_t N = myMapOfNodalDisplacements.size();
+    file<<N<<endl;
+
+    for(std::map<GeometryTag,std::map<int,gp_Vec>>::iterator it = myMapOfNodalDisplacements.begin(); it!=myMapOfNodalDisplacements.end(); it++)
+    {
+        //! --------------
+        //! write the tag
+        //! --------------
+        const GeometryTag &aLoc = it->first;
+        file<<aLoc.isParent<<endl;
+        file<<aLoc.parentShapeNr<<endl;
+        file<<aLoc.subTopNr<<endl;
+        file<<aLoc.subShapeType<<endl;
+
+        //! ---------------------------------
+        //! write the map of the current tag
+        //! ---------------------------------
+        const std::map<int,gp_Vec> &displMap = it->second;
+
+        file<<displMap.size()<<endl;    // write the number of data contained into the map
+
+        for(std::map<int,gp_Vec>::const_iterator itMap = displMap.cbegin(); itMap!= displMap.cend(); itMap++)
+        {
+            int nodeID = itMap->first;
+            const gp_Vec &aDispl = itMap->second;
+            file<<nodeID<<"\t"<<aDispl.X()<<"\t"<<aDispl.Y()<<"\t"<<aDispl.Z()<<endl;
+        }
+    }
+
     //! ----------------------------
     //! write generation paramaters
     //! ----------------------------
@@ -286,10 +330,10 @@ void postObject::write(ofstream &file)
     file<<myNbLevels<<endl;
 }
 
-//! --------------------------------
-//! function: constructor from file
-//! details:
-//! --------------------------------
+//! ----------------------
+//! function: constructor
+//! details:  from file
+//! ----------------------
 postObject::postObject(ifstream &file)
 {
     cout<<"postObject::read()->____start reading post object____"<<endl;
@@ -432,6 +476,53 @@ postObject::postObject(ifstream &file)
         occHandle(MeshVS_DeformedDataSource) aDefMeshDS = new MeshVS_DeformedDataSource(aMeshDS,1.0);
         theMeshDataSources.insert(std::make_pair(aTag,aDefMeshDS));
     }
+
+    //! ------------------------------------
+    //! read the map of nodal displacements
+    //! ------------------------------------
+    int NbMaps;
+    file>>NbMaps;   // read the number of maps
+    for(int i=0; i<NbMaps; i++)
+    {
+        //! -------------
+        //! read the tag
+        //! -------------
+        GeometryTag loc;
+
+        int isParentInt;
+        bool isParent;
+        file>>isParentInt;
+        if(isParentInt) isParent = true; else isParent = false;
+        loc.isParent = isParent;
+
+        file>>loc.parentShapeNr;
+        file>>loc.subTopNr;
+        int shapeTypeInt;
+        file>>shapeTypeInt;
+        TopAbs_ShapeEnum type = static_cast<TopAbs_ShapeEnum>(shapeTypeInt);
+        loc.subShapeType = type;
+
+        //! -----------------------------------------------------------
+        //! read the number of data of the displacement map of the tag
+        //! -----------------------------------------------------------
+        int NbData;
+        file>>NbData;
+
+        //! -------------------------------------
+        //! read the values of the displacements
+        //! -------------------------------------
+        std::map<int,gp_Vec> locDisplMap;
+        for(int i=0; i<NbData; i++)
+        {
+            int nodeID;
+            double x,y,z;
+            file>>nodeID>>x>>y>>z;
+            gp_Vec aVec(x,y,z);
+            locDisplMap.insert(std::make_pair(nodeID,aVec));
+        }
+        myMapOfNodalDisplacements.insert(std::make_pair(loc,locDisplMap));
+    }
+
     //! -------------------------------
     //! read the generation parameters
     //! -------------------------------
@@ -494,7 +585,24 @@ void postObject::buildMeshIO(double min, double max, int Nlevels, bool autoscale
         //! build a deformed mesh data source
         //! ----------------------------------
         occHandle(MeshVS_DeformedDataSource) theDeformedDS = new MeshVS_DeformedDataSource(curMeshDS,deformationScale);
-        const std::map<int,gp_Vec> &displacementMap = myMapOfNodalDisplacements.at(loc);
+
+        // can also use .size()==0 instead of try {} catch (...) {}
+        std::map<int,gp_Vec> displacementMap;
+        try
+        {
+            displacementMap = myMapOfNodalDisplacements.at(loc);
+        }
+        catch(...)
+        {
+            //cout<<"____no displacement map: creating a dummy one filled with zero____"<<endl;
+            TColStd_PackedMapOfInteger nodeMap =  curMeshDS->GetAllNodes();
+            for(TColStd_MapIteratorOfPackedMapOfInteger it(nodeMap); it.More(); it.Next())
+            {
+                displacementMap.insert(std::make_pair(it.Key(),gp_Vec(0,0,0)));
+            }
+            myMapOfNodalDisplacements.insert(std::make_pair(loc,displacementMap));
+        }
+
         theDeformedDS->SetNonDeformedDataSource(curMeshDS);
 
         for(TColStd_MapIteratorOfPackedMapOfInteger it(curMeshDS->GetAllNodes()); it.More(); it.Next())
@@ -524,7 +632,7 @@ void postObject::buildMeshIO(double min, double max, int Nlevels, bool autoscale
         switch(Global::status().myResultPresentation.theTypeOfPresentation)
         {
         case resultPresentation::typeOfPresentation_isostrips:
-            MeshTools::buildIsoStrip(theDeformedDS,res,myMin,myMax,myNbLevels,aColoredMesh);
+            MeshTools::buildIsoStrip(theDeformedDS,res,myMin,myMax,myNbLevels,aColoredMesh,true);
             break;
         case resultPresentation::typeOfPresentation_nodalresults:
             MeshTools::buildColoredMesh(theDeformedDS,res,aColoredMesh,myMin,myMax,myNbLevels);
@@ -533,6 +641,7 @@ void postObject::buildMeshIO(double min, double max, int Nlevels, bool autoscale
             MeshTools::buildIsoSurfaces(theDeformedDS,res,myMin,myMax,myNbLevels,aColoredMesh,false);
             break;
         case resultPresentation::typeOfPresentation_isolines:
+            //! to do ...
             break;
         }
 
@@ -545,7 +654,7 @@ void postObject::buildMeshIO(double min, double max, int Nlevels, bool autoscale
     graphicsTools::createColorBox(myMin, myMax, myNbLevels, AISColorScale);
     TCollection_ExtendedString title(name.toStdString().c_str());
     AISColorScale->SetTitle(title);
-    cout<<"postObject::buildMeshIO()->____exiting function____"<<endl;
+    //cout<<"postObject::buildMeshIO()->____exiting function____"<<endl;
 }
 
 //! -------------------------------------------

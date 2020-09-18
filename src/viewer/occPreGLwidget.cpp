@@ -3918,21 +3918,17 @@ void occPreGLWidget::clipMesh()
     for(AIS_ListIteratorOfListOfInteractive it(listOfIO); it.More(); it.Next())
     {
         const occHandle(MeshVS_Mesh) &aMesh = occHandle(MeshVS_Mesh)::DownCast(it.Value());
-        if(aMesh.IsNull())
-        {
-            cerr<<"____NULL MESH____"<<endl;
-            continue;
-        }
+        if(aMesh.IsNull()) continue;
 
-        //! ----------------------------------------------
-        //! reset the hidden elements of the current mesh
-        //! ----------------------------------------------
+        //! -----------------------------------------------------
+        //! reset the hidden elements of the current mesh object
+        //! -----------------------------------------------------
         aMesh->SetHiddenElems(new TColStd_HPackedMapOfInteger());
 
         const occHandle(MeshVS_DataSource) &aMeshDS = aMesh->GetDataSource();
         aSlicer.setMeshDataSource(aMeshDS);
 
-        TColStd_PackedMapOfInteger hiddenElementIDs;
+        TColStd_PackedMapOfInteger hiddenElementIDs;    // the hidden elements for the current body
         for(QMap<int,occHandle(Graphic3d_ClipPlane)>::const_iterator itplane = myMapOfClipPlanes.cbegin(); itplane != myMapOfClipPlanes.cend(); itplane++)
         {
             const occHandle(Graphic3d_ClipPlane) &aClipPlane = itplane.value();
@@ -3943,11 +3939,10 @@ void occPreGLWidget::clipMesh()
             double c = eq.GetData()[2];
             double d = eq.GetData()[3];
 
-            occHandle(TColStd_HPackedMapOfInteger) HHiddenElementIDs;
+            occHandle(TColStd_HPackedMapOfInteger) HHiddenElementIDs = new TColStd_HPackedMapOfInteger;
             bool isDone = aSlicer.perform(a,b,c,d,HHiddenElementIDs);
             if(isDone == false) return;
             hiddenElementIDs.Union(hiddenElementIDs,HHiddenElementIDs->Map());
-            //hiddenElementIDs.Unite(HHiddenElementIDs->Map());
         }
         occHandle(TColStd_HPackedMapOfInteger) mapOfHiddenElements = new TColStd_HPackedMapOfInteger;
         mapOfHiddenElements->ChangeMap() = hiddenElementIDs;

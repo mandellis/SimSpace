@@ -879,7 +879,7 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
             QDoubleValidator *validator = new QDoubleValidator();
             if(propertyName =="Expansion ratio") validator->setBottom(1.0);
             if(propertyName =="Total thickness") validator->setBottom(0.0);
-            if(propertyName =="Forst layer height") validator->setBottom(0.0);
+            if(propertyName =="First layer height") validator->setBottom(0.0);
             editor->setValidator(validator);
             return editor;
         }

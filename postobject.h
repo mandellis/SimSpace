@@ -106,10 +106,7 @@ public:
     //! -------------------------------------------------
     //! set the map of the vectorial nodal displacements
     //! -------------------------------------------------
-    void setMapOfNodalDisplacements(const std::map<GeometryTag,std::map<int,gp_Vec>> &mapDisplMap)
-    {
-        myMapOfNodalDisplacements = mapDisplMap;
-    }
+    void setMapOfNodalDisplacements(const std::map<GeometryTag,std::map<int,gp_Vec>> &mapDisplMap);
 
     //! -------------------------------------------------
     //! get the map of the vectorial nodal displacements

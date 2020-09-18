@@ -187,7 +187,8 @@ std::map<GeometryTag,std::vector<std::map<int,double>>> postEngine::evaluateResu
             //printf("compare to File %s Time= %lf Substep n=%d Step n=%d\n",resultKeyName.toStdString().c_str(),time,requiredSubStepNb,requiredStepNb);
             bool eval=false;
 
-            switch (requiredMode) {
+            switch (requiredMode)
+            {
             case 0:
             {
                 if(strcmp(tdata,resultKeyName.toStdString().c_str())==0 && subStepNb==requiredSubStepNb && stepNb == requiredStepNb && mode == requiredMode)
@@ -231,16 +232,13 @@ std::map<GeometryTag,std::vector<std::map<int,double>>> postEngine::evaluateResu
                         sscanf(val.c_str(),"%d%lf%lf%lf",&ni,&cxx,&cyy,&czz);
 
                         //! nodeIDs defining the MeshVS_dataSource
-                        //int OCCnodeID = indexedMapOfNodes.value(ni,-1);
                         std::map<int,int>::iterator it = indexedMapOfNodes.find(ni);
 
                         if(it!=indexedMapOfNodes.end())
-                        //if(OCCnodeID!=-1)
                         {
                             int OCCnodeID = it->second;
                             const QList<double> &normal = curFaceDS->myNodeNormals.value(OCCnodeID);
                             double normalFlux = cxx*normal[0]+cyy*normal[1]+czz*normal[2];
-                            //resComp_normal.insert(OCCnodeID,normalFlux);
                             resComp_normal.insert(std::make_pair(OCCnodeID,normalFlux));
                         }
                         std::getline(curFile,val);
@@ -266,10 +264,8 @@ std::map<GeometryTag,std::vector<std::map<int,double>>> postEngine::evaluateResu
                         sscanf(val.c_str(),"%d%lf%lf%lf",&ni,&cxx,&cyy,&czz);
 
                         //! nodeIDs defining the MeshVS_dataSource
-                        //int OCCnodeID = indexedMapOfNodes.value(ni,-1);
                         std::map<int,int>::iterator it = indexedMapOfNodes.find(ni);
                         if(it!=indexedMapOfNodes.end())
-                        //if(OCCnodeID!=-1)
                         {
                             int OCCnodeID = it->second;
                             total = sqrt(pow(cxx,2)+pow(cyy,2)+pow(czz,2));
@@ -309,10 +305,8 @@ std::map<GeometryTag,std::vector<std::map<int,double>>> postEngine::evaluateResu
                         sscanf(val.c_str(),"%d%lf%lf%lf%lf%lf%lf",&ni,&cxx,&cyy,&czz,&cxy,&cyz,&cxz);
 
                         //! nodeIDs defining the MeshVS_dataSource
-                        //int OCCnodeID = indexedMapOfNodes.value(ni,-1);
                         std::map<int,int>::iterator it = indexedMapOfNodes.find(ni);
                         if(it!=indexedMapOfNodes.end())
-                        //if(OCCnodeID!=-1)
                         {
                             int OCCnodeID = it->second;
 
@@ -389,10 +383,8 @@ std::map<GeometryTag,std::vector<std::map<int,double>>> postEngine::evaluateResu
                         sscanf(val.c_str(),"%d%lf",&ni,&v);
 
                         //! nodeIDs defining the MeshVS_dataSource
-                        //int OCCnodeID = indexedMapOfNodes.value(ni,-1);
                         std::map<int,int>::iterator it = indexedMapOfNodes.find(ni);
                         if(it!=indexedMapOfNodes.end())
-                        //if(OCCnodeID!=-1)
                         {
                             int OCCnodeID = it->second;
                             //resT.insert(OCCnodeID,v);
@@ -421,10 +413,8 @@ std::map<GeometryTag,std::vector<std::map<int,double>>> postEngine::evaluateResu
                         sscanf(val.c_str(),"%d%lf%lf%lf%lf%lf%lf",&ni,&cxx,&cyy,&czz,&cxy,&cyz,&cxz);
 
                         //! nodeIDs defining the MeshVS_dataSource
-                        //int OCCnodeID = indexedMapOfNodes.value(ni,-1);
                         std::map<int,int>::iterator it = indexedMapOfNodes.find(ni);
                         if(it!=indexedMapOfNodes.end())
-                        //if(OCCnodeID!=-1)
                         {
                             int OCCnodeID = it->second;
 
@@ -449,7 +439,6 @@ std::map<GeometryTag,std::vector<std::map<int,double>>> postEngine::evaluateResu
                 }
                     break;
                 }
-                //resMap.insert(loc,res);
                 resMap.insert(std::make_pair(loc,res));
                 curFile.close();
                 break;
@@ -577,10 +566,10 @@ QString postEngine::resultName(const QString &keyName, int component, int step, 
     return this->timeStamp().append("\n").append(resultName).append(timeInfo).append("\n");
 }
 
-//! --------------------------
+//! --------------------------------------------------------------------
 //! function: buildPostObject
-//! details:
-//! --------------------------
+//! details:  this method takes the data from the .frd file (from disk)
+//! --------------------------------------------------------------------
 bool postEngine::buildPostObject(const QString &keyName,
                                  int component,
                                  int requiredSubStepNb,
@@ -640,7 +629,6 @@ bool postEngine::buildPostObject(const QString &keyName,
     aPostObject->buildMeshIO(-1,-1,10,true,component,magnifyFactor);
     return true;
 }
-
 
 //! --------------------
 //! function: timeStamp

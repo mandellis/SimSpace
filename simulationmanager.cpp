@@ -10532,8 +10532,9 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
             double magnifyFactor = Global::status().myResultPresentation.theScale;
             int component = aPostObject->getSolutionDataComponent();
 
-            std::map<GeometryTag,std::map<int,gp_Vec>> mapOfNodalDisplacements = aPostObject->getMapOfNodalDisplacements();
+            /* remove this patch (moved in postObject)
             //cout<<"___SIZE OF MAP: "<<mapOfNodalDisplacements.size()<<"____"<<endl;
+            std::map<GeometryTag,std::map<int,gp_Vec>> mapOfNodalDisplacements = aPostObject->getMapOfNodalDisplacements();
 
             //! ---------------------------------------------------------------
             //! this is a patch: actually the nodal displacement for building
@@ -10557,6 +10558,7 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
                 }
                 aPostObject->setMapOfNodalDisplacements(mapOfNodalDisplacements);
             }
+            */
 
             //! -------------------------
             //! build the colored result
@@ -10652,9 +10654,10 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
             cout<<"@____step: "<<stepNb<<"____"<<endl;
             cout<<"@____sub step: "<<subStepNb<<"____\n"<<endl;
 
-            //! ----------------------
-            //! create the postObject
-            //! ----------------------
+            //! -------------------------------------------------------------------------------
+            //! create the postObject - this build the post object reading data from disk
+            //! after this call the postObject will contain the map of the nodal displacements
+            //! -------------------------------------------------------------------------------
             myPostEngine->buildPostObject(keyName,component,subStepNb,stepNb,mode,vecLoc,aPostObject);
         }
     }

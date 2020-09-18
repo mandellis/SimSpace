@@ -5863,6 +5863,7 @@ void DetailViewer::handleBRepFlagChanged()
         myCurNode->removeProperty("Pair distance");
         myCurNode->removeProperty("Preserve boundary conditions edges");
         myCurNode->removeProperty("Project points on geometry");
+        myCurNode->removeProperty("Run in memory");
 
         //! ----------------------------------------
         //! store and remove the TetWild parameters
