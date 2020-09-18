@@ -1345,8 +1345,7 @@ bool SimulationNodeClass::isSimulationSetUpNode()
             myNodeType == SimulationNodeClass::nodeType_structuralAnalysisThermalCondition ||
             myNodeType == SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_ImportedTemperatureDistribution ||
             myNodeType == SimulationNodeClass::nodeType_mapper ||
-            myNodeType == SimulationNodeClass::nodeType_modelChange ||
-            myNodeType == SimulationNodeClass::nodeType_OpenFoamScalarData)
+            myNodeType == SimulationNodeClass::nodeType_modelChange)
         return true;
 
 #ifdef COSTAMP_VERSION
@@ -1369,6 +1368,17 @@ bool SimulationNodeClass::isChildSimulationSetUpNode()
     return false;
 }
 
+//! -------------------------------------
+//! function: isNephewSimulationSetUpNode
+//! details:
+//! -------------------------------------
+bool SimulationNodeClass::isNephewSimulationSetUpNode()
+{
+    if(myNodeType == SimulationNodeClass::nodeType_postObject
+            )
+        return true;
+    return false;
+}
 
 //! -----------------------------
 //! function: isAnalysisSettings
@@ -1430,8 +1440,7 @@ bool SimulationNodeClass::isAnalysisResult()
             myNodeType == SimulationNodeClass::nodeType_solutionStructuralTotalStrain ||
             myNodeType == SimulationNodeClass::nodeType_solutionThermalTemperature ||
             myNodeType == SimulationNodeClass::nodeType_solutionThermalFlux ||
-            myNodeType == SimulationNodeClass::nodeType_solutionStructuralContact ||
-            myNodeType == SimulationNodeClass::nodeType_postObject)
+            myNodeType == SimulationNodeClass::nodeType_solutionStructuralContact)
         return true;
     return false;
 }

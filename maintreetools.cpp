@@ -398,6 +398,8 @@ QStandardItem* mainTreeTools::getCurrentSimulationRoot(QTreeView *treeView)
     if(node->isAnalysisRoot()) return curItem;
     if(node->isAnalysisSettings() || node->isSolution() || node->isSimulationSetUpNode()) return curItem->parent();
     if(node->isAnalysisResult() || node->isChildSimulationSetUpNode()) return curItem->parent()->parent();
+    if(node->isNephewSimulationSetUpNode()) return curItem->parent()->parent()->parent();
+
     return Q_NULLPTR;
 }
 
@@ -626,7 +628,7 @@ void mainTreeTools::getAllBoundaryConditionsTags(QTreeView *tree, int type, std:
             {
                 QStandardItem *itemBC = item->child(j,0);
                 SimulationNodeClass *nodeBC = itemBC->data(Qt::UserRole).value<SimulationNodeClass*>();
-                if(nodeBC->isSimulationSetUpNode()==false || nodeBC->isChildSimulationSetUpNode()) continue;
+                if(nodeBC->isSimulationSetUpNode()==false || nodeBC->isChildSimulationSetUpNode() || nodeBC->isNephewSimulationSetUpNode()) continue;
                 std::vector<GeometryTag> BCTags = nodeBC->getPropertyValue<std::vector<GeometryTag>>("Tags");
                 for(int m=0; m<BCTags.size(); m++)
                 {
@@ -679,6 +681,7 @@ SimulationNodeClass* mainTreeTools::getAnalysisSettingsNodeFromIndex(QModelIndex
     if(curNode->isSolutionInformation()) nodeAnalysisSettings = curIndex.parent().parent().child(0,0).data(Qt::UserRole).value<SimulationNodeClass*>();
     if(curNode->isAnalysisResult()) nodeAnalysisSettings = curIndex.parent().parent().child(0,0).data(Qt::UserRole).value<SimulationNodeClass*>();
     if(curNode->isChildSimulationSetUpNode()) nodeAnalysisSettings = curIndex.parent().parent().child(0,0).data(Qt::UserRole).value<SimulationNodeClass*>();
+    if(curNode->isNephewSimulationSetUpNode()) nodeAnalysisSettings = curIndex.parent().parent().parent().child(0,0).data(Qt::UserRole).value<SimulationNodeClass*>();
     return nodeAnalysisSettings;
 }
 
@@ -711,12 +714,21 @@ QStandardItem* mainTreeTools::getAnalysisSettingsItemFromCurrentItem(QTreeView *
         return static_cast<QExtendedStandardItem*>(item);
     }
 
-    //! ---------------------------------------------------
-    //! case 3: the current item is a post processing item
-    //! ---------------------------------------------------
+    //! -----------------------------------------------------------------------------------
+    //! case 3: the current item is a post processing item or a child of a simulation node
+    //! -----------------------------------------------------------------------------------
     if(curNode->isAnalysisResult() || curNode->isSolutionInformation() || curNode->isChildSimulationSetUpNode())
     {
         QStandardItem *item = curItem->parent()->parent()->child(0,0);
+        return static_cast<QExtendedStandardItem*>(item);
+    }
+
+    //! ----------------------------------------------------------
+    //! case 4: the current item is a nephew of a simulation node
+    //! ----------------------------------------------------------
+    if(curNode->isNephewSimulationSetUpNode())
+    {
+        QStandardItem *item = curItem->parent()->parent()->parent()->child(0,0);
         return static_cast<QExtendedStandardItem*>(item);
     }
     return Q_NULLPTR;
