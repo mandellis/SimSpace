@@ -30,11 +30,11 @@ struct resultPresentation
     bool useExteriorMeshForVolumeResults;
     double theScale;
 
-    //! ------------
-    //! constructor
-    //! ------------
+    //! -------------------------------------
+    //! constructor - set the default values
+    //! -------------------------------------
     resultPresentation(combinedView aCombinedView = combinedView_resultOnly,
-                       typeOfPresentation aTypeOfPresentation = typeOfPresentation_isostrips,
+                       typeOfPresentation aTypeOfPresentation = typeOfPresentation_nodalresults,
                        double aScale = 1.0,
                        bool aUseExteriorMeshForVolumeResults = true):
         theCombinedView(aCombinedView),

@@ -28,7 +28,8 @@ ResultsToolBar::ResultsToolBar(const QString &title, QWidget *parent):QToolBar(t
     //! type of presentation
     //! ---------------------
     typeOfPresentationButton = new QPushButtonExtended(this);
-    typeOfPresentationButton->setIcon(QIcon(":/icons/icon_isostrips.png"));
+    //typeOfPresentationButton->setIcon(QIcon(":/icons/icon_isostrips.png"));
+    typeOfPresentationButton->setIcon(QIcon(":/icons/icon_color gradient 1.jpg"));
 
     //! -----------------------------
     //! create a menu for the button
