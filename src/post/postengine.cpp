@@ -145,13 +145,9 @@ std::map<GeometryTag,std::vector<std::map<int,double>>> postEngine::evaluateResu
             {
                 QString fileName = curDir.absolutePath()+"/"+entryList.at(k);
                 fileList.append(fileName);
-                //cout<<"adding file name: "<<entryList.at(k).toStdString()<<endl;
             }
         }
 
-        //! --------------------------
-        //! the results on a location
-        //! --------------------------
         std::vector<std::map<int,double>> res;
 
         //! ---------------
@@ -185,8 +181,8 @@ std::map<GeometryTag,std::vector<std::map<int,double>>> postEngine::evaluateResu
 
             //printf("File %s Time= %lf Substep n=%d Step n=%d\n",tdata,time,subStepNb,stepNb);
             //printf("compare to File %s Time= %lf Substep n=%d Step n=%d\n",resultKeyName.toStdString().c_str(),time,requiredSubStepNb,requiredStepNb);
-            bool eval=false;
 
+            bool eval=false;
             switch (requiredMode)
             {
             case 0:
@@ -194,7 +190,7 @@ std::map<GeometryTag,std::vector<std::map<int,double>>> postEngine::evaluateResu
                 if(strcmp(tdata,resultKeyName.toStdString().c_str())==0 && subStepNb==requiredSubStepNb && stepNb == requiredStepNb && mode == requiredMode)
                 {
                     requiredTime = time;
-                    eval=true;
+                    eval = true;
                 }
             }
                 break;
@@ -203,12 +199,11 @@ std::map<GeometryTag,std::vector<std::map<int,double>>> postEngine::evaluateResu
                 if(strcmp(tdata,resultKeyName.toStdString().c_str())==0 && mode == requiredMode)
                 {
                     requiredTime = time;
-                    eval=true;
+                    eval = true;
                 }
             }
                 break;
             }
-            //if(strcmp(tdata,resultKeyName.toStdString().c_str())==0 && subStepNb==requiredSubStepNb && stepNb == requiredStepNb && mode == requiredMode)
             if(eval)
             {
                 //printf("file @ required time found\n");
@@ -447,12 +442,12 @@ std::map<GeometryTag,std::vector<std::map<int,double>>> postEngine::evaluateResu
             {
                 curFile.close();
             }
-            curFile.close();
+            //curFile.close();
         }
-        //! --------------------------------------------------------
-        //! resMap => QMap<GeometryTag,QList<QMap<int,double>>
-        //! res => QList<QMap<int,double>>
-        //! --------------------------------------------------------
+        //! --------------------------------------------------------------------
+        //! resMap => std::vector<GeometryTag,std::vector<std::map<int,double>>
+        //! res => std::vector<std::map<int,double>>
+        //! --------------------------------------------------------------------
     }
     return resMap;
 }
@@ -496,7 +491,6 @@ QString postEngine::resultName(const QString &keyName, int component, int step, 
     case TypeOfResult_U:
         switch(component)
         {
-        //case 0: resultName="Total displacement"; break;
         case 0: resultName="Total displacement"; break;
         case 1: resultName="Directional displacement X"; break;
         case 2: resultName="Directional displacement Y"; break;
@@ -626,8 +620,8 @@ bool postEngine::buildPostObject(const QString &keyName,
     aPostObject = std::make_shared<postObject>(resMap,vecLoc,mapDisplMap,aResultName,useSurfaceMeshForVolumeResults);
     aPostObject->init(myMeshDataBase);
     double magnifyFactor = Global::status().myResultPresentation.theScale;
-    aPostObject->buildMeshIO(-1,-1,10,true,component,magnifyFactor);
-    return true;
+    bool isDone = aPostObject->buildMeshIO(-1,-1,10,true,component,magnifyFactor);
+    return isDone;
 }
 
 //! --------------------
@@ -686,7 +680,7 @@ bool postEngine::evaluateFatigueResults(int type, std::vector<GeometryTag> locs,
     {
     case fatigueModel_BCM:
     {
-        cout<<"postEngine::evaluateResult()->____fatigue model BCM called___"<<endl;
+        cout<<"postEngine::evaluateFatigueResult()->____fatigue model BCM called___"<<endl;
         std::map<GeometryTag,std::map<int,QList<double>>> r = readFatigueResults(type,locs,times);
 
         rainflow rf;
@@ -715,7 +709,7 @@ bool postEngine::evaluateFatigueResults(int type, std::vector<GeometryTag> locs,
 
     case fatigueModel_ESR:
     {
-        cout<<"postEngine::evaluateResult()->____fatigue model ESR called___"<<endl;
+        cout<<"postEngine::evaluateFatigueResult()->____fatigue model ESR called___"<<endl;
         int step,substep;
         double requiredTime;
         postTools::getStepSubStepByTimeDTM(myDTM,times.last(),step,substep);
@@ -995,9 +989,28 @@ void postEngine::updateResultsPresentation(QList<sharedPostObject> &postObjectLi
         //! the surface mesh=>volume mesh/volume mesh=>surface mesh for viewing results
         //! the presentation should be fully rebuilt
         //! ----------------------------------------------------------------------------
+        /* commented: heavy computations (isostrips, isosurfaces, isolines should not be
+         * re-done when only some features of the results presentation has been changed
+         * left here for documentation
         if(previousResultPresentation != newResultsPresentation)
         {
-            double min= aPostObject->getMin();
+            double min = aPostObject->getMin();
+            double max = aPostObject->getMax();
+            int NbLevels = aPostObject->getNbLevels();
+            int component = aPostObject->getSolutionDataComponent();
+            bool isAutoScale = aPostObject->IsAutoscale();
+            int magnifyFactor = newResultsPresentation.theScale;
+
+            aPostObject->setMode(newResultsPresentation.useExteriorMeshForVolumeResults);
+            aPostObject->buildMeshIO(min,max,NbLevels,isAutoScale,component,magnifyFactor);
+        }
+        */
+        bool toBeUpdated = false;
+        if(previousResultPresentation.theTypeOfPresentation != newResultsPresentation.theTypeOfPresentation) toBeUpdated = true;
+        if(previousResultPresentation.theScale != newResultsPresentation.theScale) toBeUpdated = true;
+        if(toBeUpdated)
+        {
+            double min = aPostObject->getMin();
             double max = aPostObject->getMax();
             int NbLevels = aPostObject->getNbLevels();
             int component = aPostObject->getSolutionDataComponent();

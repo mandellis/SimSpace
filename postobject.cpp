@@ -545,7 +545,7 @@ void postObject::resetMeshes()
 //! function: buildMeshIO
 //! details:
 //! ----------------------
-void postObject::buildMeshIO(double min, double max, int Nlevels, bool autoscale, int component, double deformationScale)
+bool postObject::buildMeshIO(double min, double max, int Nlevels, bool autoscale, int component, double deformationScale)
 {
     cout<<"postObject::buildMeshIO()->____function called____"<<endl;
 
@@ -579,6 +579,8 @@ void postObject::buildMeshIO(double min, double max, int Nlevels, bool autoscale
         else
         {
             curMeshDS = anIt->second->GetNonDeformedDataSource();
+            //cout<<"____curmeshds: "<<curMeshDS->GetAllElements().Extent()<<"____"<<endl;
+            //exit(8888);
         }
 
         //! ----------------------------------
@@ -597,9 +599,7 @@ void postObject::buildMeshIO(double min, double max, int Nlevels, bool autoscale
             //cout<<"____no displacement map: creating a dummy one filled with zero____"<<endl;
             TColStd_PackedMapOfInteger nodeMap =  curMeshDS->GetAllNodes();
             for(TColStd_MapIteratorOfPackedMapOfInteger it(nodeMap); it.More(); it.Next())
-            {
                 displacementMap.insert(std::make_pair(it.Key(),gp_Vec(0,0,0)));
-            }
             myMapOfNodalDisplacements.insert(std::make_pair(loc,displacementMap));
         }
 
@@ -616,6 +616,12 @@ void postObject::buildMeshIO(double min, double max, int Nlevels, bool autoscale
 
         const std::vector<std::map<int, double>> &listOfRes = theData.at(loc);
         const std::map<int, double> &res = listOfRes.at(component);
+
+        if(res.size()==0)
+        {
+            cout<<"postObject::buildMeshIO()->____you are giving me no data____"<<endl;
+            return false;
+        }
 
         //! -------------------------------------------
         //! min and max for the colorbox and isostrips
@@ -654,6 +660,7 @@ void postObject::buildMeshIO(double min, double max, int Nlevels, bool autoscale
     graphicsTools::createColorBox(myMin, myMax, myNbLevels, AISColorScale);
     TCollection_ExtendedString title(name.toStdString().c_str());
     AISColorScale->SetTitle(title);
+    return true;
     //cout<<"postObject::buildMeshIO()->____exiting function____"<<endl;
 }
 

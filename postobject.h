@@ -1,3 +1,4 @@
+
 #ifndef POSTOBJECT_H
 #define POSTOBJECT_H
 
@@ -209,7 +210,7 @@ public:
     void writeMesh(ofstream &file, const occHandle(MeshVS_DataSource) &theMeshDS);
 
     //! build mesh IO
-    void buildMeshIO(double min=-1e20, double max=1e20, int Nlevels=10, bool autoscale=true, int component=0, double deformationScale = 1.0);
+    bool buildMeshIO(double min=-1e20, double max=1e20, int Nlevels=10, bool autoscale=true, int component=0, double deformationScale = 1.0);
 
     //! init
     void init(meshDataBase *mDB);

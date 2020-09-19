@@ -10522,9 +10522,9 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
             //! -------------------------------------------
             //! a results is already present into the item
             //! -------------------------------------------
-            aPostObject = curNode->getPropertyValue<sharedPostObject>("Post object"); //cesere
+            aPostObject = curNode->getPropertyValue<sharedPostObject>("Post object");
             bool useExteriorMeshForVolumeResults = Global::status().myResultPresentation.useExteriorMeshForVolumeResults;
-            aPostObject->setMode(useExteriorMeshForVolumeResults);     // use the exterior mesh for showing volume results
+            aPostObject->setMode(useExteriorMeshForVolumeResults);
             int scaleType = curNode->getPropertyValue<int>("Scale type");
             double min = aPostObject->getMin();
             double max = aPostObject->getMax();
@@ -10658,7 +10658,8 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
             //! create the postObject - this build the post object reading data from disk
             //! after this call the postObject will contain the map of the nodal displacements
             //! -------------------------------------------------------------------------------
-            myPostEngine->buildPostObject(keyName,component,subStepNb,stepNb,mode,vecLoc,aPostObject);
+            bool isDone = myPostEngine->buildPostObject(keyName,component,subStepNb,stepNb,mode,vecLoc,aPostObject);
+            if(isDone == false) return;
         }
     }
     else

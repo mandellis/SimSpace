@@ -366,7 +366,7 @@ void isoStripBuilder::pointCoord(double *c, int globalNodeID)
     int NbNodes;
     double b[3];
     TColStd_Array1OfReal cn(*b,1,3);
-    myMeshDS->GetGeom(globalNodeID, false, cn, NbNodes, aType);
+    bool isDone = myMeshDS->GetGeom(globalNodeID, false, cn, NbNodes, aType);
     for(int i=0; i<3; i++) c[i] = cn(i+1);
 }
 
@@ -411,6 +411,7 @@ bool isoStripBuilder::perform1(std::vector<meshElementByCoords> &vecMeshElements
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
     bool isDone = this->computeFaceTables();
+
     if(isDone==false) return isDone;
 
     //! ------------------------
@@ -460,15 +461,12 @@ bool isoStripBuilder::computeFaceTables()
 
         int NbNodes;
         occHandle(MeshVS_HArray1OfSequenceOfInteger) topology;
-
         myMeshDS->Get3DGeom(globalElementID,NbNodes,topology);
-
         int NbFaces = topology->Length();
         int NbNodesOfElement, b[20];
 
         TColStd_Array1OfInteger nodeIDs(*b,1,20);
         myMeshDS->GetNodesByElement(globalElementID,nodeIDs,NbNodesOfElement);
-
         std::vector<faceTable> elementFaceTables;
 
         //this->processElementFaces(topology,pointToIsoStrip,elementFaceTables);
@@ -547,7 +545,6 @@ bool isoStripBuilder::computeFaceTables()
                     if(curIsoStripNb<=minIsoStrip1) minIsoStrip1 = curIsoStripNb;
                     if(curIsoStripNb>=maxIsoStrip1) maxIsoStrip1 = curIsoStripNb;
                 }
-
                 //! --------------
                 //! recompute ...
                 //! --------------
@@ -562,6 +559,7 @@ bool isoStripBuilder::computeFaceTables()
                     if(curIsoStripNb<=minIsoStrip2) minIsoStrip2 = curIsoStripNb;
                     if(curIsoStripNb>=maxIsoStrip2) maxIsoStrip2 = curIsoStripNb;
                 }
+
                 double valueOfPoint1 = myValues.at(globalNodeID1);
                 double valueOfPoint2 = myValues.at(globalNodeID2);
 
@@ -575,13 +573,12 @@ bool isoStripBuilder::computeFaceTables()
                 //! ------------------
                 if(valueOfPoint2-valueOfPoint1>0)
                 {
+                    //cout<<"____analyzing case increasing____"<<endl;
                     int deltaStrip = minIsoStrip2 - maxIsoStrip1;
                     if(deltaStrip==0) continue;
-
                     double csp[3];
                     this->pointCoord(csp,globalNodeID1);
-                    isoStripPoint sP(csp[0],csp[1],csp[2],myValues.at(maxIsoStrip1));
-
+                    isoStripPoint sP(csp[0],csp[1],csp[2],myValues.at(globalNodeID1));
                     double cep[3];
                     this->pointCoord(cep,globalNodeID2);
                     isoStripPoint eP(cep[0],cep[1],cep[2],myValues.at(globalNodeID2));
@@ -611,6 +608,8 @@ bool isoStripBuilder::computeFaceTables()
                 //! ------------------
                 else
                 {
+                    //cout<<"____analyzing case decreasing____"<<endl;
+
                     int deltaStrip = minIsoStrip1 - maxIsoStrip2;
                     if(deltaStrip==0) continue;
 
@@ -650,7 +649,6 @@ bool isoStripBuilder::computeFaceTables()
             myVecFaceTables.push_back(aFaceTable);
             elementFaceTables.push_back(aFaceTable);
         }
-
         myMapElementFaceTables.insert(std::make_pair(globalElementID,elementFaceTables));
     }
     return true;
