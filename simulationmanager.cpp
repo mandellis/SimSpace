@@ -435,13 +435,12 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 //! ------------------------------------------------------------
                 emit requestSetWorkingMode(2);
                 emit requestHideAllResults();
-                //emit requestHideSlicedMeshes();
 
                 //! --------------------------------------------
                 //! prepare for highlighting: this version uses
                 //! the "Map index". Can also use "Geometry"
                 //! --------------------------------------------
-                QList<int> listOfBodies;
+                std::vector<int> listOfBodies;
                 for(QList<QModelIndex>::iterator it = selectedIndexes.begin();  it!=selectedIndexes.end(); ++it)
                 {
                     QModelIndex anIndex = *it;
@@ -450,7 +449,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                     if(itemMapIndex!=Q_NULLPTR)
                     {
                         int mapIndex = aNode->getPropertyValue<int>("Map index");
-                        listOfBodies<<mapIndex;
+                        listOfBodies.push_back(mapIndex);
                     }
                 }
                 emit requestHighlightBody(listOfBodies);
@@ -6348,8 +6347,11 @@ void SimulationManager::synchVisibility()
     AIS_ListOfInteractive listOfDisplayedObjects, listOfHiddenObjects;
     TopTools_ListOfShape listOfDisplayedShapes, listOfHiddenShapes;
 
-    myCTX->DisplayedObjects(AIS_KOI_Shape, -1, listOfDisplayedObjects);
-    myCTX->ErasedObjects(AIS_KOI_Shape, -1, listOfHiddenObjects);
+    myCTX->ObjectsByDisplayStatus(AIS_KOI_Shape,-1,AIS_DS_Displayed,listOfDisplayedObjects);
+    myCTX->ObjectsByDisplayStatus(AIS_KOI_Shape,-1,AIS_DS_Erased,listOfDisplayedObjects);
+
+    //myCTX->DisplayedObjects(AIS_KOI_Shape,-1,listOfDisplayedObjects);
+    //myCTX->ErasedObjects(AIS_KOI_Shape,-1,listOfHiddenObjects);
 
     AIS_ListIteratorOfListOfInteractive anIter;
     for(anIter.Initialize(listOfDisplayedObjects);anIter.More();anIter.Next())
@@ -6565,7 +6567,6 @@ void SimulationManager::ChangeElementControl()
         }
     }
 }
-
 /*
 //! ----------------------
 //! function: changeColor
@@ -6751,7 +6752,7 @@ void SimulationManager::changeColor()
                 }
                 emit requestDisplayShapeCopy1(list1,color1);
             }
-            if(itemSlaveTags!=NULL)
+            if(itemSlaveTags!=Q_NULLPTR)
             {
                 std::vector<int> vecParentShapes;
                 vecLocs = itemSlaveTags->data(Qt::UserRole).value<Property>().getData().value<std::vector<GeometryTag>>();

@@ -293,7 +293,7 @@ public slots:
     void removeObsoleteMeshes();
 
     //! highlight bodies
-    void highlightBody(const QList<int> &listOfBodyNumbers);
+    void highlightBody(const std::vector<int> &listOfBodyNumbers);
 
     //! unhighlight visible bodies
     void unhighlightBody(bool updateViewer=false);

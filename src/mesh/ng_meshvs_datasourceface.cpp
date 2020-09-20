@@ -1691,7 +1691,7 @@ void Ng_MeshVS_DataSourceFace::computeFreeMeshSegments()
 //! ----------------------------------
 void Ng_MeshVS_DataSourceFace::computeNormalAtElements()
 {
-    //cout<<"Ng_MeshVS_DataSourceFace::computeNormalAtElements()->____function called____"<<endl;
+    cout<<"Ng_MeshVS_DataSourceFace::computeNormalAtElements()->____function called____"<<endl;
     for(TColStd_MapIteratorOfPackedMapOfInteger it(myElements); it.More(); it.Next())
     {
         std::vector<polygon::Point> aPolygon;
@@ -1699,14 +1699,16 @@ void Ng_MeshVS_DataSourceFace::computeNormalAtElements()
         int globalElementID = it.Key();
         int localElementID = myElementsMap.FindIndex(globalElementID);
 
-        //cout<<"@____(global element ID, local element ID) = ("<<globalElementID<<", "<<localElementID<<")____"<<endl;
-
         int NbNodes;
         double buf[30];
         TColStd_Array1OfReal coords(*buf,1,30);
         MeshVS_EntityType type;
         bool isDone = this->GetGeom(globalElementID,true,coords,NbNodes,type);
-        Q_UNUSED(isDone)
+        if(isDone == false)
+        {
+            cerr<<"Ng_MeshVS_DataSourceFace::computeNormalAtElements()->____cannot found element ID: "<<globalElementID<<"____"<<endl;
+            continue;
+        }
 
         for(int i=0; i<NbNodes; i++)
         {
@@ -1722,6 +1724,7 @@ void Ng_MeshVS_DataSourceFace::computeNormalAtElements()
         myElemNormals->SetValue(localElementID,2,n[1]);
         myElemNormals->SetValue(localElementID,3,n[2]);
     }
+    cout<<"Ng_MeshVS_DataSourceFace::computeNormalAtElements()->____exiting function____"<<endl;
 }
 
 //! -------------------------------------------------------------------

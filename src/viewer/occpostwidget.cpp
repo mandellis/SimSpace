@@ -335,7 +335,7 @@ void occPostWidget::setWorkingMode_Solution()
 {
     if(myCurWorkingMode!=curWorkingMode_onSolution)
     {
-        cout<<"occPreGLWidget::setWorkingMode_Solution()->____ON SOLUTION____"<<endl;
+        cout<<"occPostGLWidget::setWorkingMode_Solution()->____ON SOLUTION____"<<endl;
 
         //! ---------------------------
         //! change the internal status
@@ -358,15 +358,22 @@ void occPostWidget::setWorkingMode_Solution()
         //! --------------------------------------
         //! deactivate the current selection mode
         //! --------------------------------------
-        this->clearGeometrySelection();
+        this->clearGeometrySelection(); //cesere
 
-        /*
+        //! -----------------------------------------------------
+        //! deactivate all the selection modes of all the shapes
+        //! activate selection mode for FACEs
+        //! -----------------------------------------------------
         AIS_ListOfInteractive listOfIO;
+        occContext->ObjectsInside(listOfIO,AIS_KOI_Shape,0);
         for(AIS_ListIteratorOfListOfInteractive it(listOfIO); it.More(); it.Next())
         {
-            this->setSelectionMode(CurSelection_Nothing);
+            occContext->Deactivate(it.Value());
+            occContext->Activate(it.Value(),TopAbs_FACE);
         }
-        */
+        this->setSelectionMode(CurSelection_Nothing);
+
+        /*
         switch(myCurSelectionMode)
         {
         case CurSelection_Solid: occContext->DeactivateStandardMode(TopAbs_SOLID); break;
@@ -375,6 +382,7 @@ void occPostWidget::setWorkingMode_Solution()
         case CurSelection_Vertex: occContext->DeactivateStandardMode(TopAbs_VERTEX); break;
         default: break;
         }
+        */
 
         //! --------------------------
         //! show the results tool bar

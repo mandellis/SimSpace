@@ -739,7 +739,7 @@ void occGLWidget::onLButtonUp(const int theFlags,const QPoint thePoint)
         //! The global selection mode is "multiple selection"
         //! a non zero selection area exists
         //! --------------------------------------------------
-        if(abs(myXmin-myXmax)>ValZWMin || abs(myYmin-myYmax)>ValZWMin)
+        if(abs(myXmin-myXmax)>ValZWMin && abs(myYmin-myYmax)>ValZWMin)
         {
             //! actually selects the shapes within the box
             PS = occContext->Select(myXmin, myYmin, myXmax, myYmax, occView, true);
@@ -1507,16 +1507,8 @@ void occGLWidget::setSelectionMode(CurSelectionMode selectionMode)
 //! ---------------------------------
 void occGLWidget::clearGeometrySelection()
 {
-    if(occContext->IndexOfCurrentLocal()>0)
-    {
-        cout<<"occGLWidget::clearGeometrySelection()->____function called____"<<endl;
-        for(occContext->InitSelected();occContext->MoreSelected();occContext->InitSelected()) occContext->ClearSelected(Standard_False);
-    }
-    else
-    {
-        for(occContext->InitCurrent();occContext->MoreCurrent();occContext->InitCurrent()) occContext->ClearCurrents(Standard_False);
-    }
-    occContext->UpdateCurrentViewer();
+    cout<<"occGLWidget::clearGeometrySelection()->____function called____"<<endl;
+    occContext->ClearSelected(true);
 }
 
 //! ----------------------------------------
@@ -1593,37 +1585,32 @@ void occGLWidget::setWireframeView()
 //! ----------------------------------------
 void occGLWidget::setShadedExteriorAndEdgesView()
 {
-    //if(myCurDisplayMode!=myCurDisplayMode_old)
-    //{
-        //! --------------------------------------------------------------
-        //! save the previous display mode and change the internal status
-        //! --------------------------------------------------------------
-        myCurDisplayMode_old = myCurDisplayMode;
-        myCurDisplayMode = CurDisplayMode_ShadedExteriorAndEdges;
+    //! --------------------------------------------------------------
+    //! save the previous display mode and change the internal status
+    //! --------------------------------------------------------------
+    myCurDisplayMode_old = myCurDisplayMode;
+    myCurDisplayMode = CurDisplayMode_ShadedExteriorAndEdges;
 
-        //! ------------------------------
-        //! the face boundaries are shown
-        //! ------------------------------
-        occContext->DefaultDrawer()->SetFaceBoundaryDraw(Standard_True);
-        occContext->DefaultDrawer()->FaceBoundaryAspect()->SetColor(Quantity_NOC_BLACK);
-        occContext->DefaultDrawer()->FaceBoundaryAspect()->SetWidth(1.0);
-        occContext->SetDisplayMode(AIS_Shaded,Standard_False);
+    //! ------------------------------
+    //! the face boundaries are shown
+    //! ------------------------------
+    occContext->DefaultDrawer()->SetFaceBoundaryDraw(Standard_True);
+    occContext->DefaultDrawer()->FaceBoundaryAspect()->SetColor(Quantity_NOC_BLACK);
+    occContext->DefaultDrawer()->FaceBoundaryAspect()->SetWidth(1.0);
+    occContext->SetDisplayMode(AIS_Shaded,Standard_False);
 
-        //! ------------------------------------------------------------
-        //! list of visible AIS_Shapes: signature "0" means that only
-        //! the AIS_Shape(s) having signature "Shape" are accounted for
-        //! ------------------------------------------------------------
-        AIS_ListOfInteractive theListOfDisplayedShapes;
-        occContext->DisplayedObjects(AIS_KOI_Shape, 0, theListOfDisplayedShapes, Standard_False);
-
-        AIS_ListIteratorOfListOfInteractive it;
-        for(it.Initialize(theListOfDisplayedShapes);it.More();it.Next())
-        {
-            const occHandle(AIS_Shape) &AIS = occHandle(AIS_Shape)::DownCast(it.Value());
-            occContext->RecomputePrsOnly(AIS,Standard_False,Standard_False);
-        }
-        occContext->UpdateCurrentViewer();
-    //}
+    //! ------------------------------------------------------------
+    //! list of visible AIS_Shapes: signature "0" means that only
+    //! the AIS_Shape(s) having signature "Shape" are accounted for
+    //! ------------------------------------------------------------
+    AIS_ListOfInteractive theListOfDisplayedShapes;
+    occContext->ObjectsInside(theListOfDisplayedShapes,AIS_KOI_Shape,0);
+    for(AIS_ListIteratorOfListOfInteractive it(theListOfDisplayedShapes);it.More();it.Next())
+    {
+        const occHandle(AIS_Shape) &AIS = occHandle(AIS_Shape)::DownCast(it.Value());
+        occContext->RecomputePrsOnly(AIS,Standard_False,Standard_False);
+    }
+    occContext->UpdateCurrentViewer();
 }
 
 //! ------------------------------------
@@ -1632,32 +1619,28 @@ void occGLWidget::setShadedExteriorAndEdgesView()
 //! ------------------------------------
 void occGLWidget::setShadedExteriorView()
 {
-    //if(myCurDisplayMode!=myCurDisplayMode_old)
-    //{
-        //! --------------------------------------------------------------
-        //! save the previous display mode and change the internal status
-        //! --------------------------------------------------------------
-        myCurDisplayMode_old = myCurDisplayMode;
-        myCurDisplayMode = CurDisplayMode_ShadedExterior;
+    //! --------------------------------------------------------------
+    //! save the previous display mode and change the internal status
+    //! --------------------------------------------------------------
+    myCurDisplayMode_old = myCurDisplayMode;
+    myCurDisplayMode = CurDisplayMode_ShadedExterior;
 
-        //! the edges are not shown
-        occContext->DefaultDrawer()->SetFaceBoundaryDraw(Standard_False);
-        occContext->SetDisplayMode(AIS_Shaded,Standard_False);
+    //! the edges are not shown
+    occContext->DefaultDrawer()->SetFaceBoundaryDraw(Standard_False);
+    occContext->SetDisplayMode(AIS_Shaded,Standard_False);
 
-        //! -------------------------------------------------------------------
-        //! list of visible AIS_Shapes: signature "0" means that only the only
-        //! the AIS_Shape(s) having signature "Shape" are accounted for
-        //! -------------------------------------------------------------------
-        AIS_ListOfInteractive theListOfDisplayedShapes;
-        occContext->DisplayedObjects(AIS_KOI_Shape, 0, theListOfDisplayedShapes, Standard_False);
+    //! -------------------------------------------------------------------
+    //! list of visible AIS_Shapes: signature "0" means that only the only
+    //! the AIS_Shape(s) having signature "Shape" are accounted for
+    //! -------------------------------------------------------------------
+    AIS_ListOfInteractive theListOfDisplayedShapes;
+    occContext->ObjectsInside(theListOfDisplayedShapes,AIS_KOI_Shape,0);
 
-        AIS_ListIteratorOfListOfInteractive it;
-        for(it.Initialize(theListOfDisplayedShapes);it.More();it.Next())
-        {
-            occContext->RecomputePrsOnly(it.Value(),Standard_False,Standard_False);
-        }
-        occContext->UpdateCurrentViewer();
-    //}
+    for(AIS_ListIteratorOfListOfInteractive it(theListOfDisplayedShapes);it.More();it.Next())
+    {
+        occContext->RecomputePrsOnly(it.Value(),Standard_False,Standard_False);
+    }
+    occContext->UpdateCurrentViewer();
 }
 
 //! ------------------------
@@ -1686,7 +1669,6 @@ void occGLWidget::computeSelectionProperties()
     GProp_GProps props;
 
     if(myCurSelectionMode == CurSelection_Nothing) return;
-
     occContext->InitSelected();
     if(occContext->MoreSelected())
     {
@@ -1694,24 +1676,21 @@ void occGLWidget::computeSelectionProperties()
         {
         case CurSelection_Vertex:
         {
-            if(occContext->NbSelected()==1)   //! one single point selected - retrieve the coordinates
+            std::vector<TopoDS_Shape> shapesInSelection;
+            bool isDone = this->getSelectedShapes(shapesInSelection);
+            if(isDone==false) return;
+            size_t NbSelected = shapesInSelection.size();
+            if(NbSelected==1)   // a point selected
             {
-                occContext->InitSelected();
-                TopoDS_Shape selectedShape = this->getSelectedShape();
-                const gp_Pnt &pnt = BRep_Tool::Pnt(TopoDS::Vertex(selectedShape));
-                message = QString("(x, y, z) = (%1, %2, %3").arg(pnt.X()).arg(pnt.Y()).arg(pnt.Z());
+            const gp_Pnt &pnt = BRep_Tool::Pnt(TopoDS::Vertex(shapesInSelection[0]));
+            message = QString("(x, y, z) = (%1, %2, %3").arg(pnt.X()).arg(pnt.Y()).arg(pnt.Z());
             }
-            else if(occContext->NbSelected()==2) // two points selected - calculate the distance
+            if(NbSelected==2)   // two points selected - compute the distance
             {
-                //! -------------------------
-                //! retrieves the two points
-                //! -------------------------
-                occContext->InitSelected();
-                const TopoDS_Shape &selectedShape1= this->getSelectedShape();
+                const TopoDS_Shape &selectedShape1 = shapesInSelection[0];
                 const gp_Pnt &pnt1 = BRep_Tool::Pnt(TopoDS::Vertex(selectedShape1));
 
-                occContext->NextSelected();
-                const TopoDS_Shape &selectedShape2 = this->getSelectedShape();
+                const TopoDS_Shape &selectedShape2 = shapesInSelection[1];
                 const gp_Pnt &pnt2 = BRep_Tool::Pnt(TopoDS::Vertex(selectedShape2));
 
                 //! ---------------------
@@ -1720,73 +1699,73 @@ void occGLWidget::computeSelectionProperties()
                 double distance = pnt1.Distance(pnt2);
                 message = QString("Distance = %1").arg(distance);
             }
-            else
+            if(NbSelected>2)    // more than two points
             {
-                //! ------------------------------
-                //! more than two points selected
-                //! ------------------------------
-                message = QString("%1 vertex selected").arg(occContext->NbSelected());
+                message = QString("%1 vertex selected").arg(NbSelected);
             }
-
         }
             break;
+
         case CurSelection_Edge:
         {
+            std::vector<TopoDS_Shape> shapesInSelection;
+            bool isDone = this->getSelectedShapes(shapesInSelection);
+            if(isDone==false) return;
+            size_t NbSelected = shapesInSelection.size();
+
             double len = 0.0;
-            for(occContext->InitSelected();occContext->MoreSelected();occContext->NextSelected())
+            for(size_t i=0; i<NbSelected; i++)
             {
-                const TopoDS_Shape &selectedShape = this->getSelectedShape();
+                const TopoDS_Shape &selectedShape = shapesInSelection[i];
                 BRepGProp::LinearProperties(selectedShape,props);
                 len += props.Mass();
             }
-            message = QString("%1 edges selected - total length = %2").arg(occContext->NbSelected()).arg(len);
+            message = QString("%1 edges selected - total length = %2").arg(NbSelected).arg(len);
         }
             break;
+
         case CurSelection_Face:
         {
+            std::vector<TopoDS_Shape> shapesInSelection;
+            bool isDone = this->getSelectedShapes(shapesInSelection);
+            if(isDone==false) return;
+
             double area = 0.0;
-            for(occContext->InitSelected();occContext->MoreSelected();occContext->NextSelected())
+            size_t NbSelected = shapesInSelection.size();
+            for(size_t i = 0; i<NbSelected; i++)
             {
-                const TopoDS_Shape &aSelectedShape = this->getSelectedShape();
-                BRepGProp::SurfaceProperties(aSelectedShape,props);
-                //cout<<"____"<<props.Mass()<<"____"<<endl;
+                const TopoDS_Shape &selectedShape = shapesInSelection[i];
+                BRepGProp::SurfaceProperties(selectedShape,props);
                 area += props.Mass();
             }
-            message = QString("%1 surfaces selected - total area = %2").arg(occContext->NbSelected()).arg(area);
+            message = QString("%1 surfaces selected - total area = %2").arg(NbSelected).arg(area);
         }
             break;
+
         case CurSelection_Solid:
         {
-            if(occHandle(AIS_Shape)::DownCast(occContext->SelectedInteractive())
-                ->Shape().ShapeType()==TopAbs_SOLID)
+            std::vector<TopoDS_Shape> shapesInSelection;
+            bool isDone = this->getSelectedShapes(shapesInSelection);
+            if(isDone==false) return;
+
+            double volume = 0.0;
+            size_t NbSelected = shapesInSelection.size();
+            for(size_t i = 0; i<NbSelected; i++)
             {
-                double volume = 0.0;
-                for(occContext->InitSelected();occContext->MoreSelected();occContext->NextSelected())
-                {
-                    BRepGProp::VolumeProperties(this->getSelectedShape(),props);
-                    volume += props.Mass();
-                }
-                message = QString("%1 volumes selected - total volume = %3").arg(occContext->NbSelected()).arg(volume);
+                const TopoDS_Shape &selectedShape = shapesInSelection[i];
+                BRepGProp::VolumeProperties(selectedShape,props);
+                volume += props.Mass();
             }
-            else if(occHandle(AIS_Shape)::DownCast(occContext->SelectedInteractive())->Shape().ShapeType()==TopAbs_SHELL)
-            {
-                Standard_Real area;
-                for(area = 0.0, occContext->InitSelected();occContext->MoreSelected();occContext->NextSelected())
-                {
-                    BRepGProp::SurfaceProperties(this->getSelectedShape(),props);
-                    area += props.Mass();
-                }
-                message = QString("%1 shells selected - total area = %2").arg(occContext->NbSelected()).arg(area);
-            }
+            message = QString("%1 volumes selected - total volume = %3").arg(NbSelected).arg(volume);
         }
             break;
         }
     }
-
     //! ----------------------------
     //! send info to the status bar
     //! ----------------------------
     emit statusBarMessage(message);
+    cout<<"occGLWidget::computeSelectionProperties()->____exiting with message: "<<message.toStdString()<<"____"<<endl;
 }
 
 //! -----------------------------
@@ -1795,18 +1774,15 @@ void occGLWidget::computeSelectionProperties()
 //! -----------------------------
 void occGLWidget::hideSelectedBodies()
 {
-    cout<<"occGLWidget::hideSelectedBodies()->____function called____"<<endl;
-    AIS_ListOfInteractive listOfAISShapes;
+    //cout<<"occGLWidget::hideSelectedBodies()->____function called____"<<endl;
     for(occContext->InitSelected();occContext->MoreSelected();occContext->NextSelected())
     {
-        listOfAISShapes.Append(occContext->SelectedInteractive());
         const occHandle(AIS_ExtendedShape) &curAISShape = occHandle(AIS_ExtendedShape)::DownCast(occContext->SelectedInteractive());
         curAISShape->setShapeVisibility(false);
         occContext->Erase(occContext->SelectedInteractive(),false);
     }
     this->clearGeometrySelection();
     occContext->UpdateCurrentViewer();
-    cout<<"occGLWidget::hideSelectedBodies()->____function exiting____"<<endl;
 }
 
 //! ------------------------
@@ -1820,12 +1796,12 @@ void occGLWidget::showAllBodies()
     //! ---------------------------------------------
     //! Mark all the AIS_ExtendedShape(s) as visible
     //! ---------------------------------------------
-    AIS_ListOfInteractive listOfDisplayed;
-    occContext->ObjectsByDisplayStatus(AIS_KOI_Shape,0,AIS_DS_Displayed,listOfDisplayed);
-    for(AIS_ListIteratorOfListOfInteractive it(listOfDisplayed);it.More();it.Next())
+    AIS_ListOfInteractive listOfShapes;
+    occContext->ObjectsInside(listOfShapes, AIS_KOI_Shape,0);
+    for(AIS_ListIteratorOfListOfInteractive it(listOfShapes);it.More();it.Next())
     {
         const occHandle(AIS_ExtendedShape) &curAISShape = occHandle(AIS_ExtendedShape)::DownCast(it.Value());
-        curAISShape->setShapeVisibility(Standard_True);
+        curAISShape->setShapeVisibility(true);
         curAISShape->SetTransparency(TRANSPARENCY);
     }
     occView->ZFitAll();
@@ -1898,7 +1874,9 @@ void occGLWidget::reactivateSelectionMode()
     for(AIS_ListIteratorOfListOfInteractive it(listOfIO); it.More(); it.Next()) occContext->Activate(it.Value(),theMode);
     occContext->SetAutomaticHilight(true);
     if(myCurSelectionMode==CurSelection_PointCoordinatesPicking) occContext->SetAutomaticHilight(false);
-    occContext->SetAutomaticHilight(true);
+
+    if(myCurAction3D==CurAction3D_Panning || myCurAction3D==CurAction3D_Rotation || myCurAction3D==CurAction3D_WindowZooming)
+        occContext->SetAutomaticHilight(false);
 }
 
 //! -----------------------------------
@@ -1947,7 +1925,9 @@ void occGLWidget::buildMinimalContexetMenu()
     else if(theListOfHiddenShapes.Extent()==0)  // all the bodies are shown
     {
         //! if something is selected, give the possibility to hide it, or to invert the selection
-        if(occContext->NbSelected()!=0)
+        occContext->InitSelected();
+        if(occContext->MoreSelected())
+        //if(occContext->NbSelected()!=0)
         {
             myContextMenu->addAction(actionHideBody);
             myContextMenu->addAction(actionHideAllOtherBodies);
@@ -3505,3 +3485,36 @@ gp_Pnt occGLWidget::convert2DPointTo3DPoint(double x, double y)
     return ResultPoint;
 }
 
+//! ----------------------------
+//! function: getSelectedShapes
+//! details:
+//! ----------------------------
+bool occGLWidget::getSelectedShapes(std::vector<TopoDS_Shape> &selectedShapes)
+{
+    if(occContext.IsNull()) return false;
+    for(occContext->InitSelected();occContext->MoreSelected();occContext->NextSelected())
+    {
+        const occHandle(SelectMgr_EntityOwner) &anOwner = occContext->SelectedOwner();
+        if(anOwner.IsNull())
+        {
+            cout<<"____NULL generic owner - case handled____"<<endl;
+            continue;
+        }
+        const occHandle(StdSelect_BRepOwner) &aBRepOwner = occHandle(StdSelect_BRepOwner)::DownCast(anOwner);
+        if(aBRepOwner.IsNull())
+        {
+            cout<<"____NULL BRepOwner - case handled____"<<endl;
+            continue;
+        }
+        const TopoDS_Shape &aSelectedShape = aBRepOwner->Shape();
+        if(aSelectedShape.IsNull())
+        {
+            cout<<"____NULL selected shape  - case handled____"<<endl;
+            continue;
+        }
+        TopoDS_Shape selectedShape = aSelectedShape.Located(aBRepOwner->Location() * aSelectedShape.Location());
+        selectedShapes.push_back(selectedShape);
+    }
+    if(selectedShapes.size()==0) return false;
+    return true;
+}

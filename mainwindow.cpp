@@ -1771,7 +1771,11 @@ void MainWindow::openProject()
             //! set the interactive context
             //! ----------------------------            
             const occHandle(AIS_InteractiveContext) &aCTX = myMainOCCViewer->getContext();
-            if(aCTX.IsNull()) exit(9999);
+            if(aCTX.IsNull())
+            {
+                cerr<<"MainWindow::openProject()->____cannot get context from viewer____"<<endl;
+                exit(9999);
+            }
 
             mySimulationManager->setContext(myMainOCCViewer->getContext());
 
@@ -1861,7 +1865,6 @@ void MainWindow::toggleWindowZoom(bool isActivated)
         myMainOCCViewer->setAction3D_WindowZooming();
         myDockableMasterViewPort->setAction3D_WindowZooming();
         myDockableSlaveViewPort->setAction3D_WindowZooming();
-
         statusBar()->showMessage("Window zooming",TRANSIENT_MESSAGE_TIMEOUT);
     }
 }
@@ -1878,7 +1881,6 @@ void MainWindow::togglePan(bool isActivated)
         myMainOCCViewer->setAction3D_Pan();
         myDockableMasterViewPort->setAction3D_Pan();
         myDockableSlaveViewPort->setAction3D_Pan();
-
         statusBar()->showMessage("Panning",TRANSIENT_MESSAGE_TIMEOUT);
     }
 }
@@ -2840,7 +2842,7 @@ void MainWindow::setUpConnections()
     //! ---------------------------
     //! body highlight/unhighlight
     //! ---------------------------
-    connect(mySimulationManager,SIGNAL(requestHighlightBody(QList<int>)),myMainOCCViewer,SLOT(highlightBody(QList<int>)));
+    connect(mySimulationManager,SIGNAL(requestHighlightBody(std::vector<int>)),myMainOCCViewer,SLOT(highlightBody(std::vector<int>)));
     connect(mySimulationManager,SIGNAL(requestUnhighlightBodies(bool)),myMainOCCViewer,SLOT(unhighlightBody(bool)));
 
 

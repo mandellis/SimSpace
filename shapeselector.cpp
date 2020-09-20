@@ -114,7 +114,12 @@ void ShapeSelector::setAccepted()
         // DEPRECATED METHOD
         //const TopoDS_Shape &curSelectedShape = myCTX->SelectedShape();
 
-        occHandle(StdSelect_BRepOwner) sb  = occHandle(StdSelect_BRepOwner)::DownCast(myCTX->SelectedOwner());
+        const occHandle(StdSelect_BRepOwner) &sb  = occHandle(StdSelect_BRepOwner)::DownCast(myCTX->SelectedOwner());
+        if(sb.IsNull())
+        {
+            cout<<"ShapeSelector::setAccepted()->____NULL BRepOwner - case handled____"<<endl;
+            continue;
+        }
         const TopoDS_Shape &ownerShape = sb->Shape();
         TopoDS_Shape selectedShape = ownerShape.Located(sb->Location() * ownerShape.Location());
         myShapes.Append(selectedShape);
@@ -177,6 +182,10 @@ void ShapeSelector::setShape(const std::vector<GeometryTag> &vecLoc)
     myVecLoc = vecLoc;
 
     myShapes.Clear();
+
+    //! -----------------------------------------------
+    //! rebuild the shape list from the vector of tags
+    //! -----------------------------------------------
     for(int i=0; i<vecLoc.size(); i++)
     {
         int parentShapeNr = vecLoc[i].parentShapeNr;
@@ -194,19 +203,10 @@ void ShapeSelector::setShape(const std::vector<GeometryTag> &vecLoc)
             }
         }
     }
-    /*
-    //! -----------------------------------------------
-    //! uses the deprecated method AddOrRemoveSelected
-    //! -----------------------------------------------
-    for(TopTools_ListIteratorOfListOfShape anIter(myShapes);anIter.More();anIter.Next())
-    {
-        myCTX->AddOrRemoveSelected(anIter.Value(),false);
-    }
-    */
 
-    //! -------------------------------------------------------------------------
-    //! removal of deprecated method AIS_InteractiveContext::AddOrRemoveSelected
-    //! -------------------------------------------------------------------------
+    //! -----------------------------------------------------------------------------------
+    //! trying to remove the deprecated method AIS_InteractiveContext::AddOrRemoveSelected
+    //! -----------------------------------------------------------------------------------
     AIS_ListOfInteractive listIO;
     myCTX->ObjectsInside(listIO,AIS_KOI_Shape,0);
     for(AIS_ListIteratorOfListOfInteractive it(listIO); it.More(); it.Next())
@@ -225,19 +225,30 @@ void ShapeSelector::setShape(const std::vector<GeometryTag> &vecLoc)
         for(int n=1; n<=m->Extent(); n++)
         {
             occHandle(SelectMgr_EntityOwner) s = m->FindKey(n);
+            if(s.IsNull())
+            {
+                cout<<"ShapeSelector::setShape()->____NULL owner - handled case____"<<endl;
+                continue;
+            }
             occHandle(StdSelect_BRepOwner) sb  = occHandle(StdSelect_BRepOwner)::DownCast(s);
+            if(sb.IsNull())
+            {
+                cout<<"ShapeSelector::setShape()->____NULL BRep owner - handled case____"<<endl;
+                continue;
+            }
             const TopoDS_Shape &ownerShape = sb->Shape();
             TopoDS_Shape locatedShape = ownerShape.Located(sb->Location() * ownerShape.Location());
             if(myShapes.Contains(locatedShape)==false) continue;
+
             myCTX->AddOrRemoveSelected(sb,false);
         }
     }
     myCTX->UpdateCurrentViewer();
     this->showPushButtons();
 
-    //cout<<"ShapeSelector::setShape()->____myShapes size: "<<myShapes.Extent()<<"____"<<endl;
-    //cout<<"ShapeSelector::setShape()->____myVecLoc size: "<<myVecLoc.size()<<"____"<<endl;
-    //cout<<"ShapeSelector::setShape()->____exiting function____"<<endl;
+    cout<<"ShapeSelector::setShape()->____myShapes size: "<<myShapes.Extent()<<"____"<<endl;
+    cout<<"ShapeSelector::setShape()->____myVecLoc size: "<<myVecLoc.size()<<"____"<<endl;
+    cout<<"ShapeSelector::setShape()->____exiting function____"<<endl;
 }
 
 //! ------------------------
@@ -313,5 +324,6 @@ void ShapeSelector::setContext(const occHandle(AIS_InteractiveContext) &aCTX)
 //! -----------------------
 void ShapeSelector::clearContext(bool updateViewer)
 {
-    if(myCTX->NbSelected()>0) myCTX->ClearSelected(updateViewer);
+    //if(myCTX->NbSelected()>0) myCTX->ClearSelected(updateViewer);
+    myCTX->ClearSelected(updateViewer);
 }

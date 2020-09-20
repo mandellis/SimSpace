@@ -447,7 +447,7 @@ signals:
     void requestShowMeshes(bool areMeshNodesVisible);
     void requestShowBody(TColStd_ListOfInteger ListOfBodyNumbers);
     void updatedetailViewer(QModelIndex);
-    void requestHighlightBody(const QList<int> listOfBodies);
+    void requestHighlightBody(const std::vector<int> &listOfBodies);
     void requestUnhighlightBodies(bool updateViewer);
     void requestHideBody(TColStd_ListOfInteger listOfBodies);
     void requestShowAllBodies();

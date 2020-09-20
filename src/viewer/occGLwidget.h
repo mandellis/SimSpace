@@ -158,6 +158,9 @@ public:
     //! map of clipping planes
     QMap<int,occHandle(Graphic3d_ClipPlane)> myMapOfClipPlanes;
 
+    //! get selected shapes
+    bool getSelectedShapes(std::vector<TopoDS_Shape> &selectedShapes);
+
 protected:
 
     //! helper

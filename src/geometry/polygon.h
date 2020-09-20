@@ -120,18 +120,20 @@ public:
             //P2 = points[i];
             P2 = points[(start+i)%NbPoints];
             if(areCollinear(P0,P1,P2)) continue;
-            //! -------------------
-            //! compute the normal
-            //! -------------------
             double x0 = P1.x-P0.x; double y0 = P1.y-P0.y; double z0 = P1.z-P0.z;
             double x1 = P2.x-P0.x; double y1 = P2.y-P0.y; double z1 = P2.z-P0.z;
 
             double n1= y0*z1-z0*y1; double n2 = z0*x1-x0*z1; double n3 = x0*y1-y0*x1;
             double L = sqrt(n1*n1+n2*n2+n3*n3);
-            if(L<1e-20) return zeroNormal;
+            if(L<1e-10)
+            {
+                cerr<<"polygon::getNormal()->____normal too small. Returning a zero normal____"<<endl;
+                return zeroNormal;
+            }
             std::vector<double> normal {n1/L,n2/L,n3/L};
             return normal;
         }
+        cerr<<"polygon::getNormal()->____returning a zero normal____"<<endl;
         return zeroNormal;
     }
 
@@ -139,7 +141,7 @@ public:
     //! function: isPointBetween
     //! details:  check if C is between A and B
     //! ----------------------------------------
-    static bool isPointBetween(const polygon::Point A, const polygon::Point &B, const polygon::Point &C, const double tolerance=1e-6)
+    static bool isPointBetween(const polygon::Point &A, const polygon::Point &B, const polygon::Point &C, const double tolerance=1e-6)
     {
         //! -----------------
         //! check alignement
