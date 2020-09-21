@@ -604,7 +604,6 @@ bool postObject::buildMeshIO(double min, double max, int Nlevels, bool autoscale
         }
 
         theDeformedDS->SetNonDeformedDataSource(curMeshDS);
-
         for(TColStd_MapIteratorOfPackedMapOfInteger it(curMeshDS->GetAllNodes()); it.More(); it.Next())
         {
             int globalNodeID = it.Key();
@@ -616,13 +615,11 @@ bool postObject::buildMeshIO(double min, double max, int Nlevels, bool autoscale
 
         const std::vector<std::map<int, double>> &listOfRes = theData.at(loc);
         const std::map<int, double> &res = listOfRes.at(component);
-
         if(res.size()==0)
         {
             cout<<"postObject::buildMeshIO()->____you are giving me no data____"<<endl;
             return false;
         }
-
         //! -------------------------------------------
         //! min and max for the colorbox and isostrips
         //! -------------------------------------------
@@ -651,6 +648,8 @@ bool postObject::buildMeshIO(double min, double max, int Nlevels, bool autoscale
             break;
         }
 
+        //MeshTools::buildIsoStrip(theDeformedDS,res,myMin,myMax,myNbLevels,aColoredMesh,true);
+        //MeshTools::buildDeformedColoredMesh(curMeshDS,res,displacementMap,1.0,myMin,myMax,Nlevels,aColoredMesh,true);
         theMeshes.insert(std::make_pair(loc,aColoredMesh));
     }
 
@@ -706,10 +705,10 @@ std::pair<double,double> postObject::getMinMax(int component)
     return minmax;
 }
 
-//! ----------------------------------------
+//! ---------------
 //! function: init
-//! details:  provide the mesh data sources
-//! ----------------------------------------
+//! details:
+//! ---------------
 void postObject::init(meshDataBase *mDB)
 {
     cout<<"postObject::init()->____function called____"<<endl;

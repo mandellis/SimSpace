@@ -209,7 +209,7 @@ private slots:
     void commitAndCloseVolumeMesher();                                  //! 19/05/2019
     void commitAndCloseGeometryHealing();                               //! 19/05/2019
     void commitAndCloseTessellator();                                   //! 09/06/2019
-
+    void commitAndCloseAdjustControl();
     void displayLevelSliderValue(int pos);
     void commitAndCloseFileSelect();                                    //! 31/05/2019
     void commitAndCloseToleranceType();                                 //! 06/06/2019

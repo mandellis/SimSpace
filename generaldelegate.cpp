@@ -3682,6 +3682,24 @@ void GeneralDelegate::setEditorData(QWidget *editor, const QModelIndex &index) c
             connect(cb,SIGNAL(currentIndexChanged(int)),this,SLOT(commitAndCloseSmallSlidingControl()));
         }
     }
+
+    //! ----------------
+    //! "Adjust to touch"
+    //! ----------------
+    else if(propertyName =="Adjust to touch")
+    {
+        SimulationNodeClass *curNode = this->getCurrentNode();
+        Property::contactBehavior val = curNode->getPropertyItem("Behavior")->data(Qt::UserRole).value<Property>().getData().value<Property::contactBehavior>();
+        Property::contactType type = curNode->getPropertyItem("Type")->data(Qt::UserRole).value<Property>().getData().value<Property::contactType>();
+        if(val == Property::contactBehavior_asymmetric || type == Property::contactType_bonded)
+        {
+            int value = data.value<Property>().getData().toInt();
+            QComboBox *cb = static_cast<QComboBox*>(editor);
+            cb->setCurrentIndex(value);
+            connect(cb,SIGNAL(currentIndexChanged(int)),this,SLOT(commitAndCloseAdjustControl()));
+        }
+    }
+
     //! --------------
     //! "Line search"
     //! --------------
@@ -7844,6 +7862,17 @@ void GeneralDelegate::commitAndCloseLineParametersChanged()
 //! details:  this closes the "Small sliding" control
 //! --------------------------------------------------
 void GeneralDelegate::commitAndCloseSmallSlidingControl()
+{
+    QComboBox *editor = qobject_cast<QComboBox*>(sender());
+    emit commitData(editor);
+    emit closeEditor(editor);
+}
+
+//! --------------------------------------------------
+//! function: commitAndCloseAdjustControl()
+//! details:  this closes the "Small sliding" control
+//! --------------------------------------------------
+void GeneralDelegate::commitAndCloseAdjustControl()
 {
     QComboBox *editor = qobject_cast<QComboBox*>(sender());
     emit commitData(editor);

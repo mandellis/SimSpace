@@ -864,6 +864,58 @@ void contextMenuBuilder::buildStructuralAnalysisContextMenu(QMenu *contextMenu, 
 
         return;
     }
+    //! -----------------------------------------------
+    //! add the button Run for the Imported Body scalar
+    //! -----------------------------------------------
+    if(nodeType==SimulationNodeClass::nodeType_importedBodyScalar)
+    {
+        QAction *actionRun = contextMenu->addAction("Run");
+        actionRun->setIcon(QIcon(":/icons/icon_solve.png"));
+        actionRun->setData(237);
+
+        //! add a separator
+        contextMenu->addSeparator();
+
+        //! --------------------
+        //! acition "Duplicate"
+        //! --------------------
+        contextMenuBuilder::addActionDuplicate(contextMenu);
+
+        //! add a separator
+        contextMenu->addSeparator();
+
+        //! ------------------
+        //! action "Suppress"
+        //! ------------------
+        contextMenuBuilder::addActionSuppress(contextMenu);
+
+        //! add a separator
+        contextMenu->addSeparator();
+
+        //! ----------------
+        //! action "Delete"
+        //! ----------------
+        contextMenuBuilder::addActionDeleteAllChildrenItems(contextMenu);
+
+        //! ----------------
+        //! action "Delete"
+        //! ----------------
+        contextMenuBuilder::addActionDelete(contextMenu);
+
+        //! add a separator
+        contextMenu->addSeparator();
+
+        //! ----------------
+        //! action "Rename"
+        //! ----------------
+        contextMenuBuilder::addActionRename(contextMenu);
+
+        //! add a separator
+        contextMenu->addSeparator();
+
+        return;
+    }
+
     //! ----------------
     //! menu for mapper
     //! ----------------
