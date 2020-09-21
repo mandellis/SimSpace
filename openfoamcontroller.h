@@ -20,26 +20,24 @@ private:
     QProgressIndicator *myProgressIndicator;
     SimulationNodeClass *myNode;
     QString myTargetDirectory;
-//#ifdef COSTAMP_VERSION
-//    std::vector<double> myTimeFolders;
-//#endif
+#ifdef COSTAMP_VERSION
+    std::vector<double> myTimeFolders;
+#endif
 public:
 
     //! constructor
-    openFoamController(/*const QString &sourceDirPath,
-                       const QString &targetDirPath,*/
+    openFoamController(const QString &sourceDirPath,
+                       const QString &targetDirPath,
                        int fileMode,
                        QProgressIndicator *aProgressIndicator,
                        QObject *parent);
 
     //! set progress indicator
     void setProgressIndicator(QProgressIndicator *aProgressIndicator) { myProgressIndicator = aProgressIndicator; }
-/*
 #ifdef COSTAMP_VERSION
-    void setTimeFolders(const std::vector<double> &timeFolders)
-    {myTimeFolders = timeFolders;
-    cout<<"timeFolder size "<<myTimeFolders.size()<<endl;}
-#endif*/
+    void setTimeFolders(const std::vector<double> timeFolders)
+    {myTimeFolders = timeFolders;}
+#endif
 private slots:
 
     //! for stopping the thread

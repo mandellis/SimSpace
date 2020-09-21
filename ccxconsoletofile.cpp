@@ -176,12 +176,9 @@ runTerminationData CCXconsoleToFile::perform(QString myTargetFileName,
 
                             //!cerr<<val<<endl;                                             //! average force/flux <double>
                             double average;
-                            char s1[24];
-                            sscanf(val.c_str()," average %s %lf",&s1,&average);
-                            //if(analysisType==0) sscanf(val.c_str()," average force= %lf",&average);
-                            //if(analysisType==1) sscanf(val.c_str()," average flux= %lf",&average);
-                            //if(analysisType==2) sscanf(val.c_str()," average force= %lf",&average);
-cout<<s1<<endl;
+                            if(analysisType==0) sscanf(val.c_str()," average force= %lf",&average);
+                            if(analysisType==1) sscanf(val.c_str()," average flux= %lf",&average);
+
                             if(writeOutputFile) outFile<<average<<"\t";    //! [7] write the largest residual force <double>
                             aSolutionInfo.average = average;
 
@@ -193,12 +190,9 @@ cout<<s1<<endl;
 
                             int node, dof;
                             double largestRes;
-                            char s2[24];
-                            sscanf(val.c_str()," largest residual %s %lf in node %d and dof %d",&s2,&largestRes,&node,&dof);
-                            //if(analysisType==0) sscanf(val.c_str()," largest residual force= %lf in node %d and dof %d",&largestRes,&node,&dof);
-                            //if(analysisType==1) sscanf(val.c_str()," largest residual flux= %lf in node %d and dof %d",&largestRes,&node,&dof);
-                            //if(analysisType==2) sscanf(val.c_str()," largest residual force= %lf in node %d and dof %d",&largestRes,&node,&dof);
-cout<<s2<<endl;
+                            if(analysisType==0) sscanf(val.c_str()," largest residual force= %lf in node %d and dof %d",&largestRes,&node,&dof);
+                            if(analysisType==1) sscanf(val.c_str()," largest residual flux= %lf in node %d and dof %d",&largestRes,&node,&dof);
+
                             if(writeOutputFile) outFile<<largestRes<<"\t";       //! [8] write the largest residual force/flux <double>
                             aSolutionInfo.largestResidual = largestRes;
 
@@ -206,11 +200,8 @@ cout<<s2<<endl;
                             //!cerr<<val<<endl;                                             //! largest increment of DOF (displacement/temperature)
 
                             double largestDOFlIncrement;
-                            char s3[24];
-                            sscanf(val.c_str()," largest increment of %s %lf",&s3,&largestDOFlIncrement);
-                            //if(analysisType==0) sscanf(val.c_str()," largest increment of disp=%lf",&largestDOFlIncrement);
-                            //if(analysisType==1) sscanf(val.c_str()," largest increment of temp=%lf",&largestDOFlIncrement);
-                            //if(analysisType==2) sscanf(val.c_str()," largest increment of disp=%lf",&largestDOFlIncrement);
+                            if(analysisType==0) sscanf(val.c_str()," largest increment of disp=%lf",&largestDOFlIncrement);
+                            if(analysisType==1) sscanf(val.c_str()," largest increment of temp=%lf",&largestDOFlIncrement);
 
                             if(writeOutputFile) outFile<<largestDOFlIncrement<<"\t";       //! [9] largest increment of DOF (displacement/temperature)
                             aSolutionInfo.largestDOFIncrement = largestDOFlIncrement;
@@ -219,11 +210,8 @@ cout<<s2<<endl;
                             //!cerr<<val<<endl;                                            //! largest correction to disp
 
                             double largestDOFCorrection;
-                            char s4[24];
-                            sscanf(val.c_str()," largest correction to %s %lf in node %d and dof %d",&s4,&largestDOFCorrection,&node,&dof);
-                            //if(analysisType==0) sscanf(val.c_str()," largest correction to disp= %lf in node %d and dof %d",&largestDOFCorrection,&node,&dof);
-                            //if(analysisType==1) sscanf(val.c_str()," largest correction to temp= %lf in node %d and dof %d",&largestDOFCorrection,&node,&dof);
-                            //if(analysisType==2) sscanf(val.c_str()," largest correction to disp= %lf in node %d and dof %d",&largestDOFCorrection,&node,&dof);
+                            if(analysisType==0) sscanf(val.c_str()," largest correction to disp= %lf in node %d and dof %d",&largestDOFCorrection,&node,&dof);
+                            if(analysisType==1) sscanf(val.c_str()," largest correction to temp= %lf in node %d and dof %d",&largestDOFCorrection,&node,&dof);
 
                             if(writeOutputFile) outFile<<largestDOFCorrection<<"\t";       //! [10]    largest correction to DOF (displacement/temperature)
                             aSolutionInfo.largestDOFCorrection = largestDOFCorrection;
@@ -384,9 +372,9 @@ cout<<s2<<endl;
             {
                 //! the solver has failed at the first substep
                 //! error at the very first substep number
-                lastAvailableStepNumber = 1;
-                lastAvailableSubStepNumber = 1;
-                lastAvailableTime = aSolutionInfo.time;
+                lastAvailableStepNumber = 0;
+                lastAvailableSubStepNumber = 0;
+                lastAvailableTime = 0;
 
                 //! return value
                 rtd.lastAvailableTime = lastAvailableTime;

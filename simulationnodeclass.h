@@ -134,9 +134,9 @@ public:
         nodeType_coordinateSystem,                  //! a coordinate system, 64
         nodeType_coordinateSystem_global,           //! the global coordinate system, 65
 
-        nodeType_StructuralAnalysisSolution,                  //! the family of the post-processing items
-        nodeType_StructuralAnalysisSolutionInformation,       //! the solution information
-        nodeType_solutionStructuralNodalDisplacement,         //! nodal displacement
+        nodeType_StructuralAnalysisSolution,                        //! the family of the post-processing items
+        nodeType_StructuralAnalysisSolutionInformation,             //! the solution information
+        nodeType_solutionStructuralNodalDisplacement,                         //! nodal displacement
         nodeType_solutionStructuralStress,                    //! stress
         nodeType_solutionStructuralTotalStrain,               //! total strain
         nodeType_solutionStructuralMechanicalStrain,          //! mechanical strain
@@ -146,8 +146,6 @@ public:
         nodeType_solutionStructuralNodalForces,               //! nodal forces
         nodeType_solutionStructuralFatigueTool,               //! fatigue tool
         nodeType_solutionStructuralContact,                   //! contact
-        nodeType_solutionStructuralReactionForce,             //! reaction force
-        nodeType_solutionStructuralGamma,                     //! gamma (triaxial strain ASME VIII Div.2)
 
 #ifdef COSTAMP_VERSION
         nodeType_timeStepBuilder,                   //! time step builder

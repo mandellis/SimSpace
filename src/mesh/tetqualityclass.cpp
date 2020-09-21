@@ -139,7 +139,7 @@ void TetQualityClass::getQualityMeasure(double &q0, double &q1, double &q2, doub
     //! -------
     V = Volume();
 
-    cout<<"TetQualityClass::getQualityMeasure()->____("<<q0<<", "<<q1<<", "<<q2<<")____"<<endl;
+    //cout<<"TetQualityClass::getQualityMeasure()->____("<<q0<<", "<<q1<<", "<<q2<<")____"<<endl;
 }
 
 //! --------------------------------------------------------------------------------------
@@ -157,7 +157,6 @@ double TetQualityClass::h(double sigma)
     if(sigma<gamma)
     {
         delta_min = sqrt(gamma*(gamma-sigma));
-        //if(delta_min==0) exit(9);
     }
     double val = 0.5*(sigma+sqrt(sigma*sigma+4*delta_min*delta_min));
     return val;

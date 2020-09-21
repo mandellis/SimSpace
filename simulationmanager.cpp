@@ -435,13 +435,12 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 //! ------------------------------------------------------------
                 emit requestSetWorkingMode(2);
                 emit requestHideAllResults();
-                emit requestHideSlicedMeshes();
 
                 //! --------------------------------------------
                 //! prepare for highlighting: this version uses
                 //! the "Map index". Can also use "Geometry"
                 //! --------------------------------------------
-                QList<int> listOfBodies;
+                std::vector<int> listOfBodies;
                 for(QList<QModelIndex>::iterator it = selectedIndexes.begin();  it!=selectedIndexes.end(); ++it)
                 {
                     QModelIndex anIndex = *it;
@@ -450,7 +449,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                     if(itemMapIndex!=Q_NULLPTR)
                     {
                         int mapIndex = aNode->getPropertyValue<int>("Map index");
-                        listOfBodies<<mapIndex;
+                        listOfBodies.push_back(mapIndex);
                     }
                 }
                 emit requestHighlightBody(listOfBodies);
@@ -464,7 +463,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 emit requestUnhighlightBodies(false);
                 emit requestSetWorkingMode(2);
                 emit requestHideAllResults();
-                emit requestHideSlicedMeshes();
+                //emit requestHideSlicedMeshes();
                 emit requestClearGraph();
                 this->changeColor();
             }
@@ -479,7 +478,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 emit requestUnhighlightBodies(false);
                 emit requestSetWorkingMode(2);
                 emit requestHideAllResults();
-                emit requestHideSlicedMeshes();
+                //emit requestHideSlicedMeshes();
                 emit requestClearGraph();
                 this->changeColor();
             }
@@ -498,7 +497,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 //! ---------------------------------------------------------------------
                 emit requestHideMeshes();
                 emit requestHideAllResults();
-                emit requestHideSlicedMeshes();
+                //emit requestHideSlicedMeshes();
 
                 SimulationNodeClass *node = index.data(Qt::UserRole).value<SimulationNodeClass*>();
                 QStandardItem *itemTemperature = (QStandardItem*)(node->getPropertyValue<void*>("Imported body temperature"));
@@ -528,7 +527,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 //! ---------------------------------------------------------------------
                 emit requestHideMeshes();
                 emit requestHideAllResults();
-                emit requestHideSlicedMeshes();
+                //emit requestHideSlicedMeshes();
 
                 //! -------------------------------------------------------
                 //! in the working mode "3" "Solution" the selection modes
@@ -562,16 +561,12 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
             case SimulationNodeClass::nodeType_solutionStructuralEquivalentPlasticStrain:
             case SimulationNodeClass::nodeType_solutionStructuralContact:
             case SimulationNodeClass::nodeType_solutionStructuralFatigueTool:
-            case SimulationNodeClass::nodeType_solutionStructuralGamma:
-            case SimulationNodeClass::nodeType_solutionStructuralNodalForces:
-            case SimulationNodeClass::nodeType_solutionStructuralReactionForce:
             {
                 //! ---------------------------------------------------------------------
                 //! hide the meshes: keep the bodies in wireframe mode for the selection
                 //! ---------------------------------------------------------------------
                 emit requestHideMeshes();
                 emit requestHideAllResults();
-                emit requestHideSlicedMeshes();
 
                 //! -------------------------------------------------------
                 //! in the working mode "3" "Solution" the selection modes
@@ -601,8 +596,8 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 emit requestSetWorkingMode(3);
                 emit requestShowAllBodies();
                 emit requestHideAllResults();
-                emit requestHideSlicedMeshes();
-                //this->changeColor();
+                this->changeColor();
+
                 //! switch the tab
                 emit requestSetActiveCentralTab("maingwindow");
             }
@@ -612,7 +607,6 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
             {
                 emit requestUnhighlightBodies(false);
                 emit requestHideMeshes();
-                emit requestHideSlicedMeshes();
                 emit requestSetWorkingMode(2);
                 emit requestHideAllResults();
                 this->changeColor();
@@ -622,7 +616,6 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
             case SimulationNodeClass::nodeType_geometry:
             {
                 emit requestUnhighlightBodies(false);
-                emit requestHideSlicedMeshes();
                 emit requestSetWorkingMode(2);
                 emit requestHideAllResults();
                 this->changeColor();
@@ -634,7 +627,6 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 emit requestHideAllResults();
                 emit requestUnhighlightBodies(true);
                 emit requestHideMeshes();
-                emit requestHideSlicedMeshes();
                 emit requestSetWorkingMode(2);
                 this->changeColor();
             }
@@ -645,7 +637,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 emit requestHideAllResults();
                 emit requestUnhighlightBodies(Standard_True);
                 emit requestHideMeshes();
-                emit requestHideSlicedMeshes();
+                //emit requestHideSlicedMeshes();
                 emit requestSetWorkingMode(2);
 
                 //! -------------------------------------
@@ -669,7 +661,6 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 emit requestHideAllResults();
                 emit requestUnhighlightBodies(Standard_True);
                 emit requestHideMeshes();
-                emit requestHideSlicedMeshes();
                 emit requestSetWorkingMode(2);
                 this->changeColor();
 
@@ -691,7 +682,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 emit requestHideAllResults();
                 emit requestUnhighlightBodies(true);
                 emit requestHideMeshes();
-                emit requestHideSlicedMeshes();
+                //emit requestHideSlicedMeshes();
                 emit requestSetWorkingMode(2);
             }
                 break;
@@ -701,7 +692,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 emit requestHideAllResults();
                 emit requestUnhighlightBodies(false);
                 emit requestHideMeshes();
-                emit requestHideSlicedMeshes();
+                //emit requestHideSlicedMeshes();
                 emit requestSetWorkingMode(2);
 
                 theNode->getModel()->blockSignals(true);    //! avoids calling handleItemChange()
@@ -716,7 +707,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
             {
                 emit requestSetWorkingMode(2);
                 emit requestHideAllResults();
-                emit requestHideSlicedMeshes();
+                //emit requestHideSlicedMeshes();
                 theNode->getModel()->blockSignals(true);    //! avoids calling handleItemChange()
                 bool isDone = markerBuilder::addMarker(this->getCurrentNode(), mySimulationDataBase);
                 theNode->getModel()->blockSignals(false);   //! reconnect - unblock signals
@@ -753,7 +744,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 emit requestUnhighlightBodies(Standard_True);
                 emit requestSetWorkingMode(0);
                 emit requestHideMeshes();
-                emit requestHideSlicedMeshes();
+                //emit requestHideSlicedMeshes();
                 this->changeColor();
                 emit requestClearGraph();
             }
@@ -767,7 +758,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 emit requestUnhighlightBodies(Standard_True);
                 emit requestSetWorkingMode(2);
                 emit requestHideMeshes();
-                emit requestHideSlicedMeshes();
+                //emit requestHideSlicedMeshes();
                 this->changeColor();
                 emit requestClearGraph();
             }
@@ -782,7 +773,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 emit requestUnhighlightBodies(Standard_True);
                 emit requestSetWorkingMode(2);
                 emit requestHideMeshes();
-                emit requestHideSlicedMeshes();
+                //emit requestHideSlicedMeshes();
                 this->changeColor();
 
                 //! -------------------------------------------------------------
@@ -821,7 +812,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 emit requestHideAllResults();
                 emit requestUnhighlightBodies(true);
                 emit requestHideMeshes();
-                emit requestHideSlicedMeshes();
+                //emit requestHideSlicedMeshes();
                 emit requestSetWorkingMode(2);
                 this->changeColor();
                 emit requestClearGraph();
@@ -848,7 +839,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 emit requestHideAllResults();
                 emit requestUnhighlightBodies(true);
                 emit requestHideMeshes();
-                emit requestHideSlicedMeshes();
+                //emit requestHideSlicedMeshes();
                 emit requestSetWorkingMode(2);
                 this->changeColor();
 
@@ -892,7 +883,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 emit requestHideAllResults();
                 emit requestUnhighlightBodies(true);
                 emit requestHideMeshes();
-                emit requestHideSlicedMeshes();
+                //emit requestHideSlicedMeshes();
                 emit requestSetWorkingMode(2);
                 this->changeColor();
 
@@ -928,7 +919,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 emit requestHideAllResults();
                 emit requestUnhighlightBodies(true);
                 emit requestHideMeshes();
-                emit requestHideSlicedMeshes();
+                //emit requestHideSlicedMeshes();
                 emit requestSetWorkingMode(2);
                 this->changeColor();
 
@@ -936,17 +927,13 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 //! set the model
                 //! --------------
                 QModelIndex index_analysisSettings = mainTreeTools::getAnalysisSettingsItemFromCurrentItem(myTreeView)->index();
-                cout<<"tag00"<<endl;
-
                 emit requestTabularData(index_analysisSettings);
-                cout<<"tag01"<<endl;
 
                 //! ---------------------------------------------------------------------
                 //! show the first row with Time = 0, apart from the item "Model change"
                 //! ---------------------------------------------------------------------
                 if(theNodeType==SimulationNodeClass::nodeType_modelChange) emit requestHideFirstRow();
                 else emit requestShowFirstRow();
-                cout<<"tag02"<<endl;
 
                 //! -----------------------------------------------------------
                 //! calculate the number of columns to show => in the table <=
@@ -955,8 +942,6 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 columnsToShow << TABULAR_DATA_STEP_NUMBER_COLUMN << TABULAR_DATA_STEP_END_TIME_COLUMN << mainTreeTools::getColumnsToRead(myTreeView);
                 if(columnsToShow.length()>=3)
                 {
-                    cout<<"tag03"<<endl;
-
                     emit requestShowColumns(columnsToShow);
 
                     //! ------------------------------------
@@ -964,15 +949,11 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                     //! ------------------------------------
                     columnsToShow.removeFirst();
                     CustomTableModel *tabData = index_analysisSettings.data(Qt::UserRole).value<SimulationNodeClass*>()->getTabularDataModel();
-                    //cout<<"____"<<tabData->rowCount()<<", "<<tabData->columnCount()<<"____"<<endl;
-                    //for(int k=0; k<columnsToShow.length(); k++) cout<<"____column: "<<columnsToShow[k]<<"____"<<endl;
                     emit requestShowGraph(tabData,columnsToShow);
                 }
-cout<<"tag04"<<endl;
+
                 bool isDone = markerBuilder::addMarker(this->getCurrentNode(), mySimulationDataBase);
                 if(isDone == true) this->displayMarker();
-                cout<<"tag05"<<endl;
-
             }
                 break;
 
@@ -981,7 +962,7 @@ cout<<"tag04"<<endl;
                 emit requestHideAllResults();
                 emit requestUnhighlightBodies(Standard_True);
                 emit requestHideMeshes();
-                emit requestHideSlicedMeshes();
+                //emit requestHideSlicedMeshes();
                 emit requestSetWorkingMode(2);
                 this->changeColor();
 
@@ -1020,7 +1001,7 @@ cout<<"tag04"<<endl;
                 emit requestHideAllResults();
                 emit requestUnhighlightBodies(Standard_True);
                 emit requestSetWorkingMode(1);
-                emit requestHideSlicedMeshes();
+                //emit requestHideSlicedMeshes();
                 this->changeColor();
                 emit requestClearGraph();
             }
@@ -1032,7 +1013,7 @@ cout<<"tag04"<<endl;
                 emit requestUnhighlightBodies(Standard_True);
                 emit requestHideMeshes();
                 emit requestSetWorkingMode(1);
-                emit requestHideSlicedMeshes();
+                //emit requestHideSlicedMeshes();
                 this->changeColor();
                 emit requestClearGraph();
             }
@@ -1042,7 +1023,7 @@ cout<<"tag04"<<endl;
             {
                 emit requestHideAllResults();
                 emit requestSetWorkingMode(1);
-                emit requestHideSlicedMeshes();
+                //emit requestHideSlicedMeshes();
                 //this->changeColor();
                 emit requestClearGraph();
                 //! -----------------------------------------
@@ -1110,7 +1091,7 @@ cout<<"tag04"<<endl;
                 emit requestHideAllResults();
                 emit requestUnhighlightBodies(Standard_True);
                 emit requestHideMeshes();
-                emit requestHideSlicedMeshes();
+                //emit requestHideSlicedMeshes();
                 emit requestSetWorkingMode(2);
                 this->changeColor();
                 emit requestClearGraph();
@@ -1124,7 +1105,7 @@ cout<<"tag04"<<endl;
                 emit requestHideAllResults();
                 emit requestUnhighlightBodies(Standard_True);
                 emit requestHideMeshes();
-                emit requestHideSlicedMeshes();
+                //emit requestHideSlicedMeshes();
                 emit requestSetWorkingMode(2);
                 this->changeColor();
                 emit requestClearGraph();
@@ -1137,7 +1118,7 @@ cout<<"tag04"<<endl;
                 emit requestUnhighlightBodies(Standard_True);
                 emit requestSetWorkingMode(0);  //! "On mesh" working mode
                 emit requestHideMeshes();
-                emit requestHideSlicedMeshes();
+                //emit requestHideSlicedMeshes();
                 emit requestClearGraph();
 
                 QStandardItem *item = theNode->getPropertyItem("Selected elements");
@@ -1167,15 +1148,14 @@ cout<<"tag04"<<endl;
 //! ---------------------
 void SimulationManager::setContext(const occHandle(AIS_InteractiveContext) &aCTX)
 {
-    if(!aCTX.IsNull())
+    cout<<"SimulationManager::setMeshContext()->____function called____"<<endl;
+    if(aCTX.IsNull()==true)
     {
-        myCTX = aCTX;
-        theTextWriter = new writeLabelClass(aCTX,this);
+        cout<<"SimulationManager::setContext()->____NULL GEOMETRY CONTEXT____"<<endl;
+        return;
     }
-    else
-    {
-        QMessageBox::critical(this, tr("SimulationManager::setContext()"),tr("Error: the context is null"));
-    }
+    myCTX = aCTX;
+    theTextWriter = new writeLabelClass(aCTX,this);
 }
 
 //! -----------------------------------------
@@ -1332,10 +1312,10 @@ void SimulationManager::buildCustomMenu(const QModelIndex &modelIndex)
     }
 }
 
-//! --------------------------------
-//! function: show the context menu
+//! --------------------------
+//! function: showContextMenu
 //! details:
-//! --------------------------------
+//! --------------------------
 void SimulationManager::showContextMenu(const QPoint &pos)
 {    
     const QPoint &globalPos = this->mapToGlobal(pos);
@@ -2360,20 +2340,8 @@ void SimulationManager::handleItem(int type)
     case 234: this->createSimulationNode(SimulationNodeClass::nodeType_solutionStructuralContact,2); break;
     case 235: this->createSimulationNode(SimulationNodeClass::nodeType_solutionStructuralContact,3); break;
 
-    //! ------------------------------------------------------------------
-    //! 246 -> insert total "Reaction forces"
-    //! directional nodal forces (option "1" => "x" direction by default)
-    //! ------------------------------------------------------------------
-    case 246: this->createSimulationNode(SimulationNodeClass::nodeType_solutionStructuralReactionForce,0); break;
-    case 247: this->createSimulationNode(SimulationNodeClass::nodeType_solutionStructuralReactionForce,1); break;
-
-    //! ------------------------------------------------------------------
-    //! 245 -> insert total "Gamma"
-    //! ------------------------------------------------------------------
-    case 245: this->createSimulationNode(SimulationNodeClass::nodeType_solutionStructuralGamma); break;
-
     //! -----------------
-    //!  results
+    //! evaluate results
     //! -----------------
     case 204:
     {
@@ -2695,9 +2663,7 @@ void SimulationManager::createSimulationNode(SimulationNodeClass::nodeType type,
             type ==SimulationNodeClass::nodeType_solutionStructuralStress ||
             type ==SimulationNodeClass::nodeType_solutionStructuralFatigueTool ||
             type ==SimulationNodeClass::nodeType_solutionStructuralNodalForces ||
-            type ==SimulationNodeClass::nodeType_solutionStructuralContact  ||
-            type ==SimulationNodeClass::nodeType_solutionStructuralGamma  ||
-            type ==SimulationNodeClass::nodeType_solutionStructuralReactionForce)
+            type ==SimulationNodeClass::nodeType_solutionStructuralContact)
     {
         aNode = nodeFactory::nodeFromScratch(type,mySimulationDataBase, myCTX, addOptions);
         aNode->setParent(this);
@@ -5395,7 +5361,6 @@ void SimulationManager::handleItemChange(QStandardItem *item)
                 //! if it was previously removed; in case of a "Frictionless" or "Bonded" contact pair,
                 //! remove it, if it was previously added
                 //! -----------------------------------------------------------------------------------------
-            /*
                 switch(theContactType)
                 {
                 case Property::contactType_frictional:
@@ -5461,7 +5426,7 @@ void SimulationManager::handleItemChange(QStandardItem *item)
 
                     //! ------------------------------------------------------------------
                     //! re-init the contact with "overpressure linear"
-                    //! add "Overpressure", "K", "Sigma infinity", "CO" if they were removed
+                    //! add "Overpressure", "K", "Sigma infty", "CO" if they were removed
                     //! ------------------------------------------------------------------
                     QVariant data;
                     if(curNode->getPropertyItem("K")==NULL)
@@ -5610,7 +5575,7 @@ void SimulationManager::handleItemChange(QStandardItem *item)
                 }
                     break;
 
-                case Property::contactType_noSeparation:
+                case Property::contactType_tied:
                 {
                     cout<<"____handing tied____"<<endl;
                     //! ------------------
@@ -5667,10 +5632,8 @@ void SimulationManager::handleItemChange(QStandardItem *item)
                 }
                     break;
                 }
-            */
             }
 
-            /*
             //! ------------------------------
             //! handle the "Behavior" control
             //! ------------------------------
@@ -5845,7 +5808,6 @@ void SimulationManager::handleItemChange(QStandardItem *item)
                 }
             }
             cout<<"____handling contacts: exiting____"<<endl;
-            */
         }
     }
         break;
@@ -6387,8 +6349,8 @@ void SimulationManager::synchVisibility()
     AIS_ListOfInteractive listOfDisplayedObjects, listOfHiddenObjects;
     TopTools_ListOfShape listOfDisplayedShapes, listOfHiddenShapes;
 
-    myCTX->DisplayedObjects(AIS_KOI_Shape, -1, listOfDisplayedObjects);
-    myCTX->ErasedObjects(AIS_KOI_Shape, -1, listOfHiddenObjects);
+    myCTX->DisplayedObjects(AIS_KOI_Shape,-1,listOfDisplayedObjects);
+    myCTX->ErasedObjects(AIS_KOI_Shape,-1,listOfHiddenObjects);
 
     AIS_ListIteratorOfListOfInteractive anIter;
     for(anIter.Initialize(listOfDisplayedObjects);anIter.More();anIter.Next())
@@ -6789,7 +6751,7 @@ void SimulationManager::changeColor()
                 }
                 emit requestDisplayShapeCopy1(list1,color1);
             }
-            if(itemSlaveTags!=NULL)
+            if(itemSlaveTags!=Q_NULLPTR)
             {
                 std::vector<int> vecParentShapes;
                 vecLocs = itemSlaveTags->data(Qt::UserRole).value<Property>().getData().value<std::vector<GeometryTag>>();
@@ -6966,7 +6928,6 @@ void SimulationManager::changeColor()
     emit requestDisplayShapeCopy(list1,list2,color1,color2,options);
     //cout<<"SimulationManager::changeColor()->____exiting____"<<endl;
 }
-
 
 //! -----------------------------------------------
 //! function: swapContact
@@ -7919,9 +7880,8 @@ QExtendedStandardItem* SimulationManager::getAnalysisSettingsItemFromCurrentItem
 
     //! ---------------------------------------------------
     //! case 3: the current item is a post processing item
-    //! or a child of a simulation setup node
     //! ---------------------------------------------------
-    if(curNode->isAnalysisResult() || curNode->isSolutionInformation() || curNode->isChildSimulationSetUpNode())
+    if(curNode->isAnalysisResult() || curNode->isSolutionInformation())
     {
         QStandardItem *item = curItem->parent()->parent()->child(0,0);
         return static_cast<QExtendedStandardItem*>(item);
@@ -10404,15 +10364,6 @@ bool SimulationManager::translateOpenFoamScalarData()
     theItem = theCurNode->getPropertyItem("Split data");
     int fileMode = theItem->data(Qt::UserRole).value<Property>().getData().toInt();
 
-/*#ifdef COSTAMP_VERSION
-    //! ----------------------------------------------------
-    //! get the timeList
-    //! ----------------------------------------------------
-    SimulationNodeClass *tsbNode = myTreeView->currentIndex().parent().parent().child(1,0).data(Qt::UserRole).value<SimulationNodeClass*>();
-    const QVector<double> &tSbList = tsbNode->getPropertyValue<QVector<double>>("Time list");
-    cout<<" tsbList size "<<tSbList.size()<<endl;
-#endif*/
-
     if(sourceDirectory.isEmpty() || targetDirectory.isEmpty()) return false;
 
     //! ---------------------------
@@ -10423,13 +10374,11 @@ bool SimulationManager::translateOpenFoamScalarData()
     //! ---------------
     //! another thread
     //! ---------------
-    openFoamController *anOpenFoamController = new openFoamController(/*sourceDirectory,targetDirectory,*/fileMode,
-                                                                      aProgressIndicator,this);
-/*
+    openFoamController *anOpenFoamController = new openFoamController(sourceDirectory,targetDirectory,fileMode,aProgressIndicator,this);
+
 #ifdef COSTAMP_VERSION
-    anOpenFoamController->setTimeFolders(tSbList.toStdVector());
-    cout<<"tsbList size "<<tSbList.size()<<endl;
-#endif*/
+    anOpenFoamController->setTimeFolders(tSbList);
+#endif
 
     //! --------------------------------------------------------------------------
     //! start the thread - this will also lock the items within the detail viewer
@@ -10567,6 +10516,7 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
         }
     }
     if(isMeshOK==false) return;
+
     //! --------------
     //! a post object
     //! --------------
@@ -10581,22 +10531,27 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
             //! -------------------------------------------
             //! a results is already present into the item
             //! -------------------------------------------
-            aPostObject = curNode->getPropertyValue<sharedPostObject>("Post object"); //cesere
+            aPostObject = curNode->getPropertyValue<sharedPostObject>("Post object");
             bool useExteriorMeshForVolumeResults = Global::status().myResultPresentation.useExteriorMeshForVolumeResults;
-            aPostObject->setMode(useExteriorMeshForVolumeResults);     // use the exterior mesh for showing volume results
+            aPostObject->setMode(useExteriorMeshForVolumeResults);
             int scaleType = curNode->getPropertyValue<int>("Scale type");
             double min = aPostObject->getMin();
             double max = aPostObject->getMax();
             int NbIntervals = aPostObject->getNbLevels();
             double magnifyFactor = Global::status().myResultPresentation.theScale;
-            int component = aPostObject->getSolutionDataComponent();    //cesere
+            int component = aPostObject->getSolutionDataComponent();
 
+            /* remove this patch (moved in postObject)
+            //cout<<"___SIZE OF MAP: "<<mapOfNodalDisplacements.size()<<"____"<<endl;
             std::map<GeometryTag,std::map<int,gp_Vec>> mapOfNodalDisplacements = aPostObject->getMapOfNodalDisplacements();
-            cout<<"___SIZE OF MAP: "<<mapOfNodalDisplacements.size()<<"____"<<endl;
 
+            //! ---------------------------------------------------------------
+            //! this is a patch: actually the nodal displacement for building
+            //! the deformed view should be incorporated into the postObject
+            //! ---------------------------------------------------------------
             if(mapOfNodalDisplacements.size()==0)
             {
-                cout<<"____REBUILDING NODAL DISPLACEMENTS (FILLING WITH ZERO)____"<<endl;
+                //cout<<"____REBUILDING NODAL DISPLACEMENTS (FILLING WITH ZERO)____"<<endl;
                 //! rebuild the map of nodal displacements
                 const std::vector<GeometryTag> &tags = curNode->getPropertyValue<std::vector<GeometryTag>>("Tags");
                 for(std::vector<GeometryTag>::const_iterator it = tags.cbegin(); it!=tags.cend(); it++)
@@ -10612,6 +10567,11 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
                 }
                 aPostObject->setMapOfNodalDisplacements(mapOfNodalDisplacements);
             }
+            */
+
+            //! -------------------------
+            //! build the colored result
+            //! -------------------------
             aPostObject->buildMeshIO(min,max,NbIntervals,scaleType,component,magnifyFactor);
         }
         else
@@ -10690,7 +10650,6 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
             case SimulationNodeClass::nodeType_solutionStructuralMechanicalStrain: keyName ="MESTRAIN"; break;
             case SimulationNodeClass::nodeType_solutionStructuralEquivalentPlasticStrain: keyName ="PE"; break;
             case SimulationNodeClass::nodeType_solutionStructuralNodalForces: keyName ="FORC"; break;
-            case SimulationNodeClass::nodeType_solutionStructuralReactionForce: keyName = "FORC"; break;
             case SimulationNodeClass::nodeType_solutionStructuralTemperature: keyName ="NDTEMP"; break;
             case SimulationNodeClass::nodeType_solutionStructuralContact: keyName = "CONTACT"; break;
             }
@@ -10704,10 +10663,12 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
             cout<<"@____step: "<<stepNb<<"____"<<endl;
             cout<<"@____sub step: "<<subStepNb<<"____\n"<<endl;
 
-            //! ----------------------
-            //! create the postObject
-            //! ----------------------
-            myPostEngine->buildPostObject(keyName,component,subStepNb,stepNb,mode,vecLoc,aPostObject);
+            //! -------------------------------------------------------------------------------
+            //! create the postObject - this build the post object reading data from disk
+            //! after this call the postObject will contain the map of the nodal displacements
+            //! -------------------------------------------------------------------------------
+            bool isDone = myPostEngine->buildPostObject(keyName,component,subStepNb,stepNb,mode,vecLoc,aPostObject);
+            if(isDone == false) return;
         }
     }
     else
@@ -10896,13 +10857,12 @@ bool SimulationManager::eventFilter(QObject *object, QEvent *event)
              QFile f(stafile);
              if(f.exists())
              {
-                 cout<<"____.STA FILE FOUND: \""<<stafile.toStdString()<<"\"____"<<endl;
+                 //cout<<"____.STA FILE FOUND: \""<<stafile.toStdString()<<"\"____"<<endl;
                  QMap<double,QVector<int>> timeinfo;
                  bool isDone = CCXTools::readsta(stafile,timeinfo);
                  if(isDone)
                  {
                      data.setValue(timeinfo);
-                     cout<<timeinfo.firstKey()<<endl;
                      nodeSolutionInformation->replaceProperty("Discrete time map",Property("Discrete time map",data,Property::PropertyGroup_Hidden));
                  }
                  else
@@ -11012,7 +10972,6 @@ void SimulationManager::retrieveSolverInfo()
     {
     case SimulationNodeClass::nodeType_structuralAnalysis: analysisType = 0; break;
     case SimulationNodeClass::nodeType_thermalAnalysis: analysisType = 1; break;
-    case SimulationNodeClass::nodeType_combinedAnalysis: analysisType = 2; break;
     }
 
     //! ------------------------------------------------------
@@ -11699,14 +11658,8 @@ void SimulationManager::COSTAMP_startTimeStepBuilder()
     cout<<"SimulationManager::startTimeStepBuilder()->____function called____"<<endl;
     SimulationNodeClass *curNode = myTreeView->currentIndex().data(Qt::UserRole).value<SimulationNodeClass*>();
     const QString &timeHistoryFileLoc = curNode->getPropertyValue<QString>("Time history file");    
-    QString program = QString("D:/Work/Qt/build_simSpace/release/TimeStepBuilder.exe");
+    QString program = QString("D:/Work/Qt/build_pro26.0_OCC7.3.0/release/TimeStepBuilder.exe");
     QStringList arguments;
-
-    QStandardItem *itemSimulationRoot = mainTreeTools::getCurrentSimulationRoot(myTreeView);
-    QStandardItem *itemSolution = itemSimulationRoot->child(itemSimulationRoot->rowCount()-1);
-    SimulationNodeClass *nodeSolution = itemSolution->data(Qt::UserRole).value<SimulationNodeClass*>();
-    QString myCurrentProjectDir = nodeSolution->getPropertyValue<QString>("Project files dir");
-
     arguments<<myCurrentProjectDir<<timeHistoryFileLoc;
     QProcess *tsbProcess = new QProcess(this);
     tsbProcess->start(program,arguments);
@@ -11735,11 +11688,6 @@ bool SimulationManager::COSTAMP_addProcessParameters()
     //tSbList.clear();
 
     //! Path of the configuration file
-    QStandardItem *itemSimulationRoot = mainTreeTools::getCurrentSimulationRoot(myTreeView);
-    QStandardItem *itemSolution = itemSimulationRoot->child(itemSimulationRoot->rowCount()-1);
-    SimulationNodeClass *nodeSolution = itemSolution->data(Qt::UserRole).value<SimulationNodeClass*>();
-    QString myCurrentProjectDir = nodeSolution->getPropertyValue<QString>("Project files dir");
-
     QString dirPath = myCurrentProjectDir;
     cout<<"SimulationManager::COSTAMP_addProcessParameters()->____dirPath "<<myCurrentProjectDir.toStdString()<<endl;
     QString tsbFile= dirPath+"/timepoints.out";
@@ -11754,9 +11702,9 @@ bool SimulationManager::COSTAMP_addProcessParameters()
     //! Path of the OF mapped data
     QDir dir;
     dir.current();
-    dir.cd(dirPath);
+    dir.cd(timeHistoryFileLoc);
     dir.mkdir("Mapped");
-    const QString mappedFilePath = dirPath+"/Mapped";
+    const QString mappedFilePath = timeHistoryFileLoc+"Mapped";
     cout<<"SimulationManager::COSTAMP_addProcessParameters()->____config file "<<tsbFile.toStdString()<<endl;
     //! ---------------------------------
     //! read the configuration file
@@ -11768,7 +11716,6 @@ bool SimulationManager::COSTAMP_addProcessParameters()
         return false;
     else
     {
-        cout<<"SimulationManager::COSTAMP_addProcessParameters()->____config file "<<tsbFile.toStdString()<<"opened"<<endl;
         is.open(tsbFile.toStdString());
         std::string val;
         //! timeStepType
@@ -11777,8 +11724,6 @@ bool SimulationManager::COSTAMP_addProcessParameters()
         //!  2: OpenAssembly,
         std::vector<int> timeStepNr,type;
         std::vector<double>  prevTime,curTime;
-        double closureForceValue, innerPressureValue;
-        int closureForceDir;
         int n=0;
         if(is.is_open())
             while(!is.eof())
@@ -11795,37 +11740,23 @@ bool SimulationManager::COSTAMP_addProcessParameters()
                     curTime.push_back(cTime);
                     n++;
                 }
-                else
-                {
-                    double a,b;
-                    int c;
-                    std::getline(is,val);
-                    std::getline(is,val);
-                    if(2 == sscanf(val.c_str(),"%d%lf",&c,&a))
-                    {
-                        closureForceDir = c;
-                        closureForceValue = a;
-                    }
-                    if(1 ==sscanf(val.c_str(),"%lf",&b)) innerPressureValue = b;
-                }
             }
         is.close();
-        //tSbList = curTime;
+        tSbList = curTime;
         QVariant data;
         int closureIndex, prexIndex, modelChangeIndex,tSbIndex,mapperIndex;
         closureIndex = -1;
         prexIndex = -1;
         modelChangeIndex = -1;
 
-        //QStandardItem *theStaticRoot = myTreeView->currentIndex().parent().data(Qt::UserRole).value<QStandardItem*>();
         //! ------------------------------------------------------------
         //! for "createSimulationNode()" which needs the "current" item
         //! ------------------------------------------------------------
-        myTreeView->setCurrentIndex(itemSimulationRoot->index().child(0,0));
+        myTreeView->setCurrentIndex(StaticAnalysis_RootItem->index().child(0,0));
         int curRow = 1;
         tSbIndex = curRow;
         cout<<"curRow= "<<tSbIndex<<endl;
-        SimulationNodeClass *nodeAnalysisSettings = itemSimulationRoot->child(0,0)->data(Qt::UserRole).value<SimulationNodeClass*>();
+        SimulationNodeClass *nodeAnalysisSettings = StaticAnalysis_RootItem->child(0,0)->data(Qt::UserRole).value<SimulationNodeClass*>();
         CustomTableModel *tabData = nodeAnalysisSettings->getTabularDataModel();
 
         //! ------------------------------------------
@@ -11834,7 +11765,6 @@ bool SimulationManager::COSTAMP_addProcessParameters()
         //! -------------------------------------------
         nodeAnalysisSettings->getModel()->blockSignals(true);
         int NbTstep = int(timeStepNr.size());
-        data.setValue(NbTstep);           //! the default Number of steps
         Property property_numberOfSteps("Number of steps",data,Property::PropertyGroup_StepControls);
         nodeAnalysisSettings->replaceProperty("Number of steps",property_numberOfSteps);
         this->resizeTabularData();
@@ -11843,6 +11773,7 @@ bool SimulationManager::COSTAMP_addProcessParameters()
         for(int i=0; i<NbTstep;i++)
         {
             tabData->setDataRC(curTime.at(i),i+1,1,Qt::EditRole);
+            data.setValue(NbTstep);           //! the default Number of steps
         }
         curRow++;
         cout<<"curRow= "<<curRow<<endl;
@@ -11858,33 +11789,27 @@ bool SimulationManager::COSTAMP_addProcessParameters()
         //! -------------------------------
         this->createSimulationNode(SimulationNodeClass::nodeType_mapper);
         mapperIndex = curRow;
-        cout<<"curRow of mapper Index= "<<mapperIndex<<endl;
+        cout<<"curRow= "<<mapperIndex<<endl;
         curRow++;
-        myTreeView->setCurrentIndex(itemSimulationRoot->index().child(mapperIndex,0));
+        myTreeView->setCurrentIndex(StaticAnalysis_RootItem->index().child(mapperIndex,0));
         SimulationNodeClass *mapperNode = myTreeView->currentIndex().data(Qt::UserRole).value<SimulationNodeClass*>();
         QExtendedStandardItem *mapperItem = this->getTreeItem(mapperNode->getType());
         this->createSimulationNode(SimulationNodeClass::nodeType_OpenFoamScalarData);
         myTreeView->setCurrentIndex(mapperItem->index().child(0,0));
         SimulationNodeClass *ofNode = myTreeView->currentIndex().data(Qt::UserRole).value<SimulationNodeClass*>();
         ofNode->getModel()->blockSignals(true);
-        //! target directory
-        data.setValue(mappedFilePath);
+        data.setValue(mappedFilePath);       //! target directory
         Property property_targetDir("Target directory",data,Property::PropertyGroup_Definition);
         ofNode->replaceProperty("Target directory",property_targetDir);
-        //! source directory
-        data.setValue(timeHistoryFileLoc);
+        data.setValue(timeHistoryFileLoc);       //! source directory
         Property property_sourceDir("Source directory",data,Property::PropertyGroup_Definition);
         ofNode->replaceProperty("Source directory",property_sourceDir);
-        //! split in single file
-        data.setValue(0);
+        data.setValue(0);       //! split in single file
         Property property_split("Split data",data,Property::PropertyGroup_OutputSettings);
         ofNode->replaceProperty("Split data",property_split);
-        //! Time list
-        data.setValue(QVector<double>::fromStdVector(curTime));
-        Property property_timeList("Time list",data,Property::PropertyGroup_Definition);
-        ofNode->replaceProperty("Time list",property_timeList);
         ofNode->getModel()->blockSignals(false);
-        myTreeView->setCurrentIndex(itemSimulationRoot->index().child(mapperIndex,0));
+
+        myTreeView->setCurrentIndex(StaticAnalysis_RootItem->index().child(mapperIndex,0));
         this->createSimulationNode(SimulationNodeClass::nodeType_importedBodyScalar);
         myTreeView->setCurrentIndex(mapperItem->index().child(1,0));
         SimulationNodeClass *importedBSNode = myTreeView->currentIndex().data(Qt::UserRole).value<SimulationNodeClass*>();
@@ -11920,19 +11845,20 @@ bool SimulationManager::COSTAMP_addProcessParameters()
         int nBclosure = 0;
         int nBpressure = 0;
         int nBopen = 0;
-        myTreeView->setCurrentIndex(itemSimulationRoot->index().child(0,0));
+        myTreeView->setCurrentIndex(StaticAnalysis_RootItem->index().child(0,0));
         for(int i=0; i<NbTstep;i++)
         {
-            //! ----------------------------------
-            //! create the force closureForce node
-            //! ----------------------------------
+            //! ------------------------------
+            //! create the force closure node
+            //! ------------------------------
             if(type.at(i) == 0 && nBclosure == 0)
             {
                 this->createSimulationNode(SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RemoteForce);
                 closureIndex = curRow;
-                cout<<"curRow Closure= "<<closureIndex<<endl;
+                cout<<"curRow= "<<closureIndex<<endl;
+
                 curRow++;
-                QStandardItem *curItem =itemSimulationRoot->child(closureIndex,0);
+                QStandardItem *curItem =StaticAnalysis_RootItem->child(closureIndex,0);
                 SimulationNodeClass *curNode = curItem->data(Qt::UserRole).value<SimulationNodeClass*>();
                 curNode->getModel()->blockSignals(true);
                 QString newName1="Closure Force";
@@ -11942,16 +11868,6 @@ bool SimulationManager::COSTAMP_addProcessParameters()
                 data.setValue(Property::loadDefinition_tabularData);
                 Property prop_loadMagnitude("Magnitude",data,Property::PropertyGroup_Definition);
                 curNode->replaceProperty("Magnitude",prop_loadMagnitude);
-                QVector<double> vec;
-                if(closureForceDir==1)
-                {vec.push_back(1.0);vec.push_back(0.0);vec.push_back(0.0);}
-                if(closureForceDir==2)
-                {vec.push_back(0.0);vec.push_back(1.0);vec.push_back(0.0);}
-                if(closureForceDir==3)
-                {vec.push_back(0.0);vec.push_back(0.0);vec.push_back(1.0);}
-                data.setValue(vec);
-                Property prop_loadDirection("Direction",data,Property::PropertyGroup_Definition);
-                curNode->replaceProperty("Direction",prop_loadDirection);
                 nBclosure++;
                 curNode->getModel()->blockSignals(false);
             }
@@ -11962,10 +11878,10 @@ bool SimulationManager::COSTAMP_addProcessParameters()
             {
                 this->createSimulationNode(SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Pressure);
                 prexIndex = curRow;
-                cout<<"curRow Pressure= "<<prexIndex<<endl;
+                cout<<"curRow= "<<prexIndex<<endl;
 
                 curRow++;
-                QStandardItem *curItem =itemSimulationRoot->child(prexIndex,0);
+                QStandardItem *curItem =StaticAnalysis_RootItem->child(prexIndex,0);
                 SimulationNodeClass *curNode = curItem->data(Qt::UserRole).value<SimulationNodeClass*>();
                 curNode->getModel()->blockSignals(true);
                 QString newName2="Inner Pressure";
@@ -11975,6 +11891,7 @@ bool SimulationManager::COSTAMP_addProcessParameters()
                 data.setValue(Property::loadDefinition_tabularData);
                 Property prop_loadMagnitude("Magnitude",data,Property::PropertyGroup_Definition);
                 curNode->replaceProperty("Magnitude",prop_loadMagnitude);
+                curNode->getModel()->blockSignals(false);
                 nBpressure++;
                 curNode->getModel()->blockSignals(false);
             }
@@ -11985,9 +11902,10 @@ bool SimulationManager::COSTAMP_addProcessParameters()
             {
                 this->createSimulationNode(SimulationNodeClass::nodeType_modelChange);
                 modelChangeIndex = curRow;
-                cout<<"curRow Model Change= "<<modelChangeIndex<<endl;
+                cout<<"curRow= "<<modelChangeIndex<<endl;
+
                 curRow++;
-                QStandardItem *curItem =itemSimulationRoot->child(modelChangeIndex,0);
+                QStandardItem *curItem =StaticAnalysis_RootItem->child(modelChangeIndex,0);
                 SimulationNodeClass *curNode = curItem->data(Qt::UserRole).value<SimulationNodeClass*>();
                 curNode->getModel()->blockSignals(true);
                 data.setValue(1);   //! contact
@@ -12009,50 +11927,50 @@ bool SimulationManager::COSTAMP_addProcessParameters()
             {
                 if(closureIndex!=-1)
                 {
-                    myTreeView->setCurrentIndex(itemSimulationRoot->index().child(closureIndex,0));
-                    double force = closureForceValue;
+                    myTreeView->setCurrentIndex(StaticAnalysis_RootItem->index().child(closureIndex,0));
+                    double force = 18000000.0;
                     QList<int> columns = mainTreeTools::getColumnsToRead(myTreeView);
                     tabData->setDataRC(force,stepNb,columns.at(0),Qt::EditRole);
                     cout<<"closureIndex "<<closureIndex<<" column n "<<columns.at(0)<<endl;
                 }
                 if(type.at(i)==0 && prexIndex!=-1)
                 {
-                    myTreeView->setCurrentIndex(itemSimulationRoot->index().child(prexIndex,0));
+                    myTreeView->setCurrentIndex(StaticAnalysis_RootItem->index().child(prexIndex,0));
                     double prex = 0;
                     QList<int> columns = mainTreeTools::getColumnsToRead(myTreeView);
                     tabData->setDataRC(prex,stepNb,columns.at(0),Qt::EditRole);
                 }
                 if(type.at(i)==1)
                 {
-                    myTreeView->setCurrentIndex(itemSimulationRoot->index().child(prexIndex,0));
-                    double prex = innerPressureValue;
+                    myTreeView->setCurrentIndex(StaticAnalysis_RootItem->index().child(prexIndex,0));
+                    double prex = 60;
                     QList<int> columns = mainTreeTools::getColumnsToRead(myTreeView);
                     tabData->setDataRC(prex,stepNb,columns.at(0),Qt::EditRole);
                 }
             }
             else if(type.at(i)==2)
             {
-                myTreeView->setCurrentIndex(itemSimulationRoot->index().child(modelChangeIndex,0));
+                myTreeView->setCurrentIndex(StaticAnalysis_RootItem->index().child(modelChangeIndex,0));
                 QList<int> columns = mainTreeTools::getColumnsToRead(myTreeView);
                 int mChangeValue=-1;
                 tabData->setDataRC(mChangeValue,stepNb,columns.at(0),Qt::EditRole);
                 if(prexIndex!=-1)
                 {
-                    myTreeView->setCurrentIndex(itemSimulationRoot->index().child(prexIndex,0));
+                    myTreeView->setCurrentIndex(StaticAnalysis_RootItem->index().child(prexIndex,0));
                     double prex = 0;
                     QList<int> columns = mainTreeTools::getColumnsToRead(myTreeView);
                     tabData->setDataRC(prex,stepNb,columns.at(0),Qt::EditRole);
                 }
                 if(closureIndex!=-1)
                 {
-                    myTreeView->setCurrentIndex(itemSimulationRoot->index().child(closureIndex,0));
+                    myTreeView->setCurrentIndex(StaticAnalysis_RootItem->index().child(closureIndex,0));
                     double load = 0;
                     QList<int> columns = mainTreeTools::getColumnsToRead(myTreeView);
                     tabData->setDataRC(load,stepNb,columns.at(0),Qt::EditRole);
                 }
             }
         }
-        myTreeView->setCurrentIndex(itemSimulationRoot->index().child(0,0));
+        myTreeView->setCurrentIndex(StaticAnalysis_RootItem->index().child(0,0));
         return true;
     }
 }
@@ -12075,7 +11993,6 @@ void SimulationManager::resetAndUpdateModel()
     //!   inner maps; it does not remove the mesh items
     //! ----------------------------------------------------------
     cout<<"SimulationManager::updateModel()->____resetting database____"<<endl;
-    ccout("SimulationManager::updateModel()->____resetting database____");
     mySimulationDataBase->resetDataBase();
 
     //! -------------------------
@@ -12122,7 +12039,7 @@ void SimulationManager::resetAndUpdateModel()
         {
             const QString &name = listOfNames.at(i);
             mySimulationDataBase->MapOfBodyNames.insert(index,name);
-            ccout(QString("SimulationManager::createSimulationDataBase()->____found body with name: ").append(name).append("____"));
+            cout<<"SimulationManager::createSimulationDataBase()->____found body with name: "<<name.toStdString()<<"____"<<endl;
         }
         //! -----------------------------------------------
         //! update the names of the items and of the nodes
@@ -12651,7 +12568,6 @@ void SimulationManager::generateBoundaryConditionsMeshDS(bool computeDual)
 
     for(int n=1; n<NbRows-1; n++) //skip the analysis settings item
     {
-
         std::vector<GeometryTag> patchConformingTags;
         std::vector<GeometryTag> nonPatchConformingTags;
         //! -------------------
@@ -13500,7 +13416,7 @@ void SimulationManager::deleteDataSourcesFromModel()
     for(int n=0; n<NbItems; n++)
     {
         SimulationNodeClass *curNode = items[n]->data(Qt::UserRole).value<SimulationNodeClass*>();
-        if(curNode->isSimulationSetUpNode()  || curNode->isChildSimulationSetUpNode())
+        if(curNode->isSimulationSetUpNode())
         {
             bool isDone = curNode->removeProperty("Mesh data sources");
             if(isDone)

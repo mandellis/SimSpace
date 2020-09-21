@@ -11,6 +11,7 @@
 //! ----
 #include <TColStd_MapIteratorOfPackedMapOfInteger.hxx>
 #include <TColStd_Array1OfInteger.hxx>
+#include <TColStd_HPackedMapOfInteger.hxx>
 #include <MeshVS_EntityType.hxx>
 
 //! ----
@@ -18,80 +19,97 @@
 //! ----
 #include <vector>
 #include <iostream>
+#include <ppl.h>
 using namespace std;
 
-//! ---
-//! Qt
-//! ---
-#include <QList>
-
-//! -------------------
+//! ----------------------
+//! function: constructor
+//! details:
+//! ----------------------
+meshSlicer::meshSlicer(const occHandle(MeshVS_DataSource) &aMeshDS):myMeshDS(aMeshDS)
+{
+    ;
+}
+/*
+//! ------------------
 //! function: perform
 //! details:
-//! -------------------
-bool meshSlicer::perform(double a, double b, double c, double d, opencascade::handle<Ng_MeshVS_DataSource3D> &slicedVolumeMeshDS)
+//! ------------------
+bool meshSlicer::perform(double a, double b, double c, double d, occHandle(TColStd_HPackedMapOfInteger) &hiddenElementIDs)
 {
-    cout<<"meshSlicer::perform()->____function called____"<<endl;
-    if(myVolumeMeshDS.IsNull()) return false;
+    //cout<<"meshSlicer::perform()->____function called____"<<endl;
+    if(myMeshDS.IsNull()) return false;
 
-    QList<meshElementByCoords> interceptedVolumeElements;
+    TColStd_PackedMapOfInteger amap;
+    int NbNodes, bufi[20];
+    TColStd_Array1OfInteger nodeIDs(*bufi,1,20);
+    MeshVS_EntityType aType;
+    double buf[3];
+    TColStd_Array1OfReal coords(*buf,1,3);
 
-    cout<<"meshSlicer::perform()->____iterating over the elements____"<<endl;
-
-    int NbNodes, buf[20];
-    TColStd_Array1OfInteger nodeIDs(*buf,1,20);
-    for(TColStd_MapIteratorOfPackedMapOfInteger it(myVolumeMeshDS->GetAllElements()); it.More(); it.Next())
+    bool toBeAdded = false;
+    TColStd_MapIteratorOfPackedMapOfInteger it(myMeshDS->GetAllElements());
+    int NbElements = myMeshDS->GetAllElements().Extent();
+    for(int localElementID = 1; localElementID<=NbElements; localElementID++, it.Next())
     {
-        //! -------------------------------------------
-        //! the candidate mesh points for building the
-        //! volume mesh element
-        //! -------------------------------------------
-        std::vector<mesh::meshPoint> candidateMeshPoints;
-
-        meshElementByCoords aVolumeMeshElement;
-        std::vector<polygon::Point> aCloudOfPoints;
-
         int globalElementID = it.Key();
-        myVolumeMeshDS->GetNodesByElement(globalElementID,nodeIDs,NbNodes);
+        myMeshDS->GetNodesByElement(globalElementID,nodeIDs,NbNodes);
+        toBeAdded = true;
+        int k=0;
         for(int i=1; i<=NbNodes; i++)
         {
             int globalNodeID = nodeIDs(i);
-            int localNodeID = myVolumeMeshDS->myNodesMap.FindIndex(globalNodeID);
-            const std::vector<double> &pc = myVolumeMeshDS->getNodeCoordinates(localNodeID);
-            candidateMeshPoints.push_back(mesh::meshPoint(pc[0],pc[1],pc[2],globalNodeID));
-            aCloudOfPoints.push_back(polygon::Point(pc[0],pc[1],pc[2]));
+            myMeshDS->GetGeom(globalNodeID,false,coords,NbNodes,aType);
+            double distance = polygon::pointPlaneDistance(polygon::Point(coords(1),coords(2),coords(3)),a,b,c,d);
+            //if(distance>=0) { toBeAdded = false; break; }
+            if(distance>=0) { break; }
+            k++;
         }
-        //int n;
-        bool intersect = polygon::testPolygonPlaneIntersection(aCloudOfPoints,a,b,c,d/*,n*/);
-        //cout<<"meshSlicer::perform()->________element discarded____"<<endl;
-        if(!intersect) continue;
-
-        //cout<<"meshSlicer::perform()->____adding element: "<<globalElementID<<"____"<<endl;
-
-        //! ------------------------
-        //! build a mesh element 3D
-        //! ------------------------
-        aVolumeMeshElement.ID = globalElementID;
-        for(int i=0; i<NbNodes; i++) aVolumeMeshElement.pointList<<candidateMeshPoints[i];
-        switch(NbNodes)
-        {
-        case 4: aVolumeMeshElement.type = TET; break;
-        case 5: aVolumeMeshElement.type = PYRAM; break;
-        case 6: aVolumeMeshElement.type = PRISM; break;
-        case 8: aVolumeMeshElement.type = HEXA; break;
-        }
-        interceptedVolumeElements<<aVolumeMeshElement;
+        //if(toBeAdded == true) amap.Add(globalElementID);
+        if(k==NbNodes) amap.Add(globalElementID);
     }
+    if(hiddenElementIDs.IsNull()) hiddenElementIDs = new TColStd_HPackedMapOfInteger;
+    hiddenElementIDs->ChangeMap() = amap;
+    if(amap.IsEmpty()) return false;
+    return true;
+}
+*/
 
-    //! ---------------------------------
-    //! call the volume mesh constructor
-    //! ---------------------------------
-    //cout<<"meshSlicer::perform()->____calling constructor____"<<endl;
+//! ---------------------------
+//! function: perform
+//! details:  try optimization
+//! ---------------------------
+bool meshSlicer::perform(double a, double b, double c, double d, occHandle(TColStd_HPackedMapOfInteger) &hiddenElementIDs)
+{
+    //cout<<"meshSlicer::perform()->____function called____"<<endl;
+    if(myMeshDS.IsNull()) return false;
 
-    slicedVolumeMeshDS = new Ng_MeshVS_DataSource3D(interceptedVolumeElements);
-    if(slicedVolumeMeshDS.IsNull()) return false;
-    //cout<<"meshSlicer::perform()->____number of nodes: "<<slicedVolumeMeshDS->GetAllNodes().Extent()<<"____"<<endl;
-    //cout<<"meshSlicer::perform()->____number of elements: "<<slicedVolumeMeshDS->GetAllElements().Extent()<<"____"<<endl;
+    TColStd_PackedMapOfInteger amap;
+    int NbNodes, bufi[20];
+    TColStd_Array1OfInteger nodeIDs(*bufi,1,20);
+    MeshVS_EntityType aType;
+    double buf[3];
+    TColStd_Array1OfReal coords(*buf,1,3);
 
+    TColStd_MapIteratorOfPackedMapOfInteger it(myMeshDS->GetAllElements());
+    int NbElements = myMeshDS->GetAllElements().Extent();
+    for(int localElementID = 1; localElementID<=NbElements; localElementID++, it.Next())
+    {
+        int globalElementID = it.Key();
+        myMeshDS->GetNodesByElement(globalElementID,nodeIDs,NbNodes);
+        int k=0;
+        for(int i=1; i<=NbNodes; i++)
+        {
+            int globalNodeID = nodeIDs(i);
+            myMeshDS->GetGeom(globalNodeID,false,coords,NbNodes,aType);
+            double distance = (a*coords(1)+b*coords(2)+c*coords(3)+d)/sqrt(a*a+b*b+c*c);
+            if(distance>=0) break;
+            k++;
+        }
+        if(k==NbNodes) amap.Add(globalElementID);
+    }
+    if(hiddenElementIDs.IsNull()) hiddenElementIDs = new TColStd_HPackedMapOfInteger;
+    hiddenElementIDs->ChangeMap() = amap;
+    if(amap.IsEmpty()) return false;
     return true;
 }

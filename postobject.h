@@ -1,3 +1,4 @@
+
 #ifndef POSTOBJECT_H
 #define POSTOBJECT_H
 
@@ -21,6 +22,7 @@
 #include <TColStd_PackedMapOfInteger.hxx>
 #include <TColStd_MapIteratorOfPackedMapOfInteger.hxx>
 #include <gp_Vec.hxx>
+#include <TColStd_HPackedMapOfInteger.hxx>
 
 //! --------------------------------------
 //! replacement for opencascade::handle<>
@@ -105,10 +107,7 @@ public:
     //! -------------------------------------------------
     //! set the map of the vectorial nodal displacements
     //! -------------------------------------------------
-    void setMapOfNodalDisplacements(const std::map<GeometryTag,std::map<int,gp_Vec>> &mapDisplMap)
-    {
-        myMapOfNodalDisplacements = mapDisplMap;
-    }
+    void setMapOfNodalDisplacements(const std::map<GeometryTag,std::map<int,gp_Vec>> &mapDisplMap);
 
     //! -------------------------------------------------
     //! get the map of the vectorial nodal displacements
@@ -171,6 +170,11 @@ private:
     //! ------------------
     double myScale;
 
+    //! ----------------
+    //! hidden elements
+    //! ----------------
+    std::map<GeometryTag,occHandle(TColStd_HPackedMapOfInteger)> myMapOfHiddenElements;
+
 private:
 
     //! reset meshes
@@ -206,13 +210,10 @@ public:
     void writeMesh(ofstream &file, const occHandle(MeshVS_DataSource) &theMeshDS);
 
     //! build mesh IO
-    void buildMeshIO(double min=-1e20, double max=1e20, int Nlevels=10, bool autoscale=true, int component=0, double deformationScale = 1.0);
+    bool buildMeshIO(double min=-1e20, double max=1e20, int Nlevels=10, bool autoscale=true, int component=0, double deformationScale = 1.0);
 
     //! init
     void init(meshDataBase *mDB);
-
-    //! clone
-    postObject clone(const postObject &other);
 
     //! get colored meshes
     std::map<GeometryTag,occHandle(MeshVS_Mesh>) getColoredMeshes() const { return theMeshes; }
@@ -228,6 +229,11 @@ public:
 
     //! update scaled view (internally read myScale)
     void updateScaledView();
+
+    //! set/get hidden elements
+    //void setHiddenElements(setHiddenElements(const std::map<GeometryTag,occHandle(TColStd_HPackedMapOfInteger)> &mapOfHiddenElements));
+    void computeHiddenElements(const std::map<int,std::vector<double>> &mapOfClipPlanes);
+
 
 public:
 
