@@ -407,7 +407,7 @@ simulationDataBase::simulationDataBase(const QList<SimulationNodeClass*> listOfN
         {
             QString key = QString("%1").arg(vecKeys[n]);
 
-            cout<<"____Attaching node with time tag: "<<key.toStdString()<<"____"<<endl;
+            //cout<<"____Attaching node with time tag: "<<key.toStdString()<<"____"<<endl;
 
             std::map<QString,SimulationNodeClass*>::iterator mapit = timeTagToNodeMap.find(key);
             if(mapit!=timeTagToNodeMap.end())
@@ -439,7 +439,6 @@ simulationDataBase::simulationDataBase(const QList<SimulationNodeClass*> listOfN
             {
                 SimulationNodeClass *curNode = *it;
                 bool isChildSetUpNode = curNode->isChildSimulationSetUpNode();
-
                 if(isChildSetUpNode == false)
                 {
                     it++;
@@ -483,9 +482,9 @@ simulationDataBase::simulationDataBase(const QList<SimulationNodeClass*> listOfN
             //! -----------------------------
             //! append in the original order
             //! -----------------------------
-            for(int n=0; n<vecChildKeys.size(); n++)
+            for(int l=0; l<vecChildKeys.size(); l++)
             {
-                QString key = QString("%1").arg(vecChildKeys[n]);
+                QString key = QString("%1").arg(vecChildKeys[l]);
 
                 //cout<<"____Attaching node with time tag: "<<key.toStdString()<<"____"<<endl;
 
@@ -2100,8 +2099,12 @@ void simulationDataBase::createStructuralAnalysisRootNode()
     name = "Time step builder";
 
     data.setValue(QString(""));
-    Property prop_suppressionStatus("Time history file",data,Property::PropertyGroup_Definition);
-    props.push_back(prop_suppressionStatus);
+    Property prop_thf("Time history file",data,Property::PropertyGroup_Definition);
+    props.push_back(prop_thf);
+
+    data.setValue(Property::SuppressionStatus_Active);
+    Property prop_suppressed("Suppressed",data,Property::PropertyGroup_Definition);
+    props.push_back(prop_suppressed);
 
     SimulationNodeClass *node = new SimulationNodeClass(name,SimulationNodeClass::nodeType_timeStepBuilder,props);
 

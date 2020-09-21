@@ -598,14 +598,6 @@ SimulationNodeClass::nodeType SimulationNodeClass::getFamily()
     case nodeType_postObject:
         RV = nodeType_postObject;
         break;
-
-#ifdef COSTAMP_VERSION
-    case nodeType_processParametersClosureForce:
-    case nodeType_processParametersPressure:
-        RV = nodeType_processParameters;
-        break;
-#endif
-
     default:
         break;
     }
@@ -1128,11 +1120,6 @@ void SimulationNodeClass::createSeparators()
     case nodeType_timeStepBuilder:
         myNodeRootItem->appendRow(itemDefinition);
         break;
-
-    case nodeType_processParametersClosureForce:
-    case nodeType_processParametersPressure:
-        myNodeRootItem->appendRow(itemScope);
-        myNodeRootItem->appendRow(itemDefinition);
 #endif
     }
 

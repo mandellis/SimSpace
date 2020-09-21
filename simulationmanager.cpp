@@ -13458,7 +13458,6 @@ void SimulationManager::computeAndDisplayMeshMetric()
 void SimulationManager::deleteDataSourcesFromModel()
 {
     cout<<"SimulationManager::deleteDataSourcesFromModel()->____function called____"<<endl;
-
     //! ------------------------------------------
     //! delete the data sources from the treeview
     //! ------------------------------------------
@@ -13469,7 +13468,7 @@ void SimulationManager::deleteDataSourcesFromModel()
     for(int n=0; n<NbItems; n++)
     {
         SimulationNodeClass *curNode = items[n]->data(Qt::UserRole).value<SimulationNodeClass*>();
-        if(curNode->isSimulationSetUpNode())
+        if(curNode->isSimulationSetUpNode() || curNode->isChildSimulationSetUpNode() || curNode->isNephewSimulationSetUpNode())
         {
             bool isDone = curNode->removeProperty("Mesh data sources");
             if(isDone)
