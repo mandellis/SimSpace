@@ -7,6 +7,7 @@
 #include "simulationdatabase.h"
 #include "simulationmanager.h"
 #include "resultstoolbar.h"
+#include <meshslicer.h>
 
 //! ----
 //! OCC
@@ -24,11 +25,6 @@
 occPostWidget::occPostWidget(QWidget *parent):occPreGLWidget(parent)
 {
     cout<<"occPostWidget::occPostWidget()->____CONSTRUCTOR CALLED I____"<<endl;
-
-    //! -------------------------------------
-    //! the occ context for the results view
-    //! -------------------------------------
-    //occPostContext = new AIS_InteractiveContext(occViewer);
 }
 
 //! ----------------------
@@ -40,15 +36,39 @@ occPostWidget::occPostWidget(meshDataBase *mDB, QWidget *parent):occPreGLWidget(
 {
     cout<<"occPostWidget::occPostWidget()->____CONSTRUCTOR CALLED II____"<<endl;
 
-    //! -------------------------------------
-    //! the occ context for the results view
-    //! -------------------------------------
-    //occPostContext = new AIS_InteractiveContext(occViewer);
-
     //! ---------------------------------
     //! the result presentation settings
     //! ---------------------------------
     myResultPresentation = Global::status().myResultPresentation;
+}
+
+//! -------------------------
+//! function: getPostContext
+//! details:
+//! -------------------------
+const occHandle(AIS_InteractiveContext)& occPostWidget::getPostContext() const
+{
+    return occPostContext;
+}
+
+//! ---------------
+//! function: init
+//! details:
+//! ---------------
+void occPostWidget::init()
+{
+    occPreGLWidget::init();
+    if(occPostContext.IsNull()) occPostContext = new AIS_InteractiveContext(occViewer);
+}
+
+//! ---------------------
+//! function: paintEvent
+//! details:
+//! ---------------------
+void occPostWidget::paintEvent(QPaintEvent *e)
+{
+    Q_UNUSED(e);
+    occPreGLWidget::paintEvent(e);
 }
 
 //! -------------------------
@@ -145,11 +165,6 @@ void occPostWidget::displayResult(sharedPostObject &aPostObject)
         const std::map<GeometryTag,occHandle(MeshVS_DeformedDataSource)> &mapOfMeshDS = aPostObject->getMeshDataSourcesForView();
         for(std::map<GeometryTag,occHandle(MeshVS_DeformedDataSource)>::const_iterator it = mapOfMeshDS.cbegin(); it!=mapOfMeshDS.cend(); it++)
         {
-            cout<<"@ ----------------------------------"<<endl;
-            cout<<"@ - number of nodes: "<<it->second->GetAllNodes().Extent()<<endl;
-            cout<<"@ - number of elements: "<<it->second->GetAllElements().Extent()<<endl;
-            cout<<"@ ----------------------------------"<<endl;
-
             occHandle(MeshVS_Mesh) aMeshObject = new MeshVS_Mesh();
             aMeshObject->SetDataSource(it->second);
 
@@ -211,6 +226,62 @@ void occPostWidget::displayResult(sharedPostObject &aPostObject)
     aResultPresentationOld = myResultPresentation;
 }
 
+//! ---------------------
+//! function: clipResult
+//! details:
+//! ---------------------
+void occPostWidget::clipResult()
+{
+    cout<<"occPostWidget::clipResult()->____function called____"<<endl;
+
+    //! --------------
+    //! a mesh slicer
+    //! --------------
+    meshSlicer aSlicer;
+
+    //! ------------------------------
+    //! iterate over the post objects
+    //! ------------------------------
+    AIS_ListOfInteractive listOfIO;
+    occPostContext->ObjectsInside(listOfIO);
+    for(AIS_ListIteratorOfListOfInteractive it(listOfIO); it.More(); it.Next())
+    {
+        const occHandle(MeshVS_Mesh) &aMesh = occHandle(MeshVS_Mesh)::DownCast(it.Value());
+        if(aMesh.IsNull()) continue;
+
+        //! --------------------------
+        //! reset the hidden elements
+        //! --------------------------
+        aMesh->SetHiddenNodes(new TColStd_HPackedMapOfInteger());
+
+        const occHandle(MeshVS_DataSource) &aMeshDS = aMesh->GetDataSource();
+        if(aMeshDS.IsNull()) continue;
+        aSlicer.setMeshDataSource(aMeshDS);
+
+        TColStd_PackedMapOfInteger hiddenElementIDs;
+        for(QMap<int,occHandle(Graphic3d_ClipPlane)>::const_iterator itplane = myMapOfClipPlanes.cbegin(); itplane != myMapOfClipPlanes.cend(); itplane++)
+        {
+            const occHandle(Graphic3d_ClipPlane) &aClipPlane = itplane.value();
+            if(aClipPlane->IsOn()==false) continue;
+            Graphic3d_ClipPlane::Equation eq = aClipPlane->GetEquation();
+            double a = eq.GetData()[0];
+            double b = eq.GetData()[1];
+            double c = eq.GetData()[2];
+            double d = eq.GetData()[3];
+
+            occHandle(TColStd_HPackedMapOfInteger) HHiddenElementIDs;
+            bool isDone = aSlicer.perform(a,b,c,d,HHiddenElementIDs);
+            if(isDone == false) return;
+            hiddenElementIDs.Union(hiddenElementIDs,HHiddenElementIDs->Map());
+        }
+        occHandle(TColStd_HPackedMapOfInteger) mapOfHiddenElements = new TColStd_HPackedMapOfInteger;
+        mapOfHiddenElements->ChangeMap() = hiddenElementIDs;
+        aMesh->SetHiddenElems(mapOfHiddenElements);
+        occPostContext->RecomputePrsOnly(aMesh,false,false);
+    }
+    occPostContext->UpdateCurrentViewer();
+}
+
 //! -------------------------------------
 //! function: updateViewerStatus
 //! details:  update the status variable
@@ -219,6 +290,7 @@ void occPostWidget::updateViewerStatus()
 {
     myResultPresentation = Global::status().myResultPresentation;
 
+    /*
     switch(myResultPresentation.theCombinedView)
     {
     case resultPresentation::combinedView_resultOnly: cout<<"occPostWidget::updateViewerStatus()->____results only____"<<endl; break;
@@ -227,6 +299,7 @@ void occPostWidget::updateViewerStatus()
     case resultPresentation::combinedView_undeformedWireFrame: cout<<"occPostWidget::updateViewerStatus()->____results and undeformed wireframe____"<<endl; break;
     }
     cout<<"occPostWidget::updateViewerStatus()->____scale: "<<myResultPresentation.theScale<<"____"<<endl;
+    */
 
     //! --------------------------------------------------------------
     //! this method calls the simulation manager, which in turn calls
@@ -262,7 +335,7 @@ void occPostWidget::setWorkingMode_Solution()
 {
     if(myCurWorkingMode!=curWorkingMode_onSolution)
     {
-        cout<<"occPreGLWidget::setWorkingMode_Solution()->____ON SOLUTION____"<<endl;
+        cout<<"occPostGLWidget::setWorkingMode_Solution()->____ON SOLUTION____"<<endl;
 
         //! ---------------------------
         //! change the internal status
@@ -285,8 +358,22 @@ void occPostWidget::setWorkingMode_Solution()
         //! --------------------------------------
         //! deactivate the current selection mode
         //! --------------------------------------
-        this->emptyTheSelection();
+        this->clearGeometrySelection(); //cesere
 
+        //! -----------------------------------------------------
+        //! deactivate all the selection modes of all the shapes
+        //! activate selection mode for FACEs
+        //! -----------------------------------------------------
+        AIS_ListOfInteractive listOfIO;
+        occContext->ObjectsInside(listOfIO,AIS_KOI_Shape,0);
+        for(AIS_ListIteratorOfListOfInteractive it(listOfIO); it.More(); it.Next())
+        {
+            occContext->Deactivate(it.Value());
+            occContext->Activate(it.Value(),TopAbs_FACE);
+        }
+        this->setSelectionMode(CurSelection_Nothing);
+
+        /*
         switch(myCurSelectionMode)
         {
         case CurSelection_Solid: occContext->DeactivateStandardMode(TopAbs_SOLID); break;
@@ -295,6 +382,7 @@ void occPostWidget::setWorkingMode_Solution()
         case CurSelection_Vertex: occContext->DeactivateStandardMode(TopAbs_VERTEX); break;
         default: break;
         }
+        */
 
         //! --------------------------
         //! show the results tool bar
@@ -314,10 +402,16 @@ void occPostWidget::setWorkingMode_Solution()
 //! --------------------------
 void occPostWidget::refreshMeshView(bool onlyExterior)
 {
-    //! ------------------------------------------------------
-    //! replace all the post object meshes with volume meshes
-    //! (when they are defined)
-    //! ------------------------------------------------------
     occPreGLWidget::refreshMeshView(onlyExterior);
+    //this->clipResult();
     isMeshViewVolume = (onlyExterior == true? false:true);
+}
+
+//! ----------------
+//! function: reset
+//! details:
+//! ----------------
+void occPostWidget::reset()
+{
+    occPreGLWidget::reset();
 }

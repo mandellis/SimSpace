@@ -188,7 +188,6 @@ void OpenFoamReader::setTargetDir(const QString &theTargetDir)
         dir.mkdir(myTargetDir);
     }
 }
-
 //! ---------------------------------------------------
 //! function: setSourceDir
 //! details:  set the location where reading the files
@@ -567,7 +566,7 @@ bool OpenFoamReader::perform(SimulationNodeClass *OFnode)
             fstream foutOverall;
 
             QString foutName = myTargetDir+QString(("/Body_%1_Time_%2.txt")).arg(dirName).arg(curDirName);
-            QString foutNameOverall = myTargetDir+QString(("/Overall_%1.txt")).arg(curDirName);            
+            QString foutNameOverall = myTargetDir+QString(("/Overall_%1.txt")).arg(curDirName);
 
             cout<<"OpenFoamReader::perform()->____target directory: "<<myTargetDir.toStdString()<<"____"<<endl;
 
@@ -652,13 +651,11 @@ bool OpenFoamReader::perform(SimulationNodeClass *OFnode)
                 {
                     int faceGlobalNumber = internalFieldIndexes.at(i);
                     QList<double> sourcePoint = map.value(faceGlobalNumber);
-
                     //! write on disk
                     if(myFileMode==1) fprintf(foutData,"%.9e\t%.9e\t%.9e\t%.9e\n",sourcePoint.at(0)*SCALE,sourcePoint.at(1)*SCALE,sourcePoint.at(2)*SCALE,value);
-
                     //! or store in memory ...
                 }
-                */                
+                */
             }
             else    //! case "non uniform"
             {
@@ -716,26 +713,20 @@ bool OpenFoamReader::perform(SimulationNodeClass *OFnode)
                 for(int row=0;;row++)
                 {
                     double scalarValue=0;
-
                     std::getline(is,val);
                     sscanf(val.c_str(),"%s",value);
-
                     if(strcmp(value,")")==0)
                     {
                         std::getline(is,val);   //! capture ";"
                         //cout<<"------------------>"<<val.c_str()<<endl;
                         break;
                     }
-
                     sscanf(val.c_str(),"%lf",&scalarValue);
                     //cout<<"non uniform scalar value: "<<scalarValue<<endl;  //! diagnostic
-
                     //!int faceGlobalNumber = internalFieldIndexes.at(row);
                     //!QList<double> sourcePoint = map.value(faceGlobalNumber);
-
                     //! write on disk
                     if(myFileMode==1) fprintf(foutData,"%.9e\t%.9e\t%.9e\t%.9e\n",sourcePoint.at(0)*SCALE,sourcePoint.at(1)*SCALE,sourcePoint.at(2)*SCALE,scalarValue+273.15);
-
                     //! or store in memory ...
                 }
                 */
@@ -779,7 +770,6 @@ bool OpenFoamReader::perform(SimulationNodeClass *OFnode)
                             {
                                 int faceGlobalNumber = indexes.at(i);
                                 double *sourcePoint = myMapOfFaceCenters.value(faceGlobalNumber);
-
                                 //! write on disk
                                 char s[512];
                                 sprintf(s,"%.9e\t%.9e\t%.9e\t%.9e\n",sourcePoint[0]*SCALE,sourcePoint[1]*SCALE,sourcePoint[2]*SCALE,value+273.15);
@@ -796,7 +786,6 @@ bool OpenFoamReader::perform(SimulationNodeClass *OFnode)
                         }
                         else
                         {
-
                             //!----------------------------------------------------------------
                             //! Handling nonuniform value per column
                             //! details:
@@ -806,13 +795,11 @@ bool OpenFoamReader::perform(SimulationNodeClass *OFnode)
                             cout<<"OpenFoamReader::perform()->____reading boundary block nonuniform scalarValue value = "<<val<<endl;
                             sscanf(val.c_str(),"%s%s%s%s",type1,type2,type3,type4);
                             cout<<"OpenFoamReader::perform()->____reading boundary block type4  = "<<type4<<endl;
-
                             //! -----------------------------------------
                             //! small record of data collected "in line"
                             //! jump over it
                             //! -----------------------------------------
                             if(type4==NULL) continue;
-
                             //! handling non-uniform as before
                             cout<<"OpenFoamReader::perform()->____type: non uniform____"<<endl;
                             std::getline(is,val);
@@ -820,7 +807,6 @@ bool OpenFoamReader::perform(SimulationNodeClass *OFnode)
                             cout<<"OpenFoamReader::perform()->____number of data: "<<val<<endl;
                             char s[512];
                             int n=0;
-
                             for(int row=0;;row++)
                             {
                                 std::getline(is,val);   //! capture "("
@@ -842,9 +828,7 @@ bool OpenFoamReader::perform(SimulationNodeClass *OFnode)
                                     if(n==1) cout<<indexes.length()<<endl;
                                     //cout<<"@row: "<<row<<endl;
                                     int faceGlobalNumber = indexes[row];   //! check carefully
-
                                     double *sourcePoint = myMapOfFaceCenters.value(faceGlobalNumber);
-
                                     //! --------------
                                     //! write on disk
                                     //! --------------
@@ -870,9 +854,7 @@ bool OpenFoamReader::perform(SimulationNodeClass *OFnode)
             }
 #endif
             is.close();
-
             curDir.cdUp();
-
             cout<<"OpenFoamReader::perform()->____cur directory: \""<<curDir.absolutePath().toStdString()<<
                   "\" => Now exiting the time folder____"<<endl;
 
@@ -1546,7 +1528,6 @@ void OpenFoamReader::openWithLock(fstream &stream, const char *fileName, std::io
         lockFile.open(lockFileName);
     }
 }
-
 //! -----------------------------
 //! function: closeAndRemoveLock
 //! details:

@@ -558,8 +558,6 @@ SimulationNodeClass::nodeType SimulationNodeClass::getFamily()
     case nodeType_solutionStructuralEquivalentPlasticStrain:
     case nodeType_solutionStructuralNodalForces:
     case nodeType_solutionStructuralContact:
-    case nodeType_solutionStructuralGamma:
-    case nodeType_solutionStructuralReactionForce:
         RV = nodeType_StructuralAnalysisSolution;
         break;
 
@@ -1072,8 +1070,6 @@ void SimulationNodeClass::createSeparators()
     case nodeType_solutionStructuralEquivalentPlasticStrain:
     case nodeType_solutionStructuralNodalForces:
     case nodeType_solutionStructuralContact:
-    case nodeType_solutionStructuralGamma:
-    case nodeType_solutionStructuralReactionForce:
         myNodeRootItem->appendRow(itemScope);
         myNodeRootItem->appendRow(itemDefinition);
         myNodeRootItem->appendRow(itemGraphicObject);

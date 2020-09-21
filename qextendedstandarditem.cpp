@@ -176,9 +176,8 @@ QVariant QExtendedStandardItem::data(int role) const
             else data.setValue(QString("%1").arg(dtm.size()));
             return data;
         }
-#ifdef COSTAMP_VERSION
         //! --------------------
-        //! "Discrete time map"
+        //! "Time list"
         //! --------------------
         if(name=="Time list")
         {
@@ -187,7 +186,6 @@ QVariant QExtendedStandardItem::data(int role) const
             else data.setValue(QString("%1").arg(timeList.size()));
             return data;
         }
-#endif
         //! ---------------
         //! "Solver output
         //! ---------------
@@ -1049,8 +1047,6 @@ QVariant QExtendedStandardItem::data(int role) const
             case SimulationNodeClass::nodeType_solutionStructuralTemperature:
             case SimulationNodeClass::nodeType_solutionStructuralThermalStrain:
             case SimulationNodeClass::nodeType_solutionStructuralTotalStrain:
-            case SimulationNodeClass::nodeType_solutionStructuralGamma:
-            case SimulationNodeClass::nodeType_solutionStructuralReactionForce:
             {
                 int val = QStandardItem::data(Qt::UserRole).value<Property>().getData().toInt();
                 switch(val)
@@ -1765,7 +1761,6 @@ QVariant QExtendedStandardItem::data(int role) const
             case Property::overpressureFunction_exponential: data.setValue(QString("Exponential")); break;
             case Property::overpressureFunction_linear: data.setValue(QString("Linear")); break;
             case Property::overpressureFunction_tied: data.setValue(QString("Tied")); break;
-            case Property::overpressureFunction_hard: data.setValue(QString("Hard")); break;
             }
             return data;
         }
@@ -2413,7 +2408,6 @@ QIcon QExtendedStandardItem::getIcon(SimulationNodeClass::nodeType theNodeType) 
     case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Moment: return QIcon(":/icons/icon_BC moment.png"); break;
     case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Force:
     case SimulationNodeClass::nodeType_solutionStructuralNodalForces: return QIcon(":/icons/icon_BC force.png"); break;
-    case SimulationNodeClass::nodeType_solutionStructuralReactionForce: return QIcon(":/icons/icon_BC force.png"); break;
     case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Pressure: return QIcon(":/icons/icon_BC pressure.png"); break;
     case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_ImportedTemperatureDistribution: return QIcon(":/icons/icon_insert body temperature dist.png");
     case SimulationNodeClass::nodeType_namedSelection: return QIcon(":/icons/icon_named selection root item.png");break;
@@ -2421,7 +2415,7 @@ QIcon QExtendedStandardItem::getIcon(SimulationNodeClass::nodeType theNodeType) 
     case SimulationNodeClass::nodeType_namedSelectionGeometry: return QIcon(":/icons/icon_named selection geometry.png"); break;
     case SimulationNodeClass::nodeType_coordinateSystems: case SimulationNodeClass::nodeType_coordinateSystem:
     case SimulationNodeClass::nodeType_coordinateSystem_global: return QIcon(":/icons/icon_system of reference.png"); break;
-    case SimulationNodeClass::nodeType_solutionStructuralGamma: return QIcon(":/icons/icon_BC force.png"); break;
+
         //! -----------
         //! "Solution"
         //! -----------

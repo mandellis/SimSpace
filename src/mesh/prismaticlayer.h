@@ -68,7 +68,9 @@ public:
     //! set prismatic faces
     //! (bodyIndex, list of prismatic faces on body)
     //! ---------------------------------------------
-    void setPrismaticFaces(const QList<int> &prismaticFaces);
+    //void setPrismaticFaces(const QList<int> &prismaticFaces);
+    void setPrismaticFaces(const std::vector<int> &prismaticFaces);
+
 
     //! -----------------------------
     //! get all the thickness values
@@ -147,7 +149,8 @@ private:
     //! prismatic faces: list of prismatic faces on a body
     //! key: body index; value: list of prismatic faces
     //! ---------------------------------------------------
-    QList<int> myPrismaticFaces;
+    //QList<int> myPrismaticFaces;
+    std::vector<int> myPrismaticFaces;
 
     //! -----------
     //! parameters

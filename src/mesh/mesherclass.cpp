@@ -159,10 +159,10 @@ void MesherClass::setProgressIndicator(QProgressIndicator *aProgressIndicator)
     connect(myNetgenMesher,SIGNAL(requestStoppingNetgenEnquireTimer()),this,SLOT(handleRequestStoppingNetgenEnquireTimer()));
 }
 
-//! -------------------------------
+//! --------------------------
 //! function: postUpdateEvent
-//! details:  post an update event
-//! -------------------------------
+//! details:
+//! --------------------------
 void MesherClass::postUpdateEvent(QProgressEvent *aProgressEvent)
 {
     if(myProgressIndicator!=Q_NULLPTR)
@@ -241,7 +241,7 @@ void MesherClass::generateMesh()
                 QProgressEvent *pe = new QProgressEvent();
                 pe->setVal(done);
                 pe->setMessage(QString("Start meshing body %1").arg(myMeshDB->MapOfBodyNames.value(bodyIndex)));
-                postUpdateEvent(pe);
+                this->postUpdateEvent(pe);
 
                 Sleep(MESHING_STATUS_MESSAGE_PERSISTANCE);
 
@@ -256,9 +256,10 @@ void MesherClass::generateMesh()
                 //! ---------------------------------------------------------------
                 myMeshDB->ArrayOfMeshIsToBeUdpdated.insert(bodyIndex,true);
 
-                //! ------------------------------------------------------
-                //! mesh CAD a geometry (use the boundary representation)
-                //! ------------------------------------------------------
+                //! ---------------------------------------------------------------------
+                //! useBRep ON  => mesh CAD a geometry (use the boundary representation)
+                //! useBRep OFF => mesh from a tessellation of the boundary
+                //! ---------------------------------------------------------------------
                 if(useBRep)
                 {
                     switch(MeshEngine2D)
@@ -271,7 +272,7 @@ void MesherClass::generateMesh()
                         QProgressEvent *pe = new QProgressEvent(QProgressEvent_Init,0,NbSteps-1,0,
                                                                 "Meshing surface using Netgen",
                                                                 QProgressEvent_Init,0,100,0,"Netgen meshing");
-                        postUpdateEvent(pe);
+                        this->postUpdateEvent(pe);
                         userMessage mr = Netgen_generateSurfaceMesh(bodyIndex,mainMesh2D);
                         Global::status().myMessages->appendMessage(mr);
                     }
@@ -318,10 +319,10 @@ void MesherClass::generateMesh()
                     }
                 }
 
-                //! --------------------------------------------------------
+                //! ---------------------------------------------------------
                 //! after the surface mesh has been generated, generate
-                //! the boundary mesh, prismatic or tetrahedral if required
-                //! --------------------------------------------------------
+                //! the boundary mesh, prismatic or tetrahedral, if required
+                //! ---------------------------------------------------------
                 bool isInflationDefinedOnBody = myMeshDB->HasPrismaticFaces.value(bodyIndex);
                 if(isInflationDefinedOnBody)
                 {
@@ -1306,11 +1307,12 @@ userMessage MesherClass::PrismaticLayers_generatePrismaticMesh(int bodyIndex,
     //! ---------------------------
     if(myProgressIndicator!=Q_NULLPTR) prismaticLayerBuilder.setProgressIndicator(myProgressIndicator);
 
-    //! ------------------------------------------------------
-    //! retrieve the list of the prismatic faces for the body
-    //! ------------------------------------------------------
+    //! --------------------------------------------------------------------------
+    //!  retrieve the list of the prismatic faces for the body (list of face IDs)
+    //! --------------------------------------------------------------------------
     const QList<int> &prismaticFacesOnBody = myMeshDB->prismaticFaces.value(bodyIndex);
-    prismaticLayerBuilder.setPrismaticFaces(prismaticFacesOnBody);
+    std::vector<int> prismaticFaces = prismaticFacesOnBody.toVector().toStdVector();
+    prismaticLayerBuilder.setPrismaticFaces(prismaticFaces);
 
     //! ---------------------------------------------------------------
     //! merge the prismatic face meshes into a unique mesh data source
@@ -2637,7 +2639,8 @@ userMessage MesherClass::PrismaticLayers_generatePrismaticMesh_post(int bodyInde
     //! retrieve the list of the prismatic faces for the body
     //! ------------------------------------------------------
     const QList<int> &prismaticFacesOnBody = myMeshDB->prismaticFaces.value(bodyIndex);
-    prismaticLayerBuilder.setPrismaticFaces(prismaticFacesOnBody);
+    std::vector<int> prismaticFaces = prismaticFacesOnBody.toVector().toStdVector();
+    prismaticLayerBuilder.setPrismaticFaces(prismaticFaces);
 
     //! -------------------------------------------------------
     //! initialize the prismatic layer builder

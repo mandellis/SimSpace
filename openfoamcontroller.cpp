@@ -26,7 +26,7 @@ openFoamController::openFoamController(/*const QString &sourceDirPath,
                                        int fileMode,
                                        QProgressIndicator *aProgressIndicator,
                                        QObject *parent): QObject(parent)
-{    
+{
     myProgressIndicator = aProgressIndicator;
 
     //! ---------------------
@@ -113,7 +113,7 @@ void openFoamController::stopThread()
         QString fileName1 = fileName.split(".").last();
         if(fileName1.split(".").last()=="lck")
         {
-            cout<<"____"<<fileName.toStdString()<<"____"<<endl;            
+            cout<<"____"<<fileName.toStdString()<<"____"<<endl;
             cout<<"____"<<fileName1.toStdString()<<"____"<<endl;
             filesToRemove<<fileName;
             fileName.chop(4);

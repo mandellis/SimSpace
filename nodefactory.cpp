@@ -629,10 +629,6 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
         vecProp.push_back(prop_sourceFile);
         vecProp.push_back(prop_savingDirectoryPath);
 
-        //! under definition
-        //data.setValue(false);
-        //Property prop_translate("Translate",data,Property::PropertyGroup_Definition);
-        //vecProp.push_back(prop_translate);
         //! props timeList
         QVector<double> timeList;
         data.setValue(timeList);
@@ -2174,22 +2170,6 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
     case SimulationNodeClass::nodeType_solutionStructuralTemperature:
     {
         name = "Temperature";
-        //! ------------------------------------------------------------------
-        //! redefine tags and scope:
-        //! initially the scope is "All bodies" for the structural diagnostic
-        //! ------------------------------------------------------------------
-        int NbBodies = mDB->bodyMap.size();
-        ListOfShape scope;
-        for(int i=1; i<= NbBodies; i++)
-        {
-            TopoDS_Solid aSolid = TopoDS::Solid(mDB->bodyMap.value(i));
-            scope.Append(aSolid);
-        }
-        std::vector<GeometryTag> vecLocAllBodies = TopologyTools::generateLocationPairs(mDB, scope);
-
-        data.setValue(vecLocAllBodies);
-        Property prop_scopeAllBodies("Geometry",data,Property::PropertyGroup_Scope);
-        Property prop_tagsAllBodies("Tags",data,Property::PropertyGroup_Scope);
 
         //! under scope
         vecProp.push_back(prop_scopingMethod);
@@ -2261,23 +2241,6 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
             name.append(suffix);
         }
 
-        //! ------------------------------------------------------------------
-        //! redefine tags and scope:
-        //! initially the scope is "All bodies" for the structural diagnostic
-        //! ------------------------------------------------------------------
-        int NbBodies = mDB->bodyMap.size();
-        ListOfShape scope;
-        for(int i=1; i<= NbBodies; i++)
-        {
-            TopoDS_Solid aSolid = TopoDS::Solid(mDB->bodyMap.value(i));
-            scope.Append(aSolid);
-        }
-        std::vector<GeometryTag> vecLocAllBodies = TopologyTools::generateLocationPairs(mDB, scope);
-
-        data.setValue(vecLocAllBodies);
-        Property prop_scopeAllBodies("Geometry",data,Property::PropertyGroup_Scope);
-        Property prop_tagsAllBodies("Tags",data,Property::PropertyGroup_Scope);
-
         //! under scope
         vecProp.push_back(prop_scopingMethod);
         vecProp.push_back(prop_scope);
@@ -2340,75 +2303,6 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
         case 1: name = "Directional force X"; break;
         case 2: name = "Directional force Y"; break;
         case 3: name = "Directional force Z"; break;
-        }
-
-        for(std::vector<GeometryTag>::iterator it = vecLoc.begin(); it!=vecLoc.end(); ++it)
-        {
-            const GeometryTag curLoc = *it;
-            int parentShapeNr = curLoc.parentShapeNr;
-            QString suffix = mDB->MapOfBodyNames.value(parentShapeNr)+" ";
-            name.append(suffix);
-        }
-
-        //! under scope
-        vecProp.push_back(prop_scopingMethod);
-        vecProp.push_back(prop_scope);
-        vecProp.push_back(prop_tags);
-
-        //! under definition
-        //! the component (total, X, Y, Z) is provided by the calling function through the addOptions
-        Property prop_type("Type ",typeOfForces,Property::PropertyGroup_Definition);
-        vecProp.push_back(prop_type);
-
-        //! ---------------------------------------------------------------------------
-        //! under definition
-        //! "By" selector: it provides options "Time" and "Set"
-        //! Here "By"="Time", so the "Display time" property is created
-        //! If "By" is changed into "Set", the DetailViewer replace the "Display time"
-        //! with "Set Number"
-        //! 0 => "Time"
-        //! 1 => "Set number"
-        //! ---------------------------------------------------------------------------
-        data.setValue(0.0);
-        Property prop_By("By",data,Property::PropertyGroup_Definition);
-        vecProp.push_back(prop_By);
-        Property prop_displayTime("Display time",data,Property::PropertyGroup_Definition);
-        vecProp.push_back(prop_displayTime);
-
-        //! mode
-        data.setValue(0);
-        Property prop_modeNumber("Mode number",data,Property::PropertyGroup_Definition);
-        vecProp.push_back(prop_modeNumber);
-
-        //! ---------------------------------------------------
-        //! type of scale: "0" => "Autoscale"; "1" => "Custom"
-        //! ---------------------------------------------------
-        int typeOfScale = 0;
-        data.setValue(typeOfScale);
-        Property prop_scaleType("Scale type",data,Property::PropertyGroup_ColorBox);
-        vecProp.push_back(prop_scaleType);
-
-        //! ------------------------------------------------
-        //! Number of intervals: "0" => "Program controlled
-        //! ------------------------------------------------
-        int NbIntervals = INITIAL_NUMBER_OF_COLORBOX_LEVELS;
-        data.setValue(NbIntervals);
-        Property prop_NbIntervals("# intervals",data,Property::PropertyGroup_ColorBox);
-        vecProp.push_back(prop_NbIntervals);
-    }
-        break;
-    case SimulationNodeClass::nodeType_solutionStructuralReactionForce:
-    {
-        //! read options
-        int typeOfForces = addOptions.toInt();
-
-        //! prepare the name
-        switch(typeOfForces)
-        {
-        case 0: name = "Total reaction force"; break;
-        case 1: name = "Directional reaction force X"; break;
-        case 2: name = "Directional reaction force Y"; break;
-        case 3: name = "Directional reaction force Z"; break;
         }
 
         for(std::vector<GeometryTag>::iterator it = vecLoc.begin(); it!=vecLoc.end(); ++it)
@@ -2620,98 +2514,18 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
     }
         break;
 
-    case SimulationNodeClass::nodeType_solutionStructuralGamma:
-    {
-        name = "Gamma";
-        //! ------------------------------------------------------------------
-        //! redefine tags and scope:
-        //! initially the scope is "All bodies" for the structural diagnostic
-        //! ------------------------------------------------------------------
-        int NbBodies = mDB->bodyMap.size();
-        ListOfShape scope;
-        for(int i=1; i<= NbBodies; i++)
-        {
-            TopoDS_Solid aSolid = TopoDS::Solid(mDB->bodyMap.value(i));
-            scope.Append(aSolid);
-        }
-        std::vector<GeometryTag> vecLocAllBodies = TopologyTools::generateLocationPairs(mDB, scope);
-
-        data.setValue(vecLocAllBodies);
-        Property prop_scopeAllBodies("Geometry",data,Property::PropertyGroup_Scope);
-        Property prop_tagsAllBodies("Tags",data,Property::PropertyGroup_Scope);
-
-        //! under scope
-        vecProp.push_back(prop_scopingMethod);
-        vecProp.push_back(prop_scopeAllBodies);
-        vecProp.push_back(prop_tagsAllBodies);
-
-        //! --------
-        //! "Type "
-        //! --------
-        int dummyType = 0;
-        data.setValue(dummyType);
-        Property prop_type("Type ",data,Property::PropertyGroup_Definition);
-        vecProp.push_back(prop_type);
-
-        //! ---------------------------------------------------------------------------
-        //! under definition
-        //! "By" selector: it provides options "Time" and "Set"
-        //! Here "By"="Time", so the "Display time" property is created
-        //! If "By" is changed into "Set", the DetailViewer replace the "Display time"
-        //! with "Set Number"
-        //! 0 => "Time"
-        //! 1 => "Set number"
-        //! ---------------------------------------------------------------------------
-        data.setValue(0.0);
-        Property prop_By("By",data,Property::PropertyGroup_Definition);
-        vecProp.push_back(prop_By);
-        Property prop_displayTime("Display time",data,Property::PropertyGroup_Definition);
-        vecProp.push_back(prop_displayTime);
-
-        //! mode
-        data.setValue(0);
-        Property prop_modeNumber("Mode number",data,Property::PropertyGroup_Definition);
-        vecProp.push_back(prop_modeNumber);
-/*
-        //! mode
-        data.setValue(0);
-        Property prop_modeNumber("Mode number",data,Property::PropertyGroup_Definition);
-        vecProp.push_back(prop_modeNumber);
-
-        //! mode
-        data.setValue(0);
-        Property prop_modeNumber("Mode number",data,Property::PropertyGroup_Definition);
-        vecProp.push_back(prop_modeNumber);
-
-        //! mode
-        data.setValue(0);
-        Property prop_modeNumber("Mode number",data,Property::PropertyGroup_Definition);
-        vecProp.push_back(prop_modeNumber);*/
-
-        //! ---------------------------------------------------
-        //! type of scale: "0" => "Autoscale"; "1" => "Custom"
-        //! ---------------------------------------------------
-        int typeOfScale = 0;
-        data.setValue(typeOfScale);
-        Property prop_scaleType("Scale type",data,Property::PropertyGroup_ColorBox);
-        vecProp.push_back(prop_scaleType);
-
-        //! ------------------------------------------------
-        //! Number of intervals: "0" => "Program controlled
-        //! ------------------------------------------------
-        int NbIntervals = INITIAL_NUMBER_OF_COLORBOX_LEVELS;
-        data.setValue(NbIntervals);
-        Property prop_NbIntervals("# intervals",data,Property::PropertyGroup_ColorBox);
-        vecProp.push_back(prop_NbIntervals);
-    }
-        break;
-
         //! ------------------------------
         //! thermal solution thermal flux
         //! ------------------------------
     case SimulationNodeClass::nodeType_solutionThermalFlux:
     {
         name = "Thermal flux";
+
+        //! under scope
+        //vecProp.push_back(prop_scopingMethod);
+        //vecProp.push_back(prop_scope);
+        //vecProp.push_back(prop_tags);
+
         //! ------------------------------------------------------------------
         //! redefine tags and scope:
         //! initially the scope is "All bodies" for the structural diagnostic

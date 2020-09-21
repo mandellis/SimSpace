@@ -25,7 +25,6 @@
 //! global
 //! -------
 #include "global.h"
-#include "map"
 
 //! ---
 //! Qt
@@ -717,253 +716,253 @@ bool writeSolverFileClass::perform()
             SimulationNodeClass *node = item->data(Qt::UserRole).value<SimulationNodeClass*>();
             Property::SuppressionStatus ss = node->getPropertyValue<Property::SuppressionStatus>("Suppressed");
             if(ss==Property::SuppressionStatus_Active)
-            {
-                QString timeTag = node->getPropertyValue<QString>("Time tag");
-                Property::contactType theContactType = node->getPropertyValue<Property::contactType>("Type");
-                Property::contactBehavior theContactBehavior = node->getPropertyValue<Property::contactBehavior>("Behavior");
-                Property::contactFormulation theContactFormulation = node->getPropertyValue<Property::contactFormulation>("Formulation");
-                Property::overpressureFunction theOverPressure = node->getPropertyValue<Property::overpressureFunction>("Overpressure");
+             {
+                 QString timeTag = node->getPropertyValue<QString>("Time tag");
+                 Property::contactType theContactType = node->getPropertyValue<Property::contactType>("Type");
+                 Property::contactBehavior theContactBehavior = node->getPropertyValue<Property::contactBehavior>("Behavior");
+                 Property::contactFormulation theContactFormulation = node->getPropertyValue<Property::contactFormulation>("Formulation");
+                 Property::overpressureFunction theOverPressure = node->getPropertyValue<Property::overpressureFunction>("Overpressure");
 
-                //! Normal stiffness
-                double K,KF,KN;
-                KF = node->getPropertyValue<double>("K");
-                if(KF == 0) KF=1;
+                 //! Normal stiffness
+                 double K,KF,KN;
+                 KF = node->getPropertyValue<double>("K");
+                 if(KF == 0) KF=1;
 
-                std::vector<GeometryTag> tagsMaster = node->getPropertyValue<std::vector<GeometryTag>>("Tags master");
-                std::vector<GeometryTag> tagsSlave = node->getPropertyValue<std::vector<GeometryTag>>("Tags slave");
-                QList<occHandle(Ng_MeshVS_DataSourceFace)> masterFaces,slaveFaces;
+                 std::vector<GeometryTag> tagsMaster = node->getPropertyValue<std::vector<GeometryTag>>("Tags master");
+                 std::vector<GeometryTag> tagsSlave = node->getPropertyValue<std::vector<GeometryTag>>("Tags slave");
+                 QList<occHandle(Ng_MeshVS_DataSourceFace)> masterFaces,slaveFaces;
 
-                for(std::vector<GeometryTag>::iterator it = tagsMaster.begin(); it!= tagsMaster.end(); ++it)
-                {
-                    GeometryTag aLoc = *it;
-                    int bodyIndex = aLoc.parentShapeNr;
-                    int faceIndex = aLoc.subTopNr;
+                 for(std::vector<GeometryTag>::iterator it = tagsMaster.begin(); it!= tagsMaster.end(); ++it)
+                 {
+                     GeometryTag aLoc = *it;
+                     int bodyIndex = aLoc.parentShapeNr;
+                     int faceIndex = aLoc.subTopNr;
 
-                    const occHandle(Ng_MeshVS_DataSourceFace) &faceMesh = occHandle(Ng_MeshVS_DataSourceFace)::DownCast(myDB->ArrayOfMeshDSOnFaces.getValue(bodyIndex,faceIndex));
-                    masterFaces<<faceMesh;
-                }
-                for(std::vector<GeometryTag>::iterator itt = tagsSlave.begin(); itt!= tagsSlave.end(); ++itt)
-                {
-                    GeometryTag aLoc = *itt;
-                    int bodyIndex = aLoc.parentShapeNr;
-                    int faceIndex = aLoc.subTopNr;
+                     const occHandle(Ng_MeshVS_DataSourceFace) &faceMesh = occHandle(Ng_MeshVS_DataSourceFace)::DownCast(myDB->ArrayOfMeshDSOnFaces.getValue(bodyIndex,faceIndex));
+                     masterFaces<<faceMesh;
+                 }
+                 for(std::vector<GeometryTag>::iterator itt = tagsSlave.begin(); itt!= tagsSlave.end(); ++itt)
+                 {
+                     GeometryTag aLoc = *itt;
+                     int bodyIndex = aLoc.parentShapeNr;
+                     int faceIndex = aLoc.subTopNr;
 
-                    const occHandle(Ng_MeshVS_DataSourceFace) &faceMesh = occHandle(Ng_MeshVS_DataSourceFace)::DownCast(myDB->ArrayOfMeshDSOnFaces.getValue(bodyIndex,faceIndex));
-                    slaveFaces<<faceMesh;
-                }
-                K = contactParameters::calc_K(masterFaces,slaveFaces);
-                KN = K*KF;
-                //! C0
-                double C0 = node->getPropertyValue<double>("C0");
-                //! P0
-                double P0 = node->getPropertyValue<double>("P0");
-                //! sigmaInfinity
-                double sigmaInfinity = node->getPropertyValue<double>("Sigma infinity");
-                //! Small sliding
-                int smallSliding = node->getPropertyValue<int>("Small sliding");
-                //! Adjust to touch
-                int adjust = node->getPropertyValue<int>("Adjust to touch");
-                //! fiction coefficient
-                double frictionCoefficient = node->getPropertyValue<double>("Friction coefficient");
-                //! lambda
-                double lambda = node->getPropertyValue<double>("Lambda");
-                if(lambda == 0)
-                {
-                    lambda = KN/20.0;
-                }
-                //! gap conductance
-                double gapConductance = node->getPropertyValue<double>("Thermal conductance");
-                //! Master and slave set name
-                std::string slaveName,masterName;
-                masterName = contactMapName.value(timeTag).second.toStdString();
-                slaveName = contactMapName.value(timeTag).first.toStdString();
-                //! contactName
-                std::string contactName=itemNameClearSpaces(item->data(Qt::DisplayRole).toString().append("_%1").arg(n).append("%1").arg(k+1)).toStdString();
+                     const occHandle(Ng_MeshVS_DataSourceFace) &faceMesh = occHandle(Ng_MeshVS_DataSourceFace)::DownCast(myDB->ArrayOfMeshDSOnFaces.getValue(bodyIndex,faceIndex));
+                     slaveFaces<<faceMesh;
+                 }
+                 K = contactParameters::calc_K(masterFaces,slaveFaces);
+                 KN = K*KF;
+                 //! C0
+                 double C0 = node->getPropertyValue<double>("C0");
+                 //! P0
+                 double P0 = node->getPropertyValue<double>("P0");
+                 //! sigmaInfinity
+                 double sigmaInfinity = node->getPropertyValue<double>("Sigma infinity");
+                 //! Small sliding
+                 int smallSliding = node->getPropertyValue<int>("Small sliding");
+                 //! Adjust to touch
+                 int adjust = node->getPropertyValue<int>("Adjust to touch");
+                 //! fiction coefficient
+                 double frictionCoefficient = node->getPropertyValue<double>("Friction coefficient");
+                 //! lambda
+                 double lambda = node->getPropertyValue<double>("Lambda");
+                 if(lambda == 0)
+                 {
+                     lambda = KN/20.0;
+                 }
+                 //! gap conductance
+                 double gapConductance = node->getPropertyValue<double>("Thermal conductance");
+                 //! Master and slave set name
+                 std::string slaveName,masterName;
+                 masterName = contactMapName.value(timeTag).second.toStdString();
+                 slaveName = contactMapName.value(timeTag).first.toStdString();
+                 //! contactName
+                 std::string contactName=itemNameClearSpaces(item->data(Qt::DisplayRole).toString().append("_%1").arg(n).append("%1").arg(k+1)).toStdString();
 
-                switch(theContactType)
-                {
-                case Property::contactType_bonded:
-                {
-                    if(theContactFormulation==Property::contactFormulation_MPC)
-                    {
-                        //! 1st) *TIE,<TOLERANCE: C0>,<NAME OF THE CONNECTION>
-                        //! 2st) <SLAVE SURF NAME>,<MASTER SURF NAME>
-                        //! ---------------------------------------------------
-                        if(C0==0.0) C0=1.0;
-                        //! ---------
-                        //! 1st) row
-                        //! ---------
-                        myInputFile<<"*TIE, ";
-                        if(adjust==0) myInputFile<<"ADJUST = NO,";
-                        myInputFile<<"POSITION TOLERANCE="<<C0<<", NAME="<<contactName<<endl;
-                        //! ---------
-                        //! 2nd) row
-                        //! ---------
-                        myInputFile<<slaveName<<","<<masterName<<"\n";
-                    }
-                    if(theContactFormulation==Property::contactFormulation_penalty)
-                    {
-                        //TO DO
-                    }
+                 switch(theContactType)
+                 {
+                 case Property::contactType_bonded:
+                 {
+                     if(theContactFormulation==Property::contactFormulation_MPC)
+                     {
+                         //! 1st) *TIE,<TOLERANCE: C0>,<NAME OF THE CONNECTION>
+                         //! 2st) <SLAVE SURF NAME>,<MASTER SURF NAME>
+                         //! ---------------------------------------------------
+                         if(C0==0.0) C0=1.0;
+                         //! ---------
+                         //! 1st) row
+                         //! ---------
+                         myInputFile<<"*TIE, ";
+                         if(adjust==0) myInputFile<<"ADJUST = NO,";
+                         myInputFile<<"POSITION TOLERANCE="<<C0<<", NAME="<<contactName<<endl;
+                         //! ---------
+                         //! 2nd) row
+                         //! ---------
+                         myInputFile<<slaveName<<","<<masterName<<"\n";
+                     }
+                     if(theContactFormulation==Property::contactFormulation_penalty)
+                     {
+                         //TO DO
+                     }
 
-                }
-                    break;
-                case Property::contactType_frictional:
-                case Property::contactType_frictionless:
-                {
-                    //! ----------------------------------------------------------------------------------------------------------
-                    //! frictional or frictionless contact
-                    //!
-                    //! 1st) *CONTACT PAIR,INTERACTION=<name of the contact pair>,TYPE=NODE TO SURFACE,SMALL SLIDING <if defined>
-                    //! 2nd) <slave node set>, <master face set>
-                    //! 3rd) *SURFACE INTERACTION, NAME = <name of the contact pair>
-                    //! 4th) *SURFACE BEHAVIOR, PRESSURE-OVERCLOSURE = <LINEAR, EXPONENTIAL, TABULAR>
-                    //! 5th) *FRICTION
-                    //! 6th) <friction coefficient>, <lambda>
-                    //! ----------------------------------------------------------------------------------------------------------
+                 }
+                     break;
+                 case Property::contactType_frictional:
+                 case Property::contactType_frictionless:
+                 {
+                     //! ----------------------------------------------------------------------------------------------------------
+                     //! frictional or frictionless contact
+                     //!
+                     //! 1st) *CONTACT PAIR,INTERACTION=<name of the contact pair>,TYPE=NODE TO SURFACE,SMALL SLIDING <if defined>
+                     //! 2nd) <slave node set>, <master face set>
+                     //! 3rd) *SURFACE INTERACTION, NAME = <name of the contact pair>
+                     //! 4th) *SURFACE BEHAVIOR, PRESSURE-OVERCLOSURE = <LINEAR, EXPONENTIAL, TABULAR>
+                     //! 5th) *FRICTION
+                     //! 6th) <friction coefficient>, <lambda>
+                     //! ----------------------------------------------------------------------------------------------------------
 
-                    //! ---------
-                    //! 1st) row
-                    //! ---------
-                    myInputFile<<"*CONTACT PAIR, INTERACTION = "<<contactName<<",";
-                    if(theContactFormulation!=Property::contactFormulation_lagrange)
-                    {
-                        if(theContactBehavior==Property::contactBehavior_asymmetric)
-                        {
-                            myInputFile<<" TYPE = NODE TO SURFACE";
-                            if(smallSliding==1) myInputFile<<", SMALL SLIDING";
-                        }
-                        else myInputFile<<" TYPE = SURFACE TO SURFACE";
-                    }
-                    else myInputFile<<"TYPE = MORTAR";
-                    myInputFile<<endl;
+                     //! ---------
+                     //! 1st) row
+                     //! ---------
+                     myInputFile<<"*CONTACT PAIR, INTERACTION = "<<contactName<<",";
+                     if(theContactFormulation!=Property::contactFormulation_lagrange)
+                     {
+                         if(theContactBehavior==Property::contactBehavior_asymmetric)
+                         {
+                             myInputFile<<" TYPE = NODE TO SURFACE";
+                             if(smallSliding==1) myInputFile<<", SMALL SLIDING";
+                         }
+                         else myInputFile<<" TYPE = SURFACE TO SURFACE";
+                     }
+                     else myInputFile<<"TYPE = MORTAR";
+                     myInputFile<<endl;
 
-                    //! ---------
-                    //! 2nd) row
-                    //! ---------
-                    myInputFile<<slaveName<<", "<<masterName<<"\n";
+                     //! ---------
+                     //! 2nd) row
+                     //! ---------
+                     myInputFile<<slaveName<<", "<<masterName<<"\n";
 
-                    switch(theOverPressure)
-                    {
-                    case Property::overpressureFunction_linear:
-                    {
-                        //! ---------
-                        //! 3rd) row
-                        //! ---------
-                        myInputFile<<"*SURFACE INTERACTION, NAME = "<<contactName<<"\n";
-                        //! ---------
-                        //! 4th) row
-                        //! ---------
-                        myInputFile<<"*SURFACE BEHAVIOR, PRESSURE-OVERCLOSURE=LINEAR";
+                     switch(theOverPressure)
+                     {
+                     case Property::overpressureFunction_linear:
+                     {
+                         //! ---------
+                         //! 3rd) row
+                         //! ---------
+                         myInputFile<<"*SURFACE INTERACTION, NAME = "<<contactName<<"\n";
+                         //! ---------
+                         //! 4th) row
+                         //! ---------
+                         myInputFile<<"*SURFACE BEHAVIOR, PRESSURE-OVERCLOSURE=LINEAR";
 
-                        if(sigmaInfinity == 0.0)
-                        {
-                            //! calculix suggest 0.25% of the maximum stress expected
-                            //! we use 0.25% of the tensile yield strenght // TO DO....
-                            sigmaInfinity = 0.25*750;
-                        }
-                        if(C0 == 0.0)
-                        {
-                            //! calculix default 10e-3
-                            C0 = 10.0e-3;
-                        }
-                        myInputFile<<KN<<", "<<sigmaInfinity<<", "<<C0<<endl;
-                    }
-                        break;
-                    case Property::overpressureFunction_exponential:
-                    {
-                        //! ---------
-                        //! 3rd) row
-                        //! ---------
-                        myInputFile<<"*SURFACE INTERACTION, NAME = "<<contactName<<"\n";
-                        //! ---------
-                        //! 4th) row
-                        //! ---------
-                        myInputFile<<"*SURFACE BEHAVIOR, PRESSURE-OVERCLOSURE=EXPONENTIAL"<<endl;
-                        myInputFile<<C0<<", "<<P0<<endl;
-                    }
-                        break;
-                    case Property::overpressureFunction_hard:
-                    {
-                        //! ---------
-                        //! 3rd) row
-                        //! ---------
-                        myInputFile<<"*SURFACE INTERACTION, NAME = "<<contactName<<"\n";
-                        // surface beahvior con be omitted
-                    }
-                        break;
-                    }
+                         if(sigmaInfinity == 0.0)
+                         {
+                             //! calculix suggest 0.25% of the maximum stress expected
+                             //! we use 0.25% of the tensile yield strenght // TO DO....
+                             sigmaInfinity = 0.25*750;
+                         }
+                         if(C0 == 0.0)
+                         {
+                             //! calculix default 10e-3
+                             C0 = 10.0e-3;
+                         }
+                         myInputFile<<KN<<", "<<sigmaInfinity<<", "<<C0<<endl;
+                     }
+                         break;
+                     case Property::overpressureFunction_exponential:
+                     {
+                         //! ---------
+                         //! 3rd) row
+                         //! ---------
+                         myInputFile<<"*SURFACE INTERACTION, NAME = "<<contactName<<"\n";
+                         //! ---------
+                         //! 4th) row
+                         //! ---------
+                         myInputFile<<"*SURFACE BEHAVIOR, PRESSURE-OVERCLOSURE=EXPONENTIAL"<<endl;
+                         myInputFile<<C0<<", "<<P0<<endl;
+                     }
+                         break;
+                     case Property::overpressureFunction_hard:
+                     {
+                         //! ---------
+                         //! 3rd) row
+                         //! ---------
+                         myInputFile<<"*SURFACE INTERACTION, NAME = "<<contactName<<"\n";
+                         // surface beahvior con be omitted
+                     }
+                         break;
+                     }
 
-                    if(theContactType == Property::contactType_frictional)
-                    {
-                        //! ---------
-                        //! 5th) row
-                        //! ---------
-                        myInputFile<<"*FRICTION"<<endl;
+                     if(theContactType == Property::contactType_frictional)
+                     {
+                         //! ---------
+                         //! 5th) row
+                         //! ---------
+                         myInputFile<<"*FRICTION"<<endl;
 
-                        //! ---------
-                        //! 6th) row
-                        //! ---------
-                        myInputFile<<frictionCoefficient<<", "<<lambda<<endl;
-                    }
-                    //! ----------------
-                    //! GAP CONDUCTANCE
-                    //! ----------------
-                    myInputFile<<"*GAP CONDUCTANCE "<<endl;
-                    //! default parameters conductance of 100 for all contact pressure and all temeprature
-                    if(gapConductance==0) gapConductance=1E9;
-                    myInputFile<<gapConductance<<",,273"<<endl;
-                }
-                    break;
-                case Property::contactType_noSeparation:
-                {
-                    //! -------------------------------------------------------------------------
-                    //! 1st) row - Warning: here the "SMALL SLIDING" parameter cannot be defined
-                    //! -------------------------------------------------------------------------
-                    myInputFile<<"*CONTACT PAIR, INTERACTION = "<<contactName<<
-                                 ", TYPE = SURFACE TO SURFACE\n";
+                         //! ---------
+                         //! 6th) row
+                         //! ---------
+                         myInputFile<<frictionCoefficient<<", "<<lambda<<endl;
+                     }
+                     //! ----------------
+                     //! GAP CONDUCTANCE
+                     //! ----------------
+                     myInputFile<<"*GAP CONDUCTANCE "<<endl;
+                     //! default parameters conductance of 100 for all contact pressure and all temeprature
+                     if(gapConductance==0) gapConductance=1E9;
+                     myInputFile<<gapConductance<<",,273"<<endl;
+                 }
+                     break;
+                 case Property::contactType_noSeparation:
+                 {
+                     //! -------------------------------------------------------------------------
+                     //! 1st) row - Warning: here the "SMALL SLIDING" parameter cannot be defined
+                     //! -------------------------------------------------------------------------
+                     myInputFile<<"*CONTACT PAIR, INTERACTION = "<<contactName<<
+                                  ", TYPE = SURFACE TO SURFACE\n";
 
-                    //! ---------
-                    //! 2nd) row
-                    //! ---------
-                    myInputFile<<slaveName<<", "<< masterName<<"\n";
+                     //! ---------
+                     //! 2nd) row
+                     //! ---------
+                     myInputFile<<slaveName<<", "<< masterName<<"\n";
 
-                    //! ---------
-                    //! 3rd) row
-                    //! ---------
-                    myInputFile<<"*SURFACE INTERACTION, NAME = "<<contactName<<"\n";
+                     //! ---------
+                     //! 3rd) row
+                     //! ---------
+                     myInputFile<<"*SURFACE INTERACTION, NAME = "<<contactName<<"\n";
 
-                    //! ---------
-                    //! 4th) row
-                    //! ---------
-                    myInputFile<<"*SURFACE BEHAVIOR, PRESSURE-OVERCLOSURE=";
-                    myInputFile<<"TIED"<<endl;
+                     //! ---------
+                     //! 4th) row
+                     //! ---------
+                     myInputFile<<"*SURFACE BEHAVIOR, PRESSURE-OVERCLOSURE=";
+                     myInputFile<<"TIED"<<endl;
 
-                    //! in case of face to face behavior "Sigma infty" is irrelevant
-                    //! in case of face to face behavior "C0 is irrelevant
+                     //! in case of face to face behavior "Sigma infinity" is irrelevant
+                     //! in case of face to face behavior "C0 is irrelevant
 
-                    myInputFile<<KN<<endl;
+                     myInputFile<<KN<<endl;
 
-                    //! ----------------
-                    //! GAP CONDUCTANCE
-                    //! ----------------
-                    myInputFile<<"*GAP CONDUCTANCE "<<endl;
-                    //! default parameters conductance of 1e9 for all contact pressure and all temeprature
-                    if(gapConductance==0) gapConductance=1000000000;
-                    myInputFile<<gapConductance<<",,273 "<<endl;
+                     //! ----------------
+                     //! GAP CONDUCTANCE
+                     //! ----------------
+                     myInputFile<<"*GAP CONDUCTANCE "<<endl;
+                     //! default parameters conductance of 1e9 for all contact pressure and all temeprature
+                     if(gapConductance==0) gapConductance=1000000000;
+                     myInputFile<<gapConductance<<",,273 "<<endl;
 
-                    //! ---------
-                    //! 5th) row
-                    //! ---------
-                    myInputFile<<"*FRICTION"<<endl;
-                    //! ---------
-                    //! 6th) row
-                    //! ---------
-                    //! friction coefficient for no sepration contact is irrelevant
-                    myInputFile<<1<<", "<<lambda<<endl;
-                }
-                    break;
-                }
+                     //! ---------
+                     //! 5th) row
+                     //! ---------
+                     myInputFile<<"*FRICTION"<<endl;
+                     //! ---------
+                     //! 6th) row
+                     //! ---------
+                     //! friction coefficient for no sepration contact is irrelevant
+                     myInputFile<<1<<", "<<lambda<<endl;
+                 }
+                     break;
+                 }
             }
         }
     }
@@ -1307,13 +1306,12 @@ bool writeSolverFileClass::perform()
     bool initialTempDistr = false;
     for(int k=1; k<mySimulationRoot->rowCount()-1; k++)
     {
-        //code = Global::status().code;
-        //if(code==0) return;
         if(Global::status().code==0)
         {
             cout<<"writeSolverFileClass::perform()->____process stopped____"<<endl;
             return false;
         }
+
         cout<<" - writing BC "<<mySimulationRoot->child(k,0)->data(Qt::DisplayRole).toString().toStdString()<<endl;
         //QString itemName = itemNameClearSpaces(mySimulationRoot->child(k,0)->data(Qt::DisplayRole).toString());
 
@@ -2074,20 +2072,14 @@ bool writeSolverFileClass::perform()
                             //! details:
                             //! treat acceleration as gravity
                             //! ------------------------------
-
                             //std::vector<GeometryTag> vecLoc = theCurNode->getPropertyValue<std::vector<GeometryTag>>("Tags");
                             myInputFile<<"*DLOAD"<<endl;
-
                             double loadValue = pow((pow(loadX_global,2)+pow(loadY_global,2)+pow(loadZ_global,2)),0.5);
-                            if(loadValue!=0.0)
-                            {
-                                myInputFile<<"*DLOAD"<<endl;
-
-                                double x,y,z;
-                                x = loadX_global/loadValue;
-                                y = loadY_global/loadValue;
-                                z = loadZ_global/loadValue;
-                                /*
+                            double x,y,z;
+                            x = loadX_global/loadValue;
+                            y = loadY_global/loadValue;
+                            z = loadZ_global/loadValue;
+                            /*
                             for(int i=0; i<vecLoc.size();i++)
                             {
                                 GeometryTag aLoc = vecLoc.at(i);
@@ -2098,29 +2090,28 @@ bool writeSolverFileClass::perform()
                                 myInputFile<<"E"<<bodyName<<", GRAV, "<<loadValue<<" ,"<<x<<", "<<y<<", "<<z<<endl;
                             }
                             */
-                                for(int i=0; i<theGeometryRoot->rowCount();i++)
-                                {
-                                    std::string bodyName;
-                                    QStandardItem *aGeometryItem = theGeometryRoot->child(i,0);
-                                    SimulationNodeClass *aNode = aGeometryItem->data(Qt::UserRole).value<SimulationNodeClass*>();
-                                    Property::SuppressionStatus aNodeSS = aNode->getPropertyValue<Property::SuppressionStatus>("Suppressed");
+                            for(int i=0; i<theGeometryRoot->rowCount();i++)
+                            {
+                                std::string bodyName;
+                                QStandardItem *aGeometryItem = theGeometryRoot->child(i,0);
+                                SimulationNodeClass *aNode = aGeometryItem->data(Qt::UserRole).value<SimulationNodeClass*>();
+                                Property::SuppressionStatus aNodeSS = aNode->getPropertyValue<Property::SuppressionStatus>("Suppressed");
 
-                                    if(aNodeSS==Property::SuppressionStatus_Active)
+                                if(aNodeSS==Property::SuppressionStatus_Active)
+                                {
+                                    if(aNode->getType()==SimulationNodeClass::nodeType_pointMass)
                                     {
-                                        if(aNode->getType()==SimulationNodeClass::nodeType_pointMass)
-                                        {
-                                            QString bodyNameP = itemNameClearSpaces(theGeometryRoot->child(i,0)->data(Qt::DisplayRole).toString());
-                                            bodyNameP.append("_").append(QString("%1").arg(i));
-                                            bodyName = bodyNameP.toStdString();
-                                        }
-                                        else
-                                        {
-                                            //! retrieve the name of the body from the data base
-                                            int mapIndex = aNode->getPropertyValue<int>("Map index");
-                                            bodyName = myDB->MapOfBodyNames.value(mapIndex).toStdString();
-                                        }
-                                        myInputFile<<"E"<<bodyName<<", GRAV, "<<loadValue<<" ,"<<x<<", "<<y<<", "<<z<<endl;
+                                        QString bodyNameP = itemNameClearSpaces(theGeometryRoot->child(i,0)->data(Qt::DisplayRole).toString());
+                                        bodyNameP.append("_").append(QString("%1").arg(i));
+                                        bodyName = bodyNameP.toStdString();
                                     }
+                                    else
+                                    {
+                                        //! retrieve the name of the body from the data base
+                                        int mapIndex = aNode->getPropertyValue<int>("Map index");
+                                        bodyName = myDB->MapOfBodyNames.value(mapIndex).toStdString();
+                                    }
+                                    myInputFile<<"E"<<bodyName<<", GRAV, "<<loadValue<<" ,"<<x<<", "<<y<<", "<<z<<endl;
                                 }
                             }
                         }
@@ -2760,6 +2751,7 @@ void writeSolverFileClass::writeNodesAndElements(QString aName,QMap<int,QList<in
             //! retrieve the name of the body from the data base
             //! -------------------------------------------------
             std::string bodyName = myDB->MapOfBodyNames.value(bodyIndex).toStdString();
+
             //! ------------------------------------------------------------------------------------
             //! When writing element, add them to a multi-map
             //! The first index of the multimap (the Key) is the element number (elementID)

@@ -12,11 +12,13 @@
 #include "frdreader.h"
 #include <meshdatabase.h>
 #include "resultpresentation.h"
+#include "occhandle.h"
 
 //! ---
 //! Qt
 //! ---
 #include <QWidget>
+#include <QPaintEvent>
 
 //! ----
 //! OCC
@@ -28,6 +30,17 @@
 class occPostWidget: public occPreGLWidget
 {
     Q_OBJECT
+
+protected:
+
+    //! the occ context for the results view
+    occHandle(AIS_InteractiveContext) occPostContext;
+
+    //! init
+    virtual void init() override;
+
+    //! paint event
+    virtual void paintEvent(QPaintEvent *e) override;
 
 public:
 
@@ -49,10 +62,10 @@ public:
     //! set database
     void setDataDase(meshDataBase *mDB) { myMeshDataBase = mDB; }
 
-private:
+    //! get the post context
+    const occHandle(AIS_InteractiveContext)& getPostContext() const;
 
-    //! Creates an additional context for the mesh view
-    //occHandle(AIS_InteractiveContext) occPostContext;
+private:
 
     //! the color box
     occHandle(AIS_ColorScaleExtended) myColorBox;
@@ -64,8 +77,10 @@ public slots:
     void createColorBox(double min, double max, int Nintervals);
 
     //! it read the private member myResultPresentation before displaying
-    //void displayResult(postObject &aPostObject);
     void displayResult(sharedPostObject &aPostObject);
+
+    //! display the result when clipping planes are active
+    void clipResult();
 
     void hideAllResults();
 
@@ -79,6 +94,9 @@ public slots:
 
     //! set the status variable
     void updateViewerStatus();
+
+    //! reset
+    virtual void reset() override;
 
 private:
 
