@@ -6347,11 +6347,8 @@ void SimulationManager::synchVisibility()
     AIS_ListOfInteractive listOfDisplayedObjects, listOfHiddenObjects;
     TopTools_ListOfShape listOfDisplayedShapes, listOfHiddenShapes;
 
-    myCTX->ObjectsByDisplayStatus(AIS_KOI_Shape,-1,AIS_DS_Displayed,listOfDisplayedObjects);
-    myCTX->ObjectsByDisplayStatus(AIS_KOI_Shape,-1,AIS_DS_Erased,listOfDisplayedObjects);
-
-    //myCTX->DisplayedObjects(AIS_KOI_Shape,-1,listOfDisplayedObjects);
-    //myCTX->ErasedObjects(AIS_KOI_Shape,-1,listOfHiddenObjects);
+    myCTX->DisplayedObjects(AIS_KOI_Shape,-1,listOfDisplayedObjects);
+    myCTX->ErasedObjects(AIS_KOI_Shape,-1,listOfHiddenObjects);
 
     AIS_ListIteratorOfListOfInteractive anIter;
     for(anIter.Initialize(listOfDisplayedObjects);anIter.More();anIter.Next())
