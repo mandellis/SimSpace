@@ -1340,7 +1340,6 @@ bool SimulationNodeClass::isSimulationSetUpNode()
             myNodeType == SimulationNodeClass::nodeType_structuralAnalysisBoundaryContidion_FixedSupport ||
             myNodeType == SimulationNodeClass::nodeType_structuralAnalysisThermalCondition ||
             myNodeType == SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_ImportedTemperatureDistribution ||
-            myNodeType == SimulationNodeClass::nodeType_importedBodyScalar ||
             myNodeType == SimulationNodeClass::nodeType_mapper ||
             myNodeType == SimulationNodeClass::nodeType_modelChange)
         return true;

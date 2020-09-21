@@ -21,35 +21,34 @@
 //! function: constructor
 //! details:
 //! ----------------------
-openFoamController::openFoamController(const QString &sourceDirPath,
-                                       const QString &targetDirPath,
+openFoamController::openFoamController(/*const QString &sourceDirPath,
+                                       const QString &targetDirPath,*/
                                        int fileMode,
                                        QProgressIndicator *aProgressIndicator,
                                        QObject *parent): QObject(parent)
-{    
+{
     myProgressIndicator = aProgressIndicator;
 
     //! ---------------------
     //! the target directory
     //! ---------------------
-    myTargetDirectory = targetDirPath;
+    //myTargetDirectory = targetDirPath;
 
     //! --------------
     //! Worker thread
     //! --------------
-    OpenFoamReader *OFReader = new OpenFoamReader(sourceDirPath,targetDirPath,fileMode);
+    OpenFoamReader *OFReader = new OpenFoamReader(/*sourceDirPath,targetDirPath,*/fileMode);
     OFReader->setProgressIndicator(myProgressIndicator);
     OFReader->moveToThread(&workerThread);
-
+/*
 #ifdef COSTAMP_VERSION
     OFReader->setTimeFolders(myTimeFolders);
-#endif
+#endif*/
     //! -----------------------------------
     //! connection for starting the thread
     //! -----------------------------------
-    disconnect(this,SIGNAL(operate(SimulationNodeClass*)),OFReader,SLOT(perform()));
-    connect(this,SIGNAL(operate(SimulationNodeClass*)),OFReader,SLOT(perform()));
-
+    disconnect(this,SIGNAL(operate(SimulationNodeClass*)),OFReader,SLOT(perform(SimulationNodeClass*)));
+    connect(this,SIGNAL(operate(SimulationNodeClass*)),OFReader,SLOT(perform(SimulationNodeClass*)));
     connect(this,SIGNAL(operate(SimulationNodeClass*)),this,SLOT(lockNode(SimulationNodeClass*)));
 
     //! ------------------------------------------------------------------------------------
@@ -114,7 +113,7 @@ void openFoamController::stopThread()
         QString fileName1 = fileName.split(".").last();
         if(fileName1.split(".").last()=="lck")
         {
-            cout<<"____"<<fileName.toStdString()<<"____"<<endl;            
+            cout<<"____"<<fileName.toStdString()<<"____"<<endl;
             cout<<"____"<<fileName1.toStdString()<<"____"<<endl;
             filesToRemove<<fileName;
             fileName.chop(4);

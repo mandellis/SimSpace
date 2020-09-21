@@ -176,6 +176,16 @@ QVariant QExtendedStandardItem::data(int role) const
             else data.setValue(QString("%1").arg(dtm.size()));
             return data;
         }
+        //! --------------------
+        //! "Time list"
+        //! --------------------
+        if(name=="Time list")
+        {
+            QVector<double> timeList = QStandardItem::data(Qt::UserRole).value<Property>().getData().value<QVector<double>>();
+            if(timeList.size()==0) data.setValue(QString("Empty"));
+            else data.setValue(QString("%1").arg(timeList.size()));
+            return data;
+        }
         //! ---------------
         //! "Solver output
         //! ---------------
@@ -841,8 +851,18 @@ QVariant QExtendedStandardItem::data(int role) const
             }
             return data;
         }
-        if(name == "K" || name =="Sigma infty" || name =="C0" || name =="Lambda"
-                || name =="P0" || name =="Beta")
+        if(name =="Adjust to touch")
+        {
+            int val = QStandardItem::data(Qt::UserRole).value<Property>().getData().toInt();
+            switch(val)
+            {
+            case 0: data.setValue(QString("Off")); break;
+            case 1: data.setValue(QString("On")); break;
+            }
+            return data;
+        }
+        if(name == "K" || name =="Sigma infinity" || name =="C0" || name =="Lambda"
+                || name =="P0" || name =="Beta" || name == "Thermal conductance")
         {
             double val = QStandardItem::data(Qt::UserRole).value<Property>().getData().toDouble();
             if(val==0.0) data.setValue(QString("Program controlled"));
@@ -1745,6 +1765,20 @@ QVariant QExtendedStandardItem::data(int role) const
             return data;
         }
         //! -----------
+        //! "Formulation"
+        //! -----------
+        else if(name=="Formulation")
+        {
+            Property::contactFormulation theFormulation = QStandardItem::data(Qt::UserRole).value<Property>().getData().value<Property::contactFormulation>();
+            switch(theFormulation)
+            {
+            case Property::contactFormulation_lagrange: data.setValue(QString("Lagrange")); break;
+            case Property::contactFormulation_penalty: data.setValue(QString("Pure penalty")); break;
+            case Property::contactFormulation_MPC: data.setValue(QString("MPC")); break;
+            }
+            return data;
+        }
+        //! -----------
         //! "Behavior"
         //! -----------
         else if(name=="Behavior")
@@ -1791,7 +1825,7 @@ QVariant QExtendedStandardItem::data(int role) const
                 case Property::contactType_bonded: data.setValue(QString("Bonded")); break;
                 case Property::contactType_frictional: data.setValue(QString("Frictional")); break;
                 case Property::contactType_frictionless: data.setValue(QString("Frictionless")); break;
-                case Property::contactType_tied: data.setValue(QString("Tied")); break;
+                case Property::contactType_noSeparation: data.setValue(QString("No separation")); break;
                 }
             }
                 break;

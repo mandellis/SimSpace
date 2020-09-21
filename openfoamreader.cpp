@@ -132,11 +132,11 @@ void OpenFoamReader::freeMemory()
 //! function: constructor
 //! details:
 //! ----------------------
-OpenFoamReader::OpenFoamReader(const QString &sourceDirPath, const QString &targetDirPath, int fileMode, QObject *parent):QObject(parent),myFileMode(fileMode)
+OpenFoamReader::OpenFoamReader(/*const QString &sourceDirPath, const QString &targetDirPath,*/ int fileMode, QObject *parent):QObject(parent),myFileMode(fileMode)
 {
-    cout<<"OpenFoamReader::OpenFoamReader()->____constructor called. Source file: "<<sourceDirPath.toStdString()<<"____"<<endl;
-    mySourceDir = sourceDirPath;
-    myTargetDir = targetDirPath;
+    //cout<<"OpenFoamReader::OpenFoamReader()->____constructor called. Source file: "<<sourceDirPath.toStdString()<<"____"<<endl;
+    //mySourceDir = sourceDirPath;
+    //myTargetDir = targetDirPath;
     this->setObjectName("openFoamReader");
 
     //! ---------------------
@@ -167,7 +167,7 @@ void OpenFoamReader::setProgressIndicator(QProgressIndicator *aProgressIndicator
 {
     myProgressIndicator = aProgressIndicator;
 }
-
+/*
 //! ---------------------------------------------
 //! function: setTargetDir
 //! details:  set the location for storing files
@@ -188,7 +188,6 @@ void OpenFoamReader::setTargetDir(const QString &theTargetDir)
         dir.mkdir(myTargetDir);
     }
 }
-
 //! ---------------------------------------------------
 //! function: setSourceDir
 //! details:  set the location where reading the files
@@ -198,16 +197,35 @@ void OpenFoamReader::setSourceDir(const QString &theSourceDir)
     cout<<"OpenFoamReader::setSourceDir()->____setting the source dir: "<<theSourceDir.toStdString()<<"____"<<endl;
     mySourceDir = theSourceDir;
 }
-
+*/
 //! ------------------
 //! function: perform
 //! details:
 //! ------------------
-bool OpenFoamReader::perform()
+bool OpenFoamReader::perform(SimulationNodeClass *OFnode)
 {
     cout<<"OpenFoamReader::perform()->____function called____"<<endl;
+
+    mySourceDir = OFnode->getPropertyValue<QString>("Source directory");
+    myTargetDir = OFnode->getPropertyValue<QString>("Target directory");
+    QDir dir(myTargetDir);
+    if(dir.exists())
+    {
+        cout<<"OpenFoamReader::setTargetDir()->____the target directory exists: deleting content____"<<endl;
+        tools::clearDir(myTargetDir);
+    }
+    else
+    {
+        cout<<"OpenFoamReader::setTargetDir()->____the target directory does not exist: creating a new one____"<<endl;
+        dir.mkdir(myTargetDir);
+    }
     cout<<"OpenFoamReader::perform()->____"<<mySourceDir.toStdString()<<"____"<<endl;
 
+#ifdef COSTAMP_VERSION
+    //! retrieve the time list from the node
+    const QVector<double> timeList = OFnode->getPropertyValue<QVector<double>>("Time list");
+    myTimeFolders = timeList.toStdVector();
+#endif
     QDir curDir(mySourceDir);
 
     cout<<(QString("OpenFoamReader::OpenFoamReader->____starting dir: ").append(curDir.absolutePath()).append("____")).toStdString()<<endl;
@@ -232,31 +250,13 @@ bool OpenFoamReader::perform()
 
     for(int i=0; i<entriesInfo.length(); i++)
     {
-#ifdef COSTAMP_VERSION
-
-        if(entriesInfo.at(i).baseName() == "Casting0" || entriesInfo.at(i).baseName() == "0")
-        {
-            cout<<"____found \"Casting0\" in data: jumping over it____"<<endl;
-            continue;
-        }
-        int nBstep = myTimeFolders.size();
-        for(int j=0;j<nBstep;j++)
-        {
-            double endTime = myTimeFolders.at(j);
-            QString dirTime = QString("%1").arg(endTime,0,'g',-1);
-            if(entriesInfo.at(i).isDir() && directoryList.at(i) == dirTime)
-            {
-                directoryListFiltered.append(directoryList.at(i));
-            }
-        }
-#endif
-#ifndef COSTAMP_VERSION
-        if(entriesInfo.at(i).isDir() && directoryList.at(i)!="." && directoryList.at(i)!=".." && directoryList.at(i)!="polyMesh")
+        if(entriesInfo.at(i).isDir() && directoryList.at(i)!="."
+                && directoryList.at(i)!=".." && directoryList.at(i)!="polyMesh"
+                && directoryList.at(i)!="Casting0")
         {
             directoryListFiltered.append(directoryList.at(i));
             cout<<"OpenFoamReader::OpenFoamReader()->____found body: "<<directoryList.at(i).toStdString()<<"____"<<endl;
         }
-#endif
     }
 
     //! ---------------------------------
@@ -274,6 +274,7 @@ bool OpenFoamReader::perform()
     //! ---------------------
     QProgressEvent *e;
     int NbBodies = directoryListFiltered.length();
+    cout<<"____tag01____"<<NbBodies<<endl;
 
     if(myProgressIndicator!=Q_NULLPTR)
     {
@@ -284,6 +285,7 @@ bool OpenFoamReader::perform()
 
     curDir.cdUp();
     curDir.cd("constant");
+    cout<<"____tag02____"<<endl;
 
     //! ------------------------------
     //! entering the data directories
@@ -505,14 +507,30 @@ bool OpenFoamReader::perform()
         QList<QFileInfo> entriesInfo = curDir.entryInfoList();
         QList<QString> directoryList = curDir.entryList();
         QList<QString> directoryListFiltered;
+
         for(int i=0; i<entriesInfo.length(); i++)
         {
+#ifdef COSTAMP_VERSION
+        int nBstep = int(myTimeFolders.size());
+        for(int j=0;j<nBstep;j++)
+        {
+            double endTime = myTimeFolders.at(j);
+            QString dirTime = QString("%1").arg(endTime,0,'g',-1);
+            cout<<"time "<<endTime<<" dirTime "<<directoryList.at(i).toStdString()<<endl;
+            if(entriesInfo.at(i).isDir() && directoryList.at(i) == dirTime)
+            {
+                directoryListFiltered.append(directoryList.at(i));
+            }
+        }
+#endif
+#ifndef COSTAMP_VERSION
             if(entriesInfo.at(i).isDir() && directoryList.at(i)!="." && directoryList.at(i)!=".."
                     && directoryList.at(i)!="constant" && directoryList.at(i)!="system")
             {
                 directoryListFiltered.append(directoryList.at(i));
                 cout<<"____"<<directoryList.at(i).toStdString()<<"____"<<endl;
             }
+#endif
         }
 
         //! ------------------------------
@@ -548,7 +566,7 @@ bool OpenFoamReader::perform()
             fstream foutOverall;
 
             QString foutName = myTargetDir+QString(("/Body_%1_Time_%2.txt")).arg(dirName).arg(curDirName);
-            QString foutNameOverall = myTargetDir+QString(("/Overall_%1.txt")).arg(curDirName);            
+            QString foutNameOverall = myTargetDir+QString(("/Overall_%1.txt")).arg(curDirName);
 
             cout<<"OpenFoamReader::perform()->____target directory: "<<myTargetDir.toStdString()<<"____"<<endl;
 
@@ -633,13 +651,11 @@ bool OpenFoamReader::perform()
                 {
                     int faceGlobalNumber = internalFieldIndexes.at(i);
                     QList<double> sourcePoint = map.value(faceGlobalNumber);
-
                     //! write on disk
                     if(myFileMode==1) fprintf(foutData,"%.9e\t%.9e\t%.9e\t%.9e\n",sourcePoint.at(0)*SCALE,sourcePoint.at(1)*SCALE,sourcePoint.at(2)*SCALE,value);
-
                     //! or store in memory ...
                 }
-                */                
+                */
             }
             else    //! case "non uniform"
             {
@@ -697,26 +713,20 @@ bool OpenFoamReader::perform()
                 for(int row=0;;row++)
                 {
                     double scalarValue=0;
-
                     std::getline(is,val);
                     sscanf(val.c_str(),"%s",value);
-
                     if(strcmp(value,")")==0)
                     {
                         std::getline(is,val);   //! capture ";"
                         //cout<<"------------------>"<<val.c_str()<<endl;
                         break;
                     }
-
                     sscanf(val.c_str(),"%lf",&scalarValue);
                     //cout<<"non uniform scalar value: "<<scalarValue<<endl;  //! diagnostic
-
                     //!int faceGlobalNumber = internalFieldIndexes.at(row);
                     //!QList<double> sourcePoint = map.value(faceGlobalNumber);
-
                     //! write on disk
                     if(myFileMode==1) fprintf(foutData,"%.9e\t%.9e\t%.9e\t%.9e\n",sourcePoint.at(0)*SCALE,sourcePoint.at(1)*SCALE,sourcePoint.at(2)*SCALE,scalarValue+273.15);
-
                     //! or store in memory ...
                 }
                 */
@@ -760,7 +770,6 @@ bool OpenFoamReader::perform()
                             {
                                 int faceGlobalNumber = indexes.at(i);
                                 double *sourcePoint = myMapOfFaceCenters.value(faceGlobalNumber);
-
                                 //! write on disk
                                 char s[512];
                                 sprintf(s,"%.9e\t%.9e\t%.9e\t%.9e\n",sourcePoint[0]*SCALE,sourcePoint[1]*SCALE,sourcePoint[2]*SCALE,value+273.15);
@@ -777,7 +786,6 @@ bool OpenFoamReader::perform()
                         }
                         else
                         {
-
                             //!----------------------------------------------------------------
                             //! Handling nonuniform value per column
                             //! details:
@@ -787,13 +795,11 @@ bool OpenFoamReader::perform()
                             cout<<"OpenFoamReader::perform()->____reading boundary block nonuniform scalarValue value = "<<val<<endl;
                             sscanf(val.c_str(),"%s%s%s%s",type1,type2,type3,type4);
                             cout<<"OpenFoamReader::perform()->____reading boundary block type4  = "<<type4<<endl;
-
                             //! -----------------------------------------
                             //! small record of data collected "in line"
                             //! jump over it
                             //! -----------------------------------------
                             if(type4==NULL) continue;
-
                             //! handling non-uniform as before
                             cout<<"OpenFoamReader::perform()->____type: non uniform____"<<endl;
                             std::getline(is,val);
@@ -801,7 +807,6 @@ bool OpenFoamReader::perform()
                             cout<<"OpenFoamReader::perform()->____number of data: "<<val<<endl;
                             char s[512];
                             int n=0;
-
                             for(int row=0;;row++)
                             {
                                 std::getline(is,val);   //! capture "("
@@ -823,9 +828,7 @@ bool OpenFoamReader::perform()
                                     if(n==1) cout<<indexes.length()<<endl;
                                     //cout<<"@row: "<<row<<endl;
                                     int faceGlobalNumber = indexes[row];   //! check carefully
-
                                     double *sourcePoint = myMapOfFaceCenters.value(faceGlobalNumber);
-
                                     //! --------------
                                     //! write on disk
                                     //! --------------
@@ -851,9 +854,7 @@ bool OpenFoamReader::perform()
             }
 #endif
             is.close();
-
             curDir.cdUp();
-
             cout<<"OpenFoamReader::perform()->____cur directory: \""<<curDir.absolutePath().toStdString()<<
                   "\" => Now exiting the time folder____"<<endl;
 
@@ -1527,7 +1528,6 @@ void OpenFoamReader::openWithLock(fstream &stream, const char *fileName, std::io
         lockFile.open(lockFileName);
     }
 }
-
 //! -----------------------------
 //! function: closeAndRemoveLock
 //! details:

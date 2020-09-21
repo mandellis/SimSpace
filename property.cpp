@@ -938,7 +938,7 @@ QMap<QString,QString> Property::propertyMap()
     myPropertyMap.insert("Define by ","Property::defineBy");
     myPropertyMap.insert("Type","Property::contactType");
     myPropertyMap.insert("Behavior","Property::contactBehavior");
-    myPropertyMap.insert("Formulation","Property::contactFormulation");     //! not used for the moment
+    myPropertyMap.insert("Formulation","Property::contactFormulation");
     myPropertyMap.insert("Overpressure","Property::overpressureFunction");
     myPropertyMap.insert("Magnitude","Property::loadDefinition");
     myPropertyMap.insert("X component","Property::loadDefinition");
