@@ -13,7 +13,6 @@
 #include "ais_colorscaleextended.h"
 #include <indexedmapofmeshdatasources.h>
 #include "geometrytag.h"
-#include "occhandle.h"
 
 //! ----
 //! OCC
@@ -56,30 +55,13 @@ class occPreGLWidget: public occGLWidget
 
 protected:
 
-    virtual void mousePressEvent(QMouseEvent *e) override;
-    virtual void mouseReleaseEvent(QMouseEvent *e) override;
-    virtual void mouseMoveEvent(QMouseEvent *e) override;
-    virtual void onLButtonDown(const int theFlags, const QPoint thePoint) override;
-    virtual void onRButtonDown(const int theFlags, const QPoint thePoint) override;
-    virtual void onMButtonDown(const int theFlags, const QPoint thePoint) override;
-    virtual void onLButtonUp(const int theFlags, const QPoint thePoint) override;
-    virtual void onRButtonUp(const int theFlags, const QPoint thePoint) override;
-    virtual void onMButtonUp(const int theFlags, const QPoint thePoint) override;
-    virtual void onMouseMove(const int theFlags, QPoint thePoint) override;
-
-protected:
-
-    //! the occ context for the mesh view
-    occHandle(AIS_InteractiveContext) occMeshContext;
-
-    //! init
-    virtual void init() override;
-
-    //! paint event
-    virtual void paintEvent(QPaintEvent *e) override;
-
-    //! ... experimental ...
     virtual void focusInEvent(QFocusEvent *focusEvent);
+
+    //! interactive context for the mesh
+    //occHandle(AIS_InteractiveContext) occMeshContext;
+
+    //! The display mode
+    //! CurDisplayMode myCurDisplayMode, my_CurDisplayMode_old;
 
     //! The mesh view mode
     bool isMeshViewVolume;
@@ -95,6 +77,9 @@ protected:
 
     //! Map of prismatic meshes
     QMap<int,occHandle(AIS_InteractiveObject)> myMapOfInteractivePrismaticMeshes;
+
+    //! Map of sliced meshes
+    QMap<int,occHandle(MeshVS_Mesh)> mySlicedMeshesIO;
 
     //! Shape colors: an array of colors for the shapes
     ArrayOfColors myShapeColor;
@@ -117,16 +102,22 @@ protected:
     //! print a summary
     void printSummary();
 
+    //! ------------------------------------------------------------
+    //! onLButtonUp: add to this event a the body highlight removal
+    //! ------------------------------------------------------------
+    virtual void onLButtonUp(const int theFlags,const QPoint thePoint)
+    {
+        occGLWidget::onLButtonUp(theFlags,thePoint);
+        //this->unhighlightBody(true);
+    }
+
 public:
 
     //! constructor
     occPreGLWidget(QWidget *parent=0);
 
-    //! destructor
+    //! Destructor
     virtual ~occPreGLWidget();
-
-    //! set the selection mode
-    virtual void setSelectionMode(CurSelectionMode selectionMode) override;
 
     //! Display the CAD model
     void displayCAD(bool onlyLoad=false);
@@ -138,13 +129,10 @@ public:
     void createInteractiveShapes();
 
     //! return the mesh context
-    const occHandle(AIS_InteractiveContext)& getMeshContext() const;
+    occHandle(AIS_InteractiveContext) getMeshContext() {return occMeshContext; }
 
     //! get the interactive objects (AIS_Shape)
     QMap<int,occHandle(AIS_InteractiveObject)> getInteractiveObjects() { return myMapOfInteractiveShapes; }
-
-    //! get the mesh objects (MeshVS_Mesh)
-    QMap<int,occHandle(AIS_InteractiveObject)> getMeshObjects() { return myMapOfInteractiveMeshes; }
 
     //! get current working mode
     inline curWorkingMode getWorkingMode() { return myCurWorkingMode; }
@@ -166,7 +154,7 @@ public:
     virtual void removeClipPlane(int ID) override;
 
     //! update clip plane translation
-    virtual void updateClipPlaneCoefficients(int ID, const QVector<double> &coeffs) override;
+    virtual void updateClipPlaneTranslation(int ID, int zVal, const QVector<double> &coeffs) override;
 
     //! update clip planes
     void updateClipPlanes(const std::vector<int> &activeClipPlanes);
@@ -179,12 +167,6 @@ public:
         occContext->Color(aShape,acolor);
         return acolor;
     }
-
-    //! set all elements visible
-    void setAllElementsVisible();
-
-    //! clip mesh
-    void clipMesh();
 
 public:
 
@@ -219,9 +201,6 @@ public slots:
     //! build the sliced mesh interactive object
     void buildSlicedMeshIO(const QMap<int, opencascade::handle<MeshVS_DataSource> > &slicedMeshDS);
 
-    //! set hidden elements
-    void setHiddenElements(const std::map<int,occHandle(TColStd_HPackedMapOfInteger)> &hiddenElements);
-
     //! build the prismatic mesh interactive object
     void buildPrismaticMeshIO();
 
@@ -234,11 +213,16 @@ public slots:
     //! hide all the meshes
     void hideAllMeshes(bool updateViewer=true);
 
+    //! erase the sliced meshes
+    void eraseSlicedMeshes();
+
+    //! ------------------
     //! refresh mesh view
+    //! ------------------
     virtual void refreshMeshView(bool onlyExterior);
 
     //! Reset all
-    virtual void reset() override;
+    void reset();
 
     //! Activates the operating mode "model"
     void setWorkingMode_Model();
@@ -255,13 +239,9 @@ public slots:
     //! Activate the operating mode "solution"
     //void setWorkingMode_Solution();
 
-    //! set selection mode mesh
-    void setMeshSelectionMode();
-
-    //! set selection mode geometry
-    void setGeometrySelectionMode();
-
+    //! ----------------
     //! invalidate mesh
+    //! ----------------
     void invalidateMesh(int bodyIndex, Standard_Boolean updateViewer=Standard_False);
     void invalidateMeshes(const std::vector<int> &indexes);
     void invalidateAllMeshes();
@@ -293,7 +273,7 @@ public slots:
     void removeObsoleteMeshes();
 
     //! highlight bodies
-    void highlightBody(const std::vector<int> &listOfBodyNumbers);
+    void highlightBody(const QList<int> &listOfBodyNumbers);
 
     //! unhighlight visible bodies
     void unhighlightBody(bool updateViewer=false);
@@ -364,13 +344,13 @@ private slots:
 
 protected slots:
 
-    //! geometric properties of a selection
-    virtual void computeSelectionProperties() override;
-
     void ShowContextMenu1(const QPoint&);
 
-    //! Click on a geometry -> returns the number
+    //! Click on a topology -> returns the number
     void printTopologyNumber();
+
+    //! Click on a topology -> returns the number
+    void identifyTheSelection(int &vertexIndex, int &edgeIndex, int &faceIndex, int &solidIndex);
 
     //! Clears data on the selected bodies (meshes)
     void clearMeshFromViewer();

@@ -47,7 +47,6 @@ public:
     static void addActionUnsuppressAllBodies(QMenu* contextMenu);
     static void addActionDeleteAllChildrenItems(QMenu *contextMenu);
     static void addActionCreateNamedSelection(QMenu *contextMenu);
-    static void addActionCreateMeshNamedSelection(QMenu *contexMenu);
 };
 
 #endif // CONTEXTMENUBUILDER_H

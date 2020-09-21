@@ -110,6 +110,8 @@ public:
             cout<<"polygon::getNormal()->____wrong number of nodes____"<<endl;
             return zeroNormal;
         }
+        //Point P0 = points[0];
+        //Point P1 = points[1];
         int start = 1;
         Point P0 = points[start%NbPoints];
         Point P1 = points[(start+1)%NbPoints];
@@ -120,20 +122,18 @@ public:
             //P2 = points[i];
             P2 = points[(start+i)%NbPoints];
             if(areCollinear(P0,P1,P2)) continue;
+            //! -------------------
+            //! compute the normal
+            //! -------------------
             double x0 = P1.x-P0.x; double y0 = P1.y-P0.y; double z0 = P1.z-P0.z;
             double x1 = P2.x-P0.x; double y1 = P2.y-P0.y; double z1 = P2.z-P0.z;
 
             double n1= y0*z1-z0*y1; double n2 = z0*x1-x0*z1; double n3 = x0*y1-y0*x1;
             double L = sqrt(n1*n1+n2*n2+n3*n3);
-            if(L<1e-10)
-            {
-                cerr<<"polygon::getNormal()->____normal too small. Returning a zero normal____"<<endl;
-                return zeroNormal;
-            }
+            if(L<1e-20) return zeroNormal;
             std::vector<double> normal {n1/L,n2/L,n3/L};
             return normal;
         }
-        cerr<<"polygon::getNormal()->____returning a zero normal____"<<endl;
         return zeroNormal;
     }
 
@@ -141,7 +141,7 @@ public:
     //! function: isPointBetween
     //! details:  check if C is between A and B
     //! ----------------------------------------
-    static bool isPointBetween(const polygon::Point &A, const polygon::Point &B, const polygon::Point &C, const double tolerance=1e-6)
+    static bool isPointBetween(const polygon::Point A, const polygon::Point &B, const polygon::Point &C, const double tolerance=1e-6)
     {
         //! -----------------
         //! check alignement
@@ -272,8 +272,8 @@ public:
         //! -----------------
         //! first two points
         //! -----------------
-        Point P0 = points[0];
-        Point P1 = points[1];
+        Point P0 = points.at(0);
+        Point P1 = points.at(1);
         x0 = P0.x; y0 = P0.y; z0 = P0.z;
         x1 = P1.x; y1 = P1.y; z1 = P1.z;
 
@@ -282,7 +282,7 @@ public:
         //! -------------------------------------
         for(int i=2; i<NbPoints; i++)
         {
-            Point P2 = points[i];
+            Point P2 = points.at(i);
             if(!areCollinear(P0,P1,P2))
             {
                 x2 = P2.x; y2 = P2.y; z2 = P2.z;
@@ -321,7 +321,9 @@ public:
             size_t NbPoints = aPolygon.size();
             for(int n=0; n<NbPoints; n++)
             {
+                //const polygon::Point aP = aPolygon.at(n);
                 const polygon::Point aP = aPolygon[n];
+
                 double d = sqrt(pow(aP.x-P.x,2)+pow(aP.y-P.y,2)+pow(aP.z-P.z,2));
                 if(d>proximity) return false;
             }
@@ -590,6 +592,9 @@ public:
 
         for(int i=0; i<NbPoints-1; i++)
         {
+            //const polygon::Point &Pi = transfPointList.at(0);
+            //const polygon::Point &Pii = transfPointList.at(1);
+
             const polygon::Point &Pi = transfPointList[0];
             const polygon::Point &Pii = transfPointList[1];
 
@@ -652,16 +657,23 @@ public:
         //! point plane distance
         //! ---------------------
         const polygon::Point &aP = aPolygon[0];
+
+        //double L = sqrt(a*a+b*b+c*c);
+        //double d_old = (a*aP.x+b*aP.y+c*aP.z+d)/L;
         double d_old = (a*aP.x+b*aP.y+c*aP.z+d);
+
         for(int i=1; i<aPolygon.size(); i++)
         {
             const polygon::Point &aP = aPolygon[i];
+
+            //double d_new = (a*aP.x+b*aP.y+c*aP.z+d)/L;
             double d_new = (a*aP.x+b*aP.y+c*aP.z+d);
 
             //! -----
             //! sign
             //! -----
             if(d_new*d_old<=0)
+            //if(SIGN(d_new)*SIGN(d_old)<1)
             {
                 intersection = true;
                 break;

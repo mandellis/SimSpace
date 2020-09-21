@@ -1090,9 +1090,6 @@ Standard_Boolean Ng_MeshVS_DataSource3D::Get3DGeom(const Standard_Integer theID,
         case PRISM: theNbNodes = 6; theData = PRISM6MeshData; break;
         case PYRAM: theNbNodes = 5; theData = PYRAM5MeshData; break;
         case TET10: theNbNodes = 10; theData= TET10MeshData; break;
-        case HEXA20: theNbNodes = 20; theData = HEXA20MeshData; break;
-        case PRISM15: theNbNodes = 15; theData = PRISM15MeshData; break;
-        case PYRAM13: theNbNodes = 13; theData = PYRAM13MeshData; break;
         }
         return true;
     }

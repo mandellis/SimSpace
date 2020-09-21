@@ -1,22 +1,16 @@
 #ifndef RESULTPRESENTATION_H
 #define RESULTPRESENTATION_H
 
+#include <string>
+#include <iostream>
+#include <fstream>
+using namespace std;
+
 struct resultPresentation
 {
-    //! ----------------------------
-    //! type of result presentation
-    //! ----------------------------
-    enum typeOfPresentation
-    {
-        typeOfPresentation_isostrips,
-        typeOfPresentation_isosurfaces,
-        typeOfPresentation_isolines,
-        typeOfPresentation_nodalresults
-    };
-
-    //! --------------
-    //! combined view
-    //! --------------
+    //! ----------
+    //! view mode
+    //! ----------
     enum combinedView
     {
         combinedView_resultOnly,
@@ -26,21 +20,18 @@ struct resultPresentation
     };
 
     combinedView theCombinedView;
-    typeOfPresentation theTypeOfPresentation;
     bool useExteriorMeshForVolumeResults;
     double theScale;
 
-    //! -------------------------------------
-    //! constructor - set the default values
-    //! -------------------------------------
+    //! ------------
+    //! constructor
+    //! ------------
     resultPresentation(combinedView aCombinedView = combinedView_resultOnly,
-                       typeOfPresentation aTypeOfPresentation = typeOfPresentation_nodalresults,
                        double aScale = 1.0,
                        bool aUseExteriorMeshForVolumeResults = true):
         theCombinedView(aCombinedView),
         useExteriorMeshForVolumeResults(aUseExteriorMeshForVolumeResults),
-        theScale(aScale),
-        theTypeOfPresentation(aTypeOfPresentation)
+        theScale(aScale)
     {;}
 
     //! -----------------
@@ -48,7 +39,6 @@ struct resultPresentation
     //! -----------------
     resultPresentation(const resultPresentation &aRP)
     {
-        theTypeOfPresentation = aRP.theTypeOfPresentation;
         theCombinedView = aRP.theCombinedView;
         useExteriorMeshForVolumeResults = aRP.useExteriorMeshForVolumeResults;
         theScale = aRP.theScale;
@@ -59,7 +49,6 @@ struct resultPresentation
     //! -----------
     resultPresentation operator = (const resultPresentation &aRP)
     {
-        theTypeOfPresentation = aRP.theTypeOfPresentation;
         theCombinedView = aRP.theCombinedView;
         useExteriorMeshForVolumeResults = aRP.useExteriorMeshForVolumeResults;
         theScale = aRP.theScale;
@@ -71,7 +60,6 @@ struct resultPresentation
     //! ------------
     bool operator == (const resultPresentation &aRP)
     {
-        if(theTypeOfPresentation != aRP.theTypeOfPresentation) return false;
         if(theCombinedView != aRP.theCombinedView) return false;
         if(useExteriorMeshForVolumeResults != aRP.useExteriorMeshForVolumeResults) return false;
         if(theScale != aRP.theScale) return false;

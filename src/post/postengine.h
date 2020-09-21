@@ -54,7 +54,8 @@ public:
         TypeOfResult_F,
         TypeOfResult_EPS,
         TypeOfResult_CONT,
-        TypeOfResult_HFL
+        TypeOfResult_HFL,
+        TypeOfResult_RF
     };
 
 public:
@@ -72,7 +73,6 @@ private:
     //! location (m,n) <=> QMap<CCXnodeID, OCCnodeID>
     //! ---------------------------------------------------
     OCCMeshToCCXmesh *OCCtoCCXinterface;
-
 
     void buildMap();
 

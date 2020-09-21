@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core opengl gui
+QT       += core opengl gui #charts
 
 ##############
 # QCustomPlot
@@ -182,9 +182,7 @@ SOURCES += main.cpp\
     src/mesh/meshnodesrenumberingtool.cpp \
     inputfilegenerator.cpp \
     ccxsolvermanager1.cpp \
-    src/mesh/isostripbuilder.cpp \
-    src/mesh/rayintersectmesh.cpp \
-    meshselector.cpp
+    src/mesh/isostripbuilder.cpp
 
 HEADERS  += mainwindow.h \
     actions3d.h \
@@ -417,9 +415,7 @@ HEADERS  += mainwindow.h \
     src/mesh/meshnodesrenumberingtool.h \
     inputfilegenerator.h \
     ccxsolvermanager1.h \
-    src/mesh/isostripbuilder.h \
-    src/mesh/rayintersectmesh.h \
-    meshselector.h
+    src/mesh/isostripbuilder.h
 
 FORMS    += mainwindow.ui
 
@@ -432,7 +428,7 @@ DEFINES += WNT  \
            DEBUG_VERSION   \
            #COSTAMP_VERSION \
            GENERATE_FACE_MESH_DATASOURCES   \
-           #USE_MESHFIX
+           USE_MESHFIX
 
 DEFINES += QCUSTOMPLOT_USE_LIBRARY
 

@@ -21,6 +21,7 @@ public:
 
     mainTreeTools(){;}
 
+    //static QList<int> getColumnsToRead1(QTreeView *tree);
     static int calculateStartColumn(QTreeView *tree);
     static int calculateStartColumn(QStandardItem *anItem);
 

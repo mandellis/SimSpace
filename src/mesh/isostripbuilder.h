@@ -16,6 +16,7 @@
 //! Qt
 //! ---
 #include <QObject>
+//#include <QMap>
 
 //! ----------------
 //! custom includes
@@ -52,7 +53,7 @@ public:
     //! -------------------------------------
     //! retrieve the list of values of a key
     //! -------------------------------------
-    std::vector<V> values(const K &key) const
+    std::vector<V> values(const K &key)
     {
         /* linear search O(N)
         std::vector<V> values;
@@ -69,8 +70,8 @@ public:
         //! https://thispointer.com/finding-all-values-for-a-key-in-multimap-using-equals_range-example/
         //! ---------------------------------------------------------------------------------------------
         std::vector<V> values;
-        std::pair<std::unordered_multimap<K,V>::const_iterator, std::unordered_multimap<K,V>::const_iterator> r = this->equal_range(key);
-        for (std::unordered_multimap<K,V>::const_iterator it = r.first; it != r.second; it++) values.push_back(it->second);
+        std::pair<std::unordered_multimap<K,V>::iterator, std::unordered_multimap<K,V>::iterator> r = this->equal_range(key);
+        for (std::unordered_multimap<K,V>::iterator it = r.first; it != r.second; it++) values.push_back(it->second);
         return values;
     }
 };
@@ -87,21 +88,6 @@ private:
 
 public:
 
-    //! ----------
-    //! getColumn
-    //! ----------
-    std::vector<isoStripPoint> getColumn(int col) const
-    {
-        std::vector<isoStripPoint> vecPoints;
-        std::map<int,std::vector<isoStripPoint>>::const_iterator it = mdata.find(col);
-        if(it!=mdata.cend())
-        {
-            const std::vector<isoStripPoint> &vp = it->second;
-            for(int k=0; k<vp.size(); k++) vecPoints.push_back(vp[k]);
-        }
-        return vecPoints;
-    }
-
     //! -----------------------------------------------
     //! append a value at the end of a specific column
     //! -----------------------------------------------
@@ -111,11 +97,14 @@ public:
         if(it==mdata.end())
         {
             std::vector<isoStripPoint> v{theValue};
-            mdata.insert(std::make_pair(aCol,v));
+            std::pair<int,std::vector<isoStripPoint>> apair;
+            apair.first = aCol;
+            apair.second = v;
+            mdata.insert(apair);
         }
         else
         {
-            it->second.push_back(theValue);
+            (*it).second.push_back(theValue);
         }
     }
 
@@ -130,10 +119,13 @@ public:
 
         std::vector<isoStripPoint>::iterator it_ = std::find((*it).second.begin(),(*it).second.end(),thePoint);
 
-        if(it_==it->second.end()) return false;
+        if(it_==(*it).second.end())
+        {
+            return false;
+        }
         else
         {
-            it->second.insert(it_,theValue);
+            (*it).second.insert(it_,theValue);
             return true;
         }
     }
@@ -149,10 +141,13 @@ public:
 
         std::vector<isoStripPoint>::iterator it_ = std::find((*it).second.begin(),(*it).second.end(),thePoint);
 
-        if(it_==it->second.end()) return false;
+        if(it_==(*it).second.end())
+        {
+            return false;
+        }
         else
         {
-            it->second.insert(it_+1,theValue);
+            (*it).second.insert(it_+1,theValue);
             return true;
         }
     }
@@ -213,7 +208,6 @@ public:
             theElement.pointList<<mesh::meshPoint(aPoint.x,aPoint.y,aPoint.z);
         }
     }
-
 };
 
 class MeshVS_DataSource;
@@ -231,30 +225,22 @@ public:
     void setValues(const std::map<int,double> &values);
     void setIsoStrips(const std::vector<isoStrip> &theIsoStrips);
 
-    //bool perform(std::vector<meshElementByCoords> &vecMeshElements);
+    bool perform(std::vector<meshElementByCoords> &vecMeshElements);
     bool perform1(std::vector<meshElementByCoords> &vecMeshElements);
 
+    void getAllElements(const std::vector<faceTable> &vecFaceTables, std::vector<meshElementByCoords> &vecMeshElements);
     void getIsoStripElements(const std::vector<faceTable> &vecFaceTables, std::multimap<int, meshElementByCoords> &meshElementsByIsoStripNb);
-    bool performIsoSurface(int NbLevels, std::vector<meshElementByCoords> &vecMeshElements, std::map<int,int> &mapElementLevel, int position = -1);
 
 private:
 
     occHandle(MeshVS_DataSource) myMeshDS;
     std::map<int,double> myValues;
     std::vector<isoStrip> myIsoStrips;
-    std::map<int,std::vector<faceTable>> myMapElementFaceTables;
-    std::vector<faceTable> myVecFaceTables;
-    std::set<meshElement2D> myFaceElements;
 
 private:
 
     void classifyNodes(myMultiMap<int, int> &pointToIsoStrip);
     void pointCoord(double *c, int globalNodeID);
-    void getAllElements(const std::vector<faceTable> &vecFaceTables, std::vector<meshElementByCoords> &vecMeshElements);
-    bool computeFaceTables();
-    void processElementFaces(occHandle(MeshVS_HArray1OfSequenceOfInteger) &topology, const myMultiMap<int,int> &pointToIsoStrip, std::vector<faceTable> &elementFaceTables);
-
-    void computeFaceElements();
 
 private:
 

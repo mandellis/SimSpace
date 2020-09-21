@@ -19,6 +19,7 @@ namespace CCXTools
 //! ------------------
 bool readsta(const QString &path, QMap<double, QVector<int>> &timeinfo)
 {
+    cout<<"CCXTools::readsta()->_____read STA_______"<<endl;
     QFile fn(path);
     QString nfn = path;
     nfn.chop(4);
@@ -29,8 +30,9 @@ bool readsta(const QString &path, QMap<double, QVector<int>> &timeinfo)
     if(f==NULL) return false;
 
     char line [256];
-    int a1,a2,a3,a4;
-    int a1_old,a2_old,a3_old,a4_old;
+    int a1,a2,a4;
+    int a1_old,a2_old,a4_old;
+    char a3[24],a3_old[24];
 
     double f1,f2,f3;
     double f1_old,f2_old,f3_old;
@@ -43,7 +45,7 @@ bool readsta(const QString &path, QMap<double, QVector<int>> &timeinfo)
     int setnr = 1;
 
     fgets(line, sizeof line, f);
-    if(7!=sscanf(line,"%d%d%d%d%lf%lf%lf",&a1_old,&a2_old,&a3_old,&a4_old,&f1_old,&f2_old,&f3_old))
+    if(7!=sscanf(line,"%d%d%s%d%lf%lf%lf",&a1_old,&a2_old,&a3_old,&a4_old,&f1_old,&f2_old,&f3_old))
     {
         fclose(f);
         QFile r(nfn);
@@ -60,7 +62,7 @@ bool readsta(const QString &path, QMap<double, QVector<int>> &timeinfo)
     for(;feof(f)==0;)
     {
         fgets(line, sizeof line, f);
-        if(7!=sscanf(line,"%d%d%d%d%lf%lf%lf",&a1,&a2,&a3,&a4,&f1,&f2,&f3))
+        if(7!=sscanf(line,"%d%d%s%d%lf%lf%lf",&a1,&a2,&a3,&a4,&f1,&f2,&f3))
         {
             fclose(f);
             QFile r(nfn);
@@ -70,7 +72,7 @@ bool readsta(const QString &path, QMap<double, QVector<int>> &timeinfo)
         if(a2_old==a2) continue;
 
         setnr++;
-        //cout<<"set: "<<setnr<<" step: "<<a1_old<<" substep: "<<a2_old<<" total time: "<<f1_old<<endl;
+        cout<<"set: "<<setnr<<" step: "<<a1_old<<" substep: "<<a2_old<<" total time: "<<f1_old<<endl;
 
         //! -------------------
         //! fill the time info
@@ -78,18 +80,25 @@ bool readsta(const QString &path, QMap<double, QVector<int>> &timeinfo)
         QVector<int> s{setnr,a1,a2};
         timeinfo.insert(f1,s);
 
-        a1_old=a1; a2_old=a2; a3_old=a3; a4_old=a4;
+        a1_old=a1; a2_old=a2; a4_old=a4;
         f1_old=f1; f2_old=f2; f3_old=f3;
     }
 
     //! --------------------------
     //! fill the time info - last
     //! --------------------------
-    //cout<<"set: "<<setnr<<" step: "<<a1<<" substep: "<<a2<<" total time: "<<f1<<endl;
+    cout<<"set: "<<setnr<<" step: "<<a1<<" substep: "<<a2<<" total time: "<<f1<<endl;
+    cout<<"set: "<<setnr<<" step: "<<a1_old<<" substep: "<<a2_old<<" total time: "<<f1_old<<endl;
 
     QVector<int> s{setnr,a1_old,a2_old};
-    timeinfo.insert(f1,s);
 
+    if(setnr!=1)
+    timeinfo.insert(f1+f3,s);   //check if is correct to add f3 at the end
+    else
+    {
+        timeinfo.remove(f1_old);
+        timeinfo.insert(f1+f3,s);   //check if is correct to add f3 at the end
+    }
     fclose(f);
 
     QFile r(nfn);

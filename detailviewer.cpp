@@ -267,11 +267,11 @@ DetailViewer::DetailViewer(QWidget *parent): QTreeView(parent)
 {
     cout<<"DetailViewer::DetailViewer()->____default constructor called____"<<endl;
 
-    //! drawing style
-    this->setAlternatingRowColors(true);
-
     //! delegate
     myGeneralDelegate = new GeneralDelegate(this);
+
+    this->setAlternatingRowColors(true);
+
     this->setItemDelegate(myGeneralDelegate);
 
     //! items with child(ren) have an expander
@@ -303,8 +303,6 @@ DetailViewer::DetailViewer(QWidget *parent): QTreeView(parent)
 DetailViewer::DetailViewer(const occHandle(AIS_InteractiveContext) &aCTX, QWidget *parent):QTreeView(parent),myCTX(aCTX)
 {
     cout<<"DetailViewer::DetailViewer()->____CONSTRUCTOR I CALLED____"<<endl;
-
-    //! delegate    
     myGeneralDelegate = new GeneralDelegate(myCTX, this);
     this->setItemDelegate(myGeneralDelegate);
 
@@ -324,44 +322,37 @@ DetailViewer::DetailViewer(const occHandle(AIS_InteractiveContext) &aCTX, QWidge
     this->setObjectName("detailViewer");
 }
 
-//! --------------------------------
+//! ---------------------
 //! function: setContext
-//! details:  also for the delegate
-//! --------------------------------
+//! details:
+//! ---------------------
 void DetailViewer::setContext(const occHandle(AIS_InteractiveContext) &aCTX)
 {
-    cout<<"DetailViewer::setContext()->____function called____"<<endl;
-    if(aCTX.IsNull()==true)
+    if(!aCTX.IsNull())
     {
-        cout<<"DetailViewer::setContext()->____NULL CONTEXT____"<<endl;
-        return;
+        myCTX = aCTX;
+        myGeneralDelegate->setContext(myCTX);
     }
-    myCTX = aCTX;
-    myGeneralDelegate->setContext(myCTX);
-    cout<<"DetailViewer::setContext()->____context OK____"<<endl;
 }
 
-//! --------------------------------
-//! function: setMeshContext
-//! details:  also for the delegate
-//! --------------------------------
-void DetailViewer::setMeshContext(const occHandle(AIS_InteractiveContext) &aMeshCTX)
-{
-    cout<<"DetailViewer::setMeshContext()->____function called____"<<endl;
-    if(aMeshCTX.IsNull()==true)
-    {
-        cout<<"DetailViewer::setMeshContext()->____NULL MESH CONTEXT____"<<endl;
-        return;
-    }
-    myMeshCTX = aMeshCTX;
-    myGeneralDelegate->setMeshContext(aMeshCTX);
-    cout<<"DetailViewer::setMeshContext()->____mesh context OK____"<<endl;
-}
-
-//! ----------------------
-//! function: setTheModel
+//! -----------------------------
+//! function: setDelegateContext
 //! details:
-//! ----------------------
+//! -----------------------------
+void DetailViewer::setDelegateContext(const occHandle(AIS_InteractiveContext) &aCTX)
+{
+    cout<<"DetailViewer::setDelegateContext()->____function called____"<<endl;
+    if(!aCTX.IsNull())
+    {
+        myCTX = aCTX;
+        myGeneralDelegate->setContext(aCTX);
+    }
+}
+
+//! ---------------------------------------------------------
+//! function: setTheModel
+//! details:  handle also the visibility of some model items
+//! ---------------------------------------------------------
 void DetailViewer::setTheModel(const QModelIndex &anIndex)
 {
     //cout<<"DetailViewer::setTheModel()->____function called____"<<endl;
@@ -383,10 +374,14 @@ void DetailViewer::setTheModel(const QModelIndex &anIndex)
     //! -----------------------------------------------------
     this->expandChildren();
 
-    //! ----------------------------------------
-    //! the source model index and current node
-    //! ----------------------------------------
+    //! -----------------------
+    //! the source model index
+    //! -----------------------
     myCurModelIndex = anIndex;
+
+    //! -----------------------
+    //! store the current node
+    //! -----------------------
     myCurNode = data.value<SimulationNodeClass*>();
 
     SimulationNodeClass::nodeType nodeType = myCurNode->getType();
@@ -443,6 +438,7 @@ void DetailViewer::setTheModel(const QModelIndex &anIndex)
         {
         case Property::boltStatusDefinedBy_load:
         {
+
             this->setRowHidden(indexLoad.row(),indexLoad.parent(),false);
             this->setRowHidden(indexAdjustment.row(),indexAdjustment.parent(),true);
 
@@ -454,8 +450,10 @@ void DetailViewer::setTheModel(const QModelIndex &anIndex)
             SimulationNodeClass *nodeAnalysisSettings = myCurModelIndex.parent().child(0,0).data(Qt::UserRole).value<SimulationNodeClass*>();
             int currentStepNumber = nodeAnalysisSettings->getPropertyItem("Current step number")->data(Qt::UserRole).value<Property>().getData().toInt();
 
+            //int SC = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"))->calculateStartColumn();
             SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
             int SC = mainTreeTools::calculateStartColumn(sm->myTreeView);
+            //cesere
             int row = currentStepNumber;
             int col = SC+2;
             CustomTableModel *tabularDataModel = nodeAnalysisSettings->getTabularDataModel();
@@ -477,6 +475,7 @@ void DetailViewer::setTheModel(const QModelIndex &anIndex)
             SimulationNodeClass *nodeAnalysisSettings = myCurModelIndex.parent().child(0,0).data(Qt::UserRole).value<SimulationNodeClass*>();
             int currentStepNumber = nodeAnalysisSettings->getPropertyValue<int>("Current step number");
 
+            //int SC = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"))->calculateStartColumn();
             SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
             int SC = mainTreeTools::calculateStartColumn(sm->myTreeView);
 
@@ -501,6 +500,7 @@ void DetailViewer::setTheModel(const QModelIndex &anIndex)
             SimulationNodeClass *nodeAnalysisSettings = myCurModelIndex.parent().child(0,0).data(Qt::UserRole).value<SimulationNodeClass*>();
             int currentStepNumber = nodeAnalysisSettings->getPropertyValue<int>("Current step number");
 
+            //int SC = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"))->calculateStartColumn();
             SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
             int SC = mainTreeTools::calculateStartColumn(sm->myTreeView);
             int row = currentStepNumber;
@@ -757,8 +757,7 @@ void DetailViewer::handleScopingMethodChange()
 {
     cout<<"DetailViewer::handleScopingMethodChange()->____function called____"<<endl;
 
-    //myCurNode->getModel()->blockSignals(true);
-    this->connectToSimulationManager(false);
+    myCurNode->getModel()->blockSignals(true);
 
     QExtendedStandardItem* item = myCurNode->getPropertyItem("Scoping method");
     if(item!=Q_NULLPTR)
@@ -960,8 +959,9 @@ void DetailViewer::handleScopingMethodChange()
             break;
         }
     }
-    //myCurNode->getModel()->blockSignals(false);
-    this->connectToSimulationManager(true);
+
+    myCurNode->getModel()->blockSignals(false);
+
 }
 
 //! -----------------------------------------------------------
@@ -1079,6 +1079,7 @@ void DetailViewer::updateTags()
             }
             if(itemMaster!=Q_NULLPTR && itemSlave!=Q_NULLPTR)
             {
+                void *p;
                 QExtendedStandardItem *itemNS;
                 SimulationNodeClass *nodeNS;
                 std::vector<GeometryTag> vecLoc;
@@ -1086,12 +1087,13 @@ void DetailViewer::updateTags()
                 //! -----------------------------------------------------------------
                 //! [1] rebuild the pairs (parent shape, child shape) for the Master
                 //! -----------------------------------------------------------------
-                void *p = itemMaster->data(Qt::UserRole).value<Property>().getData().value<void*>();
+                p = itemMaster->data(Qt::UserRole).value<Property>().getData().value<void*>();
                 itemNS = static_cast<QExtendedStandardItem*>(p);
                 nodeNS = itemNS->data(Qt::UserRole).value<SimulationNodeClass*>();
 
                 //! see: SimulationNodeClass* nodeFactory::nodeFromScratch Ref. [1]
-                vecLoc = nodeNS->getPropertyValue<std::vector<GeometryTag>>("Tags");
+                vecLoc = nodeNS->getPropertyItem("Tags")
+                        ->data(Qt::UserRole).value<Property>().getData().value<std::vector<GeometryTag>>();
 
                 QVariant data;
                 data.setValue(vecLoc);
@@ -1106,7 +1108,8 @@ void DetailViewer::updateTags()
                 nodeNS = itemNS->data(Qt::UserRole).value<SimulationNodeClass*>();
 
                 //! see: SimulationNodeClass* nodeFactory::nodeFromScratch Ref. [1]
-                vecLoc = nodeNS->getPropertyValue<std::vector<GeometryTag>>("Tags");
+                vecLoc = nodeNS->getPropertyItem("Tags")
+                        ->data(Qt::UserRole).value<Property>().getData().value<std::vector<GeometryTag>>();
                 data.setValue(vecLoc);
                 Property prop_slaveTags("Tags slave",data,Property::PropertyGroup_Scope);
                 myCurNode->replaceProperty("Tags slave",prop_slaveTags);
@@ -1714,6 +1717,7 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
     }
 
     int currentStepNumber = nodeAnalysisSettings->getPropertyValue<int>("Current step number");
+    cerr<<"@- current step number -@  "<<currentStepNumber<<endl;
     tabularDataModel = nodeAnalysisSettings->getTabularDataModel();
 
     //! -------------------------------------------------------------------------------------------------------------------------
@@ -5865,7 +5869,6 @@ void DetailViewer::handleBRepFlagChanged()
         myCurNode->removeProperty("Pair distance");
         myCurNode->removeProperty("Preserve boundary conditions edges");
         myCurNode->removeProperty("Project points on geometry");
-        myCurNode->removeProperty("Run in memory");
 
         //! ----------------------------------------
         //! store and remove the TetWild parameters
@@ -6827,10 +6830,9 @@ void DetailViewer::handleTransparencyChanged()
 //! function: handleSelectionMethodChanged
 //! details:
 //! ---------------------------------------
-void DetailViewer::handleSelectionMethodChanged()//cesere
+void DetailViewer::handleSelectionMethodChanged()
 {
-    this->connectToSimulationManager(false);
-    //myCurNode->getModel()->blockSignals(true);
+    myCurNode->getModel()->blockSignals(true);
 
     QVariant data;
     int selectionMethod = myCurNode->getPropertyValue<int>("Selection method");
@@ -6840,23 +6842,18 @@ void DetailViewer::handleSelectionMethodChanged()//cesere
     {
         data.setValue(QString(""));
         Property prop_elementList("Element list",data,Property::PropertyGroup_Definition);
-        myCurNode->removeProperty("Mesh entities");
         myCurNode->addProperty(prop_elementList,1);
     }
         break;
     case 1:
     {
-        data.setValue(std::vector<int>());
         myCurNode->removeProperty("Element list");
-        Property prop_meshEntities("Mesh entities",data,Property::PropertyGroup_Definition);
-        myCurNode->removeProperty("Element list");
-        myCurNode->addProperty(prop_meshEntities,1);
+        emit requestActivateMeshElementSelectionMode();
     }
         break;
     }
 
-    //myCurNode->getModel()->blockSignals(false);
-    this->connectToSimulationManager(true);
+    myCurNode->getModel()->blockSignals(false);
 }
 
 //! ----------------------------------

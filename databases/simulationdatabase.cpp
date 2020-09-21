@@ -361,6 +361,7 @@ simulationDataBase::simulationDataBase(const QList<SimulationNodeClass*> listOfN
         {
             SimulationNodeClass *curNode = *it;
             bool isSetUpNode = curNode->isSimulationSetUpNode();
+            //bool isChildSetUpNode = curNode->isChildSimulationSetUpNode();
             if(isSetUpNode==false)
             {
                 it++;
@@ -639,6 +640,7 @@ simulationDataBase::simulationDataBase(const QList<SimulationNodeClass*> listOfN
         }
         cout<<"____Solution information found____"<<endl;
         QString curParentTimeTag = curNode->getPropertyValue<QString>("Parent time tag");
+        //exit(20);
 
         //! ---------------------------------
         //! search for an Analysis root item
@@ -716,7 +718,6 @@ simulationDataBase::simulationDataBase(const QList<SimulationNodeClass*> listOfN
             QStandardItem *curSimulationRootItem = myRootItem->child(n,0);
             SimulationNodeClass *curSimulationNodeRoot = curSimulationRootItem->data(Qt::UserRole).value<SimulationNodeClass*>();
             if(curSimulationNodeRoot->isAnalysisRoot()==false) continue;
-
             //! -----------------------------
             //! retrieve the "Solution" item
             //! -----------------------------
@@ -2099,9 +2100,15 @@ void simulationDataBase::createStructuralAnalysisRootNode()
 
     name = "Time step builder";
 
+    //! props suppression status
+    data.setValue(Property::SuppressionStatus_Active);
+    Property prop_ss("Suppressed",data,Property::PropertyGroup_Definition);
+    props.push_back(prop_ss);
+
+    //! props time hystory file
     data.setValue(QString(""));
-    Property prop_suppressionStatus("Time history file",data,Property::PropertyGroup_Definition);
-    props.push_back(prop_suppressionStatus);
+    Property prop_timeHystory("Time history file",data,Property::PropertyGroup_Definition);
+    props.push_back(prop_timeHystory);
 
     SimulationNodeClass *node = new SimulationNodeClass(name,SimulationNodeClass::nodeType_timeStepBuilder,props);
 
