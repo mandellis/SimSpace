@@ -56,12 +56,15 @@ class QStandardItemModel;
 class QStandardItem;
 class QMenu;
 class QTimer;
+class MeshScript;
 
 class CCXSolverManager;
 
 class SimulationManager: public QWidget
 {
     Q_OBJECT
+
+    friend class MeshScript;
 
 public:
 

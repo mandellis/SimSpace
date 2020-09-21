@@ -57,6 +57,9 @@ class DetailViewer;
 class TableWidget;
 
 class TabularDataViewerClass1;
+class PythonConsole;
+class MeshScript;
+class SystemScript;
 
 class QProgressBar;
 class systemConsole;
@@ -83,6 +86,10 @@ class MainWindow : public QMainWindow
 {
     Q_OBJECT
 
+    friend class MeshScript;
+
+    friend class SystemScript;
+
 public:
 
     //! constructor
@@ -99,6 +106,11 @@ private:
     //! debug console
     //! --------------
     systemConsole *myDebugConsole;
+
+    //! --------------
+    //! python console
+    //! --------------
+    PythonConsole *myPythonConsole;
 
     //! -------------------------------
     //! memory usage: this is dockable
@@ -203,7 +215,7 @@ private:
     QAction *actionShowDebugWindow;
     QAction *actionShowSectionPlanes;
     QAction *actionShowMemoryProfiler;
-    QAction *actionShowPhytonConsole;
+    QAction *actionShowPythonConsole;
 
     //! -----------------------------
     //! actions: "Mesh" menu actions
@@ -367,6 +379,7 @@ private:
     QDockWidget *myDetailViewerDock;
     QDockWidget *myDebugConsoleDock;
     QDockWidget *myClipToolDock;
+    QDockWidget *myPythonConsoleDock;
 
 private:
 

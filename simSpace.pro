@@ -183,7 +183,10 @@ SOURCES += main.cpp\
     src/mesh/meshnodesrenumberingtool.cpp \
     inputfilegenerator.cpp \
     ccxsolvermanager1.cpp \
-    src/mesh/isostripbuilder.cpp
+    src/mesh/isostripbuilder.cpp \
+    pythonConsole/meshscript.cpp \
+    pythonConsole/pythonconsole.cpp \
+    pythonConsole/systemscript.cpp
 
 HEADERS  += mainwindow.h \
     actions3d.h \
@@ -417,7 +420,10 @@ HEADERS  += mainwindow.h \
     src/mesh/meshnodesrenumberingtool.h \
     inputfilegenerator.h \
     ccxsolvermanager1.h \
-    src/mesh/isostripbuilder.h
+    src/mesh/isostripbuilder.h \
+    pythonConsole/meshscript.h \
+    pythonConsole/pythonconsole.h \
+    pythonConsole/systemscript.h
 
 FORMS    += mainwindow.ui
 
@@ -437,26 +443,26 @@ DEFINES += QCUSTOMPLOT_USE_LIBRARY
 #DEFINES += ONLY_MESHER
 DEFINES += NEW_HASH
 
-INCLUDEPATH = D:/Work/Qt/SimSpace/src/geometry \
+INCLUDEPATH = C:/Users/FRA/Documents/GitHub/SimSpace/src/geometry \
               C:/OpenCASCADE7.3.0-vc14-64/opencascade-7.3.0/inc \
-              D:/Work/Qt/SimSpace/compatibility/StlMesh    \
-              "D:/Work/Costamp/OCC lib/EMESH_7.3.0_binaries_win64vc14/inc"     \
-              "D:/Work/Costamp/OCC lib/OMF_7.3.0_binaries_win64vc14/inc"   \
-              D:/Work/Qt/SimSpace/src/mesh   \
-              D:/Work/Qt/SimSpace/src/viewer   \
-              D:/Work/Qt/SimSpace/optionsWidget    \
-              D:/Work/Qt/SimSpace/src/post \
-              D:/Work/Qt/SimSpace/src/testTools    \
-              D:/Work/Qt/SimSpace/databases    \
-              D:/Work/Qt/SimSpace/registeredMetatypes  \
-              D:/Work/Qt/SimSpace/src/gui  \
-              D:/Work/Qt/SimSpace/eigen    \
-              D:/Work/Qt/SimSpace    \
+              C:/Users/FRA/Documents/GitHub/SimSpace/compatibility/StlMesh    \
+              "D:/Progetto/OCCaus/EMESH_7.3.0_binaries_win64vc14/inc"     \
+              "D:/Progetto/OCCaus/OMF_7.3.0_binaries_win64vc14/inc"   \
+              C:/Users/FRA/Documents/GitHub/SimSpace/src/mesh   \
+              C:/Users/FRA/Documents/GitHub/SimSpace/src/viewer   \
+              C:/Users/FRA/Documents/GitHub/SimSpace/optionsWidget    \
+              C:/Users/FRA/Documents/GitHub/SimSpace/src/post \
+              C:/Users/FRA/Documents/GitHub/SimSpace/src/testTools    \
+              C:/Users/FRA/Documents/GitHub/SimSpace/databases    \
+              C:/Users/FRA/Documents/GitHub/SimSpace/registeredMetatypes  \
+              C:/Users/FRA/Documents/GitHub/SimSpace/src/gui  \
+              C:/Users/FRA/Documents/GitHub/SimSpace/eigen    \
+              C:/Users/FRA/Documents/GitHub/SimSpace    \
               C:/CGAL-4.14/include    \
               C:/local/boost_1_69_0   \                 # needed by cgal
               C:/CGAL-4.14/auxiliary/gmp/include    \   # needed by cgal
-              D:/Work/Qt/SimSpace/libigl   \
-              D:/Work/Qt/SimSpace/src/pymesh
+              C:/Users/FRA/Documents/GitHub/SimSpace/libigl   \
+              C:/Users/FRA/Documents/GitHub/SimSpace/src/pymesh
 
 LIBS += \
 -lC:\OpenCASCADE7.3.0-vc14-64\opencascade-7.3.0\win64\vc14\lib\TKBin   \
@@ -518,22 +524,22 @@ LIBS += \
 -lC:\OpenCASCADE7.3.0-vc14-64\opencascade-7.3.0\win64\vc14\lib\TKXmlXCAF   \
 -lC:\OpenCASCADE7.3.0-vc14-64\opencascade-7.3.0\win64\vc14\lib\TKXSBase   \
 -lC:\OpenCASCADE7.3.0-vc14-64\opencascade-7.3.0\win64\vc14\lib\TKXSDRAW   \
--l"D:\Work\Costamp\OCC lib\OMF_7.3.0_binaries_win64vc14\win64\vc14\lib\TKOCCLicense"    \
--l"D:\Work\Costamp\OCC lib\OMF_7.3.0_binaries_win64vc14\win64\vc14\lib\TKOMF"    \
--l"D:\Work\Costamp\OCC lib\OMF_7.3.0_binaries_win64vc14\win64\vc14\lib\TKOMFBase"    \
--l"D:\Work\Costamp\OCC lib\OMF_7.3.0_binaries_win64vc14\win64\vc14\lib\TKOMFCAF" \
--l"D:\Work\Costamp\OCC lib\OMF_7.3.0_binaries_win64vc14\win64\vc14\lib\TKOMFCAM" \
--l"D:\Work\Costamp\OCC lib\OMF_7.3.0_binaries_win64vc14\win64\vc14\lib\TKOMFCAMTest" \
--l"D:\Work\Costamp\OCC lib\OMF_7.3.0_binaries_win64vc14\win64\vc14\lib\TKOMFQM"  \
--l"D:\Work\Costamp\OCC lib\OMF_7.3.0_binaries_win64vc14\win64\vc14\lib\TKOMFQMTest"  \
--l"D:\Work\Costamp\OCC lib\OMF_7.3.0_binaries_win64vc14\win64\vc14\lib\TKOMFTest"    \
--l"D:\Work\Costamp\OCC lib\OMF_7.3.0_binaries_win64vc14\win64\vc14\lib\TKOMFVS"  \
--l"D:\Work\Costamp\OCC lib\OMF_7.3.0_binaries_win64vc14\win64\vc14\lib\TKOMFXCAF" \
--l"D:\Work\Costamp\OCC lib\EMESH_7.3.0_binaries_win64vc14\win64\vc14\lib\TKOCCLicense"    \
--l"D:\Work\Costamp\OCC lib\EMESH_7.3.0_binaries_win64vc14\win64\vc14\lib\TKQMesh"    \
--l"D:\Work\Costamp\OCC lib\EMESH_7.3.0_binaries_win64vc14\win64\vc14\lib\TKEMeshTest"    \
--l"D:\Work\Costamp\OCC lib\EMESH_7.3.0_binaries_win64vc14\win64\vc14\lib\TKEMesh"    \
--l"D:\quazip-0.7.3\build-quazip-Desktop_Qt_5_8_0_MSVC2013_64bit-Release\release\quazip" \
+-l"D:\Progetto\OCCaus\OMF_7.3.0_binaries_win64vc14\win64\vc14\lib\TKOCCLicense"    \
+-l"D:\Progetto\OCCaus\OMF_7.3.0_binaries_win64vc14\win64\vc14\lib\TKOMF"    \
+-l"D:\Progetto\OCCaus\OMF_7.3.0_binaries_win64vc14\win64\vc14\lib\TKOMFBase"    \
+-l"D:\Progetto\OCCaus\OMF_7.3.0_binaries_win64vc14\win64\vc14\lib\TKOMFCAF" \
+-l"D:\Progetto\OCCaus\OMF_7.3.0_binaries_win64vc14\win64\vc14\lib\TKOMFCAM" \
+-l"D:\Progetto\OCCaus\OMF_7.3.0_binaries_win64vc14\win64\vc14\lib\TKOMFCAMTest" \
+-l"D:\Progetto\OCCaus\OMF_7.3.0_binaries_win64vc14\win64\vc14\lib\TKOMFQM"  \
+-l"D:\Progetto\OCCaus\OMF_7.3.0_binaries_win64vc14\win64\vc14\lib\TKOMFQMTest"  \
+-l"D:\Progetto\OCCaus\OMF_7.3.0_binaries_win64vc14\win64\vc14\lib\TKOMFTest"    \
+-l"D:\Progetto\OCCaus\OMF_7.3.0_binaries_win64vc14\win64\vc14\lib\TKOMFVS"  \
+-l"D:\Progetto\OCCaus\OMF_7.3.0_binaries_win64vc14\win64\vc14\lib\TKOMFXCAF" \
+-l"D:\Progetto\OCCaus\EMESH_7.3.0_binaries_win64vc14\win64\vc14\lib\TKOCCLicense"    \
+-l"D:\Progetto\OCCaus\EMESH_7.3.0_binaries_win64vc14\win64\vc14\lib\TKQMesh"    \
+-l"D:\Progetto\OCCaus\EMESH_7.3.0_binaries_win64vc14\win64\vc14\lib\TKEMeshTest"    \
+-l"D:\Progetto\OCCaus\EMESH_7.3.0_binaries_win64vc14\win64\vc14\lib\TKEMesh"    \
+-l"D:\Progetto\quazip-0.7.3\build-quazip-Desktop_Qt_5_8_0_MSVC2013_64bit-Release\release\quazip" \
 -l"C:\local\boost_1_69_0\lib64-msvc-14.0\libboost_thread-vc140-mt-x64-1_69" \
 -l"C:\CGAL-4.14\build_MSVC14.0\lib\Release\CGAL-vc140-mt-4.14"   \
 -l"C:\CGAL-4.14\build_MSVC14.0\lib\Release\CGAL_Core-vc140-mt-4.14" \
@@ -650,3 +656,7 @@ DEPENDPATH += $$PWD/QCustomPlot/qcp
 #{
 #QMAKE_POST_LINK += mt -nologo -manifest $$PWD/manifest.xml -outputresource:$$OUT_PWD/$$TARGET”.exe” $$escape_expand(\n\t)
 #}
+
+include (D:/Progetto/PythonQt/build/common.prf)
+include (D:/Progetto/PythonQt/build/PythonQt.prf)
+include (D:/Progetto/PythonQt/build/PythonQt_QtAll.prf)

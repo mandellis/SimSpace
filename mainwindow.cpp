@@ -19,6 +19,7 @@
 #include "shapeselector.h"
 #include "generaldelegate.h"
 #include "boundaryvaluemanager.h"
+#include "pythonConsole/pythonconsole.h"
 
 #include "tabulardataviewerclass1.h"
 
@@ -571,6 +572,15 @@ void MainWindow::createDockWidgets()
     myDebugConsoleDock->setVisible(false);
 
     //! --------------------------------
+    //! python console dock
+    //! --------------------------------
+    myPythonConsoleDock = new QDockWidget("Python console", this);
+    myPythonConsole = new PythonConsole(this);
+    myPythonConsoleDock->setWidget(myPythonConsole->getConsole());
+    this->addDockWidget(Qt::BottomDockWidgetArea,myPythonConsoleDock);
+    myPythonConsoleDock->setVisible(false);
+
+    //! --------------------------------
     //! memory profiler dockable widget
     //! --------------------------------
     myMemoryProfiler = new memoryProfiler(2500,this);
@@ -750,7 +760,7 @@ void MainWindow::createMenu()
     viewSubMenuWindows->addAction(actionShowDebugWindow);
     viewSubMenuWindows->addAction(actionShowSectionPlanes);
     viewSubMenuWindows->addAction(actionShowMemoryProfiler);
-    viewSubMenuWindows->addAction(actionShowPhytonConsole);
+    viewSubMenuWindows->addAction(actionShowPythonConsole);
 }
 
 //! -----------------------------
@@ -938,9 +948,9 @@ void MainWindow::createActions()
     actionShowMemoryProfiler->setCheckable(true);
     actionShowMemoryProfiler->setChecked(false);
 
-    actionShowPhytonConsole = new QAction("Phyton console",this);
-    actionShowPhytonConsole->setCheckable(true);
-    actionShowPhytonConsole->setChecked(false);
+    actionShowPythonConsole = new QAction("Python console",this);
+    actionShowPythonConsole->setCheckable(true);
+    actionShowPythonConsole->setChecked(false);
 
     //! "View" toolbar actions
     actionFitAll = new QAction("Toggle fit all",this);
@@ -2027,6 +2037,7 @@ void MainWindow::setWorkingMode(int workingModeNumber)
         myMainOCCViewer->setWorkingMode_Solution();
         myTabularDataDock->setVisible(false);
         myTabularDataViewerDock->setVisible(false);
+
     }
         break;
     }
@@ -2638,6 +2649,9 @@ void MainWindow::setUpConnections()
 
     connect(actionShowDebugWindow,SIGNAL(triggered(bool)),myDebugConsoleDock,SLOT(setVisible(bool)));
     connect(myDebugConsoleDock,SIGNAL(visibilityChanged(bool)),actionShowDebugWindow,SLOT(setChecked(bool)));
+
+    connect(actionShowPythonConsole,SIGNAL(triggered(bool)),myPythonConsoleDock,SLOT(setVisible(bool)));
+    connect(myPythonConsoleDock,SIGNAL(visibilityChanged(bool)),actionShowPythonConsole,SLOT(setChecked(bool)));
 
     connect(mySimulationManager,SIGNAL(requestClearMesh()),myMainOCCViewer,SLOT(clearMeshFromViewer()));
     connect(myMainOCCViewer,SIGNAL(requestGenerateMesh(bool)),mySimulationManager,SLOT(buildMesh(bool)));
