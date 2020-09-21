@@ -1,6 +1,8 @@
 #ifndef OCCGLWIDGET_H
 #define OCCGLWIDGET_H
 
+#define ValZWMin 1
+
 //! ---
 //! Qt
 //! ---
@@ -23,6 +25,7 @@
 #include <Graphic3d_SequenceOfHClipPlane.hxx>
 #include <AIS_Plane.hxx>
 #include <IntAna_IntConicQuad.hxx>
+#include "occhandle.h"
 
 //! ----------------
 //! custom includes
@@ -65,6 +68,9 @@ protected:
 
     //! the selection mode
     CurSelectionMode myCurSelectionMode;
+
+    //! the selection type
+    SelectionType myCurSelectionType;
 
     //! the global selection mode - can be "single selection" or "multiple selection"
     CurGlobalSelectionMode myCurGlobalSelectionMode;    
@@ -114,7 +120,7 @@ public:
     TopAbs_ShapeEnum curSelectionMode();
 
     //! set the selection mode
-    void setSelectionMode(CurSelectionMode selectionMode);
+    virtual void setSelectionMode(CurSelectionMode selectionMode);
 
     //! get the current selection mode
     CurSelectionMode getCurrentSelectionMode(){ return myCurSelectionMode; }
@@ -135,9 +141,9 @@ public:
     void setClipPlaneOn(int ID, bool isOn);
 
     //! update clip plane definition
-    virtual void updateClipPlaneTranslation(int ID, int zVal, const QVector<double> &coeffs);
+    virtual void occGLWidget::updateClipPlaneCoefficients(int ID, const QVector<double> &coeffs);
 
-    //! set the current clip plane ID - experimental
+    //! set the current clip plane
     virtual void setCurrentClipPlane(int curClipPlaneID)
     {
         myCurClipPlaneID = curClipPlaneID;
@@ -152,10 +158,13 @@ public:
     //! map of clipping planes
     QMap<int,occHandle(Graphic3d_ClipPlane)> myMapOfClipPlanes;
 
-    //! map of handle planes
-    QMap<int,occHandle(AIS_Plane)> myMapOfHandlePlanes;
+    //! get selected shapes
+    bool getSelectedShapes(std::vector<TopoDS_Shape> &selectedShapes);
 
 protected:
+
+    //! helper
+    TopoDS_Shape getSelectedShape();
 
     //! active opened context - "0" is neutral, ">0" is for selection
     Standard_Integer myLocalCtxNumber;
@@ -169,17 +178,11 @@ protected:
     //! the occ context
     occHandle(AIS_InteractiveContext) occContext;
 
-    //! the occ context for the mesh view
-    occHandle(AIS_InteractiveContext) occMeshContext;
-
-    //! the occ context for the results view
-    occHandle(AIS_InteractiveContext) occPostContext;
-
     //! init
     virtual void init();
 
     //! clear the "current" or "selected" shapes
-    void emptyTheSelection();
+    void clearGeometrySelection();
 
     //! the left upper label content
     occHandle(AIS_TextLabel) myTextLabel;
@@ -195,9 +198,6 @@ protected:
 
     //! rotate
     void rotate(int x, int y, RotationPointType theRotationPointType, const gp_Pnt& theSelectedPoint);
-
-    //! set transparency
-    //void setTransparency(bool isActive, bool updateViewer=false, double level = 0.5);
 
     //! my display quality
     displayQuality myDisplayQuality;
@@ -232,6 +232,13 @@ protected:
 
     //! pick point
     gp_Pnt hitPoint(long x, long y, TopoDS_Shape shape);
+
+    //! create line from view eye
+    gp_Lin createLineFromViewEye(double x, double y);
+
+    //!
+    gp_Pnt convert2DPointTo3DPoint(double x, double y);
+
 
     //! convert to plane
     Standard_Boolean ConvertToPlane(const Standard_Integer Xs,
@@ -286,9 +293,7 @@ public slots:
     void setAction3D_Pan();
     void setAction3D_WindowZooming();
 
-    //!experimental
-    void setAction3D_PlaneDrag();
-
+    //! fit all
     void FitAll();
 
     //! select all: select all according to the current selection mode
@@ -303,11 +308,14 @@ public slots:
     //! sets the view mode shaded and wireframe
     virtual void setShadedExteriorAndEdgesView();
 
+    //! set selection type
+    virtual void setSelectionType(SelectionType &aSelectionType) { myCurSelectionType = aSelectionType; }
+
     //! sets the global selection mode
     virtual void setGlobalCurSelectionMode(int);
 
     //! reactivate the current standard selection mode
-    void reactivateCurrentStandardSelectionMode();
+    virtual void reactivateSelectionMode();
 
     //! set a gradient bakground
     void setBackgroundColor(double R1, double G1, double B1, double R2, double G2, double B2, int tof);
@@ -333,10 +341,13 @@ public slots:
     //! hide all markers, including triads
     void hideAllMarkers(bool updateViewer = true);
 
+    //! reset
+    virtual void reset();
+
 protected slots:
 
-    //! properties of the selection: length, area, volume, ...
-    void selectionProperties();
+    //! geometric properties of a selection
+    virtual void computeSelectionProperties();
 
     //! build a basic context menu structure
     void buildMinimalContexetMenu();
@@ -415,6 +426,12 @@ public:
 
     //! get clip planes
     QMap<int,occHandle(Graphic3d_ClipPlane)> getClipPlanes() { return myMapOfClipPlanes; }
+
+    //! get scene bounding box
+    void getSceneBoundingBox(double &lx, double &ly, double &lz);
+
+    //! get selection type
+    SelectionType getSelectionType() const { return myCurSelectionType; }
 
 signals:
 

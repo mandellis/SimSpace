@@ -7,6 +7,7 @@
 #include "myenumvariables.h"
 #include "qextendedstandarditem.h"
 #include "shapeselector.h"
+#include "meshselector.h"
 #include "directionselector.h"
 #include "lineedit.h"
 #include "qbackgroundevent.h"
@@ -315,7 +316,7 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
             bool foundTemperatureDistribution = false;
             for(int n=1; n<itemOtherAnalysisSolution->rowCount(); n++)
             {
-                cout<<"____n: "<<n<<"____"<<endl;
+                //cout<<"____n: "<<n<<"____"<<endl;
                 QStandardItem *curResultItem = itemOtherAnalysisSolution->child(n,0);
                 SimulationNodeClass *curResultNode = curResultItem->data(Qt::UserRole).value<SimulationNodeClass*>();
 
@@ -878,7 +879,7 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
             QDoubleValidator *validator = new QDoubleValidator();
             if(propertyName =="Expansion ratio") validator->setBottom(1.0);
             if(propertyName =="Total thickness") validator->setBottom(0.0);
-            if(propertyName =="Forst layer height") validator->setBottom(0.0);
+            if(propertyName =="First layer height") validator->setBottom(0.0);
             editor->setValidator(validator);
             return editor;
         }
@@ -1043,16 +1044,10 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
         //! --------------------------------------
         //! Advanced properties for contact group
         //! --------------------------------------
-        else if(propertyName =="K" || propertyName=="Sigma infinity" || propertyName =="C0" ||
-                propertyName =="Lambda" || propertyName =="P0" || propertyName == "Thermal conductance")
+        else if(propertyName =="K" || propertyName=="Sigma infty" /*|| propertyName =="C0"*/ ||
+                propertyName =="Lambda" || propertyName =="P0")
         {
             SimulationNodeClass *curNode = this->getCurrentNode();
-
-            QLineEdit *editor = new QLineEdit(parent);
-            QDoubleValidator *doubleValidator = new QDoubleValidator();
-            doubleValidator->setBottom(0);
-            editor->setValidator(doubleValidator);
-            return editor;
             if(curNode->getType()==SimulationNodeClass::nodeType_connectionPair)
             {
                 Property::contactBehavior behavior = this->getCurrentNode()->getPropertyItem("Behavior")->data(Qt::UserRole).value<Property>().getData().value<Property::contactBehavior>();
@@ -1067,9 +1062,9 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
                     case Property::overpressureFunction_linear:
                     {
                         //! ------------------------------------------------
-                        //! "C0" "K" "Lambda" "Sigma infinity" can be modified
+                        //! "C0" "K" "Lambda" "Sigma infty" can be modified
                         //! ------------------------------------------------
-                        if(propertyName=="C0" || propertyName =="Lambda" || propertyName =="Sigma infinity" || propertyName =="K")
+                        if(propertyName=="C0" || propertyName =="Lambda" || propertyName =="Sigma infty" || propertyName =="K")
                         {
                             QLineEdit *editor = new QLineEdit(parent);
                             QDoubleValidator *doubleValidator = new QDoubleValidator();
@@ -1097,11 +1092,6 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
                         else return 0;
                     }
                         break;
-                    case Property::overpressureFunction_hard:
-                    {
-                        return 0;
-                    }
-                        break;
                     }
                 }
                     break;
@@ -1114,7 +1104,7 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
                     {
                         //! -----------------------------------------------------------------
                         //! "K" "Lambda" "can be modified. For a symmetric face to face
-                        //! contact "C0" is set to zero by CCX, and "Sigma infinity" is not
+                        //! contact "C0" is set to zero by CCX, and "Sigma infty" is not
                         //! defined (the overpressure function is truly bilinear)
                         //! From CCX routine "springfc_f2f.f" appears that the overpressure
                         //! equation is the same for the two cases. For a "Tied" overpressure
@@ -1166,17 +1156,14 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
                         else return 0;
                     }
                         break;
-                    case Property::overpressureFunction_hard:
-                    {
-                        return 0;
-                    }
                     }
                 }
                     break;
                 }
             }
+
             //! ---------------------------------------------
-            //! "K" and "Sigma infinity" are also properties of
+            //! "K" and "Sigma infty" are also properties of
             //! the "Compression only support"
             //! ---------------------------------------------
             if(curNode->getType()==SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_CompressionOnlySupport)
@@ -1187,9 +1174,7 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
                 editor->setValidator(doubleValidator);
                 return editor;
             }
-
         }
-        /*
         //! -----
         //! "C0"
         //! -----
@@ -1201,7 +1186,6 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
             editor->setValidator(doubleValidator);
             return editor;
         }
-        */
         //! ----------------
         //! "Small sliding"
         //! ----------------
@@ -1220,25 +1204,6 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
                 return editor;
             }
             else return 0;
-        }
-        //! ----------------
-        //! "Adjust to touch"
-        //! ----------------
-        else if(propertyName=="Adjust to touch")
-        {
-            SimulationNodeClass *curNode = this->getCurrentNode();
-            Property::contactBehavior val = curNode->getPropertyItem("Behavior")->data(Qt::UserRole).value<Property>().getData().value<Property::contactBehavior>();
-            //if(val == Property::contactBehavior_asymmetric )
-            //{
-                QComboBox *editor = new QComboBox(parent);
-                QVariant data;
-                data.setValue(0);
-                editor->addItem("Off",data);
-                data.setValue(1);
-                editor->addItem("On",data);
-                return editor;
-            //}
-            //else return 0;
         }
         //! --------------------------------------------------------
         //! Line search "0" => "Program controlled" "1" => "Custom"
@@ -1496,8 +1461,6 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
             case SimulationNodeClass::nodeType_solutionStructuralTotalStrain:
             case SimulationNodeClass::nodeType_solutionStructuralEquivalentPlasticStrain:
             case SimulationNodeClass::nodeType_solutionStructuralNodalForces:
-            case SimulationNodeClass::nodeType_solutionStructuralGamma:
-            case SimulationNodeClass::nodeType_solutionStructuralReactionForce:
             {
                 data.setValue(0); editor->addItem("Time",data);
                 data.setValue(1); editor->addItem("Set",data);
@@ -1529,18 +1492,9 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
             {
             case SimulationNodeClass::nodeType_solutionThermalTemperature:
             case SimulationNodeClass::nodeType_solutionThermalFlux:
-            case SimulationNodeClass::nodeType_solutionStructuralGamma:
                 return Q_NULLPTR;
                 break;
-            case SimulationNodeClass::nodeType_solutionStructuralReactionForce:
-            {
-                editor = new QComboBox(parent);
-                data.setValue(0); editor->addItem("Total reaction force",data);
-                data.setValue(1); editor->addItem("Directional reaction force X",data);
-                data.setValue(2); editor->addItem("Directional reaction force Y",data);
-                data.setValue(3); editor->addItem("Directional reaction force Z",data);
-            }
-                break;
+
             case SimulationNodeClass::nodeType_solutionStructuralEquivalentPlasticStrain:
             {
                 editor = new QComboBox(parent);
@@ -2141,7 +2095,7 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
         {
             SimulationNodeClass *curNode = this->getCurrentNode();
             Property::contactType type = curNode->getPropertyItem("Type")->data(Qt::UserRole).value<Property>().getData().value<Property::contactType>();
-            if(type!= Property::contactType_noSeparation && type!= Property::contactType_bonded)
+            if(type!= Property::contactType_tied && type!= Property::contactType_bonded)
             {
                 QComboBox *editor = new QComboBox(parent);
                 QVariant data;
@@ -2149,29 +2103,9 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
                 editor->addItem("Linear",data);
                 data.setValue(Property::overpressureFunction_exponential);
                 editor->addItem("Exponential",data);
-                data.setValue(Property::overpressureFunction_hard);
-                editor->addItem("Hard",data);
                 return editor;
             }
             else return 0;
-        }
-        //! --------------
-        //! "Formulation"
-        //! --------------
-        else if(propertyName =="Formulation")
-        {
-            //SimulationNodeClass *curNode = this->getCurrentNode();
-            //Property::contactFormulation formulation = curNode->getPropertyItem("Formulation")->data(Qt::UserRole).value<Property>().getData().value<Property::contactType>();
-            QComboBox *editor = new QComboBox(parent);
-            editor->clear();
-            QVariant data;
-            data.setValue(Property::contactFormulation_lagrange);
-            editor->addItem("Lagrange",data);
-            data.setValue(Property::contactFormulation_penalty);
-            editor->addItem("Pure penalty",data);
-            data.setValue(Property::contactFormulation_MPC);
-            editor->addItem("MPC",data);
-            return editor;
         }
         //! ---------------------------------------------------------------------
         //! "Behavior"
@@ -2182,7 +2116,7 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
         {
             SimulationNodeClass *curNode = this->getCurrentNode();
             Property::contactType type = curNode->getPropertyItem("Type")->data(Qt::UserRole).value<Property>().getData().value<Property::contactType>();
-            if(type!=Property::contactType_noSeparation)
+            if(type!=Property::contactType_tied)
             {
                 QComboBox *editor = new QComboBox(parent);
                 editor->clear();
@@ -2240,8 +2174,8 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
                 editor->addItem("Frictional",data);
                 data.setValue(Property::contactType_frictionless);
                 editor->addItem("Frictionless",data);
-                data.setValue(Property::contactType_noSeparation);
-                editor->addItem("No separation",data);
+                data.setValue(Property::contactType_tied);
+                editor->addItem("Tied",data);
             }
                 break;
             }
@@ -2335,22 +2269,15 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
             //! non standard treatment of the dummy node for multiple selections
             //! -----------------------------------------------------------------
             DetailViewer *theDetailViewer = static_cast<DetailViewer*>(parent->parent());
-            //cout<<"____"<<theDetailViewer->objectName().toStdString()<<"____"<<endl;
-
             SimulationNodeClass *aNode = theDetailViewer->getCurrentMultipleSelectionNode();
-            cout<<"____tag00____"<<endl;
-            //if(aNode==Q_NULLPTR) exit(11111);
-            //if(aNode!=Q_NULLPTR) exit(11112);
             if(aNode!=Q_NULLPTR)
             {
-                cout<<"____node: "<<aNode->getName().toStdString()<<"____"<<endl;
                 if(aNode->getPropertyItem("Master")->data(Qt::UserRole).value<Property>().getData().isValid()==false) return Q_NULLPTR;
                 if(aNode->getPropertyItem("Slave")->data(Qt::UserRole).value<Property>().getData().isValid()==false) return Q_NULLPTR;
             }
             //! -----------------
             //! end experimental
             //! -----------------
-            cout<<"____tag01____"<<endl;
             SimulationNodeClass *node = this->getCurrentNode();
             Property::ScopingMethod theScopingMethod = node->getPropertyValue<Property::ScopingMethod>("Scoping method");
             switch(theScopingMethod)
@@ -2749,13 +2676,19 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
             }
             else return 0;
         }
+        //! ----------------
+        //! "Mesh entities"
+        //! ----------------
+        else if (propertyName=="Mesh entities")
+        {
+            MeshSelector *aMeshSelector = new MeshSelector(parent);
+            return aMeshSelector;
+        }
         //! ----------------------------------
         //! "Boundary" - for prismatic layers
         //! ----------------------------------
         else if (propertyName =="Boundary")
         {
-            cerr<<"____creating editor for \"Boundary\"____"<<endl;
-            cerr<<"____creating editor for \"Boundary\": case scoping method geometry selection____"<<endl;
             ShapeSelector *editor = new ShapeSelector(myCTX,parent);
             return editor;
         }
@@ -2764,7 +2697,6 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
         //! ----------------------------------------
         else if (propertyName=="Number of steps" || propertyName=="Current step number")
         {
-            cout<<"GeneralDelegate::createEditor()->____function called for Number of steps or Current step number____"<<endl;
             QSpinBox *editor = new QSpinBox(parent);
             editor->setMinimum(1);
             editor->setMaximum(1e6);
@@ -3723,12 +3655,12 @@ void GeneralDelegate::setEditorData(QWidget *editor, const QModelIndex &index) c
     //! ----------------------------------------
     //! Advanced controls for the contact group
     //! ----------------------------------------
-    else if(propertyName =="K" || propertyName=="Sigma infinity" || propertyName =="C0" ||
-            propertyName =="Lambda" || propertyName =="P0" || propertyName == "Thermal conductance")
+    else if(propertyName =="K" || propertyName=="Sigma infty" || propertyName =="C0" ||
+            propertyName =="Lambda" || propertyName =="P0")
     {
         //SimulationNodeClass *curNode = this->getCurrentNode();
         //Property::contactBehavior val = curNode->getPropertyItem("Behavior")->data(Qt::UserRole).value<Property>().getData().value<Property::contactBehavior>();
-        //if(val == Property::contactBehavior_symmetric && propertyName != "C0" && propertyName == "Sigma infinity")
+        //if(val == Property::contactBehavior_symmetric && propertyName != "C0" && propertyName == "Sigma infty")
         //{
             double value = data.value<Property>().getData().toDouble();
             QLineEdit *le = static_cast<QLineEdit*>(editor);
@@ -3750,6 +3682,7 @@ void GeneralDelegate::setEditorData(QWidget *editor, const QModelIndex &index) c
             connect(cb,SIGNAL(currentIndexChanged(int)),this,SLOT(commitAndCloseSmallSlidingControl()));
         }
     }
+
     //! ----------------
     //! "Adjust to touch"
     //! ----------------
@@ -3766,6 +3699,7 @@ void GeneralDelegate::setEditorData(QWidget *editor, const QModelIndex &index) c
             connect(cb,SIGNAL(currentIndexChanged(int)),this,SLOT(commitAndCloseAdjustControl()));
         }
     }
+
     //! --------------
     //! "Line search"
     //! --------------
@@ -4023,8 +3957,6 @@ void GeneralDelegate::setEditorData(QWidget *editor, const QModelIndex &index) c
         case SimulationNodeClass::nodeType_solutionStructuralTotalStrain:
         case SimulationNodeClass::nodeType_solutionStructuralEquivalentPlasticStrain:
         case SimulationNodeClass::nodeType_solutionStructuralNodalForces:
-        case SimulationNodeClass::nodeType_solutionStructuralReactionForce:
-        case SimulationNodeClass::nodeType_solutionStructuralGamma:
         {
             int val = data.value<Property>().getData().toInt();
             QComboBox *cb = static_cast<QComboBox*>(editor);
@@ -4433,7 +4365,7 @@ void GeneralDelegate::setEditorData(QWidget *editor, const QModelIndex &index) c
     {
         SimulationNodeClass *curNode = this->getCurrentNode();
         Property::contactType type = curNode->getPropertyItem("Type")->data(Qt::UserRole).value<Property>().getData().value<Property::contactType>();
-        if(type!= Property::contactType_noSeparation && type!= Property::contactType_bonded)
+        if(type!= Property::contactType_tied && type!= Property::contactType_bonded)
         {
             Property::overpressureFunction value = data.value<Property>().getData().value<Property::overpressureFunction>();
             QComboBox *comboBox = static_cast<QComboBox*>(editor);
@@ -4441,27 +4373,24 @@ void GeneralDelegate::setEditorData(QWidget *editor, const QModelIndex &index) c
             {
             case Property::overpressureFunction_linear: comboBox->setCurrentIndex(0); break;
             case Property::overpressureFunction_exponential: comboBox->setCurrentIndex(1); break;
-            case Property::overpressureFunction_hard: comboBox->setCurrentIndex(2); break;
             }
             connect(editor,SIGNAL(currentIndexChanged(int)),this, SLOT(commitAndCloseComboBox()));
         }
     }
-    //! ------------
-    //! Formulation
-    //! ------------
+    //! --------------
+    //! to be removed
+    //! --------------
     else if(propertyName=="Formulation")
     {
         Property::contactFormulation value = data.value<Property>().getData().value<Property::contactFormulation>();
         QComboBox *comboBox = static_cast<QComboBox*>(editor);
         switch(value)
         {
-        case Property::contactFormulation_lagrange: comboBox->setCurrentIndex(0); break;
-        case Property::contactFormulation_penalty: comboBox->setCurrentIndex(1); break;
-        case Property::contactFormulation_MPC: comboBox->setCurrentIndex(2); break;
+        case Property::contactFormulation_penalty: comboBox->setCurrentIndex(0); break;
+        case Property::contactFormulation_MPC: comboBox->setCurrentIndex(1); break;
         }
         connect(editor,SIGNAL(currentIndexChanged(int)),this, SLOT(commitAndCloseComboBox()));
     }
-
     //! ---------
     //! Behavior
     //! ---------
@@ -4469,7 +4398,7 @@ void GeneralDelegate::setEditorData(QWidget *editor, const QModelIndex &index) c
     {
         SimulationNodeClass *curNode = this->getCurrentNode();
         Property::contactType type = curNode->getPropertyItem("Type")->data(Qt::UserRole).value<Property>().getData().value<Property::contactType>();
-        if(type!=Property::contactType_noSeparation)
+        if(type!=Property::contactType_tied)
         {
             Property::contactBehavior value = data.value<Property>().getData().value<Property::contactBehavior>();
             QComboBox *comboBox = static_cast<QComboBox*>(editor);
@@ -4499,7 +4428,7 @@ void GeneralDelegate::setEditorData(QWidget *editor, const QModelIndex &index) c
             case Property::contactType_bonded: comboBox->setCurrentIndex(0); break;
             case Property::contactType_frictional: comboBox->setCurrentIndex(1); break;
             case Property::contactType_frictionless: comboBox->setCurrentIndex(2); break;
-            case Property::contactType_noSeparation: comboBox->setCurrentIndex(3); break;
+            case Property::contactType_tied: comboBox->setCurrentIndex(3); break;
             }
             connect(editor,SIGNAL(currentIndexChanged(int)),this, SLOT(commitAndCloseComboBox()));
         //}
@@ -4540,10 +4469,10 @@ void GeneralDelegate::setEditorData(QWidget *editor, const QModelIndex &index) c
         if(item->data(Qt::UserRole).value<SimulationNodeClass*>()->getPropertyItem("Time tag")==Q_NULLPTR) exit(5555);
         QString timeTag = item->data(Qt::UserRole).value<SimulationNodeClass*>()->getPropertyValue<QString>("Time tag");
 
-        cout<<"____time tag: "<<timeTag.toStdString()<<"____"<<endl;
+        //cout<<"____time tag: "<<timeTag.toStdString()<<"____"<<endl;
 
         QStandardItemModel *model = (QStandardItemModel*)(comboBox->model());
-        cout<<"____number of coordinate systems defined: "<<model->rowCount()<<"____"<<endl;
+        //cout<<"____number of coordinate systems defined: "<<model->rowCount()<<"____"<<endl;
         bool found = false;
         int n=0;
         for(; n<model->rowCount(); n++)
@@ -4552,7 +4481,7 @@ void GeneralDelegate::setEditorData(QWidget *editor, const QModelIndex &index) c
             void *pp = model->data(mi,Qt::UserRole).value<void*>();
             QStandardItem *curItem = (QStandardItem*)(pp);
             SimulationNodeClass *curNode = curItem->data(Qt::UserRole).value<SimulationNodeClass*>();
-            cout<<"____"<<curNode->getPropertyValue<QString>("Time tag").toStdString()<<"____"<<endl;
+            //cout<<"____"<<curNode->getPropertyValue<QString>("Time tag").toStdString()<<"____"<<endl;
             if(timeTag == curNode->getPropertyValue<QString>("Time tag"))
             {
                 found = true;
@@ -4569,14 +4498,6 @@ void GeneralDelegate::setEditorData(QWidget *editor, const QModelIndex &index) c
     //! ----------------
     else if(propertyName =="Remote points")
     {
-        //void *p = data.value<Property>().getData().value<void*>();
-        //QComboBox *comboBox = static_cast<QComboBox*>(editor);
-        //QVariant data;
-        //data.setValue(p);
-        //int index = comboBox->findData(data);
-        //if(index!=-1) comboBox->setCurrentIndex(index);
-        //else comboBox->setCurrentIndex(0);
-
         void *p = data.value<Property>().getData().value<void*>();
         QComboBox *comboBox = static_cast<QComboBox*>(editor);
         QStandardItem *item = (QStandardItem*)(p);
@@ -4592,7 +4513,7 @@ void GeneralDelegate::setEditorData(QWidget *editor, const QModelIndex &index) c
             void *pp = model->data(mi,Qt::UserRole).value<void*>();
             QStandardItem *curItem = (QStandardItem*)(pp);
             SimulationNodeClass *curNode = curItem->data(Qt::UserRole).value<SimulationNodeClass*>();
-            cout<<"____"<<curNode->getPropertyValue<QString>("Time tag").toStdString()<<"____"<<endl;
+            //cout<<"____"<<curNode->getPropertyValue<QString>("Time tag").toStdString()<<"____"<<endl;
             if(timeTag == curNode->getPropertyValue<QString>("Time tag"))
             {
                 found = true;
@@ -4624,7 +4545,7 @@ void GeneralDelegate::setEditorData(QWidget *editor, const QModelIndex &index) c
             void *pp = model->data(mi,Qt::UserRole).value<void*>();
             QStandardItem *curItem = (QStandardItem*)(pp);
             SimulationNodeClass *curNode = curItem->data(Qt::UserRole).value<SimulationNodeClass*>();
-            cout<<"____"<<curNode->getPropertyValue<QString>("Time tag").toStdString()<<"____"<<endl;
+            //cout<<"____"<<curNode->getPropertyValue<QString>("Time tag").toStdString()<<"____"<<endl;
             if(timeTag == curNode->getPropertyValue<QString>("Time tag"))
             {
                 found = true;
@@ -4655,7 +4576,7 @@ void GeneralDelegate::setEditorData(QWidget *editor, const QModelIndex &index) c
             void *pp = model->data(mi,Qt::UserRole).value<void*>();
             QStandardItem *curItem = (QStandardItem*)(pp);
             SimulationNodeClass *curNode = curItem->data(Qt::UserRole).value<SimulationNodeClass*>();
-            cout<<"____"<<curNode->getPropertyValue<QString>("Time tag").toStdString()<<"____"<<endl;
+            //cout<<"____"<<curNode->getPropertyValue<QString>("Time tag").toStdString()<<"____"<<endl;
             if(timeTag == curNode->getPropertyValue<QString>("Time tag"))
             {
                 found = true;
@@ -4664,15 +4585,6 @@ void GeneralDelegate::setEditorData(QWidget *editor, const QModelIndex &index) c
         }
         if(found == true) comboBox->setCurrentIndex(n);
         else comboBox->setCurrentIndex(0);
-
-        //void *p = data.value<Property>().getData().value<void*>();
-        //QComboBox *comboBox = static_cast<QComboBox*>(editor);
-        //QVariant t;
-        //t.setValue(p);
-        //int index = comboBox->findData(t);
-        //if(index!=-1) comboBox->setCurrentIndex(index);
-        //else comboBox->setCurrentIndex(0);
-
         connect(editor,SIGNAL(currentIndexChanged(int)),SLOT(commitAndCloseContactPairSelector()));
     }
     //! ---------------------------
@@ -4695,7 +4607,7 @@ void GeneralDelegate::setEditorData(QWidget *editor, const QModelIndex &index) c
             void *pp = model->data(mi,Qt::UserRole).value<void*>();
             QStandardItem *curItem = (QStandardItem*)(pp);
             SimulationNodeClass *curNode = curItem->data(Qt::UserRole).value<SimulationNodeClass*>();
-            cout<<"____"<<curNode->getPropertyValue<QString>("Time tag").toStdString()<<"____"<<endl;
+            //cout<<"____"<<curNode->getPropertyValue<QString>("Time tag").toStdString()<<"____"<<endl;
             if(timeTag == curNode->getPropertyValue<QString>("Time tag"))
             {
                 found = true;
@@ -4704,13 +4616,6 @@ void GeneralDelegate::setEditorData(QWidget *editor, const QModelIndex &index) c
         }
         if(found == true) comboBox->setCurrentIndex(n);
         else comboBox->setCurrentIndex(0);
-        //void *p = data.value<Property>().getData().value<void*>();
-        //QComboBox *comboBox = static_cast<QComboBox*>(editor);
-        //QVariant t;
-        //t.setValue(p);
-        //int index = comboBox->findData(t);
-        //if(index!=-1) comboBox->setCurrentIndex(index);
-        //else comboBox->setCurrentIndex(0);
         connect(editor,SIGNAL(currentIndexChanged(int)),SLOT(commitAndCloseShapeSelectorEditor_boundaryPrismaticLayer()));
     }
     //! -----------------
@@ -4736,13 +4641,6 @@ void GeneralDelegate::setEditorData(QWidget *editor, const QModelIndex &index) c
         }
         else
         {
-            //void *p = data.value<Property>().getData().value<void*>();
-            //QComboBox *comboBox = static_cast<QComboBox*>(editor);
-            //QVariant t;
-            //t.setValue(p);
-            //int index = comboBox->findData(t);
-            //if(index!=-1) comboBox->setCurrentIndex(index);
-            //else comboBox->setCurrentIndex(0);
 
             void *p = data.value<Property>().getData().value<void*>();
             QComboBox *comboBox = static_cast<QComboBox*>(editor);
@@ -4759,7 +4657,7 @@ void GeneralDelegate::setEditorData(QWidget *editor, const QModelIndex &index) c
                 void *pp = model->data(mi,Qt::UserRole).value<void*>();
                 QStandardItem *curItem = (QStandardItem*)(pp);
                 SimulationNodeClass *curNode = curItem->data(Qt::UserRole).value<SimulationNodeClass*>();
-                cout<<"____"<<curNode->getPropertyValue<QString>("Time tag").toStdString()<<"____"<<endl;
+                //cout<<"____"<<curNode->getPropertyValue<QString>("Time tag").toStdString()<<"____"<<endl;
                 if(timeTag == curNode->getPropertyValue<QString>("Time tag"))
                 {
                     found = true;
@@ -5812,8 +5710,8 @@ void GeneralDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, c
         //! ----------------------------------------
         //! Advanced controls for the contact group
         //! ----------------------------------------
-        else if(propertyName =="K" || propertyName=="Sigma infinity" || /*propertyName =="C0" ||*/
-                propertyName =="Lambda" || propertyName =="P0" || propertyName == "Thermal conductance")
+        else if(propertyName =="K" || propertyName=="Sigma infty" || /*propertyName =="C0" ||*/
+                propertyName =="Lambda" || propertyName =="P0")
         {
             SimulationNodeClass *curNode = this->getCurrentNode();
 
@@ -5833,7 +5731,7 @@ void GeneralDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, c
                     {
                     case Property::overpressureFunction_linear:
                     {
-                        //! linear: "K", "C0", "Sigma infinity", "Lambda" can be modified
+                        //! linear: "K", "C0", "Sigma infty", "Lambda" can be modified
                         QLineEdit *le = static_cast<QLineEdit*>(editor);
                         data.setValue(le->text().toDouble());
                     }
@@ -5901,7 +5799,7 @@ void GeneralDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, c
                 data.setValue(le->text().toDouble());
             }
             //! ------------------------------------------
-            //! "K" and "Sigma infinity" are also properties
+            //! "K" and "Sigma infty" are also properties
             //! of "Compression only support"
             //! ------------------------------------------
             if(curNode->getType()==SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_CompressionOnlySupport)
@@ -5917,11 +5815,11 @@ void GeneralDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, c
         {
             SimulationNodeClass *curNode = this->getCurrentNode();
             Property::contactBehavior val = curNode->getPropertyValue<Property::contactBehavior>("Behavior");
-            //if(val == Property::contactBehavior_asymmetric)
-            //{
+            if(val == Property::contactBehavior_asymmetric)
+            {
                 QComboBox *cb = static_cast<QComboBox*>(editor);
                 data.setValue(cb->currentData().toInt());
-            //}
+            }
         }
         //! ------------
         //! Line search
@@ -6417,20 +6315,20 @@ void GeneralDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, c
         {
             SimulationNodeClass *curNode = this->getCurrentNode();
             Property::contactType type = curNode->getPropertyItem("Type")->data(Qt::UserRole).value<Property>().getData().value<Property::contactType>();
-            if(type!= Property::contactType_noSeparation &&  type!= Property::contactType_bonded)
+            if(type!= Property::contactType_tied &&  type!= Property::contactType_bonded)
             {
                 QComboBox *comboBox = static_cast<QComboBox*>(editor);
                 data.setValue(comboBox->currentData(Qt::UserRole).value<Property::overpressureFunction>());
             }
         }
         //! --------------
-        //! "Formulation"
+        //! to be removed
         //! --------------
-        else if(propertyName=="Formulation")
-        {
-            QComboBox *comboBox = static_cast<QComboBox*>(editor);
-            data.setValue(comboBox->currentData(Qt::UserRole).value<Property::contactFormulation>());
-        }
+        //else if(propertyName=="Formulation")
+        //{
+        //    QComboBox *comboBox = static_cast<QComboBox*>(editor);
+        //    data.setValue(comboBox->currentData(Qt::UserRole).value<Property::contactFormulation>());
+        //}
         //! ---------
         //! Behavior
         //! ---------
@@ -6438,7 +6336,7 @@ void GeneralDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, c
         {
             SimulationNodeClass *curNode = this->getCurrentNode();
             Property::contactType type = curNode->getPropertyItem("Type")->data(Qt::UserRole).value<Property>().getData().value<Property::contactType>();
-            if(type!=Property::contactType_noSeparation)
+            if(type!=Property::contactType_tied)
             {
                 QComboBox *comboBox = static_cast<QComboBox*>(editor);
                 data.setValue(comboBox->currentData(Qt::UserRole).value<Property::contactBehavior>());
@@ -6993,19 +6891,30 @@ void GeneralDelegate::paint(QPainter *painter, const QStyleOptionViewItem &opt, 
 //! function: setContext
 //! details:
 //! ---------------------
-void GeneralDelegate::setContext(const opencascade::handle<AIS_InteractiveContext> &aCTX)
+void GeneralDelegate::setContext(const occHandle(AIS_InteractiveContext) &aCTX)
 {
+    cout<<"GeneralDelegate::setContext()->____function called____"<<endl;
     myCTX = aCTX;
+    if(myCTX.IsNull()==false) cout<<"GeneralDelegate::setContext()->____context OK____"<<endl;
 }
 
-//! -----------------------------------------------------
+//! -------------------------
+//! function: setMeshContext
+//! details:
+//! -------------------------
+void GeneralDelegate::setMeshContext(const occHandle(AIS_InteractiveContext) &aMeshCTX)
+{
+    cout<<"GeneralDelegate::setMeshContext()->____function called____"<<endl;
+    myMeshCTX = aMeshCTX;
+    if(myCTX.IsNull()==false) cout<<"GeneralDelegate::setMeshContext()->____mesh context OK____"<<endl;
+}
+
+//! --------------------------------------------
 //! function: commitAndCloseShapeSelectorEditor
-//! details:  commit and close the shape selector editor
-//! -----------------------------------------------------
+//! details:
+//! --------------------------------------------
 void GeneralDelegate::commitAndCloseShapeSelectorEditor()
 {
-    //static int i;
-    //cout<<"GeneralDelegate::commitAndCloseShapeSelectorEditor()->____scope changed: "<<i++<<"____"<<endl;
     ShapeSelector *editor = qobject_cast<ShapeSelector *>(sender());
     emit commitData(editor);
     emit closeEditor(editor);
@@ -7150,8 +7059,8 @@ void GeneralDelegate::commitAndCloseDefineByControlComboBox()
 //! ------------------------------------------------------
 void GeneralDelegate::commitAndCloseElementControlComboBox()
 {
-    static int g;
-    cout<<"GeneralDelegate::commitAndCloseElementControlComboBox()->____Element control changed: "<<g++<<"____"<<endl;
+    //static int i;
+    //cout<<"GeneralDelegate::commitAndCloseElementControlComboBox()->____Element control changed: "<<i++<<"____"<<endl;
     QComboBox *editor = qobject_cast<QComboBox*>(sender());
     emit commitData(editor);
     emit closeEditor(editor);
@@ -7164,8 +7073,8 @@ void GeneralDelegate::commitAndCloseElementControlComboBox()
 //! -----------------------------------------------------
 void GeneralDelegate::commitAndCloseScopingMethodComboBox()
 {
-    static int i;
-    cout<<"GeneralDelegate::commitAndCloseScopingMethodComboBox()->____function called: "<<i++<<"____"<<endl;
+    //static int i;
+    //cout<<"GeneralDelegate::commitAndCloseScopingMethodComboBox()->____function called: "<<i++<<"____"<<endl;
     QComboBox *editor = qobject_cast<QComboBox*>(sender());
     emit commitData(editor);
     emit closeEditor(editor);
@@ -7722,9 +7631,6 @@ void GeneralDelegate::commitAndCloseBySelector()
     case SimulationNodeClass::nodeType_solutionStructuralTemperature:
     case SimulationNodeClass::nodeType_solutionStructuralThermalStrain:
     case SimulationNodeClass::nodeType_solutionStructuralTotalStrain:
-    case SimulationNodeClass::nodeType_solutionStructuralGamma:
-    case SimulationNodeClass::nodeType_solutionStructuralNodalForces:
-    case SimulationNodeClass::nodeType_solutionStructuralReactionForce:
     {
         emit byChanged();
     }
@@ -7987,7 +7893,7 @@ void GeneralDelegate::commitAndCloseComboBoxForOutputSettings()
 
 //! --------------------------------------------------
 //! function: commitAndCloseComboBoxStoreResultsAt()
-//! details:  this closes the "Store resutl at" control
+//! details:  this closes the "Small sliding" control
 //! --------------------------------------------------
 void GeneralDelegate::commitAndCloseStoreResultsAt()
 {

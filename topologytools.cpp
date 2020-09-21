@@ -49,7 +49,6 @@ std::vector<GeometryTag> TopologyTools::generateLocationPairs(geometryDataBase *
         }
         vecLocs.push_back(loc);
     }
-    //cout<<"TopologyTools::generateLocationPairs()->____exiting function____"<<endl;
     return vecLocs;
 }
 

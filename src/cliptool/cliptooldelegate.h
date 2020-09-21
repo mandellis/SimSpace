@@ -25,7 +25,7 @@ private slots:
 
    void handleCSChanged();
    void handleCSStatusChanged();
-   void handleCSTranslation(int curZ);
+   void handleCSTranslation(int sliderValue);
    void handleCSTranslationHandleReleased();
 
 signals:
