@@ -17,6 +17,7 @@
 //! ----
 #include <iostream>
 #include <fstream>
+#include <unordered_map>
 
 //! -------
 //! global
@@ -111,8 +112,15 @@ std::map<GeometryTag,std::vector<std::map<int,double>>> postEngine::evaluateResu
     //! ----------------------------------------------------
     //! generate the results on all the requested locations
     //! ----------------------------------------------------
+
+    //! ----------------------------------------------------
+    //! result of reaction forces (to do)
+    //! ----------------------------------------------------
+    std::unordered_multimap<int,std::vector<double>> totalRForcesMap;
+
     std::map<GeometryTag,std::vector<std::map<int,double>>> resMap;
     for(std::vector<GeometryTag>::const_iterator it = vecLoc.cbegin(); it!= vecLoc.cend(); ++it)
+
     {
         GeometryTag loc = *it;
 
@@ -145,9 +153,15 @@ std::map<GeometryTag,std::vector<std::map<int,double>>> postEngine::evaluateResu
             {
                 QString fileName = curDir.absolutePath()+"/"+entryList.at(k);
                 fileList.append(fileName);
+                //cout<<"adding file name: "<<entryList.at(k).toStdString()<<endl;
             }
         }
 
+        //! --------------------------
+        //! the results on a location
+        //! --------------------------
+  
+        std::vector<double> totalRForces;
         std::vector<std::map<int,double>> res;
 
         //! ---------------
@@ -181,16 +195,15 @@ std::map<GeometryTag,std::vector<std::map<int,double>>> postEngine::evaluateResu
 
             //printf("File %s Time= %lf Substep n=%d Step n=%d\n",tdata,time,subStepNb,stepNb);
             //printf("compare to File %s Time= %lf Substep n=%d Step n=%d\n",resultKeyName.toStdString().c_str(),time,requiredSubStepNb,requiredStepNb);
-
             bool eval=false;
-            switch (requiredMode)
-            {
+
+            switch (requiredMode) {
             case 0:
             {
                 if(strcmp(tdata,resultKeyName.toStdString().c_str())==0 && subStepNb==requiredSubStepNb && stepNb == requiredStepNb && mode == requiredMode)
                 {
                     requiredTime = time;
-                    eval = true;
+                    eval=true;
                 }
             }
                 break;
@@ -199,11 +212,12 @@ std::map<GeometryTag,std::vector<std::map<int,double>>> postEngine::evaluateResu
                 if(strcmp(tdata,resultKeyName.toStdString().c_str())==0 && mode == requiredMode)
                 {
                     requiredTime = time;
-                    eval = true;
+                    eval=true;
                 }
             }
                 break;
             }
+            //if(strcmp(tdata,resultKeyName.toStdString().c_str())==0 && subStepNb==requiredSubStepNb && stepNb == requiredStepNb && mode == requiredMode)
             if(eval)
             {
                 //printf("file @ required time found\n");
@@ -227,13 +241,16 @@ std::map<GeometryTag,std::vector<std::map<int,double>>> postEngine::evaluateResu
                         sscanf(val.c_str(),"%d%lf%lf%lf",&ni,&cxx,&cyy,&czz);
 
                         //! nodeIDs defining the MeshVS_dataSource
+                        //int OCCnodeID = indexedMapOfNodes.value(ni,-1);
                         std::map<int,int>::iterator it = indexedMapOfNodes.find(ni);
 
                         if(it!=indexedMapOfNodes.end())
+                        //if(OCCnodeID!=-1)
                         {
                             int OCCnodeID = it->second;
                             const QList<double> &normal = curFaceDS->myNodeNormals.value(OCCnodeID);
                             double normalFlux = cxx*normal[0]+cyy*normal[1]+czz*normal[2];
+                            //resComp_normal.insert(OCCnodeID,normalFlux);
                             resComp_normal.insert(std::make_pair(OCCnodeID,normalFlux));
                         }
                         std::getline(curFile,val);
@@ -259,8 +276,10 @@ std::map<GeometryTag,std::vector<std::map<int,double>>> postEngine::evaluateResu
                         sscanf(val.c_str(),"%d%lf%lf%lf",&ni,&cxx,&cyy,&czz);
 
                         //! nodeIDs defining the MeshVS_dataSource
+                        //int OCCnodeID = indexedMapOfNodes.value(ni,-1);
                         std::map<int,int>::iterator it = indexedMapOfNodes.find(ni);
                         if(it!=indexedMapOfNodes.end())
+                        //if(OCCnodeID!=-1)
                         {
                             int OCCnodeID = it->second;
                             total = sqrt(pow(cxx,2)+pow(cyy,2)+pow(czz,2));
@@ -282,7 +301,43 @@ std::map<GeometryTag,std::vector<std::map<int,double>>> postEngine::evaluateResu
                     //cout<<"postEngine::evaluateResult()->____Number of components: "<<res.length()<<"____"<<endl;
                 }
                     break;
+                case TypeOfResult_RF:
+                {
+                    std::map<int,double> resComp_X,resComp_Y,resComp_Z,resComp_Total;
+                    double compXtotal,compYtotal,compZtotal,compTtotal;
+                    //! <>::eof(): call getline before while, then inside {}, @ as last instruction
+                    std::getline(curFile,val);
+                    while(curFile.eof()!=true)
+                    {
+                        int ni;
+                        double cxx,cyy,czz,total;
+                        sscanf(val.c_str(),"%d%lf%lf%lf",&ni,&cxx,&cyy,&czz);
 
+                        //! nodeIDs defining the MeshVS_dataSource
+                        std::map<int,int>::iterator it = indexedMapOfNodes.find(ni);
+                        if(it!=indexedMapOfNodes.end())
+                        {
+                            int OCCnodeID = it->second;
+                            total = sqrt(pow(cxx,2)+pow(cyy,2)+pow(czz,2));
+                            resComp_Total.insert(std::make_pair(OCCnodeID,total));
+                            resComp_X.insert(std::make_pair(OCCnodeID,cxx));
+                            resComp_Y.insert(std::make_pair(OCCnodeID,cyy));
+                            resComp_Z.insert(std::make_pair(OCCnodeID,czz));
+                            compXtotal+=cxx;
+                            compYtotal+=cyy;
+                            compZtotal+=czz;
+                            compTtotal+=total;
+                        }
+                        std::getline(curFile,val);
+                    }
+                    //totalRForces<<compXtotal<<compYtotal<<compZtotal<<compTtotal;
+                    //! result
+                    res.push_back(resComp_Total);
+                    res.push_back(resComp_X);
+                    res.push_back(resComp_Y);
+                    res.push_back(resComp_Z);
+                }
+                    break;
                 case TypeOfResult_S:
                 case TypeOfResult_TOSTRAIN:
                 case TypeOfResult_MESTRAIN:
@@ -300,8 +355,10 @@ std::map<GeometryTag,std::vector<std::map<int,double>>> postEngine::evaluateResu
                         sscanf(val.c_str(),"%d%lf%lf%lf%lf%lf%lf",&ni,&cxx,&cyy,&czz,&cxy,&cyz,&cxz);
 
                         //! nodeIDs defining the MeshVS_dataSource
+                        //int OCCnodeID = indexedMapOfNodes.value(ni,-1);
                         std::map<int,int>::iterator it = indexedMapOfNodes.find(ni);
                         if(it!=indexedMapOfNodes.end())
+                        //if(OCCnodeID!=-1)
                         {
                             int OCCnodeID = it->second;
 
@@ -378,8 +435,10 @@ std::map<GeometryTag,std::vector<std::map<int,double>>> postEngine::evaluateResu
                         sscanf(val.c_str(),"%d%lf",&ni,&v);
 
                         //! nodeIDs defining the MeshVS_dataSource
+                        //int OCCnodeID = indexedMapOfNodes.value(ni,-1);
                         std::map<int,int>::iterator it = indexedMapOfNodes.find(ni);
                         if(it!=indexedMapOfNodes.end())
+                        //if(OCCnodeID!=-1)
                         {
                             int OCCnodeID = it->second;
                             //resT.insert(OCCnodeID,v);
@@ -408,8 +467,10 @@ std::map<GeometryTag,std::vector<std::map<int,double>>> postEngine::evaluateResu
                         sscanf(val.c_str(),"%d%lf%lf%lf%lf%lf%lf",&ni,&cxx,&cyy,&czz,&cxy,&cyz,&cxz);
 
                         //! nodeIDs defining the MeshVS_dataSource
+                        //int OCCnodeID = indexedMapOfNodes.value(ni,-1);
                         std::map<int,int>::iterator it = indexedMapOfNodes.find(ni);
                         if(it!=indexedMapOfNodes.end())
+                        //if(OCCnodeID!=-1)
                         {
                             int OCCnodeID = it->second;
 
@@ -434,7 +495,11 @@ std::map<GeometryTag,std::vector<std::map<int,double>>> postEngine::evaluateResu
                 }
                     break;
                 }
+                //totalRForcesMap.insert(loc,totalRForces);
+
+                //resMap.insert(loc,res);
                 resMap.insert(std::make_pair(loc,res));
+
                 curFile.close();
                 break;
             }
@@ -442,12 +507,12 @@ std::map<GeometryTag,std::vector<std::map<int,double>>> postEngine::evaluateResu
             {
                 curFile.close();
             }
-            //curFile.close();
+            curFile.close();
         }
-        //! --------------------------------------------------------------------
-        //! resMap => std::vector<GeometryTag,std::vector<std::map<int,double>>
-        //! res => std::vector<std::map<int,double>>
-        //! --------------------------------------------------------------------
+        //! --------------------------------------------------------
+        //! resMap => QMap<GeometryTag,QList<QMap<int,double>>
+        //! res => QList<QMap<int,double>>
+        //! --------------------------------------------------------
     }
     return resMap;
 }
@@ -491,6 +556,7 @@ QString postEngine::resultName(const QString &keyName, int component, int step, 
     case TypeOfResult_U:
         switch(component)
         {
+        //case 0: resultName="Total displacement"; break;
         case 0: resultName="Total displacement"; break;
         case 1: resultName="Directional displacement X"; break;
         case 2: resultName="Directional displacement Y"; break;
@@ -548,6 +614,15 @@ QString postEngine::resultName(const QString &keyName, int component, int step, 
         case 3: resultName="Directional Force Z"; break;
         }
         break;
+    case TypeOfResult_RF:
+        switch(component)
+        {
+        case 0: resultName="Total reaction force"; break;
+        case 1: resultName="Directional reaction force X"; break;
+        case 2: resultName="Directional reaction force Y"; break;
+        case 3: resultName="Directional reaction force Z"; break;
+        }
+        break;
     case TypeOfResult_EPS:
         switch(component)
         {
@@ -560,10 +635,10 @@ QString postEngine::resultName(const QString &keyName, int component, int step, 
     return this->timeStamp().append("\n").append(resultName).append(timeInfo).append("\n");
 }
 
-//! --------------------------------------------------------------------
+//! --------------------------
 //! function: buildPostObject
-//! details:  this method takes the data from the .frd file (from disk)
-//! --------------------------------------------------------------------
+//! details:
+//! --------------------------
 bool postEngine::buildPostObject(const QString &keyName,
                                  int component,
                                  int requiredSubStepNb,
@@ -620,9 +695,10 @@ bool postEngine::buildPostObject(const QString &keyName,
     aPostObject = std::make_shared<postObject>(resMap,vecLoc,mapDisplMap,aResultName,useSurfaceMeshForVolumeResults);
     aPostObject->init(myMeshDataBase);
     double magnifyFactor = Global::status().myResultPresentation.theScale;
-    bool isDone = aPostObject->buildMeshIO(-1,-1,10,true,component,magnifyFactor);
-    return isDone;
+    aPostObject->buildMeshIO(-1,-1,10,true,component,magnifyFactor);
+    return true;
 }
+
 
 //! --------------------
 //! function: timeStamp
@@ -680,7 +756,7 @@ bool postEngine::evaluateFatigueResults(int type, std::vector<GeometryTag> locs,
     {
     case fatigueModel_BCM:
     {
-        cout<<"postEngine::evaluateFatigueResult()->____fatigue model BCM called___"<<endl;
+        cout<<"postEngine::evaluateResult()->____fatigue model BCM called___"<<endl;
         std::map<GeometryTag,std::map<int,QList<double>>> r = readFatigueResults(type,locs,times);
 
         rainflow rf;
@@ -709,7 +785,7 @@ bool postEngine::evaluateFatigueResults(int type, std::vector<GeometryTag> locs,
 
     case fatigueModel_ESR:
     {
-        cout<<"postEngine::evaluateFatigueResult()->____fatigue model ESR called___"<<endl;
+        cout<<"postEngine::evaluateResult()->____fatigue model ESR called___"<<endl;
         int step,substep;
         double requiredTime;
         postTools::getStepSubStepByTimeDTM(myDTM,times.last(),step,substep);
@@ -989,28 +1065,9 @@ void postEngine::updateResultsPresentation(QList<sharedPostObject> &postObjectLi
         //! the surface mesh=>volume mesh/volume mesh=>surface mesh for viewing results
         //! the presentation should be fully rebuilt
         //! ----------------------------------------------------------------------------
-        /* commented: heavy computations (isostrips, isosurfaces, isolines should not be
-         * re-done when only some features of the results presentation has been changed
-         * left here for documentation
         if(previousResultPresentation != newResultsPresentation)
         {
-            double min = aPostObject->getMin();
-            double max = aPostObject->getMax();
-            int NbLevels = aPostObject->getNbLevels();
-            int component = aPostObject->getSolutionDataComponent();
-            bool isAutoScale = aPostObject->IsAutoscale();
-            int magnifyFactor = newResultsPresentation.theScale;
-
-            aPostObject->setMode(newResultsPresentation.useExteriorMeshForVolumeResults);
-            aPostObject->buildMeshIO(min,max,NbLevels,isAutoScale,component,magnifyFactor);
-        }
-        */
-        bool toBeUpdated = false;
-        if(previousResultPresentation.theTypeOfPresentation != newResultsPresentation.theTypeOfPresentation) toBeUpdated = true;
-        if(previousResultPresentation.theScale != newResultsPresentation.theScale) toBeUpdated = true;
-        if(toBeUpdated)
-        {
-            double min = aPostObject->getMin();
+            double min= aPostObject->getMin();
             double max = aPostObject->getMax();
             int NbLevels = aPostObject->getNbLevels();
             int component = aPostObject->getSolutionDataComponent();

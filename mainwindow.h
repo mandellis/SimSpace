@@ -37,10 +37,8 @@
 #include <QMainWindow>
 #include <QAction>
 
-class occGLWidget;
 class occPreGLWidget;
 class occPostWidget;
-
 class QToolBar;
 class QComboBox;
 class QLabel;
@@ -139,13 +137,12 @@ private:
     //! -------------------------------------
     QMenu *FileMenu;
     QMenu *GeometryMenu;
-
-    QMenu *MeshMenu;
-    QMenu *MeshMenuInsert;
-
     QMenu *ToolsMenu;
     QMenu *SolutionMenu;
 
+    //! -----------------------
+    //! View menu and sub menu
+    //! -----------------------
     QMenu *ViewMenu;
     QMenu *viewSubMenuDisplayQuality;
     QMenu *viewSubMenuWindows;
@@ -165,10 +162,9 @@ private:
     //! -----------------------
     QLabel *statusLabel;
 
-    //! ----------------
-    //! Graphic windows
-    //! ----------------
-    //occGLWidget *myMainOCCViewer;
+    //! ---------------------
+    //! Preprocessing window
+    //! ----------------------
     //occPreGLWidget *myMainOCCViewer;
     occPostWidget *myMainOCCViewer;
     dockableViewPort *myDockableMasterViewPort;
@@ -214,7 +210,6 @@ private:
     //! -----------------------------
     QAction* actionPreviewMesh;
     QAction *actionGenerateMesh;
-    QAction *actionLoadMesh;
     QAction *actionClearMesh;
 
     //! -----------------------------------------------
@@ -223,9 +218,6 @@ private:
     QAction *actionInsertMethod;
     QAction *actionInsertBodySizing;
     QAction *actionInsertFaceSizing;
-    QAction *actionInsertEdgeSizing;
-    QAction *actionInsertVertexSizing;
-    QAction *actionInsertPrismaticLayer;
 
     //! -------------------
     //! "Solution" actions
@@ -381,6 +373,12 @@ private:
     //! event
     virtual bool MainWindow::event(QEvent *event);
 
+    //! return the (system) path of the "settings.txt" file
+    QString getSettingsFilePath() const
+    {
+        ;
+    }
+
     //! create the menus
     void createMenu();
 
@@ -403,24 +401,6 @@ private:
     //void writeSolverInputFile();
 
 private slots:
-
-    //! create item mesh method - wrapper
-    void createItemMeshMethod();
-
-    //! create item mesh body sizing - wrapper
-    void createItemMeshBodySizing();
-
-    //! create item mesh face sizing - wrapper
-    void createItemMeshFaceSizing();
-
-    //! create item mesh edge sizing - wrapper
-    void createItemMeshEdgeSizing();
-
-    //! create item mesh vertex sizing - wrapper
-    void createItemMeshVertexSizing();
-
-    //! create item mesh prismatic layer - wrapper
-    void createItemMeshPrismaticLayer();
 
     //! Handle the "Select all" request from the toolbar
     void HandleSelectAll();
@@ -504,8 +484,6 @@ private slots:
 
     void setSelectionModeBox();
     void setSelectionModeSingle();
-    void setSelectionModeGeometry();
-    void setSelectionModeMesh();
 
     void showOptionsWidget();
 

@@ -1372,7 +1372,7 @@ void Ng_MeshVS_DataSourceFace::computeNormalAtNodes()
             for(int col=1; col<=3; col++)
             {
                 int globalNodeID = myElemNodes->Value(localElementID,col);
-                //int localNodeID = myNodesMap.FindIndex(globalNodeID);
+                int localNodeID = myNodesMap.FindIndex(globalNodeID);
 
                 //! ---------------------------------------------------------
                 //! build the map "nodeNormals" using the global node number
@@ -1691,7 +1691,7 @@ void Ng_MeshVS_DataSourceFace::computeFreeMeshSegments()
 //! ----------------------------------
 void Ng_MeshVS_DataSourceFace::computeNormalAtElements()
 {
-    cout<<"Ng_MeshVS_DataSourceFace::computeNormalAtElements()->____function called____"<<endl;
+    //cout<<"Ng_MeshVS_DataSourceFace::computeNormalAtElements()->____function called____"<<endl;
     for(TColStd_MapIteratorOfPackedMapOfInteger it(myElements); it.More(); it.Next())
     {
         std::vector<polygon::Point> aPolygon;
@@ -1699,16 +1699,14 @@ void Ng_MeshVS_DataSourceFace::computeNormalAtElements()
         int globalElementID = it.Key();
         int localElementID = myElementsMap.FindIndex(globalElementID);
 
+        //cout<<"@____(global element ID, local element ID) = ("<<globalElementID<<", "<<localElementID<<")____"<<endl;
+
         int NbNodes;
         double buf[30];
         TColStd_Array1OfReal coords(*buf,1,30);
         MeshVS_EntityType type;
         bool isDone = this->GetGeom(globalElementID,true,coords,NbNodes,type);
-        if(isDone == false)
-        {
-            cerr<<"Ng_MeshVS_DataSourceFace::computeNormalAtElements()->____cannot found element ID: "<<globalElementID<<"____"<<endl;
-            continue;
-        }
+        Q_UNUSED(isDone)
 
         for(int i=0; i<NbNodes; i++)
         {
@@ -1724,7 +1722,6 @@ void Ng_MeshVS_DataSourceFace::computeNormalAtElements()
         myElemNormals->SetValue(localElementID,2,n[1]);
         myElemNormals->SetValue(localElementID,3,n[2]);
     }
-    cout<<"Ng_MeshVS_DataSourceFace::computeNormalAtElements()->____exiting function____"<<endl;
 }
 
 //! -------------------------------------------------------------------
@@ -4174,7 +4171,6 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const std::vector<meshElement
         myNodeCoords->SetValue(localNodeID,2,aMeshPoint.y);
         myNodeCoords->SetValue(localNodeID,3,aMeshPoint.z);
     }
-
     //! ---------------------------
     //! compute normal at elements
     //! ---------------------------

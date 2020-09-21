@@ -25,17 +25,23 @@
 
 tools::tools() { ; }
 
-//! ----------------------------
-//! function: changeIconOpacity
+//! ----------------------------------
+//! function: change the icon opacity
 //! details:
-//! ----------------------------
+//! ----------------------------------
 void tools::changeIconOpacity(QExtendedStandardItem *item, bool isOpaque)
 {
     SimulationNodeClass *theCurNode = item->data(Qt::UserRole).value<SimulationNodeClass*>();
     QIcon theCurrentIcon =item->getIcon(theCurNode->getType());
     QPixmap p;
-    if(isOpaque) p =  theCurrentIcon.pixmap(QSize(32,32), QIcon::Disabled, QIcon::Off);
-    else p =  theCurrentIcon.pixmap(QSize(32,32), QIcon::Normal, QIcon::On);
+    if(isOpaque)
+    {
+        p =  theCurrentIcon.pixmap(QSize(32,32), QIcon::Disabled, QIcon::Off);
+    }
+    else
+    {
+        p =  theCurrentIcon.pixmap(QSize(32,32), QIcon::Normal, QIcon::On);
+    }
     QIcon theModifiedIcon(p);
     item->setIcon(theModifiedIcon);
 }

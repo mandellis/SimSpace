@@ -4,10 +4,7 @@
 //! redefinition of opencascade Handle() macro
 #include "occhandle.h"
 
-//! ----
 //! OCC
-//! ----
-#include <MeshVS_DataSource.hxx>
 #include <Standard_DefineHandle.hxx>
 #include <Standard_Macro.hxx>
 #include <Standard.hxx>
@@ -21,6 +18,11 @@
 #include <MeshVS_EntityType.hxx>
 #include <MeshVS_HArray1OfSequenceOfInteger.hxx>
 
+//! custom includes
+#include <ng_meshvs_datasourceface.h>
+#include <ng_meshvs_datasource2d.h>
+
+//#define VERBOSE
 
 class Ng_MeshVS_DataSource1D: public MeshVS_DataSource
 {
@@ -31,7 +33,7 @@ public:
 
     Standard_EXPORT Ng_MeshVS_DataSource1D(const TColStd_PackedMapOfInteger &theNodes,
                                            const occHandle(TColStd_HArray2OfReal) &theCoords,
-                                           int theMeshOrder);
+                                           Standard_Integer theMeshOrder);
 
 
     Standard_EXPORT Standard_Boolean GetGeom (const Standard_Integer ID,
@@ -74,7 +76,7 @@ private:
 
     Standard_Integer myMeshOrder;
     Standard_Integer myNumberOfNodes;
-    Standard_Integer myNumberOfElements;
+    Standard_Integer myNumberOfEdgeElements;
 
 public:
 

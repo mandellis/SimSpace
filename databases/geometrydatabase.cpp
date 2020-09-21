@@ -269,10 +269,10 @@ void geometryDataBase::printSummary()
     cout<<"____free edges: "<<NbEdges<<"____"<<endl;
 }
 
-//!-------------------------
-//! function: getSubShapeNr
+//!----------------------------------------
+//! function: retrieve the subshape number
 //! details:
-//! -------------------------
+//! ---------------------------------------
 bool geometryDataBase::getSubShapeNr(const TopoDS_Shape &aSubShape, int &mainShapeIndex, int &subShapeIndex, TopAbs_ShapeEnum &subShapeType) const
 {
     //cout<<"geometryDataBase::getSubShapeNr()->____function called____"<<endl;
@@ -308,6 +308,7 @@ bool geometryDataBase::getSubShapeNr(const TopoDS_Shape &aSubShape, int &mainSha
             case TopAbs_FACE: isTheShapeContained = MapOfBodyTopologyMap.value(k).faceMap.Contains(aSubShape); break;
             case TopAbs_EDGE: isTheShapeContained = MapOfBodyTopologyMap.value(k).edgeMap.Contains(aSubShape); break;
             case TopAbs_VERTEX: isTheShapeContained = MapOfBodyTopologyMap.value(k).vertexMap.Contains(aSubShape); break;
+
             }
 
             if(isTheShapeContained==true)
@@ -325,6 +326,7 @@ bool geometryDataBase::getSubShapeNr(const TopoDS_Shape &aSubShape, int &mainSha
     }
         break;
     }
+    //cerr<<"geometryDataBase::getSubShapeNr()->____exiting____"<<endl;
     return isTheShapeContained;
 }
 

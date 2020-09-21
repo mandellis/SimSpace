@@ -99,19 +99,17 @@ private:
 
 private:
 
-    //! the interactive context for geometry
+    //! ------------------------
+    //! the interactive context
+    //! ------------------------
     occHandle(AIS_InteractiveContext) myCTX;
-
-    //! the interactive context for mesh
-    occHandle(AIS_InteractiveContext) myMeshCTX;
 
 public:
 
+    //! ----------------------------
     //! set the interactive context
+    //! ----------------------------
     void setContext(const occHandle(AIS_InteractiveContext) &aCTX);
-
-    //! set the interactive mesh context
-    void setMeshContext(const occHandle(AIS_InteractiveContext) &aMeshCTX);
 
 private slots:
 

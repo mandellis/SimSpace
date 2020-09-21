@@ -399,6 +399,7 @@ QStandardItem* mainTreeTools::getCurrentSimulationRoot(QTreeView *treeView)
     if(node->isAnalysisSettings() || node->isSolution() || node->isSimulationSetUpNode()) return curItem->parent();
     if(node->isAnalysisResult() || node->isChildSimulationSetUpNode()) return curItem->parent()->parent();
     if(node->isNephewSimulationSetUpNode()) return curItem->parent()->parent()->parent();
+
     return Q_NULLPTR;
 }
 
@@ -681,7 +682,6 @@ SimulationNodeClass* mainTreeTools::getAnalysisSettingsNodeFromIndex(QModelIndex
     if(curNode->isAnalysisResult()) nodeAnalysisSettings = curIndex.parent().parent().child(0,0).data(Qt::UserRole).value<SimulationNodeClass*>();
     if(curNode->isChildSimulationSetUpNode()) nodeAnalysisSettings = curIndex.parent().parent().child(0,0).data(Qt::UserRole).value<SimulationNodeClass*>();
     if(curNode->isNephewSimulationSetUpNode()) nodeAnalysisSettings = curIndex.parent().parent().parent().child(0,0).data(Qt::UserRole).value<SimulationNodeClass*>();
-
     return nodeAnalysisSettings;
 }
 

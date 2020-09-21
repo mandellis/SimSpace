@@ -108,9 +108,9 @@ prismaticLayer::prismaticLayer(meshDataBase *mDB, QProgressIndicator *aProgressI
 //! function: setPrismaticFaces
 //! details:
 //! ----------------------------
-void prismaticLayer::setPrismaticFaces(const std::vector<int> &prismaticFaces)
+void prismaticLayer::setPrismaticFaces(const QList<int> &prismaticFaces)
 {
-    for(size_t i=0; i<prismaticFaces.size(); i++) myPrismaticFaces.push_back(prismaticFaces.at(i));
+    for(int i=0; i<prismaticFaces.length(); i++) myPrismaticFaces<<prismaticFaces.at(i);
     //this->mergeFaceMeshes();
 }
 
@@ -544,11 +544,8 @@ bool prismaticLayer::mergeFaceMeshes()
                 occHandle(Ng_MeshVS_DataSourceFace)::DownCast(myMeshDB->ArrayOfMeshDSOnFaces.getValue(bodyIndex,faceNr));
 
         faceList0<<aFaceMeshDS;
-        if(std::find(myPrismaticFaces.begin(), myPrismaticFaces.end(), faceNr)!=myPrismaticFaces.end()) faceList1<<aFaceMeshDS;
-        if(std::find(myPrismaticFaces.begin(), myPrismaticFaces.end(), faceNr)==myPrismaticFaces.end()) faceList2<<aFaceMeshDS;
-
-        //if(myPrismaticFaces.contains(faceNr)) faceList1<<aFaceMeshDS;
-        //if(!myPrismaticFaces.contains(faceNr)) faceList2<<aFaceMeshDS;
+        if(myPrismaticFaces.contains(faceNr)) faceList1<<aFaceMeshDS;
+        if(!myPrismaticFaces.contains(faceNr)) faceList2<<aFaceMeshDS;
     }
 
     cout<<"____faceList0: "<<faceList0.length()<<"____"<<endl;
@@ -775,7 +772,7 @@ bool prismaticLayer::inflateMeshAndCompress(QList<occHandle(Ng_MeshVS_DataSource
         //! what is not prismatic
         //! ----------------------
         std::vector<TopoDS_Face> vecFaces;
-        for(size_t i=0; i<myPrismaticFaces.size(); i++)
+        for(int i=0; i<myPrismaticFaces.length(); i++)
         {
             int faceNr = myPrismaticFaces.at(i);
             TopoDS_Face aFace = TopoDS::Face(myMeshDB->MapOfBodyTopologyMap.value(myBodyIndex).faceMap.FindKey(faceNr));
@@ -1098,9 +1095,9 @@ bool prismaticLayer::generateMeshAtWalls(occHandle(Ng_MeshVS_DataSource3D) &mesh
                                          occHandle(Ng_MeshVS_DataSourceFace) &lastInflatedMesh,
                                          QList<occHandle(Ng_MeshVS_DataSourceFace)> &listOfInflatedMeshes)
 {
-    //! ---------------------------------------------
-    //! merge the prismatic faces into a unique mesh
-    //! ---------------------------------------------
+    //! ----------------------------------------------
+    //! merge the prismmatic faces into a unique mesh
+    //! ----------------------------------------------
     bool isDone = this->mergeFaceMeshes();
     if(!isDone) return false;
 
@@ -1352,7 +1349,6 @@ void prismaticLayer::generateOneTetLayer(occHandle(Ng_MeshVS_DataSourceFace) &th
             //! ------------------------
             TetQualityClass aTetQuality;
             aTetQuality.setPoints(aVolElement.getPoints());
-
             double V = aTetQuality.Volume();
             if(V<0.0)
             {
@@ -1430,6 +1426,7 @@ void prismaticLayer::generateOneTetLayer(occHandle(Ng_MeshVS_DataSourceFace) &th
         }
     }
 }
+
 
 //! ------------------------
 //! function: fieldSmoother

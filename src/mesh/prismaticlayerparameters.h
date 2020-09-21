@@ -43,7 +43,7 @@ struct prismaticLayerParameters
     bool checkSelfIntersections;
     bool checkMutualIntersections;
     int generationAlgorithm;
-    int boundaryMeshType;               // "0" Hybrid "1" Tetrahedral
+    int boundaryMeshType;
 
     //! ----------------------
     //! operator = assignment

@@ -17,11 +17,5 @@ enum CurSelectionMode
     CurSelection_PointCoordinatesPicking
 };
 
-enum SelectionType
-{
-    SelectionType_Geometry,
-    SelectionType_Mesh
-};
-
 #endif // SELECTIONMODES
 

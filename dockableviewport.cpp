@@ -1,11 +1,5 @@
-//! ----------------
-//! custom includes
-//! ----------------
 #include "dockableViewPort.h"
 
-//! ---
-//! Qt
-//! ---
 #include <QVBoxLayout>
 
 //! ---------------------
@@ -72,110 +66,27 @@ void dockableViewPort::focusInEvent(QFocusEvent *focusEvent)
     emit requestChangeDelegateContext(this->myViewPort->getContext());
 }
 
-//! -------------------------------
-//! function: setAction3D_Rotation
-//! details:
-//! -------------------------------
 void dockableViewPort::setAction3D_Rotation()
 {
     myViewPort->setAction3D_Rotation();
 }
 
-//! --------------------------
-//! function: setAction3D_Pan
-//! details:
-//! --------------------------
 void dockableViewPort::setAction3D_Pan()
 {
     myViewPort->setAction3D_Pan();
 }
 
-//! ------------------------------------
-//! function: setAction3D_WindowZooming
-//! details:
-//! ------------------------------------
 void dockableViewPort::setAction3D_WindowZooming()
 {
     myViewPort->setAction3D_WindowZooming();
 }
 
-//! -----------------
-//! function: FitAll
-//! details:
-//! -----------------
 void dockableViewPort::FitAll()
 {
     myViewPort->FitAll();
 }
 
-//! ---------------------------
-//! function: setSelectionMode
-//! details:
-//! ---------------------------
 void dockableViewPort::setSelectionMode(CurSelectionMode selectionMode)
 {
     myViewPort->setSelectionMode(selectionMode);
-}
-
-//! ---------------------
-//! function: displayCAD
-//! details:
-//! ---------------------
-void dockableViewPort::displayCAD()
-{
-    myViewPort->displayCAD();
-}
-
-//! -------------------
-//! function: hideBody
-//! details:
-//! -------------------
-void dockableViewPort::hideBody(const TColStd_ListOfInteger &bodyListNbs)
-{
-    myViewPort->hideBody(bodyListNbs);
-}
-
-//! -------------------
-//! function: showBody
-//! details:
-//! -------------------
-void dockableViewPort::showBody(const TColStd_ListOfInteger &bodyListNbs)
-{
-    myViewPort->showBody(bodyListNbs);
-}
-
-//! ---------------------
-//! function: getContext
-//! details:
-//! ---------------------
-const occHandle(AIS_InteractiveContext)& dockableViewPort::getContext() const
-{
-    return myViewPort->getContext();
-}
-
-//! ---------------------------
-//! function: displayShapeCopy
-//! details:
-//! ---------------------------
-void dockableViewPort::displayShapeCopy(const TopTools_ListOfShape &list1,
-                      const TopTools_ListOfShape &list2,
-                      Quantity_NameOfColor color1,
-                      Quantity_NameOfColor color2,
-                      QVariant options)
-{
-    myViewPort->displayShapeCopy(list1,list2,color1,color2,options);
-}
-
-//! ----------------------------
-//! function: displayShapeCopy1
-//! details:
-//! ----------------------------
-void dockableViewPort::displayShapeCopy1(const TopTools_ListOfShape &listShapes, Quantity_NameOfColor color)
-{
-    myViewPort->displayShapeCopy1(listShapes,color);
-}
-
-void dockableViewPort::displayShapeCopy2(const TopTools_ListOfShape &listShapes, Quantity_NameOfColor color)
-{
-    myViewPort->displayShapeCopy2(listShapes,color);
 }
