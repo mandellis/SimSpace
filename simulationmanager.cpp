@@ -9587,7 +9587,6 @@ void SimulationManager::buildDataBaseFromDisk(const QString &fileName)
             }
         }
         */
-
     }
 
     //! -----------------------------
@@ -10192,12 +10191,12 @@ void SimulationManager::interpolatePrivate(int mode)
         //! ----------------------------------
         nodeResult->addProperty(prop_postObject);
 
-        //! -----------------------------------------------------
-        //! add the timeTag copied from the parent item "Mapper"
-        //! -----------------------------------------------------
+        //! -------------------------------------------------------------------
+        //! add the timeTag copied from the parent item "Imported body scalar"
+        //! -------------------------------------------------------------------
         data.setValue(parentTimeTag);
-        Property prop_timeTag("Time tag",data,Property::PropertyGroup_Identifier);
-        nodeResult->addProperty(prop_timeTag);
+        Property prop_parenTimeTag("Parent time tag",data,Property::PropertyGroup_Identifier);
+        nodeResult->addProperty(prop_parenTimeTag);
 
         //! ----------------------------------------------------------
         //! add the "Source time" and "Analysis time" properties only
@@ -10258,14 +10257,12 @@ void SimulationManager::interpolatePrivate(int mode)
         }
         itemResult->setData(itemName,Qt::DisplayRole);
         itemResult->setData(data,Qt::UserRole);
-
-        //! ----------------------------
-        //! append to the "Mapper" item
-        //! ----------------------------
+        nodeResult->setName(itemName);
+        //! ------------------------------------------
+        //! append to the "Imported body scalar" item
+        //! ------------------------------------------
         curItem->appendRow(itemResult);
-
         connect(nodeResult->getModel(),SIGNAL(itemChanged(QStandardItem*)),this,SLOT(handleItemChange(QStandardItem*)));
-
         t++;
     }
 }
@@ -10445,7 +10442,6 @@ void SimulationManager::callPostEngineEvaluateResult()
 void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curItem, bool immediatelyDisplay)
 {
     cout<<"SimulationManager::callPostEngineEvaluateResult_private()->____function called____"<<endl;
-
     //! --------------
     //! the node type
     //! --------------

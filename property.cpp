@@ -834,7 +834,7 @@ void Property::readProperty(ifstream &in, Property &prop)
         cout<<"- value: "<<prop.getPropertyValue(enumName).toStdString()<<endl;
     }
     else if(propKeyName == "X axis data" || propKeyName == "Y axis data" || propKeyName == "Z axis data" ||
-            propKeyName == "Base origin" || propKeyName =="Direction" || propKeyName =="Reference point")
+            propKeyName == "Base origin" || propKeyName =="Direction" || propKeyName =="Reference point" || propKeyName == "Time list")
     {
         QVector<double> vec = tools::readQVector<double>(in);
         data.setValue(vec);
