@@ -597,7 +597,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 emit requestSetWorkingMode(3);
                 emit requestShowAllBodies();
                 emit requestHideAllResults();
-                //this->changeColor();
+                this->changeColor();
 
                 //! switch the tab
                 emit requestSetActiveCentralTab("maingwindow");
