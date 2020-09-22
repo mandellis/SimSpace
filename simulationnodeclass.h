@@ -125,11 +125,6 @@ public:
         nodeType_importedBodyScalar,                //! imported scalar
         nodeType_modelChange,                       //! model change
 
-#ifdef COSTAMP_VERSION
-        nodeType_processParameters,
-        nodeType_processParametersPressure,
-        nodeType_processParametersClosureForce,
-#endif
         nodeType_coordinateSystems,                 //! the family or the root node
         nodeType_coordinateSystem,                  //! a coordinate system, 64
         nodeType_coordinateSystem_global,           //! the global coordinate system, 65

@@ -2466,8 +2466,6 @@ QIcon QExtendedStandardItem::getIcon(SimulationNodeClass::nodeType theNodeType) 
 
 #ifdef COSTAMP_VERSION
     case SimulationNodeClass::nodeType_timeStepBuilder: return QIcon(":/icons/icon_clock.png"); break;
-    case SimulationNodeClass::nodeType_processParametersClosureForce: return QIcon(":/icons/icon_closure force.png"); break;
-    case SimulationNodeClass::nodeType_processParametersPressure: return QIcon(":/icons/icon_BC pressure.png"); break;
 #endif
     default:
         return QIcon();

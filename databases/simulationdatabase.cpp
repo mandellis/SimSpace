@@ -374,7 +374,9 @@ simulationDataBase::simulationDataBase(const QList<SimulationNodeClass*> listOfN
                 it++;
                 continue;
             }
-            //cout<<"____NODE TO ATTACH FOUND____"<<endl;
+
+            //QString nodeName = curNode->getName();
+            //cout<<"____NODE TO ATTACH FOUND____"<<nodeName.toStdString()<<endl;
             //cout<<"____PARENT TIME TAG: "<<curParentTimeTag.toStdString()<<"____"<<endl;
             //cout<<"____TIME TAG: "<<curTimeTag.toStdString()<<"____"<<endl;
 
@@ -407,7 +409,7 @@ simulationDataBase::simulationDataBase(const QList<SimulationNodeClass*> listOfN
         {
             QString key = QString("%1").arg(vecKeys[n]);
 
-            cout<<"____Attaching node with time tag: "<<key.toStdString()<<"____"<<endl;
+            //cout<<"____Attaching node with time tag: "<<key.toStdString()<<"____"<<endl;
 
             std::map<QString,SimulationNodeClass*>::iterator mapit = timeTagToNodeMap.find(key);
             if(mapit!=timeTagToNodeMap.end())
@@ -425,8 +427,9 @@ simulationDataBase::simulationDataBase(const QList<SimulationNodeClass*> listOfN
 
         //! ------------------------------------
         //! retrieve the child and nephew nodes
+        //! skip analysis settings item
         //! ------------------------------------
-        for(int nn=0; nn<curSimulationRootItem->rowCount();nn++)
+        for(int nn=1; nn<curSimulationRootItem->rowCount();nn++)
         {
             QStandardItem *curSimulationItem = curSimulationRootItem->child(nn,0);
             SimulationNodeClass *curSimulationNode = curSimulationItem->data(Qt::UserRole).value<SimulationNodeClass*>();
@@ -435,28 +438,40 @@ simulationDataBase::simulationDataBase(const QList<SimulationNodeClass*> listOfN
             std::map<QString,SimulationNodeClass*> timeTagToChildNodeMap;
             std::vector<unsigned long long int> vecChildKeys;
 
+            cout<<"____SEARCHING CHILD FOR NODE____"<<curSimulationNode->getName().toStdString()
+               <<"___TIME TAG OF THE PARENT: "<<curSimulationNodeTimeTag.toStdString()<<"____"<<endl;
+
             for(QList<SimulationNodeClass*>::iterator it=listOfNodes_.begin(); it!=listOfNodes_.end();)
             {
                 SimulationNodeClass *curNode = *it;
                 bool isChildSetUpNode = curNode->isChildSimulationSetUpNode();
+                //cout<<"____curNode name"<<curNode->getName().toStdString()<<endl;
 
                 if(isChildSetUpNode == false)
                 {
                     it++;
                     continue;
                 }
+                cout<<"____the node is a child node_____"<<endl;
 
                 QString curChildParentTimeTag = curNode->getPropertyValue<QString>("Parent time tag");
+                //cout<<"____tag00"<<endl;
+
                 QString curChildTimeTag = curNode->getPropertyValue<QString>("Time tag");
+
+                //cout<<"____tag01"<<endl;
 
                 if(curChildParentTimeTag!=curSimulationNodeTimeTag)
                 {
+                    //cout<<"____tag02"<<endl;
                     it++;
                     continue;
                 }
+                QString nodeName = curNode->getName();
+                cout<<"____NODE TO ATTACH FOUND____"<<nodeName.toStdString()<<endl;
                 //cout<<"____NODE TO ATTACH FOUND____"<<endl;
-                //cout<<"____PARENT TIME TAG: "<<curParentTimeTag.toStdString()<<"____"<<endl;
-                //cout<<"____TIME TAG: "<<curTimeTag.toStdString()<<"____"<<endl;
+                //cout<<"____PARENT TIME TAG: "<<curChildParentTimeTag.toStdString()<<"____"<<endl;
+                //cout<<"____TIME TAG OF THE PARENT: "<<curTimeTag.toStdString()<<"____"<<endl;
 
                 //! ------------------------------
                 //! remove the node from the list
@@ -474,18 +489,19 @@ simulationDataBase::simulationDataBase(const QList<SimulationNodeClass*> listOfN
                 vecChildKeys.push_back(curChildTimeTag.toULongLong());
                 //cout<<"____a check =>"<<curChildTimeTag.toULongLong()<<"____"<<endl;
             }
-
             //! ---------------------------
             //! sort the map using the key
             //! ---------------------------
             std::sort(vecChildKeys.begin(),vecChildKeys.end());
 
+            //cout<<"____tag01"<<endl;
+
             //! -----------------------------
             //! append in the original order
             //! -----------------------------
-            for(int n=0; n<vecChildKeys.size(); n++)
+            for(int l=0; l<vecChildKeys.size(); l++)
             {
-                QString key = QString("%1").arg(vecChildKeys[n]);
+                QString key = QString("%1").arg(vecChildKeys[l]);
 
                 //cout<<"____Attaching node with time tag: "<<key.toStdString()<<"____"<<endl;
 
@@ -503,6 +519,7 @@ simulationDataBase::simulationDataBase(const QList<SimulationNodeClass*> listOfN
                 }
             }
 
+            //! add the nephew node
             for(int p=0;p<curSimulationItem->rowCount();p++)
             {
                 QStandardItem *curChildSimulationItem = curSimulationItem->child(p,0);
@@ -511,28 +528,33 @@ simulationDataBase::simulationDataBase(const QList<SimulationNodeClass*> listOfN
 
                 std::map<QString,SimulationNodeClass*> timeTagToNephewNodeMap;
                 std::vector<unsigned long long int> vecNephewKeys;
+                cout<<"SEARCHING CHILD FOR NODE___"<<curChildSimulationNode->getName().toStdString()<<"____TIME TAG OF THE PARENT: "<<curChildSimulationNodeTimeTag.toStdString()<<"____"<<endl;
 
                 for(QList<SimulationNodeClass*>::iterator it=listOfNodes_.begin(); it!=listOfNodes_.end();)
                 {
                     SimulationNodeClass *curNode = *it;
                     bool isNephewSetUpNode = curNode->isNephewSimulationSetUpNode();
+                    cout<<"____tag00"<<endl;
 
                     if(isNephewSetUpNode == false)
                     {
                         it++;
                         continue;
                     }
+                    cout<<"____tag01"<<endl;
 
                     QString curNephewParentTimeTag = curNode->getPropertyValue<QString>("Parent time tag");
                     QString curNephewTimeTag = curNode->getPropertyValue<QString>("Time tag");
+                    cout<<"____tag02"<<endl;
 
                     if(curNephewParentTimeTag!=curChildSimulationNodeTimeTag)
                     {
                         it++;
                         continue;
                     }
-                    //cout<<"____NODE TO ATTACH FOUND____"<<endl;
-                    //cout<<"____PARENT TIME TAG: "<<curParentTimeTag.toStdString()<<"____"<<endl;
+                    QString nodeName = curNode->getName();
+                    cout<<"____NODE TO ATTACH FOUND____"<<nodeName.toStdString()<<endl;
+                    cout<<"____PARENT TIME TAG: "<<curNephewParentTimeTag.toStdString()<<"____"<<endl;
                     //cout<<"____TIME TAG: "<<curTimeTag.toStdString()<<"____"<<endl;
 
                     //! ------------------------------
@@ -2100,8 +2122,12 @@ void simulationDataBase::createStructuralAnalysisRootNode()
     name = "Time step builder";
 
     data.setValue(QString(""));
-    Property prop_suppressionStatus("Time history file",data,Property::PropertyGroup_Definition);
-    props.push_back(prop_suppressionStatus);
+    Property prop_thf("Time history file",data,Property::PropertyGroup_Definition);
+    props.push_back(prop_thf);
+
+    data.setValue(Property::SuppressionStatus_Active);
+    Property prop_suppressed("Suppressed",data,Property::PropertyGroup_Definition);
+    props.push_back(prop_suppressed);
 
     SimulationNodeClass *node = new SimulationNodeClass(name,SimulationNodeClass::nodeType_timeStepBuilder,props);
 

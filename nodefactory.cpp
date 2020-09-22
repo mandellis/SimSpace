@@ -675,9 +675,9 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
     }
         break;
 
-        //! --------------------------------
-        //! imported body scalar (OpenFoam)
-        //! --------------------------------
+        //! ---------------------
+        //! imported body scalar
+        //! ---------------------
     case SimulationNodeClass::nodeType_importedBodyScalar:
     {
         cout<<"nodeFactory::nodeFromScratch->____creating imported body scalar____"<<endl;
