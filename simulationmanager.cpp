@@ -485,6 +485,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 break;
 
             case SimulationNodeClass::nodeType_OpenFoamScalarData:
+            case SimulationNodeClass::nodeType_importedBodyScalar:
             {
                 emit requestSetActiveCentralTab("maingwindow");
             }
@@ -550,7 +551,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
             }
                 break;
 
-            case SimulationNodeClass::nodeType_importedBodyScalar:
+            //case SimulationNodeClass::nodeType_importedBodyScalar:
             case SimulationNodeClass::nodeType_postObject:
             case SimulationNodeClass::nodeType_solutionStructuralNodalDisplacement:
             case SimulationNodeClass::nodeType_solutionStructuralStress:
@@ -596,7 +597,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 emit requestSetWorkingMode(3);
                 emit requestShowAllBodies();
                 emit requestHideAllResults();
-                this->changeColor();
+                //this->changeColor();
 
                 //! switch the tab
                 emit requestSetActiveCentralTab("maingwindow");
@@ -10132,32 +10133,45 @@ void SimulationManager::interpolatePrivate(int mode)
         //! ---------------------
         //! create a post object
         //! ---------------------
-        QString postObjectName = QString("Interpolation result on");
+        QString postObjectName = QString("Interpolation result");
 
         //! -----------------------------------------
         //! prepare the name(s) of the postObject(s)
         //! -----------------------------------------
-        mapOfMeshDataSources meshMap;
-        for(std::vector<GeometryTag>::const_iterator it = vecLocs.cbegin();it!=vecLocs.cend();++it)
+        QString pName;
+        switch(mode)
         {
-            GeometryTag loc = *it;
-            int bodyIndex=loc.parentShapeNr;
-
-            //! ------------------------------
-            //! pile up the mesh data sources
-            //! ------------------------------
-            const occHandle(MeshVS_DataSource) &theMeshVS_DataSource = mySimulationDataBase->ArrayOfMeshDS.value(bodyIndex);
-            meshMap.insert(loc, theMeshVS_DataSource);
-
-            //! ---------------------------
-            //! use the name of the bodies
-            //! ---------------------------
-            QString name = mySimulationDataBase->MapOfBodyNames.value(bodyIndex);
-            postObjectName.append(" ").append(name).append("\n").append(computationTimesMap.value(loc));
-
-            cout<<"Simulation manager::interpolatePrivate()->____the interpolation post object has name: \""<<postObjectName.toStdString()<<"\"____"<<endl;
+        case 4:
+        {
+            pName = QString(" at T = %1").arg(timeS.toDouble());
+            postObjectName.append(pName);
         }
+            break;
+        default:
+        {
+            mapOfMeshDataSources meshMap;
+            for(std::vector<GeometryTag>::const_iterator it = vecLocs.cbegin();it!=vecLocs.cend();++it)
+            {
+                GeometryTag loc = *it;
+                int bodyIndex=loc.parentShapeNr;
 
+                //! ------------------------------
+                //! pile up the mesh data sources
+                //! ------------------------------
+                const occHandle(MeshVS_DataSource) &theMeshVS_DataSource = mySimulationDataBase->ArrayOfMeshDS.value(bodyIndex);
+                meshMap.insert(loc, theMeshVS_DataSource);
+
+                //! ---------------------------
+                //! use the name of the bodies
+                //! ---------------------------
+                QString name = mySimulationDataBase->MapOfBodyNames.value(bodyIndex);
+                postObjectName.append(" on ").append(name).append("\n");
+                //postObjectName.append(" on ").append(name).append("\n").append(computationTimesMap.value(loc));
+                cout<<"Simulation manager::interpolatePrivate()->____the interpolation post object has name: \""<<postObjectName.toStdString()<<"\"____"<<endl;
+            }
+        }
+            break;
+        }
         //! ---------------------------------------------
         //! append the timestamp to the color box legend
         //! ---------------------------------------------
