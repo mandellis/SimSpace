@@ -9893,6 +9893,8 @@ void SimulationManager::interpolatePrivate(int mode)
             }
         }
         NbStep = listTimeS.size();
+        //Mapper3DClass::nodeSource aNodeSource = vecSourceNodes[1];
+        //cout<<"size of vec val "<<aNodeSource.vecVal.size()<<endl;
     }
         break;
 
@@ -10046,11 +10048,12 @@ void SimulationManager::interpolatePrivate(int mode)
 
             cout<<"SimulationManager::interpolatePrivate()->____mapping finished____"<<endl;
 
+
             for(int pos=0;pos<NbStep;pos++)
             {
-                std::map<GeometryTag,std::vector<std::map<int,double>>> mapOfRes;
                 QMap<int,std::pair<double,double>> mapMinMax;
                 std::vector<std::map<int,double>> listOfRes;
+                std::map<GeometryTag,std::vector<std::map<int,double>>> mapOfRes;
 
                 cout<<"SimulationManager::interpolatePrivate()->____retrieve list of map of result at step "<<pos<<"____"<<endl;
 
@@ -10087,10 +10090,10 @@ void SimulationManager::interpolatePrivate(int mode)
                     //! --------------------------------------------
                     listMapMinMax.replace(pos,mapMinMax);
                     listMapOfRes[pos] = mapOfRes;
+                    //std::replace(listMapOfRes.begin(),listMapOfRes.end(),listMapOfRes.at(pos),mapOfRes);
                 }
             }
         }
-
         //! ------------
         //! stop chrono
         //! ------------

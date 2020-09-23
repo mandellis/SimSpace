@@ -1336,39 +1336,48 @@ bool writeSolverFileClass::perform()
             for(int pp=0;pp<theCurItem->rowCount();pp++)
             {
                 QExtendedStandardItem *itemBodyScalar = static_cast<QExtendedStandardItem*>(theCurItem->child(pp,0));
-                SimulationNodeClass *ImportedBodyScalarNode = theCurItem->child(pp,0)->data(Qt::UserRole).value<SimulationNodeClass*>();
+                SimulationNodeClass *bodyScalarNode = theCurItem->child(pp,0)->data(Qt::UserRole).value<SimulationNodeClass*>();
                 QString itemName = itemNameClearSpaces(mySimulationRoot->child(k,0)->data(Qt::DisplayRole).toString());
-                SimulationNodeClass::nodeType ImportedBodyScalarType= ImportedBodyScalarNode->getType();
+                QString extension=".t";
+                QString index=QString::number(n);
+                //QString time=QString::number(i);
+                //QString tname = "Initial_"+SetName+"_"+index+"_"+time+extension;
+                QString tname = "Initial_"+itemName+"_"+index+extension;
+                QString dirName = myFileName;
+                QString absFileName = myFileName.split("/").last();
+                dirName.chop(absFileName.size());
+                tname.prepend(dirName);
 
-                if(ImportedBodyScalarType!=SimulationNodeClass::nodeType_OpenFoamScalarData)
+                SimulationNodeClass::nodeType bodyScalarType= bodyScalarNode->getType();
+                if(bodyScalarType!=SimulationNodeClass::nodeType_OpenFoamScalarData)
                 {
-                    double initialTime = tabData->dataRC(1,1).toDouble();
-                    double sourceTime = ImportedBodyScalarNode->getPropertyValue<doubel>("Source time");
-                    if(sourceTime != initialTime) continue;
-                    QString extension=".t";
-                    QString index=QString::number(n);
-                    //QString time=QString::number(i);
-                    //QString tname = "Initial_"+SetName+"_"+index+"_"+time+extension;
-                    QString tname = "Initial_"+itemName+"_"+index+"_"+extension;
-                    QString absFileName = myFileName.split("/").last();
-                    QString dirName = myFileName;
-                    dirName.chop(absFileName.size());
-                    //tname.prepend(dirName);
-                    postObject pObject;
-                    //! scan the interpolation results at different times
-                    SimulationNodeClass *node = itemBodyScalar->child(n,0)->data(Qt::UserRole).value<SimulationNodeClass*>();
-                    Property::SuppressionStatus ss = node->getPropertyValue<Property::SuppressionStatus>("Suppressed");
-                    if(ss==Property::SuppressionStatus_Active)
+                    for(int ppp=0;ppp<itemBodyScalar->rowCount();ppp++)
                     {
-                        //!search the Graphic Object property and extract temperature distribution data map
-                        pObject =  node->getPropertyItem("Post object")->data(Qt::UserRole).value<Property>().getData().value<postObject>();
-                        this->writeTemperatureHistory(pObject, tname);
+                        QExtendedStandardItem *itemImportedBodyScalar = static_cast<QExtendedStandardItem*>(itemBodyScalar->child(ppp,0));
+                        SimulationNodeClass *ImportedBodyScalarNode = itemImportedBodyScalar->data(Qt::UserRole).value<SimulationNodeClass*>();
+                        //QString itemName = itemNameClearSpaces(mySimulationRoot->child(k,0)->data(Qt::DisplayRole).toString());
+                        //SimulationNodeClass::nodeType ImportedBodyScalarType= ImportedBodyScalarNode->getType();
+                        double initialTime = tabData->dataRC(1,1).toDouble();
+                        double sourceTime = ImportedBodyScalarNode->getPropertyValue<double>("Analysis time");
+                        if(sourceTime != initialTime) continue;
+
+                        sharedPostObject pObject;
+                        //! scan the interpolation results at different times
+                        //SimulationNodeClass *node = itemBodyScalar->child(n,0)->data(Qt::UserRole).value<SimulationNodeClass*>();
+                        Property::SuppressionStatus ss = ImportedBodyScalarNode->getPropertyValue<Property::SuppressionStatus>("Suppressed");
+                        if(ss==Property::SuppressionStatus_Active)
+                        {
+                            //!search the Graphic Object property and extract temperature distribution data map
+                            pObject =  ImportedBodyScalarNode->getPropertyItem("Post object")->data(Qt::UserRole).value<Property>().getData().value<sharedPostObject>();
+                            this->writeTemperatureHistory(pObject, tname);
+                            myInputFile<<"*INITIAL CONDITIONS, TYPE=TEMPERATURE"<<endl;
+                            myInputFile<<"*INCLUDE, INPUT = "<<tname.toStdString()<<endl;
+                            initialTempDistr = true;
+                        }
+                            break;
                     }
-                    myInputFile<<"*INITIAL CONDITIONS, TYPE=TEMPERATURE"<<endl;
-                    myInputFile<<"*INCLUDE, INPUT = "<<tname.toStdString()<<endl;
-                    initialTempDistr = true;
-                    break;
                 }
+                if(initialTempDistr==true) break;
             }
         }
     }
@@ -1416,7 +1425,7 @@ bool writeSolverFileClass::perform()
                 tname.prepend(dirName);
 
                 myInputFile<<"*INITIAL CONDITIONS, TYPE=TEMPERATURE"<<endl;
-                postObject pObject = itemPostObject->data(Qt::UserRole).value<Property>().getData().value<postObject>();
+                sharedPostObject pObject = itemPostObject->data(Qt::UserRole).value<Property>().getData().value<sharedPostObject>();
                 this->writeTemperatureHistory(pObject, tname);
             }
             initialTempDistr = true;
@@ -1692,11 +1701,12 @@ bool writeSolverFileClass::perform()
 
             cout<<"writeSolverFileClass::perform()->_____writing "<<mySimulationRoot->child(k,0)->data(Qt::DisplayRole).toString().toStdString()<<endl;
             QString itemName = itemNameClearSpaces(mySimulationRoot->child(k,0)->data(Qt::DisplayRole).toString());
-
             SimulationNodeClass *theCurNode = mySimulationRoot->child(k,0)->data(Qt::UserRole).value<SimulationNodeClass*>();
             SimulationNodeClass::nodeType theNodeType= theCurNode->getType();
+            cout<<"tag00"<<endl;
 
             Property::SuppressionStatus theNodeSS = theCurNode->getPropertyValue<Property::SuppressionStatus>("Suppressed");
+            cout<<"tag00"<<endl;
 
             if(theNodeSS==Property::SuppressionStatus_Active &&
                     theNodeType!=SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_CylindricalSupport &&
@@ -1778,7 +1788,7 @@ bool writeSolverFileClass::perform()
                             QString dirName = myFileName;
                             dirName.chop(absFileName.size());
                             tname.prepend(dirName);
-                            postObject pObject = itemPostObject->data(Qt::UserRole).value<Property>().getData().value<postObject>();
+                            sharedPostObject pObject = itemPostObject->data(Qt::UserRole).value<Property>().getData().value<sharedPostObject>();
                             myInputFile<<"*TEMPERATURE"<<endl;
                             this->writeTemperatureHistory(pObject, tname);
                         }
@@ -1799,7 +1809,7 @@ bool writeSolverFileClass::perform()
                         //! the current mapper
                         QExtendedStandardItem *itemBodyScalar = static_cast<QExtendedStandardItem*>(theCurItem->child(n,0));
                         SimulationNodeClass *ImportedBodyScalarNode = theCurItem->child(n,0)->data(Qt::UserRole).value<SimulationNodeClass*>();
-                        double curTime = tabData->dataRC(i,1);
+                        double curTime = tabData->dataRC(i,1).toDouble();
 
                         SimulationNodeClass::nodeType ImportedBodyScalarType= ImportedBodyScalarNode->getType();
                         if(ImportedBodyScalarType!=SimulationNodeClass::nodeType_OpenFoamScalarData)
@@ -1814,7 +1824,7 @@ bool writeSolverFileClass::perform()
                             tname.prepend(dirName);
 
                             int stepSelection = ImportedBodyScalarNode->getPropertyValue<int>("Step selection mode");
-                            postObject pObject;
+                            sharedPostObject pObject;
                             myInputFile<<"*TEMPERATURE"<<endl;
 
                             switch(stepSelection)
@@ -1822,12 +1832,12 @@ bool writeSolverFileClass::perform()
                             case 0:     //All time steps
                             {
                                 //! scan the interpolation results at different times
-                                SimulationNodeClass *node = itemBodyScalar->child(i-1,0)->data(Qt::UserRole).value<SimulationNodeClass*>();
+                                SimulationNodeClass *node = itemBodyScalar->child(0,0)->data(Qt::UserRole).value<SimulationNodeClass*>();
                                 Property::SuppressionStatus ss = node->getPropertyValue<Property::SuppressionStatus>("Suppressed");
                                 if(ss==Property::SuppressionStatus_Active)
                                 {
                                     //!search the Graphic Object property and extract temperature distribution data map
-                                    pObject =  node->getPropertyItem("Post object")->data(Qt::UserRole).value<Property>().getData().value<postObject>();
+                                    pObject =  node->getPropertyValue<sharedPostObject>("Post object");
                                     this->writeTemperatureHistory(pObject, tname);
                                 }
                             }
@@ -1838,12 +1848,12 @@ bool writeSolverFileClass::perform()
                                 if (i==1)
                                 {
                                     //! scan the interpolation results at different times
-                                    SimulationNodeClass *node = itemBodyScalar->child(i-1,0)->data(Qt::UserRole).value<SimulationNodeClass*>();
+                                    SimulationNodeClass *node = itemBodyScalar->child(0,0)->data(Qt::UserRole).value<SimulationNodeClass*>();
                                     Property::SuppressionStatus ss = node->getPropertyValue<Property::SuppressionStatus>("Suppressed");
                                     if(ss==Property::SuppressionStatus_Active)
                                     {
                                         //!search the Graphic Object property and extract temperature distribution data map
-                                        pObject =  node->getPropertyItem("Post object")->data(Qt::UserRole).value<Property>().getData().value<postObject>();
+                                        pObject =  node->getPropertyValue<sharedPostObject>("Post object");
                                         this->writeTemperatureHistory(pObject, tname);
                                     }
                                 }
@@ -1852,16 +1862,15 @@ bool writeSolverFileClass::perform()
 
                             case 2:     //Last
                             {
-                                cout<<i<<","<<NbSteps<<endl;
                                 if (i==NbSteps)
                                 {
                                     //! scan the interpolation results at different times
-                                    SimulationNodeClass *node = itemBodyScalar->child(i-1,0)->data(Qt::UserRole).value<SimulationNodeClass*>();
+                                    SimulationNodeClass *node = itemBodyScalar->child(0,0)->data(Qt::UserRole).value<SimulationNodeClass*>();
                                     Property::SuppressionStatus ss = node->getPropertyValue<Property::SuppressionStatus>("Suppressed");
                                     if(ss==Property::SuppressionStatus_Active)
                                     {
                                         //!search the Graphic Object property and extract temperature distribution data map
-                                        pObject =  node->getPropertyItem("Post object")->data(Qt::UserRole).value<Property>().getData().value<postObject>();
+                                        pObject =  node->getPropertyValue<sharedPostObject>("Post object");
                                         this->writeTemperatureHistory(pObject, tname);
                                     }
                                 }
@@ -1870,18 +1879,15 @@ bool writeSolverFileClass::perform()
 
                             case 3:     //By number
                             {
-                                int tNumber =  ImportedBodyScalarNode->getPropertyValue<int>("Step number");
-                                if (i==tNumber)
+                                //! scan the interpolation results at different times
+                                SimulationNodeClass *node = itemBodyScalar->child(0,0)->data(Qt::UserRole).value<SimulationNodeClass*>();
+                                Property::SuppressionStatus ss = node->getPropertyValue<Property::SuppressionStatus>("Suppressed");
+                                int analysisTime =  ImportedBodyScalarNode->getPropertyValue<int>("Step number");
+                                if(ss==Property::SuppressionStatus_Active && analysisTime==curTime)
                                 {
-                                    //! scan the interpolation results at different times
-                                    SimulationNodeClass *node = itemBodyScalar->child(i-1,0)->data(Qt::UserRole).value<SimulationNodeClass*>();
-                                    Property::SuppressionStatus ss = node->getPropertyValue<Property::SuppressionStatus>("Suppressed");
-                                    if(ss==Property::SuppressionStatus_Active)
-                                    {
-                                        //!search the Graphic Object property and extract temperature distribution data map
-                                        pObject =  node->getPropertyItem("Post object")->data(Qt::UserRole).value<Property>().getData().value<postObject>();
-                                        this->writeTemperatureHistory(pObject, tname);
-                                    }
+                                    //!search the Graphic Object property and extract temperature distribution data map
+                                    pObject =  node->getPropertyValue<sharedPostObject>("Post object");
+                                    this->writeTemperatureHistory(pObject, tname);
                                 }
                             }
                                 break;
@@ -1889,15 +1895,16 @@ bool writeSolverFileClass::perform()
                             case 4:     //Automatic Time Stepping
                             {
                                 //! scan the interpolation results at different times
-                                for(iint ii=0;ii<itemBodyScalar->rowCount();ii++)
+                                for(int ii=0;ii<itemBodyScalar->rowCount();ii++)
                                 {
                                     SimulationNodeClass *node = itemBodyScalar->child(ii,0)->data(Qt::UserRole).value<SimulationNodeClass*>();
                                     Property::SuppressionStatus ss = node->getPropertyValue<Property::SuppressionStatus>("Suppressed");
                                     double analysisTime = node->getPropertyValue<double>("Analysis time");
+                                    cout<<analysisTime<<"  "<<curTime<<endl;
                                     if(ss==Property::SuppressionStatus_Active && analysisTime == curTime)
                                     {
                                         //!search the Graphic Object property and extract temperature distribution data map
-                                        pObject =  node->getPropertyItem("Post object")->data(Qt::UserRole).value<Property>().getData().value<postObject>();
+                                        pObject =  node->getPropertyValue<sharedPostObject>("Post object");
                                         this->writeTemperatureHistory(pObject, tname);
                                     }
                                 }
@@ -3312,20 +3319,23 @@ void writeSolverFileClass::writeFilm(double aLoad, QString aName,double refTempe
 //! function: writeTemperatureHistory
 //! details:
 //! ----------------------------------
-void writeSolverFileClass::writeTemperatureHistory(postObject pObject, QString tName)
+void writeSolverFileClass::writeTemperatureHistory(sharedPostObject pObject, QString tName)
 {
     ofstream myTemperature;
     myTemperature.setf(ios::scientific);
     myTemperature.precision(EXPFORMAT_PRECISION);
     myTemperature.open(tName.toStdString());
 
-    std::map<GeometryTag,std::vector<std::map<int,double>>> Tdata = pObject.getData();
+    std::map<GeometryTag,std::vector<std::map<int,double>>> Tdata = pObject->getData();
+    cout<<" size of pObject "<<Tdata.size()<<endl;
     for(std::map<GeometryTag,std::vector<std::map<int,double>>>::iterator mapIt = Tdata.begin(); mapIt!=Tdata.end(); ++mapIt)
     {
         GeometryTag aloc = mapIt->first;
 
         std::vector<std::map<int,double>> lres = mapIt->second;     //extract the list of results
         std::map<int,double> res = lres.at(0);                      //extract the result from the list
+        cout<<" size of res "<<res.size()<<endl;
+
         std::map<int,int> trans = OCCMeshToCCXmesh::perform(aloc,myDB);
 
         int l=1;
