@@ -119,7 +119,7 @@ std::map<GeometryTag,std::vector<std::map<int,double>>> postEngine::evaluateResu
         //! -------------------------------------------------------------------------
         //! node conversion map: (Calculix mesh nodeID,nodeID for MeshVS_DataSource)
         //! -------------------------------------------------------------------------
-        std::map<int,int> indexedMapOfNodes = OCCMeshToCCXmesh::perform(loc,myMeshDataBase);
+        std::map<int,int> indexedMapOfNodes = OCCMeshToCCXmesh::performCCXtoOCC(loc,myMeshDataBase);
 
         //! ------------------------------------------------
         //! enter <...>/SolutionData/ResultsData
@@ -818,7 +818,7 @@ std::map<GeometryTag,std::map<int,QList<double>>> postEngine::readFatigueResults
         //! node conversion map: (Calculix mesh nodeID,nodeID for MeshVS_DataSource)
         //! -------------------------------------------------------------------------
         GeometryTag loc = *it;
-        std::map<int,int> indexedMapOfNodes = OCCMeshToCCXmesh::perform(loc,myMeshDataBase);
+        std::map<int,int> indexedMapOfNodes = OCCMeshToCCXmesh::performCCXtoOCC(loc,myMeshDataBase);
 
         //! -------------------------------------
         //! enter <...>/SolutionData/ResultsData

@@ -3336,13 +3336,15 @@ void writeSolverFileClass::writeTemperatureHistory(sharedPostObject pObject, QSt
         std::map<int,double> res = lres.at(0);                      //extract the result from the list
         cout<<" size of res "<<res.size()<<endl;
 
-        std::map<int,int> trans = OCCMeshToCCXmesh::perform(aloc,myDB);
+        std::map<int,int> trans = OCCMeshToCCXmesh::performOCCtoCCX(aloc,myDB);
 
         int l=1;
         for(std::map<int,double>::const_iterator it =res.cbegin(); it!=res.cend(); it++)
         {
-            int keyOfl = trans.find(l)->first;
-            myTemperature<<keyOfl<<", "<<it->second<<endl;
+            //int keyOfl = trans.find(l)->second;
+            //myTemperature<<keyOfl<<", "<<it->second<<endl;
+            int nodeID = it->first;
+            myTemperature<<trans.find(nodeID)->second<<", "<<it->second<<endl;
             l++;
         }
     }
