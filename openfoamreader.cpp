@@ -849,8 +849,6 @@ bool OpenFoamReader::perform(SimulationNodeClass *OFnode)
 #endif
             is.close();
             curDir.cdUp();
-            //cout<<"OpenFoamReader::perform()->____cur directory: \""<<curDir.absolutePath().toStdString()<<
-                  "\" => Now exiting the time folder____"<<endl;
 
             //! --------------------------
             //! exiting the "time" folder
@@ -1055,7 +1053,7 @@ void OpenFoamReader::readFaces(fstream &is, std::vector<std::vector<int>> &listO
     //! -----------------------
     for(int faceNr=0; faceNr<Nent; faceNr++)
     {
-        if(faceNr%1000==0)//cout<<"____reading face nr: "<<faceNr<<" from file____"<<endl;
+        //if(faceNr%1000==0)//cout<<"____reading face nr: "<<faceNr<<" from file____"<<endl;
 
         //! -----------------------------------
         //! a list of node IDs defining a face
@@ -1155,9 +1153,8 @@ void OpenFoamReader::readFaces(fstream &is, std::vector<std::vector<int>> &listO
     }
 
     //cout<<"____Number bad faces: "<<bad<<"____"<<endl;
-    double failures = double(bad)/double(Nent);
+    //double failures = double(bad)/double(Nent);
     //cout<<"____Failures ratio: "<<failures<<endl;
-
     //cout<<"____end reading faces: "<<this->clock()<<"____"<<endl;
 }
 

@@ -25,7 +25,7 @@
 //! ---
 //! Qt
 //! ---
-#include <QMap>
+//#include <QMap>
 
 //! ----
 //! C++
@@ -157,6 +157,15 @@ postObject::postObject(const std::map<GeometryTag,std::vector<std::map<int,doubl
 void postObject::setMapOfNodalDisplacements(const std::map<GeometryTag,std::map<int,gp_Vec>> &mapDisplMap)
 {
     myMapOfNodalDisplacements = mapDisplMap;
+}
+
+//! -------------------------------------
+//! function: getMapOfNodalDisplacements
+//! details:
+//! -------------------------------------
+std::map<GeometryTag,std::map<int,gp_Vec>> postObject::getMapOfNodalDisplacements()
+{
+    return myMapOfNodalDisplacements;
 }
 
 
@@ -328,6 +337,7 @@ void postObject::write(ofstream &file)
     file<<myMin<<endl;
     file<<myMax<<endl;
     file<<myNbLevels<<endl;
+    file<<myIsAutoscale<<endl;
 }
 
 //! ----------------------
@@ -530,6 +540,18 @@ postObject::postObject(ifstream &file)
     file>>myMin;
     file>>myMax;
     file>>myNbLevels;
+    int autoscale;
+    file>>autoscale;
+    autoscale == 0? myIsAutoscale = false: myIsAutoscale = true;
+
+    //! ----------------------------------------------------------
+    //! this parameters are synchornized with the default setting
+    //! of the results tool bar at application start
+    //! ----------------------------------------------------------
+    bool useSurfaceMeshForResultView = true;
+    bool magnifyFactor = 1.0;
+    this->setMode(useSurfaceMeshForResultView);
+    this->buildMeshIO(myMin,myMax,myNbLevels,myIsAutoscale,mySolutionDataComponent,magnifyFactor);
 }
 
 //! ----------------------
@@ -579,8 +601,6 @@ bool postObject::buildMeshIO(double min, double max, int Nlevels, bool autoscale
         else
         {
             curMeshDS = anIt->second->GetNonDeformedDataSource();
-            //cout<<"____curmeshds: "<<curMeshDS->GetAllElements().Extent()<<"____"<<endl;
-            //exit(8888);
         }
 
         //! ----------------------------------
@@ -617,7 +637,7 @@ bool postObject::buildMeshIO(double min, double max, int Nlevels, bool autoscale
         const std::map<int, double> &res = listOfRes.at(component);
         if(res.size()==0)
         {
-            cout<<"postObject::buildMeshIO()->____you are giving me no data____"<<endl;
+            cout<<"postObject::buildMeshIO()->____you are giving me no displacement data____"<<endl;
             return false;
         }
         //! -------------------------------------------
@@ -648,8 +668,9 @@ bool postObject::buildMeshIO(double min, double max, int Nlevels, bool autoscale
             break;
         }
 
-        //MeshTools::buildIsoStrip(theDeformedDS,res,myMin,myMax,myNbLevels,aColoredMesh,true);
-        //MeshTools::buildDeformedColoredMesh(curMeshDS,res,displacementMap,1.0,myMin,myMax,Nlevels,aColoredMesh,true);
+        // put here your experiments on view generation
+        // MeshTools::buildIsoStrip(theDeformedDS,res,myMin,myMax,myNbLevels,aColoredMesh,true);
+        // MeshTools::buildDeformedColoredMesh(curMeshDS,res,displacementMap,1.0,myMin,myMax,Nlevels,aColoredMesh,true);
         theMeshes.insert(std::make_pair(loc,aColoredMesh));
     }
 
@@ -660,7 +681,6 @@ bool postObject::buildMeshIO(double min, double max, int Nlevels, bool autoscale
     TCollection_ExtendedString title(name.toStdString().c_str());
     AISColorScale->SetTitle(title);
     return true;
-    //cout<<"postObject::buildMeshIO()->____exiting function____"<<endl;
 }
 
 //! -------------------------------------------
@@ -822,7 +842,7 @@ void postObject::writeIntoStream(ofstream &os, const occHandle(MeshVS_DataSource
     os<<int(3)<<endl;
     os<<aNodes.Extent()<<endl;
 
-    Standard_Real aCoordsBuf[3];
+    double aCoordsBuf[3];
     TColStd_Array1OfReal aCoords(*aCoordsBuf,1,3);
     Standard_Integer nbNodes;
     MeshVS_EntityType aType;
@@ -871,7 +891,6 @@ void postObject::writeIntoStream(ofstream &os, const occHandle(MeshVS_DataSource
             case 4: sprintf(header,"QUAD"); break;
             case 6: sprintf(header,"TRIG6"); break;
             case 8: sprintf(header,"QUAD8"); break;
-            default: break;
             }
         }
         else if(type==MeshVS_ET_Volume)
@@ -879,12 +898,13 @@ void postObject::writeIntoStream(ofstream &os, const occHandle(MeshVS_DataSource
             switch(NbNodes)
             {
             case 4: sprintf(header,"TET"); break;
+            case 5: sprintf(header,"PYRAM"); break;
+            case 6: sprintf(header,"PRISM"); break;
             case 8: sprintf(header,"HEXA"); break;
             case 10: sprintf(header,"TET10"); break;
+            case 13: sprintf(header,"PYRAM13"); break;
+            case 15: sprintf(header,"PRISM15"); break;
             case 20: sprintf(header,"HEXA20"); break;
-            case 6: sprintf(header,"PRISM"); break;
-            case 5: sprintf(header,"PYRAM"); break;
-            default: break;
             }
         }
 

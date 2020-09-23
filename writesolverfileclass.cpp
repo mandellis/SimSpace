@@ -1336,14 +1336,14 @@ bool writeSolverFileClass::perform()
             for(int pp=0;pp<theCurItem->rowCount();pp++)
             {
                 QExtendedStandardItem *itemBodyScalar = static_cast<QExtendedStandardItem*>(theCurItem->child(pp,0));
-                SimulationNodeClass *ImportedBodyScalarNode = theCurItem->child(pp,0)->data(Qt::UserRole).value<SimulationNodeClass*>();
+                SimulationNodeClass *aNode = theCurItem->child(pp,0)->data(Qt::UserRole).value<SimulationNodeClass*>();
                 QString itemName = itemNameClearSpaces(mySimulationRoot->child(k,0)->data(Qt::DisplayRole).toString());
-                SimulationNodeClass::nodeType ImportedBodyScalarType= ImportedBodyScalarNode->getType();
+                SimulationNodeClass::nodeType aType = aNode->getType();
 
-                if(ImportedBodyScalarType!=SimulationNodeClass::nodeType_OpenFoamScalarData)
+                if(aType!=SimulationNodeClass::nodeType_OpenFoamScalarData)
                 {
                     double initialTime = tabData->dataRC(1,1).toDouble();
-                    double sourceTime = ImportedBodyScalarNode->getPropertyValue<doubel>("Source time");
+                    double sourceTime = aNode->getPropertyValue<double>("Source time");
                     if(sourceTime != initialTime) continue;
                     QString extension=".t";
                     QString index=QString::number(n);
@@ -1799,7 +1799,7 @@ bool writeSolverFileClass::perform()
                         //! the current mapper
                         QExtendedStandardItem *itemBodyScalar = static_cast<QExtendedStandardItem*>(theCurItem->child(n,0));
                         SimulationNodeClass *ImportedBodyScalarNode = theCurItem->child(n,0)->data(Qt::UserRole).value<SimulationNodeClass*>();
-                        double curTime = tabData->dataRC(i,1);
+                        double curTime = tabData->dataRC(i,1).toDouble();
 
                         SimulationNodeClass::nodeType ImportedBodyScalarType= ImportedBodyScalarNode->getType();
                         if(ImportedBodyScalarType!=SimulationNodeClass::nodeType_OpenFoamScalarData)
@@ -1889,7 +1889,7 @@ bool writeSolverFileClass::perform()
                             case 4:     //Automatic Time Stepping
                             {
                                 //! scan the interpolation results at different times
-                                for(iint ii=0;ii<itemBodyScalar->rowCount();ii++)
+                                for(int ii=0;ii<itemBodyScalar->rowCount();ii++)
                                 {
                                     SimulationNodeClass *node = itemBodyScalar->child(ii,0)->data(Qt::UserRole).value<SimulationNodeClass*>();
                                     Property::SuppressionStatus ss = node->getPropertyValue<Property::SuppressionStatus>("Suppressed");

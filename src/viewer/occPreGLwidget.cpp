@@ -124,7 +124,6 @@ occPreGLWidget::occPreGLWidget(QWidget *parent):occGLWidget(parent),
 {
     cout<<"occPreGLWidget::occPreGLWidget()->____CONSTRUCTOR CALLED____"<<endl;
     //this->setFocusPolicy(Qt::StrongFocus);
-    //this->setFocusPolicy(Qt::ClickFocus);
 
     this->setContextMenuPolicy(Qt::CustomContextMenu);
 
@@ -132,7 +131,7 @@ occPreGLWidget::occPreGLWidget(QWidget *parent):occGLWidget(parent),
     connect(this,SIGNAL(selectionChanged()),this,SLOT(computeSelectionProperties()));
     connect(this,SIGNAL(highlightmeshface()),this,SLOT(showFaceMesh()));
     connect(this,SIGNAL(highlightmeshedge()),this,SLOT(showEdgeMesh()));
-    connect(this,SIGNAL(selectionChanged()),this,SLOT(printTopologyNumber()));
+    //connect(this,SIGNAL(selectionChanged()),this,SLOT(printTopologyNumber()));
 
     //! -----------------------------
     //! actions for the context menu
@@ -150,10 +149,10 @@ occPreGLWidget::occPreGLWidget(QWidget *parent):occGLWidget(parent),
     actionClearGeneratedDataOnSelectedBodies->setData(18);
 }
 
-//! --------------------------------------------------------------
+//! ------------------------------------
 //! function: buildMeshToolsContextMenu
-//! details:  build a piece of context menu containing mesh tools
-//! --------------------------------------------------------------
+//! details:
+//! ------------------------------------
 void occPreGLWidget::buildMeshToolsContextMenu(QMenu *aContextMenu)
 {
     QMenu *meshToolsMenu = aContextMenu->addMenu("Mesh tools");
@@ -310,14 +309,8 @@ void occPreGLWidget::displayCAD(bool onlyLoad)
     QList<QAction *>listOfActions = myCursorModeMenu->actions();
     for(int i=0;i<listOfActions.size();i++) listOfActions.value(i)->setChecked(false);
 
-    //! This closes all contexts - returns to the NEUTRAL POINT
-    //occContext->CloseAllContexts(true);
-
     //! Set the number of the context - now "0", NEUTRAL POINT
     myLocalCtxNumber = occContext->IndexOfCurrentLocal();
-
-    //! Not interested in selection in NEUTRAL POINT
-    //occContext->SetAutoActivateSelection(Standard_False);
 
     //! Set the view mode
     this->setShadedExteriorAndEdgesView();
@@ -357,16 +350,8 @@ void occPreGLWidget::displayCAD(bool onlyLoad)
         //! -------------
         //anAISShape->SetTransparency(TRANSPARENCY_IN_WORKING_MODE_MODEL);
 
-        //! -----------------------------------------------------
-        //! The selection or highlight is on the whole shape
-        //! It can be: Aspect_TOHM_BOUNDBOX or Aspect_TOHM_COLOR
-        //! -----------------------------------------------------
-        //Aspect_TypeOfHighlightMethod typeOfHighlightMethod = Aspect_TOHM_COLOR;
-        //anAISShape->Attributes()->SetMethod(typeOfHighlightMethod);
-
         if(onlyLoad)
         {
-
             //! only load into the context
             occContext->Load(anAISShape,-1,false);
         }
@@ -564,14 +549,16 @@ void occPreGLWidget::reset()
 //! ------------------------------
 #include <StdSelect_BRepOwner.hxx>
 void occPreGLWidget::printTopologyNumber()
-{    
+{
     for(occContext->InitSelected();occContext->MoreSelected();occContext->NextSelected())
-    {        
+    {
         const occHandle(AIS_ExtendedShape) &theSelectedAIS_Shape = occHandle(AIS_ExtendedShape)::DownCast(occContext->SelectedInteractive());
         int AIS_shapeIndex = theSelectedAIS_Shape->index();
 
         const occHandle(SelectMgr_EntityOwner) &anOwnerOfSelection = occContext->SelectedOwner();
+        if(anOwnerOfSelection.IsNull()) continue;
         const occHandle(StdSelect_BRepOwner) &aBRepOwnerOfSelection = occHandle(StdSelect_BRepOwner)::DownCast(anOwnerOfSelection);
+        if(aBRepOwnerOfSelection.IsNull()) continue;
         TopoDS_Shape aSelectedShape = aBRepOwnerOfSelection->Shape();
         TopoDS_Shape aLocatedSelectedShape = aSelectedShape.Located(aBRepOwnerOfSelection->Location() * aSelectedShape.Location());
 
@@ -2115,7 +2102,7 @@ void occPreGLWidget::ShowContextMenu1(const QPoint& pos)
 //! details:
 //! --------------------------------------
 void occPreGLWidget::buildSuppressionContextMenu()
-{   
+{
     //! ------------------------------------------
     //! check if some bodies have been suppressed
     //! ------------------------------------------
