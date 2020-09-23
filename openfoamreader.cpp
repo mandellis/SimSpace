@@ -73,7 +73,7 @@ void OpenFoamReader::freeMemory()
     //! ----------------------
     if(myPointList.size()>0)
     {
-        cout<<"OpenFoamReader::freeMemory()->____deleting points____"<<endl;
+        //cout<<"OpenFoamReader::freeMemory()->____deleting points____"<<endl;
         for(std::vector<double*>::iterator it = myPointList.begin(); it != myPointList.end(); ++it)
         {
             double *point = *it;
@@ -87,7 +87,7 @@ void OpenFoamReader::freeMemory()
     //! ------------------------------------
     if(!myMapOfRotationMatrices.isEmpty())
     {
-        cout<<"OpenFoamReader::freeMemory()->____deleting the map of rotation matrices____"<<endl;
+        //cout<<"OpenFoamReader::freeMemory()->____deleting the map of rotation matrices____"<<endl;
         for(QMap<int,double*>::iterator it = myMapOfRotationMatrices.begin(); it != myMapOfRotationMatrices.end(); ++it)
         {
             double *rotationMatrix = it.value();
@@ -101,7 +101,7 @@ void OpenFoamReader::freeMemory()
     //! -------------------------------
     if(!myMapOfFaceCenters.isEmpty())
     {
-        cout<<"OpenFoamReader::freeMemory()->____deleting the map of face centers____"<<endl;
+        //cout<<"OpenFoamReader::freeMemory()->____deleting the map of face centers____"<<endl;
         for(QMap<int,double*>::iterator it = myMapOfFaceCenters.begin(); it != myMapOfFaceCenters.end(); ++it)
         {
             double *center = it.value();
@@ -274,7 +274,7 @@ bool OpenFoamReader::perform(SimulationNodeClass *OFnode)
     //! ---------------------
     QProgressEvent *e;
     int NbBodies = directoryListFiltered.length();
-    cout<<"____tag01____"<<NbBodies<<endl;
+    //cout<<"____tag01____"<<NbBodies<<endl;
 
     if(myProgressIndicator!=Q_NULLPTR)
     {
@@ -285,7 +285,7 @@ bool OpenFoamReader::perform(SimulationNodeClass *OFnode)
 
     curDir.cdUp();
     curDir.cd("constant");
-    cout<<"____tag02____"<<endl;
+    //cout<<"____tag02____"<<endl;
 
     //! ------------------------------
     //! entering the data directories
@@ -298,21 +298,15 @@ bool OpenFoamReader::perform(SimulationNodeClass *OFnode)
         QString dirName = directoryListFiltered.at(i);
 
         curDir.cd(dirName);
-
-        cout<<"OpenFoamReader::perform()->____Entering directory: "<<curDir.absolutePath().toStdString()<<"____"<<endl;;
-
         curDir.cd("polyMesh");
-
-        cout<<"OpenFoamReader::perform()->____Entering directory: "<<curDir.absolutePath().toStdString()<<"____"<<endl;
-
         //! ----------------------------------
         //! [1] read boundary fields settings
         //! ----------------------------------
         char fileName[512];
         sprintf(fileName,"%s",curDir.filePath("boundary").toStdString().c_str());
 
-        cout<<"OpenFoamReader::perform()->____Opening file: "<<fileName<<"____"<<endl;
-        cout<<"OpenFoamReader::perform()->____Entering directory: "<<dirName.toStdString()<<"____"<<endl;
+        //cout<<"OpenFoamReader::perform()->____Opening file: "<<fileName<<"____"<<endl;
+        //cout<<"OpenFoamReader::perform()->____Entering directory: "<<dirName.toStdString()<<"____"<<endl;
 
         if(myProgressIndicator!=Q_NULLPTR)
         {
@@ -324,7 +318,7 @@ bool OpenFoamReader::perform(SimulationNodeClass *OFnode)
 
         Sleep(A_SMALL_PROGRESS_TIMEOUT);
 
-        cout<<"OpenFoamReader::perform()->____Reading boundary definitions____"<<endl;
+        //cout<<"OpenFoamReader::perform()->____Reading boundary definitions____"<<endl;
 
         fstream is;
         openWithLock(is,fileName, std::ios_base::in);
@@ -346,7 +340,7 @@ bool OpenFoamReader::perform(SimulationNodeClass *OFnode)
         Sleep(A_SMALL_PROGRESS_TIMEOUT);
 
         sprintf(fileName,"%s",curDir.filePath("points").toStdString().c_str());
-        cout<<"OpenFoamReader::perform()->____Opening: "<<fileName<<"____"<<endl;
+        //cout<<"OpenFoamReader::perform()->____Opening: "<<fileName<<"____"<<endl;
 
         //! ------------------------------
         //! uses the optimized overload
@@ -370,8 +364,8 @@ bool OpenFoamReader::perform(SimulationNodeClass *OFnode)
         Sleep(A_SMALL_PROGRESS_TIMEOUT);
 
         sprintf(fileName,"%s",curDir.filePath("faces").toStdString().c_str());
-        cout<<"OpenFoamReader::perform()->____Opening file: "<<fileName<<"____"<<endl;
-        cout<<"OpenFoamReader::perform()->____Reading faces____"<<endl;
+        //cout<<"OpenFoamReader::perform()->____Opening file: "<<fileName<<"____"<<endl;
+        //cout<<"OpenFoamReader::perform()->____Reading faces____"<<endl;
 
         openWithLock(is,fileName, std::ios_base::in);
 
@@ -410,24 +404,24 @@ bool OpenFoamReader::perform(SimulationNodeClass *OFnode)
 
         Sleep(A_SMALL_PROGRESS_TIMEOUT);
 
-        cout<<"OpenFoamReader::perform()->____Calculating the centers of the cells____"<<endl;
+        //cout<<"OpenFoamReader::perform()->____Calculating the centers of the cells____"<<endl;
 
         sprintf(fileName,"%s",curDir.filePath("owner").toStdString().c_str());
-        cout<<"OpenFoamReader::perform()->____Opening: "<<fileName<<"____"<<endl;
+        //cout<<"OpenFoamReader::perform()->____Opening: "<<fileName<<"____"<<endl;
 
         openWithLock(is,fileName, std::ios_base::in);
 
-        cout<<"OpenFoamReader::perform()->____Opening file: "<<fileName<<"____"<<endl;
+        //cout<<"OpenFoamReader::perform()->____Opening file: "<<fileName<<"____"<<endl;
 
         char fileName1[128];
         sprintf(fileName1,"%s",curDir.filePath("neighbour").toStdString().c_str());
 
-        cout<<"OpenFoamReader::perform()->____Opening: "<<fileName<<"____"<<endl;
+        //cout<<"OpenFoamReader::perform()->____Opening: "<<fileName<<"____"<<endl;
 
         fstream is1;
         openWithLock(is1,fileName1, std::ios_base::in);
 
-        cout<<"OpenFoamReader::perform()->____Opening file: "<<fileName<<"____"<<endl;
+        //cout<<"OpenFoamReader::perform()->____Opening file: "<<fileName<<"____"<<endl;
 
         //! ----------------------------------------
         //! calculate the center of each polyhedron
@@ -451,7 +445,7 @@ bool OpenFoamReader::perform(SimulationNodeClass *OFnode)
 
         Sleep(A_SMALL_PROGRESS_TIMEOUT);
 
-        cout<<"OpenFoamReader::perform()->____Grouping the element faces____"<<endl;
+        //cout<<"OpenFoamReader::perform()->____Grouping the element faces____"<<endl;
 
         QMap<std::string, QList<int>> localMaps;
         for(std::vector<BB>::iterator it = vecBoundaries.begin(); it!= vecBoundaries.end(); ++it)
@@ -481,7 +475,7 @@ bool OpenFoamReader::perform(SimulationNodeClass *OFnode)
             allFacesMap.Subtract(tempFacesMap);
         }
 
-        cout<<"OpenFoamReader::perform()->____number of internal faces: "<<allFacesMap.Extent()<<"____"<<endl;
+        //cout<<"OpenFoamReader::perform()->____number of internal faces: "<<allFacesMap.Extent()<<"____"<<endl;
 
         //! ---------------------------------------------------
         //! inserting into the map the group of internal faces
@@ -492,7 +486,7 @@ bool OpenFoamReader::perform(SimulationNodeClass *OFnode)
             localToGlobalInternalFaceNr.append(anIt.Key());
         }
         localMaps.insert("internalField",localToGlobalInternalFaceNr);
-        cout<<"OpenFoamReader::perform()->____number of internal faces: "<<localToGlobalInternalFaceNr.size()<<"____"<<endl;
+        //cout<<"OpenFoamReader::perform()->____number of internal faces: "<<localToGlobalInternalFaceNr.size()<<"____"<<endl;
 
         //! ----------------
         //! position @ root
@@ -516,7 +510,7 @@ bool OpenFoamReader::perform(SimulationNodeClass *OFnode)
         {
             double endTime = myTimeFolders.at(j);
             QString dirTime = QString("%1").arg(endTime,0,'g',-1);
-            cout<<"time "<<endTime<<" dirTime "<<directoryList.at(i).toStdString()<<endl;
+            //cout<<"time "<<endTime<<" dirTime "<<directoryList.at(i).toStdString()<<endl;
             if(entriesInfo.at(i).isDir() && directoryList.at(i) == dirTime)
             {
                 directoryListFiltered.append(directoryList.at(i));
@@ -528,7 +522,7 @@ bool OpenFoamReader::perform(SimulationNodeClass *OFnode)
                     && directoryList.at(i)!="constant" && directoryList.at(i)!="system")
             {
                 directoryListFiltered.append(directoryList.at(i));
-                cout<<"____"<<directoryList.at(i).toStdString()<<"____"<<endl;
+                //cout<<"____"<<directoryList.at(i).toStdString()<<"____"<<endl;
             }
 #endif
         }
@@ -541,7 +535,7 @@ bool OpenFoamReader::perform(SimulationNodeClass *OFnode)
             //! the "Time" directory (curDirName is ->relative<-)
             const QString &curDirName = directoryListFiltered.at(t);
 
-            cout<<"OpenFoamReader::perform()->____entering time directory: \""<<curDirName.toStdString()<<"\"____"<<endl;
+            //cout<<"OpenFoamReader::perform()->____entering time directory: \""<<curDirName.toStdString()<<"\"____"<<endl;
 
             if(myProgressIndicator!=Q_NULLPTR)
             {
@@ -553,7 +547,7 @@ bool OpenFoamReader::perform(SimulationNodeClass *OFnode)
 
             Sleep(A_SMALL_PROGRESS_TIMEOUT);
 
-            cout<<"OpenFoamReader::perform()->____Body: \""<<dirName.toStdString()<<"\" Translating data at time: "<<curDirName.toStdString()<<"____"<<endl;
+            //cout<<"OpenFoamReader::perform()->____Body: \""<<dirName.toStdString()<<"\" Translating data at time: "<<curDirName.toStdString()<<"____"<<endl;
 
             curDir.cd(curDirName);  // entering the time directory
             curDir.cd(dirName);     // entering the body directory
@@ -568,16 +562,16 @@ bool OpenFoamReader::perform(SimulationNodeClass *OFnode)
             QString foutName = myTargetDir+QString(("/Body_%1_Time_%2.txt")).arg(dirName).arg(curDirName);
             QString foutNameOverall = myTargetDir+QString(("/Overall_%1.txt")).arg(curDirName);
 
-            cout<<"OpenFoamReader::perform()->____target directory: "<<myTargetDir.toStdString()<<"____"<<endl;
+            //cout<<"OpenFoamReader::perform()->____target directory: "<<myTargetDir.toStdString()<<"____"<<endl;
 
             if(myFileMode==1)
             {
-                cout<<"OpenFoamReader::perform()->____Creating file: \""<<foutName.toStdString()<<"\"____"<<endl;
+                //cout<<"OpenFoamReader::perform()->____Creating file: \""<<foutName.toStdString()<<"\"____"<<endl;
                 openWithLock(fout,foutName.toStdString().c_str(), std::ios_base::out);
             }
             else
             {
-                cout<<"OpenFoamReader::perform()->____Creating file: \""<<foutNameOverall.toStdString()<<"\"____"<<endl;
+                //cout<<"OpenFoamReader::perform()->____Creating file: \""<<foutNameOverall.toStdString()<<"\"____"<<endl;
                 openWithLock(foutOverall,foutNameOverall.toStdString().c_str(), std::ios_base::app);
             }
 
@@ -586,7 +580,7 @@ bool OpenFoamReader::perform(SimulationNodeClass *OFnode)
             //! "T" can be changed into another scalar
             //! -----------------------------------------------
             sprintf(fileName,"%s",curDir.absoluteFilePath("TCel").toStdString().c_str());
-            cout<<"OpenFoamReader::perform()->____Opening file: \""<<fileName<<"\"____"<<endl;
+            //cout<<"OpenFoamReader::perform()->____Opening file: \""<<fileName<<"\"____"<<endl;
             is.open(fileName);
 
             //! ----------------
@@ -616,7 +610,7 @@ bool OpenFoamReader::perform(SimulationNodeClass *OFnode)
             {
                 double scalarValue = 0;
                 sscanf(val.c_str(),"%s%s%lf",type1,type2,&scalarValue);
-                cout<<"OpenFoamReader::perform()->____uniform scalar value: "<<scalarValue<<endl;
+                //cout<<"OpenFoamReader::perform()->____uniform scalar value: "<<scalarValue<<endl;
                 //scalarValue+=273.15;
 
                 //! ------------------------------
@@ -662,7 +656,7 @@ bool OpenFoamReader::perform(SimulationNodeClass *OFnode)
                 std::getline(is,val);
                 int Ndata;
                 sscanf(val.c_str(),"%d",&Ndata);
-                cout<<"OpenFoamReader::perform()->____Number of scalar values: "<<Ndata<<endl;
+                //cout<<"OpenFoamReader::perform()->____Number of scalar values: "<<Ndata<<endl;
 
                 std::getline(is,val);   //! capture "("
                 char value[32];
@@ -855,7 +849,7 @@ bool OpenFoamReader::perform(SimulationNodeClass *OFnode)
 #endif
             is.close();
             curDir.cdUp();
-            cout<<"OpenFoamReader::perform()->____cur directory: \""<<curDir.absolutePath().toStdString()<<
+            //cout<<"OpenFoamReader::perform()->____cur directory: \""<<curDir.absolutePath().toStdString()<<
                   "\" => Now exiting the time folder____"<<endl;
 
             //! --------------------------
@@ -864,15 +858,15 @@ bool OpenFoamReader::perform(SimulationNodeClass *OFnode)
             curDir.cdUp();
             if(myFileMode==1)
             {
-                cout<<"OpenFoamReader::perform()->____Closing file: "<<foutName.toStdString()<<"____"<<endl;
+                //cout<<"OpenFoamReader::perform()->____Closing file: "<<foutName.toStdString()<<"____"<<endl;
                 closeAndRemoveLock(fout,foutName.toStdString().c_str());
             }
             else
             {
-                cout<<"OpenFoamReader::perform()->____Closing file: "<<foutNameOverall.toStdString()<<"____"<<endl;
+                //cout<<"OpenFoamReader::perform()->____Closing file: "<<foutNameOverall.toStdString()<<"____"<<endl;
                 closeAndRemoveLock(foutOverall,foutNameOverall.toStdString().c_str());
             }
-            cout<<"OpenFoamReader::perform()->____cur directory after exiting time folder: "<<curDir.absolutePath().toStdString()<<"\"____"<<endl;
+            //cout<<"OpenFoamReader::perform()->____cur directory after exiting time folder: "<<curDir.absolutePath().toStdString()<<"\"____"<<endl;
         }
 
         curDir.cd("constant");
@@ -923,7 +917,7 @@ void OpenFoamReader::readBoundarySection(std::vector<BB> &vecBoundaries, fstream
     std::getline(is,val);
     int Nb;
     sscanf(val.c_str(),"%d",&Nb);
-    cout<<"OpenFoamReader::readBoundarySection()->____number of boundaries: "<<Nb<<"____"<<endl;
+    //cout<<"OpenFoamReader::readBoundarySection()->____number of boundaries: "<<Nb<<"____"<<endl;
 
     std::getline(is,val);   //! (
 
@@ -935,7 +929,7 @@ void OpenFoamReader::readBoundarySection(std::vector<BB> &vecBoundaries, fstream
         std::getline(is,val);   //! read the <name> of the boundary
         char curName[512];
         sscanf(val.c_str(),"%s",curName);
-        cout<<"OpenFoamReader::readBoundarySection()->____name of the boundary: "<<curName<<"____"<<endl;
+        //cout<<"OpenFoamReader::readBoundarySection()->____name of the boundary: "<<curName<<"____"<<endl;
 
         QString domainCheckString = QString::fromLatin1(curName);
         sprintf(curBoundary.boundaryName,"%s",curName);
@@ -964,7 +958,7 @@ void OpenFoamReader::readBoundarySection(std::vector<BB> &vecBoundaries, fstream
         }
         else
         {
-            cout<<"____skipping since defined as \"interface\"____"<<endl;
+            //cout<<"____skipping since defined as \"interface\"____"<<endl;
         }
     }
     std::getline(is,val);   //! ")"
@@ -1021,7 +1015,7 @@ void OpenFoamReader::readPoints(fstream &is)
 //! --------------------
 void OpenFoamReader::readFaces(fstream &is, std::vector<std::vector<int>> &listOfFaceDefinitions)
 {
-    cout<<"____start reading faces: "<<this->clock()<<"____"<<endl;
+    //cout<<"____start reading faces: "<<this->clock()<<"____"<<endl;
 
     //! ip: inserted centers
     //! bad: failures
@@ -1061,7 +1055,7 @@ void OpenFoamReader::readFaces(fstream &is, std::vector<std::vector<int>> &listO
     //! -----------------------
     for(int faceNr=0; faceNr<Nent; faceNr++)
     {
-        if(faceNr%1000==0) cout<<"____reading face nr: "<<faceNr<<" from file____"<<endl;
+        if(faceNr%1000==0)//cout<<"____reading face nr: "<<faceNr<<" from file____"<<endl;
 
         //! -----------------------------------
         //! a list of node IDs defining a face
@@ -1115,7 +1109,7 @@ void OpenFoamReader::readFaces(fstream &is, std::vector<std::vector<int>> &listO
         }
         if(flag==false)
         {
-            cout<<"____bad face: all points are aligned____"<<endl;
+            //cout<<"____bad face: all points are aligned____"<<endl;
             bad++;
             continue;
         }
@@ -1160,11 +1154,11 @@ void OpenFoamReader::readFaces(fstream &is, std::vector<std::vector<int>> &listO
         }
     }
 
-    cout<<"____Number bad faces: "<<bad<<"____"<<endl;
+    //cout<<"____Number bad faces: "<<bad<<"____"<<endl;
     double failures = double(bad)/double(Nent);
-    cout<<"____Failures ratio: "<<failures<<endl;
+    //cout<<"____Failures ratio: "<<failures<<endl;
 
-    cout<<"____end reading faces: "<<this->clock()<<"____"<<endl;
+    //cout<<"____end reading faces: "<<this->clock()<<"____"<<endl;
 }
 
 //! -------------------------
@@ -1175,7 +1169,7 @@ void OpenFoamReader::getCellCenters(fstream &is,
                                     fstream &is1,
                                     const std::vector<std::vector<int>> &listOfFaceDefinitions)
 {
-    cout<<"OpenFoamReader::getCellCenters()->____function called: rebuilding elements____"<<endl;
+    //cout<<"OpenFoamReader::getCellCenters()->____function called: rebuilding elements____"<<endl;
     //! ------------------
     //! read "owner" file
     //! ------------------
@@ -1195,7 +1189,7 @@ void OpenFoamReader::getCellCenters(fstream &is,
         std::getline(is,val);
         if(sscanf(val.c_str(),"%d",&NE)==1) break;
     }
-    cout<<"OpenFoamReader::getCellCenters()->____Number of owner entries: "<<NE<<"____"<<endl;
+    //cout<<"OpenFoamReader::getCellCenters()->____Number of owner entries: "<<NE<<"____"<<endl;
 
     //! capture "("
     std::getline(is,val);
@@ -1216,7 +1210,7 @@ void OpenFoamReader::getCellCenters(fstream &is,
         elementsByFaces.insert(n,pos);
     }
 
-    cout<<"OpenFoamReader::getCellCenters()->____\"owner\" file read: number of entries: "<<NE<<"____"<<endl;
+    //cout<<"OpenFoamReader::getCellCenters()->____\"owner\" file read: number of entries: "<<NE<<"____"<<endl;
 
     //! ----------------------
     //! read "neighbour" file
@@ -1235,7 +1229,7 @@ void OpenFoamReader::getCellCenters(fstream &is,
         if(sscanf(val.c_str(),"%d",&NN)==1) break;
     }
 
-    cout<<"OpenFoamReader::getCellCenters()->____Number of \"neighbour\" entries: "<<NN<<"____"<<endl;
+    //cout<<"OpenFoamReader::getCellCenters()->____Number of \"neighbour\" entries: "<<NN<<"____"<<endl;
 
     //! capture "("
     std::getline(is1,val);

@@ -1339,8 +1339,12 @@ bool writeSolverFileClass::perform()
                 SimulationNodeClass *ImportedBodyScalarNode = theCurItem->child(pp,0)->data(Qt::UserRole).value<SimulationNodeClass*>();
                 QString itemName = itemNameClearSpaces(mySimulationRoot->child(k,0)->data(Qt::DisplayRole).toString());
                 SimulationNodeClass::nodeType ImportedBodyScalarType= ImportedBodyScalarNode->getType();
+
                 if(ImportedBodyScalarType!=SimulationNodeClass::nodeType_OpenFoamScalarData)
                 {
+                    double initialTime = tabData->dataRC(1,1).toDouble();
+                    double sourceTime = ImportedBodyScalarNode->getPropertyValue<doubel>("Source time");
+                    if(sourceTime != initialTime) continue;
                     QString extension=".t";
                     QString index=QString::number(n);
                     //QString time=QString::number(i);
@@ -1351,7 +1355,6 @@ bool writeSolverFileClass::perform()
                     dirName.chop(absFileName.size());
                     //tname.prepend(dirName);
                     postObject pObject;
-
                     //! scan the interpolation results at different times
                     SimulationNodeClass *node = itemBodyScalar->child(n,0)->data(Qt::UserRole).value<SimulationNodeClass*>();
                     Property::SuppressionStatus ss = node->getPropertyValue<Property::SuppressionStatus>("Suppressed");
@@ -1796,6 +1799,7 @@ bool writeSolverFileClass::perform()
                         //! the current mapper
                         QExtendedStandardItem *itemBodyScalar = static_cast<QExtendedStandardItem*>(theCurItem->child(n,0));
                         SimulationNodeClass *ImportedBodyScalarNode = theCurItem->child(n,0)->data(Qt::UserRole).value<SimulationNodeClass*>();
+                        double curTime = tabData->dataRC(i,1);
 
                         SimulationNodeClass::nodeType ImportedBodyScalarType= ImportedBodyScalarNode->getType();
                         if(ImportedBodyScalarType!=SimulationNodeClass::nodeType_OpenFoamScalarData)
@@ -1885,15 +1889,18 @@ bool writeSolverFileClass::perform()
                             case 4:     //Automatic Time Stepping
                             {
                                 //! scan the interpolation results at different times
-                                SimulationNodeClass *node = itemBodyScalar->child(i-1,0)->data(Qt::UserRole).value<SimulationNodeClass*>();
-                                Property::SuppressionStatus ss = node->getPropertyValue<Property::SuppressionStatus>("Suppressed");
-                                if(ss==Property::SuppressionStatus_Active)
+                                for(iint ii=0;ii<itemBodyScalar->rowCount();ii++)
                                 {
-                                    //!search the Graphic Object property and extract temperature distribution data map
-                                    pObject =  node->getPropertyItem("Post object")->data(Qt::UserRole).value<Property>().getData().value<postObject>();
-                                    this->writeTemperatureHistory(pObject, tname);
+                                    SimulationNodeClass *node = itemBodyScalar->child(ii,0)->data(Qt::UserRole).value<SimulationNodeClass*>();
+                                    Property::SuppressionStatus ss = node->getPropertyValue<Property::SuppressionStatus>("Suppressed");
+                                    double analysisTime = node->getPropertyValue<double>("Analysis time");
+                                    if(ss==Property::SuppressionStatus_Active && analysisTime == curTime)
+                                    {
+                                        //!search the Graphic Object property and extract temperature distribution data map
+                                        pObject =  node->getPropertyItem("Post object")->data(Qt::UserRole).value<Property>().getData().value<postObject>();
+                                        this->writeTemperatureHistory(pObject, tname);
+                                    }
                                 }
-
                             }
                                 break;
                             }

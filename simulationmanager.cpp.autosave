@@ -9850,8 +9850,6 @@ void SimulationManager::interpolatePrivate(int mode)
                 if(!isSuffixValid) continue;
 
                 listTimeS<<timeS;
-                //std::sort(listTimeS.begin(),listTimeS.end());
-
                 //! -------------------
                 //! read a source file
                 //! -------------------
@@ -10045,7 +10043,6 @@ void SimulationManager::interpolatePrivate(int mode)
             }
 
             cout<<"SimulationManager::interpolatePrivate()->____mapping finished____"<<endl;
-
             for(int pos=0;pos<NbStep;pos++)
             {
                 std::map<GeometryTag,std::vector<std::map<int,double>>> mapOfRes;
