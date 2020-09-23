@@ -71,7 +71,7 @@ Mapper3DClass::Mapper3DClass(const opencascade::handle<MeshVS_DataSource> &theTa
 
     this->setTargetMesh(theTargetMeshDS);
 
-    cout<<"Mapper3DClass->____target mesh bounding box size: ("<<myXmax-myXmin<<", "<<myYmax-myYmin<<", "<<myZmax-myZmin<<")____"<<endl;
+    //cout<<"Mapper3DClass->____target mesh bounding box size: ("<<myXmax-myXmin<<", "<<myYmax-myYmin<<", "<<myZmax-myZmin<<")____"<<endl;
 }
 
 //! -------------------------
@@ -130,13 +130,13 @@ void Mapper3DClass::setTargetMesh(const opencascade::handle<MeshVS_DataSource> &
         myVecElements.push_back(anElem);
         myVecEmptyElements.push_back(anElem);
     }
-    cout<<"Mapper3DClass::setTargetMesh()->____"<<myVecElements.size()<<" elements prepared"<<endl;
+    //cout<<"Mapper3DClass::setTargetMesh()->____"<<myVecElements.size()<<" elements prepared"<<endl;
 
     //! -------------------------------------------------------
     //! prepare the nodes as std::map<int,std::vector<double>>
     //! <int> => nodeID, double[3] => spatial coords
     //! -------------------------------------------------------
-    cout<<"Mapper3DClass::setTargetMesh()->____preparing nodes____"<<endl;
+    //cout<<"Mapper3DClass::setTargetMesh()->____preparing nodes____"<<endl;
 
     double bufn[3];
     for(TColStd_MapIteratorOfPackedMapOfInteger nIter(theTargetMeshDS->GetAllNodes());nIter.More();nIter.Next())
@@ -167,7 +167,7 @@ void Mapper3DClass::setTargetMesh(const opencascade::handle<MeshVS_DataSource> &
     myYmax = myYmax + Ly*0.10;
     myZmax = myZmax + Lz*0.10;
 
-    cout<<"Mapper3DClass::setTargetMesh()->____target mesh bounding box size: ("<<myXmax-myXmin<<", "<<myYmax-myYmin<<", "<<myZmax-myZmin<<")____"<<endl;
+    //cout<<"Mapper3DClass::setTargetMesh()->____target mesh bounding box size: ("<<myXmax-myXmin<<", "<<myYmax-myYmin<<", "<<myZmax-myZmin<<")____"<<endl;
 }
 
 //! -----------------------
@@ -445,7 +445,7 @@ bool Mapper3DClass::isInner(const mesh::meshElement &anElement, const nodeSource
 //! -----------------------------------------------
 void Mapper3DClass::splitSourceIntoBuckets()
 {
-    cout<<"Mapper3DClass::splitSourceIntoBuckets()->____function called____"<<endl;
+    //cout<<"Mapper3DClass::splitSourceIntoBuckets()->____function called____"<<endl;
 
 #ifdef CORRECT_BUCKETS
     //! --------------------------------
@@ -456,7 +456,7 @@ void Mapper3DClass::splitSourceIntoBuckets()
     {
         int recalc_NbBucketsX, recalc_NbBucketsY, recalc_NbBucketsZ;
         double typicalSize = 1.0*pow(maxVolume,1.0/3.0);
-        cout<<"Mapper3DClass::splitSourceIntoBuckets()->____maximum linear element size: "<<typicalSize<<"____"<<endl;
+        //cout<<"Mapper3DClass::splitSourceIntoBuckets()->____maximum linear element size: "<<typicalSize<<"____"<<endl;
 
         //! --------------
         //! check along x
@@ -465,7 +465,7 @@ void Mapper3DClass::splitSourceIntoBuckets()
         if(recalc_NbBucketsX == 0)  recalc_NbBucketsX++;
         if(myNbucketsX>recalc_NbBucketsX)
         {
-            cout<<"Mapper3DClass::splitSourceIntoBuckets()->____the number of X buckets has been corrected from "<<
+            //cout<<"Mapper3DClass::splitSourceIntoBuckets()->____the number of X buckets has been corrected from "<<
                   myNbucketsX<<" to "<<recalc_NbBucketsX<<"____"<<endl;
             myNbucketsX = recalc_NbBucketsX;
         }
@@ -476,7 +476,7 @@ void Mapper3DClass::splitSourceIntoBuckets()
         if(recalc_NbBucketsY == 0)  recalc_NbBucketsY++;
         if(myNbucketsY>recalc_NbBucketsY)
         {
-            cout<<"Mapper3DClass::splitSourceIntoBuckets()->____the number of Y buckets has been corrected from "<<
+            //cout<<"Mapper3DClass::splitSourceIntoBuckets()->____the number of Y buckets has been corrected from "<<
                   myNbucketsY<<" to "<<recalc_NbBucketsY<<"____"<<endl;
             myNbucketsY = recalc_NbBucketsY;
         }
@@ -487,11 +487,11 @@ void Mapper3DClass::splitSourceIntoBuckets()
         if(recalc_NbBucketsZ == 0)  recalc_NbBucketsZ++;
         if(myNbucketsZ>recalc_NbBucketsZ)
         {
-            cout<<"Mapper3DClass::splitSourceIntoBuckets()->____the number of Z buckets has been corrected from "<<
+            //<<"Mapper3DClass::splitSourceIntoBuckets()->____the number of Z buckets has been corrected from "<<
                   myNbucketsZ<<" to "<<recalc_NbBucketsZ<<"____"<<endl;
             myNbucketsZ = recalc_NbBucketsZ;
         }
-        cout<<"Mapper3DClass::splitSourceIntoBuckets()->____("<<myNbucketsX<<", "<<myNbucketsY<<", "<<myNbucketsZ<<")____"<<endl;
+        //cout<<"Mapper3DClass::splitSourceIntoBuckets()->____("<<myNbucketsX<<", "<<myNbucketsY<<", "<<myNbucketsZ<<")____"<<endl;
     }
 #endif
 
@@ -571,9 +571,9 @@ void Mapper3DClass::splitSourceIntoBuckets()
         }
 #endif
     }
-    cout<<"Mapper3DClass::splitSourceIntoBuckets()->____total number of source nodes: "<<mySourceNodes.size()<<"____"<<endl;
-    cout<<"Mapper3DClass::splitSourceIntoBuckets()->____total number of source nodes into buckects: "<<npointinsidebuckets<<"____"<<endl;
-    cout<<"Mapper3DClass::splitSourceIntoBuckets()->____total number of source nodes outside buckets: "<<npointsoutsidebuckets<<"____"<<endl;
+    //cout<<"Mapper3DClass::splitSourceIntoBuckets()->____total number of source nodes: "<<mySourceNodes.size()<<"____"<<endl;
+    //cout<<"Mapper3DClass::splitSourceIntoBuckets()->____total number of source nodes into buckects: "<<npointinsidebuckets<<"____"<<endl;
+    //cout<<"Mapper3DClass::splitSourceIntoBuckets()->____total number of source nodes outside buckets: "<<npointsoutsidebuckets<<"____"<<endl;
 }
 
 //! ---------------------
@@ -600,7 +600,7 @@ void Mapper3DClass::setProgressIndicator(QProgressIndicator *aProgressIndicator)
 //! --------------------------------
 void Mapper3DClass::performShapeFunctions()
 {
-    cout<<"Mapper3DClass::interpolate8)->____function called____"<<endl;
+    cout<<"Mapper3DClass::interpolate()->____function called____"<<endl;
 
     //! -----------------
     //! a progress event
@@ -623,11 +623,11 @@ void Mapper3DClass::performShapeFunctions()
     //! -----------------------------------
     //! calculate the width of the buckets
     //! -----------------------------------
-    cout<<"Mapper3DClass::interpolate()->____Number of buckets: ("<<myNbucketsX<<", "<<myNbucketsY<<", "<<myNbucketsZ<<")____"<<endl;
+    //cout<<"Mapper3DClass::interpolate()->____Number of buckets: ("<<myNbucketsX<<", "<<myNbucketsY<<", "<<myNbucketsZ<<")____"<<endl;
     double dx = (myXmax-myXmin)/myNbucketsX;
     double dy = (myYmax-myYmin)/myNbucketsY;
     double dz = (myZmax-myZmin)/myNbucketsZ;
-    cout<<"Mapper3DClass::interpolate()->____Buckets width ("<<dx<<", "<<dy<<", "<<dz<<")____"<<endl;
+    //cout<<"Mapper3DClass::interpolate()->____Buckets width ("<<dx<<", "<<dy<<", "<<dz<<")____"<<endl;
 
     //! --------------------------------------
     //! iterate over the target mesh elements
@@ -729,7 +729,7 @@ void Mapper3DClass::performShapeFunctions()
         }
     }
 
-    cout<<"Mapper3DClass::interpolate()->____number of empty elements: "<<myVecEmptyElements.size()<<"____"<<endl;
+    //cout<<"Mapper3DClass::interpolate()->____number of empty elements: "<<myVecEmptyElements.size()<<"____"<<endl;
 
     //! --------------------------
     //! try to remap if requested
@@ -757,7 +757,7 @@ void Mapper3DClass::performShapeFunctions()
 void Mapper3DClass::putScalarOnTargetNode(int interpolationTypeFunction)
 {
     cout<<"Mapper3DClass::putScalarOnTargetNode()->____function called____"<<endl;
-    cout<<"Mapper3DClass::putScalarOnTargetNode()->____myMultiresNode size "<<myMultiResNodes.size()<<"____"<<endl;
+    //cout<<"Mapper3DClass::putScalarOnTargetNode()->____myMultiresNode size "<<myMultiResNodes.size()<<"____"<<endl;
 
     for(std::multimap<int,std::vector<double>>::iterator it = myMultiResNodes.begin(); it!=myMultiResNodes.end(); ++it)
     //for(QMultiMap<int,std::vector<double>>::iterator it = myMultiResNodes.begin(); it!=myMultiResNodes.end(); ++it)
@@ -937,7 +937,7 @@ int Mapper3DClass::remapByTargetElements()
         //pinball = 100;
 
         if(tryCount==1)
-            cout<<"Mapper3DClass::remapByTargetElements->____remapping: "<<curElem.ID<<" using pinball: "<<pinball<<"____"<<endl;
+            //cout<<"Mapper3DClass::remapByTargetElements->____remapping: "<<curElem.ID<<" using pinball: "<<pinball<<"____"<<endl;
 
         bool hasBeenRemappedDone = false;
         for(std::vector<Mapper3DClass::nodeSource>::iterator itSourceNodes = vecSourceNodesFiltered.begin(); itSourceNodes!=vecSourceNodesFiltered.end();)
@@ -980,7 +980,7 @@ int Mapper3DClass::remapByTargetElements()
             }
             else
             {
-                cout<<"Mapper3DClass::remapByTargetElements->____element: "<<curElem.ID<<" cannot be renapped in "<<myRemappingSteps<<" steps____"<<endl;
+                //cout<<"Mapper3DClass::remapByTargetElements->____element: "<<curElem.ID<<" cannot be renapped in "<<myRemappingSteps<<" steps____"<<endl;
                 tryCount = 1;
                 pinball = 0;
                 continue;
@@ -988,13 +988,13 @@ int Mapper3DClass::remapByTargetElements()
         }
         else
         {
-            cout<<"Mapper3DClass::remapByTargetElements->____element: "<<curElem.ID<<" remapped using pinball: "<<pinball<<"____"<<endl;
+            //cout<<"Mapper3DClass::remapByTargetElements->____element: "<<curElem.ID<<" remapped using pinball: "<<pinball<<"____"<<endl;
             tryCount = 1;
             pinball = 0;
         }
     }
 
-    cout<<"Mapper3DClass::remapByTargetElements()->____succesfully remapped % "<<double(nremapped)/double(myVecEmptyElements.size())*100<<" elemenst____"<<endl;
+    //cout<<"Mapper3DClass::remapByTargetElements()->____succesfully remapped % "<<double(nremapped)/double(myVecEmptyElements.size())*100<<" elemenst____"<<endl;
     return nremapped;
 }
 
