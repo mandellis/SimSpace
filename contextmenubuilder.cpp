@@ -591,7 +591,7 @@ void contextMenuBuilder::buildGeometryContextMenu(QMenu *contextMenu, bool addCo
 
                     //! ---------------------------------------------------------------------
                     //! a visible body has been clicked: if some body is not visible add the
-                    //! action "Show all bodies
+                    //! action "Show all bodies"
                     //! ---------------------------------------------------------------------
                     //! check if some body is hidden
                     QExtendedStandardItem *itemGeometryRoot = static_cast<QExtendedStandardItem*>(static_cast<QStandardItemModel*>(sm->myTreeView->model())
