@@ -1312,10 +1312,10 @@ void SimulationManager::showContextMenu(const QPoint &pos)
     if(selectedAction)  handleItem(selectedAction->data().toInt());
 }
 
-//! ------------------------------------------
+//! ---------------------
 //! function: deleteItem
-//! details:  delete items from the main tree
-//! ------------------------------------------
+//! details:
+//! ---------------------
 void SimulationManager::deleteItem(QList<QModelIndex> indexesList)
 {
     cout<<"SimulationManager::deleteItem()->____function called____"<<endl;
@@ -1513,17 +1513,16 @@ void SimulationManager::deleteItem(QList<QModelIndex> indexesList)
                         nodeSetUp->replaceProperty("Scoping method",Property("Scoping method",data,Property::PropertyGroup_Scope));
                         nodeSetUp->getModel()->blockSignals(false);
                     }
-
                 }
             }
 
         }
 
-        //! -------------------------------------------------
-        //! handle the special case of a "Thermal condition"
+        //! ----------------------------------------------------------------
+        //! handle the special case of a "Thermal condition" "Model change"
         //! handle the special case of a "Bolt pretension"
-        //! -------------------------------------------------
-        if(theType == SimulationNodeClass::nodeType_structuralAnalysisThermalCondition)
+        //! ----------------------------------------------------------------
+        if(theType == SimulationNodeClass::nodeType_structuralAnalysisThermalCondition || theType == SimulationNodeClass::nodeType_modelChange)
         {
             int SC = mainTreeTools::calculateStartColumn(myTreeView);
             int count = 1;
@@ -5818,12 +5817,10 @@ TopTools_ListOfShape SimulationManager::prepareForMeshing()
     //! -----------------------------------------------------
     emit requestRemoveObsoleteMeshes();
 
-    //! list of the TopoDS_Shape to be meshed
-    TopTools_ListOfShape shapeToBeMeshed;
-
     //! --------------------------------------
     //! 1. if the user selection is not empty
     //! --------------------------------------
+    TopTools_ListOfShape shapeToBeMeshed;
     myCTX->InitSelected();
     if(myCTX->MoreSelected())
     {
@@ -5844,6 +5841,7 @@ TopTools_ListOfShape SimulationManager::prepareForMeshing()
         cout<<"SimulationManager::prepareForMeshing()->____number of shapes to mesh: "<<shapeToBeMeshed.Extent()<<"____"<<endl;
         return shapeToBeMeshed;
     }
+
     //! -------------------------------------------------
     //! 2. the selection is empty => mesh all the bodies
     //! -------------------------------------------------
@@ -5908,7 +5906,7 @@ void SimulationManager::buildMesh(bool isVolumeMesh)
     if(progressIndicator == Q_NULLPTR) cout<<"SimulationManager::buildMesh()->_____warning: the progress indicator is NULL____"<<endl;
 
     //! ----------------------------------------------------------------------------
-    //! scan the contactd and the boundary conditions of all the analysis branches
+    //! scan the contact and the boundary conditions of all the analysis branches
     //! In case of patch independent meshing method, with geometry defeaturing and
     //! simplification, the boundary of the patches of the boundary conditions will
     //! be preserved (if the "Preserve boundary condition edges" selector is ON
@@ -10635,7 +10633,7 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
         //! --------------------------------------------
         if(curNode->getPropertyItem("Post object")!=Q_NULLPTR)
         {
-            aPostObject = curNode->getPropertyItem("Post object")->data(Qt::UserRole).value<Property>().getData().value<sharedPostObject>();
+            aPostObject = curNode->getPropertyValue<sharedPostObject>("Post object");
             aPostObject->init(static_cast<meshDataBase*>(mySimulationDataBase));
         }
         else
@@ -10664,10 +10662,8 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
             //! ---------------------
             int fatigueAlgo = curNode->getPropertyValue<int>("Fatigue algo");
             myPostEngine->setFatigueModel(fatigueAlgo);
-
             CustomTableModel *tabData =  this->getAnalysisSettingsNodeFromCurrentItem()->getTabularDataModel();
-
-            QStandardItem *theGeometryRoot=this->getTreeItem(SimulationNodeClass::nodeType_geometry);
+            QStandardItem *theGeometryRoot = this->getTreeItem(SimulationNodeClass::nodeType_geometry);
             QMap<int,int> materialBodyMap;
             for(int k=0; k<theGeometryRoot->rowCount();k++)
             {
@@ -10688,7 +10684,6 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
             //! the post object retrieves the mesh data sources from the simulation database
             //! and internally builds its own interactive mesh objects
             //! -----------------------------------------------------------------------------
-            aPostObject->init(static_cast<meshDataBase*>(mySimulationDataBase));
             myPostEngine->evaluateFatigueResults(component,vecLoc,timeList,materialBodyMap,NbCycles,aPostObject);
         }
     }
@@ -10706,7 +10701,7 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
     //! -------------------------------------------------------------------------------
     //! synchronize the post object min, man, scale type with the color box properties
     //! -------------------------------------------------------------------------------
-    if(curNode->getPropertyItem("Scale type")==Q_NULLPTR) cerr<<"____NULL property____"<<endl;
+    if(curNode->getPropertyItem("Scale type") == Q_NULLPTR) cerr<<"____NULL property____"<<endl;
     if(curNode->getPropertyValue<int>("Scale type") == 1)
     {
         disconnect(curNode->getModel(),SIGNAL(itemChanged(QStandardItem*)),this,SLOT(handleItemChange(QStandardItem*)));

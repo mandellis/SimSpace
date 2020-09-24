@@ -575,6 +575,8 @@ void mainTreeTools::addSolutionInformation(QStandardItem* solutionItem)
 //! ---------------------------------------
 void mainTreeTools::getAllBoundaryConditionsTags(QTreeView *tree, int type, std::vector<GeometryTag> &vecTags)
 {
+    cout<<"mainTreeTools::getAllBoundaryConditionsTags()->____function called____"<<endl;
+
     //! -----------
     //! model root
     //! -----------
@@ -643,12 +645,14 @@ void mainTreeTools::getAllBoundaryConditionsTags(QTreeView *tree, int type, std:
 
         if(node->getType()==SimulationNodeClass::nodeType_meshControl)
         {
+            cout<<"____MESH CONTROL____"<<endl;
             for(int j=0; j<item->rowCount();j++)
             {
                 QStandardItem *itemMeshControl = item->child(j,0);
-                SimulationNodeClass *nodeFaceMeshControl = itemMeshControl->data(Qt::UserRole).value<SimulationNodeClass*>();
-                if(nodeFaceMeshControl->getType()!=SimulationNodeClass::nodeType_meshFaceSize) continue;
-                std::vector<GeometryTag> faceSizingTags = nodeFaceMeshControl->getPropertyValue<std::vector<GeometryTag>>("Tags");
+                SimulationNodeClass *nodeMeshControl = itemMeshControl->data(Qt::UserRole).value<SimulationNodeClass*>();
+                if(nodeMeshControl->getType()!=SimulationNodeClass::nodeType_meshFaceSize) continue;
+                cout<<"____tag00____"<<endl;
+                std::vector<GeometryTag> faceSizingTags = nodeMeshControl->getPropertyValue<std::vector<GeometryTag>>("Tags");
                 for(int m=0; m<faceSizingTags.size(); m++)
                 {
                     if(std::find(vecTags.begin(),vecTags.end(),faceSizingTags[m])==vecTags.end())
@@ -661,6 +665,7 @@ void mainTreeTools::getAllBoundaryConditionsTags(QTreeView *tree, int type, std:
             }
         }
     }
+    cout<<"mainTreeTools::getAllBoundaryConditionsTags()->____function exiting____"<<endl;
 }
 
 //! -----------------------------------

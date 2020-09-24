@@ -562,7 +562,7 @@ QString postEngine::resultName(const QString &keyName, int component, int step, 
 
 //! --------------------------------------------------------------------
 //! function: buildPostObject
-//! details:  this method takes the data from the .frd file (from disk)
+//! details:  this method reads the data from the .frd file (from disk)
 //! --------------------------------------------------------------------
 bool postEngine::buildPostObject(const QString &keyName,
                                  int component,
@@ -782,9 +782,15 @@ bool postEngine::evaluateFatigueResults(int type, std::vector<GeometryTag> locs,
     //! -----------------------
     //! create the post object
     //! -----------------------
+    bool useSurfaceMeshForVolumeResults = Global::status().myResultPresentation.useExteriorMeshForVolumeResults;
     QString label = this->resultName("Damage",0,1,1,0);
-    aPostObject = std::make_shared<postObject>(fatigueResults,locs,label);
-    return true;
+    std::map<GeometryTag,std::map<int,gp_Vec>> mapDisplMap;
+    aPostObject = std::make_shared<postObject>(fatigueResults,locs,mapDisplMap,label,useSurfaceMeshForVolumeResults);
+    aPostObject->init(myMeshDataBase);
+    double magnifyFactor = Global::status().myResultPresentation.theScale;
+    int component = 0;
+    bool isDone = aPostObject->buildMeshIO(-1,-1,10,true,component,magnifyFactor);
+    return isDone;
 }
 
 //! ---------------------------------------------------
