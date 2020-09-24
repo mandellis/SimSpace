@@ -455,15 +455,10 @@ simulationDataBase::simulationDataBase(const QList<SimulationNodeClass*> listOfN
                 cout<<"____the node is a child node_____"<<endl;
 
                 QString curChildParentTimeTag = curNode->getPropertyValue<QString>("Parent time tag");
-                //cout<<"____tag00"<<endl;
-
                 QString curChildTimeTag = curNode->getPropertyValue<QString>("Time tag");
-
-                //cout<<"____tag01"<<endl;
 
                 if(curChildParentTimeTag!=curSimulationNodeTimeTag)
                 {
-                    //cout<<"____tag02"<<endl;
                     it++;
                     continue;
                 }
