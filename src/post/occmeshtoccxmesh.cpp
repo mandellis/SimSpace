@@ -89,7 +89,7 @@ std::map<int,int> OCCMeshToCCXmesh::performOCCtoCCX(GeometryTag loc, meshDataBas
         for(TColStd_MapIteratorOfPackedMapOfInteger anIter(theCurMeshDS->GetAllNodes()); anIter.More(); anIter.Next())
         {
             int nodeID = anIter.Key()+offset;
-            map.insert(std::make_pair(nodeID,anIter.Key()));
+            map.insert(std::make_pair(anIter.Key(),nodeID));
         }
     }
     if(type==TopAbs_FACE)
