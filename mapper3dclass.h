@@ -310,12 +310,12 @@ public:
 
     //! set the number of remapping steps
     void setRemappingSteps(int rs){ myRemappingSteps = rs; }
-
+/*
     //! --------------------------------------
     //! getMultiresult for multiInterpolation
     //! --------------------------------------
     std::map<int, std::vector<double> > getMultiResults();
-
+*/
     //! ---------------------------
     //! set the progress indicator
     //! ---------------------------
