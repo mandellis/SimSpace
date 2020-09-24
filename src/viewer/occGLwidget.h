@@ -73,7 +73,7 @@ protected:
     SelectionType myCurSelectionType;
 
     //! the global selection mode - can be "single selection" or "multiple selection"
-    CurGlobalSelectionMode myCurGlobalSelectionMode;    
+    CurGlobalSelectionMode myCurGlobalSelectionMode;
 
     //! z-layer for model view
     Standard_Integer my_zLayerID_model;
@@ -365,7 +365,7 @@ protected slots:
     virtual void hideAllTheOtherBodies();
 
     //! set isometric view
-    void isometricView();    
+    void isometricView();
 
     //! unset the selection modes
     void unsetSelectionModes();
@@ -420,7 +420,7 @@ protected slots:
     void updateCOR(gp_Pnt newCOR, bool isOnFace);
 
     //! display center of rotation
-    void displayRotationCenter(gp_Pnt newOrigin, bool isOnFace);    
+    void displayRotationCenter(gp_Pnt newOrigin, bool isOnFace);
 
 public:
 

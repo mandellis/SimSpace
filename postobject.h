@@ -35,7 +35,7 @@
 #include <QMetaType>
 #include <QString>
 #include <QMap>
-#include <QVector>
+//#include <QVector>
 #include <Quantity_Color.hxx>
 
 class postObject
@@ -112,10 +112,7 @@ public:
     //! -------------------------------------------------
     //! get the map of the vectorial nodal displacements
     //! -------------------------------------------------
-    std::map<GeometryTag,std::map<int,gp_Vec>> getMapOfNodalDisplacements()
-    {
-        return myMapOfNodalDisplacements;
-    }
+    std::map<GeometryTag,std::map<int,gp_Vec>> getMapOfNodalDisplacements();
 
 private:
 
@@ -230,8 +227,7 @@ public:
     //! update scaled view (internally read myScale)
     void updateScaledView();
 
-    //! set/get hidden elements
-    //void setHiddenElements(setHiddenElements(const std::map<GeometryTag,occHandle(TColStd_HPackedMapOfInteger)> &mapOfHiddenElements));
+    //! compute hidden elements - unused - but do not remove
     void computeHiddenElements(const std::map<int,std::vector<double>> &mapOfClipPlanes);
 
 

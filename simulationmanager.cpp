@@ -9422,10 +9422,10 @@ void SimulationManager::buildDataBaseFromDisk(const QString &fileName)
         QExtendedStandardItem *anItem = *it;
         SimulationNodeClass *aNode = anItem->data(Qt::UserRole).value<SimulationNodeClass*>();
 
-        //! ----------------------------------------------------------------
+        //! ---------------------------------------------
         //! during reload, parse the mesh control items,
-        //! Excluding the "Mesh" root
-        //! ----------------------------------------------------------------
+        //! jumping over the "Mesh" root
+        //! ---------------------------------------------
         //if(aNode->getFamily()==SimulationNodeClass::nodeType_meshControl &&
         //        aNode->getType()!=SimulationNodeClass::nodeType_meshControl)
         //{
@@ -9511,6 +9511,7 @@ void SimulationManager::buildDataBaseFromDisk(const QString &fileName)
             this->callPostEngineEvaluateResult_private(curPostProcessingItem,immediatelyDisplay);
         }
 
+        //cesere
         /*
         //! -----------------------------------------------------------------------
         //! rebuild the output of the simulation monitor - disabled for the moment
@@ -9688,7 +9689,7 @@ void SimulationManager::interpolate()
     //! retrieve the "Step selection mode"
     //! -----------------------------------
     QExtendedStandardItem *item = node->getPropertyItem("Step selection mode");
-    if(item!=NULL)
+    if(item!=Q_NULLPTR)
     {
         int mode = item->data(Qt::UserRole).value<Property>().getData().toInt();
         this->interpolatePrivate(mode);
@@ -9726,7 +9727,6 @@ void SimulationManager::interpolatePrivate(int mode)
     //! -----------------------
     if(aProgressIndicator)
     {
-        cout<<"____reset progress indicator____"<<endl;
         prgEvent = new QProgressEvent(QProgressEvent_Reset,0,9999,0,"",QProgressEvent_Reset,0,9999,0);
         QApplication::postEvent(aProgressIndicator,prgEvent);
         QApplication::processEvents();
@@ -9742,10 +9742,8 @@ void SimulationManager::interpolatePrivate(int mode)
     //! ---------------------------------------
     bool remapFlag = node->getPropertyValue<bool>("Remap");
     int NbRemappingSteps = 0;
-    if(node->getPropertyItem("Remapping steps")!=NULL)
-    {
+    if(node->getPropertyItem("Remapping steps")!=Q_NULLPTR)
         NbRemappingSteps = node->getPropertyValue<int>("Remapping steps");
-    }
 
     //! -------------------------------
     //! retrieve the number of buckets
@@ -9850,8 +9848,6 @@ void SimulationManager::interpolatePrivate(int mode)
                 if(!isSuffixValid) continue;
 
                 listTimeS<<timeS;
-                //std::sort(listTimeS.begin(),listTimeS.end());
-
                 //! -------------------
                 //! read a source file
                 //! -------------------
@@ -9936,7 +9932,7 @@ void SimulationManager::interpolatePrivate(int mode)
             prgEvent = new QProgressEvent(QProgressEvent_Init,0,NbBodies-1,0,msg,QProgressEvent_Init,0,100,0);
             QApplication::postEvent(aProgressIndicator,prgEvent);
             QApplication::processEvents();
-            Sleep(2000);
+            Sleep(1000);
         }
 
         //! ---------------------
@@ -10008,22 +10004,16 @@ void SimulationManager::interpolatePrivate(int mode)
             //! ----------------
             switch(algo)
             {
-            case 0:
+            case 0: // nearest point algo
             {
-                //! --------------------------------
-                //! interpolate using nearest point
-                //! --------------------------------
                 mapper.setRemap(remapFlag);
                 if(remapFlag == true) mapper.setRemappingSteps(NbRemappingSteps);
                 double pinball = node->getPropertyValue<double>("Pinball");
                 mapper.performNearest(pinball);
             }
                 break;
-            case 1:
+            case 1: // nearest point - another algo
             {
-                //! --------------------------------
-                //! interpolate using nearest point2
-                //! --------------------------------
                 mapper.setNbBuckets(NbBucketsX,NbBucketsY,NbBucketsZ);
                 mapper.splitSourceIntoBuckets();
                 mapper.setRemap(remapFlag);
@@ -10032,11 +10022,8 @@ void SimulationManager::interpolatePrivate(int mode)
                 mapper.performNearestNeighboring(pinball);
             }
                 break;
-            case 2:
+            case 2: // use shape function
             {
-                //! ----------------------------------
-                //! interpolate using shape functions
-                //! ----------------------------------
                 mapper.setNbBuckets(NbBucketsX,NbBucketsY,NbBucketsZ);
                 mapper.splitSourceIntoBuckets();
                 mapper.setRemap(remapFlag);
@@ -10047,8 +10034,6 @@ void SimulationManager::interpolatePrivate(int mode)
             }
 
             cout<<"SimulationManager::interpolatePrivate()->____mapping finished____"<<endl;
-
-
             for(int pos=0;pos<NbStep;pos++)
             {
                 QMap<int,std::pair<double,double>> mapMinMax;
@@ -10200,11 +10185,10 @@ void SimulationManager::interpolatePrivate(int mode)
         Property prop_postObject("Post object",data,Property::PropertyGroup_GraphicObjects);
         data.setValue(prop_postObject);
 
-        SimulationNodeClass *nodeResult = nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType_postObject);
-
         //! ----------------------------------
         //! add the post object as a property
         //! ----------------------------------
+        SimulationNodeClass *nodeResult = nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType_postObject);
         nodeResult->addProperty(prop_postObject);
 
         //! -------------------------------------------------------------------
@@ -10434,9 +10418,9 @@ void SimulationManager::callPostEngineEvaluateResult()
         for(int i=1; i<itemSolution->rowCount(); i++)
             this->callPostEngineEvaluateResult_private(itemSolution->child(i,0),false);
     }
-    //! ------------------------------------------------------------------------
-    //! execute on the children of "Solution" apart from "Solution information"
-    //! ------------------------------------------------------------------------
+    //! --------------------------------------------------------------------------
+    //! execute on the children of "Solution" jumping over "Solution information"
+    //! --------------------------------------------------------------------------
     if(curNode->isSolution()) for(int i=1; i<curItem->rowCount(); i++)
         this->callPostEngineEvaluateResult_private(curItem->child(i,0),false);
 
@@ -10565,34 +10549,6 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
             int NbIntervals = aPostObject->getNbLevels();
             double magnifyFactor = Global::status().myResultPresentation.theScale;
             int component = aPostObject->getSolutionDataComponent();
-
-            /* remove this patch (moved in postObject)
-            //cout<<"___SIZE OF MAP: "<<mapOfNodalDisplacements.size()<<"____"<<endl;
-            std::map<GeometryTag,std::map<int,gp_Vec>> mapOfNodalDisplacements = aPostObject->getMapOfNodalDisplacements();
-
-            //! ---------------------------------------------------------------
-            //! this is a patch: actually the nodal displacement for building
-            //! the deformed view should be incorporated into the postObject
-            //! ---------------------------------------------------------------
-            if(mapOfNodalDisplacements.size()==0)
-            {
-                //cout<<"____REBUILDING NODAL DISPLACEMENTS (FILLING WITH ZERO)____"<<endl;
-                //! rebuild the map of nodal displacements
-                const std::vector<GeometryTag> &tags = curNode->getPropertyValue<std::vector<GeometryTag>>("Tags");
-                for(std::vector<GeometryTag>::const_iterator it = tags.cbegin(); it!=tags.cend(); it++)
-                {
-                    std::map<int,gp_Vec> nmap;
-                    const GeometryTag &aTag = *it;
-                    TColStd_PackedMapOfInteger nodeMap = aPostObject->getMeshDataSources().find(aTag)->second->GetAllNodes();
-                    for(TColStd_MapIteratorOfPackedMapOfInteger it_(nodeMap); it_.More(); it_.Next())
-                    {
-                        nmap.insert(std::make_pair(it_.Key(),gp_Vec(0,0,0)));
-                    }
-                    mapOfNodalDisplacements.insert(std::make_pair(aTag,nmap));
-                }
-                aPostObject->setMapOfNodalDisplacements(mapOfNodalDisplacements);
-            }
-            */
 
             //! -------------------------
             //! build the colored result
