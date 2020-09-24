@@ -90,7 +90,7 @@ private:
     void writeFilm(double aLoad, QString aName,double refTemperature);
     void writeDflux(double aLoad, QString aName);
 
-    void writeTemperatureHistory(postObject pObject, QString tName);
+    void writeTemperatureHistory(sharedPostObject pObject, QString tName);
 
     //! progress bar info
     void progressDialogInfo();

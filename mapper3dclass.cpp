@@ -465,8 +465,6 @@ void Mapper3DClass::splitSourceIntoBuckets()
         if(recalc_NbBucketsX == 0)  recalc_NbBucketsX++;
         if(myNbucketsX>recalc_NbBucketsX)
         {
-            //cout<<"Mapper3DClass::splitSourceIntoBuckets()->____the number of X buckets has been corrected from "<<
-            //      myNbucketsX<<" to "<<recalc_NbBucketsX<<"____"<<endl;
             myNbucketsX = recalc_NbBucketsX;
         }
         //! --------------
@@ -476,8 +474,6 @@ void Mapper3DClass::splitSourceIntoBuckets()
         if(recalc_NbBucketsY == 0)  recalc_NbBucketsY++;
         if(myNbucketsY>recalc_NbBucketsY)
         {
-            //cout<<"Mapper3DClass::splitSourceIntoBuckets()->____the number of Y buckets has been corrected from "<<
-            //      myNbucketsY<<" to "<<recalc_NbBucketsY<<"____"<<endl;
             myNbucketsY = recalc_NbBucketsY;
         }
         //! --------------
@@ -487,8 +483,6 @@ void Mapper3DClass::splitSourceIntoBuckets()
         if(recalc_NbBucketsZ == 0)  recalc_NbBucketsZ++;
         if(myNbucketsZ>recalc_NbBucketsZ)
         {
-            //<<"Mapper3DClass::splitSourceIntoBuckets()->____the number of Z buckets has been corrected from "<<
-            //      myNbucketsZ<<" to "<<recalc_NbBucketsZ<<"____"<<endl;
             myNbucketsZ = recalc_NbBucketsZ;
         }
         //cout<<"Mapper3DClass::splitSourceIntoBuckets()->____("<<myNbucketsX<<", "<<myNbucketsY<<", "<<myNbucketsZ<<")____"<<endl;
@@ -934,7 +928,7 @@ int Mapper3DClass::remapByTargetElements()
         if(tryCount==1) pinball = 1.0*L;
         else pinball = pinball*1.1;
 
-        bool hasBeenRemappedDone = false;
+        bool hasBeenRemappedDone=false;
         for(std::vector<Mapper3DClass::nodeSource>::iterator itSourceNodes = vecSourceNodesFiltered.begin(); itSourceNodes!=vecSourceNodesFiltered.end();)
         {
             const Mapper3DClass::nodeSource &aSN = *itSourceNodes;
