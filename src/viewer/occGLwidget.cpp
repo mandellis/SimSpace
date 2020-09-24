@@ -229,7 +229,7 @@ occGLWidget::occGLWidget(QWidget* parent):QGLWidget(parent),
 //! details:
 //! ---------------------
 occGLWidget::~occGLWidget()
-{    
+{
     cout<<"occGLWidget::~occGLWidget()->____DESTRUCTOR CALLED____"<<endl;
 }
 
@@ -316,7 +316,7 @@ void occGLWidget::createTheActions()
 //! ---------------
 #include "wbtrihedron.h"
 void occGLWidget::init()
-{    
+{
     //! --------------------------------
     //! Create Aspect_DisplayConnection
     //! --------------------------------
@@ -368,7 +368,7 @@ void occGLWidget::init()
         //! the settings file has been succesfully opened
         //! ----------------------------------------------
         int gradient, r1,g1,b1,r2,g2,b2;
-        char tmp[64];        
+        char tmp[64];
         std::string val;
 
         int N=0;
@@ -651,52 +651,56 @@ void occGLWidget::onLButtonUp(const int theFlags,const QPoint thePoint)
     switch(myCurAction3D)
     {
     case CurAction3D_WindowZooming:
+    {
         myXmax = thePoint.x();
         myYmax = thePoint.y();
-        if((abs(myXmin - myXmax)>ValZWMin) || (abs(myYmin - myYmax)>ValZWMin))
-        {
+        if((abs(myXmin - myXmax)>ValZWMin) && (abs(myYmin - myYmax)>ValZWMin))
             occView->WindowFitAll(myXmin, myYmin, myXmax, myYmax);
-        }
+    }
         break;
 
     case CurAction3D_Rotation: case CurAction3D_Panning:
+    {
         myXmax = thePoint.x();
         myYmax = thePoint.y();
         if(thePoint.x()==myXmax && thePoint.y()==myYmin)
+        {
+            //! One single click when the rotation/panning mode is active.
+            //! Effect: the center ("At" point) of the camera is changed
+            //! If the "air" is clicked the new At point is the origin
+            //! (0, 0, 0) (the default one?)
+            //! If the a model point P is clicked this is the new "At point"
+
+            double X_gravity, Y_gravity, Z_gravity;
+            X_gravity = Y_gravity = Z_gravity = 0.0;
+
+            occContext->MoveTo(myXmax, myYmin, occView,true);
+
+            const occHandle(SelectMgr_EntityOwner) &anOwnerOfDetection = occContext->DetectedOwner();
+            if(anOwnerOfDetection.IsNull()==false)                  //! a shape is detected by the mouse click
             {
-                //! One single click when the rotation mode is active.
-                //! Effect: the center ("At" point) of the camera is changed
-                //! If the "air" is clicked the new At point is the origin
-                //! (0, 0, 0) (the default one?)
-                //! If the a model point P is clicked this is the new "At point"
-                occContext->MoveTo(myXmax, myYmin, occView,true);
-
-                const occHandle(SelectMgr_EntityOwner) &anOwnerOfDetection = occContext->DetectedOwner();
-                if(anOwnerOfDetection.IsNull()==false)
+                const occHandle(StdSelect_BRepOwner) &aBRepOwnerOfDetection = occHandle(StdSelect_BRepOwner)::DownCast(anOwnerOfDetection);
+                const TopoDS_Shape &detectedShape = aBRepOwnerOfDetection->Shape();
+                const TopoDS_Shape &shape = detectedShape.Located(aBRepOwnerOfDetection->Location() * detectedShape.Location());
+                gp_Pnt newCOR;
+                if(shape.IsNull()==false)
                 {
-                    const occHandle(StdSelect_BRepOwner) &aBRepOwnerOfDetection = occHandle(StdSelect_BRepOwner)::DownCast(anOwnerOfDetection);
-                    const TopoDS_Shape &detectedShape = aBRepOwnerOfDetection->Shape();
-                    if(!detectedShape.IsNull())
-                    {
-                        //! ------------------------------------
-                        //! click on a (visible face of a) body
-                        //! ------------------------------------
-                        gp_Pnt newCOR = hitPoint(thePoint.x(), thePoint.y(), occContext->DetectedShape());
-                        emit CORchanged(newCOR, true);
-                    }
-                    else
-                    {
-                        //! -------------------------
-                        //! click on the empty space
-                        //! -------------------------
-                        double X_gravity, Y_gravity, Z_gravity;
-                        X_gravity = Y_gravity = Z_gravity = 0.0;
-
-                        gp_Pnt newCOR(X_gravity, Y_gravity, Z_gravity);
-                        emit CORchanged(newCOR, false);
-                    }
+                    newCOR = this->hitPoint(thePoint.x(), thePoint.y(), shape);
+                    emit CORchanged(newCOR, true);
+                }
+                else
+                {
+                    newCOR = gp_Pnt(X_gravity, Y_gravity, Z_gravity);
+                    emit CORchanged(newCOR, false);
                 }
             }
+            else   //! no shape detected by the mouse click - the signal with argument "false" will remove the marker
+            {
+                gp_Pnt newCOR = gp_Pnt(X_gravity, Y_gravity, Z_gravity);
+                emit CORchanged(newCOR, false);
+            }
+        }
+    }
         break;
 
     default:
@@ -772,7 +776,7 @@ void occGLWidget::onLButtonUp(const int theFlags,const QPoint thePoint)
 //! function: onMButtonUp
 //! details:
 //! ----------------------
-void occGLWidget::onMButtonUp(const int theFlags,const QPoint thePoint)
+void occGLWidget::onMButtonUp(const int theFlags, const QPoint thePoint)
 {
     Q_UNUSED(thePoint);
     Q_UNUSED(theFlags);
@@ -869,8 +873,11 @@ void occGLWidget::onMouseMove(const int theFlags, QPoint thePoint)
                         TopoDS_ListOfShape listOfTopoDS_Shapes;
                         for(occContext->InitSelected();occContext->MoreSelected();occContext->NextSelected())
                         {
+                            cout<<"____++++____"<<endl;
                             //const occHandle(SelectMgr_EntityOwner) &anEntityOwner = occContext->SelectedOwner();
+                            //if(anEntityOwner.IsNull()) continue;
                             //const occHandle(StdSelect_BRepOwner) &aBRepOwner = occHandle(StdSelect_BRepOwner)::DownCast(anEntityOwner);
+                            //if(aBRepOwner.IsNull()) continue;
                             //TopoDS_Shape aSelShape = aBRepOwner->Shape();
                             //TopoDS_Shape aLocatedShape = aSelShape.Located(aBRepOwner->Location() * aSelShape.Location());
                             //listOfTopoDS_Shapes.Append(aLocatedShape);
@@ -2339,7 +2346,7 @@ void occGLWidget::updateCOR(gp_Pnt newCOR, bool isOnFace)
 
     if(isOnFace)
     {
-        //cout<<"occGLWidget::updateCOR()->____new COR("<<newCOR.X()<<", "<<newCOR.Y()<<", "<<newCOR.Z()<<")____"<<endl;
+        cout<<"occGLWidget::updateCOR()->____new COR("<<newCOR.X()<<", "<<newCOR.Y()<<", "<<newCOR.Z()<<")____"<<endl;
         gp_Dir cameraDirection = occView->Camera()->Direction();
 
         //! --------------------------
@@ -2350,21 +2357,20 @@ void occGLWidget::updateCOR(gp_Pnt newCOR, bool isOnFace)
         occView->Redraw();
 
         isTheLastClickOnAir = false;
-        this->displayRotationCenter(myCOR, true);
+        this->displayRotationCenter(myCOR, isOnFace);
 
         myRotationPointType = RotationPointType_selected;
     }
     else
     {
-        //cout<<"occGLWidget::updateCOR()->____no point hit: the COV is on air____"<<endl;
-        //cout<<"occGLWidget::updateCOR()->____new COR("<<newCOR.X()<<", "<<newCOR.Y()<<", "<<newCOR.Z()<<")____"<<endl;
+        cout<<"occGLWidget::updateCOR()->____no point hit: the COV is on air____"<<endl;
+        cout<<"occGLWidget::updateCOR()->____new COR("<<newCOR.X()<<", "<<newCOR.Y()<<", "<<newCOR.Z()<<")____"<<endl;
 
         //! ------------------------------------------------------
         //! If the also the previous click was on air, do nothing
         //! Otherwise set the default camera "At" point
         //! ------------------------------------------------------
-        gp_Dir cDirection;
-        cDirection = occView->Camera()->Direction();
+        gp_Dir cDirection = occView->Camera()->Direction();
 
         //! ---------------------------------------------
         //! Return back to the previous rotation center
@@ -3010,49 +3016,11 @@ void occGLWidget::displayRotationCenter(gp_Pnt COR, bool isOnFace)
     cerr<<"occGLWidget::displayRotationCenter()->____function called____"<<endl;
 
     static occHandle(AIS_CORMarker) CORMarker;
-    if(!CORMarker.IsNull())
-    {
-        cerr<<"index of the current context: "<<occContext->IndexOfCurrentLocal()<<endl;
-        if(occContext->IndexOfCurrentLocal()!=0)
-        {
-            cerr<<"occGLWidget::displayRotationCenter()->____calling Erase()____"<<endl;
-            occContext->Erase(CORMarker,true);
-        }
-        else
-        {
-            cerr<<"occGLWidget::displayRotationCenter()->____calling Remove()____"<<endl;
-            occContext->Remove(CORMarker,true);
-        }
-    }
+    if(!CORMarker.IsNull()) occContext->Remove(CORMarker,false);
 
     if(isOnFace)
     {
-        /*
-        //! --------------------------------------------------------
-        //! In this position:
-        //! when the click does not intercept a face, the previous
-        //! rotation center is used.
-        //! Out of "if(isOnFace){ ... }":
-        //! when the click does not intercept a face, the (0,0,0)
-        //! rotation center is used.
-        //! --------------------------------------------------------
-        if(!CORMarker.IsNull())
-        {
-            cerr<<"index of the current context: "<<occContext->IndexOfCurrentLocal()<<endl;
-            if( occContext->IndexOfCurrentLocal()!=0)
-            {
-                cerr<<"____calling Erase()____"<<endl;
-                occContext->Erase(CORMarker,false);
-            }
-            else
-            {
-                cerr<<"____calling Remove()____"<<endl;
-                occContext->Remove(CORMarker,false);
-            }
-        }
-        */
-
-        cout<<"occGLWidget::displayRotationCenter()->____newCOR("<<COR.X()<<", "<<COR.Y()<<", "<<COR.Z()<<")____"<<endl;
+        cout<<"____DISPLAY CENTER OF ROTATION____"<<endl;
 
         //! -------------------------------
         //! display the center of rotation
@@ -3060,7 +3028,7 @@ void occGLWidget::displayRotationCenter(gp_Pnt COR, bool isOnFace)
         double X,Y;
         occView->Size(X,Y);
         double L = sqrt(X*Y);
-        double radius = L/100.0;
+        double radius = L/150.0;
         const TopoDS_Shape &sphere = BRepPrimAPI_MakeSphere(COR,radius);
         CORMarker = new AIS_CORMarker(sphere);
         CORMarker->Attributes()->SetFaceBoundaryDraw(false);
@@ -3079,28 +3047,12 @@ void occGLWidget::displayRotationCenter(gp_Pnt COR, bool isOnFace)
         if(!occContext->DefaultDrawer()->IsAutoTriangulation()) occContext->DefaultDrawer()->SetAutoTriangulation(true);
         CORMarker->SetDisplayMode(AIS_Shaded);
         CORMarker->SetColor(Quantity_NOC_RED);
-        occContext->Display(CORMarker,1,-1,false);
+        occContext->Display(CORMarker,AIS_Shaded,-1,false);
     }
-    else
+    else    // click on air - remove the sphere from the context
     {
-        //! -------------------------------------------------------------
-        //! if not on face erase the rotation center: same block of code
-        //! -------------------------------------------------------------
-        if(!CORMarker.IsNull())
-        {
-            cerr<<"not on face"<<endl;
-            cerr<<"index of the current context: "<<occContext->IndexOfCurrentLocal()<<endl;
-            if(occContext->IndexOfCurrentLocal()!=0)
-            {
-                cerr<<"occGLWidget::displayRotationCenter()->____calling Erase()____"<<endl;
-                occContext->Erase(CORMarker,true);
-            }
-            else
-            {
-                cerr<<"occGLWidget::displayRotationCenter()->____calling Remove()____"<<endl;
-                occContext->Remove(CORMarker,true);
-            }
-        }
+        cout<<"____REMOVE CENTER OF ROTATION FROM VIEW____"<<endl;
+        if(!CORMarker.IsNull()) occContext->Remove(CORMarker,false);
     }
     //! ------------------
     //! update the viewer

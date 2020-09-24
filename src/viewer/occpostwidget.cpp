@@ -216,11 +216,12 @@ void occPostWidget::displayResult(sharedPostObject &aPostObject)
     const occHandle(AIS_ColorScaleExtended) &colorBox = aPostObject->getColorBox();
     occPostContext->Display(colorBox,false);
 
-    //! ------------------
-    //! update the viewer
-    //! ------------------
-    occPostContext->UpdateCurrentViewer();
-    occMeshContext->UpdateCurrentViewer();
+    //! --------------------------------------------------------
+    //! update the viewer - one update of the current viewer
+    //! called from one of the AIS_InteractiveContext is enough
+    //! --------------------------------------------------------
+    //occPostContext->UpdateCurrentViewer();
+    //occMeshContext->UpdateCurrentViewer();
     occContext->UpdateCurrentViewer();
 
     aResultPresentationOld = myResultPresentation;
@@ -390,9 +391,9 @@ void occPostWidget::setWorkingMode_Solution()
         ResultsToolBar *theResultsToolBar = static_cast<ResultsToolBar*>(tools::getWidgetByName("resultsToolBar"));
         theResultsToolBar->setVisible(true);
 
-        theResultsToolBar->blockSignals(true);
+        //theResultsToolBar->blockSignals(true);
         //theResultsToolBar->setStatus(myResultPresentation);
-        theResultsToolBar->blockSignals(false);
+        //theResultsToolBar->blockSignals(false);
     }
 }
 
