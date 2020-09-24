@@ -67,7 +67,7 @@ double contactParameters::calc_K(QList<occHandle(Ng_MeshVS_DataSourceFace)> mast
 //! ---------------------------------------------------------
 double contactParameters::calc_discretizedArea(const opencascade::handle<Ng_MeshVS_DataSourceFace> &faceMesh)
 {
-    cout<<"contactParameters::calc_discretizedArea()->____function called____"<<endl;
+    //cout<<"contactParameters::calc_discretizedArea()->____function called____"<<endl;
     double A = 0.0;
     int NbNodes;
     double bufn[24];

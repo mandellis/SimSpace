@@ -1703,10 +1703,7 @@ bool writeSolverFileClass::perform()
             QString itemName = itemNameClearSpaces(mySimulationRoot->child(k,0)->data(Qt::DisplayRole).toString());
             SimulationNodeClass *theCurNode = mySimulationRoot->child(k,0)->data(Qt::UserRole).value<SimulationNodeClass*>();
             SimulationNodeClass::nodeType theNodeType= theCurNode->getType();
-            cout<<"tag00"<<endl;
-
             Property::SuppressionStatus theNodeSS = theCurNode->getPropertyValue<Property::SuppressionStatus>("Suppressed");
-            cout<<"tag00"<<endl;
 
             if(theNodeSS==Property::SuppressionStatus_Active &&
                     theNodeType!=SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_CylindricalSupport &&
@@ -1900,7 +1897,6 @@ bool writeSolverFileClass::perform()
                                     SimulationNodeClass *node = itemBodyScalar->child(ii,0)->data(Qt::UserRole).value<SimulationNodeClass*>();
                                     Property::SuppressionStatus ss = node->getPropertyValue<Property::SuppressionStatus>("Suppressed");
                                     double analysisTime = node->getPropertyValue<double>("Analysis time");
-                                    cout<<analysisTime<<"  "<<curTime<<endl;
                                     if(ss==Property::SuppressionStatus_Active && analysisTime == curTime)
                                     {
                                         //!search the Graphic Object property and extract temperature distribution data map
@@ -3327,23 +3323,17 @@ void writeSolverFileClass::writeTemperatureHistory(sharedPostObject pObject, QSt
     myTemperature.open(tName.toStdString());
 
     std::map<GeometryTag,std::vector<std::map<int,double>>> Tdata = pObject->getData();
-    cout<<" size of pObject "<<Tdata.size()<<endl;
     for(std::map<GeometryTag,std::vector<std::map<int,double>>>::iterator mapIt = Tdata.begin(); mapIt!=Tdata.end(); ++mapIt)
     {
         GeometryTag aloc = mapIt->first;
 
         std::vector<std::map<int,double>> lres = mapIt->second;     //extract the list of results
         std::map<int,double> res = lres.at(0);                      //extract the result from the list
-        cout<<" size of res "<<res.size()<<endl;
-
-        std::map<int,int> trans = OCCMeshToCCXmesh::perform(aloc,myDB);
-
-        int l=1;
+        std::map<int,int> trans = OCCMeshToCCXmesh::performOCCtoCCX(aloc,myDB);
         for(std::map<int,double>::const_iterator it =res.cbegin(); it!=res.cend(); it++)
         {
-            int keyOfl = trans.find(l)->first;
-            myTemperature<<keyOfl<<", "<<it->second<<endl;
-            l++;
+            int nodeID = it->first;
+            myTemperature<<trans.find(nodeID)->second<<", "<<it->second<<endl;
         }
     }
     myInputFile<<"*INCLUDE, INPUT="<<tName.split("/").last().toStdString()<<endl;
