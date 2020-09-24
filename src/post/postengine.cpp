@@ -572,7 +572,6 @@ bool postEngine::buildPostObject(const QString &keyName,
                                  const std::vector<GeometryTag> &vecLoc,
                                  sharedPostObject &aPostObject)
 {
-
     //! --------------------
     //! call the postEngine
     //! --------------------
