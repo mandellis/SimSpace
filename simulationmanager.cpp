@@ -10713,7 +10713,7 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
             //! the post object retrieves the mesh data sources from the simulation database
             //! and internally builds its own interactive mesh objects
             //! -----------------------------------------------------------------------------
-            aPostObject->init(static_cast<meshDataBase*>(mySimulationDataBase));
+            //aPostObject->init(static_cast<meshDataBase*>(mySimulationDataBase));
             myPostEngine->evaluateFatigueResults(component,vecLoc,timeList,materialBodyMap,NbCycles,aPostObject);
         }
     }
