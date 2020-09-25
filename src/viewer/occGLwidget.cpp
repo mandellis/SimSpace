@@ -3316,12 +3316,12 @@ void occGLWidget::updateClipPlaneCoefficients(int ID, const QVector<double> &coe
 void occGLWidget::hideAllBodies()
 {
     AIS_ListOfInteractive AISList;
-    occContext->ObjectsByDisplayStatus(AIS_KOI_Shape,-1,AIS_DS_Displayed,AISList);
-    AIS_ListIteratorOfListOfInteractive it;
-    for(it.Initialize(AISList);it.More();it.Next())
+    occContext->ObjectsInside(AISList,AIS_KOI_Shape,-1);
+    for(AIS_ListIteratorOfListOfInteractive it(AISList);it.More();it.Next())
     {
         const occHandle(AIS_ExtendedShape) &curAISShape = occHandle(AIS_ExtendedShape)::DownCast(it.Value());
-        curAISShape->setShapeVisibility(false);
+        //! call ::setShapeVisibility only on AIS_ExtendedShape(s)
+        if(curAISShape.IsNull()==false) curAISShape->setShapeVisibility(false);
         occContext->Erase(curAISShape,false);
     }
     occContext->UpdateCurrentViewer();

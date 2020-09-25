@@ -10523,7 +10523,12 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
             //! -------------------------
             //! build the colored result
             //! -------------------------
-            aPostObject->buildMeshIO(min,max,NbIntervals,scaleType,component,magnifyFactor);
+            bool isDone = aPostObject->buildMeshIO(min,max,NbIntervals,scaleType,component,magnifyFactor);
+            if(isDone == false)
+            {
+                QMessageBox::critical(this,"Simulation manager","Cannot create result view",QMessageBox::Ok);
+                return;
+            }
         }
         else
         {
@@ -10619,7 +10624,11 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
             //! after this call the postObject will contain the map of the nodal displacements
             //! -------------------------------------------------------------------------------
             bool isDone = myPostEngine->buildPostObject(keyName,component,subStepNb,stepNb,mode,vecLoc,aPostObject);
-            if(isDone == false) return;
+            if(isDone == false)
+            {
+                QMessageBox::critical(this,"Simulation manager","Cannot create result view",QMessageBox::Ok);
+                return;
+            }
         }
     }
     else
@@ -10633,6 +10642,7 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
         //! --------------------------------------------
         if(curNode->getPropertyItem("Post object")!=Q_NULLPTR)
         {
+            // this should be changed ... to do
             aPostObject = curNode->getPropertyValue<sharedPostObject>("Post object");
             aPostObject->init(static_cast<meshDataBase*>(mySimulationDataBase));
         }
@@ -10684,7 +10694,12 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
             //! the post object retrieves the mesh data sources from the simulation database
             //! and internally builds its own interactive mesh objects
             //! -----------------------------------------------------------------------------
-            myPostEngine->evaluateFatigueResults(component,vecLoc,timeList,materialBodyMap,NbCycles,aPostObject);
+            bool isDone = myPostEngine->evaluateFatigueResults(component,vecLoc,timeList,materialBodyMap,NbCycles,aPostObject);
+            if(isDone == false)
+            {
+                QMessageBox::critical(this,"Simulation manager","Cannot create result view",QMessageBox::Ok);
+                return;
+            }
         }
     }
 

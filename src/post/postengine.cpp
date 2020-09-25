@@ -790,6 +790,7 @@ bool postEngine::evaluateFatigueResults(int type, std::vector<GeometryTag> locs,
     double magnifyFactor = Global::status().myResultPresentation.theScale;
     int component = 0;
     bool isDone = aPostObject->buildMeshIO(-1,-1,10,true,component,magnifyFactor);
+    if(isDone==false) cout<<"postEngine::evaluateFatigueResults()->____cannot create result view____"<<endl;
     return isDone;
 }
 
@@ -803,6 +804,8 @@ std::map<GeometryTag,std::map<int,QList<double>>> postEngine::readFatigueResults
                                                                                  const std::vector<GeometryTag> &vecLoc,
                                                                                  const QList<double> &times)
 {
+    cout<<"postEngine::readFatigueResults()->____function called____"<<endl;
+
     QString resultKeyName;
     switch(type)
     {
@@ -816,8 +819,7 @@ std::map<GeometryTag,std::map<int,QList<double>>> postEngine::readFatigueResults
     //! ----------------------------------------------------
     std::map<GeometryTag,std::map<int,QList<double>>> resMap;
 
-    std::vector<GeometryTag>::const_iterator it;
-    for(it = vecLoc.cbegin(); it!= vecLoc.cend(); ++it)
+    for(std::vector<GeometryTag>::const_iterator it = vecLoc.cbegin(); it!= vecLoc.cend(); ++it)
     {
         //! -------------------------------------------------------------------------
         //! node conversion map: (Calculix mesh nodeID,nodeID for MeshVS_DataSource)
@@ -855,23 +857,29 @@ std::map<GeometryTag,std::map<int,QList<double>>> postEngine::readFatigueResults
         //! ---------------
         //! scan the files
         //! ---------------
-        int n=0;    //! time index
-        //QMap<int,QList<double>> resMISES;
+        int n=-1;    //! time index
         std::map<int,QList<double>> resMISES;
 
         for(int i=0; i<fileList.length(); i++)
         {
+            //cout<<"postEngine::readFatigueResults()->____scanning file: "<<i<<"____"<<endl;
+
             QString filePath = fileList.at(i);
             ifstream curFile(filePath.toStdString());
 
-            std::string val;
+            std::string val;            
             std::getline(curFile,val);
+            cout<<val<<endl;
+            std::getline(curFile,val);
+            cout<<val<<endl;
             double time;
             sscanf(val.c_str(),"Time= %lf",&time);
             std::getline(curFile,val);
+            cout<<val<<endl;
             int subStepNb, stepNb;
             sscanf(val.c_str(),"Substep n=%d Step n=%d",&subStepNb,&stepNb);
             std::getline(curFile,val);
+            cout<<val<<endl;
             char tdata[32];
             sscanf(val.c_str(),"%s",tdata);
 
@@ -879,9 +887,13 @@ std::map<GeometryTag,std::map<int,QList<double>>> postEngine::readFatigueResults
             postTools::getStepSubStepByTimeDTM(myDTM,times.at(n),step,substep);
 
             QList<double> timeHistory;
-            if(strcmp(tdata,resultKeyName.toStdString().c_str())==0 && subStepNb==substep && stepNb == step)
+            if(strcmp(tdata,resultKeyName.toStdString().c_str())==0)
+            //if(strcmp(tdata,resultKeyName.toStdString().c_str())==0 && subStepNb==substep && stepNb == step) // why this?
             {
+                cout<<"postEngine::readFatigueResults()->____data file found: start reading data within____"<<endl;
+
                 n++;
+
                 //! ----------------------------------------------------------------------------
                 //! <>::eof(): call getline before while, then inside {}, @ as last instruction
                 //! ----------------------------------------------------------------------------
@@ -896,7 +908,6 @@ std::map<GeometryTag,std::map<int,QList<double>>> postEngine::readFatigueResults
                     //! nodeIDs defining the MeshVS_dataSource
                     std::map<int,int>::iterator it = indexedMapOfNodes.find(ni);
                     if(it!=indexedMapOfNodes.end() && n==0)
-                    //if(OCCnodeID!=-1 && n==0)
                     {
                         int OCCnodeID = it->second;
 
@@ -905,19 +916,19 @@ std::map<GeometryTag,std::map<int,QList<double>>> postEngine::readFatigueResults
                         //! -------------------------------------
                         double vonMises = (2.0/3.0)*sqrt((3.0/2.0)*(cxx*cxx+cyy*cyy+czz*czz)+(3.0/4.0)*(cxy*cxy+cyz*cyz+cxz*cxz));
                         timeHistory<<vonMises;
-                        //resMISES.insert(OCCnodeID,timeHistory);
                         resMISES.insert(std::make_pair(OCCnodeID,timeHistory));
+                        //cout<<"1____inserting value :"<<vonMises<<"____"<<endl;
 
+                        // why this?
                         //! -----------------------------------------------------
                         //! compute the principal components: index 0 is minimum
                         //! -----------------------------------------------------
-                        double sik[6] {cxx,cyy,czz,cxy,cyz,cxz};
-                        double s[3];
-                        postTools::principalComponents(sik,s);
+                        //double sik[6] {cxx,cyy,czz,cxy,cyz,cxz};
+                        //double s[3];
+                        //postTools::principalComponents(sik,s);
 
                     }
                     else if(it!=indexedMapOfNodes.end())
-                    //else if(OCCnodeID!=-1)
                     {
                         int OCCnodeID = indexedMapOfNodes.find(ni)->second;
 
@@ -930,15 +941,19 @@ std::map<GeometryTag,std::map<int,QList<double>>> postEngine::readFatigueResults
                         timeHistory = resMISES.at(OCCnodeID);
 
                         timeHistory<<vonMises;
-                        //resMISES.insert(OCCnodeID,timeHistory);
-                        resMISES.insert(std::make_pair(OCCnodeID,timeHistory));
+                        //cout<<"2____inserting value :"<<vonMises<<"____"<<endl;
 
+                        //resMISES.insert(std::make_pair(OCCnodeID,timeHistory));   // std::map<>::insert will fail if key is already present
+                        std::map<int,QList<double>>::iterator it_ = resMISES.find(OCCnodeID);
+                        it_->second = timeHistory;
+
+                        // why this?
                         //! ---------------------------------
                         //! compute the principal components
                         //! ---------------------------------
-                        double sik[6] {cxx,cyy,czz,cxy,cyz,cxz};
-                        double s[3];
-                        postTools::principalComponents(sik,s);
+                        //double sik[6] {cxx,cyy,czz,cxy,cyz,cxz};
+                        //double s[3];
+                        //postTools::principalComponents(sik,s);
                     }
                     std::getline(curFile,val);
                 }

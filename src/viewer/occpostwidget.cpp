@@ -359,14 +359,14 @@ void occPostWidget::setWorkingMode_Solution()
         //! --------------------------------------
         //! deactivate the current selection mode
         //! --------------------------------------
-        this->clearGeometrySelection(); //cesere
+        this->clearGeometrySelection();
 
         //! -----------------------------------------------------
         //! deactivate all the selection modes of all the shapes
         //! activate selection mode for FACEs
         //! -----------------------------------------------------
         AIS_ListOfInteractive listOfIO;
-        occContext->ObjectsInside(listOfIO,AIS_KOI_Shape,0);
+        occContext->ObjectsInside(listOfIO,AIS_KOI_Shape,-1);
         for(AIS_ListIteratorOfListOfInteractive it(listOfIO); it.More(); it.Next())
         {
             occContext->Deactivate(it.Value());
@@ -374,26 +374,11 @@ void occPostWidget::setWorkingMode_Solution()
         }
         this->setSelectionMode(CurSelection_Nothing);
 
-        /*
-        switch(myCurSelectionMode)
-        {
-        case CurSelection_Solid: occContext->DeactivateStandardMode(TopAbs_SOLID); break;
-        case CurSelection_Face: occContext->DeactivateStandardMode(TopAbs_FACE); break;
-        case CurSelection_Edge: occContext->DeactivateStandardMode(TopAbs_EDGE); break;
-        case CurSelection_Vertex: occContext->DeactivateStandardMode(TopAbs_VERTEX); break;
-        default: break;
-        }
-        */
-
         //! --------------------------
         //! show the results tool bar
         //! --------------------------
         ResultsToolBar *theResultsToolBar = static_cast<ResultsToolBar*>(tools::getWidgetByName("resultsToolBar"));
         theResultsToolBar->setVisible(true);
-
-        //theResultsToolBar->blockSignals(true);
-        //theResultsToolBar->setStatus(myResultPresentation);
-        //theResultsToolBar->blockSignals(false);
     }
 }
 

@@ -22,11 +22,6 @@
 #include <MeshVS_MeshPrsBuilder.hxx>
 #include <MeshVS_ElementalColorPrsBuilder.hxx>
 
-//! ---
-//! Qt
-//! ---
-//#include <QMap>
-
 //! ----
 //! C++
 //! ----
@@ -583,6 +578,18 @@ bool postObject::buildMeshIO(double min, double max, int Nlevels, bool autoscale
     //! the data content
     //! -----------------
     std::map<GeometryTag,std::vector<std::map<int,double>>>::const_iterator it = theData.cbegin();
+
+    /* only for diag purposes
+    for(std::map<GeometryTag,std::vector<std::map<int,double>>>::const_iterator it = theData.cbegin(); it!=theData.cend(); it++)
+    {
+        std::map<int,double> d = it->second.at(0);
+        for(std::map<int,double>::iterator itt = d.begin(); itt!=d.end(); itt++)
+        {
+            cout<<"data____("<<itt->first<<", "<<itt->second<<")____"<<endl;
+        }
+    }
+    */
+
     for(std::map<GeometryTag,occHandle(MeshVS_DeformedDataSource)>::const_iterator anIt = theMeshDataSources.cbegin(); anIt!= theMeshDataSources.cend() && it!= theData.cend(); ++anIt, ++it)
     {
         const GeometryTag &loc = anIt->first;
@@ -616,7 +623,7 @@ bool postObject::buildMeshIO(double min, double max, int Nlevels, bool autoscale
         }
         catch(...)
         {
-            //cout<<"____no displacement map: creating a dummy one filled with zero____"<<endl;
+            cout<<"postObject::buildMeshIO()->____no displacement map: creating a dummy one filled with zero____"<<endl;
             TColStd_PackedMapOfInteger nodeMap =  curMeshDS->GetAllNodes();
             for(TColStd_MapIteratorOfPackedMapOfInteger it(nodeMap); it.More(); it.Next())
                 displacementMap.insert(std::make_pair(it.Key(),gp_Vec(0,0,0)));
@@ -637,7 +644,7 @@ bool postObject::buildMeshIO(double min, double max, int Nlevels, bool autoscale
         const std::map<int, double> &res = listOfRes.at(component);
         if(res.size()==0)
         {
-            cout<<"postObject::buildMeshIO()->____you are giving me no displacement data____"<<endl;
+            cout<<"postObject::buildMeshIO()->____you are giving me no data____"<<endl;
             return false;
         }
         //! -------------------------------------------
@@ -651,27 +658,28 @@ bool postObject::buildMeshIO(double min, double max, int Nlevels, bool autoscale
         }
         else { myMin = min; myMax = max; }
 
+        bool isDone;
         occHandle(MeshVS_Mesh) aColoredMesh;
         switch(Global::status().myResultPresentation.theTypeOfPresentation)
         {
         case resultPresentation::typeOfPresentation_isostrips:
-            MeshTools::buildIsoStrip(theDeformedDS,res,myMin,myMax,myNbLevels,aColoredMesh,true);
+            isDone = MeshTools::buildIsoStrip(theDeformedDS,res,myMin,myMax,myNbLevels,aColoredMesh,true);
             break;
         case resultPresentation::typeOfPresentation_nodalresults:
-            MeshTools::buildColoredMesh(theDeformedDS,res,aColoredMesh,myMin,myMax,myNbLevels);
+            isDone = MeshTools::buildColoredMesh(theDeformedDS,res,aColoredMesh,myMin,myMax,myNbLevels);
             break;
         case resultPresentation::typeOfPresentation_isosurfaces:
-            MeshTools::buildIsoSurfaces(theDeformedDS,res,myMin,myMax,myNbLevels,aColoredMesh,false);
+            isDone = MeshTools::buildIsoSurfaces(theDeformedDS,res,myMin,myMax,myNbLevels,aColoredMesh,false);
             break;
         case resultPresentation::typeOfPresentation_isolines:
             //! to do ...
             break;
         }
 
-        // put here your experiments on view generation
+        // put here your experiments on colored mesh view generation
         // MeshTools::buildIsoStrip(theDeformedDS,res,myMin,myMax,myNbLevels,aColoredMesh,true);
         // MeshTools::buildDeformedColoredMesh(curMeshDS,res,displacementMap,1.0,myMin,myMax,Nlevels,aColoredMesh,true);
-        theMeshes.insert(std::make_pair(loc,aColoredMesh));
+        if(isDone == true) theMeshes.insert(std::make_pair(loc,aColoredMesh));
     }
 
     //! ---------------------------------
@@ -689,14 +697,14 @@ bool postObject::buildMeshIO(double min, double max, int Nlevels, bool autoscale
 //! -------------------------------------------
 std::pair<double,double> postObject::getMinMax(int component)
 {
-    cout<<"postObject::getMinMax()->____function called____"<<endl;
+    //cout<<"postObject::getMinMax()->____function called____"<<endl;
 
     //! ---------------------------------------------
     //! first element => min; second element => max;
     //! ---------------------------------------------
     std::pair<double,double> minmax;
-    minmax.first = 1e20;
-    minmax.second = -1e20;
+    minmax.first = 1e10;
+    minmax.second = -1e10;
 
     //! -------------------
     //! scan the locations
