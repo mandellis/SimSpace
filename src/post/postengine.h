@@ -125,7 +125,7 @@ private:
     //                                                             const std::vector<GeometryTag> &vecLoc,
     //                                                             const QList<double> &times);
 
-    std::map<GeometryTag,std::map<int,QList<double>>> readFatigueResults(int type,
+    std::map<GeometryTag, std::map<int, std::vector<double> > > readFatigueResults(int type,
                                                                  const std::vector<GeometryTag> &vecLoc,
                                                                  const QList<double> &times);
 
