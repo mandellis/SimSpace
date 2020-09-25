@@ -746,7 +746,6 @@ void postObject::init(meshDataBase *mDB)
         cout<<"postObject::update()->____cannot generate the mesh object: no data____"<<endl;
         return;
     }
-
     int topNr, parentShapeNr;
     occHandle(MeshVS_DataSource) meshDS;
 

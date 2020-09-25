@@ -225,14 +225,14 @@ int rainflow::solve(double eps)
 //! function: damage_index
 //! details:
 //! -----------------------
-double rainflow::damage_index(QList<double> y)
+double rainflow::damage_index(std::vector<double> y)
 {
     //cout<<"rainflow::damage_index()->____function called____"<<endl;
 
     double D=0.;
     double deltaEps;
-    QList<double> B = this->rainflow_engine(y);
-    int NbData = B.length();
+    std::vector<double> B = this->rainflow_engine(y);
+    int NbData = int(B.size());
     for(int i=0;i<NbData;i++)
     {
         deltaEps = B.at(i);
@@ -257,7 +257,7 @@ double rainflow::damage_index(QList<double> y)
 //! function: rainflow_engine
 //! details:
 //! --------------------------
-QList<double> rainflow::rainflow_engine(QList<double> y)
+std::vector<double> rainflow::rainflow_engine(std::vector<double> y)
 {
 
     //cout<<"rainflow::rainflow engine()->____function called____"<<endl;
@@ -274,8 +274,8 @@ QList<double> rainflow::rainflow_engine(QList<double> y)
     int nkv;
     int last_a;
 
-    QList<double> B;
-    QVector<double> a;
+    std::vector<double> B;
+    std::vector<double> a;
 
     double slope1;
     double slope2;
@@ -308,7 +308,7 @@ QList<double> rainflow::rainflow_engine(QList<double> y)
     myStrain<<y.last();
     myStrain.close();
 */
-    int NP = y.length();
+    int NP = int(y.size());
     for(i=1;i<(NP-1);i++)
     {
         //myStrain<<y.at(i-1)<<endl;
@@ -322,7 +322,7 @@ QList<double> rainflow::rainflow_engine(QList<double> y)
             k++;
         }
     }
-    a.push_back(y.last());
+    a.push_back(y.at(NP-1));
     k++;
 
     last_a=k-1;
@@ -377,7 +377,7 @@ QList<double> rainflow::rainflow_engine(QList<double> y)
                 row.insert(1,0.5);
                 row.insert(0,Y);
 
-                B<<Y;
+                B.push_back(Y);
                 kv++;
                 a.erase(a.begin());
                 last_a--;
@@ -393,7 +393,7 @@ QList<double> rainflow::rainflow_engine(QList<double> y)
                 row.insert(1,1);
                 row.insert(0,Y);
 
-                B<<Y;
+                B.push_back(Y);
 
                 kv++;
                 n=0;
@@ -441,7 +441,7 @@ QList<double> rainflow::rainflow_engine(QList<double> y)
             row.insert(1,0.5);
             row.insert(0,Y*.5);
             //B.push_back(row);
-            B<<Y;
+            B.push_back(Y);
 
             kv++;
 
@@ -452,17 +452,17 @@ QList<double> rainflow::rainflow_engine(QList<double> y)
 }
 
 //bool rainflow::perform(QMap<int, QList<double>> strainDistTimeHistory, QMap<int,double> &damageDist)
-bool rainflow::perform(std::map<int, QList<double>> strainDistTimeHistory, std::map<int,double> &damageDist)
+bool rainflow::perform(std::map<int, std::vector<double>> strainDistTimeHistory, std::map<int,double> &damageDist)
 {
     cout<<"rainflow::perform()->____function called____"<<endl;
 
-    for(std::map<int, QList<double>>::iterator it = strainDistTimeHistory.begin(); it!= strainDistTimeHistory.end(); ++it)
+    for(std::map<int, std::vector<double>>::iterator it = strainDistTimeHistory.begin(); it!= strainDistTimeHistory.end(); ++it)
     //for(QMap<int, QList<double>>::iterator it = strainDistTimeHistory.begin(); it!= strainDistTimeHistory.end(); ++it)
     {
         //int nodeID = it.key();
         int nodeID = it->first;
         //QList<double> timeHistory = it.value();
-        QList<double> timeHistory = it->second;
+        std::vector<double> timeHistory = it->second;
 
         double damage = this->damage_index(timeHistory);
         //damageDist.insert(nodeID,damage);

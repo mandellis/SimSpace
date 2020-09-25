@@ -10017,10 +10017,8 @@ void SimulationManager::interpolatePrivate(int mode)
 
                 //! record the min-max values for each body undergoing interpolation at time pos
                 std::pair<double,double> aPair = mapper.getMinMax();
-
                 //! retrieve the results at time pos
                 listOfRes.push_back(mapper.getResults());
-
                 if(it==vecLocs.begin())
                 {
                     cout<<"SimulationManager::interpolatePrivate()->inserting results on first body number = "<<bodyIndex<<endl;
@@ -10036,7 +10034,6 @@ void SimulationManager::interpolatePrivate(int mode)
                     cout<<"SimulationManager::interpolatePrivate()->inserting results on next body number =  "<<bodyIndex<<endl;
                     mapMinMax=listMapMinMax[pos];
                     mapOfRes=listMapOfRes[pos];
-
                     mapMinMax.insert(bodyIndex,aPair);
                     mapOfRes.insert(std::make_pair(loc,listOfRes));
 

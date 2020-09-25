@@ -72,7 +72,7 @@ public:
 
     //! perform
     //bool perform(QMap<int, QList<double> > strainDistTimeHistory, QMap<int, double> &damageDist);
-    bool perform(std::map<int, QList<double> > strainDistTimeHistory, std::map<int, double> &damageDist);
+    bool perform(std::map<int, std::vector<double> > strainDistTimeHistory, std::map<int, double> &damageDist);
 
     //void read_data();
 
@@ -96,13 +96,13 @@ private:
     fatigueModel myFatigueModel;
 
     //! damage index
-    double damage_index(QList<double> y);
+    double damage_index(std::vector<double> y);
 
     //! called within damage_index()
     int solve(double eps);
 
     //! ---
-    QList<double> rainflow_engine(QList<double> y);
+    std::vector<double> rainflow_engine(std::vector<double> y);
 };
 
 #endif // RAINFLOW_H

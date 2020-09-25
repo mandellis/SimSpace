@@ -2476,7 +2476,13 @@ void MainWindow::saveProjectAs()
         _filesDir.append("_files");
         //cout<<"____"<<_filesDir.toStdString()<<"____"<<endl;
         QDir curDir(_filesDir);
-        curDir.removeRecursively();
+        if(curDir.exists())
+        {
+            QDir SDB_dir(_filesDir+("/SDB"));
+            QDir MDB_dir(_filesDir+("/MDB"));
+            SDB_dir.removeRecursively();
+            MDB_dir.removeRecursively();
+        }
     }
 
     //! ------------------------

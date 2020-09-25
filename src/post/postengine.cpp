@@ -673,23 +673,26 @@ void postEngine::updateIsostrips(sharedPostObject &aPostObject, int scaleType, d
 //! ---------------------------------
 bool postEngine::evaluateFatigueResults(int type, std::vector<GeometryTag> locs, const QList<double> &times, QMap<int,int> materialBodyMap, int nCycle, sharedPostObject &aPostObject)
 {
+    cout<<"postEngine::evaluateFatigueResult()->____tagoo___"<<endl;
+
     std::map<GeometryTag,std::vector<std::map<int,double>>> fatigueResults;
+    cout<<"postEngine::evaluateFatigueResult()->____tagoo___"<<endl;
 
     switch(myFatigueModel.type)
     {
     case fatigueModel_BCM:
     {
         cout<<"postEngine::evaluateFatigueResult()->____fatigue model BCM called___"<<endl;
-        std::map<GeometryTag,std::map<int,QList<double>>> r = readFatigueResults(type,locs,times);
+        std::map<GeometryTag,std::map<int,std::vector<double>>> r = readFatigueResults(type,locs,times);
 
         rainflow rf;
-        for(std::map<GeometryTag,std::map<int,QList<double>>>::iterator it = r.begin(); it!=r.end(); ++it)
+        for(std::map<GeometryTag,std::map<int,std::vector<double>>>::iterator it = r.begin(); it!=r.end(); ++it)
         {
             GeometryTag curLoc = it->first;
 
             rf.setLocation(curLoc);
 
-            std::map<int,QList<double>> strainDistTimeHistory = it->second;
+            std::map<int,std::vector<double>> strainDistTimeHistory = it->second;
 
             rf.setFatigueModel(myFatigueModel);
             std::map<int,double> damageDist;
@@ -779,7 +782,7 @@ bool postEngine::evaluateFatigueResults(int type, std::vector<GeometryTag> locs,
         break;
     }
 
-    //! -----------------------
+    /! -----------------------
     //! create the post object
     //! -----------------------
     bool useSurfaceMeshForVolumeResults = Global::status().myResultPresentation.useExteriorMeshForVolumeResults;
@@ -800,7 +803,7 @@ bool postEngine::evaluateFatigueResults(int type, std::vector<GeometryTag> locs,
 //!           type = 0 => equivalent total strain
 //!           ... other types
 //! ---------------------------------------------------
-std::map<GeometryTag,std::map<int,QList<double>>> postEngine::readFatigueResults(int type,
+std::map<GeometryTag,std::map<int,std::vector<double>>> postEngine::readFatigueResults(int type,
                                                                                  const std::vector<GeometryTag> &vecLoc,
                                                                                  const QList<double> &times)
 {
@@ -817,7 +820,7 @@ std::map<GeometryTag,std::map<int,QList<double>>> postEngine::readFatigueResults
     //! ----------------------------------------------------
     //! generate the results on all the requested locations
     //! ----------------------------------------------------
-    std::map<GeometryTag,std::map<int,QList<double>>> resMap;
+    std::map<GeometryTag,std::map<int,std::vector<double>>> resMap;
 
     for(std::vector<GeometryTag>::const_iterator it = vecLoc.cbegin(); it!= vecLoc.cend(); ++it)
     {
@@ -858,7 +861,8 @@ std::map<GeometryTag,std::map<int,QList<double>>> postEngine::readFatigueResults
         //! scan the files
         //! ---------------
         int n=-1;    //! time index
-        std::map<int,QList<double>> resMISES;
+        std::map<int,std::vector<double>> resMISES;
+        int n=0;    //! time index
 
         for(int i=0; i<fileList.length(); i++)
         {
@@ -886,9 +890,10 @@ std::map<GeometryTag,std::map<int,QList<double>>> postEngine::readFatigueResults
             int step,substep;
             postTools::getStepSubStepByTimeDTM(myDTM,times.at(n),step,substep);
 
-            QList<double> timeHistory;
-            if(strcmp(tdata,resultKeyName.toStdString().c_str())==0)
-            //if(strcmp(tdata,resultKeyName.toStdString().c_str())==0 && subStepNb==substep && stepNb == step) // why this?
+            std::vector<double> timeHistory;
+            //if(strcmp(tdata,resultKeyName.toStdString().c_str())==0)            
+            if(strcmp(tdata,resultKeyName.toStdString().c_str())==0 && subStepNb==substep && stepNb == step)
+
             {
                 cout<<"postEngine::readFatigueResults()->____data file found: start reading data within____"<<endl;
 
@@ -915,7 +920,9 @@ std::map<GeometryTag,std::map<int,QList<double>>> postEngine::readFatigueResults
                         //! compute the equivalent stress/strain
                         //! -------------------------------------
                         double vonMises = (2.0/3.0)*sqrt((3.0/2.0)*(cxx*cxx+cyy*cyy+czz*czz)+(3.0/4.0)*(cxy*cxy+cyz*cyz+cxz*cxz));
-                        timeHistory<<vonMises;
+
+                        timeHistory.push_back(vonMises);
+                        //resMISES.insert(OCCnodeID,timeHistory);
                         resMISES.insert(std::make_pair(OCCnodeID,timeHistory));
                         //cout<<"1____inserting value :"<<vonMises<<"____"<<endl;
 
@@ -940,20 +947,11 @@ std::map<GeometryTag,std::map<int,QList<double>>> postEngine::readFatigueResults
                         //timeHistory = resMISES.value(OCCnodeID);
                         timeHistory = resMISES.at(OCCnodeID);
 
-                        timeHistory<<vonMises;
-                        //cout<<"2____inserting value :"<<vonMises<<"____"<<endl;
-
+                        timeHistory.push_back(vonMises);
                         //resMISES.insert(std::make_pair(OCCnodeID,timeHistory));   // std::map<>::insert will fail if key is already present
                         std::map<int,QList<double>>::iterator it_ = resMISES.find(OCCnodeID);
                         it_->second = timeHistory;
 
-                        // why this?
-                        //! ---------------------------------
-                        //! compute the principal components
-                        //! ---------------------------------
-                        //double sik[6] {cxx,cyy,czz,cxy,cyz,cxz};
-                        //double s[3];
-                        //postTools::principalComponents(sik,s);
                     }
                     std::getline(curFile,val);
                 }

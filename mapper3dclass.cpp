@@ -831,15 +831,6 @@ std::pair<double,double> Mapper3DClass::getMinMax() const
     return pair;
 }
 
-//! ---------------------
-//! function: getResults
-//! details:
-//! ---------------------
-std::map<int,double> Mapper3DClass::getResults()
-{
-    return myRes;
-}
-
 //! --------------------------
 //! function: clock
 //! details:  time diagnostic
@@ -986,6 +977,7 @@ int Mapper3DClass::remapByTargetElements()
     return nremapped;
 }
 
+/*
 //! ---------------------------------------------------------
 //! function: getMultiResults
 //! details:  retrieve the multiRes map for multiInterpolate
@@ -994,6 +986,15 @@ int Mapper3DClass::remapByTargetElements()
 std::map<int,std::vector<double>> Mapper3DClass::getMultiResults()
 {
     return myMultiRes;
+}*/
+
+//! ---------------------
+//! function: getResults
+//! details:
+//! ---------------------
+std::map<int,double> Mapper3DClass::getResults()
+{
+    return myRes;
 }
 
 //! ------------------------
@@ -1006,17 +1007,14 @@ void Mapper3DClass::retrieveResMap(int pos)
     //! key => nodeID
     //! value => list of values @ node
     //! -------------------------------
-    //for(QMap<int,std::vector<double>>::iterator it = myMultiRes.begin(); it!=myMultiRes.end(); ++it)
+    myRes.clear();
     for(std::map<int,std::vector<double>>::iterator it = myMultiRes.begin(); it!=myMultiRes.end(); ++it)
     {
-        //int nodeID = it.key();
         int nodeID = it->first;
-        //const std::vector<double> &vec = myMultiRes.value(nodeID);
         const std::vector<double> &vec = myMultiRes.at(nodeID);
         double scalarVal = vec[pos];
         if(scalarVal>=myMaxValue) myMaxValue=scalarVal;
         if(scalarVal<=myMinValue) myMinValue=scalarVal;
-        //myRes.insert(nodeID,scalarVal);
         myRes.insert(std::make_pair(nodeID,scalarVal));
     }
 }
@@ -1157,10 +1155,10 @@ void Mapper3DClass::perform(int theAlgo, const opencascade::handle<MeshVS_DataSo
     }
 }
 
-//! -------------------------
-//! function: performNearest
+//! -------------------------------------
+//! function: performNearest Neighboring
 //! details:
-//! -------------------------
+//! -------------------------------------
 void Mapper3DClass::performNearestNeighboring(double pinball)
 {
     cout<<"Mapper3DClass::performNearestNeighboring()->____function called____"<<endl;
