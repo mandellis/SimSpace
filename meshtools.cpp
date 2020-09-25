@@ -398,7 +398,7 @@ bool MeshTools::buildColoredMesh(const occHandle(MeshVS_DataSource) &theMeshVS_D
     int indexOfMin, indexOfMax;
     if(autoscale)
     {
-        max = -1e80;
+        max = -1e10;
         min = -max;
 
         for(std::map<int,double>::const_iterator it = res.cbegin(); it!=res.cend(); it++)
@@ -473,6 +473,8 @@ bool MeshTools::buildColoredMesh(const occHandle(MeshVS_DataSource) &theMeshVS_D
     aColoredMesh->GetDrawer()->SetBoolean(MeshVS_DA_DisplayNodes, false);
     aColoredMesh->GetDrawer()->SetBoolean(MeshVS_DA_ShowEdges, showEdges);
     aColoredMesh->GetDrawer()->SetColor(MeshVS_DA_EdgeColor,Quantity_NOC_BLACK);
+
+    cout<<"MeshTools::buildColoredMesh->____exiting function____"<<endl;
 
     return true;
 }

@@ -105,6 +105,8 @@
 #include <Aspect_TypeOfColorScalePosition.hxx>
 #include <TopTools_MapIteratorOfMapOfShape.hxx>
 #include <BRep_Builder.hxx>
+#include <SelectMgr_EntityOwner.hxx>
+#include <StdSelect_BRepOwner.hxx>
 
 //! ---
 //! Qt
@@ -463,7 +465,6 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 emit requestUnhighlightBodies(false);
                 emit requestSetWorkingMode(2);
                 emit requestHideAllResults();
-                //emit requestHideSlicedMeshes();
                 emit requestClearGraph();
                 this->changeColor();
             }
@@ -478,7 +479,6 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 emit requestUnhighlightBodies(false);
                 emit requestSetWorkingMode(2);
                 emit requestHideAllResults();
-                //emit requestHideSlicedMeshes();
                 emit requestClearGraph();
                 this->changeColor();
             }
@@ -498,7 +498,6 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 //! ---------------------------------------------------------------------
                 emit requestHideMeshes();
                 emit requestHideAllResults();
-                //emit requestHideSlicedMeshes();
 
                 SimulationNodeClass *node = index.data(Qt::UserRole).value<SimulationNodeClass*>();
                 QStandardItem *itemTemperature = (QStandardItem*)(node->getPropertyValue<void*>("Imported body temperature"));
@@ -528,7 +527,6 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 //! ---------------------------------------------------------------------
                 emit requestHideMeshes();
                 emit requestHideAllResults();
-                //emit requestHideSlicedMeshes();
 
                 //! -------------------------------------------------------
                 //! in the working mode "3" "Solution" the selection modes
@@ -638,7 +636,6 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 emit requestHideAllResults();
                 emit requestUnhighlightBodies(Standard_True);
                 emit requestHideMeshes();
-                //emit requestHideSlicedMeshes();
                 emit requestSetWorkingMode(2);
 
                 //! -------------------------------------
@@ -683,7 +680,6 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 emit requestHideAllResults();
                 emit requestUnhighlightBodies(true);
                 emit requestHideMeshes();
-                //emit requestHideSlicedMeshes();
                 emit requestSetWorkingMode(2);
             }
                 break;
@@ -693,7 +689,6 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 emit requestHideAllResults();
                 emit requestUnhighlightBodies(false);
                 emit requestHideMeshes();
-                //emit requestHideSlicedMeshes();
                 emit requestSetWorkingMode(2);
 
                 theNode->getModel()->blockSignals(true);    //! avoids calling handleItemChange()
@@ -708,7 +703,6 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
             {
                 emit requestSetWorkingMode(2);
                 emit requestHideAllResults();
-                //emit requestHideSlicedMeshes();
                 theNode->getModel()->blockSignals(true);    //! avoids calling handleItemChange()
                 bool isDone = markerBuilder::addMarker(this->getCurrentNode(), mySimulationDataBase);
                 theNode->getModel()->blockSignals(false);   //! reconnect - unblock signals
@@ -745,7 +739,6 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 emit requestUnhighlightBodies(Standard_True);
                 emit requestSetWorkingMode(0);
                 emit requestHideMeshes();
-                //emit requestHideSlicedMeshes();
                 this->changeColor();
                 emit requestClearGraph();
             }
@@ -759,7 +752,6 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 emit requestUnhighlightBodies(Standard_True);
                 emit requestSetWorkingMode(2);
                 emit requestHideMeshes();
-                //emit requestHideSlicedMeshes();
                 this->changeColor();
                 emit requestClearGraph();
             }
@@ -774,7 +766,6 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 emit requestUnhighlightBodies(Standard_True);
                 emit requestSetWorkingMode(2);
                 emit requestHideMeshes();
-                //emit requestHideSlicedMeshes();
                 this->changeColor();
 
                 //! -------------------------------------------------------------
@@ -813,7 +804,6 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 emit requestHideAllResults();
                 emit requestUnhighlightBodies(true);
                 emit requestHideMeshes();
-                //emit requestHideSlicedMeshes();
                 emit requestSetWorkingMode(2);
                 this->changeColor();
                 emit requestClearGraph();
@@ -840,7 +830,6 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 emit requestHideAllResults();
                 emit requestUnhighlightBodies(true);
                 emit requestHideMeshes();
-                //emit requestHideSlicedMeshes();
                 emit requestSetWorkingMode(2);
                 this->changeColor();
 
@@ -884,7 +873,6 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 emit requestHideAllResults();
                 emit requestUnhighlightBodies(true);
                 emit requestHideMeshes();
-                //emit requestHideSlicedMeshes();
                 emit requestSetWorkingMode(2);
                 this->changeColor();
 
@@ -920,7 +908,6 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 emit requestHideAllResults();
                 emit requestUnhighlightBodies(true);
                 emit requestHideMeshes();
-                //emit requestHideSlicedMeshes();
                 emit requestSetWorkingMode(2);
                 this->changeColor();
 
@@ -963,7 +950,6 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 emit requestHideAllResults();
                 emit requestUnhighlightBodies(Standard_True);
                 emit requestHideMeshes();
-                //emit requestHideSlicedMeshes();
                 emit requestSetWorkingMode(2);
                 this->changeColor();
 
@@ -1002,7 +988,6 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 emit requestHideAllResults();
                 emit requestUnhighlightBodies(Standard_True);
                 emit requestSetWorkingMode(1);
-                //emit requestHideSlicedMeshes();
                 this->changeColor();
                 emit requestClearGraph();
             }
@@ -1014,7 +999,6 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 emit requestUnhighlightBodies(Standard_True);
                 emit requestHideMeshes();
                 emit requestSetWorkingMode(1);
-                //emit requestHideSlicedMeshes();
                 this->changeColor();
                 emit requestClearGraph();
             }
@@ -1024,7 +1008,6 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
             {
                 emit requestHideAllResults();
                 emit requestSetWorkingMode(1);
-                //emit requestHideSlicedMeshes();
                 //this->changeColor();
                 emit requestClearGraph();
                 //! -----------------------------------------
@@ -1092,7 +1075,6 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 emit requestHideAllResults();
                 emit requestUnhighlightBodies(Standard_True);
                 emit requestHideMeshes();
-                //emit requestHideSlicedMeshes();
                 emit requestSetWorkingMode(2);
                 this->changeColor();
                 emit requestClearGraph();
@@ -1106,7 +1088,6 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 emit requestHideAllResults();
                 emit requestUnhighlightBodies(Standard_True);
                 emit requestHideMeshes();
-                //emit requestHideSlicedMeshes();
                 emit requestSetWorkingMode(2);
                 this->changeColor();
                 emit requestClearGraph();
@@ -1119,7 +1100,6 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 emit requestUnhighlightBodies(Standard_True);
                 emit requestSetWorkingMode(0);  //! "On mesh" working mode
                 emit requestHideMeshes();
-                //emit requestHideSlicedMeshes();
                 emit requestClearGraph();
 
                 QStandardItem *item = theNode->getPropertyItem("Selected elements");
@@ -1332,10 +1312,10 @@ void SimulationManager::showContextMenu(const QPoint &pos)
     if(selectedAction)  handleItem(selectedAction->data().toInt());
 }
 
-//! ------------------------------------------
+//! ---------------------
 //! function: deleteItem
-//! details:  delete items from the main tree
-//! ------------------------------------------
+//! details:
+//! ---------------------
 void SimulationManager::deleteItem(QList<QModelIndex> indexesList)
 {
     cout<<"SimulationManager::deleteItem()->____function called____"<<endl;
@@ -1533,17 +1513,16 @@ void SimulationManager::deleteItem(QList<QModelIndex> indexesList)
                         nodeSetUp->replaceProperty("Scoping method",Property("Scoping method",data,Property::PropertyGroup_Scope));
                         nodeSetUp->getModel()->blockSignals(false);
                     }
-
                 }
             }
 
         }
 
-        //! -------------------------------------------------
-        //! handle the special case of a "Thermal condition"
+        //! ----------------------------------------------------------------
+        //! handle the special case of a "Thermal condition" "Model change"
         //! handle the special case of a "Bolt pretension"
-        //! -------------------------------------------------
-        if(theType == SimulationNodeClass::nodeType_structuralAnalysisThermalCondition)
+        //! ----------------------------------------------------------------
+        if(theType == SimulationNodeClass::nodeType_structuralAnalysisThermalCondition || theType == SimulationNodeClass::nodeType_modelChange)
         {
             int SC = mainTreeTools::calculateStartColumn(myTreeView);
             int count = 1;
@@ -1682,9 +1661,7 @@ void SimulationManager::handleItem(int type)
         }
     }
         break;
-
     case 86: this->replicateBolt(); break;
-
     case 26:
     {
         //! --------------------------------------------------------------------------------------------------------
@@ -2002,7 +1979,6 @@ void SimulationManager::handleItem(int type)
         //! export a result
     case 109:
     {
-        cout<<"____case 109 selected____"<<endl;
         SimulationNodeClass *curNode = myTreeView->currentIndex().data(Qt::UserRole).value<SimulationNodeClass*>();
         if(curNode->getPropertyItem("Post object")==Q_NULLPTR) return;
 
@@ -2071,10 +2047,12 @@ void SimulationManager::handleItem(int type)
             //! -----------------------------------
             //! synch the "Visible" property value
             //! -----------------------------------
+            disconnect(theCurNode->getModel(),SIGNAL(itemChanged(QStandardItem*)),this,SLOT(handleItemChange(QStandardItem*)));
             QVariant data;
             data.setValue(false);
             Property prop_visible("Visible",data,Property::PropertyGroup_GraphicProperties);
             theCurNode->replaceProperty("Visible",prop_visible);
+            connect(theCurNode->getModel(),SIGNAL(itemChanged(QStandardItem*)),this,SLOT(handleItemChange(QStandardItem*)));
         }
         emit requestHideBody(bodyNumbers);
     }
@@ -2087,13 +2065,15 @@ void SimulationManager::handleItem(int type)
         //! [2] scan all the body indexes one by one. If the current body index
         //!     is not contained into the previous list, add to "allOtherBodies"
         //! ---------------------------------------------------------------------
-        TColStd_ListOfInteger selectedBodiesIndexes;
+        //TColStd_ListOfInteger selectedBodiesIndexes;
+        std::vector<int> selectedBodiesIndexes;
         QList<QModelIndex> selectedIndexes = mySelectionModel->selectedRows(0);
         for(int i=0; i<selectedIndexes.length(); i++)
         {
             SimulationNodeClass* selectedNode = selectedIndexes.at(i).data(Qt::UserRole).value<SimulationNodeClass*>();
-            int selectedBodyIndex = selectedNode->getPropertyItem("Map index")->data(Qt::UserRole).value<Property>().getData().toInt();
-            selectedBodiesIndexes.Append(selectedBodyIndex);
+            int selectedBodyIndex = selectedNode->getPropertyValue<int>("Map index");
+            //selectedBodiesIndexes.Append(selectedBodyIndex);
+            selectedBodiesIndexes.push_back(selectedBodyIndex);
         }
 
         QExtendedStandardItem *geomeytryRootItem = static_cast<QExtendedStandardItem*>(this->getTreeItem(SimulationNodeClass::nodeType_geometry));
@@ -2103,71 +2083,58 @@ void SimulationManager::handleItem(int type)
         {
             QExtendedStandardItem *theCurItem = static_cast<QExtendedStandardItem*>(geomeytryRootItem->child(i,0));
             SimulationNodeClass *theCurNode = theCurItem->data(Qt::UserRole).value<SimulationNodeClass*>();
-            int bodyIndex = theCurNode->getPropertyItem("Map index")->data(Qt::UserRole).value<Property>().getData().toInt();
-            if(!selectedBodiesIndexes.Contains(bodyIndex))
+            int bodyIndex = theCurNode->getPropertyValue<int>("Map index");
+            if(std::find(selectedBodiesIndexes.begin(),selectedBodiesIndexes.end(),bodyIndex)==selectedBodiesIndexes.end())
+            //if(!selectedBodiesIndexes.Contains(bodyIndex))
             {
                 allOtherBodies.Append(bodyIndex);
 
                 //! ---------------------------
                 //! synch the "Visible" switch
                 //! ---------------------------
+                disconnect(theCurNode->getModel(),SIGNAL(itemChanged(QStandardItem*)),this,SLOT(handleItemChange(QStandardItem*)));
                 QVariant data;
                 data.setValue(false);
                 Property prop_visible("Visible",data,Property::PropertyGroup_GraphicProperties);
                 theCurNode->replaceProperty("Visible",prop_visible);
-
-                //! -------------------------------------------
-                //! change icon opacity => set isOpaque = true
-                //! -------------------------------------------
-                tools::changeIconOpacity(theCurItem,true);
+                tools::changeIconOpacity(theCurItem,true);      //! opaque icon
+                connect(theCurNode->getModel(),SIGNAL(itemChanged(QStandardItem*)),this,SLOT(handleItemChange(QStandardItem*)));
             }
             else
             {
-                //! --------------------------------------------
-                //! change icon opacity => set isOpaque = false
-                //! --------------------------------------------
-                tools::changeIconOpacity(theCurItem,false);
+                disconnect(theCurNode->getModel(),SIGNAL(itemChanged(QStandardItem*)),this,SLOT(handleItemChange(QStandardItem*)));
+                tools::changeIconOpacity(theCurItem,false);    //! icon not opaque
+                connect(theCurNode->getModel(),SIGNAL(itemChanged(QStandardItem*)),this,SLOT(handleItemChange(QStandardItem*)));
             }
-
         }
-        if(!allOtherBodies.IsEmpty())
-        {
-            requestHideBody(allOtherBodies);
-        }
+        if(!allOtherBodies.IsEmpty()) requestHideBody(allOtherBodies);
     }
         break;
-    case 65:
+    case 65:    // show body/bodies
     {
-        //! show body
         TColStd_ListOfInteger bodiesToShow;
         QList<QModelIndex> selectedIndexes = mySelectionModel->selectedIndexes();
         for(int i=0; i<selectedIndexes.length(); i++)
         {
             SimulationNodeClass *curNode = selectedIndexes.at(i).data(Qt::UserRole).value<SimulationNodeClass*>();
-            int bodyIndex = curNode->getPropertyItem("Map index")->data(Qt::UserRole).value<Property>().getData().toInt();
+            int bodyIndex = curNode->getPropertyValue<int>("Map index");
+            Property::SuppressionStatus isSuppressed = curNode->getPropertyValue<Property::SuppressionStatus>("Suppressed");
+            if(isSuppressed == Property::SuppressionStatus_Suppressed) continue;
 
-            cout<<"action 65:____body to show: "<<bodyIndex<<"____"<<endl;
-
-            Property::SuppressionStatus isSuppressed = curNode->getPropertyItem("Suppressed")->data(Qt::UserRole).value<Property>().getData().value<Property::SuppressionStatus>();
-            if(isSuppressed == Property::SuppressionStatus_Active)
-            {
-                QVariant data;
-                data.setValue(true);
-                Property prop_visible("Visible",data,Property::PropertyGroup_GraphicProperties);
-                curNode->replaceProperty("Visible",prop_visible);
-                bodiesToShow.Append(bodyIndex);
-
-                //! ---------------------------------------------
-                //! change icon opacity => set isOpaque = false
-                //! ---------------------------------------------
-                QExtendedStandardItem *curItem = static_cast<QExtendedStandardItem*>(myModel->itemFromIndex(selectedIndexes.at(i)));
-                tools::changeIconOpacity(curItem,false);
-            }
+            disconnect(curNode->getModel(),SIGNAL(itemChanged(QStandardItem*)),this,SLOT(handleItemChange(QStandardItem*)));
+            QVariant data;
+            data.setValue(true);
+            Property prop_visible("Visible",data,Property::PropertyGroup_GraphicProperties);
+            curNode->replaceProperty("Visible",prop_visible);
+            bodiesToShow.Append(bodyIndex);
+            connect(curNode->getModel(),SIGNAL(itemChanged(QStandardItem*)),this,SLOT(handleItemChange(QStandardItem*)));
+            QExtendedStandardItem *curItem = static_cast<QExtendedStandardItem*>(myModel->itemFromIndex(selectedIndexes.at(i)));
+            tools::changeIconOpacity(curItem,false);        // icon not opaque
         }
         if(!bodiesToShow.IsEmpty()) emit requestShowBody(bodiesToShow);
     }
         break;
-    case 66:
+    case 66:    // show all bodies
     {
         QExtendedStandardItem *itemGeometryRoot = static_cast<QExtendedStandardItem*>(this->getTreeItem(SimulationNodeClass::nodeType_geometry));
         QVariant data;
@@ -2178,12 +2145,10 @@ void SimulationManager::handleItem(int type)
         {
             QExtendedStandardItem *itemBody = static_cast<QExtendedStandardItem*>(itemGeometryRoot->child(i,0));
             SimulationNodeClass *curNode = itemBody->data(Qt::UserRole).value<SimulationNodeClass*>();
+            disconnect(curNode->getModel(),SIGNAL(itemChanged(QStandardItem*)),this,SLOT(handleItemChange(QStandardItem*)));
             curNode->replaceProperty("Visible",prop_visible);
-
-            //! ------------------------------------------
-            //! change icon opacity: set isOpaque == true;
-            //! ------------------------------------------
-            tools::changeIconOpacity(itemBody,false);
+            tools::changeIconOpacity(itemBody,false);   // opaque icon
+            connect(curNode->getModel(),SIGNAL(itemChanged(QStandardItem*)),this,SLOT(handleItemChange(QStandardItem*)));
         }
         emit requestShowAllBodies();
     }
@@ -2211,14 +2176,14 @@ void SimulationManager::handleItem(int type)
         this->createSimulationNode(SimulationNodeClass::nodeType_namedSelectionGeometry);
 
         SimulationNodeClass *node = myTreeView->currentIndex().data(Qt::UserRole).value<SimulationNodeClass*>();
-        node->getModel()->blockSignals(true);
+        disconnect(node->getModel(),SIGNAL(itemChanged(QStandardItem*)),this,SLOT(handleItemChange(QStandardItem*)));
         QVariant data;
         data.setValue(tags);
         Property prop_scope("Geometry",data,Property::PropertyGroup_Scope);
         Property prop_tags("Tags",data,Property::PropertyGroup_Scope);
         node->replaceProperty("Geometry",prop_scope);
         node->replaceProperty("Tags",prop_tags);
-        node->getModel()->blockSignals(false);
+        connect(node->getModel(),SIGNAL(itemChanged(QStandardItem*)),this,SLOT(handleItemChange(QStandardItem*)));
     }
         break;
 
@@ -2536,10 +2501,10 @@ void SimulationManager::showHealingElements()
     }
 }
 
-//! -----------------------------------------------
+//! -------------------------------
 //! function: getGeometrySelection
-//! details:  check if something has been selected
-//! -----------------------------------------------
+//! details:
+//! -------------------------------
 ListOfShape SimulationManager::getGeometrySelection() const
 {
     ListOfShape scope;
@@ -2547,9 +2512,15 @@ ListOfShape SimulationManager::getGeometrySelection() const
     if(!myCTX.IsNull())
     {
         for(myCTX->InitSelected(); myCTX->MoreSelected(); myCTX->NextSelected())
-            scope.Append(myCTX->SelectedShape());
-        //! 24/12/2018 - commented
-        //! myCTX->ClearSelected();
+        {
+            const occHandle(SelectMgr_EntityOwner) &anOwner = myCTX->SelectedOwner();
+            if(anOwner.IsNull()) continue;
+            const occHandle(StdSelect_BRepOwner) &aBRepOwner = occHandle(StdSelect_BRepOwner)::DownCast(anOwner);
+            if(aBRepOwner.IsNull()) continue;
+            const TopoDS_Shape &ownerShape = aBRepOwner->Shape();
+            const TopoDS_Shape &shape = ownerShape.Located(aBRepOwner->Location() * ownerShape.Location());
+            scope.Append(shape);
+        }
     }
     return scope;
 }
@@ -5846,12 +5817,10 @@ TopTools_ListOfShape SimulationManager::prepareForMeshing()
     //! -----------------------------------------------------
     emit requestRemoveObsoleteMeshes();
 
-    //! list of the TopoDS_Shape to be meshed
-    TopTools_ListOfShape shapeToBeMeshed;
-
     //! --------------------------------------
     //! 1. if the user selection is not empty
     //! --------------------------------------
+    TopTools_ListOfShape shapeToBeMeshed;
     myCTX->InitSelected();
     if(myCTX->MoreSelected())
     {
@@ -5872,6 +5841,7 @@ TopTools_ListOfShape SimulationManager::prepareForMeshing()
         cout<<"SimulationManager::prepareForMeshing()->____number of shapes to mesh: "<<shapeToBeMeshed.Extent()<<"____"<<endl;
         return shapeToBeMeshed;
     }
+
     //! -------------------------------------------------
     //! 2. the selection is empty => mesh all the bodies
     //! -------------------------------------------------
@@ -5936,7 +5906,7 @@ void SimulationManager::buildMesh(bool isVolumeMesh)
     if(progressIndicator == Q_NULLPTR) cout<<"SimulationManager::buildMesh()->_____warning: the progress indicator is NULL____"<<endl;
 
     //! ----------------------------------------------------------------------------
-    //! scan the contactd and the boundary conditions of all the analysis branches
+    //! scan the contact and the boundary conditions of all the analysis branches
     //! In case of patch independent meshing method, with geometry defeaturing and
     //! simplification, the boundary of the patches of the boundary conditions will
     //! be preserved (if the "Preserve boundary condition edges" selector is ON
@@ -10550,7 +10520,12 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
             //! -------------------------
             //! build the colored result
             //! -------------------------
-            aPostObject->buildMeshIO(min,max,NbIntervals,scaleType,component,magnifyFactor);
+            bool isDone = aPostObject->buildMeshIO(min,max,NbIntervals,scaleType,component,magnifyFactor);
+            if(isDone == false)
+            {
+                QMessageBox::critical(this,"Simulation manager","Cannot create result view",QMessageBox::Ok);
+                return;
+            }
         }
         else
         {
@@ -10646,7 +10621,11 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
             //! after this call the postObject will contain the map of the nodal displacements
             //! -------------------------------------------------------------------------------
             bool isDone = myPostEngine->buildPostObject(keyName,component,subStepNb,stepNb,mode,vecLoc,aPostObject);
-            if(isDone == false) return;
+            if(isDone == false)
+            {
+                QMessageBox::critical(this,"Simulation manager","Cannot create result view",QMessageBox::Ok);
+                return;
+            }
         }
     }
     else
@@ -10660,7 +10639,8 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
         //! --------------------------------------------
         if(curNode->getPropertyItem("Post object")!=Q_NULLPTR)
         {
-            aPostObject = curNode->getPropertyItem("Post object")->data(Qt::UserRole).value<Property>().getData().value<sharedPostObject>();
+            // this should be changed ... to do
+            aPostObject = curNode->getPropertyValue<sharedPostObject>("Post object");
             aPostObject->init(static_cast<meshDataBase*>(mySimulationDataBase));
         }
         else
@@ -10689,10 +10669,8 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
             //! ---------------------
             int fatigueAlgo = curNode->getPropertyValue<int>("Fatigue algo");
             myPostEngine->setFatigueModel(fatigueAlgo);
-
             CustomTableModel *tabData =  this->getAnalysisSettingsNodeFromCurrentItem()->getTabularDataModel();
-
-            QStandardItem *theGeometryRoot=this->getTreeItem(SimulationNodeClass::nodeType_geometry);
+            QStandardItem *theGeometryRoot = this->getTreeItem(SimulationNodeClass::nodeType_geometry);
             QMap<int,int> materialBodyMap;
             for(int k=0; k<theGeometryRoot->rowCount();k++)
             {
@@ -10713,8 +10691,12 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
             //! the post object retrieves the mesh data sources from the simulation database
             //! and internally builds its own interactive mesh objects
             //! -----------------------------------------------------------------------------
-            //aPostObject->init(static_cast<meshDataBase*>(mySimulationDataBase));
-            myPostEngine->evaluateFatigueResults(component,vecLoc,timeList,materialBodyMap,NbCycles,aPostObject);
+            bool isDone = myPostEngine->evaluateFatigueResults(component,vecLoc,timeList,materialBodyMap,NbCycles,aPostObject);
+            if(isDone == false)
+            {
+                QMessageBox::critical(this,"Simulation manager","Cannot create result view",QMessageBox::Ok);
+                return;
+            }
         }
     }
 
@@ -10731,7 +10713,7 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
     //! -------------------------------------------------------------------------------
     //! synchronize the post object min, man, scale type with the color box properties
     //! -------------------------------------------------------------------------------
-    if(curNode->getPropertyItem("Scale type")==Q_NULLPTR) cerr<<"____NULL property____"<<endl;
+    if(curNode->getPropertyItem("Scale type") == Q_NULLPTR) cerr<<"____NULL property____"<<endl;
     if(curNode->getPropertyValue<int>("Scale type") == 1)
     {
         disconnect(curNode->getModel(),SIGNAL(itemChanged(QStandardItem*)),this,SLOT(handleItemChange(QStandardItem*)));

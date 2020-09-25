@@ -75,11 +75,11 @@ int rainflow::solve(double eps)
         double sigmaF=myFatigueModel.coeffs.at(2);
         double E= myFatigueModel.coeffs.at(3);
         double b= myFatigueModel.coeffs.at(4);
-        cout<<"rainflow::solve()->____epsF = "<<epsF<<"____"<<endl;
-        cout<<"rainflow::solve()->____c = "<<c<<"____"<<endl;
-        cout<<"rainflow::solve()->____sigmaF = "<<sigmaF<<"____"<<endl;
-        cout<<"rainflow::solve()->____E = "<<E<<"____"<<endl;
-        cout<<"rainflow::solve()->____b = "<<b<<"____"<<endl;
+        //cout<<"rainflow::solve()->____epsF = "<<epsF<<"____"<<endl;
+        //cout<<"rainflow::solve()->____c = "<<c<<"____"<<endl;
+        //cout<<"rainflow::solve()->____sigmaF = "<<sigmaF<<"____"<<endl;
+        //cout<<"rainflow::solve()->____E = "<<E<<"____"<<endl;
+        //cout<<"rainflow::solve()->____b = "<<b<<"____"<<endl;
 
         /*
         //!------------------------------------------------------------------
@@ -161,7 +161,7 @@ int rainflow::solve(double eps)
         double level11=4.7e-3;
         double level12=9.64e-3;
 
-//add more level
+        //add more level
         if(eps>tol2 && eps<level1) initialRoot=60000;
         else if(eps>level1 && eps<level2) initialRoot=55000;
         else if(eps>level2 && eps<level3) initialRoot=50000;
@@ -215,7 +215,8 @@ int rainflow::solve(double eps)
     default:
         break;
     }
-    NN=(int)round(N);
+    NN = (int)N;
+    //NN=(int)round(N);
     return NN;
     cout<<"rainflow::solve()->____newton raphson method, finalRoot = "<<NN<<"____"<<endl;
 }

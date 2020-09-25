@@ -814,6 +814,8 @@ void occPreGLWidget::setWireframeView()
     }
     occContext->UpdateCurrentViewer();
     occMeshContext->UpdateCurrentViewer();
+
+    cout<<"occPreGLWidget::setWireframeView->____function exiting____"<<endl;
 }
 
 //! --------------------------------
