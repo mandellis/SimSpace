@@ -10408,6 +10408,7 @@ void SimulationManager::callPostEngineEvaluateResult()
 void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curItem, bool immediatelyDisplay)
 {
     cout<<"SimulationManager::callPostEngineEvaluateResult_private()->____function called____"<<endl;
+
     //! --------------
     //! the node type
     //! --------------

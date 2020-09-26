@@ -1556,3 +1556,34 @@ void MeshTools::toListOf3DElements(const occHandle(Ng_MeshVS_DataSource3D) &inpu
         elements<<ameshElementByCoords;
     }
 }
+
+
+//! ----------------------
+//! function: groupMeshes
+//! details:
+//! ----------------------
+std::map<GeometryTag, std::vector<occHandle(MeshVS_Mesh)>> MeshTools::groupMeshes(const std::map<GeometryTag, occHandle(MeshVS_Mesh)> &mapOfMeshes)
+{
+    cout<<"MeshTools::groupMeshes()->____grouping meshes____"<<endl;
+
+    std::map<GeometryTag,std::vector<occHandle(MeshVS_Mesh)>> body2MeshVector;
+    for(std::map<GeometryTag,occHandle(MeshVS_Mesh)>::const_iterator it = mapOfMeshes.cbegin(); it!=mapOfMeshes.cend(); it++)
+    {
+        const GeometryTag &aTag = it->first;
+        const occHandle(MeshVS_Mesh) &aMeshDS = it->second;
+
+        //! ----------------------------------------
+        //! a tag representing a main shape (SOLID)
+        //! ----------------------------------------
+        int bodyIndex = aTag.parentShapeNr;
+        GeometryTag bodyTag(bodyIndex,bodyIndex,true,TopAbs_SOLID);
+        std::map<GeometryTag,std::vector<occHandle(MeshVS_Mesh)>>::iterator it_ = body2MeshVector.find(bodyTag);
+        if(it_==body2MeshVector.end())
+        {
+            std::vector<occHandle(MeshVS_Mesh)> vecMeshes { it->second };
+            body2MeshVector.insert(std::make_pair(bodyTag,vecMeshes));
+        }
+        else it_->second.push_back(it->second);
+    }
+    return body2MeshVector;
+}

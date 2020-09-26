@@ -578,17 +578,190 @@ bool postObject::buildMeshIO(double min, double max, int Nlevels, bool autoscale
     //! the data content
     //! -----------------
     std::map<GeometryTag,std::vector<std::map<int,double>>>::const_iterator it = theData.cbegin();
-
-    /* only for diag purposes
-    for(std::map<GeometryTag,std::vector<std::map<int,double>>>::const_iterator it = theData.cbegin(); it!=theData.cend(); it++)
+    for(std::map<GeometryTag,occHandle(MeshVS_DeformedDataSource)>::const_iterator anIt = theMeshDataSources.cbegin(); anIt!= theMeshDataSources.cend() && it!= theData.cend(); ++anIt, ++it)
     {
-        std::map<int,double> d = it->second.at(0);
-        for(std::map<int,double>::iterator itt = d.begin(); itt!=d.end(); itt++)
+        const GeometryTag &loc = anIt->first;
+        occHandle(MeshVS_DataSource) curMeshDS;
+        if(loc.subShapeType == TopAbs_SOLID && myUseSurfaceMeshForVolumeResults == true)
         {
-            cout<<"data____("<<itt->first<<", "<<itt->second<<")____"<<endl;
+            cout<<"____USING THE EXTERIOR MESH____"<<endl;
+            occHandle(Ng_MeshVS_DataSource3D) volumeMeshDS = new Ng_MeshVS_DataSource3D(anIt->second->GetNonDeformedDataSource());
+
+            //! ----------------------------------------
+            //! generate the surface mesh topologically
+            //! ----------------------------------------
+            if(volumeMeshDS->myFaceToElements.isEmpty()) volumeMeshDS->buildFaceToElementConnectivity();
+            curMeshDS = new Ng_MeshVS_DataSource2D(volumeMeshDS);
+        }
+        else
+        {
+            curMeshDS = anIt->second->GetNonDeformedDataSource();
+        }
+
+        //! ----------------------------------
+        //! build a deformed mesh data source
+        //! ----------------------------------
+        occHandle(MeshVS_DeformedDataSource) theDeformedDS = new MeshVS_DeformedDataSource(curMeshDS,deformationScale);
+
+        // can also use .size()==0 instead of try {} catch (...) {}
+        std::map<int,gp_Vec> displacementMap;
+        try
+        {
+            displacementMap = myMapOfNodalDisplacements.at(loc);
+        }
+        catch(...)
+        {
+            cout<<"postObject::buildMeshIO()->____no displacement map: creating a dummy one filled with zero____"<<endl;
+            TColStd_PackedMapOfInteger nodeMap =  curMeshDS->GetAllNodes();
+            for(TColStd_MapIteratorOfPackedMapOfInteger it(nodeMap); it.More(); it.Next())
+                displacementMap.insert(std::make_pair(it.Key(),gp_Vec(0,0,0)));
+            myMapOfNodalDisplacements.insert(std::make_pair(loc,displacementMap));
+        }
+
+        theDeformedDS->SetNonDeformedDataSource(curMeshDS);
+        for(TColStd_MapIteratorOfPackedMapOfInteger it(curMeshDS->GetAllNodes()); it.More(); it.Next())
+        {
+            int globalNodeID = it.Key();
+            const gp_Vec &d = displacementMap.at(globalNodeID);
+            theDeformedDS->SetVector(globalNodeID,d);
+        }
+        theDeformedDS->SetMagnify(deformationScale);
+        theMeshDataSourcesForView[loc]=theDeformedDS;   //! abruptly replace - do not use "insert"
+
+        const std::vector<std::map<int, double>> &listOfRes = theData.at(loc);
+        const std::map<int, double> &res = listOfRes.at(component);
+        if(res.size()==0)
+        {
+            cout<<"postObject::buildMeshIO()->____you are giving me no data____"<<endl;
+            return false;
+        }
+        //! -------------------------------------------
+        //! min and max for the colorbox and isostrips
+        //! -------------------------------------------
+        if(autoscale)
+        {
+            std::pair<double,double> minmax = this->getMinMax(component);
+            myMin = minmax.first;
+            myMax = minmax.second;
+        }
+        else { myMin = min; myMax = max; }
+
+        bool isDone;
+        occHandle(MeshVS_Mesh) aColoredMesh;
+        switch(Global::status().myResultPresentation.theTypeOfPresentation)
+        {
+        case resultPresentation::typeOfPresentation_isostrips:
+            isDone = MeshTools::buildIsoStrip(theDeformedDS,res,myMin,myMax,myNbLevels,aColoredMesh,true);
+            break;
+        case resultPresentation::typeOfPresentation_nodalresults:
+            isDone = MeshTools::buildColoredMesh(theDeformedDS,res,aColoredMesh,myMin,myMax,myNbLevels);
+            break;
+        case resultPresentation::typeOfPresentation_isosurfaces:
+            isDone = MeshTools::buildIsoSurfaces(theDeformedDS,res,myMin,myMax,myNbLevels,aColoredMesh,false);
+            break;
+        case resultPresentation::typeOfPresentation_isolines:
+            //! to do ...
+            break;
+        }
+
+        // put here your experiments on colored mesh view generation
+        // MeshTools::buildIsoStrip(theDeformedDS,res,myMin,myMax,myNbLevels,aColoredMesh,true);
+        // MeshTools::buildDeformedColoredMesh(curMeshDS,res,displacementMap,1.0,myMin,myMax,Nlevels,aColoredMesh,true);
+        if(isDone == true) theMeshes.insert(std::make_pair(loc,aColoredMesh));
+    }
+
+    //! ---------------------------------
+    //! create the color box with labels
+    //! ---------------------------------
+    graphicsTools::createColorBox(myMin, myMax, myNbLevels, AISColorScale);
+    TCollection_ExtendedString title(name.toStdString().c_str());
+    AISColorScale->SetTitle(title);
+    return true;
+}
+
+
+/*
+bool postObject::buildMeshIO(double min, double max, int Nlevels, bool autoscale, int component, double deformationScale)
+{
+    cout<<"postObject::buildMeshIO()->____function called____"<<endl;
+
+    //! ------------------------
+    //! set the private members
+    //! ------------------------
+    mySolutionDataComponent = component;
+    myIsAutoscale = autoscale;
+    myNbLevels = Nlevels;
+    theMeshes.clear();
+
+    //! ------------------------------------------------------------------------------
+    //! the tags - generate new body-based tags - could be moved into the constructor
+    //! ------------------------------------------------------------------------------
+    std::vector<GeometryTag> vecLoc;
+    std::map<GeometryTag,int> alreadyVisited;
+    int c = 0;
+    for(std::vector<GeometryTag>::iterator it = myVecLoc.begin(); it!= myVecLoc.end(); it++)
+    {
+        const GeometryTag &aTag = *it;
+        GeometryTag aLoc(aTag.parentShapeNr,aTag.parentShapeNr,true,TopAbs_SOLID);
+        std::map<GeometryTag,int>::iterator it_ = alreadyVisited.find(aLoc);
+        if(it_!=alreadyVisited.end()) continue;
+        c++;
+        alreadyVisited.insert(std::make_pair(aLoc,c));
+        vecLoc.push_back(aLoc);
+    }
+
+    //! --------------------------------------------
+    //! the data content - group the data by bodies
+    //! --------------------------------------------
+    std::map<GeometryTag,std::vector<std::map<int,double>>> theData_byBody;
+    for(std::map<GeometryTag,std::vector<std::map<int,double>>>::iterator it = theData.begin(); it!=theData.end(); it++)
+    {
+        const GeometryTag &loc = it->first;
+        GeometryTag bodyTag(loc.parentShapeNr,loc.parentShapeNr,true,TopAbs_SOLID);
+        std::map<GeometryTag,std::vector<std::map<int,double>>>::iterator it_ = theData_byBody.find(bodyTag);
+        if(it_ == theData_byBody.end())
+        {
+            std::vector<std::map<int,double>> aVecRes { it->second };
+            theData_byBody.insert(std::make_pair(bodyTag,aVecRes));
+        }
+        else
+        {
+            std::vector<std::map<int,double>> aVecRes = it->second;
+            size_t NbComponents = aVecRes.size();
+            for(size_t n=0; n<NbComponents; n++)
+            {
+                const std::map<int,double> &res = aVecRes.at(n);
+                std::map<int,double> augmentedMap = aVecRes.at(n);
+                for(std::map<int,double>::const_iterator it__ = res.cbegin(); it__!=res.cend(); it__++)
+                    augmentedMap.insert(std::make_pair(it__->first,it__->second));
+                aVecRes.push_back(augmentedMap);
+                it->second = aVecRes;
+            }
         }
     }
-    */
+
+    //! -------------------------------------------------
+    //! the mesh data sources - group the data by bodies
+    //! -------------------------------------------------
+    std::map<GeometryTag,std::vector<occHandle(MeshVS_DeformedDataSource)>> theMeshDataSources_byBodies;
+    for(std::map<GeometryTag,occHandle(MeshVS_DeformedDataSource)>::iterator it = theMeshDataSources.begin(); it!=theMeshDataSources.end(); it++)
+    {
+        const GeometryTag &aTag = it->first;
+        GeometryTag bodyTag(aTag.parentShapeNr, aTag.parentShapeNr, true, TopAbs_SOLID);
+        std::map<GeometryTag,std::vector<occHandle(MeshVS_DeformedDataSource)>>::iterator it_ = theMeshDataSources_byBodies.find(bodyTag);
+        if(it_==theMeshDataSources_byBodies.end())
+        {
+            std::vector<occHandle(MeshVS_DeformedDataSource)> vecMeshDS { it->second };
+            theMeshDataSources_byBodies.insert(std::make_pair(bodyTag,vecMeshDS));
+        }
+        else it_->second.push_back(it->second);
+    }
+    //! ---------------------------
+    //! sum these meshes by bodies
+    //! ---------------------------
+    // to do ...
+
+    std::map<GeometryTag,occHandle(MeshVS_DeformedDataSource)> theMeshDataSource_;
 
     for(std::map<GeometryTag,occHandle(MeshVS_DeformedDataSource)>::const_iterator anIt = theMeshDataSources.cbegin(); anIt!= theMeshDataSources.cend() && it!= theData.cend(); ++anIt, ++it)
     {
@@ -690,6 +863,7 @@ bool postObject::buildMeshIO(double min, double max, int Nlevels, bool autoscale
     AISColorScale->SetTitle(title);
     return true;
 }
+*/
 
 //! -------------------------------------------
 //! function: getMinMax
