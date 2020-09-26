@@ -168,7 +168,7 @@ bool meshSelectNLayers::getElements(occHandle(Ng_MeshVS_DataSource3D) &theElemen
     //! build the resulting mesh - now only for visualization purposes
     //! ---------------------------------------------------------------
     cout<<"meshSelectNLayers::getElements()->____calling volume mesh constructor____"<<endl;
-    QList<meshElementByCoords> listVolumeElements;
+    std::vector<meshElementByCoords> listVolumeElements;
     for(int n=0; n<vecGlobalElementIDs.size(); n++)
     {
         int globalElementID = vecGlobalElementIDs[n];
@@ -195,7 +195,7 @@ bool meshSelectNLayers::getElements(occHandle(Ng_MeshVS_DataSource3D) &theElemen
             mesh::meshPoint aP(P[0],P[1],P[2],globalNodeID);
             aVolumeElement.pointList<<aP;
         }
-        listVolumeElements<<aVolumeElement;
+        listVolumeElements.push_back(aVolumeElement);
     }
 
     //! ---------------

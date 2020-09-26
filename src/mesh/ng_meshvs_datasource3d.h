@@ -86,7 +86,7 @@ public:
     Standard_EXPORT Ng_MeshVS_DataSource3D(const QString &tetgenEleFileName, const QString &tetgenNodeFileName);
 
     //! constructor V - constructor for a list of "meshElementsByCoords"
-    Standard_EXPORT Ng_MeshVS_DataSource3D(const QList<meshElementByCoords> &meshElements, bool autoNumberElements=true, bool autoNumberNodes=true);
+    Standard_EXPORT Ng_MeshVS_DataSource3D(const std::vector<meshElementByCoords> &meshElements, bool autoNumberElements=true, bool autoNumberNodes=true);
 
     //! constructor VI - for merging a prismatic mesh and a volume mesh
     Standard_EXPORT Ng_MeshVS_DataSource3D(const occHandle(Ng_MeshVS_DataSource3D) &aMesh1, const occHandle(Ng_MeshVS_DataSource3D) &aMesh2);

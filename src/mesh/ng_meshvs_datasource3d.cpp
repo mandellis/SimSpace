@@ -65,12 +65,12 @@ QTime Ng_MeshVS_DataSource3D::clock()
 //! function: constructor
 //! details:  from a list of 3D elements
 //! -------------------------------------
-Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(const QList<meshElementByCoords> &meshElements,
+Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(const std::vector<meshElementByCoords> &meshElements,
                                                bool autoNumberElements,
                                                bool autoNumberNodes)
 {
     cout<<"Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D()->____constructor from a QList meshElementByCoords called____"<<endl;
-    myNumberOfElements = meshElements.length();
+    myNumberOfElements = (int)meshElements.size();
     if(myNumberOfElements<1)
     {
         cerr<<"Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D()->____the mesh has no element____"<<endl;
@@ -80,7 +80,7 @@ Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(const QList<meshElementByCoords> 
     myElemType = new TColStd_HArray1OfInteger(1,myNumberOfElements);
     myElemNodes = new TColStd_HArray2OfInteger(1,myNumberOfElements,1,20);
 
-    QMap<mesh::meshPoint,int> meshPointMap;
+    std::map<mesh::meshPoint,int> meshPointMap;
 
     int n = 0;
     for(int i=1; i<=myNumberOfElements; i++)
@@ -99,7 +99,7 @@ Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(const QList<meshElementByCoords> 
         for(int j=0; j<NbNodes; j++)
         {
             const mesh::meshPoint &curMeshPoint = curMeshElement.pointList.at(j);
-            if(!meshPointMap.contains(curMeshPoint))
+            if(meshPointMap.count(curMeshPoint)==false)
             {
                 //! ----------------------------------------------------------
                 //! if autoNumberNodes == true the ID of the node is the ID
@@ -109,12 +109,12 @@ Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(const QList<meshElementByCoords> 
                 if(autoNumberNodes)
                 {
                     n++;
-                    meshPointMap.insert(curMeshPoint,n);
+                    meshPointMap.insert(std::make_pair(curMeshPoint,n));
                 }
                 else
                 {
                     int globalNodeID = curMeshPoint.ID;
-                    meshPointMap.insert(curMeshPoint,globalNodeID);
+                    meshPointMap.insert(std::make_pair(curMeshPoint,globalNodeID));
                 }
             }
         }
@@ -137,10 +137,10 @@ Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(const QList<meshElementByCoords> 
 
     int i=0;
     int localNodeID = 0;
-    for(QMap<mesh::meshPoint,int>::iterator it = meshPointMap.begin(); it!=meshPointMap.end(); ++it)
+    for(std::map<mesh::meshPoint,int>::iterator it = meshPointMap.begin(); it!=meshPointMap.end(); ++it)
     {
         localNodeID++;
-        i = it.value();
+        i = it->second;
 
         //! --------------------
         //! fill the nodes maps
@@ -151,7 +151,7 @@ Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(const QList<meshElementByCoords> 
         //! ------------------
         //! nodes coordinates
         //! ------------------
-        const mesh::meshPoint &aP = it.key();
+        const mesh::meshPoint &aP = it->first;
         myNodeCoords->SetValue(localNodeID,1,aP.x);
         myNodeCoords->SetValue(localNodeID,2,aP.y);
         myNodeCoords->SetValue(localNodeID,3,aP.z);
@@ -169,7 +169,7 @@ Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(const QList<meshElementByCoords> 
         for(int j=0; j<NbNodes; j++)
         {
             const mesh::meshPoint &curMeshPoint = curmeshElementByCoords.pointList.at(j);
-            int indexOfPoint = meshPointMap.value(curMeshPoint);
+            int indexOfPoint = meshPointMap.at(curMeshPoint);
             myElemNodes->SetValue(i,j+1,indexOfPoint);
         }
     }

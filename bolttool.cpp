@@ -41,7 +41,7 @@ bool boltTool::sliceMeshWithPlane(double a, double b, double c, double d,
 {
     cout<<"boltTool::sliceMeshWithPlane()->____function called____"<<endl;
 
-    QList<meshElementByCoords> volumeElementsList;
+    std::vector<meshElementByCoords> volumeElementsList;
 
     //! -----------------------------------------------
     //! search for the intersected volume elements
@@ -104,7 +104,7 @@ bool boltTool::sliceMeshWithPlane(double a, double b, double c, double d,
         bool intersect = polygon::testPolygonPlaneIntersection(aPointCloud,a,b,c,d);
         if(!intersect) continue;
 
-        volumeElementsList<<aVolumeMeshElement;
+        volumeElementsList.push_back(aVolumeMeshElement);
     }
     if(volumeElementsList.size()==0) return false;
 

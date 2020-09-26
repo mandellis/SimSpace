@@ -1445,10 +1445,13 @@ userMessage MesherClass::Netgen_generateVolumeMesh(int bodyIndex,
             //! it uses the 3D mesh constructor from a list of meshElementByCoords
             //! which perform the automatic node renumbering
             //! -------------------------------------------------------------
-            QList<meshElementByCoords> elementList1, elementList2;
+            std::vector<meshElementByCoords> elementList1, elementList2;
+            //QList<meshElementByCoords> elementList1, elementList2;
             MeshTools::toListOf3DElements(prismatic3DMesh,elementList1);
             MeshTools::toListOf3DElements(postInflationVolumeMesh,elementList2);
-            elementList1<<elementList2;
+            //elementList1<<elementList2;
+            elementList1.reserve(elementList1.size()+elementList2.size());
+            elementList1.insert(elementList1.end(),elementList2.begin(),elementList2.end());
             mainMesh3D = new Ng_MeshVS_DataSource3D(elementList1);
 
             //! -----------------------------------------
@@ -1557,10 +1560,13 @@ userMessage MesherClass::Netgen_generateVolumeMesh(int bodyIndex,
             //! it uses the 3D mesh constructor from a list of meshElementByCoords
             //! which perform an automatic node renumbering
             //! -------------------------------------------------------------------
-            QList<meshElementByCoords> elementList1, elementList2;
+            std::vector<meshElementByCoords> elementList1, elementList2;
+            //QList<meshElementByCoords> elementList1, elementList2;
             MeshTools::toListOf3DElements(prismaticMeshDS,elementList1);
             MeshTools::toListOf3DElements(occHandle(Ng_MeshVS_DataSource3D)::DownCast(mainMesh3D),elementList2);
-            elementList1<<elementList2;
+            elementList1.reserve(elementList1.size()+elementList2.size());
+            elementList1.insert(elementList1.end(),elementList2.begin(),elementList2.end());
+            //elementList1<<elementList2;
 
             occHandle(Ng_MeshVS_DataSource3D) summedMeshDS = new Ng_MeshVS_DataSource3D(elementList1);
             summedMeshDS->buildFaceToElementConnectivity();
@@ -1837,10 +1843,14 @@ userMessage MesherClass::Tetgen_generateVolumeMesh(int bodyIndex, int preserveSu
         //! pile up the prismatic mesh and the volume mesh
         //! -----------------------------------------------
         //occHandle(Ng_MeshVS_DataSource3D) mainMesh3D = new Ng_MeshVS_DataSource3D(prismatic3DMesh,tetgenVolumeMeshDS);
-        QList<meshElementByCoords> elementList1, elementList2;
+
+        //QList<meshElementByCoords> elementList1, elementList2;
+        std::vector<meshElementByCoords> elementList1, elementList2;
         MeshTools::toListOf3DElements(prismatic3DMesh,elementList1);
         MeshTools::toListOf3DElements(tetgenVolumeMeshDS,elementList2);
-        elementList1<<elementList2;
+        //elementList1<<elementList2;
+        elementList1.reserve(elementList1.size()+elementList2.size());
+        elementList1.insert(elementList1.end(),elementList2.begin(),elementList2.end());
         occHandle(Ng_MeshVS_DataSource3D) mainMesh3D = new Ng_MeshVS_DataSource3D(elementList1);
         if(mainMesh3D.IsNull())
         {
@@ -1848,7 +1858,6 @@ userMessage MesherClass::Tetgen_generateVolumeMesh(int bodyIndex, int preserveSu
             mr.message = QString("Error in merging the prismatic and interionr mesh for body %1").arg(bodyIndex);
             return mr;
         }
-
         myMeshDB->ArrayOfMeshDS.insert(bodyIndex,mainMesh3D);
 
         mr.isDone = true;
@@ -1997,10 +2006,12 @@ userMessage MesherClass::Netgen_STL_generateVolumeMesh(int bodyIndex,
             //! it uses the 3D mesh constructor from a list of meshElementByCoords
             //! which perform an automatic node renumbering
             //! -------------------------------------------------------------
-            QList<meshElementByCoords> elementList1, elementList2;
+            std::vector<meshElementByCoords> elementList1, elementList2;
             MeshTools::toListOf3DElements(prismatic3DMesh,elementList1);
             MeshTools::toListOf3DElements(postInflationVolumeMesh,elementList2);
-            elementList1<<elementList2;
+            //elementList1<<elementList2;
+            elementList1.reserve(elementList1.size()+elementList2.size());
+            elementList1.insert(elementList1.end(),elementList2.begin(),elementList2.end());
             mainMesh3D = new Ng_MeshVS_DataSource3D(elementList1);
 
             //! -----------------------------------------
@@ -2047,10 +2058,10 @@ userMessage MesherClass::Netgen_STL_generateVolumeMesh(int bodyIndex,
 
                 size_t seed = 0;
                 for(int j=0; j<3; j++) hash_c<double>(seed, aPoint[j]);
-                std::pair<size_t,int> aPair;
-                aPair.first = seed;
-                aPair.second = globalNodeID;
-                mapNodeCoords_globalNodeID.insert(aPair);
+                //std::pair<size_t,int> aPair;
+                //aPair.first = seed;
+                //aPair.second = globalNodeID;
+                mapNodeCoords_globalNodeID.insert(std::make_pair(seed,globalNodeID));
             }
 
             cout<<"\\-----------------------------------------------------\\"<<endl;

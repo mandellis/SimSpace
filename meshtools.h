@@ -157,9 +157,10 @@ public:
                                            ElemType aType,
                                            occHandle(MeshVS_DataSource) &outputMesh);
 
-    static void toListOf3DElements(const occHandle(Ng_MeshVS_DataSource3D) &inputMesh, QList<meshElementByCoords> &elements);
-
+    static void toListOf3DElements(const occHandle(Ng_MeshVS_DataSource3D) &inputMesh, std::vector<meshElementByCoords> &elements);
     static std::map<GeometryTag,std::vector<occHandle(MeshVS_Mesh)>> groupMeshes(const std::map<GeometryTag,occHandle(MeshVS_Mesh)> &mapOfMeshes);
+    static occHandle(MeshVS_DataSource) mergeMesh(const occHandle(MeshVS_DataSource) &mesh1, const occHandle(MeshVS_DataSource) &mesh2);
+
 };
 
 class point

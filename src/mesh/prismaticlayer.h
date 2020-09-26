@@ -261,7 +261,7 @@ private:
     //! --------------------
     void generateOneTetLayer(occHandle(Ng_MeshVS_DataSourceFace) &theMeshToInflate,
                              double displacement,
-                             QList<meshElementByCoords> &volumeElementsAtWalls);
+                             std::vector<meshElementByCoords> &volumeElementsAtWalls);
 
 
     //! ---------------------------------

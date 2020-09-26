@@ -614,7 +614,7 @@ bool prismaticLayer::buildPrismaticElements(const QList<occHandle(Ng_MeshVS_Data
     int NbTet, NbPyram, NbPrism, NbNullElement;
     NbTet = NbPyram = NbPrism = NbNullElement = 0;
 
-    QList<meshElementByCoords> listOfMeshElements3D;
+    std::vector<meshElementByCoords> listOfMeshElements3D;
 
     //! -----------------------------------
     //! forward: from external to internal
@@ -675,7 +675,7 @@ bool prismaticLayer::buildPrismaticElements(const QList<occHandle(Ng_MeshVS_Data
             //! create the prismatic element
             //! -----------------------------
             meshElementByCoords ameshElementByCoords(bottomFace,topFace);
-            if(ameshElementByCoords.type!=NULL_ELEMENT) listOfMeshElements3D<<ameshElementByCoords;
+            if(ameshElementByCoords.type!=NULL_ELEMENT) listOfMeshElements3D.push_back(ameshElementByCoords);
 
             //! ----------------------------
             //! diagnostic - elements count
@@ -1044,7 +1044,7 @@ void prismaticLayer::generateTetLayers(occHandle(Ng_MeshVS_DataSource3D) &meshAt
     //! -----------------------------
     //! the volume elements at walls
     //! -----------------------------
-    QList<meshElementByCoords> volumeElementsAtWalls;
+    std::vector<meshElementByCoords> volumeElementsAtWalls;
 
     //! --------------------------------------
     //! decide which node should be displaced
@@ -1223,7 +1223,7 @@ bool prismaticLayer::checkMutualIntersection(const occHandle(Ng_MeshVS_DataSourc
 //! ------------------------------
 void prismaticLayer::generateOneTetLayer(occHandle(Ng_MeshVS_DataSourceFace) &theMeshToInflate,
                                          double displacement,
-                                         QList<meshElementByCoords> &volumeElementsAtWalls)
+                                         std::vector<meshElementByCoords> &volumeElementsAtWalls)
 {
     //! ----------------------------------------------------------------------
     //! calculate the discrete curvature and the curvature gradient amplitude
@@ -1384,7 +1384,6 @@ void prismaticLayer::generateOneTetLayer(occHandle(Ng_MeshVS_DataSourceFace) &th
         {
             std::vector<double> P {x_displ,y_displ,z_displ};
             theMeshToInflate->changeNodeCoords(localNodeID,P);
-
             int localNodeID_surfaceMesh = myOverallSumMeshDS->myNodesMap.FindIndex(globalNodeID);
 
             //! ------------------------------------------------------------------------------------
@@ -1405,7 +1404,7 @@ void prismaticLayer::generateOneTetLayer(occHandle(Ng_MeshVS_DataSourceFace) &th
             //{
             //    for(int i=0; i<vecElementsToAdd.size(); i++)
             //    {
-            //        volumeElementsAtWalls<<vecElementsToAdd[i];
+            //        volumeElementsAtWalls.push_back(vecElementsToAdd[i]);
             //    }
             //}
             //! ---------------------------
@@ -1416,7 +1415,7 @@ void prismaticLayer::generateOneTetLayer(occHandle(Ng_MeshVS_DataSourceFace) &th
             //{
             //    for(int i=0; i<vecElementsToAdd.size(); i++)
             //    {
-            //        volumeElementsAtWalls<<vecElementsToAdd[i];
+            //        volumeElementsAtWalls.push_back(vecElementsToAdd[i]);
             //    }
             //}
 
@@ -1425,7 +1424,7 @@ void prismaticLayer::generateOneTetLayer(occHandle(Ng_MeshVS_DataSourceFace) &th
             //! -------------------
             for(int i=0; i<vecElementsToAdd.size(); i++)
             {
-                volumeElementsAtWalls<<vecElementsToAdd[i];
+                volumeElementsAtWalls.push_back(vecElementsToAdd[i]);
             }
         }
     }
@@ -1444,7 +1443,7 @@ void prismaticLayer::fieldSmoother(QMap<int,QList<double>> &field,
 
     if(aMeshDS->myCurvature.isEmpty())
     {
-        int mode = 1; //! Gaussian curvature
+        int mode = 1;       //! Gaussian curvature
         aMeshDS->computeDiscreteCurvature(mode);
     }
 

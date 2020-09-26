@@ -1467,7 +1467,7 @@ void MeshTools::filterVolumeElementsByType(const occHandle(MeshVS_DataSource) &i
     if(inputMesh->GetAllElements().Extent()<1) return;
     if(inputMesh->GetAllNodes().Extent()<1) return;
 
-    QList<meshElementByCoords> listOfElements;
+    std::vector<meshElementByCoords> listOfElements;
     for(TColStd_MapIteratorOfPackedMapOfInteger it(inputMesh->GetAllElements()); it.More(); it.Next())
     {
         int globalElementID = it.Key();
@@ -1503,7 +1503,8 @@ void MeshTools::filterVolumeElementsByType(const occHandle(MeshVS_DataSource) &i
             ameshElementByCoords.pointList<<aP;
         }
         //cout<<"____point list size: "<<pointList.size()<<"____"<<endl;
-        listOfElements<<ameshElementByCoords;
+        //listOfElements<<ameshElementByCoords;
+        listOfElements.push_back(ameshElementByCoords);
     }
 
     //! ------------------
@@ -1516,7 +1517,7 @@ void MeshTools::filterVolumeElementsByType(const occHandle(MeshVS_DataSource) &i
 //! function: toListOf3DElements
 //! details:
 //! -----------------------------
-void MeshTools::toListOf3DElements(const occHandle(Ng_MeshVS_DataSource3D) &inputMesh, QList<meshElementByCoords> &elements)
+void MeshTools::toListOf3DElements(const occHandle(Ng_MeshVS_DataSource3D) &inputMesh, std::vector<meshElementByCoords> &elements)
 {
     if(inputMesh.IsNull()) return;
     if(inputMesh->GetAllElements().Extent()<1) return;
@@ -1553,7 +1554,8 @@ void MeshTools::toListOf3DElements(const occHandle(Ng_MeshVS_DataSource3D) &inpu
             aP.ID = n;
             ameshElementByCoords.pointList<<aP;
         }
-        elements<<ameshElementByCoords;
+        elements.push_back(ameshElementByCoords);
+        //elements<<ameshElementByCoords;
     }
 }
 
@@ -1586,4 +1588,80 @@ std::map<GeometryTag, std::vector<occHandle(MeshVS_Mesh)>> MeshTools::groupMeshe
         else it_->second.push_back(it->second);
     }
     return body2MeshVector;
+}
+
+//! --------------------
+//! function: addMeshes
+//! details:
+//! --------------------
+occHandle(MeshVS_DataSource) MeshTools::mergeMesh(const occHandle(MeshVS_DataSource) &mesh1, const occHandle(MeshVS_DataSource) &mesh2)
+{
+    if(mesh1.IsNull()) return mesh2;
+    if(mesh2.IsNull()) return mesh1;
+    if(mesh2.IsNull() && mesh1.IsNull()) return Q_NULLPTR;
+
+    for(TColStd_MapIteratorOfPackedMapOfInteger it = mesh1->GetAllElements(); it.More(); it.Next())
+    {
+        int globalElementID = it.Key();
+
+        meshElementByCoords aMeshElement;
+        aMeshElement.ID = globalElementID;
+
+        int NbNodes, buf[20];
+        TColStd_Array1OfInteger nodeIDs(*buf,1,20);
+        mesh1->GetNodesByElement(globalElementID,nodeIDs,NbNodes);
+
+        MeshVS_EntityType aType;
+        mesh1->GetGeomType(globalElementID,true,aType);
+
+        ElemType anElementType;
+        switch(aType)
+        {
+        case MeshVS_ET_Element:
+        {
+            switch(NbNodes)
+            {
+            case 4: anElementType = TET; break;
+            case 5: anElementType = PYRAM ; break;
+            case 6: anElementType = PRISM; break;
+            case 8: anElementType = HEXA; break;
+            case 10: anElementType = TET10; break;
+            case 13: anElementType = PYRAM13 ; break;
+            case 15: anElementType = PRISM15; break;
+            case 20: anElementType = HEXA20; break;
+            }
+        }
+            break;
+
+        case MeshVS_ET_Face:
+        {
+            switch(NbNodes)
+            {
+            case 3: anElementType = TRIG; break;
+            case 4: anElementType = QUAD; break;
+            case 6: anElementType = TRIG6; break;
+            case 8: anElementType = QUAD8; break;
+            }
+        }
+            break;
+
+        case MeshVS_ET_Link:
+        {
+            // to do
+        }
+            break;
+        }
+
+        aMeshElement.type = anElementType;
+
+        for(int i=1; i<=NbNodes; i++)
+        {
+            int globalNodeID = nodeIDs(i);
+            double dbuf[3];
+            TColStd_Array1OfReal coords(*dbuf,1,3);
+            mesh1->GetGeom(globalNodeID,false,coords,NbNodes,aType);
+            mesh::meshPoint aP(coords(1),coords(2),coords(3),globalNodeID);
+            aMeshElement.pointList<<aP;
+        }
+    }
 }

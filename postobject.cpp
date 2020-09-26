@@ -679,7 +679,6 @@ bool postObject::buildMeshIO(double min, double max, int Nlevels, bool autoscale
     return true;
 }
 
-
 /*
 bool postObject::buildMeshIO(double min, double max, int Nlevels, bool autoscale, int component, double deformationScale)
 {

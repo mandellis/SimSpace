@@ -6887,7 +6887,7 @@ void DetailViewer::handleMeshElementListChanged()
         cout<<"____NULL mesh____"<<endl;
         return;
     }
-    QList<meshElementByCoords> listOfElements;
+    std::vector<meshElementByCoords> listOfElements;
     for(int i = 0; i<elementList.size(); i++)
     {
         int globalElementID = elementList[i];
@@ -6910,7 +6910,7 @@ void DetailViewer::handleMeshElementListChanged()
         case 6: aMeshElement.type = PRISM; break;
         case 8: aMeshElement.type = HEXA; break;
         }
-        listOfElements<<aMeshElement;
+        listOfElements.push_back(aMeshElement);
     }
     //! --------------------------
     //! call the mesh constructor
