@@ -1785,6 +1785,7 @@ void occGLWidget::hideSelectedBodies()
     for(occContext->InitSelected();occContext->MoreSelected();occContext->NextSelected())
     {
         const occHandle(AIS_ExtendedShape) &curAISShape = occHandle(AIS_ExtendedShape)::DownCast(occContext->SelectedInteractive());
+        if(curAISShape.IsNull()) continue;  // sono un tipo prudente
         curAISShape->setShapeVisibility(false);
         occContext->Erase(occContext->SelectedInteractive(),false);
     }
@@ -1832,7 +1833,7 @@ void occGLWidget::hideAllTheOtherBodies()
     //! the shapes visible in context
     //! ------------------------------
     AIS_ListOfInteractive listOfVisible;
-    occContext->ObjectsByDisplayStatus(AIS_KOI_Shape,0,AIS_DS_Displayed,listOfVisible);
+    occContext->ObjectsByDisplayStatus(AIS_KOI_Shape,-1,AIS_DS_Displayed,listOfVisible);
 
     //! ------------------------------------
     //! the list of the shapes in selection
@@ -1841,6 +1842,7 @@ void occGLWidget::hideAllTheOtherBodies()
     for(occContext->InitSelected();occContext->MoreSelected();occContext->NextSelected())
     {
         const occHandle(AIS_ExtendedShape) &aShape = occHandle(AIS_ExtendedShape)::DownCast(occContext->SelectedInteractive());
+        if(aShape.IsNull()) continue;   // la prudenza non è mai troppa
         listOfSelected.Append(aShape);
     }
 
@@ -1850,6 +1852,7 @@ void occGLWidget::hideAllTheOtherBodies()
     for(AIS_ListIteratorOfListOfInteractive it(listOfVisible); it.More(); it.Next())
     {
         const occHandle(AIS_ExtendedShape) &curShape = occHandle(AIS_ExtendedShape)::DownCast(it.Value());
+        if(curShape.IsNull()) continue;     // la prudenza non è mai troppa
         if(listOfSelected.Contains(curShape)==false)
         {
             curShape->setShapeVisibility(false);

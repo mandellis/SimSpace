@@ -55,32 +55,15 @@ rainflow::rainflow(GeometryTag loc, fatigueModel fm, QObject *parent): QObject(p
 //! function: solveEquation
 //! details:  returns the number of cycles @ failure
 //! -------------------------------------------------
-int rainflow::solve(double eps)
+double rainflow::solve(double eps, double epsF, double c, double sigmaF, double E, double b)
 {
     cout<<"rainflow::solve()->____function called____"<<endl;
-    int NN;
     double N,Nn,initialRoot;
-    cout<<"rainflow::solve()->____eps____"<<eps<<endl;
 
     switch(myFatigueModel.type)
     {
     case fatigueModel_BCM:
     {
-        //!------------------------------------------
-        //! deltaeps/2= espF*(2N)^c+sigmaF/E*(2N)^b
-        //!              [0]     [1]   [2] [3]   [4]
-        //!------------------------------------------
-        double epsF= myFatigueModel.coeffs.at(0);
-        double c= myFatigueModel.coeffs.at(1);
-        double sigmaF=myFatigueModel.coeffs.at(2);
-        double E= myFatigueModel.coeffs.at(3);
-        double b= myFatigueModel.coeffs.at(4);
-        //cout<<"rainflow::solve()->____epsF = "<<epsF<<"____"<<endl;
-        //cout<<"rainflow::solve()->____c = "<<c<<"____"<<endl;
-        //cout<<"rainflow::solve()->____sigmaF = "<<sigmaF<<"____"<<endl;
-        //cout<<"rainflow::solve()->____E = "<<E<<"____"<<endl;
-        //cout<<"rainflow::solve()->____b = "<<b<<"____"<<endl;
-
         /*
         //!------------------------------------------------------------------
         //! Bisection Method: choose initial guess for Newton Raphson Method
@@ -191,7 +174,7 @@ int rainflow::solve(double eps)
                 Nn=N-f/df;
                 //cout<<"rainflow::solve()->____NN = "<<Nn<<"____"<<endl;
 
-                double err=abs((Nn-N));
+                double err = abs((Nn-N));
                 //cout<<"rainflow::solve()->____err = "<<err<<"____"<<endl;
                 if(err<maxErr)
                 {
@@ -212,44 +195,66 @@ int rainflow::solve(double eps)
         }
     }
         break;
+
     default:
         break;
     }
-    NN = (int)N;
-    //NN=(int)round(N);
-    return NN;
-    cout<<"rainflow::solve()->____newton raphson method, finalRoot = "<<NN<<"____"<<endl;
+    return N;
+}
+
+//! ----------------------
+//! function: solve_exact
+//! details:
+//! ----------------------
+double rainflow::solve_exact(double eps, double epsF, double c, double sigmaF, double E, double b)
+    {
+        cout<<"rainflow::solve()->____function called____"<<endl;
+        double N;
+        switch(myFatigueModel.type)
+        {
+        case fatigueModel_BCM:
+        {
+            double den = c-b; if(den == 0) den = 1e-12;
+            double x = (1/(c-b))*log((eps/epsF)*(sigmaF/E));
+            N = 0.5*exp(x);
+        }
+            break;
+        }
+        return N;
 }
 
 //! -----------------------
 //! function: damage_index
 //! details:
 //! -----------------------
-double rainflow::damage_index(std::vector<double> y)
+double rainflow::damage_index(const std::vector<double> &y)
 {
-    //cout<<"rainflow::damage_index()->____function called____"<<endl;
+    cout<<"rainflow::damage_index()->____function called____"<<endl;
+
+    //!------------------------------------------
+    //! deltaeps/2= espF*(2N)^c+sigmaF/E*(2N)^b
+    //!              [0]     [1]   [2] [3]   [4]
+    //!------------------------------------------
+    double epsF = myFatigueModel.coeffs.at(0);
+    double c = myFatigueModel.coeffs.at(1);
+    double sigmaF = myFatigueModel.coeffs.at(2);
+    double E = myFatigueModel.coeffs.at(3);
+    double b = myFatigueModel.coeffs.at(4);
 
     double D=0.;
     double deltaEps;
     std::vector<double> B = this->rainflow_engine(y);
-    int NbData = int(B.size());
-    for(int i=0;i<NbData;i++)
+    size_t NbData = B.size();
+    for(size_t i=0; i<NbData; i++)
     {
-        deltaEps = B.at(i);
-        //cout<<"rainflow::damage_index()->____delta eps = "<<deltaEps<<"____"<<endl;
-
+        deltaEps = B[i];
         if(deltaEps>tol2)
         {
-            int NN = solve(deltaEps);
-            D+=pow(NN,-1);
-            //cout<<"rainflow::damage_index()->____damage = "<<D<<"____"<<endl;
-        }
-        else
-        {
-            D+=0.0;
+            //double NN_ = solve_exact(deltaEps,epsF,c,sigmaF,E,b);
+            double NN = solve(deltaEps,epsF,c,sigmaF,E,b);
+            D+= 1/NN;
         }
     }
-    //cout<<"rainflow::damage_index()->____D = "<<D<<"____"<<endl;
     return D;
 }
 
@@ -259,9 +264,7 @@ double rainflow::damage_index(std::vector<double> y)
 //! --------------------------
 std::vector<double> rainflow::rainflow_engine(std::vector<double> y)
 {
-
-    //cout<<"rainflow::rainflow engine()->____function called____"<<endl;
-
+    cout<<"rainflow::rainflow_engine()->____function called____"<<endl;
     double sum;
     double ymax;
     double mina,maxa;
@@ -287,32 +290,11 @@ std::vector<double> rainflow::rainflow_engine(std::vector<double> y)
     //	a[k]=y[k];
     a.push_back(y.at(k));
 
-    k=1;
+    k=1;    // ??
 
-    /*
-    //! this is only for debug purpose
-    ofstream myStrain;
-    cout<<"rainflow::rainflow engine()->____function called____"<<endl;
-
-    myStrain.setf(ios::scientific);
-    myStrain.precision(EXPFORMAT_PRECISION);
-    QString dirName = "C:/Users/CLEVO/Desktop/";
-    QString     aname= "y_strain.txt";
-    cout<<"rainflow::rainflow engine()->____function called____"<<endl;
-
-    QString name=dirName.append(aname);
-    cout<<"rainflow::rainflow engine()->____myStrain name = "<<name.toStdString()<<endl;
-
-    myStrain.open(name.toStdString());
-
-    myStrain<<y.last();
-    myStrain.close();
-*/
     int NP = int(y.size());
     for(i=1;i<(NP-1);i++)
     {
-        //myStrain<<y.at(i-1)<<endl;
-
         slope1=(y.at(i)-y.at(i-1));
         slope2=(y.at(i+1)-y.at(i));
 
@@ -328,8 +310,8 @@ std::vector<double> rainflow::rainflow_engine(std::vector<double> y)
     last_a=k-1;
     hold=last_a;
 
-    mina=1.0e20;
-    maxa=-mina;
+    mina = 1.0e10;
+    maxa = -mina;
     for(i=0;i<=last_a;i++)
     {
         if(a.at(i)<mina)
@@ -361,7 +343,7 @@ std::vector<double> rainflow::rainflow_engine(std::vector<double> y)
     {
         Y=(fabs(a.at(i)-a.at(i+1)));
         X=(fabs(a.at(j)-a.at(j+1)));
-        if(X>=Y && Y>0 && Y<1.0e+20)
+        if(X>=Y && Y>0 && Y<1.0e+10)
         {
             if(Y>ymax)
             {
@@ -408,7 +390,8 @@ std::vector<double> rainflow::rainflow_engine(std::vector<double> y)
             }
 
             nkv++;
-/*
+
+            /*
             if(nkv==3000)
             {
                 double ratio = fabs((last_a)/double(LLL));
@@ -451,21 +434,19 @@ std::vector<double> rainflow::rainflow_engine(std::vector<double> y)
     return B;
 }
 
-//bool rainflow::perform(QMap<int, QList<double>> strainDistTimeHistory, QMap<int,double> &damageDist)
+//! ------------------
+//! function: perform
+//! details:
+//! ------------------
 bool rainflow::perform(std::map<int, std::vector<double>> strainDistTimeHistory, std::map<int,double> &damageDist)
 {
     cout<<"rainflow::perform()->____function called____"<<endl;
 
-    for(std::map<int, std::vector<double>>::iterator it = strainDistTimeHistory.begin(); it!= strainDistTimeHistory.end(); ++it)
-    //for(QMap<int, QList<double>>::iterator it = strainDistTimeHistory.begin(); it!= strainDistTimeHistory.end(); ++it)
+    for(std::map<int, std::vector<double>>::iterator it = strainDistTimeHistory.begin(); it!= strainDistTimeHistory.end(); it++)
     {
-        //int nodeID = it.key();
         int nodeID = it->first;
-        //QList<double> timeHistory = it.value();
         std::vector<double> timeHistory = it->second;
-
         double damage = this->damage_index(timeHistory);
-        //damageDist.insert(nodeID,damage);
         damageDist.insert(std::make_pair(nodeID,damage));
     }
     return true;

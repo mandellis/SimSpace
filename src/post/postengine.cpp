@@ -668,28 +668,25 @@ void postEngine::updateIsostrips(sharedPostObject &aPostObject, int scaleType, d
 }
 
 //! ---------------------------------
-//! function: evaulateFatigueResults
-//! details:  overload
+//! function: buildFatiguePostObject
+//! details:
 //! ---------------------------------
-bool postEngine::evaluateFatigueResults(int type, std::vector<GeometryTag> locs, const QList<double> &times, QMap<int,int> materialBodyMap, int nCycle, sharedPostObject &aPostObject)
+bool postEngine::buildFatiguePostObject(int type, const std::vector<GeometryTag> &locs,
+                                        std::vector<double> times, QMap<int,int> materialBodyMap,
+                                        int nCycle, sharedPostObject &aPostObject)
 {
-    cout<<"postEngine::evaluateFatigueResult()->____tagoo___"<<endl;
-
     std::map<GeometryTag,std::vector<std::map<int,double>>> fatigueResults;
-    cout<<"postEngine::evaluateFatigueResult()->____tagoo___"<<endl;
-
     switch(myFatigueModel.type)
     {
     case fatigueModel_BCM:
     {
         cout<<"postEngine::evaluateFatigueResult()->____fatigue model BCM called___"<<endl;
-        std::map<GeometryTag,std::map<int,std::vector<double>>> r = readFatigueResults(type,locs,times);
+        std::map<GeometryTag,std::map<int,std::vector<double>>> r = this->readFatigueResults(type,locs,times);
 
         rainflow rf;
-        for(std::map<GeometryTag,std::map<int,std::vector<double>>>::iterator it = r.begin(); it!=r.end(); ++it)
+        for(std::map<GeometryTag,std::map<int,std::vector<double>>>::iterator it = r.begin(); it!= r.end(); ++it)
         {
             GeometryTag curLoc = it->first;
-
             rf.setLocation(curLoc);
 
             std::map<int,std::vector<double>> strainDistTimeHistory = it->second;
@@ -701,7 +698,6 @@ bool postEngine::evaluateFatigueResults(int type, std::vector<GeometryTag> locs,
             if(isDone)
             {
                 std::vector<std::map<int,double>> damageDistList;
-
                 damageDistList.push_back(damageDist);
                 fatigueResults.insert(std::make_pair(curLoc,damageDistList));
             }
@@ -714,15 +710,14 @@ bool postEngine::evaluateFatigueResults(int type, std::vector<GeometryTag> locs,
         cout<<"postEngine::evaluateFatigueResult()->____fatigue model ESR called___"<<endl;
         int step,substep;
         double requiredTime;
-        postTools::getStepSubStepByTimeDTM(myDTM,times.last(),step,substep);
+        postTools::getStepSubStepByTimeDTM(myDTM,times.at(times.size()-1),step,substep);
         QString tor_eps = m.key(TypeOfResult_EPS);
         QString tor_mises = m.key(TypeOfResult_S);
-        int mode =0;
+        int mode = 0;
 
         std::map<GeometryTag,std::vector<std::map<int,double>>> pe = this->evaluateResult(tor_eps,substep,step,mode,locs,requiredTime);
         std::map<GeometryTag,std::vector<std::map<int,double>>> stress = this->evaluateResult(tor_mises,substep,step,mode,locs,requiredTime);
-
-        for(std::vector<GeometryTag>::iterator it=locs.begin();it!=locs.end();it++)
+        for(std::vector<GeometryTag>::const_iterator it = locs.cbegin(); it!= locs.cend(); it++)
         {
             GeometryTag curLoc = *it;
             int bodyIndex = curLoc.parentShapeNr;
@@ -746,7 +741,7 @@ bool postEngine::evaluateFatigueResults(int type, std::vector<GeometryTag> locs,
 
                 switch(material)
                 {
-                case 5:case 6:case 0:case 1:case 2:case 3:case 4:case 7:case 8:case 9:
+                case 5: case 6: case 0: case 1: case 2: case 3: case 4: case 7: case 8: case 9:
                 {
                     elasticModulusAve = 1.76e5;
                     altStress = 0.5*(mises+eps*elasticModulusAve);
@@ -782,18 +777,19 @@ bool postEngine::evaluateFatigueResults(int type, std::vector<GeometryTag> locs,
         break;
     }
 
-    /! -----------------------
+
+    //! -----------------------
     //! create the post object
     //! -----------------------
     bool useSurfaceMeshForVolumeResults = Global::status().myResultPresentation.useExteriorMeshForVolumeResults;
     QString label = this->resultName("Damage",0,1,1,0);
-    std::map<GeometryTag,std::map<int,gp_Vec>> mapDisplMap;
+    std::map<GeometryTag,std::map<int,gp_Vec>> mapDisplMap;     // the displaced view has no meaning for this result
     aPostObject = std::make_shared<postObject>(fatigueResults,locs,mapDisplMap,label,useSurfaceMeshForVolumeResults);
     aPostObject->init(myMeshDataBase);
     double magnifyFactor = Global::status().myResultPresentation.theScale;
     int component = 0;
     bool isDone = aPostObject->buildMeshIO(-1,-1,10,true,component,magnifyFactor);
-    if(isDone==false) cout<<"postEngine::evaluateFatigueResults()->____cannot create result view____"<<endl;
+    if(isDone==false) cout<<"postEngine::buildFatiguePostObject()->____cannot create result view____"<<endl;
     return isDone;
 }
 
@@ -804,8 +800,8 @@ bool postEngine::evaluateFatigueResults(int type, std::vector<GeometryTag> locs,
 //!           ... other types
 //! ---------------------------------------------------
 std::map<GeometryTag,std::map<int,std::vector<double>>> postEngine::readFatigueResults(int type,
-                                                                                 const std::vector<GeometryTag> &vecLoc,
-                                                                                 const QList<double> &times)
+                                                                                       const std::vector<GeometryTag> &vecLoc,
+                                                                                       std::vector<double> times)
 {
     cout<<"postEngine::readFatigueResults()->____function called____"<<endl;
 
@@ -814,7 +810,7 @@ std::map<GeometryTag,std::map<int,std::vector<double>>> postEngine::readFatigueR
     {
     case 0: resultKeyName = "TOSTRAIN"; break;
     case 1: resultKeyName = "MESTRAIN"; break;
-    //case 2: resultKeyName = "THSTRAIN"; break;
+    default: break;
     }
 
     //! ----------------------------------------------------
@@ -827,7 +823,7 @@ std::map<GeometryTag,std::map<int,std::vector<double>>> postEngine::readFatigueR
         //! -------------------------------------------------------------------------
         //! node conversion map: (Calculix mesh nodeID,nodeID for MeshVS_DataSource)
         //! -------------------------------------------------------------------------
-        GeometryTag loc = *it;
+        const GeometryTag &loc = *it;
         std::map<int,int> indexedMapOfNodes = OCCMeshToCCXmesh::performCCXtoOCC(loc,myMeshDataBase);
 
         //! -------------------------------------
@@ -850,53 +846,49 @@ std::map<GeometryTag,std::map<int,std::vector<double>>> postEngine::readFatigueR
         //! ------------------------------------------------------
         for(int k=0; k<entryList.length(); k++)
         {
-            if(entriesInfo.at(k).isFile())
-            {
-                QString fileName = curDir.absolutePath()+"/"+entryList.at(k);
-                fileList.append(fileName);
-            }
+            if(entriesInfo.at(k).isFile() == false) continue;
+            QString fileName = curDir.absolutePath()+"/"+entryList.at(k);
+            fileList.append(fileName);
         }
 
         //! ---------------
         //! scan the files
         //! ---------------
-        int n=-1;    //! time index
         std::map<int,std::vector<double>> resMISES;
-        int n=0;    //! time index
 
         for(int i=0; i<fileList.length(); i++)
         {
-            //cout<<"postEngine::readFatigueResults()->____scanning file: "<<i<<"____"<<endl;
+            cout<<"****************************************"<<endl;
+            cout<<"* scanning file: "<<i<<endl;
 
             QString filePath = fileList.at(i);
             ifstream curFile(filePath.toStdString());
 
-            std::string val;            
+            std::string val;
             std::getline(curFile,val);
-            cout<<val<<endl;
+            cout<<"* "<<val<<endl;
             std::getline(curFile,val);
-            cout<<val<<endl;
+            cout<<"* "<<val<<endl;
             double time;
             sscanf(val.c_str(),"Time= %lf",&time);
             std::getline(curFile,val);
-            cout<<val<<endl;
+            cout<<"* "<<val<<endl;
             int subStepNb, stepNb;
             sscanf(val.c_str(),"Substep n=%d Step n=%d",&subStepNb,&stepNb);
             std::getline(curFile,val);
-            cout<<val<<endl;
+            cout<<"* "<<val<<endl;
             char tdata[32];
             sscanf(val.c_str(),"%s",tdata);
+            cout<<"****************************************"<<endl;
 
             int step,substep;
-            postTools::getStepSubStepByTimeDTM(myDTM,times.at(n),step,substep);
+            int n = 0;
+            //postTools::getStepSubStepByTimeDTM(myDTM,times.at(n),step,substep);
 
-            std::vector<double> timeHistory;
-            //if(strcmp(tdata,resultKeyName.toStdString().c_str())==0)            
-            if(strcmp(tdata,resultKeyName.toStdString().c_str())==0 && subStepNb==substep && stepNb == step)
-
+            if(strcmp(tdata,resultKeyName.toStdString().c_str())==0)
+            //if(strcmp(tdata,resultKeyName.toStdString().c_str())==0 && subStepNb==substep && stepNb == step)
             {
-                cout<<"postEngine::readFatigueResults()->____data file found: start reading data within____"<<endl;
-
+                cout<<"\n=> data file found: start reading data within <=\n"<<endl;
                 n++;
 
                 //! ----------------------------------------------------------------------------
@@ -910,49 +902,24 @@ std::map<GeometryTag,std::map<int,std::vector<double>>> postEngine::readFatigueR
                     double cxx,cyy,czz,cxy,cyz,cxz;
                     sscanf(val.c_str(),"%d%lf%lf%lf%lf%lf%lf",&ni,&cxx,&cyy,&czz,&cxy,&cyz,&cxz);
 
-                    //! nodeIDs defining the MeshVS_dataSource
+                    //cout<<"____node nr. "<<ni<<"____("<<cxx<<", "<<cyy<<", "<<czz<<", ...)____"<<endl;
+
+                    //! nodeID within the MeshVS_dataSource
                     std::map<int,int>::iterator it = indexedMapOfNodes.find(ni);
-                    if(it!=indexedMapOfNodes.end() && n==0)
+                    if(it==indexedMapOfNodes.end())
                     {
-                        int OCCnodeID = it->second;
-
-                        //! -------------------------------------
-                        //! compute the equivalent stress/strain
-                        //! -------------------------------------
-                        double vonMises = (2.0/3.0)*sqrt((3.0/2.0)*(cxx*cxx+cyy*cyy+czz*czz)+(3.0/4.0)*(cxy*cxy+cyz*cyz+cxz*cxz));
-
-                        timeHistory.push_back(vonMises);
-                        //resMISES.insert(OCCnodeID,timeHistory);
-                        resMISES.insert(std::make_pair(OCCnodeID,timeHistory));
-                        //cout<<"1____inserting value :"<<vonMises<<"____"<<endl;
-
-                        // why this?
-                        //! -----------------------------------------------------
-                        //! compute the principal components: index 0 is minimum
-                        //! -----------------------------------------------------
-                        //double sik[6] {cxx,cyy,czz,cxy,cyz,cxz};
-                        //double s[3];
-                        //postTools::principalComponents(sik,s);
-
+                        std::getline(curFile,val);
+                        continue;
                     }
-                    else if(it!=indexedMapOfNodes.end())
+                    int OCCnodeID = it->second;
+                    double vonMises = (2.0/3.0)*sqrt((3.0/2.0)*(cxx*cxx+cyy*cyy+czz*czz)+(3.0/4.0)*(cxy*cxy+cyz*cyz+cxz*cxz));
+                    std::map<int,std::vector<double>>::iterator itt = resMISES.find(OCCnodeID);
+                    if(itt == resMISES.end())
                     {
-                        int OCCnodeID = indexedMapOfNodes.find(ni)->second;
-
-                        //! -------------------------------------
-                        //! compute the equivalent stress/strain
-                        //! -------------------------------------
-                        double vonMises;
-                        vonMises = (2.0/3.0)*sqrt((3.0/2.0)*(cxx*cxx+cyy*cyy+czz*czz)+(3.0/4.0)*(cxy*cxy+cyz*cyz+cxz*cxz));
-                        //timeHistory = resMISES.value(OCCnodeID);
-                        timeHistory = resMISES.at(OCCnodeID);
-
-                        timeHistory.push_back(vonMises);
-                        //resMISES.insert(std::make_pair(OCCnodeID,timeHistory));   // std::map<>::insert will fail if key is already present
-                        std::map<int,QList<double>>::iterator it_ = resMISES.find(OCCnodeID);
-                        it_->second = timeHistory;
-
+                        std::vector<double> th {vonMises};
+                        resMISES.insert(std::make_pair(OCCnodeID,th));
                     }
+                    else itt->second.push_back(vonMises);
                     std::getline(curFile,val);
                 }
                 curFile.close();
@@ -964,6 +931,7 @@ std::map<GeometryTag,std::map<int,std::vector<double>>> postEngine::readFatigueR
         }
         resMap.insert(std::make_pair(loc,resMISES));
     }
+    cout<<"postEngine::readFatigueResults()->____exiting function____"<<endl;
     return resMap;
 }
 
@@ -1070,7 +1038,7 @@ void coefficients(double x, double *c)
 //! function: evaulateFatigueResults
 //! details:
 //! ---------------------------------
-postObject postEngine::evaluateFatigueResults(int type, std::vector<GeometryTag> locs, const QList<double> &times, QMap<int,int> materialBodyMap, int nCycle)
+postObject postEngine::buildFatiguePostObject(int type, std::vector<GeometryTag> locs, const QList<double> &times, QMap<int,int> materialBodyMap, int nCycle)
 {
     QMap<GeometryTag,QList<QMap<int,double>>> fatigueResults;
 

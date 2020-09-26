@@ -101,7 +101,7 @@ public slots:
                                                                             double &requiredTime);
 
     //! evaluate fatigue results
-    bool evaluateFatigueResults(int type, std::vector<GeometryTag> locs, const QList<double> &times, QMap<int,int> materialBodyMap, int nCycle, sharedPostObject &aPostObject);
+    bool buildFatiguePostObject(int type, const std::vector<GeometryTag> &locs, std::vector<double> times, QMap<int,int> materialBodyMap, int nCycle, sharedPostObject &aPostObject);
 
     //! build a post object
     bool buildPostObject(const QString &keyName,
@@ -121,14 +121,9 @@ private:
     QString timeStamp();
 
     //! read fatigue results
-    //QMap<GeometryTag,QMap<int,QList<double>>> readFatigueResults(int type,
-    //                                                             const std::vector<GeometryTag> &vecLoc,
-    //                                                             const QList<double> &times);
-
-    std::map<GeometryTag, std::map<int, std::vector<double> > > readFatigueResults(int type,
-                                                                 const std::vector<GeometryTag> &vecLoc,
-                                                                 const QList<double> &times);
-
+    std::map<GeometryTag, std::map<int, std::vector<double>>> readFatigueResults(int type,
+                                                                                 const std::vector<GeometryTag> &vecLoc,
+                                                                                 std::vector<double> times);
 
     //! fatigue model
     fatigueModel myFatigueModel;

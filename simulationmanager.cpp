@@ -4681,7 +4681,6 @@ void SimulationManager::handleItemChange(QStandardItem *item)
     //! reconnection is at the end of this function [*]
     //! ------------------------------------------------
     disconnect(curNode->getModel(),SIGNAL(itemChanged(QStandardItem*)),this,SLOT(handleItemChange(QStandardItem*)));
-    //curNode->getModel()->blockSignals(true);
 
     switch(family)
     {
@@ -10630,7 +10629,7 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
     }
     else
     {
-        QList<double> timeList;
+        std::vector<double> timeList;
         int component = curNode->getPropertyValue<int>("Component");
         int NbCycles = curNode->getPropertyValue<int>("Number of cycles");
 
@@ -10684,14 +10683,18 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
                     materialBodyMap.insert(loc,matNumber);
                 }
             }
-            for(int i=0;i<tabData->rowCount();i++) timeList<<tabData->dataRC(i,1).toDouble();
+
+            //! ----------------------------
+            //! retrieve the end time steps
+            //! ----------------------------
+            for(int i=0;i<tabData->rowCount();i++) timeList.push_back(tabData->dataRC(i,1).toDouble());
 
             //! -----------------------------------------------------------------------------
             //! create the postObject
             //! the post object retrieves the mesh data sources from the simulation database
             //! and internally builds its own interactive mesh objects
             //! -----------------------------------------------------------------------------
-            bool isDone = myPostEngine->evaluateFatigueResults(component,vecLoc,timeList,materialBodyMap,NbCycles,aPostObject);
+            bool isDone = myPostEngine->buildFatiguePostObject(component,vecLoc,timeList,materialBodyMap,NbCycles,aPostObject);
             if(isDone == false)
             {
                 QMessageBox::critical(this,"Simulation manager","Cannot create result view",QMessageBox::Ok);

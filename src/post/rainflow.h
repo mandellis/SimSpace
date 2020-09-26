@@ -71,7 +71,6 @@ public:
     inline void setFatigueModel (fatigueModel fm) { myFatigueModel = fm; }
 
     //! perform
-    //bool perform(QMap<int, QList<double> > strainDistTimeHistory, QMap<int, double> &damageDist);
     bool perform(std::map<int, std::vector<double> > strainDistTimeHistory, std::map<int, double> &damageDist);
 
     //void read_data();
@@ -85,9 +84,10 @@ public slots:
 private:
 
     //!tolerance on solveEquation
-    double maxErr = 1.0e+0;
+    const double maxErr = 1.0e+0;
+
     //! tolerance on deltaEps value
-    double tol2=3.5e-3;
+    const double tol2 = 3.5e-3;
 
     //! loc
     GeometryTag myLoc;
@@ -96,10 +96,11 @@ private:
     fatigueModel myFatigueModel;
 
     //! damage index
-    double damage_index(std::vector<double> y);
+    double damage_index(const std::vector<double> &y);
 
     //! called within damage_index()
-    int solve(double eps);
+    double solve(double eps, double epsF, double c, double sigmaF, double E, double b);
+    double solve_exact(double eps, double epsF, double c, double sigmaF, double E, double b);
 
     //! ---
     std::vector<double> rainflow_engine(std::vector<double> y);

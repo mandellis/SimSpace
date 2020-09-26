@@ -354,3 +354,102 @@ void STEPimporter::STEP_GetEntityName(const TopoDS_Shape &theShape, STEPCAFContr
         else acName = aReprItem->Name()->ToCString();
     }
 }
+
+bool STEPimporter::import1(const QString &fileName, TopoDS_Compound &Comp, QList<QString> &listOfNames)
+{
+    BRep_Builder builder;
+    builder.MakeCompound(Comp);
+
+    STEPControl_Reader aReader;
+    TopoDS_Shape aShape;
+    if(fileName.isNull()) return false;
+    if(fileName.isEmpty()) return false;
+
+    Standard_CString name = fileName.toStdString().c_str();
+    if (aReader.ReadFile((Standard_CString)name)!=IFSelect_RetDone) return false;
+
+    //occHandle(Message_ProgressIndicator) pi = new ProgressIndicator(100);
+    //aReader.WS()->MapReader()->SetProgress(pi);
+    //pi->NewScope(100, "Reading STEP file...");
+    //pi->Show();
+
+    // Root transfers
+    int nbr = aReader.NbRootsForTransfer();
+    //aReader.PrintCheckTransfer (failsonly, IFSelect_ItemsByEntity);
+    for (int n = 1; n<= nbr; n++)
+    {
+        cout<<"____transferring root "<<n<<"____"<<endl;
+        aReader.TransferRoot(n);
+    }
+    //pi->EndScope();
+
+    // Collecting resulting entities
+    int nbs = aReader.NbShapes();
+    if (nbs == 0)
+    {
+        cout<<"____no shapes in file____"<<endl;
+        return false;
+    }
+    else
+    {
+        //Handle(StepData_StepModel) Model = aReader.StepModel();
+        //Handle(XSControl_WorkSession) ws = aReader.WS();
+        //Handle(XSControl_TransferReader) tr = ws->TransferReader();
+
+        //std::map<int, Quantity_Color> hash_col;
+        //ReadColors(aReader.WS(), hash_col);
+        //ReadNames(aReader.WS());
+
+        for (int i=1; i<=nbs; i++)
+        {
+            cout<<"____transferring shape: "<<i<<"____"<<endl;
+            aShape = aReader.Shape(i);
+
+            // load each solid as an own object
+            TopExp_Explorer ex;
+            for (ex.Init(aShape, TopAbs_SOLID); ex.More(); ex.Next())
+            {
+                // get the shape
+                const TopoDS_Solid& aSolid = TopoDS::Solid(ex.Current());
+            }
+
+            // load all non-solids now
+            for (ex.Init(aShape, TopAbs_SHELL, TopAbs_SOLID); ex.More(); ex.Next())
+            {
+                // get the shape
+                const TopoDS_Shell& aShell = TopoDS::Shell(ex.Current());
+            }
+
+            // put all other free-flying shapes into a single compound
+
+            for (ex.Init(aShape, TopAbs_FACE, TopAbs_SHELL); ex.More(); ex.Next()) {
+                if (!ex.Current().IsNull()) {
+                    builder.Add(Comp, ex.Current());
+                }
+            }
+            for (ex.Init(aShape, TopAbs_WIRE, TopAbs_FACE); ex.More(); ex.Next()) {
+                if (!ex.Current().IsNull()) {
+                    builder.Add(Comp, ex.Current());
+                }
+            }
+            for (ex.Init(aShape, TopAbs_EDGE, TopAbs_WIRE); ex.More(); ex.Next()) {
+                if (!ex.Current().IsNull()) {
+                    builder.Add(Comp, ex.Current());
+                }
+            }
+            for (ex.Init(aShape, TopAbs_VERTEX, TopAbs_EDGE); ex.More(); ex.Next()) {
+                if (!ex.Current().IsNull()) {
+                    builder.Add(Comp, ex.Current());
+                }
+            }
+
+            //if (!emptyComp) {
+            //    std::string name = fi.fileNamePure();
+            //    Part::Feature *pcFeature = static_cast<Part::Feature*>(pcDoc->addObject
+            //        ("Part::Feature", name.c_str()));
+            //    pcFeature->Shape.setValue(comp);
+            //}
+        }
+    }
+    return true;
+}

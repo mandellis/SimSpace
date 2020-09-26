@@ -2,7 +2,9 @@
 #define MESHDATABASE_H
 
 #include <QMap>
+//#include <map>
 #include "hash_c.h"
+//#include <utility>
 
 struct doubleKey
 {
@@ -13,7 +15,7 @@ struct doubleKey
     doubleKey(const doubleKey &other) { key1 = other.key1; key2 = other.key2; }
     inline doubleKey* operator = (const doubleKey& other) { key1 = other.key1; key2 = other.key2; return this; }
 
-    inline bool operator == (const doubleKey &other) { if(key1==other.key1 && key2==other.key2) return true; return false; }
+    inline bool operator == (const doubleKey &other) const { if(key1==other.key1 && key2==other.key2) return true; return false; }
 
     inline bool operator < (const doubleKey& other) const
     {
@@ -42,6 +44,41 @@ struct Q2DMap
     }
     inline Q getValue(int akey1, int akey2) { return innerMap.value(doubleKey(akey1,akey2)); }
     inline void clear() { innerMap.clear(); }
+};
+*/
+
+/*
+//! -------------------------
+//! use C++ standard library
+//! -------------------------
+template <class T>
+class Q2DMap: public std::map<doubleKey,T>
+{
+public:
+
+    void setValue(int aKey1, int aKey2, T value)
+    {
+        doubleKey dk(aKey1,aKey2);
+        std::map<doubleKey,T>::iterator it = this->find(dk);
+        if(it==this->end())
+        {
+            std::pair<doubleKey,T> aPair;
+            aPair.first = dk;
+            aPair.second = T;
+            this->insert(aPair);
+        }
+        else it->second = value;
+    }
+    T getValue(int aKey1, int aKey2)
+    {
+        doubleKey dk(aKey1,aKey2);
+        std::map<doubleKey,T>::iterator it = this->find(dk);
+        return it->second;
+    }
+    void remove(const doubleKey &aKey)
+    {
+        this->erase(aKey);
+    }
 };
 */
 
