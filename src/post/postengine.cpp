@@ -4,6 +4,7 @@
 #include "postengine.h"
 #include "posttools.h"
 #include "occmeshtoccxmesh.h"
+#include "meshtools.h"
 #include <rainflow.h>
 
 //! ---
@@ -612,14 +613,162 @@ bool postEngine::buildPostObject(const QString &keyName,
         mapDisplMap[aLoc]=displMap;         // do not use "insert"
     }
 
+    cout<<"postEngine::buildPostObject()->____reorganizing displacements maps____"<<endl;
+    //! -------------------------------------------
+    //! reorganize the displacements map by bodies
+    //! -------------------------------------------
+    std::map<GeometryTag,std::map<int,gp_Vec>> mapDisplMap_byBodies;
+    for(std::map<GeometryTag,std::map<int,gp_Vec>>::iterator it = mapDisplMap.begin(); it!=mapDisplMap.end(); it++)
+    {
+        const GeometryTag &aTag = it->first;
+        GeometryTag bodyTag(aTag.parentShapeNr,aTag.parentShapeNr,true,TopAbs_SOLID);
+        std::map<GeometryTag,std::map<int,gp_Vec>>::iterator it_ = mapDisplMap_byBodies.find(bodyTag);
+        if(it_ == mapDisplMap_byBodies.end())
+        {
+            //! insert the element at position bodyTag for the very first time
+            mapDisplMap_byBodies.insert(std::make_pair(bodyTag,it->second));
+        }
+        else
+        {
+            //! augment the already present map
+            for(std::map<int,gp_Vec>::const_iterator it__ = it->second.cbegin(); it__!=it->second.cend(); it__++)
+                it->second.insert(std::make_pair(it__->first,it__->second));
+        }
+    }
+    cout<<"postEngine::buildPostObject()->____reorganizing displacements maps - DONE -____"<<endl;
+
+    cout<<"postEngine::buildPostObject()->____reorganizing tags____"<<endl;
+
+    //! ------------------------------------------------------------------------------
+    //! the tags - generate new body-based tags - could be moved into the constructor
+    //! Example: {(2,3),(3,1),(2,1),(4,1),(3,12)} => {(2,2),(3,3),(4,4)}
+    //! ------------------------------------------------------------------------------
+    std::vector<GeometryTag> vecLoc_byBodies;
+    std::map<GeometryTag,int> alreadyVisited;
+    int c = 0;
+    for(std::vector<GeometryTag>::const_iterator it = vecLoc.cbegin(); it!= vecLoc.cend(); it++)
+    {
+        const GeometryTag &aTag = *it;
+        GeometryTag aLoc(aTag.parentShapeNr,aTag.parentShapeNr,true,TopAbs_SOLID);
+        std::map<GeometryTag,int>::iterator it_ = alreadyVisited.find(aLoc);
+        if(it_!=alreadyVisited.end()) continue;
+        c++;
+        alreadyVisited.insert(std::make_pair(aLoc,c));
+        vecLoc_byBodies.push_back(aLoc);
+    }
+    cout<<"postEngine::buildPostObject()->____reorganizing tags - DONE-____"<<endl;
+
+    cout<<"postEngine::buildPostObject()->____reorganizing data____"<<endl;
+
+    //! --------------------------------------------
+    //! the data content - group the data by bodies
+    //! --------------------------------------------
+    std::map<GeometryTag,std::vector<std::map<int,double>>> resMap_byBody;
+    for(std::map<GeometryTag,std::vector<std::map<int,double>>>::const_iterator it = resMap.cbegin(); it!=resMap.cend(); it++)
+    {
+        const GeometryTag &loc = it->first;
+        GeometryTag bodyTag(loc.parentShapeNr,loc.parentShapeNr,true,TopAbs_SOLID);
+        std::map<GeometryTag,std::vector<std::map<int,double>>>::iterator it_ = resMap_byBody.find(bodyTag);
+        if(it_ == resMap_byBody.end())
+        {
+            //! insert the vector of results for the very first time
+            std::vector<std::map<int,double>> aVecRes { it->second };
+            resMap_byBody.insert(std::make_pair(bodyTag,aVecRes));
+        }
+        else
+        {
+            //! augment each map within the vector of results
+            size_t NbComponents = it->second.size();
+            for(size_t n = 0; n<NbComponents; n++)
+            {
+                std::map<int,double> curMap = it_->second.at(n);
+                std::map<int,double> toBeAdded = it->second.at(n);
+                for(std::map<int,double>::iterator it__ = toBeAdded.begin(); it__ != toBeAdded.end(); it__++)
+                    curMap.insert(std::make_pair(it__->first,it__->second));
+                it_->second[n] = curMap;
+            }
+        }
+    }
+    cout<<"postEngine::buildPostObject()->____reorganizing data -DONE-____"<<endl;
+
+    cout<<"postEngine::buildPostObject()->____reorganizing meshes____"<<endl;
+
+    //! ------------------------------------------------
+    //! group the mesh data sources by bodies, then add
+    //! ------------------------------------------------
+    std::map<GeometryTag,std::vector<occHandle(MeshVS_DataSource)>> bodyTag2VecMeshDS;
+    for(std::vector<GeometryTag>::const_iterator it = vecLoc.cbegin(); it!=vecLoc.cend(); ++it)
+    {
+        //! ------------------------------------------------------
+        //! retrieve the mesh data source of the current location
+        //! ------------------------------------------------------
+        occHandle(MeshVS_DataSource) aMeshDS;
+        const GeometryTag &loc = *it;
+        if(loc.isParent) aMeshDS = myMeshDataBase->ArrayOfMeshDS.value(loc.parentShapeNr);
+        else
+        {
+            switch(loc.subShapeType)
+            {
+            case TopAbs_FACE: aMeshDS = myMeshDataBase->ArrayOfMeshDSOnFaces.getValue(loc.parentShapeNr,loc.subTopNr); break;
+            case TopAbs_EDGE: aMeshDS = myMeshDataBase->ArrayOfMeshDSOnEdges.getValue(loc.parentShapeNr,loc.subTopNr); break;
+            case TopAbs_VERTEX: break; // to do
+            }
+        }
+        if(aMeshDS.IsNull()) continue;  // jump over null meshes
+
+        GeometryTag aBodyTag(loc.parentShapeNr, loc.parentShapeNr, true, TopAbs_SOLID);
+
+        std::map<GeometryTag,std::vector<occHandle(MeshVS_DataSource)>>::iterator it_ = bodyTag2VecMeshDS.find(aBodyTag);
+        if(it_==bodyTag2VecMeshDS.end())
+        {
+            //! insert for the very first time
+            std::vector<occHandle(MeshVS_DataSource)> vecMeshes { aMeshDS };
+            bodyTag2VecMeshDS.insert(std::make_pair(aBodyTag,vecMeshes));
+        }
+        else
+        {
+            //! augment the vector of meshes
+            it_->second.push_back(aMeshDS);
+        }
+    }
+    cout<<"postEngine::buildPostObject()->____reorganizing meshes -DONE-____"<<endl;
+
+    cout<<"postEngine::buildPostObject()->____merge meshes____"<<endl;
+
+    //! --------------------------------------
+    //! add meshes for each body geometry tag
+    //! --------------------------------------
+    std::map<GeometryTag,occHandle(MeshVS_DataSource)> meshDSforResults;
+    for(std::map<GeometryTag,std::vector<occHandle(MeshVS_DataSource)>>::const_iterator it = bodyTag2VecMeshDS.cbegin(); it!=bodyTag2VecMeshDS.cend(); it++)
+    {
+        const GeometryTag &bodyTag = it->first;
+        const std::vector<occHandle(MeshVS_DataSource)> &vecMeshes = it->second;
+        occHandle(MeshVS_DataSource) mergedMesh = vecMeshes.at(0);
+        for(size_t i=1; i<vecMeshes.size(); i++) mergedMesh = MeshTools::mergeMesh(mergedMesh,vecMeshes[i]);
+        meshDSforResults.insert(std::make_pair(bodyTag,mergedMesh));
+    }
+    cout<<"postEngine::buildPostObject()->____merge meshes -DONE-____"<<endl;
+
     //! ----------------------
     //! create the postObject
     //! ----------------------
+    /*
     bool useSurfaceMeshForVolumeResults = Global::status().myResultPresentation.useExteriorMeshForVolumeResults;
     aPostObject = std::make_shared<postObject>(resMap,vecLoc,mapDisplMap,aResultName,useSurfaceMeshForVolumeResults);
     aPostObject->init(myMeshDataBase);
     double magnifyFactor = Global::status().myResultPresentation.theScale;
     bool isDone = aPostObject->buildMeshIO(-1,-1,10,true,component,magnifyFactor);
+    */
+
+    cout<<"postEngine::buildPostObject()->____creating the result container____"<<endl;
+
+    bool useSurfaceMeshForVolumeResults = Global::status().myResultPresentation.useExteriorMeshForVolumeResults;
+    aPostObject = std::make_shared<postObject>(resMap_byBody,vecLoc_byBodies,mapDisplMap_byBodies,aResultName,useSurfaceMeshForVolumeResults);
+    aPostObject->setMeshDataSources(meshDSforResults);  // replaces init()
+    double magnifyFactor = Global::status().myResultPresentation.theScale;
+    bool isDone = aPostObject->buildMeshIO(-1,-1,10,true,component,magnifyFactor);
+    cout<<"postEngine::buildPostObject()->____creating the result container -DONE-____"<<endl;
+
     return isDone;
 }
 

@@ -10440,7 +10440,7 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
     //! retrieve the location
     //! ----------------------
     std::vector<GeometryTag> vecLoc = curNode->getPropertyValue<std::vector<GeometryTag>>("Tags");
-
+    /*
     //! ----------------------------------------------------------------
     //! check if a mesh for each location exists
     //! This avoids application crash when calling "Evaluate result(s)"
@@ -10492,7 +10492,7 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
         }
     }
     if(isMeshOK==false) return;
-
+    */
     //! --------------
     //! a post object
     //! --------------

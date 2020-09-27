@@ -12,13 +12,15 @@
 #include "stldoctor.h"
 #include "extendedrwstl.h"
 #include "ccout.h"
-#include <ng_meshvs_deformeddatasource2d.h>
+//#include <ng_meshvs_deformeddatasource2d.h>
 #include <ng_meshvs_datasource1d.h>
 #include "qprogressindicator.h"
 #include "qprogressevent.h"
 #include <elementtypes.h>
 #include <isostrip.h>
 #include <isostripbuilder.h>
+#include <ng_meshvs_datasourceface.h>
+#include <ng_meshvs_datasource3d.h>
 
 //! ---
 //! Qt
@@ -489,13 +491,14 @@ extern int hueFromValue(int,int,int);
 //! details:
 //! ------------------------
 bool MeshTools::buildIsoStrip(const occHandle(MeshVS_DataSource) &theMeshDS,        //! input mesh data source
-                              const std::map<int,double> &res,                          //! nodal results
+                              const std::map<int,double> &res,                      //! nodal results
                               double min,                                           //! used for isostrips generation
                               double max,                                           //! used for isostrips generation
                               int NbLevels,                                         //! user for isostrip generation
                               occHandle(MeshVS_Mesh) &aColoredMesh,                 //! result
                               bool showEdges)
 {
+    Q_UNUSED(showEdges)
     if(theMeshDS.IsNull()) return false;
 
     //! ---------------------
@@ -529,6 +532,8 @@ bool MeshTools::buildIsoStrip(const occHandle(MeshVS_DataSource) &theMeshDS,    
     std::vector<meshElementByCoords> allElements;
     //bool isDone = anIsoStripBuilder.perform(allElements);
     bool isDone = anIsoStripBuilder.perform1(allElements);
+
+    if(isDone == false) return false;
 
     occHandle(Ng_MeshVS_DataSourceFace) finalMesh = new Ng_MeshVS_DataSourceFace(allElements,true,true);
 
@@ -753,7 +758,7 @@ bool MeshTools::buildIsoStrip(const occHandle(MeshVS_DataSource) &theMeshDS,    
 
     return true;
 }
-
+/*
 //! -----------------------------------
 //! function: buildDeformedColoredMesh
 //! details:
@@ -859,7 +864,7 @@ bool MeshTools::buildDeformedColoredMesh(const occHandle(MeshVS_DataSource) &the
     aColoredMesh->GetDrawer()->SetBoolean(MeshVS_DA_ShowEdges, showEdges);
     return true;
 }
-
+*/
 //! -----------------
 //! function: Normal
 //! details:
@@ -1671,7 +1676,8 @@ occHandle(MeshVS_DataSource) MeshTools::mergeMesh(const occHandle(MeshVS_DataSou
                 int globalNodeID = nodeIDs(i);
                 double dbuf[3];
                 TColStd_Array1OfReal coords(*dbuf,1,3);
-                curMeshDS->GetGeom(globalNodeID,false,coords,NbNodes,aType);
+                int NbNodes1;
+                curMeshDS->GetGeom(globalNodeID,false,coords,NbNodes1,aType);
                 mesh::meshPoint aP(coords(1),coords(2),coords(3),globalNodeID);
                 aMeshElement.pointList<<aP;
             }
@@ -1685,8 +1691,8 @@ occHandle(MeshVS_DataSource) MeshTools::mergeMesh(const occHandle(MeshVS_DataSou
     {
     case 0: break;
     case 1: break;
-    case 2: retMeshDS = new Ng_MeshVS_DataSourceFace(vecElements); break;
-    case 3: retMeshDS = new Ng_MeshVS_DataSource3D(vecElements); break;
+    case 2: retMeshDS = new Ng_MeshVS_DataSourceFace(vecElements,false,false); break;
+    case 3: retMeshDS = new Ng_MeshVS_DataSource3D(vecElements,false,false); break;
     }
     return retMeshDS;
 }
