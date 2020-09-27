@@ -1572,7 +1572,7 @@ std::map<GeometryTag, std::vector<occHandle(MeshVS_Mesh)>> MeshTools::groupMeshe
     for(std::map<GeometryTag,occHandle(MeshVS_Mesh)>::const_iterator it = mapOfMeshes.cbegin(); it!=mapOfMeshes.cend(); it++)
     {
         const GeometryTag &aTag = it->first;
-        const occHandle(MeshVS_Mesh) &aMeshDS = it->second;
+        //const occHandle(MeshVS_Mesh) &aMeshDS = it->second;
 
         //! ----------------------------------------
         //! a tag representing a main shape (SOLID)
@@ -1596,72 +1596,97 @@ std::map<GeometryTag, std::vector<occHandle(MeshVS_Mesh)>> MeshTools::groupMeshe
 //! --------------------
 occHandle(MeshVS_DataSource) MeshTools::mergeMesh(const occHandle(MeshVS_DataSource) &mesh1, const occHandle(MeshVS_DataSource) &mesh2)
 {
+    occHandle(MeshVS_DataSource) retMeshDS;
+
     if(mesh1.IsNull()) return mesh2;
     if(mesh2.IsNull()) return mesh1;
-    if(mesh2.IsNull() && mesh1.IsNull()) return Q_NULLPTR;
+    if(mesh2.IsNull() && mesh1.IsNull()) return retMeshDS;
 
-    for(TColStd_MapIteratorOfPackedMapOfInteger it = mesh1->GetAllElements(); it.More(); it.Next())
+    int meshDim = 0;    //! 0,1,2,3 D
+
+    std::vector<meshElementByCoords> vecElements;
+    std::vector<occHandle(MeshVS_DataSource)> vecMeshes {mesh1, mesh2};
+    for(int i=0; i<=1; i++)
     {
-        int globalElementID = it.Key();
-
-        meshElementByCoords aMeshElement;
-        aMeshElement.ID = globalElementID;
-
-        int NbNodes, buf[20];
-        TColStd_Array1OfInteger nodeIDs(*buf,1,20);
-        mesh1->GetNodesByElement(globalElementID,nodeIDs,NbNodes);
-
-        MeshVS_EntityType aType;
-        mesh1->GetGeomType(globalElementID,true,aType);
-
-        ElemType anElementType;
-        switch(aType)
+        const occHandle(MeshVS_DataSource) &curMeshDS = vecMeshes[i];
+        for(TColStd_MapIteratorOfPackedMapOfInteger it = curMeshDS->GetAllElements(); it.More(); it.Next())
         {
-        case MeshVS_ET_Element:
-        {
-            switch(NbNodes)
+            int globalElementID = it.Key();
+
+            meshElementByCoords aMeshElement;
+            aMeshElement.ID = globalElementID;
+
+            int NbNodes, buf[20];
+            TColStd_Array1OfInteger nodeIDs(*buf,1,20);
+            curMeshDS->GetNodesByElement(globalElementID,nodeIDs,NbNodes);
+
+            MeshVS_EntityType aType;
+            curMeshDS->GetGeomType(globalElementID,true,aType);
+
+            ElemType anElementType;
+            switch(aType)
             {
-            case 4: anElementType = TET; break;
-            case 5: anElementType = PYRAM ; break;
-            case 6: anElementType = PRISM; break;
-            case 8: anElementType = HEXA; break;
-            case 10: anElementType = TET10; break;
-            case 13: anElementType = PYRAM13 ; break;
-            case 15: anElementType = PRISM15; break;
-            case 20: anElementType = HEXA20; break;
-            }
-        }
-            break;
-
-        case MeshVS_ET_Face:
-        {
-            switch(NbNodes)
+            case MeshVS_ET_Volume:
             {
-            case 3: anElementType = TRIG; break;
-            case 4: anElementType = QUAD; break;
-            case 6: anElementType = TRIG6; break;
-            case 8: anElementType = QUAD8; break;
+                meshDim = 3;
+                switch(NbNodes)
+                {
+                case 4: anElementType = TET; break;
+                case 5: anElementType = PYRAM ; break;
+                case 6: anElementType = PRISM; break;
+                case 8: anElementType = HEXA; break;
+                case 10: anElementType = TET10; break;
+                case 13: anElementType = PYRAM13 ; break;
+                case 15: anElementType = PRISM15; break;
+                case 20: anElementType = HEXA20; break;
+                }
             }
-        }
-            break;
+                break;
 
-        case MeshVS_ET_Link:
-        {
-            // to do
-        }
-            break;
-        }
+            case MeshVS_ET_Face:
+            {
+                meshDim = 2;
+                switch(NbNodes)
+                {
+                case 3: anElementType = TRIG; break;
+                case 4: anElementType = QUAD; break;
+                case 6: anElementType = TRIG6; break;
+                case 8: anElementType = QUAD8; break;
+                }
+            }
+                break;
 
-        aMeshElement.type = anElementType;
+            case MeshVS_ET_Link:
+            {
+                meshDim = 1;
+                // to do
+            }
+                break;
+            }
 
-        for(int i=1; i<=NbNodes; i++)
-        {
-            int globalNodeID = nodeIDs(i);
-            double dbuf[3];
-            TColStd_Array1OfReal coords(*dbuf,1,3);
-            mesh1->GetGeom(globalNodeID,false,coords,NbNodes,aType);
-            mesh::meshPoint aP(coords(1),coords(2),coords(3),globalNodeID);
-            aMeshElement.pointList<<aP;
+            aMeshElement.type = anElementType;
+
+            for(int i=1; i<=NbNodes; i++)
+            {
+                int globalNodeID = nodeIDs(i);
+                double dbuf[3];
+                TColStd_Array1OfReal coords(*dbuf,1,3);
+                curMeshDS->GetGeom(globalNodeID,false,coords,NbNodes,aType);
+                mesh::meshPoint aP(coords(1),coords(2),coords(3),globalNodeID);
+                aMeshElement.pointList<<aP;
+            }
+
+            //! pile up the elements
+            vecElements.push_back(aMeshElement);
         }
     }
+
+    switch(meshDim)
+    {
+    case 0: break;
+    case 1: break;
+    case 2: retMeshDS = new Ng_MeshVS_DataSourceFace(vecElements); break;
+    case 3: retMeshDS = new Ng_MeshVS_DataSource3D(vecElements); break;
+    }
+    return retMeshDS;
 }

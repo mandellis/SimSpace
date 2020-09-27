@@ -10529,12 +10529,11 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
         }
         else
         {
-            //! ------------------------------------------------------------
-            //! retrieve the time info:
-            //! a result is always retrieved using the pair (step, substep)
+            //! ------------------------------------------------------------------------------------
+            //! retrieve the time info: a result is always retrieved using the pair (step, substep)
             //! if "By" is "Time" - "Analysis time" is read from the GUI
             //! if "By" is "Set" - "Set number" is read from the GUI
-            //! ------------------------------------------------------------
+            //! ------------------------------------------------------------------------------------
             int subStepNb, stepNb, setNumber;
             double analysisTime;
             int rmode = curNode->getPropertyValue<int>("By");
@@ -10705,7 +10704,7 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
     }
 
     //! ------------------------------
-    //! insert the into the main tree
+    //! insert the into the main tree - plase change it
     //! ------------------------------
     QVariant data;
     data.setValue(aPostObject);

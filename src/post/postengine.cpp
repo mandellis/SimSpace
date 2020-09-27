@@ -586,7 +586,7 @@ bool postEngine::buildPostObject(const QString &keyName,
     //! --------------------------------------------------------------------------------------------------------------------------
     //! create the map of nodal vectorial displacements for the deformed mesh presentation. Here:
     //! std::map<int,gp_Vec> displMap                    => map of nodal vectorial displacements
-    //! std::map<GeometryTag,std:.vector<std::map<int,gp_Vec>>> => each location has its own map of nodal vectorial displacements
+    //! std::map<GeometryTag,std::vector<std::map<int,gp_Vec>>> => each location has its own map of nodal vectorial displacements
     //! --------------------------------------------------------------------------------------------------------------------------
     std::map<int,gp_Vec> displMap;
     std::map<GeometryTag,std::map<int,gp_Vec>> mapDisplMap;

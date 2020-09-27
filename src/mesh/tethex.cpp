@@ -349,7 +349,6 @@ userMessage TetHex::makeHexa(const occHandle(Ng_MeshVS_DataSource3D) &aTetMesh, 
         }
     }
 
-
     if(allHexaElements.size()<4)
     {
         um.isDone = false;
