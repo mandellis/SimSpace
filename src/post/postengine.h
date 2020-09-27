@@ -13,12 +13,15 @@
 #include <meshdatabase.h>
 #include "postobject.h"
 #include "global.h"
+#include "qprogressindicator.h"
+#include "qprogressevent.h"
 
 //! ----
 //! C++
 //! ----
 #include <iostream>
 #include <fstream>
+#include <map>
 #include <memory>
 
 class OCCMeshToCCXmesh;
@@ -66,13 +69,6 @@ private:
     meshDataBase *myMeshDataBase;
     QString myResultsFilePath;
     QMap<QString,TypeOfResult> m;
-
-    //! ---------------------------------------------------
-    //! from CCX node to OCC mesh node
-    //! location (m,n) <=> QMap<CCXnodeID, OCCnodeID>
-    //! ---------------------------------------------------
-    OCCMeshToCCXmesh *OCCtoCCXinterface;
-
 
     void buildMap();
 
@@ -136,6 +132,14 @@ public:
     void setDiscreteTimeMap(const QMap<double,QVector<int>> &dtm);
     void updateResultsPresentation(QList<sharedPostObject> &postObjectList);
     void updateIsostrips(sharedPostObject &aPostObject, int scaleType, double minValue, double maxValue, int NbIntervals);
+
+private:
+
+    void groupDeformationFieldByBodies(const std::map<GeometryTag,std::map<int,gp_Vec>> &mapDisplMap,
+                                       std::map<GeometryTag,std::map<int,gp_Vec>> &mapDisplMap_byBodies);
+
+    void groupTagsByBodies(const std::vector<GeometryTag> &vecLoc, std::vector<GeometryTag> &vecLoc_byBodies);
+
 };
 
 #endif // POSTENGINE_H

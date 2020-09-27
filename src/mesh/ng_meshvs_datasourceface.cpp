@@ -3924,7 +3924,7 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const std::vector<meshElement
                     //! ----------------------
                     //! point already present
                     //! ----------------------
-                    int foundLocalNodeID = (*nnit).second;
+                    int foundLocalNodeID = nnit->second;
                     myElemNodes->SetValue(localElementID,i+1,foundLocalNodeID);
                 }
             }

@@ -163,6 +163,7 @@ std::map<GeometryTag,std::vector<std::map<int,double>>> postEngine::evaluateResu
             {
                 cout<<"postEngine::evaluateResult()->____cannot open the results file: "<<resultKeyName.toStdString()<<"____"<<endl;
                 break;
+                //! error in opening the file - please handle it ... to do ...
             }
             std::string val;
             std::getline(curFile,val);
@@ -245,6 +246,7 @@ std::map<GeometryTag,std::vector<std::map<int,double>>> postEngine::evaluateResu
                     //cout<<"postEngine::evaluateResult()->____Number of components: "<<res.length()<<"____"<<endl;
                 }
                     break;
+
                 case TypeOfResult_U:
                 case TypeOfResult_F:
                 //case TypeOfResult_HFL:
@@ -319,7 +321,6 @@ std::map<GeometryTag,std::vector<std::map<int,double>>> postEngine::evaluateResu
                                 //vonMises = sqrt(cxx*cxx+cyy*cyy+czz*czz-cxx*cyy-cyy*czz-czz*cxx+3*(cxz*cxz+cyz*cyz+cxz*cxz));
                                 vonMises = sqrt(0.5*(pow(cxx-cyy,2)+pow(cxx-czz,2)+pow(cyy-czz,2))+3*(cxz*cxz+cyz*cyz+cxz*cxz));
                             }
-                            //resMISES.insert(OCCnodeID,vonMises);
                             resMISES.insert(std::make_pair(OCCnodeID,vonMises));
 
                             //! ---------------------------------
@@ -595,7 +596,7 @@ bool postEngine::buildPostObject(const QString &keyName,
     for(std::map<GeometryTag,std::vector<std::map<int,double>>>::const_iterator it = nodalDisplacements.cbegin(); it!=nodalDisplacements.cend(); ++it)
     {
         const GeometryTag &aLoc= it->first;
-
+        //cout<<"____working on tag: ("<<aLoc.parentShapeNr<<", "<<aLoc.subTopNr<<")____"<<endl;
         const std::vector<std::map<int,double>> &nodalDisplacementsComponents = it->second;
         const std::map<int,double> &displX = nodalDisplacementsComponents[1];
         const std::map<int,double> &displY = nodalDisplacementsComponents[2];
@@ -613,6 +614,15 @@ bool postEngine::buildPostObject(const QString &keyName,
         mapDisplMap[aLoc]=displMap;         // do not use "insert"
     }
 
+    //! -------------------------------------------
+    //! reorganize the displacements map by bodies
+    //! -------------------------------------------
+    cout<<"postEngine::buildPostObject()->____reorganizing displacements maps____"<<endl;
+    std::map<GeometryTag,std::map<int,gp_Vec>> mapDisplMap_byBodies;
+    this->groupDeformationFieldByBodies(mapDisplMap,mapDisplMap_byBodies);
+    cout<<"postEngine::buildPostObject()->____reorganizing displacements maps - DONE -____"<<endl;
+
+    /*
     //! -------------------------------------------
     //! reorganize the displacements map by bodies
     //! -------------------------------------------
@@ -636,7 +646,18 @@ bool postEngine::buildPostObject(const QString &keyName,
         }
     }
     cout<<"postEngine::buildPostObject()->____reorganizing displacements maps - DONE -____"<<endl;
+    */
 
+    //! ------------------------------------------------------------------------------
+    //! the tags - generate new body-based tags - could be moved into the constructor
+    //! Example: {(2,3),(3,1),(2,1),(4,1),(3,12)} => {(2,2),(3,3),(4,4)}
+    //! ------------------------------------------------------------------------------
+    cout<<"postEngine::buildPostObject()->____reorganizing tags____"<<endl;
+    std::vector<GeometryTag> vecLoc_byBodies;
+    this->groupTagsByBodies(vecLoc,vecLoc_byBodies);
+    cout<<"postEngine::buildPostObject()->____reorganizing tags - DONE-____"<<endl;
+
+    /*
     //! ------------------------------------------------------------------------------
     //! the tags - generate new body-based tags - could be moved into the constructor
     //! Example: {(2,3),(3,1),(2,1),(4,1),(3,12)} => {(2,2),(3,3),(4,4)}
@@ -656,6 +677,7 @@ bool postEngine::buildPostObject(const QString &keyName,
         vecLoc_byBodies.push_back(aLoc);
     }
     cout<<"postEngine::buildPostObject()->____reorganizing tags - DONE-____"<<endl;
+    */
 
     //! --------------------------------------------
     //! the data content - group the data by bodies
@@ -745,19 +767,11 @@ bool postEngine::buildPostObject(const QString &keyName,
     }
     cout<<"postEngine::buildPostObject()->____merge meshes -DONE-____"<<endl;
 
-    //! ----------------------
-    //! create the postObject
-    //! ----------------------
-    /*
-    bool useSurfaceMeshForVolumeResults = Global::status().myResultPresentation.useExteriorMeshForVolumeResults;
-    aPostObject = std::make_shared<postObject>(resMap,vecLoc,mapDisplMap,aResultName,useSurfaceMeshForVolumeResults);
-    aPostObject->init(myMeshDataBase);
-    double magnifyFactor = Global::status().myResultPresentation.theScale;
-    bool isDone = aPostObject->buildMeshIO(-1,-1,10,true,component,magnifyFactor);
-    */
 
+    //! -----------------------------------------
+    //! creating the result container postObject
+    //! -----------------------------------------
     cout<<"postEngine::buildPostObject()->____creating the result container____"<<endl;
-
     bool useSurfaceMeshForVolumeResults = Global::status().myResultPresentation.useExteriorMeshForVolumeResults;
     aPostObject = std::make_shared<postObject>(resMap_byBody,vecLoc_byBodies,mapDisplMap_byBodies,aResultName,useSurfaceMeshForVolumeResults);
     aPostObject->setMeshDataSources(meshDSforResults);  // replaces init()
@@ -1298,3 +1312,50 @@ postObject postEngine::buildFatiguePostObject(int type, std::vector<GeometryTag>
     return aPostObject;
 }
 */
+
+//! ----------------------------------------
+//! function: groupDeformationFieldByBodies
+//! details:
+//! ----------------------------------------
+void postEngine::groupDeformationFieldByBodies(const std::map<GeometryTag,std::map<int,gp_Vec>> &mapDisplMap,
+                                               std::map<GeometryTag,std::map<int,gp_Vec>> &mapDisplMap_byBodies)
+{
+    for(std::map<GeometryTag,std::map<int,gp_Vec>>::const_iterator it = mapDisplMap.begin(); it!=mapDisplMap.end(); it++)
+    {
+        const GeometryTag &aTag = it->first;
+        GeometryTag bodyTag(aTag.parentShapeNr,aTag.parentShapeNr,true,TopAbs_SOLID);
+        std::map<GeometryTag,std::map<int,gp_Vec>>::iterator it_ = mapDisplMap_byBodies.find(bodyTag);
+        if(it_ == mapDisplMap_byBodies.end())
+        {
+            //! insert the element at position bodyTag for the very first time
+            mapDisplMap_byBodies.insert(std::make_pair(bodyTag,it->second));
+        }
+        else
+        {
+            //! augment the already present map
+            for(std::map<int,gp_Vec>::const_iterator it__ = it->second.cbegin(); it__!=it->second.cend(); it__++)
+                it_->second.insert(std::make_pair(it__->first,it__->second));
+        }
+    }
+}
+
+
+//! ----------------------------
+//! function: groupTagsByBodies
+//! details:
+//! ----------------------------
+void postEngine::groupTagsByBodies(const std::vector<GeometryTag> &vecLoc, std::vector<GeometryTag> &vecLoc_byBodies)
+{
+    std::map<GeometryTag,int> alreadyVisited;
+    int c = 0;
+    for(std::vector<GeometryTag>::const_iterator it = vecLoc.cbegin(); it!= vecLoc.cend(); it++)
+    {
+        const GeometryTag &aTag = *it;
+        GeometryTag aLoc(aTag.parentShapeNr,aTag.parentShapeNr,true,TopAbs_SOLID);
+        std::map<GeometryTag,int>::iterator it_ = alreadyVisited.find(aLoc);
+        if(it_!=alreadyVisited.end()) continue;
+        c++;
+        alreadyVisited.insert(std::make_pair(aLoc,c));
+        vecLoc_byBodies.push_back(aLoc);
+    }
+}
