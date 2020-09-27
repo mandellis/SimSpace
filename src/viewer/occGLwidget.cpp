@@ -1805,10 +1805,11 @@ void occGLWidget::showAllBodies()
     //! Mark all the AIS_ExtendedShape(s) as visible
     //! ---------------------------------------------
     AIS_ListOfInteractive listOfShapes;
-    occContext->ObjectsInside(listOfShapes, AIS_KOI_Shape,0);
+    occContext->ObjectsInside(listOfShapes, AIS_KOI_Shape, -1);
     for(AIS_ListIteratorOfListOfInteractive it(listOfShapes);it.More();it.Next())
     {
         const occHandle(AIS_ExtendedShape) &curAISShape = occHandle(AIS_ExtendedShape)::DownCast(it.Value());
+        if(curAISShape.IsNull()) continue;  // the current object is not an AIS_ExtendedShape
         curAISShape->setShapeVisibility(true);
         curAISShape->SetTransparency(TRANSPARENCY);
     }

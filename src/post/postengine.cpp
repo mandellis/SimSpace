@@ -613,10 +613,10 @@ bool postEngine::buildPostObject(const QString &keyName,
         mapDisplMap[aLoc]=displMap;         // do not use "insert"
     }
 
-    cout<<"postEngine::buildPostObject()->____reorganizing displacements maps____"<<endl;
     //! -------------------------------------------
     //! reorganize the displacements map by bodies
     //! -------------------------------------------
+    cout<<"postEngine::buildPostObject()->____reorganizing displacements maps____"<<endl;
     std::map<GeometryTag,std::map<int,gp_Vec>> mapDisplMap_byBodies;
     for(std::map<GeometryTag,std::map<int,gp_Vec>>::iterator it = mapDisplMap.begin(); it!=mapDisplMap.end(); it++)
     {
@@ -632,17 +632,16 @@ bool postEngine::buildPostObject(const QString &keyName,
         {
             //! augment the already present map
             for(std::map<int,gp_Vec>::const_iterator it__ = it->second.cbegin(); it__!=it->second.cend(); it__++)
-                it->second.insert(std::make_pair(it__->first,it__->second));
+                it_->second.insert(std::make_pair(it__->first,it__->second));
         }
     }
     cout<<"postEngine::buildPostObject()->____reorganizing displacements maps - DONE -____"<<endl;
-
-    cout<<"postEngine::buildPostObject()->____reorganizing tags____"<<endl;
 
     //! ------------------------------------------------------------------------------
     //! the tags - generate new body-based tags - could be moved into the constructor
     //! Example: {(2,3),(3,1),(2,1),(4,1),(3,12)} => {(2,2),(3,3),(4,4)}
     //! ------------------------------------------------------------------------------
+    cout<<"postEngine::buildPostObject()->____reorganizing tags____"<<endl;
     std::vector<GeometryTag> vecLoc_byBodies;
     std::map<GeometryTag,int> alreadyVisited;
     int c = 0;
@@ -658,11 +657,10 @@ bool postEngine::buildPostObject(const QString &keyName,
     }
     cout<<"postEngine::buildPostObject()->____reorganizing tags - DONE-____"<<endl;
 
-    cout<<"postEngine::buildPostObject()->____reorganizing data____"<<endl;
-
     //! --------------------------------------------
     //! the data content - group the data by bodies
     //! --------------------------------------------
+    cout<<"postEngine::buildPostObject()->____reorganizing data____"<<endl;
     std::map<GeometryTag,std::vector<std::map<int,double>>> resMap_byBody;
     for(std::map<GeometryTag,std::vector<std::map<int,double>>>::const_iterator it = resMap.cbegin(); it!=resMap.cend(); it++)
     {
@@ -691,11 +689,10 @@ bool postEngine::buildPostObject(const QString &keyName,
     }
     cout<<"postEngine::buildPostObject()->____reorganizing data -DONE-____"<<endl;
 
-    cout<<"postEngine::buildPostObject()->____reorganizing meshes____"<<endl;
-
     //! ------------------------------------------------
     //! group the mesh data sources by bodies, then add
     //! ------------------------------------------------
+    cout<<"postEngine::buildPostObject()->____reorganizing meshes____"<<endl;
     std::map<GeometryTag,std::vector<occHandle(MeshVS_DataSource)>> bodyTag2VecMeshDS;
     for(std::vector<GeometryTag>::const_iterator it = vecLoc.cbegin(); it!=vecLoc.cend(); ++it)
     {
@@ -733,11 +730,10 @@ bool postEngine::buildPostObject(const QString &keyName,
     }
     cout<<"postEngine::buildPostObject()->____reorganizing meshes -DONE-____"<<endl;
 
-    cout<<"postEngine::buildPostObject()->____merge meshes____"<<endl;
-
     //! --------------------------------------
     //! add meshes for each body geometry tag
     //! --------------------------------------
+    cout<<"postEngine::buildPostObject()->____merge meshes____"<<endl;
     std::map<GeometryTag,occHandle(MeshVS_DataSource)> meshDSforResults;
     for(std::map<GeometryTag,std::vector<occHandle(MeshVS_DataSource)>>::const_iterator it = bodyTag2VecMeshDS.cbegin(); it!=bodyTag2VecMeshDS.cend(); it++)
     {

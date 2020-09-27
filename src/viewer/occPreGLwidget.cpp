@@ -1204,24 +1204,25 @@ void occPreGLWidget::showAllBodies()
     occContext->ObjectsByDisplayStatus(AIS_KOI_Shape,0,AIS_DS_Erased,listOfHidden);
     for(AIS_ListIteratorOfListOfInteractive it(listOfHidden); it.More(); it.Next())
     {
-        const occHandle(AIS_ExtendedShape) &curShape = occHandle(AIS_ExtendedShape)::DownCast(it.Value());
-        int shapeIndex = curShape->index();
+        const occHandle(AIS_ExtendedShape) &curAISShape = occHandle(AIS_ExtendedShape)::DownCast(it.Value());
+        if(curAISShape.IsNull()) continue; // the current object is not an AIS_ExtendedShape
+        int shapeIndex = curAISShape->index();
         bool isShapeActive = myDS2->MapOfIsActive.value(shapeIndex);
         if(isShapeActive==false) continue;
-        curShape->setShapeVisibility(true);
+        curAISShape->setShapeVisibility(true);
 
         //! ----------------------
         //! handling transparency
         //! ----------------------
         switch(myCurWorkingMode)
         {
-        case curWorkingMode_onContact:occContext->SetTransparency(curShape,TRANSPARENCY_IN_WORKING_MODE_CONTACT,Standard_False); break;
-        case curWorkingMode_onModel: occContext->SetTransparency(curShape,TRANSPARENCY_IN_WORKING_MODE_MODEL,Standard_False); break;
-        case curWorkingMode_onMesh: occContext->SetTransparency(curShape,TRANSPARENCY_IN_WORKING_MODE_MESH,Standard_False); break;
-        case curWorkingMode_onSolution: occContext->SetTransparency(curShape,TRANSPARENCY_IN_WORKING_MODE_MODEL,Standard_False); break;
-        default: occContext->SetTransparency(curShape,TRANSPARENCY_IN_WORKING_MODE_MODEL,Standard_False); break;
+        case curWorkingMode_onContact:occContext->SetTransparency(curAISShape,TRANSPARENCY_IN_WORKING_MODE_CONTACT,false); break;
+        case curWorkingMode_onModel: occContext->SetTransparency(curAISShape,TRANSPARENCY_IN_WORKING_MODE_MODEL,false); break;
+        case curWorkingMode_onMesh: occContext->SetTransparency(curAISShape,TRANSPARENCY_IN_WORKING_MODE_MESH,false); break;
+        case curWorkingMode_onSolution: occContext->SetTransparency(curAISShape,TRANSPARENCY_IN_WORKING_MODE_MODEL,false); break;
+        default: occContext->SetTransparency(curAISShape,TRANSPARENCY_IN_WORKING_MODE_MODEL,false); break;
         }
-        occContext->Display(curShape,false);
+        occContext->Display(curAISShape,false);
     }
 
     switch(myCurWorkingMode)
@@ -1238,68 +1239,11 @@ void occPreGLWidget::showAllBodies()
     this->clearGeometrySelection();
 
     if(curAction3D()!=CurAction3D_Nothing) occContext->SetAutomaticHilight(Standard_False);
-
-    /*
-    for(QMap<int,occHandle(AIS_InteractiveObject)>::iterator it = myMapOfInteractiveShapes.begin(); it!=myMapOfInteractiveShapes.end(); ++it)
-    {
-        const occHandle(AIS_ExtendedShape) &AIS = occHandle(AIS_ExtendedShape)::DownCast(it.value());
-        int bodyIndex = myDS2->bodyMap.key(AIS->Shape());
-        if(myDS2->MapOfIsActive.value(bodyIndex)==true)
-        {
-            occContext->Display(AIS,false);
-            AIS->setShapeVisibility(Standard_True);
-        }
-    }
-
-    AIS_ListOfInteractive thelistOfDIsplayed;
-    occContext->DisplayedObjects(AIS_KOI_Shape,0,thelistOfDIsplayed, false);
-    AIS_ListIteratorOfListOfInteractive it;
-    for(it.Initialize(thelistOfDIsplayed);it.More();it.Next())
-    {
-        const occHandle(AIS_ExtendedShape) &curAISShape = occHandle(AIS_ExtendedShape)::DownCast(it.Value());
-        curAISShape->setShapeVisibility(Standard_True);
-        switch(myCurWorkingMode)
-        {
-        case curWorkingMode_onContact:
-            occContext->SetTransparency(curAISShape,TRANSPARENCY_IN_WORKING_MODE_CONTACT,Standard_False);
-            break;
-        case curWorkingMode_onModel:
-            occContext->SetTransparency(curAISShape,TRANSPARENCY_IN_WORKING_MODE_MODEL,Standard_False);
-            break;
-        case curWorkingMode_onMesh:
-            occContext->SetTransparency(curAISShape,TRANSPARENCY_IN_WORKING_MODE_MESH,Standard_False);
-            break;
-        case curWorkingMode_onSolution:
-            occContext->SetTransparency(curAISShape,TRANSPARENCY_IN_WORKING_MODE_MODEL,Standard_False);
-            break;
-        default:
-            occContext->SetTransparency(curAISShape,TRANSPARENCY_IN_WORKING_MODE_MODEL,Standard_False);
-            break;
-        }
-    }
-    occView->ZFitAll();
-    occContext->UpdateCurrentViewer();
-    occMeshContext->UpdateCurrentViewer();
-
-    if(curAction3D()!=CurAction3D_Nothing) occContext->SetAutomaticHilight(Standard_False);
-
-    //! ----------------------------------------------------------------
-    //! this is a temporary solution to use hide/show context services
-    //! on the mesh, showing them together with the underlying geometry
-    //! ----------------------------------------------------------------
-    Graphic3d_NameOfMaterial theMat = Graphic3d_NOM_GOLD;
-    switch(myCurWorkingMode)
-    {
-    case curWorkingMode_onMesh: this->displayAllMeshes(false,theMat); break;
-    case curWorkingMode_onSolution: this->hideAllMeshes(); break;
-    }
-    */
 }
 
 //! ---------------------------------------------------------
 //! function: refreshMeshView
 //! details:  recompute the presentation of the mesh objects
-//!           and immediately refresh the presentation
 //! ---------------------------------------------------------
 void occPreGLWidget::refreshMeshView(bool onlyExterior)
 {

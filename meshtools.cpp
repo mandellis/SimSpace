@@ -532,11 +532,17 @@ bool MeshTools::buildIsoStrip(const occHandle(MeshVS_DataSource) &theMeshDS,    
     std::vector<meshElementByCoords> allElements;
     //bool isDone = anIsoStripBuilder.perform(allElements);
     bool isDone = anIsoStripBuilder.perform1(allElements);
-
-    if(isDone == false) return false;
-
+    if(isDone == false)
+    {
+        cout<<"MeshTools::buildIsoStrip()->____cannot build isostrips____"<<endl;
+        return false;
+    }
     occHandle(Ng_MeshVS_DataSourceFace) finalMesh = new Ng_MeshVS_DataSourceFace(allElements,true,true);
-
+    if(finalMesh.IsNull())
+    {
+        cout<<"MeshTools::buildIsoStrip()->____cannot build isostrips____"<<endl;
+        return false;
+    }
     cout<<"@ --------------------------"<<endl;
     cout<<"@ - overall strip mesh"<<endl;
     cout<<"@ - elements: "<<finalMesh->GetAllElements().Extent()<<endl;
@@ -565,6 +571,7 @@ bool MeshTools::buildIsoStrip(const occHandle(MeshVS_DataSource) &theMeshDS,    
     aColoredMesh->GetDrawer()->SetColor(MeshVS_DA_EdgeColor,Quantity_NOC_BLACK);
     aColoredMesh->GetDrawer()->SetBoolean(MeshVS_DA_ShowEdges, false);
 
+    cout<<"MeshTools::buildIsoStrip()->____exiting function____"<<endl;
     return true;
 }
 
@@ -1601,6 +1608,8 @@ std::map<GeometryTag, std::vector<occHandle(MeshVS_Mesh)>> MeshTools::groupMeshe
 //! --------------------
 occHandle(MeshVS_DataSource) MeshTools::mergeMesh(const occHandle(MeshVS_DataSource) &mesh1, const occHandle(MeshVS_DataSource) &mesh2)
 {
+    cout<<"MeshTools::mergeMesh()->____function called____"<<endl;
+
     occHandle(MeshVS_DataSource) retMeshDS;
 
     if(mesh1.IsNull()) return mesh2;
@@ -1694,5 +1703,10 @@ occHandle(MeshVS_DataSource) MeshTools::mergeMesh(const occHandle(MeshVS_DataSou
     case 2: retMeshDS = new Ng_MeshVS_DataSourceFace(vecElements,false,false); break;
     case 3: retMeshDS = new Ng_MeshVS_DataSource3D(vecElements,false,false); break;
     }
+
+    cout<<"MeshTools::mergeMesh()->____number of nodes: "<<retMeshDS->GetAllNodes().Extent()<<"____"<<endl;
+    cout<<"MeshTools::mergeMesh()->____number of elements: "<<retMeshDS->GetAllElements().Extent()<<"____"<<endl;
+    cout<<"MeshTools::mergeMesh()->____function exiting____"<<endl;
+
     return retMeshDS;
 }
