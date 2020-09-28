@@ -1671,6 +1671,13 @@ userMessage MesherClass::Tetgen_generateVolumeMesh(int bodyIndex, int preserveSu
                 cout<<mr.message.toStdString()<<endl;
                 return mr;
             }
+            else if(exitCode==-2)
+            {
+                mr.isDone = false;
+                mr.message = QString("Tetgen stopped while generating the face mesh data sources").arg(exitCode);
+                cout<<mr.message.toStdString()<<endl;
+                return mr;
+            }
             else
             {
                 mr.isDone = false;

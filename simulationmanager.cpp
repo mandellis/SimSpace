@@ -62,13 +62,15 @@
 #include "qsimulationstatusevent.h"
 #include "tablewidget.h"
 #include "generaldelegate.h"
-
 #include "qccxsolvermessageevent.h"
 #include "ccxsolvermanager1.h"
 #include "ccxsolvermessage.h"
 #include "ccxtools.h"
-
 #include "inputfilegenerator.h"
+#include "maintreetools.h"
+#include <exportingtools.h>
+#include "bolttool.h"
+#include "shapecomparison.h"
 
 //! ----
 //! C++
@@ -107,6 +109,9 @@
 #include <BRep_Builder.hxx>
 #include <SelectMgr_EntityOwner.hxx>
 #include <StdSelect_BRepOwner.hxx>
+#include <GProp_GProps.hxx>
+#include <TopLoc_Datum3D.hxx>
+
 
 //! ---
 //! Qt
@@ -1577,13 +1582,6 @@ void SimulationManager::deleteItem(QList<QModelIndex> indexesList)
 //! function: handleItem
 //! details:
 //! ---------------------
-#include "maintreetools.h"
-#include <exportingtools.h>
-#include "bolttool.h"
-#include <TopLoc_Datum3D.hxx>
-#include "shapecomparison.h"
-#include <GProp_GProps.hxx>
-
 void SimulationManager::handleItem(int type)
 {
     cout<<"SimulationManager::handleItem()->____function called: action Nr: "<<type<<"_____"<<endl;
@@ -6033,11 +6031,10 @@ void SimulationManager::updateMeshStatistics()
     connect(meshRootNode->getModel(),SIGNAL(itemChanged(QStandardItem*)),this,SLOT(handleItemChange(QStandardItem*)));
 }
 
-//! --------------------------------------------------------
+//! --------------------------------------
 //! function: changeNodeSuppressionStatus
-//! details:  also handle visibility. Works on items and on
-//!           a list of shapes selected in the OCC viewer
-//! --------------------------------------------------------
+//! details:  also synchronize visibility
+//! --------------------------------------
 void SimulationManager::changeNodeSuppressionStatus(Property::SuppressionStatus newSuppressionStatus)
 {
     cout<<"SimulationManager::changeNodeSuppressionStatus()->____function called____"<<endl;
@@ -6091,7 +6088,7 @@ void SimulationManager::changeNodeSuppressionStatus(Property::SuppressionStatus 
                 //! -----------------------
                 //! block the node signals
                 //! -----------------------
-                nodeBody->getModel()->blockSignals(true);
+                disconnect(nodeBody->getModel(),SIGNAL(itemChanged(QStandardItem*)),this,SLOT(handleItemChange(QStandardItem*)));
 
                 //! ----------------------------------------------------
                 //! synch the "Suppressed" property and update the icon
@@ -6111,7 +6108,7 @@ void SimulationManager::changeNodeSuppressionStatus(Property::SuppressionStatus 
                 //! ------------------------
                 //! unlock the node signals
                 //! ------------------------
-                nodeBody->getModel()->blockSignals(false);
+                connect(nodeBody->getModel(),SIGNAL(itemChanged(QStandardItem*)),this,SLOT(handleItemChange(QStandardItem*)));
             }
         }
     }
@@ -6139,7 +6136,7 @@ void SimulationManager::changeNodeSuppressionStatus(Property::SuppressionStatus 
             //! -----------------------
             //! block the node signals
             //! -----------------------
-            theCurNode->getModel()->blockSignals(true);
+            disconnect(theCurNode->getModel(),SIGNAL(itemChanged(QStandardItem*)),this,SLOT(handleItemChange(QStandardItem*)));
 
             //! ---------------------------------------------------------------------------
             //! if the item is a geometry item, store the bodyIndex into ListOfBodyNumbers
@@ -6168,7 +6165,7 @@ void SimulationManager::changeNodeSuppressionStatus(Property::SuppressionStatus 
             //! ------------------------
             //! unlock the node signals
             //! ------------------------
-            theCurNode->getModel()->blockSignals(false);
+            connect(theCurNode->getModel(),SIGNAL(itemChanged(QStandardItem*)),this,SLOT(handleItemChange(QStandardItem*)));
         }
     }
 

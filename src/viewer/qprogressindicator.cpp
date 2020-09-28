@@ -399,7 +399,7 @@ void QProgressIndicator::handleStopPressed()
         emit requestStopCCX();
     }
 
-    QThread::msleep(500);
+    QThread::msleep(125);
     this->hide();
 }
 

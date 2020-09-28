@@ -402,7 +402,7 @@ void TetgenMesher::setSwitches(int preserveSurfaceMesh, int bodyIndex)
         //!    vertex smoothing, vertex insertion/deletion:
         //!    Attach "O10/7"
         //! ------------------------------------------------
-        sprintf(mySwitches,"pq2.0/0.0a%.2lfT%.2eV",maxVolSize,tolerance);
+        sprintf(mySwitches,"pq1.4/0.0a%.2lfT%.2eV",maxVolSize,tolerance);
     }
         break;
 
@@ -413,7 +413,7 @@ void TetgenMesher::setSwitches(int preserveSurfaceMesh, int bodyIndex)
         //!    vertex smoothing, vertex insertion/deletion:
         //!    Attach "O10/7"
         //! ------------------------------------------------
-        sprintf(mySwitches,"pYq2.0/0.0a%.2lfT%.2eV",maxVolSize,tolerance);
+        sprintf(mySwitches,"pYq1.4/0.0a%.2lfT%.2eV",maxVolSize,tolerance);
     }
         break;
     }
@@ -494,7 +494,6 @@ void TetgenMesher::createTetgenSupportFilesDir(bool clearPreviousContent)
 //! function: retrieveMeshDataSourcesFromDisk
 //! details:
 //! ------------------------------------------
-//#define DO_NOT_GENERATE_FACE_MESH_DS
 bool TetgenMesher::retrieveMeshDataSourcesFromDisk(int bodyIndex,
                                                    occHandle(Ng_MeshVS_DataSource3D) &volumeMeshDS,
                                                    occHandle(Ng_MeshVS_DataSource2D) &surfaceMeshDS,
@@ -517,13 +516,14 @@ bool TetgenMesher::retrieveMeshDataSourcesFromDisk(int bodyIndex,
     //! init the secondary progress bar
     //! --------------------------------
     int N_events = myMeshDB->MapOfBodyTopologyMap.value(bodyIndex).faceMap.Extent()+2;
-    QProgressEvent *pe = new QProgressEvent();
-    pe->setVal(done);
-    pe->setMessage("Generating the face mesh data sources");
-    pe->setAction1(QProgressEventAction::QProgressEvent_Init);
-    pe->setRange1(0, N_events);
-    if(myProgressIndicator)
+
+    if(myProgressIndicator!=Q_NULLPTR)
     {
+        QProgressEvent *pe = new QProgressEvent();
+        pe->setVal(done);
+        pe->setMessage("Generating the face mesh data sources");
+        pe->setAction1(QProgressEventAction::QProgressEvent_Init);
+        pe->setRange1(0, N_events);
         QApplication::postEvent(myProgressIndicator,pe);
         QApplication::processEvents();
     }
@@ -545,17 +545,18 @@ bool TetgenMesher::retrieveMeshDataSourcesFromDisk(int bodyIndex,
     //! generate the face to element connectivity data
     //! -----------------------------------------------
     cout<<"TetgenMesher::retrieveMeshDataSourcesFromDisk()->____generating the face to element connectivity data____"<<endl;
+    this->setStopButtonEnabled(false);
     volumeMeshDS->buildFaceToElementConnectivity();
 
     //! --------------------------------------------
     //! post an event: the surface mesh data source
     //! --------------------------------------------
-    pe = new QProgressEvent();
-    pe->setVal(done);
-    pe->setMessage(QString("Processing volume mesh"));
-    pe->setVal1(1);
     if(myProgressIndicator!=Q_NULLPTR)
     {
+        QProgressEvent *pe = new QProgressEvent();
+        pe->setVal(done);
+        pe->setMessage(QString("Processing volume mesh"));
+        pe->setVal1(1);
         QApplication::postEvent(myProgressIndicator,pe);
         QApplication::processEvents();
     }
@@ -589,12 +590,12 @@ bool TetgenMesher::retrieveMeshDataSourcesFromDisk(int bodyIndex,
     //! --------------------------------------------
     //! post an event: the surface mesh data source
     //! --------------------------------------------
-    pe = new QProgressEvent();
-    pe->setVal(done);
-    pe->setMessage(QString("Processing volume mesh"));
-    pe->setVal1(2);
     if(myProgressIndicator!=Q_NULLPTR)
     {
+        QProgressEvent *pe = new QProgressEvent();
+        pe->setVal(done);
+        pe->setMessage(QString("Processing volume mesh"));
+        pe->setVal1(2);
         QApplication::postEvent(myProgressIndicator,pe);
         QApplication::processEvents();
     }
@@ -612,7 +613,6 @@ bool TetgenMesher::retrieveMeshDataSourcesFromDisk(int bodyIndex,
     //! "0" face explicitly is nullified
     //! -----------------------------------------------------
 
-#ifndef DO_NOT_GENERATE_FACE_MESH_DS
     //QList<QList<double>> listOfMeshPoints = TetgenMesher::readNodeFile(nodeFileName);
     //QList<QList<int>> listOfFaces = TetgenMesher::readFaceFile(faceFileName);
 
@@ -624,19 +624,13 @@ bool TetgenMesher::retrieveMeshDataSourcesFromDisk(int bodyIndex,
     QMap<int,mesh::meshPoint> indexedMapOfMeshPoints;
     this->readNodeFile(nodeFileName,indexedMapOfMeshPoints);
 
+    this->setStopButtonEnabled(true);
+
     occHandle(Ng_MeshVS_DataSourceFace) aFaceMeshDS;
     for(int faceNr = 1; faceNr<=NbGeometryFaces; faceNr++)
     {
-        //! --------------------------------
-        //! process interrupted by the user
-        //! --------------------------------
-        if(Global::status().code = 0)
-        {
-            Global::status().code = 1;
-            cout<<"____process interrupted by the user____"<<endl; //cesere
-            exit(100);
-            return false;
-        }
+        if(Global::status().code == 0) return false;    // process interrupted by the user
+
         cout<<"TetgenMesher::retrieveMeshDataSourcesFromDisk()->____retrieving the face mesh for face nr. "<<faceNr<<"____"<<endl;
 
         //aFaceMeshDS = new Ng_MeshVS_DataSourceFace(faceFileName,nodeFileName,faceNr);
@@ -645,20 +639,16 @@ bool TetgenMesher::retrieveMeshDataSourcesFromDisk(int bodyIndex,
         //aFaceMeshDS = new Ng_MeshVS_DataSourceFace(listOfMeshPoints,listOfFaces,faceNr);  //cesere
 
         arrayOfFaceMeshDS.SetValue(faceNr,aFaceMeshDS);
-        //cout<<"TetgenMesher::retrieveMeshDataSourcesFromDisk()->____mesh data source for face nr. "<<faceNr<<"____"<<endl;
 
         //! -------------------------------------------
         //! post update events on face mesh generation
         //! -------------------------------------------
-        if(faceNr%50==0)
+        if(faceNr%50==0 && myProgressIndicator!=Q_NULLPTR)
         {
             QProgressEvent *pe = new QProgressEvent(QProgressEvent_None,0,9999,0,"Generate face mesh data sources",
                                                     QProgressEvent_Update,0,9999,faceNr,"Tetgen building face mesh datasources from disk");
-            if(myProgressIndicator!=Q_NULLPTR)
-            {
-                QApplication::postEvent(myProgressIndicator,pe);
-                QApplication::processEvents();
-            }
+            QApplication::postEvent(myProgressIndicator,pe);
+            QApplication::processEvents();
         }
     }
 
@@ -667,7 +657,6 @@ bool TetgenMesher::retrieveMeshDataSourcesFromDisk(int bodyIndex,
     //! ---------------------
     cout<<"TetgenMesher::retrieveMeshDataSourcesFromDisk()->____nullifying the \"0\" face____"<<endl;
     arrayOfFaceMeshDS.SetValue(0,occHandle(Ng_MeshVS_DataSourceFace)());
-#endif
 
     return true;
 }
@@ -914,14 +903,13 @@ bool TetgenMesher::buildPLC(int bodyIndex, QList<int> &invalidFaceTags, bool sav
 }
 #endif
 
-//! ----------------------------------
-//! function: redirectStandardOuput()
-//! details:  private slot
-//! ----------------------------------
+//! --------------------------------
+//! function: redirectStandardOuput
+//! details:
+//! --------------------------------
 void TetgenMesher::redirectTetgenOutput()
 {
     std::string message = tetgenProcess->readAllStandardOutput().toStdString();
-    ccout(QString::fromStdString(message));
     QProgressEvent *progressEvent;
     if(QString::fromStdString(message).contains(QString("Initializing memorypools.")))
     {
@@ -1074,7 +1062,8 @@ int TetgenMesher::performOnDisk1(const NCollection_Array1<occHandle(Ng_MeshVS_Da
     //! ------------------------------------
     //! generate the face mesh data sources
     //! ------------------------------------
-    this->retrieveMeshDataSourcesFromDisk(bodyIndex,tetgenMesh3D,tetgenMesh2D,tetgenArrayOfFaceDS,done);
+    bool isDone = this->retrieveMeshDataSourcesFromDisk(bodyIndex,tetgenMesh3D,tetgenMesh2D,tetgenArrayOfFaceDS,done);
+    if(isDone == false) exitCode = -2;
     return exitCode;
 }
 
@@ -1082,7 +1071,7 @@ int TetgenMesher::performOnDisk1(const NCollection_Array1<occHandle(Ng_MeshVS_Da
 //! function: performOnDisk1
 //! details:  this is an overloaded function. It returns only the volume mesh.
 //!           It is used when generating prismatic meshes at the boundary, and
-//!           at the interior only the volume mesh is of interest
+//!           at only the interior the volume mesh is of interest
 //! ----------------------------------------------------------------------------
 int TetgenMesher::performOnDisk1(const NCollection_Array1<occHandle(Ng_MeshVS_DataSourceFace)> &arrayOfFaceDS,
                                  int bodyIndex,
@@ -1157,7 +1146,6 @@ int TetgenMesher::performOnDisk1(const NCollection_Array1<occHandle(Ng_MeshVS_Da
     if(exitCode!=0)
     {
         cout<<"____process terminated by the user____"<<endl;
-        exit(8888);
         return exitCode;
     }
 
@@ -1314,4 +1302,16 @@ bool TetgenMesher::readNodeFile(const QString &nodeFileName, QMap<int,mesh::mesh
     cout<<"TetgenMesher::readNodeFile()->____mesh points read____"<<endl;
     fclose(nodeFile);
     return true;
+}
+
+//! -------------------------------
+//! function: setStopButtonEnabled
+//! details:
+//! -------------------------------
+void TetgenMesher::setStopButtonEnabled(bool isEnabled)
+{
+    QProgressEvent *pe;
+    if(isEnabled) pe = new QProgressEvent(QProgressEvent_EnableStop,0,0,0,"",QProgressEvent_None,0,0,0,"Tetgen meshing running on disk");
+    else pe = new QProgressEvent(QProgressEvent_DisableStop,0,0,0,"",QProgressEvent_None,0,0,0,"Tetgen meshing running on disk");
+    QApplication::postEvent(myProgressIndicator,pe);
 }

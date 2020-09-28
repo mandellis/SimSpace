@@ -408,7 +408,7 @@ void occGLWidget::init()
     occContext = new AIS_InteractiveContext(occViewer);
     cout<<"____GEOMETRY CONTEXT CREATED____"<<endl;
 
-    occContext->Display(myFloatingLabel,true);
+    occContext->Display(myFloatingLabel,0,-1,true,false,AIS_DS_Temporary);
 
     //! -------------------------------
     //! Set up lights - default lights
@@ -1130,7 +1130,6 @@ void occGLWidget::keyPressEvent(QKeyEvent *theKey)
 //! -------------------------
 void occGLWidget::drawRubberBand(const int minX,const int minY,const int maxX,const int maxY)
 {
-
     QRect aRect;
 
     // sets the rectangle
@@ -1142,7 +1141,6 @@ void occGLWidget::drawRubberBand(const int minX,const int minY,const int maxX,co
     if (!myRectBand)
     {
         myRectBand = new QRubberBand(QRubberBand::Rectangle, this);
-        // frame in MS Windows style
         myRectBand->setStyle(QStyleFactory::create("windows"));
     }
     myRectBand->setGeometry(aRect);
@@ -2717,7 +2715,7 @@ void occGLWidget::displayTrihedron(QVector<double> Origin, QVector<QVector<doubl
     //! --------
     //! display
     //! --------
-    occContext->Display(theTrihedron,0,-1,true);
+    occContext->Display(theTrihedron,0,-1,false,false,AIS_DS_Temporary);
 }
 
 //! --------------------------
@@ -2911,7 +2909,7 @@ void occGLWidget::displayRotationCenter(gp_Pnt COR, bool isOnFace)
         if(!occContext->DefaultDrawer()->IsAutoTriangulation()) occContext->DefaultDrawer()->SetAutoTriangulation(true);
         CORMarker->SetDisplayMode(AIS_Shaded);
         CORMarker->SetColor(Quantity_NOC_RED);
-        occContext->Display(CORMarker,AIS_Shaded,-1,false);
+        occContext->Display(CORMarker,AIS_Shaded,-1,false,false,AIS_DS_Temporary);
     }
     else    // click on air - remove the sphere from the context
     {
@@ -2957,7 +2955,7 @@ void occGLWidget::displaySphericalMarker(gp_Pnt P)
     //! ----------------
     aShape->Attributes()->SetFaceBoundaryDraw(false);
 
-    occContext->Display(aShape,1,-1,false);
+    occContext->Display(aShape,AIS_Shaded,-1,false,false,AIS_DS_Temporary);
     occContext->UpdateCurrentViewer();
 
     anAIS_Shape = aShape;

@@ -57,7 +57,7 @@ rainflow::rainflow(GeometryTag loc, fatigueModel fm, QObject *parent): QObject(p
 //! -------------------------------------------------
 double rainflow::solve(double eps, double epsF, double c, double sigmaF, double E, double b)
 {
-    cout<<"rainflow::solve()->____function called____"<<endl;
+    //cout<<"rainflow::solve()->____function called____"<<endl;
     double N,Nn,initialRoot;
 
     switch(myFatigueModel.type)
@@ -207,20 +207,20 @@ double rainflow::solve(double eps, double epsF, double c, double sigmaF, double 
 //! details:
 //! ----------------------
 double rainflow::solve_exact(double eps, double epsF, double c, double sigmaF, double E, double b)
+{
+    //cout<<"rainflow::solve_exact()->____function called____"<<endl;
+    double N;
+    switch(myFatigueModel.type)
     {
-        cout<<"rainflow::solve()->____function called____"<<endl;
-        double N;
-        switch(myFatigueModel.type)
-        {
-        case fatigueModel_BCM:
-        {
-            double den = c-b; if(den == 0) den = 1e-12;
-            double x = (1/(c-b))*log((eps/epsF)*(sigmaF/E));
-            N = 0.5*exp(x);
-        }
-            break;
-        }
-        return N;
+    case fatigueModel_BCM:
+    {
+        double den = c-b; if(den == 0) den = 1e-12;
+        double x = (1/(c-b))*log((eps/epsF)*(sigmaF/E));
+        N = 0.5*exp(x);
+    }
+        break;
+    }
+    return N;
 }
 
 //! -----------------------
@@ -264,7 +264,7 @@ double rainflow::damage_index(const std::vector<double> &y)
 //! --------------------------
 std::vector<double> rainflow::rainflow_engine(std::vector<double> y)
 {
-    cout<<"rainflow::rainflow_engine()->____function called____"<<endl;
+    //cout<<"rainflow::rainflow_engine()->____function called____"<<endl;
     double sum;
     double ymax;
     double mina,maxa;
@@ -458,8 +458,7 @@ std::vector<double> rainflow::rainflow_engine(std::vector<double> y)
 //! ------------------
 bool rainflow::perform(std::map<int, std::vector<double>> strainDistTimeHistory, std::map<int,double> &damageDist)
 {
-    cout<<"rainflow::perform()->____function called____"<<endl;
-
+    //cout<<"rainflow::perform()->____function called____"<<endl;
     for(std::map<int, std::vector<double>>::iterator it = strainDistTimeHistory.begin(); it!= strainDistTimeHistory.end(); it++)
     {
         int nodeID = it->first;

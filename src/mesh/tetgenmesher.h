@@ -165,6 +165,9 @@ private:
     //! get the tetgen support files dir location
     QString getTetgenSupportFilesDir() const { return myTetgenSupportFilesDir; }
 
+    //! enable/disable stop button
+    void setStopButtonEnabled(bool isEnabled);
+
 private slots:
 
     void redirectTetgenOutput();
