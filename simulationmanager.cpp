@@ -5790,7 +5790,6 @@ void SimulationManager::handleItemChange(QStandardItem *item)
     //! reconnection [*]
     //! -----------------
     connect(curNode->getModel(),SIGNAL(itemChanged(QStandardItem*)),this,SLOT(handleItemChange(QStandardItem*)));
-    //curNode->getModel()->blockSignals(false);
 
     //! ------
     //! parse
@@ -5908,7 +5907,7 @@ void SimulationManager::buildMesh(bool isVolumeMesh)
     //! scan the contact and the boundary conditions of all the analysis branches
     //! In case of patch independent meshing method, with geometry defeaturing and
     //! simplification, the boundary of the patches of the boundary conditions will
-    //! be preserved (if the "Preserve boundary condition edges" selector is ON
+    //! be preserved (if the "Preserve boundary condition edges" selector is ON)
     //! ----------------------------------------------------------------------------
     std::vector<GeometryTag> vecTags;
     int type = 4;       //! on faces
@@ -5995,8 +5994,8 @@ void SimulationManager::updateMeshStatistics()
         int bodyIndex = mySimulationDataBase->bodyMap.key(mySimulationDataBase->bodyMap.value(i));
         if(!mySimulationDataBase->ArrayOfMeshDS.value(bodyIndex).IsNull())
         {
-            NN3D = NN3D + mySimulationDataBase->ArrayOfMeshDS.value(bodyIndex)->GetAllNodes().Extent();
-            NE3D = NE3D + mySimulationDataBase->ArrayOfMeshDS.value(bodyIndex)->GetAllElements().Extent();
+            NN3D += mySimulationDataBase->ArrayOfMeshDS.value(bodyIndex)->GetAllNodes().Extent();
+            NE3D += mySimulationDataBase->ArrayOfMeshDS.value(bodyIndex)->GetAllElements().Extent();
         }
     }
     for(int i=1; i<=mySimulationDataBase->ArrayOfMeshDS2D.size(); i++)
@@ -6004,8 +6003,8 @@ void SimulationManager::updateMeshStatistics()
         int bodyIndex = mySimulationDataBase->bodyMap.key(mySimulationDataBase->bodyMap.value(i));
         if(!mySimulationDataBase->ArrayOfMeshDS2D.value(bodyIndex).IsNull())
         {
-            NN2D = NN2D + mySimulationDataBase->ArrayOfMeshDS2D.value(bodyIndex)->GetAllNodes().Extent();
-            NE2D = NE2D + mySimulationDataBase->ArrayOfMeshDS2D.value(bodyIndex)->GetAllElements().Extent();
+            NN2D += mySimulationDataBase->ArrayOfMeshDS2D.value(bodyIndex)->GetAllNodes().Extent();
+            NE2D += mySimulationDataBase->ArrayOfMeshDS2D.value(bodyIndex)->GetAllElements().Extent();
         }
     }
 
@@ -6023,7 +6022,7 @@ void SimulationManager::updateMeshStatistics()
     //! -----------------------
     //! block the node signals
     //! -----------------------
-    meshRootNode->getModel()->blockSignals(true);
+    disconnect(meshRootNode->getModel(),SIGNAL(itemChanged(QStandardItem*)),this,SLOT(handleItemChange(QStandardItem*)));
 
     meshRootNode->replaceProperty("Number of nodes",prop_NN);
     meshRootNode->replaceProperty("Number of elements",prop_NE);
@@ -6031,7 +6030,7 @@ void SimulationManager::updateMeshStatistics()
     //! ------------------------
     //! unlock the node signals
     //! ------------------------
-    meshRootNode->getModel()->blockSignals(false);
+    connect(meshRootNode->getModel(),SIGNAL(itemChanged(QStandardItem*)),this,SLOT(handleItemChange(QStandardItem*)));
 }
 
 //! --------------------------------------------------------
@@ -6816,7 +6815,8 @@ void SimulationManager::changeColor()
                 theType !=SimulationNodeClass::nodeType_solutionStructuralStress &&
                 theType !=SimulationNodeClass::nodeType_solutionStructuralMechanicalStrain &&
                 theType !=SimulationNodeClass::nodeType_solutionStructuralThermalStrain &&
-                theType !=SimulationNodeClass::nodeType_solutionStructuralTotalStrain)
+                theType !=SimulationNodeClass::nodeType_solutionStructuralTotalStrain &&
+                theType !=SimulationNodeClass::nodeType_solutionStructuralFatigueTool)
         {
             QExtendedStandardItem* itemTags = node->getPropertyItem("Tags");
             color1 = graphicsTools::getModelFeatureColor(theType);

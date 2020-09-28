@@ -235,22 +235,22 @@ double rainflow::damage_index(const std::vector<double> &y)
     //! deltaeps/2= espF*(2N)^c+sigmaF/E*(2N)^b
     //!              [0]     [1]   [2] [3]   [4]
     //!------------------------------------------
-    double epsF = myFatigueModel.coeffs.at(0);
-    double c = myFatigueModel.coeffs.at(1);
-    double sigmaF = myFatigueModel.coeffs.at(2);
-    double E = myFatigueModel.coeffs.at(3);
-    double b = myFatigueModel.coeffs.at(4);
+    double epsF = myFatigueModel.coeffs[0];
+    double c = myFatigueModel.coeffs[1];
+    double sigmaF = myFatigueModel.coeffs[2];
+    double E = myFatigueModel.coeffs[3];
+    double b = myFatigueModel.coeffs[4];
 
-    double D=0.;
+    double D=0.0;
     double deltaEps;
-    std::vector<double> B = this->rainflow_engine(y);
+    const std::vector<double> &B = this->rainflow_engine(y);
     size_t NbData = B.size();
     for(size_t i=0; i<NbData; i++)
     {
         deltaEps = B[i];
         if(deltaEps>tol2)
         {
-            //double NN_ = solve_exact(deltaEps,epsF,c,sigmaF,E,b);
+            //double NN = solve_exact(deltaEps,epsF,c,sigmaF,E,b)+1e-12;
             double NN = solve(deltaEps,epsF,c,sigmaF,E,b);
             D+= 1/NN;
         }
@@ -290,21 +290,25 @@ std::vector<double> rainflow::rainflow_engine(std::vector<double> y)
     //	a[k]=y[k];
     a.push_back(y.at(k));
 
-    k=1;    // ??
+    //k=1;    // ??
 
     int NP = int(y.size());
     for(i=1;i<(NP-1);i++)
     {
-        slope1=(y.at(i)-y.at(i-1));
-        slope2=(y.at(i+1)-y.at(i));
+        //slope1=(y.at(i)-y.at(i-1));
+        //slope2=(y.at(i+1)-y.at(i));
+        slope1=(y[i]-y[i-1]);           //! faster
+        slope2=(y[i+1]-y[i]);           //! faster
 
         if((slope1*slope2)<=0 && fabs(slope1)>0)
         {
-            a.push_back(y.at(i));
+            //a.push_back(y.at(i));
+            a.push_back(y[i]);          //! faster
             k++;
         }
     }
-    a.push_back(y.at(NP-1));
+    //a.push_back(y.at(NP-1));
+    a.push_back(y[NP-1]);            //! faster
     k++;
 
     last_a=k-1;
@@ -314,14 +318,16 @@ std::vector<double> rainflow::rainflow_engine(std::vector<double> y)
     maxa = -mina;
     for(i=0;i<=last_a;i++)
     {
-        if(a.at(i)<mina)
-        {
-            mina=a.at(i);
-        }
-        if(a.at(i)>maxa)
-        {
-            maxa=a.at(i);
-        }
+        if(a[i]<mina) mina=a[i];    //! faster
+        if(a[i]>maxa) maxa=a[i];    //! faster
+        //if(a.at(i)<mina)
+        //{
+        //    mina=a.at(i);
+        //}
+        //if(a.at(i)>maxa)
+        //{
+        //    maxa=a.at(i);
+        //}
     }
 
     num=int(maxa-mina)+1;
@@ -341,8 +347,10 @@ std::vector<double> rainflow::rainflow_engine(std::vector<double> y)
 
     while(1)
     {
-        Y=(fabs(a.at(i)-a.at(i+1)));
-        X=(fabs(a.at(j)-a.at(j+1)));
+        //Y=(fabs(a.at(i)-a.at(i+1)));
+        //X=(fabs(a.at(j)-a.at(j+1)));
+        Y=(fabs(a[i]-a[i+1]));      //! faster
+        X=(fabs(a[j]-a[j+1]));      //! faster
         if(X>=Y && Y>0 && Y<1.0e+10)
         {
             if(Y>ymax)
@@ -354,8 +362,11 @@ std::vector<double> rainflow::rainflow_engine(std::vector<double> y)
                 n=0;
                 sum+=0.5;
 
-                row.insert(3,a.at(i+1));
-                row.insert(2,a.at(i));
+                //row.insert(3,a.at(i+1));
+                //row.insert(2,a.at(i));
+                row.insert(3,a[i+1]);        //! faster
+                row.insert(2,a[i]);          //! faster
+
                 row.insert(1,0.5);
                 row.insert(0,Y);
 
@@ -370,8 +381,10 @@ std::vector<double> rainflow::rainflow_engine(std::vector<double> y)
             else
             {
                 sum+=1;
-                row.insert(3,a.at(i+1));
-                row.insert(2,a.at(i));
+                //row.insert(3,a.at(i+1));
+                //row.insert(2,a.at(i));
+                row.insert(3,a[i+1]);       //! faster
+                row.insert(2,a[i]);         //! faster
                 row.insert(1,1);
                 row.insert(0,Y);
 
@@ -414,13 +427,18 @@ std::vector<double> rainflow::rainflow_engine(std::vector<double> y)
 
     for(i=0;i<(last_a);i++)
     {
-        Y=(fabs(a.at(i)-a.at(i+1)));
+        //Y=(fabs(a.at(i)-a.at(i+1)));
+        Y=(fabs(a[i]-a[i+1]));      //! faster
+
         if(Y>0. && Y<1.0e+20)
         {
             sum+=0.5;
 
-            row.insert(3,a.at(i+1));
-            row.insert(2,a.at(i));
+            //row.insert(3,a.at(i+1));
+            //row.insert(2,a.at(i));
+            row.insert(3,a[i+1]);       //! faster
+            row.insert(2,a[i]);         //! faster
+
             row.insert(1,0.5);
             row.insert(0,Y*.5);
             //B.push_back(row);

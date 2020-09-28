@@ -167,7 +167,7 @@ bool writeSolverFileClass::perform()
                                                QProgressEvent_None,-1,-1,-1,"Writing CCX solver input file");
         QApplication::postEvent(myProgressIndicator,e);
         QApplication::processEvents();
-        QThread::msleep(500);
+        QThread::msleep(250);
 
         if(Global::status().code==0)
         {
@@ -208,7 +208,7 @@ bool writeSolverFileClass::perform()
                                                QProgressEvent_None,-1,-1,-1,"Writing CCX solver input file");
         QApplication::postEvent(myProgressIndicator,e);
         QApplication::processEvents();
-        QThread::msleep(500);
+        QThread::msleep(250);
 
         if(Global::status().code==0)
         {
@@ -598,7 +598,7 @@ bool writeSolverFileClass::perform()
                                                QProgressEvent_None,-1,-1,-1,"Writing CCX solver input file");
         QApplication::postEvent(myProgressIndicator,e);
         QApplication::processEvents();
-        QThread::msleep(500);
+        QThread::msleep(250);
 
         if(Global::status().code==0)
         {
@@ -984,7 +984,7 @@ bool writeSolverFileClass::perform()
                                                QProgressEvent_None,-1,-1,-1,"Writing CCX solver input file");
         QApplication::postEvent(myProgressIndicator,e);
         QApplication::processEvents();
-        QThread::msleep(500);
+        QThread::msleep(250);
 
         if(Global::status().code==0)
         {
@@ -1220,7 +1220,7 @@ bool writeSolverFileClass::perform()
                                                QProgressEvent_None,-1,-1,-1,"Writing CCX solver input file");
         QApplication::postEvent(myProgressIndicator,e);
         QApplication::processEvents();
-        QThread::msleep(500);
+        QThread::msleep(250);
 
         if(Global::status().code==0)
         {
@@ -1297,7 +1297,7 @@ bool writeSolverFileClass::perform()
                                                QProgressEvent_None,-1,-1,-1,"Writing CCX solver input file");
         QApplication::postEvent(myProgressIndicator,e);
         QApplication::processEvents();
-        QThread::msleep(500);
+        QThread::msleep(250);
 
         if(Global::status().code==0)
         {
@@ -1450,7 +1450,7 @@ bool writeSolverFileClass::perform()
                                                QProgressEvent_None,-1,-1,-1,"Writing CCX solver input file");
         QApplication::postEvent(myProgressIndicator,e);
         QApplication::processEvents();
-        QThread::msleep(500);
+        QThread::msleep(250);
 
         if(Global::status().code==0)
         {
@@ -2411,7 +2411,7 @@ bool writeSolverFileClass::perform()
                                                QProgressEvent_Reset,-1,-1,-1,"");
         QApplication::postEvent(myProgressIndicator,e);
         QApplication::processEvents();
-        QThread::msleep(500);
+        QThread::msleep(250);
     }
 
     myInputFile.close();

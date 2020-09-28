@@ -140,6 +140,12 @@ private:
 
     void groupTagsByBodies(const std::vector<GeometryTag> &vecLoc, std::vector<GeometryTag> &vecLoc_byBodies);
 
+    void groupResultsByBodies(const std::map<GeometryTag,std::vector<std::map<int,double>>> &resMap,
+                              std::map<GeometryTag,std::vector<std::map<int,double>>> &resMap_byBody);
+
+    void groupAndMergeMeshDataSourcesByBodies(const std::vector<GeometryTag> &vecLoc,
+                                              std::map<GeometryTag, opencascade::handle<MeshVS_DataSource> > &meshDSforResults);
+
 };
 
 #endif // POSTENGINE_H
