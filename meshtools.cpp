@@ -9,10 +9,8 @@
 #include "ais_colorscaleextended.h"
 #include "tools.h"
 #include "exportingtools.h"
-#include "stldoctor.h"
 #include "extendedrwstl.h"
 #include "ccout.h"
-//#include <ng_meshvs_deformeddatasource2d.h>
 #include <ng_meshvs_datasource1d.h>
 #include "qprogressindicator.h"
 #include "qprogressevent.h"

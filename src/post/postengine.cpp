@@ -454,6 +454,367 @@ std::map<GeometryTag,std::vector<std::map<int,double>>> postEngine::evaluateResu
     return resMap;
 }
 
+
+
+//! -------------------------------
+//! function: evaluateResultOnBody
+//! details:
+//! -------------------------------
+std::vector<std::map<int,double>> postEngine::evaluateResultOnBody(const QString &resultKeyName,
+                                                                   int requiredSubStepNb,
+                                                                   int requiredStepNb,
+                                                                   int requiredMode,
+                                                                   const occHandle(MeshVS_DataSource) &aMeshDS,
+                                                                   const GeometryTag &bodyTag,
+                                                                   double &requiredTime)
+{
+    cout<<"@ -------------------------------------------------"<<endl;
+    cout<<"@ - postEngine::evaluateResultOnBody "<<endl;
+    cout<<"@ -------------------------------------------------"<<endl;
+
+    //! -------------------------------------------------------------------------
+    //! node conversion map: (Calculix mesh nodeID,nodeID for MeshVS_DataSource)
+    //! -------------------------------------------------------------------------
+    std::map<int,int> indexedMapOfNodes;
+    int bodyIndex = bodyTag.parentShapeNr;
+    int offset = 0;
+    for(int k=1; k<bodyIndex; k++) offset = offset+myMeshDataBase->ArrayOfMeshDS.value(k)->GetAllNodes().Extent();
+    for(TColStd_MapIteratorOfPackedMapOfInteger anIter(aMeshDS->GetAllNodes()); anIter.More(); anIter.Next())
+    {
+        int nodeID = anIter.Key()+offset;
+        indexedMapOfNodes.insert(std::make_pair(nodeID,anIter.Key()));
+    }
+
+    //! ------------------------------------------------
+    //! enter <...>/SolutionData/ResultsData
+    //! ------------------------------------------------
+    QString tmp = myResultsFilePath.split("/").last();
+    QString path = myResultsFilePath;
+    path.chop(tmp.length());
+
+    QDir curDir(path);
+    curDir.cd("ResultsData");
+    QFileInfoList entriesInfo = curDir.entryInfoList();
+
+    QList<QString> entryList = curDir.entryList();
+    QList<QString> fileList;
+
+    //! ------------------------------------------------------
+    //! retrieve the files (discard directories)
+    //! it could be used to setup the range of a progress bar
+    //! ------------------------------------------------------
+    for(int k=0; k<entryList.length(); k++)
+    {
+        if(entriesInfo.at(k).isFile())
+        {
+            QString fileName = curDir.absolutePath()+"/"+entryList.at(k);
+            fileList.append(fileName);
+        }
+    }
+
+    //! ---------------------------------
+    //! the result that will be returned
+    //! ---------------------------------
+    std::vector<std::map<int,double>> res;
+
+    //! ---------------
+    //! scan the files
+    //! ---------------
+    for(int i=0; i<fileList.length(); i++)
+    {
+        //cout<<"scanning file name: "<<fileList.at(i).toStdString()<<endl;
+        QString filePath = fileList.at(i);
+        fstream curFile(filePath.toStdString(),ios::in);
+        if(!curFile.is_open())
+        {
+            cout<<"postEngine::evaluateResult()->____cannot open the results file: "<<resultKeyName.toStdString()<<"____"<<endl;
+            break;
+            //! error in opening the file - please handle it ... to do ...
+        }
+        std::string val;
+        std::getline(curFile,val);
+        char analysisType[24];
+        int mode;
+        sscanf(val.c_str(),"%s%d",&analysisType,&mode);
+
+        std::getline(curFile,val);
+        double time;
+        sscanf(val.c_str(),"Time= %lf",&time);
+        std::getline(curFile,val);
+        int subStepNb, stepNb;
+        sscanf(val.c_str(),"Substep n=%d Step n=%d",&subStepNb,&stepNb);
+        std::getline(curFile,val);
+        char tdata[32];
+        sscanf(val.c_str(),"%s",tdata);
+
+        //printf("File %s Time= %lf Substep n=%d Step n=%d\n",tdata,time,subStepNb,stepNb);
+        //printf("compare to File %s Time= %lf Substep n=%d Step n=%d\n",resultKeyName.toStdString().c_str(),time,requiredSubStepNb,requiredStepNb);
+
+        bool eval=false;
+        switch (requiredMode)
+        {
+        case 0:
+        {
+            if(strcmp(tdata,resultKeyName.toStdString().c_str())==0 && subStepNb==requiredSubStepNb && stepNb == requiredStepNb && mode == requiredMode)
+            {
+                requiredTime = time;
+                eval = true;
+            }
+        }
+            break;
+        default:
+        {
+            if(strcmp(tdata,resultKeyName.toStdString().c_str())==0 && mode == requiredMode)
+            {
+                requiredTime = time;
+                eval = true;
+            }
+        }
+            break;
+        }
+        if(eval)
+        {
+            //printf("file @ required time found\n");
+            TypeOfResult tor = m.value(tdata);
+            switch(tor)
+            {
+            case TypeOfResult_HFL:
+            {
+                std::map<int,double> resComp_normal;
+                //occHandle(Ng_MeshVS_DataSourceFace) curFaceDS = occHandle(Ng_MeshVS_DataSourceFace)::
+                //        DownCast(myMeshDataBase->ArrayOfMeshDSOnFaces.getValue(loc.parentShapeNr,loc.subTopNr));
+
+                occHandle(Ng_MeshVS_DataSourceFace) curFaceDS = occHandle(Ng_MeshVS_DataSourceFace)::DownCast(aMeshDS);
+                if(curFaceDS->myNodeNormals.isEmpty()) curFaceDS->computeNormalAtNodes();
+
+                //! <>::eof(): call getline before while, then inside {}, @ as last instruction
+                std::getline(curFile,val);
+                while(curFile.eof()!=true)
+                {
+                    int ni;
+                    double cxx,cyy,czz;
+                    sscanf(val.c_str(),"%d%lf%lf%lf",&ni,&cxx,&cyy,&czz);
+
+                    //! nodeIDs defining the MeshVS_dataSource
+                    std::map<int,int>::iterator it = indexedMapOfNodes.find(ni);
+
+                    if(it!=indexedMapOfNodes.end())
+                    {
+                        int OCCnodeID = it->second;
+                        const QList<double> &normal = curFaceDS->myNodeNormals.value(OCCnodeID);
+                        double normalFlux = cxx*normal[0]+cyy*normal[1]+czz*normal[2];
+                        resComp_normal.insert(std::make_pair(OCCnodeID,normalFlux));
+                    }
+                    std::getline(curFile,val);
+                }
+
+                //! result
+                res.push_back(resComp_normal);
+                //cout<<"postEngine::evaluateResult()->____Number of components: "<<res.length()<<"____"<<endl;
+            }
+                break;
+
+            case TypeOfResult_U:
+            case TypeOfResult_F:
+                //case TypeOfResult_HFL:
+            {
+                std::map<int,double> resComp_X,resComp_Y,resComp_Z,resComp_Total;
+
+                //! <>::eof(): call getline before while, then inside {}, @ as last instruction
+                std::getline(curFile,val);
+                while(curFile.eof()!=true)
+                {
+                    int ni;
+                    double cxx,cyy,czz,total;
+                    sscanf(val.c_str(),"%d%lf%lf%lf",&ni,&cxx,&cyy,&czz);
+
+                    //! nodeIDs defining the MeshVS_dataSource
+                    std::map<int,int>::iterator it = indexedMapOfNodes.find(ni);
+                    if(it!=indexedMapOfNodes.end())
+                    {
+                        int OCCnodeID = it->second;
+                        total = sqrt(pow(cxx,2)+pow(cyy,2)+pow(czz,2));
+                        resComp_Total.insert(std::make_pair(OCCnodeID,total));
+                        resComp_X.insert(std::make_pair(OCCnodeID,cxx));
+                        resComp_Y.insert(std::make_pair(OCCnodeID,cyy));
+                        resComp_Z.insert(std::make_pair(OCCnodeID,czz));
+
+                    }
+                    std::getline(curFile,val);
+                }
+
+                //! result
+                res.push_back(resComp_Total);
+                res.push_back(resComp_X);
+                res.push_back(resComp_Y);
+                res.push_back(resComp_Z);
+
+                //cout<<"postEngine::evaluateResult()->____Number of components: "<<res.length()<<"____"<<endl;
+            }
+                break;
+
+            case TypeOfResult_S:
+            case TypeOfResult_TOSTRAIN:
+            case TypeOfResult_MESTRAIN:
+            {
+                //!                   0       1        2      3       4        5       6       7       8      9      10
+                std::map<int,double> resMISES, resSINT, resSI, resSII, resSIII, resSXX, resSYY, resSZZ, resSXY,resSYZ,resSXZ;
+
+                //! <>::eof(): call getline before while, then inside {}, @ as last instruction
+                std::getline(curFile,val);
+                while(curFile.eof()!=true)
+                {
+                    //! read the components of the 3x3 data
+                    int ni;
+                    double cxx,cyy,czz,cxy,cyz,cxz;
+                    sscanf(val.c_str(),"%d%lf%lf%lf%lf%lf%lf",&ni,&cxx,&cyy,&czz,&cxy,&cyz,&cxz);
+
+                    //! nodeIDs defining the MeshVS_dataSource
+                    std::map<int,int>::iterator it = indexedMapOfNodes.find(ni);
+                    if(it!=indexedMapOfNodes.end())
+                    {
+                        int OCCnodeID = it->second;
+
+                        //! --------------------------------------------
+                        //! compute the equivalent stress/strain
+                        //! --------------------------------------------
+                        double vonMises;
+                        if(tor==TypeOfResult_TOSTRAIN || tor == TypeOfResult_MESTRAIN)   // equivalent strain formula
+                        {
+                            vonMises = (2.0/3.0)*sqrt((3.0/2.0)*(cxx*cxx+cyy*cyy+czz*czz)+(3.0/4.0)*(cxy*cxy+cyz*cyz+cxz*cxz));
+                        }
+                        else    // equivalent stress formula
+                        {
+                            //vonMises = sqrt(cxx*cxx+cyy*cyy+czz*czz-cxx*cyy-cyy*czz-czz*cxx+3*(cxz*cxz+cyz*cyz+cxz*cxz));
+                            vonMises = sqrt(0.5*(pow(cxx-cyy,2)+pow(cxx-czz,2)+pow(cyy-czz,2))+3*(cxz*cxz+cyz*cyz+cxz*cxz));
+                        }
+                        resMISES.insert(std::make_pair(OCCnodeID,vonMises));
+
+                        //! ---------------------------------
+                        //! compute the principal components
+                        //! ---------------------------------
+                        double sik[6] {cxx,cyy,czz,cxy,cyz,cxz};
+                        double s[3];
+                        postTools::principalComponents(sik,s);
+
+                        resSI.insert(std::make_pair(OCCnodeID,s[2]));        //! maximum
+                        resSII.insert(std::make_pair(OCCnodeID,s[1]));       //! middle
+                        resSIII.insert(std::make_pair(OCCnodeID,s[0]));      //! minimum
+
+                        //! -----------------------------------------------
+                        //! compute the stress/strain intensity (2*Tresca)
+                        //! maximum shear stress/strain
+                        //! -----------------------------------------------
+                        double sint = fabs(s[2]-s[0]);
+                        resSINT.insert(std::make_pair(OCCnodeID,sint));
+                        resSXX.insert(std::make_pair(OCCnodeID,cxx));
+                        resSYY.insert(std::make_pair(OCCnodeID,cyy));
+                        resSZZ.insert(std::make_pair(OCCnodeID,czz));
+                        resSXY.insert(std::make_pair(OCCnodeID,cxy));
+                        resSYZ.insert(std::make_pair(OCCnodeID,cyz));
+                        resSXZ.insert(std::make_pair(OCCnodeID,cxz));
+
+                    }
+                    std::getline(curFile,val);
+                }
+                //! result
+                res.push_back(resMISES);
+                res.push_back(resSINT);
+                res.push_back(resSI);
+                res.push_back(resSII);
+                res.push_back(resSIII);
+                res.push_back(resSXX);
+                res.push_back(resSYY);
+                res.push_back(resSZZ);
+                res.push_back(resSXY);
+                res.push_back(resSYZ);
+                res.push_back(resSXZ);
+                //cout<<"postEngine::evaluateResult()->____Number of components: "<<res.length()<<"____"<<endl;;
+            }
+                break;
+
+            case TypeOfResult_NT:
+            case TypeOfResult_EPS:
+            {
+                std::map<int,double> resT;
+
+                //! <>::eof(): call getline before while, then inside {}, @ as last instruction
+                std::getline(curFile,val);
+                while(curFile.eof()!=true)
+                {
+                    int ni;
+                    double v;
+                    sscanf(val.c_str(),"%d%lf",&ni,&v);
+
+                    //! nodeIDs defining the MeshVS_dataSource
+                    std::map<int,int>::iterator it = indexedMapOfNodes.find(ni);
+                    if(it!=indexedMapOfNodes.end())
+                    {
+                        int OCCnodeID = it->second;
+                        //resT.insert(OCCnodeID,v);
+                        resT.insert(std::make_pair(OCCnodeID,v));
+                    }
+                    std::getline(curFile,val);
+                }
+                //! result
+                res.push_back(resT);
+                //cout<<"Number of components: "<<res.length();
+            }
+                break;
+
+            case TypeOfResult_CONT:
+            {
+                //!                         col 1           col 2+3     col 4           col 5+6
+                std::map<int,double> resContPenetration, resContSliding, resContPress, resContFrictStress;
+
+                //! <>::eof(): call getline before while, then inside {}, @ as last instruction
+                std::getline(curFile,val);
+                while(curFile.eof()!=true)
+                {
+                    //! read the components of the 3x3 data
+                    int ni;
+                    double cxx,cyy,czz,cxy,cyz,cxz;
+                    sscanf(val.c_str(),"%d%lf%lf%lf%lf%lf%lf",&ni,&cxx,&cyy,&czz,&cxy,&cyz,&cxz);
+
+                    //! nodeIDs defining the MeshVS_dataSource
+                    std::map<int,int>::iterator it = indexedMapOfNodes.find(ni);
+                    if(it!=indexedMapOfNodes.end())
+                    {
+                        int OCCnodeID = it->second;
+
+                        //! --------------------------------------------------
+                        //! compute the frictional stress and contact sliding
+                        //! -------------------------------------------------
+                        double frictStress = sqrt(cyz*cyz+cxz*cxz);
+                        double contSliding = sqrt(cyy*cyy+czz*czz);
+
+                        resContFrictStress.insert(std::make_pair(OCCnodeID,frictStress));
+                        resContSliding.insert(std::make_pair(OCCnodeID,contSliding));
+                        resContPress.insert(std::make_pair(OCCnodeID,cxy));
+                        resContPenetration.insert(std::make_pair(OCCnodeID,cxx));
+                    }
+                    std::getline(curFile,val);
+                }
+                //! result
+                res.push_back(resContPress);
+                res.push_back(resContFrictStress);
+                res.push_back(resContPenetration);
+                res.push_back(resContSliding);
+            }
+                break;
+            }
+            curFile.close();
+            break;
+        }
+        else
+        {
+            curFile.close();
+        }
+    }
+    return res;
+}
+
+
 //! ---------------------------------
 //! function: resultName
 //! details:  title for the colorbox
@@ -566,6 +927,7 @@ QString postEngine::resultName(const QString &keyName, int component, int step, 
 //! function: buildPostObject
 //! details:  this method reads the data from the .frd file (from disk)
 //! --------------------------------------------------------------------
+/*
 bool postEngine::buildPostObject(const QString &keyName,
                                  int component,
                                  int requiredSubStepNb,
@@ -652,6 +1014,87 @@ bool postEngine::buildPostObject(const QString &keyName,
 
     return isDone;
 }
+*/
+
+bool postEngine::buildPostObject(const QString &keyName,
+                                 int component,
+                                 int requiredSubStepNb,
+                                 int requiredStepNb,
+                                 int requiredMode,
+                                 const std::vector<GeometryTag> &vecLoc,
+                                 sharedPostObject &aPostObject)
+{
+    //! -------------------------
+    //! build the colorBox title
+    //! -------------------------
+    double time;
+    QString aResultName = this->resultName(keyName, component, requiredStepNb, requiredSubStepNb, time);
+
+    //! -------------------------
+    //! group the tags by bodies
+    //! -------------------------
+    std::vector<GeometryTag> vecLoc_byBodies;
+    this->groupTagsByBodies(vecLoc,vecLoc_byBodies);
+
+    //! ---------------------------
+    //! group the meshes by bodies
+    //! ---------------------------
+    std::map<GeometryTag,occHandle(MeshVS_DataSource>) meshDSforResults;
+    this->groupAndMergeMeshDataSourcesByBodies(vecLoc,meshDSforResults);
+
+    //! -----------------------------
+    //! access the results by bodies
+    //! -----------------------------
+    std::map<GeometryTag,std::vector<std::map<int,double>>> resMap_byBody;
+    std::map<GeometryTag,std::map<int,gp_Vec>> mapDisplMap_byBodies;
+    for(std::vector<GeometryTag>::iterator it = vecLoc_byBodies.begin(); it!=vecLoc_byBodies.end(); it++)
+    {
+        const GeometryTag &aLoc = *it;
+        const occHandle(MeshVS_DataSource) &meshDS = meshDSforResults.at(aLoc);
+
+        //! --------------------------------------------
+        //! the results of interest on the current body
+        //! --------------------------------------------
+        double time;
+        const std::vector<std::map<int,double>> &res = this->evaluateResultOnBody(keyName, requiredSubStepNb, requiredStepNb, requiredMode, meshDS, aLoc, time);
+
+        //! --------------------------------------------
+        //! the nodal displacements on the current body
+        //! --------------------------------------------
+        std::map<int,gp_Vec> displMap;
+        const std::vector<std::map<int,double>> &nodalDisplacements = this->evaluateResultOnBody("DISP", requiredSubStepNb, requiredStepNb,requiredMode, meshDS, aLoc, time);
+
+        const std::map<int,double> &displX = nodalDisplacements[1];
+        const std::map<int,double> &displY = nodalDisplacements[2];
+        const std::map<int,double> &displZ = nodalDisplacements[3];
+        std::map<int,double>::const_iterator itX = displX.cbegin();
+        std::map<int,double>::const_iterator itY = displY.cbegin();
+        std::map<int,double>::const_iterator itZ = displZ.cbegin();
+
+        for(;itX!=displX.cend() && itY!=displY.cend() && itZ!=displZ.cend(); ++itX, ++itY, ++itZ)
+        {
+            int nodeID = itX->first;
+            gp_Vec aVec(itX->second,itY->second,itZ->second);
+            displMap[nodeID] = aVec;
+        }
+        mapDisplMap_byBodies.insert(std::make_pair(aLoc,displMap));
+        resMap_byBody.insert(std::make_pair(aLoc,res));
+    }
+
+    //! -----------------------------------------
+    //! creating the result container postObject
+    //! -----------------------------------------
+    cout<<"postEngine::buildPostObject()->____creating the result container____"<<endl;
+    bool useSurfaceMeshForVolumeResults = Global::status().myResultPresentation.useExteriorMeshForVolumeResults;
+    aPostObject = std::make_shared<postObject>(resMap_byBody,vecLoc_byBodies,mapDisplMap_byBodies,aResultName,useSurfaceMeshForVolumeResults);
+    aPostObject->setMeshDataSources(meshDSforResults);  // replaces init()
+    double magnifyFactor = Global::status().myResultPresentation.theScale;
+    bool isDone = aPostObject->buildMeshIO(-1,-1,10,true,component,magnifyFactor);
+    cout<<"postEngine::buildPostObject()->____creating the result container -DONE-____"<<endl;
+
+    return isDone;
+}
+
 
 //! --------------------
 //! function: timeStamp

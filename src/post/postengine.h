@@ -95,6 +95,14 @@ public slots:
                                                                             int requiredMode,
                                                                             const std::vector<GeometryTag> &vecLoc,
                                                                             double &requiredTime);
+    //! evaluate results
+    std::vector<std::map<int, double> > evaluateResultOnBody(const QString &resultKeyName,
+                                                             int requiredSubStepNb,
+                                                             int requiredStepNb,
+                                                             int requiredMode,
+                                                             const occHandle(MeshVS_DataSource) &aMeshDS,
+                                                             const GeometryTag &bodyTag,
+                                                             double &requiredTime);
 
     //! evaluate fatigue results
     bool buildFatiguePostObject(int type, const std::vector<GeometryTag> &locs, std::vector<double> times, QMap<int,int> materialBodyMap, int nCycle, sharedPostObject &aPostObject);

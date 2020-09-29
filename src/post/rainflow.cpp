@@ -288,7 +288,7 @@ std::vector<double> rainflow::rainflow_engine(std::vector<double> y)
     nkv=0;
     k=0;
     //	a[k]=y[k];
-    a.push_back(y.at(k));
+    a.push_back(y[k]);      //! faster
 
     //k=1;    // ??
 
@@ -320,14 +320,6 @@ std::vector<double> rainflow::rainflow_engine(std::vector<double> y)
     {
         if(a[i]<mina) mina=a[i];    //! faster
         if(a[i]>maxa) maxa=a[i];    //! faster
-        //if(a.at(i)<mina)
-        //{
-        //    mina=a.at(i);
-        //}
-        //if(a.at(i)>maxa)
-        //{
-        //    maxa=a.at(i);
-        //}
     }
 
     num=int(maxa-mina)+1;

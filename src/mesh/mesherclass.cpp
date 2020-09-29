@@ -2428,6 +2428,7 @@ QString MesherClass::processSTL(int bodyIndex)
         //! correction using MeshFix
         //! -------------------------
         STLdoctor aSTLDoctor;
+        //aSTLDoctor.setProgressIndicator(myProgressIndicator);
         aSTLDoctor.performMeshFix(inputExtendedSTL, inputExtendedSTL_H);
     }
     else
@@ -2477,9 +2478,10 @@ QString MesherClass::processSTL(int bodyIndex)
             break;
         }
 
-        //! --------------------------------------
-        //! further mesh correction using MeshFix
-        //! --------------------------------------
+        //! ----------------------------------------------------------------
+        //! last mesh correction using MeshFix at the end of simplification
+        //! (in principle the tessellation should be watertight)
+        //! ----------------------------------------------------------------
         STLdoctor aSTLDoctor;
         aSTLDoctor.performMeshFix(inputExtendedSTL_S, inputExtendedSTL_SH);
 
