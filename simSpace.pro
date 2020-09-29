@@ -184,7 +184,8 @@ SOURCES += main.cpp\
     ccxsolvermanager1.cpp \
     src/mesh/isostripbuilder.cpp \
     src/mesh/rayintersectmesh.cpp \
-    meshselector.cpp
+    meshselector.cpp \
+    src/post/rainflow_01.cpp
 
 HEADERS  += mainwindow.h \
     actions3d.h \
@@ -419,7 +420,8 @@ HEADERS  += mainwindow.h \
     ccxsolvermanager1.h \
     src/mesh/isostripbuilder.h \
     src/mesh/rayintersectmesh.h \
-    meshselector.h
+    meshselector.h \
+    src/post/rainflow_01.h
 
 FORMS    += mainwindow.ui
 
