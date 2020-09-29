@@ -6,6 +6,7 @@
 #include "occmeshtoccxmesh.h"
 #include "meshtools.h"
 #include <rainflow.h>
+#include <rainflow_01.h>
 
 //! ---
 //! Qt
@@ -712,7 +713,8 @@ bool postEngine::buildFatiguePostObject(int type, const std::vector<GeometryTag>
     {
         //cout<<"postEngine::evaluateFatigueResult()->____fatigue model BCM called___"<<endl;
         std::map<GeometryTag,std::map<int,std::vector<double>>> r = this->readFatigueResults(type,locs,times);
-        rainflow rf;
+        //rainflow rf;
+        rainflow_01 rf;
         for(std::map<GeometryTag,std::map<int,std::vector<double>>>::iterator it = r.begin(); it!= r.end(); ++it)
         {
             GeometryTag curLoc = it->first;

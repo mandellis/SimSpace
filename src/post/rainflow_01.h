@@ -60,12 +60,9 @@ public:
 
     //void read_data();
 
-    int rf3(double *array_ext, int nr, double *array_out);
 
-    int rf5(double *array_ext, int nr, double *array_t, double *array_out);
 
-    int sig2ext(double *sig, double *time_sig, long n, int clsn,
-                double *ext, double *exttime);
+
 
 signals:
 
@@ -75,13 +72,21 @@ public slots:
 
 private:
 
+    int rf3(double *array_ext, int nr, double *array_out);
 
-    double arr_min(const double sig, const int n, const int pos);
+    int rf5(double *array_ext, int nr, double *array_t, double *array_out);
+
+    int sig2ext(double *sig, double *time_sig, long n, int clsn,
+                double *ext, double *exttime);
+
+    double arr_min(double *sig, int n, int *pos);
     double arr_max(double *sig, int n, int *pos);
     #define NNEW(a,b) (a *)calloc((b),sizeof(a))
     #define RENEW(a,b,c) a=(b *) realloc((b *)(a),(c)*sizeof(b))
-    double diff(double *vec, int n);
+    double *diff(double *vec, int n);
     int repl(double *x, int *filt, int n, double *x_repl);
+
+    double damage_index(double *y,long timeSize);
 
 
     //!tolerance on solveEquation
