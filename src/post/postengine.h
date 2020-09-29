@@ -129,6 +129,12 @@ private:
                                                                                  const std::vector<GeometryTag> &vecLoc,
                                                                                  std::vector<double> times);
 
+    //! read fatigue results
+    std::map<int,std::vector<double>> readFatigueResultsOnBody(int type,
+                                                               const occHandle(MeshVS_DataSource) &aMeshDS,
+                                                               const GeometryTag &bodyTag,
+                                                               std::vector<double> times);
+
     //! fatigue model
     fatigueModel myFatigueModel;
 

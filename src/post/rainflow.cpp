@@ -36,20 +36,19 @@ rainflow::rainflow(QObject *parent): QObject(parent)
 //! function: constructor I
 //! details:
 //! ------------------------
-rainflow::rainflow(GeometryTag loc, QObject *parent): QObject(parent),myLoc(loc)
-{
-    ;
-}
+//rainflow::rainflow(GeometryTag loc, QObject *parent): QObject(parent)
+//{
+//    ;
+//}
 
 //! ------------------------
 //! function: constructor II
 //! details:
 //! ------------------------
-rainflow::rainflow(GeometryTag loc, fatigueModel fm, QObject *parent): QObject(parent),
-    myLoc(loc),myFatigueModel(fm)
-{
-    ;
-}
+//rainflow::rainflow(GeometryTag loc, fatigueModel fm, QObject *parent): QObject(parent),myFatigueModel(fm)
+//{
+//    ;
+//}
 
 //! -------------------------------------------------
 //! function: solveEquation
@@ -229,7 +228,7 @@ double rainflow::solve_exact(double eps, double epsF, double c, double sigmaF, d
 //! -----------------------
 double rainflow::damage_index(const std::vector<double> &y)
 {
-    cout<<"rainflow::damage_index()->____function called____"<<endl;
+    //cout<<"rainflow::damage_index()->____function called____"<<endl;
 
     //!------------------------------------------
     //! deltaeps/2= espF*(2N)^c+sigmaF/E*(2N)^b
@@ -250,8 +249,8 @@ double rainflow::damage_index(const std::vector<double> &y)
         deltaEps = B[i];
         if(deltaEps>tol2)
         {
-            //double NN = solve_exact(deltaEps,epsF,c,sigmaF,E,b)+1e-12;
-            double NN = solve(deltaEps,epsF,c,sigmaF,E,b);
+            double NN = solve_exact(deltaEps,epsF,c,sigmaF,E,b)+1e-12;
+            //double NN = solve(deltaEps,epsF,c,sigmaF,E,b);
             D+= 1/NN;
         }
     }

@@ -1606,7 +1606,7 @@ std::map<GeometryTag, std::vector<occHandle(MeshVS_Mesh)>> MeshTools::groupMeshe
 //! --------------------
 occHandle(MeshVS_DataSource) MeshTools::mergeMesh(const occHandle(MeshVS_DataSource) &mesh1, const occHandle(MeshVS_DataSource) &mesh2)
 {
-    cout<<"MeshTools::mergeMesh()->____function called____"<<endl;
+    //cout<<"MeshTools::mergeMesh()->____function called____"<<endl;
 
     occHandle(MeshVS_DataSource) retMeshDS;
 
@@ -1702,9 +1702,9 @@ occHandle(MeshVS_DataSource) MeshTools::mergeMesh(const occHandle(MeshVS_DataSou
     case 3: retMeshDS = new Ng_MeshVS_DataSource3D(vecElements,false,false); break;
     }
 
-    cout<<"MeshTools::mergeMesh()->____number of nodes: "<<retMeshDS->GetAllNodes().Extent()<<"____"<<endl;
-    cout<<"MeshTools::mergeMesh()->____number of elements: "<<retMeshDS->GetAllElements().Extent()<<"____"<<endl;
-    cout<<"MeshTools::mergeMesh()->____function exiting____"<<endl;
+    //cout<<"MeshTools::mergeMesh()->____number of nodes: "<<retMeshDS->GetAllNodes().Extent()<<"____"<<endl;
+    //cout<<"MeshTools::mergeMesh()->____number of elements: "<<retMeshDS->GetAllElements().Extent()<<"____"<<endl;
+    //cout<<"MeshTools::mergeMesh()->____function exiting____"<<endl;
 
     return retMeshDS;
 }

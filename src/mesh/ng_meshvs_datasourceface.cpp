@@ -3865,7 +3865,7 @@ void Ng_MeshVS_DataSourceFace::setNodeNormal(int globalNodeID, double *n)
 //! -------------------------------------------------------------
 Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const std::vector<meshElementByCoords> &meshElements, bool autoRenumberElements, bool autoRenumberNodes)
 {
-    cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor called____"<<endl;
+    //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor called____"<<endl;
 
     //! -------------
     //! sanity check

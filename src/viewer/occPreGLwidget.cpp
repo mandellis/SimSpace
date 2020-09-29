@@ -2873,7 +2873,7 @@ void occPreGLWidget::displayShapeCopy(const TopTools_ListOfShape &list1,
             //! display: second argument: Shaded mode: third argument: no selection allowed
             //! does not update the viewer (done at the end)
             //! ----------------------------------------------------------------------------
-            occContext->Display(anOldShape1,1,-1,false,AIS_DS_Temporary);
+            occContext->Display(anOldShape1,AIS_Shaded,-1,false,false,AIS_DS_Temporary);
         }
             break;
         }
@@ -2903,7 +2903,7 @@ void occPreGLWidget::displayShapeCopy(const TopTools_ListOfShape &list1,
             //! display: second argument: Shaded mode: third argument: no selection allowed
             //! does not update the viewer (done at the end)
             //! ----------------------------------------------------------------------------
-            occContext->Display(anOldShape2,1,-1,false,AIS_DS_Temporary);
+            occContext->Display(anOldShape2,AIS_Shaded,-1,false,false,AIS_DS_Temporary);
         }
         else
         {
