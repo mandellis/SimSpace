@@ -33,10 +33,10 @@ rainflow::rainflow(QObject *parent): QObject(parent)
 //! function: constructor I
 //! details:
 //! ------------------------
-rainflow::rainflow(GeometryTag loc, QObject *parent): QObject(parent),myLoc(loc)
-{
-    ;
-}
+//rainflow::rainflow(GeometryTag loc, QObject *parent): QObject(parent)
+//{
+//    ;
+//}
 
 //! ------------------------
 //! function: constructor II

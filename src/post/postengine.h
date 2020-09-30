@@ -95,6 +95,14 @@ public slots:
                                                                             int requiredMode,
                                                                             const std::vector<GeometryTag> &vecLoc,
                                                                             double &requiredTime);
+    //! evaluate results
+    std::vector<std::map<int, double> > evaluateResultOnBody(const QString &resultKeyName,
+                                                             int requiredSubStepNb,
+                                                             int requiredStepNb,
+                                                             int requiredMode,
+                                                             const occHandle(MeshVS_DataSource) &aMeshDS,
+                                                             const GeometryTag &bodyTag,
+                                                             double &requiredTime);
 
     //! evaluate fatigue results
     bool buildFatiguePostObject(int type, const std::vector<GeometryTag> &locs, std::vector<double> times, QMap<int,int> materialBodyMap, int nCycle, sharedPostObject &aPostObject);
@@ -116,10 +124,16 @@ private:
     //! time stamp
     QString timeStamp();
 
-    //! read fatigue results
+    //! read fatigue results - THIS METHOD IS UNUSED -
     std::map<GeometryTag, std::map<int, std::vector<double>>> readFatigueResults(int type,
                                                                                  const std::vector<GeometryTag> &vecLoc,
                                                                                  std::vector<double> times);
+
+    //! read fatigue results
+    std::map<int,std::vector<double>> readFatigueResultsOnBody(int type,
+                                                               const occHandle(MeshVS_DataSource) &aMeshDS,
+                                                               const GeometryTag &bodyTag,
+                                                               std::vector<double> times);
 
     //! fatigue model
     fatigueModel myFatigueModel;
@@ -135,11 +149,13 @@ public:
 
 private:
 
+    //! THIS METHOD IS UNUSED - DO NOT DELETE
     void groupDeformationFieldByBodies(const std::map<GeometryTag,std::map<int,gp_Vec>> &mapDisplMap,
                                        std::map<GeometryTag,std::map<int,gp_Vec>> &mapDisplMap_byBodies);
 
     void groupTagsByBodies(const std::vector<GeometryTag> &vecLoc, std::vector<GeometryTag> &vecLoc_byBodies);
 
+    //! THIS METHOD IS UNUSED - NO NOT DELETE
     void groupResultsByBodies(const std::map<GeometryTag,std::vector<std::map<int,double>>> &resMap,
                               std::map<GeometryTag,std::vector<std::map<int,double>>> &resMap_byBody);
 

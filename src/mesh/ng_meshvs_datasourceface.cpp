@@ -1691,7 +1691,7 @@ void Ng_MeshVS_DataSourceFace::computeFreeMeshSegments()
 //! ----------------------------------
 void Ng_MeshVS_DataSourceFace::computeNormalAtElements()
 {
-    cout<<"Ng_MeshVS_DataSourceFace::computeNormalAtElements()->____function called____"<<endl;
+    //cout<<"Ng_MeshVS_DataSourceFace::computeNormalAtElements()->____function called____"<<endl;
     for(TColStd_MapIteratorOfPackedMapOfInteger it(myElements); it.More(); it.Next())
     {
         std::vector<polygon::Point> aPolygon;
@@ -1724,7 +1724,7 @@ void Ng_MeshVS_DataSourceFace::computeNormalAtElements()
         myElemNormals->SetValue(localElementID,2,n[1]);
         myElemNormals->SetValue(localElementID,3,n[2]);
     }
-    cout<<"Ng_MeshVS_DataSourceFace::computeNormalAtElements()->____exiting function____"<<endl;
+    //cout<<"Ng_MeshVS_DataSourceFace::computeNormalAtElements()->____exiting function____"<<endl;
 }
 
 //! -------------------------------------------------------------------
@@ -3865,7 +3865,7 @@ void Ng_MeshVS_DataSourceFace::setNodeNormal(int globalNodeID, double *n)
 //! -------------------------------------------------------------
 Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const std::vector<meshElementByCoords> &meshElements, bool autoRenumberElements, bool autoRenumberNodes)
 {
-    cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor called____"<<endl;
+    //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor called____"<<endl;
 
     //! -------------
     //! sanity check

@@ -35,13 +35,10 @@ public:
     rainflow(QObject *parent = 0);
 
     //! constructor I
-    rainflow(GeometryTag loc, QObject *parent = 0);
+    //rainflow(GeometryTag loc, QObject *parent = 0);
 
     //! constructor II
-    rainflow(GeometryTag loc, fatigueModel fm, QObject *parent = 0);
-
-    //! set location
-    inline void setLocation(GeometryTag aLoc) { myLoc = aLoc; }
+    //rainflow(GeometryTag loc, fatigueModel fm, QObject *parent = 0);
 
     //! set fatigue model
     inline void setFatigueModel (fatigueModel fm) { myFatigueModel = fm; }
@@ -81,9 +78,6 @@ private:
 
     //! tolerance on deltaEps value
     const double tol2 = 3.5e-4;
-
-    //! loc
-    GeometryTag myLoc;
 
     //! fatigue model
     fatigueModel myFatigueModel;

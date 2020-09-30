@@ -1443,7 +1443,7 @@ void prismaticLayer::fieldSmoother(QMap<int,QList<double>> &field,
 
     if(aMeshDS->myCurvature.isEmpty())
     {
-        int mode = 1;       //! Gaussian curvature
+        int mode = 1;       //! use gaussian curvature
         aMeshDS->computeDiscreteCurvature(mode);
     }
 

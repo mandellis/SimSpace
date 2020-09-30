@@ -3,6 +3,8 @@
 //! ----------------
 #include "simplifymesh.h"
 #include "stldoctor.h"
+#include "qprogressindicator.h"
+#include "qprogressevent.h"
 
 //! ---
 //! Qt
@@ -10,12 +12,12 @@
 #include <QByteArray>
 #include <QProcess>
 #include <QFile>
+#include <QApplication>
 
 //! ----
 //! C++
 //! ----
 #include <iostream>
-#include <stdlib.h>
 using namespace std;
 
 //! ----------------------
@@ -35,6 +37,20 @@ STLdoctor::STLdoctor(QObject *parent): QObject(parent)
     //! ----------------------------
     MeshFix = new QProcess(this);
     connect(MeshFix,SIGNAL(readyReadStandardOutput()),this,SLOT(readMeshFixStdOutput()));
+
+    //! ----------------------------
+    //! init the progress indicator
+    //! ----------------------------
+    myProgressIndicator = Q_NULLPTR;
+}
+
+//! -------------------------------
+//! function: setProgressIndicator
+//! details:
+//! -------------------------------
+void STLdoctor::setProgressIndicator(QProgressIndicator *aProgressIndicator)
+{
+    myProgressIndicator = aProgressIndicator;
 }
 
 //! ------------------
@@ -136,7 +152,13 @@ void STLdoctor::readMeshFixStdOutput()
 {
     //cout<<"STLdoctor::readMeshFixOutput()->____function called____"<<endl;
     QByteArray msg = MeshFix->readAllStandardOutput();
-    cout<<msg.toStdString()<<"\r"<<endl;
+    cout<<msg.toStdString()<<endl;
+    if(myProgressIndicator!=Q_NULLPTR)
+    {
+        QProgressEvent *e = new QProgressEvent(QProgressEvent_None,-1,-1,0,QString::fromStdString(msg.toStdString()),QProgressEvent_Init,0,100,0);
+        QApplication::postEvent(myProgressIndicator,e);
+        QApplication::processEvents();
+    }
 }
 
 //! --------------------------------------
