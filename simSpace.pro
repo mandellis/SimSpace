@@ -137,7 +137,6 @@ SOURCES += main.cpp\
     meshtools.cpp \
     src/mesh/netgentools.cpp \
     src/gui/qfileselect.cpp \
-    src/post/rainflow.cpp \
     src/memory/memoryprofiler.cpp \
     src/geometry/geometryhealing.cpp \
     src/mesh/igtools.cpp \
@@ -185,7 +184,7 @@ SOURCES += main.cpp\
     src/mesh/isostripbuilder.cpp \
     src/mesh/rayintersectmesh.cpp \
     meshselector.cpp \
-    src/post/rainflow_01.cpp
+    src/post/rainflow.cpp
 
 HEADERS  += mainwindow.h \
     actions3d.h \
@@ -338,7 +337,6 @@ HEADERS  += mainwindow.h \
     src/gui/itemselector.h \
     src/mesh/netgentools.h \
     src/gui/qfileselect.h \
-    src/post/rainflow.h \
     src/memory/memoryprofiler.h \
     src/geometry/geometryhealing.h \
     src/mesh/igtools.h \
@@ -421,7 +419,7 @@ HEADERS  += mainwindow.h \
     src/mesh/isostripbuilder.h \
     src/mesh/rayintersectmesh.h \
     meshselector.h \
-    src/post/rainflow_01.h
+    src/post/rainflow.h
 
 FORMS    += mainwindow.ui
 

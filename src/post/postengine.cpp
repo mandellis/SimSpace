@@ -6,7 +6,6 @@
 #include "occmeshtoccxmesh.h"
 #include "meshtools.h"
 #include <rainflow.h>
-#include <rainflow_01.h>
 
 //! ---
 //! Qt
@@ -713,17 +712,19 @@ bool postEngine::buildFatiguePostObject(int type, const std::vector<GeometryTag>
     {
         //cout<<"postEngine::evaluateFatigueResult()->____fatigue model BCM called___"<<endl;
         std::map<GeometryTag,std::map<int,std::vector<double>>> r = this->readFatigueResults(type,locs,times);
-        //rainflow rf;
-        rainflow_01 rf;
+        rainflow rf;
         for(std::map<GeometryTag,std::map<int,std::vector<double>>>::iterator it = r.begin(); it!= r.end(); ++it)
         {
             GeometryTag curLoc = it->first;
             rf.setLocation(curLoc);
+
             std::map<int,std::vector<double>> strainDistTimeHistory = it->second;
             rf.setFatigueModel(myFatigueModel);
+
             std::map<int,double> damageDist;
 
             bool isDone = rf.perform(strainDistTimeHistory,damageDist);
+
             if(isDone == false) continue;   // try to handle this error
             std::vector<std::map<int,double>> damageDistList;
             damageDistList.push_back(damageDist);

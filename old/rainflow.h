@@ -1,5 +1,5 @@
-#ifndef RAINFLOW_01_H
-#define RAINFLOW_01_H
+#ifndef RAINFLOW_H
+#define RAINFLOW_H
 
 #include <geometrytag.h>
 
@@ -33,21 +33,36 @@
 #include "postengine.h"
 
 using namespace std;
+/*
+enum fatigueModelType
+{
+    fatigueModel_BCM // Basquin Coffin Manson
+    fatigueModel_ESR // Effective Strain Range (ASME VIII Div2 Assestment)
+};
+Q_DECLARE_METATYPE(fatigueModelType)
 
-class rainflow_01: public QObject
+struct fatigueModel
+{
+    fatigueModelType type;
+    QList<double> coeffs;
+};
+Q_DECLARE_METATYPE(fatigueModel)
+*/
+
+class rainflow: public QObject
 {
     Q_OBJECT
 
 public:
 
     //! constructor
-    rainflow_01(QObject *parent = 0);
+    rainflow(QObject *parent = 0);
 
     //! constructor I
-    rainflow_01(GeometryTag loc, QObject *parent = 0);
+    rainflow(GeometryTag loc, QObject *parent = 0);
 
     //! constructor II
-    rainflow_01(GeometryTag loc, fatigueModel fm, QObject *parent = 0);
+    rainflow(GeometryTag loc, fatigueModel fm, QObject *parent = 0);
 
     //! set location
     inline void setLocation(GeometryTag aLoc) { myLoc = aLoc; }
@@ -60,10 +75,6 @@ public:
 
     //void read_data();
 
-
-
-
-
 signals:
 
 
@@ -72,28 +83,11 @@ public slots:
 
 private:
 
-    int rf3(double *array_ext, int nr, double *array_out);
-
-    int rf5(double *array_ext, int nr, double *array_t, double *array_out);
-
-    int sig2ext(double *sig, double *time_sig, long n, int clsn,
-                double *ext, double *exttime);
-
-    double arr_min(double *sig, int n, int *pos);
-    double arr_max(double *sig, int n, int *pos);
-    #define NNEW(a,b) (a *)calloc((b),sizeof(a))
-    #define RENEW(a,b,c) a=(b *) realloc((b *)(a),(c)*sizeof(b))
-    double *diff(double *vec, int n);
-    int repl(double *x, int *filt, int n, double *x_repl);
-
-    double damage_index(double *y,long timeSize);
-
-
     //!tolerance on solveEquation
     const double maxErr = 1.0e+0;
 
     //! tolerance on deltaEps value
-    const double tol2 = 3.5e-3;
+    const double tol2 = 3.5e-4;
 
     //! loc
     GeometryTag myLoc;
@@ -109,7 +103,7 @@ private:
     double solve_exact(double eps, double epsF, double c, double sigmaF, double E, double b);
 
     //! ---
-    std::vector<double> rainflow_engine_01(std::vector<double> y);
+    std::vector<double> rainflow_engine(std::vector<double> y);
 };
 
 #endif // RAINFLOW_H

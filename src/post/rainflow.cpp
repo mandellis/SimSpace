@@ -12,17 +12,14 @@
 #include <stdlib.h>
 #include <conio.h>
 
-#include <QVector>
-#include <QList>
-
 #include <time.h>
 #include <sys/types.h>
 #include <sys/timeb.h>
 
-#define MAX 51000000
-
-using namespace std;
-
+/********************************************************************
+ * Copyright:   (c) 2007-2008 Ladisk <www.fs.uni-lj.si/ladisk>
+ * Author:      Primoz Cermelj <primoz.cermelj@gmail.com>
+ *********************************************************************/
 //! ----------------------
 //! function: constructor
 //! details:
@@ -49,6 +46,436 @@ rainflow::rainflow(GeometryTag loc, fatigueModel fm, QObject *parent): QObject(p
     myLoc(loc),myFatigueModel(fm)
 {
     ;
+}
+/*-------------------------------------------------------------
+ * rf3
+ *
+ * Performs rainflow analysis without time analysis and returns
+ * the actual number of rows in the output rf matrix - the
+ * actual size of the data in array_out is (Nr x 3).
+ *
+ * Based on Adam Nieslony's rainflow.c for Matlab.
+ *-------------------------------------------------------------*/
+int rainflow::rf3(double *array_ext,	// (in) an array of turning points (see sig2ext on how to get these)
+        int nr,				// (in) length of the array_ext (number of rows of the vector)
+        double *array_out)	// (out) output matrix of size nr x 3; the columns are:
+                            // 		cycles amplitude, cycles mean value, number of
+                            // 		cycles (0.5 or 1.0). This array must be allocated
+                            // 		apriori.
+{
+  double a[512], ampl, mean;
+  int index, j, cNr, tot_num;
+
+  tot_num = nr;
+
+  // Init array_out to zero
+  for (index=0; index<nr*3; index++)
+  {
+    array_out[index] = 0.0;
+  }
+
+  j = -1;
+  cNr = 1;
+  for (index=0; index<tot_num; index++)
+  {
+    a[++j]=*array_ext++;
+    while ( (j >= 2) && (fabs(a[j-1]-a[j-2]) <= fabs(a[j]-a[j-1])) ) {
+      ampl = fabs( (a[j-1]-a[j-2])/2 );
+      switch(j){
+        case 0: { break; }
+        case 1: { break; }
+        case 2: {
+          mean=(a[0]+a[1])/2;
+          a[0]=a[1];
+          a[1]=a[2];
+          j=1;
+          if (ampl > 0) {
+            *array_out ++= ampl;
+            *array_out ++= mean;
+            *array_out ++= 0.50;
+          }
+          break;
+        }
+        default: {
+          mean = (a[j-1]+a[j-2])/2;
+          a[j-2] = a[j];
+          j = j-2;
+          if (ampl > 0) {
+            *array_out ++= ampl;
+            *array_out ++= mean;
+            *array_out ++= 1.00;
+            cNr++;
+          }
+          break;
+        }
+      }
+    }
+  }
+  for (index=0; index<j; index++)
+  {
+    ampl = fabs(a[index]-a[index+1])/2;
+    mean = (a[index]+a[index+1])/2;
+    if (ampl > 0)
+    {
+      *array_out ++= ampl;
+      *array_out ++= mean;
+      *array_out ++= 0.50;
+    }
+  }
+
+  return (tot_num - 1 - cNr);
+}
+
+
+/*-------------------------------------------------------------
+ * rf5
+ *
+ * Performs rainflow analysis with time analysis.
+ *
+ * Inputs:
+ *      array_ext   an array of turning points (see sig2ext on how to get these)
+ *      nr          length of the array_ext and  number of rows in array_out
+ *      array_t     an array of time values
+ *
+ * Outputs:
+ *      cnr         the actual number of rows in the rf matrix
+ *      array_out   matrix of length nr x 5 where the result will be returned;
+ *                  this array must be pre-allocated apriori.
+ *
+ * Based on Adam Nieslony's rainflow.c for Matlab.
+ *-------------------------------------------------------------*/
+int rainflow::rf5(double *array_ext, int nr, double *array_t, double *array_out){
+  double a[512], t[512], ampl, mean, period, atime;
+  int index, j, cNr, tot_num;
+
+  tot_num = nr;
+
+  // Init array_out to zero
+  for (index=0; index<nr*5; index++) {
+    array_out[index] = 0.0;
+  }
+
+  j = -1;
+  cNr = 1;
+  for (index=0; index<tot_num; index++) {
+    a[++j]=*array_ext++;
+    t[j]=*array_t++;
+    while ( (j >= 2) && (fabs(a[j-1]-a[j-2]) <= fabs(a[j]-a[j-1])) ) {
+      ampl=fabs( (a[j-1]-a[j-2])/2 );
+      switch(j) {
+        case 0: { break; }
+        case 1: { break; }
+        case 2: {
+          mean=(a[0]+a[1])/2;
+          period=(t[1]-t[0])*2;
+          atime=t[0];
+          a[0]=a[1];
+          a[1]=a[2];
+          t[0]=t[1];
+          t[1]=t[2];
+          j=1;
+          if (ampl > 0) {
+            *array_out++=ampl;
+            *array_out++=mean;
+            *array_out++=0.50;
+            *array_out++=atime;
+            *array_out++=period;
+          }
+          break;
+        }
+        default: {
+          mean=(a[j-1]+a[j-2])/2;
+          period=(t[j-1]-t[j-2])*2;
+          atime=t[j-2];
+          a[j-2]=a[j];
+          t[j-2]=t[j];
+          j=j-2;
+          if (ampl > 0) {
+            *array_out++=ampl;
+            *array_out++=mean;
+            *array_out++=1.00;
+            *array_out++=atime;
+            *array_out++=period;
+            cNr++;
+          }
+          break;
+        }
+      }
+    }
+  }
+  for (index=0; index<j; index++) {
+    ampl=fabs(a[index]-a[index+1])/2;
+    mean=(a[index]+a[index+1])/2;
+    period=(t[index+1]-t[index])*2;
+    atime=t[index];
+    if (ampl > 0){
+      *array_out++=ampl;
+      *array_out++=mean;
+      *array_out++=0.50;
+      *array_out++=atime;
+      *array_out++=period;
+    }
+  }
+
+  return (tot_num - 1 - cNr);
+}
+
+
+/*-------------------------------------------------------------
+ * sig2ext
+ *
+ * Searches local extrema from time course (signal) sig.
+ *
+ * Inputs:
+ *      sig         an array of n time points
+ *      time_sig    an array of n delta time points (pass NULL if this array
+ *                  is to be assumed in the form of 0, 1, 2,....)
+ *      n           number of points (sig, time_sig)
+ *      clsn        number of classes (pass -1 if not to be used, i.e., no
+ *                  divisions into classes)
+ *      ext         (output) extrema found on sig
+ *      exttime     (output) time values corresponding to ext;
+ *                  if time was NULL, a dt=1 is assumed.
+ * Outputs:
+ *      np          number of extrema (number of points on the output)
+ *
+ * Based on Adam Nieslony's sig2ext.m (Matlab function).
+ *-------------------------------------------------------------*/
+int rainflow::sig2ext(double *sig, double *time_sig, int n, int clsn,
+            double *ext, double *exttime)
+{
+    int i, have_time = 0;
+    double smax, smin;
+    double *w1;
+    int *w;
+    int np;
+
+    if (time_sig != NULL)
+    {
+        have_time = 1;
+    }
+    if (clsn != -1)
+    {
+        clsn--;
+
+        smin = this->arr_min(sig, n, 0);
+        smax = this->arr_max(sig, n, NULL);
+        for (i=0; i<n; i++)
+        {
+            sig[i] = round((sig[i]-smin)*clsn/(smax-smin))*(smax-smin)/clsn + smin;
+        }
+    }
+
+    if (have_time != 1)
+    {
+        time_sig = NNEW(double, n);
+        for (i=0; i<n; i++)
+        {
+            time_sig[i] = i;
+        }
+    }
+
+    w = NNEW(int, n);
+    w1 = this->diff(sig, n);
+    for (i=1; i<n; i++)
+    {
+        if (w1[i-1]*w1[i] <= 0) w[i] = 1;
+    }
+    w[0] = 1;
+    w[n-1] = 1;
+    np = this->repl(ext, w, n, sig);
+    np = this->repl(exttime, w, n, time_sig);
+
+    free(w1);
+    RENEW(w, int, np);
+    w1 = this->diff(ext, np);
+    for (i=1; i<np; i++)
+    {
+        if (!(w1[i-1]==0 && w1[i]==0)) w[i] = 1;
+    }
+    w[0] = 1;
+    w[np-1] = 1;
+    np = this->repl(ext, w, np, ext);
+    np = this->repl(exttime, w, np, exttime);
+
+    for (i=1; i<np; i++)
+    {
+        if (ext[i-1] != ext[i]) w[i] = 1;
+    }
+    w[0] = 1;
+    np = this->repl(ext, w, np, ext);
+    RENEW(w1, double, np-1);
+    for (i=0; i<np-1; i++)
+    {
+        w1[i] = 0.5*( exttime[i+1] - exttime[i]);
+        exttime[i] = exttime[i] + w1[i]*(!w[i+1]);
+    }
+    np = this->repl(exttime, w, np, exttime);
+
+    if (np > 2)
+    {
+        free(w1);
+        RENEW(w, int, np);
+        w1 = this->diff(ext, np);
+        for (i=1; i<np; i++){
+            if (w1[i-1]*w1[i] < 0) w[i] = 1;
+        }
+        w[0] = 1;
+        w[np-1] = 1;
+        np = this->repl(ext, w, np, ext);
+        np = this->repl(exttime, w, np, exttime);
+    }
+
+    free(w1);
+    free(w);
+    if (have_time != 1) free(time_sig);
+
+    return np;
+}
+
+/*-------------------------------------------------------------
+ * arr_min
+ *
+ * Returns minimum of a double vector. If the pos is given as a
+ * non-NULL pointer, the position of the min value is returned
+ * as well.
+ *-------------------------------------------------------------*/
+double rainflow::arr_min(double *sig, int n, int *pos)
+{
+    int i, ind=0;
+
+    double min_val = sig[0];
+    for (i=1; i<n; i++)
+    {
+        if (sig[i] < min_val)
+        {
+            min_val = sig[i];
+            ind = i;
+        }
+    }
+    if (pos != NULL) *pos = ind;
+    return min_val;
+}
+
+
+/*-------------------------------------------------------------
+ * arr_max
+ *
+ * Returns maximum of a double vector. If the pos is given as a
+ * non-NULL pointer, the position of the max value is returned
+ * as well.
+ *-------------------------------------------------------------*/
+double rainflow::arr_max(double *sig, int n, int *pos){
+    int i, ind=0;
+
+    double max_val = sig[0];
+    for (i=1; i<n; i++)
+    {
+        if (sig[i] > max_val)
+        {
+            max_val = sig[i];
+            ind = i;
+        }
+    }
+    if (pos != NULL) *pos = ind;
+    return max_val;
+}
+
+/*-------------------------------------------------------------
+ * diff
+ *
+ * Returns a new, dynamically allocated vector with the length
+ * n-1 and values defined as:
+ *      v[2]-v[1]
+ *      v[3]-v[2]
+ *      ....
+ *
+ * Make sure the vector is cleared with free when no longer
+ * needed.
+ *-------------------------------------------------------------*/
+double *rainflow::diff(double *vec, int n)
+{
+    // The length of vec_out is n-1!
+    int i;
+    double *vec_out;
+
+    vec_out = NNEW(double, n-1);
+    for (i=0; i<(n-1); i++)
+    {
+        vec_out[i] = vec[i+1] - vec[i];
+    }
+    return vec_out;
+}
+
+
+/*-------------------------------------------------------------
+ * repl
+ *
+ * Replaces x with x_repl where filt is 1. x and filt are of the length n
+ * while x_repl can be n or greater. x is replaced inplace. It returns
+ * the number of terms replaced.
+ *-------------------------------------------------------------*/
+int rainflow::repl(double *x, int *filt, int n, double *x_repl)
+{
+    int i, j;
+    j = 0;
+    for (i=0; i<n; i++){
+        if (filt[i] > 0){
+            x[j] = x_repl[i];
+            j++;
+        }
+    }
+    return j;
+}
+
+//! ------------------
+//! function: perform
+//! details:
+//! ------------------
+bool rainflow::perform(std::map<int, std::vector<double>> strainDistTimeHistory, std::map<int,double> &damageDist)
+{
+    cout<<"rainflow::perform()->____function called____"<<endl;
+
+    //!------------------------------------------
+    //! deltaeps/2= espF*(2N)^c+sigmaF/E*(2N)^b
+    //!              [0]     [1]   [2] [3]   [4]
+    //!------------------------------------------
+    double epsF = myFatigueModel.coeffs[0];
+    double c = myFatigueModel.coeffs[1];
+    double sigmaF = myFatigueModel.coeffs[2];
+    double E = myFatigueModel.coeffs[3];
+    double b = myFatigueModel.coeffs[4];
+
+    for(std::map<int, std::vector<double>>::iterator it = strainDistTimeHistory.begin(); it!= strainDistTimeHistory.end(); it++)
+    {
+        int nodeID = it->first;
+        std::vector<double> timeHistory = it->second;
+        size_t timeSize = timeHistory.size();
+        double *tH= NNEW(double, timeSize);
+        for (int i=0; i<(timeSize); i++)
+        {
+            tH[i] = timeHistory[i];
+        }
+
+        double damage=0.0;
+        double *ext=NNEW(double,timeSize*3);
+        int np = this->rf3(tH,timeSize,ext);
+
+        for(int i=0; i<np; i++)
+        {
+            double deltaEps = ext[3*i];
+            //if(i==0) cout<<"rainflow::damage_index()->____ext value____"<<ext[3*i]<<"___"<<ext[3*i+1]<<"___"<<ext[3*i+2]<<endl;
+            if(deltaEps>tol2)
+            {
+                double NN = solve_exact(deltaEps,epsF,c,sigmaF,E,b)+1e-12;
+                //double NN = solve(deltaEps,epsF,c,sigmaF,E,b);
+                damage+= 1/NN;
+            }
+        }
+        //double damage = this->damage_index(tH,timeSize);
+        damageDist.insert(std::make_pair(nodeID,damage));
+    }
+    return true;
 }
 
 //! -------------------------------------------------
@@ -214,257 +641,15 @@ double rainflow::solve_exact(double eps, double epsF, double c, double sigmaF, d
     {
     case fatigueModel_BCM:
     {
+        /*
         double den = c-b; if(den == 0) den = 1e-12;
         double x = (1/(c-b))*log((eps/epsF)*(sigmaF/E));
-        N = 0.5*exp(x);
+        */
+        double den = epsF+sigmaF/E*exp(b/c);
+        //N = 0.5*eps/den;
+        N = 0.5*pow(eps/den,1/c);
     }
         break;
     }
     return N;
-}
-
-//! -----------------------
-//! function: damage_index
-//! details:
-//! -----------------------
-double rainflow::damage_index(const std::vector<double> &y)
-{
-    cout<<"rainflow::damage_index()->____function called____"<<endl;
-
-    //!------------------------------------------
-    //! deltaeps/2= espF*(2N)^c+sigmaF/E*(2N)^b
-    //!              [0]     [1]   [2] [3]   [4]
-    //!------------------------------------------
-    double epsF = myFatigueModel.coeffs[0];
-    double c = myFatigueModel.coeffs[1];
-    double sigmaF = myFatigueModel.coeffs[2];
-    double E = myFatigueModel.coeffs[3];
-    double b = myFatigueModel.coeffs[4];
-
-    double D=0.0;
-    double deltaEps;
-    const std::vector<double> &B = this->rainflow_engine(y);
-    size_t NbData = B.size();
-    for(size_t i=0; i<NbData; i++)
-    {
-        deltaEps = B[i];
-        if(deltaEps>tol2)
-        {
-            //double NN = solve_exact(deltaEps,epsF,c,sigmaF,E,b)+1e-12;
-            double NN = solve(deltaEps,epsF,c,sigmaF,E,b);
-            D+= 1/NN;
-        }
-    }
-    return D;
-}
-
-//! --------------------------
-//! function: rainflow_engine
-//! details:
-//! --------------------------
-std::vector<double> rainflow::rainflow_engine(std::vector<double> y)
-{
-    //cout<<"rainflow::rainflow_engine()->____function called____"<<endl;
-    double sum;
-    double ymax;
-    double mina,maxa;
-    double X,Y;
-
-    int kv;
-    int hold;
-    int i,j,k,n;
-    int num;
-    int nkv;
-    int last_a;
-
-    std::vector<double> B;
-    std::vector<double> a;
-
-    double slope1;
-    double slope2;
-
-    ymax=0.;
-
-    nkv=0;
-    k=0;
-    //	a[k]=y[k];
-    a.push_back(y.at(k));
-
-    //k=1;    // ??
-
-    int NP = int(y.size());
-    for(i=1;i<(NP-1);i++)
-    {
-        //slope1=(y.at(i)-y.at(i-1));
-        //slope2=(y.at(i+1)-y.at(i));
-        slope1=(y[i]-y[i-1]);           //! faster
-        slope2=(y[i+1]-y[i]);           //! faster
-
-        if((slope1*slope2)<=0 && fabs(slope1)>0)
-        {
-            //a.push_back(y.at(i));
-            a.push_back(y[i]);          //! faster
-            k++;
-        }
-    }
-    //a.push_back(y.at(NP-1));
-    a.push_back(y[NP-1]);            //! faster
-    k++;
-
-    last_a=k-1;
-    hold=last_a;
-
-    mina = 1.0e10;
-    maxa = -mina;
-    for(i=0;i<=last_a;i++)
-    {
-        if(a[i]<mina) mina=a[i];    //! faster
-        if(a[i]>maxa) maxa=a[i];    //! faster
-        //if(a.at(i)<mina)
-        //{
-        //    mina=a.at(i);
-        //}
-        //if(a.at(i)>maxa)
-        //{
-        //    maxa=a.at(i);
-        //}
-    }
-
-    num=int(maxa-mina)+1;
-
-    n=0;
-    i=0;
-    j=1;
-
-    sum=0;
-
-    kv=0;
-
-    //int LLL=last_a;
-
-    QVector<double> row;
-    row.resize(4);
-
-    while(1)
-    {
-        //Y=(fabs(a.at(i)-a.at(i+1)));
-        //X=(fabs(a.at(j)-a.at(j+1)));
-        Y=(fabs(a[i]-a[i+1]));      //! faster
-        X=(fabs(a[j]-a[j+1]));      //! faster
-        if(X>=Y && Y>0 && Y<1.0e+10)
-        {
-            if(Y>ymax)
-            {
-                ymax=Y;
-            }
-            if(i==0)
-            {
-                n=0;
-                sum+=0.5;
-
-                //row.insert(3,a.at(i+1));
-                //row.insert(2,a.at(i));
-                row.insert(3,a[i+1]);        //! faster
-                row.insert(2,a[i]);          //! faster
-
-                row.insert(1,0.5);
-                row.insert(0,Y);
-
-                B.push_back(Y);
-                kv++;
-                a.erase(a.begin());
-                last_a--;
-
-                i=0;
-                j=1;
-            }
-            else
-            {
-                sum+=1;
-                //row.insert(3,a.at(i+1));
-                //row.insert(2,a.at(i));
-                row.insert(3,a[i+1]);       //! faster
-                row.insert(2,a[i]);         //! faster
-                row.insert(1,1);
-                row.insert(0,Y);
-
-                B.push_back(Y);
-
-                kv++;
-                n=0;
-
-                a.erase(a.begin()+(i+1));
-                a.erase(a.begin()+i);
-
-                last_a-=2;
-
-                i=0;
-                j=1;
-            }
-
-            nkv++;
-
-            /*
-            if(nkv==3000)
-            {
-                double ratio = fabs((last_a)/double(LLL));
-                nkv=0;
-            }
-            */
-        }
-        else
-        {
-            i++;
-            j++;
-        }
-
-        if((j+1)>last_a)
-        {
-            break;
-        }
-    }
-
-
-    for(i=0;i<(last_a);i++)
-    {
-        //Y=(fabs(a.at(i)-a.at(i+1)));
-        Y=(fabs(a[i]-a[i+1]));      //! faster
-
-        if(Y>0. && Y<1.0e+20)
-        {
-            sum+=0.5;
-
-            //row.insert(3,a.at(i+1));
-            //row.insert(2,a.at(i));
-            row.insert(3,a[i+1]);       //! faster
-            row.insert(2,a[i]);         //! faster
-
-            row.insert(1,0.5);
-            row.insert(0,Y*.5);
-            //B.push_back(row);
-            B.push_back(Y);
-
-            kv++;
-
-            if(Y>ymax) ymax=Y;
-        }
-    }
-    return B;
-}
-
-//! ------------------
-//! function: perform
-//! details:
-//! ------------------
-bool rainflow::perform(std::map<int, std::vector<double>> strainDistTimeHistory, std::map<int,double> &damageDist)
-{
-    //cout<<"rainflow::perform()->____function called____"<<endl;
-    for(std::map<int, std::vector<double>>::iterator it = strainDistTimeHistory.begin(); it!= strainDistTimeHistory.end(); it++)
-    {
-        int nodeID = it->first;
-        std::vector<double> timeHistory = it->second;
-        double damage = this->damage_index(timeHistory);
-        damageDist.insert(std::make_pair(nodeID,damage));
-    }
-    return true;
 }
