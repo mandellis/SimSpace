@@ -42,11 +42,11 @@ rainflow::rainflow(QObject *parent): QObject(parent)
 //! function: constructor II
 //! details:
 //! ------------------------
-rainflow::rainflow(GeometryTag loc, fatigueModel fm, QObject *parent): QObject(parent),
-    myLoc(loc),myFatigueModel(fm)
-{
-    ;
-}
+//rainflow::rainflow(GeometryTag loc, fatigueModel fm, QObject *parent): QObject(parent),
+//   myLoc(loc),myFatigueModel(fm)
+//{
+ //   ;
+//}
 /*-------------------------------------------------------------
  * rf3
  *
