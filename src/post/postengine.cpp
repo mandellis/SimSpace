@@ -1162,11 +1162,14 @@ bool postEngine::buildFatiguePostObject(int type, const std::vector<GeometryTag>
         {
             GeometryTag curLoc = it->first;
             rf.setLocation(curLoc);
+
             std::map<int,std::vector<double>> strainDistTimeHistory = it->second;
             rf.setFatigueModel(myFatigueModel);
+
             std::map<int,double> damageDist;
 
             bool isDone = rf.perform(strainDistTimeHistory,damageDist);
+
             if(isDone == false) continue;   // try to handle this error
             std::vector<std::map<int,double>> damageDistList;
             damageDistList.push_back(damageDist);
