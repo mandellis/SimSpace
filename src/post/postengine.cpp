@@ -1146,7 +1146,8 @@ void postEngine::updateIsostrips(sharedPostObject &aPostObject, int scaleType, d
 //! ---------------------------------
 /*
 bool postEngine::buildFatiguePostObject(int type, const std::vector<GeometryTag> &locs,
-                                        std::vector<double> times, QMap<int,int> materialBodyMap,
+                                        std::vector<double> times,
+                                        QMap<int,int> materialBodyMap,
                                         int nCycle, sharedPostObject &aPostObject)
 {
     std::map<GeometryTag,std::vector<std::map<int,double>>> fatigueResults;
@@ -1428,8 +1429,8 @@ bool postEngine::buildFatiguePostObject(int type, const std::vector<GeometryTag>
 //! function: readFatigueResults
 //! details:  type = 1 => equivalent mechanical strain
 //!           type = 0 => equivalent total strain
+//!           THIS METHOD IS UNUSED
 //! ---------------------------------------------------
-/*
 std::map<GeometryTag,std::map<int,std::vector<double>>> postEngine::readFatigueResults(int type,
                                                                                        const std::vector<GeometryTag> &vecLoc,
                                                                                        std::vector<double> times)
@@ -1565,7 +1566,6 @@ std::map<GeometryTag,std::map<int,std::vector<double>>> postEngine::readFatigueR
     cout<<"postEngine::readFatigueResults()->____exiting function____"<<endl;
     return resMap;
 }
-*/
 
 //! -----------------------------------
 //! function: readFatigueResultsOnBody
@@ -1767,6 +1767,7 @@ void postEngine::updateResultsPresentation(QList<sharedPostObject> &postObjectLi
         }
         */
         bool toBeUpdated = false;
+        if(previousResultPresentation.useExteriorMeshForVolumeResults != newResultsPresentation.useExteriorMeshForVolumeResults) toBeUpdated = true;
         if(previousResultPresentation.theTypeOfPresentation != newResultsPresentation.theTypeOfPresentation) toBeUpdated = true;
         if(previousResultPresentation.theScale != newResultsPresentation.theScale) toBeUpdated = true;
         if(toBeUpdated)
@@ -1778,6 +1779,19 @@ void postEngine::updateResultsPresentation(QList<sharedPostObject> &postObjectLi
             bool isAutoScale = aPostObject->IsAutoscale();
             int magnifyFactor = newResultsPresentation.theScale;
 
+            //! -------------------------
+            //! group the tags by bodies
+            //! -------------------------
+            std::vector<GeometryTag> locs;
+            this->groupTagsByBodies(aPostObject->getLocations(),locs);
+
+            //! ---------------------------
+            //! group the meshes by bodies
+            //! ---------------------------
+            std::map<GeometryTag,occHandle(MeshVS_DataSource>) meshDSforResults;
+            this->groupAndMergeMeshDataSourcesByBodies(locs,meshDSforResults);
+
+            aPostObject->setMeshDataSources(meshDSforResults);
             aPostObject->setMode(newResultsPresentation.useExteriorMeshForVolumeResults);
             aPostObject->buildMeshIO(min,max,NbLevels,isAutoScale,component,magnifyFactor);
         }
@@ -1929,10 +1943,10 @@ postObject postEngine::buildFatiguePostObject(int type, std::vector<GeometryTag>
 }
 */
 
-//! ----------------------------------------
+//! ------------------------------------------------
 //! function: groupDeformationFieldByBodies
-//! details:
-//! ----------------------------------------
+//! details:  THIS METHOD IS UNUSED - DO NOT DELETE
+//! ------------------------------------------------
 void postEngine::groupDeformationFieldByBodies(const std::map<GeometryTag,std::map<int,gp_Vec>> &mapDisplMap,
                                                std::map<GeometryTag,std::map<int,gp_Vec>> &mapDisplMap_byBodies)
 {
@@ -1980,10 +1994,10 @@ void postEngine::groupTagsByBodies(const std::vector<GeometryTag> &vecLoc, std::
     cout<<"postEngine::groupTagsByBodies()->____start grouping tags -DONE-____"<<endl;
 }
 
-//! -------------------------------
+//! ------------------------------------------------
 //! function: groupResultsByBodies
-//! details:
-//! -------------------------------
+//! details:  THIS METHOD IS UNUSED - DO NOT DELETE
+//! ------------------------------------------------
 void postEngine::groupResultsByBodies(const std::map<GeometryTag,std::vector<std::map<int,double>>> &resMap,
                                       std::map<GeometryTag,std::vector<std::map<int,double>>> &resMap_byBody)
 {

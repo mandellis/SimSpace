@@ -124,7 +124,7 @@ private:
     //! time stamp
     QString timeStamp();
 
-    //! read fatigue results
+    //! read fatigue results - THIS METHOD IS UNUSED -
     std::map<GeometryTag, std::map<int, std::vector<double>>> readFatigueResults(int type,
                                                                                  const std::vector<GeometryTag> &vecLoc,
                                                                                  std::vector<double> times);
@@ -149,11 +149,13 @@ public:
 
 private:
 
+    //! THIS METHOD IS UNUSED - DO NOT DELETE
     void groupDeformationFieldByBodies(const std::map<GeometryTag,std::map<int,gp_Vec>> &mapDisplMap,
                                        std::map<GeometryTag,std::map<int,gp_Vec>> &mapDisplMap_byBodies);
 
     void groupTagsByBodies(const std::vector<GeometryTag> &vecLoc, std::vector<GeometryTag> &vecLoc_byBodies);
 
+    //! THIS METHOD IS UNUSED - NO NOT DELETE
     void groupResultsByBodies(const std::map<GeometryTag,std::vector<std::map<int,double>>> &resMap,
                               std::map<GeometryTag,std::vector<std::map<int,double>>> &resMap_byBody);
 
