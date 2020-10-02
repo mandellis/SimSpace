@@ -18,6 +18,7 @@
 //! OCC
 //! ----
 #include <TopoDS_Face.hxx>
+#include <TopoDS_Solid.hxx>
 
 //! ---
 //! Qt
@@ -38,6 +39,9 @@ public:
     void setFaces(const QList<TopoDS_Face> &faceList);
     void setFaces(const std::vector<GeometryTag> &vecLoc);
     void setFaces(const QMap<int, std::vector<GeometryTag>> &vecLocMap);
+
+    void setShape(const std::vector<GeometryTag> &vecLoc);
+
     void setMapOfIsMeshExact(const QMap<int,bool> &aMapOfIsMeshExact);
     void setDataBase(meshDataBase *mDB);
 
@@ -50,6 +54,10 @@ private:
     meshDataBase *myMDB;
     QMap<int,bool> myMapOfIsMeshDSExact;
     QList<TopoDS_Face> myListOfFaces;
+    QList<TopoDS_Solid> myListOfBodies;
+
+    QMap<int,QList<TopoDS_Face>> myMapOfListOfFaces;
+    QMap<int,QList<TopoDS_Face>> myMapOfListOfFaces;
     QMap<int,QList<TopoDS_Face>> myMapOfListOfFaces;
 
 private:

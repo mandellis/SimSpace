@@ -12596,15 +12596,20 @@ void SimulationManager::generateBoundaryConditionsMeshDS(bool computeDual)
             else
             {
                 cout<<"____valid BC detected____"<<endl;
+                bool hasLocParent;
                 const std::vector<GeometryTag> &vecLoc = curNode->getPropertyValue<std::vector<GeometryTag>>("Tags");
                 for(int i=0; i<vecLoc.size(); i++)
                 {
-                    int bodyIndex = vecLoc.at(i).parentShapeNr;
+                    GeometryTag loc= vecLoc.at(i);
+                    int bodyIndex = loc.parentShapeNr;
+                    hasLocParent = loc.isParent;
                     bool isMeshDSExactOnBody = mapOfIsMeshDSExact.value(bodyIndex);
                     if(isMeshDSExactOnBody) patchConformingTags.push_back(vecLoc.at(i));
                     else nonPatchConformingTags.push_back(vecLoc.at(i));
                 }
 
+                if(hasLocParent == true)
+                    cout<<" is Solid "<<endl;
                 //! --------------------------
                 //! work on exact datasources
                 //! --------------------------

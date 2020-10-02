@@ -72,6 +72,7 @@ void faceDataSourceBuilder::setFaces(const QList<TopoDS_Face> &faceList)
     }
 }
 
+
 //! ------------------------------
 //! function: setMapOfIsMeshExact
 //! details:
