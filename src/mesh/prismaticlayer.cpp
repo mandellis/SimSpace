@@ -54,7 +54,6 @@
 //! ------------------------------
 void plotAverageNormals(const occHandle(Ng_MeshVS_DataSourceFace) &aFaceMeshDS)
 {
-    cout<<"____MAP OF NORMALS FOR THE FACE____"<<endl;
     for(QMap<int,QList<double>>::const_iterator it=aFaceMeshDS->myNodeNormals.cbegin(); it!=aFaceMeshDS->myNodeNormals.cend(); ++it)
     {
         int nodeID = it.key();
@@ -85,9 +84,9 @@ prismaticLayer::prismaticLayer(meshDataBase *mDB, QProgressIndicator *aProgressI
     myTotalThickness = 1;
     myFirstLayerThickness = 1;
 
-    //! -------------------
-    //! new parameters (5)
-    //! -------------------
+    //! ---------------
+    //! new parameters
+    //! ---------------
     myCurvatureSensitivityForShrink=100;
     myNbGuidingVectorSmoothingSteps=50;
     myNbLayerThicknessSmoothingSteps=50;
@@ -111,7 +110,6 @@ prismaticLayer::prismaticLayer(meshDataBase *mDB, QProgressIndicator *aProgressI
 void prismaticLayer::setPrismaticFaces(const std::vector<int> &prismaticFaces)
 {
     for(size_t i=0; i<prismaticFaces.size(); i++) myPrismaticFaces.push_back(prismaticFaces.at(i));
-    //this->mergeFaceMeshes();
 }
 
 //! -----------------------------------------------------------------------------------

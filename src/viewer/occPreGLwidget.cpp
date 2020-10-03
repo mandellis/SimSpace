@@ -2557,10 +2557,10 @@ void occPreGLWidget::displayColoredSubshapes(const TopTools_ListOfShape &listOfS
     if(updateViewer) occContext->UpdateCurrentViewer();
 }
 
-//! --------------------------------
+//! -------------------
 //! function: hideBody
-//! details:  hide a list of bodies
-//! --------------------------------
+//! details:
+//! -------------------
 void occPreGLWidget::hideBody(const TColStd_ListOfInteger &listOfBodyNumbers)
 {
     cout<<"occPreGLWidget::hideBody()->____function called____"<<endl;
@@ -2655,10 +2655,10 @@ void occPreGLWidget::unhighlightBody(bool updateViewer)
     if(updateViewer==true) occContext->UpdateCurrentViewer();
 }
 
-//! --------------------------------------------------------------------
+//! ---------------------------
 //! function: displayShapeCopy
-//! details:  aim: showing a boundary condition on a geometry selection
-//! --------------------------------------------------------------------
+//! details:
+//! ---------------------------
 void occPreGLWidget::displayShapeCopy(const TopTools_ListOfShape &list1,
                                       const TopTools_ListOfShape &list2,
                                       Quantity_NameOfColor color1,
@@ -2666,7 +2666,6 @@ void occPreGLWidget::displayShapeCopy(const TopTools_ListOfShape &list1,
                                       QVariant options)
 {
     //cout<<"occPreGLWidget::displayShapeCopy()->____function called____"<<endl;
-
     const double tol = 1e-2;
 
     //! ------------------------------
@@ -2705,26 +2704,26 @@ void occPreGLWidget::displayShapeCopy(const TopTools_ListOfShape &list1,
                 myBuilder1.Add(myCompound1,s);
             }
             anOldShape1 = new AIS_ColoredShape(myCompound1);
-            //anOldShape1->SetZLayer(Graphic3d_ZLayerId_Top);
+            //anOldShape1->SetZLayer(Graphic3d_ZLayerId_Top);     // z-layer on top
 
             //! -----------------------
             //! needed for shaded view
             //! -----------------------
             if(!occContext->DefaultDrawer()->IsAutoTriangulation()) occContext->DefaultDrawer()->SetAutoTriangulation(Standard_True);
-            anOldShape1->SetTransparency(0.5);
+            anOldShape1->SetTransparency(0.0);
 
             //! ----------------------
             //! hide sphere wireframe
             //! ----------------------
             anOldShape1->Attributes()->SetFaceBoundaryDraw(false);
             occContext->SetColor(anOldShape1,Quantity_Color(Quantity_NOC_RED),false);
-            occContext->Display(anOldShape1,1,-1,false,AIS_DS_Temporary);
+            //occContext->Display(anOldShape1,AIS_Shaded,-1,false,false,AIS_DS_Temporary);
+            occContext->Display(anOldShape1,false);
         }
         break;
 
         case TopAbs_EDGE:
         {
-            cout<<"____handling edge____"<<endl;
             myBuilder1.MakeCompound(myCompound1);
 
             //! -----------------------------------------------------------------------
@@ -2735,11 +2734,10 @@ void occPreGLWidget::displayShapeCopy(const TopTools_ListOfShape &list1,
             //! -----------------------------------------------------------------------
             if(options.toBool())
             {
-                cout<<"____handling edge: a mesh control___"<<endl;
+                //cout<<"____handling edge: a mesh control___"<<endl;
                 TopTools_ListIteratorOfListOfShape itEdges;
                 for(itEdges.Initialize(list1);itEdges.More();itEdges.Next())
                 {
-                    cout<<"____accessing the edge BRep____"<<endl;
                     //! -------------------------------------------
                     //! access the BRep representation of the edge
                     //! -------------------------------------------
@@ -2747,16 +2745,16 @@ void occPreGLWidget::displayShapeCopy(const TopTools_ListOfShape &list1,
                     if(BRep_Tool::Degenerated(edge)) continue;
                     BRepAdaptor_Curve BRepAdaptor(edge);
                     GeomAdaptor_Curve curve = BRepAdaptor.Curve();
-                    //! -------------------------------------------
+                    //! ----------------------------
                     //! calculate the actual length
-                    //! -------------------------------------------
+                    //! ----------------------------
                     CPnts_AbscissaPoint CP;
                     CP.Init(curve);
 
-                    double L = CP.Length(curve,tol);
+                    double L = CP.Length(curve,tol);        // length of the selected edge
                     double newDeltaL;
                     int NbDivisions = 1;
-                    //cout<<"____curve length: " <<L<<"____"<<endl;
+
                     //! ----------------------------------------------
                     //! retrieve the element size/number of divisions
                     //! from the GUI
@@ -2832,20 +2830,19 @@ void occPreGLWidget::displayShapeCopy(const TopTools_ListOfShape &list1,
                 //! ----------------------------------------
                 anOldShape1->Attributes()->SetFaceBoundaryDraw(false);
             }
-            else
+            else    // not a mesh control
             {
                 //! ----------------------------------------------
                 //! build a thick cylinder to overlap to the edge
                 //! not working... to do
                 //! ----------------------------------------------
-                cout<<"____handling edge: not a mesh control___"<<endl;
                 for(TopTools_ListIteratorOfListOfShape itEdges(list1); itEdges.More(); itEdges.Next())
                 {
                     myBuilder1.Add(myCompound1,itEdges.Value());
                 }
-            }
-
-            occContext->Display(anOldShape1,1,-1,false,AIS_DS_Temporary);
+            }            
+            //occContext->Display(anOldShape1,AIS_Shaded,-1,false,false,AIS_DS_Temporary);
+            occContext->Display(anOldShape1,false);
         }
             break;
 
@@ -2862,18 +2859,16 @@ void occPreGLWidget::displayShapeCopy(const TopTools_ListOfShape &list1,
             }
             anOldShape1 = new AIS_Shape(myCompound1);
 
-            //! ----------------------
-            //! use the model z-layer
-            //! ----------------------
-            //anOldShape1->SetZLayer(Graphic3d_ZLayerId_Top);
+            //anOldShape1->SetZLayer(Graphic3d_ZLayerId_Top);     // z-layer on top
             anOldShape1->SetColor(color1);
             anOldShape1->Attributes()->ShadingAspect()->SetTransparency(0.5,Aspect_TOFM_FRONT_SIDE);
             anOldShape1->Attributes()->ShadingAspect()->SetTransparency(1.0,Aspect_TOFM_BACK_SIDE);
             //! ----------------------------------------------------------------------------
-            //! display: second argument: Shaded mode: third argument: no selection allowed
+            //! display: second argument: shaded mode: third argument: no selection allowed
             //! does not update the viewer (done at the end)
             //! ----------------------------------------------------------------------------
-            occContext->Display(anOldShape1,AIS_Shaded,-1,false,false,AIS_DS_Temporary);
+            //occContext->Display(anOldShape1,AIS_Shaded,-1,false,false,AIS_DS_Temporary);
+            occContext->Display(anOldShape1,false);
         }
             break;
         }
@@ -2896,6 +2891,7 @@ void occPreGLWidget::displayShapeCopy(const TopTools_ListOfShape &list1,
                 myBuilder2.Add(myCompound2,anIter.Value());
             }
             anOldShape2 = new AIS_ColoredShape(myCompound2);
+            //anOldShape2->SetZLayer(Graphic3d_ZLayerId_Top);
             anOldShape2->SetColor(color2);
             anOldShape2->Attributes()->ShadingAspect()->SetTransparency(0.0,Aspect_TOFM_FRONT_SIDE);
             anOldShape2->Attributes()->ShadingAspect()->SetTransparency(1.0,Aspect_TOFM_BACK_SIDE);
@@ -2903,7 +2899,8 @@ void occPreGLWidget::displayShapeCopy(const TopTools_ListOfShape &list1,
             //! display: second argument: Shaded mode: third argument: no selection allowed
             //! does not update the viewer (done at the end)
             //! ----------------------------------------------------------------------------
-            occContext->Display(anOldShape2,AIS_Shaded,-1,false,false,AIS_DS_Temporary);
+            //occContext->Display(anOldShape2,AIS_Shaded,-1,false,false,AIS_DS_Temporary);
+            occContext->Display(anOldShape2,false);
         }
         else
         {
@@ -2917,7 +2914,6 @@ void occPreGLWidget::displayShapeCopy(const TopTools_ListOfShape &list1,
 void occPreGLWidget::displayShapeCopy1(const TopTools_ListOfShape &listShapes, Quantity_NameOfColor color)
 {
     cout<<"occPreGLWidget::displayShapeCopy1()->____function called____"<<endl;
-
     TopoDS_Compound myCompound1;
     static occHandle(AIS_Shape) anOldShape1;
 
@@ -2962,7 +2958,7 @@ void occPreGLWidget::displayShapeCopy1(const TopTools_ListOfShape &listShapes, Q
             //! display: second argument: Shaded mode: third argument: no selection allowed
             //! does not update the viewer (done at the end)
             //! ----------------------------------------------------------------------------
-            occContext->Display(anOldShape1,1,-1,false,AIS_DS_Temporary);
+            occContext->Display(anOldShape1,AIS_Shaded,-1,false,false,AIS_DS_Temporary);
         }
             break;
         }
@@ -3019,7 +3015,7 @@ void occPreGLWidget::displayShapeCopy2(const TopTools_ListOfShape &listShapes, Q
             //! display: second argument: Shaded mode: third argument: no selection allowed
             //! does not update the viewer (done at the end)
             //! ----------------------------------------------------------------------------
-            occContext->Display(anOldShape1,1,-1,false,AIS_DS_Temporary);
+            occContext->Display(anOldShape1,AIS_Shaded,-1,false,false,AIS_DS_Temporary);
         }
             break;
         }

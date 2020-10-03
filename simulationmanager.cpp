@@ -6628,7 +6628,7 @@ void SimulationManager::changeColor()
     //! -------------------------
     //! this version uses "Tags"
     //! -------------------------
-    //cout<<"SimulationManager::changeColor()->____function called____"<<endl;
+    cout<<"SimulationManager::changeColor()->____function called____"<<endl;
     QModelIndex index = mySelectionModel->currentIndex();
     if(!index.isValid()) return;
 
@@ -6645,11 +6645,10 @@ void SimulationManager::changeColor()
     {
     case SimulationNodeClass::nodeType_connection:
     {
-        //! -------------------------------------------------------------
-        //! handle the particular case of a contact pairs, which must be
-        //! highlighted with two colors, one for the master and one for
-        //! the slave face(s)
-        //! -------------------------------------------------------------
+        //! ----------------------------------------------
+        //! handle the particular case of a contact pairs
+        //! which must be highlighted with two colors
+        //! ----------------------------------------------
         if(theType != SimulationNodeClass::nodeType_connection && theType != SimulationNodeClass::nodeType_connectionGroup)
         {
             QExtendedStandardItem* itemMasterTags = node->getPropertyItem("Tags master");
@@ -6659,7 +6658,7 @@ void SimulationManager::changeColor()
 
             std::vector<GeometryTag> vecLocs;
             GeometryTag loc;
-            if(itemMasterTags!=NULL)
+            if(itemMasterTags!=Q_NULLPTR)
             {
                 vecLocs = itemMasterTags->data(Qt::UserRole).value<Property>().getData().value<std::vector<GeometryTag>>();
                 std::vector<int> vecParentShapes;
@@ -6786,6 +6785,7 @@ void SimulationManager::changeColor()
 
     default:
     {
+
         //! ---------------------------------------------------------
         //! all the items requiring a color, apart from contact pair
         //! which is handled within the previous case

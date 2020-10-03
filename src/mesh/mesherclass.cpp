@@ -388,12 +388,6 @@ void MesherClass::generateMesh()
                     case Property::meshEngine3D_Netgen:
                     {
                         userMessage mr = this->Netgen_generateVolumeMesh(bodyIndex,mainMesh2D,mainMesh3D);
-
-                        //! experimental
-                        //occHandle(Ng_MeshVS_DataSource3D) iindmesh = new Ng_MeshVS_DataSource3D(mainMesh3D,2);
-                        //myMeshDB->ArrayOfMeshDS.insert(bodyIndex,iindmesh);
-                        //! end experimental
-
                         if(mr.isDone) myMeshDB->ArrayOfMeshIsToBeUdpdated.insert(bodyIndex,false);
                         Global::status().myMessages->appendMessage(mr);
                     }
@@ -523,15 +517,6 @@ void MesherClass::generateMesh()
                         occHandle(Ng_MeshVS_DataSource2D) anSTL_MeshVS_DataSource;
                         int NbGeometryFaces = myMeshDB->MapOfBodyTopologyMap.value(bodyIndex).faceMap.Extent();
 
-                        /*
-                        const TopoDS_Shape &shape = myMeshDB->bodyMap.value(bodyIndex);
-                        NCollection_Array1<occHandle(Ng_MeshVS_DataSourceFace)> array_STL_meshDS(0,NbGeometryFaces);
-                        bool isDone = MeshTools::toSTLMesh(shape, inputExtendedSTL_S, anSTL_MeshVS_DataSource, array_STL_meshDS);
-                        */
-
-                        //! -----------
-                        //! proviamoci
-                        //! -----------
                         std::vector<occHandle(Ng_MeshVS_DataSourceFace)> array_STL_meshDS;
                         for(int i=0; i<=NbGeometryFaces; i++) array_STL_meshDS.push_back(occHandle(Ng_MeshVS_DataSourceFace)());
                         const TopoDS_Shape &shape = myMeshDB->bodyMap.value(bodyIndex);
@@ -550,16 +535,8 @@ void MesherClass::generateMesh()
                             //! ------------------------------------------------
                             for(int faceNr = 0; faceNr<=NbGeometryFaces; faceNr++)
                             {
-                                /*
-                                if(!array_STL_meshDS.Value(faceNr).IsNull())
-                                    myMeshDB->ArrayOfMeshDSOnFaces.setValue(bodyIndex,faceNr,array_STL_meshDS.Value(faceNr));
-                                */
-
-                                //! -----------
-                                //! proviamoci
-                                //! -----------
-                                if(!array_STL_meshDS.at(faceNr).IsNull())
-                                    myMeshDB->ArrayOfMeshDSOnFaces.setValue(bodyIndex,faceNr,array_STL_meshDS.at(faceNr));
+                                if(array_STL_meshDS.at(faceNr).IsNull() == true) continue;
+                                myMeshDB->ArrayOfMeshDSOnFaces.setValue(bodyIndex,faceNr,array_STL_meshDS.at(faceNr));
                             }
 
                             //! ---------------------------------------------
@@ -1561,12 +1538,10 @@ userMessage MesherClass::Netgen_generateVolumeMesh(int bodyIndex,
             //! which perform an automatic node renumbering
             //! -------------------------------------------------------------------
             std::vector<meshElementByCoords> elementList1, elementList2;
-            //QList<meshElementByCoords> elementList1, elementList2;
             MeshTools::toListOf3DElements(prismaticMeshDS,elementList1);
             MeshTools::toListOf3DElements(occHandle(Ng_MeshVS_DataSource3D)::DownCast(mainMesh3D),elementList2);
             elementList1.reserve(elementList1.size()+elementList2.size());
             elementList1.insert(elementList1.end(),elementList2.begin(),elementList2.end());
-            //elementList1<<elementList2;
 
             occHandle(Ng_MeshVS_DataSource3D) summedMeshDS = new Ng_MeshVS_DataSource3D(elementList1);
             summedMeshDS->buildFaceToElementConnectivity();
@@ -1597,23 +1572,20 @@ userMessage MesherClass::Tetgen_generateVolumeMesh(int bodyIndex, int preserveSu
 
     userMessage mr;
     bool hasPrismaticFaces = myMeshDB->HasPrismaticFaces.value(bodyIndex);
-    if(!hasPrismaticFaces)
+
+    if(!hasPrismaticFaces)  // standard meshing without boundary mesh
     {
-        //! ------------------------------------------------------
+        //! ---------------------------------------------------
         //! start meshing volume: initialize the tetgen mesher
-        //! choose if Tetgen will be used as a library or as .exe
-        //! ------------------------------------------------------
+        //! ---------------------------------------------------
         if(runInMemory==false)
         {
-            //! ------------------------
-            //! Tetgen will run on disk
-            //! ------------------------
             cout<<"MesherClass::Tetgen_generateVolumeMesh()->____Tetgen will run on disk____"<<endl;
 
             //! -----------------------------------------------------------------
             //! arrayOfMeshDS is used by the Tetgen mesher for building the PLC
             //! the face mesh data sources are retrieved from the mesh database,
-            //! so they should have been generated before
+            //! so they should have been generated in advance
             //! ------------------------------------------------------------------
             int NbGeometryFaces = myMeshDB->MapOfBodyTopologyMap.value(bodyIndex).faceMap.Extent();
             NCollection_Array1<occHandle(Ng_MeshVS_DataSourceFace)> inputArrayOfFaceMeshDS(0,NbGeometryFaces);
@@ -1661,13 +1633,13 @@ userMessage MesherClass::Tetgen_generateVolumeMesh(int bodyIndex, int preserveSu
                 }
 
                 mr.isDone = true;
-                mr.message = QString("MesherClass::Tetgen_generateVolumeMesh()->____Tetgen has successfully generated the volume mesh____");
+                mr.message = QString("Tetgen has successfully generated the volume mesh");
                 return mr;
             }
             else if(exitCode==-1)
             {
                 mr.isDone = false;
-                mr.message = QString("MesherClass::Tetgen_generateVolumeMesh()->____Tetgen failure. Error in building PLC for body index: %1____").arg(bodyIndex);
+                mr.message = QString("Tetgen failure. Error in building PLC for body index: %1").arg(bodyIndex);
                 cout<<mr.message.toStdString()<<endl;
                 return mr;
             }
@@ -1681,16 +1653,13 @@ userMessage MesherClass::Tetgen_generateVolumeMesh(int bodyIndex, int preserveSu
             else
             {
                 mr.isDone = false;
-                mr.message = QString("MesherClass::Tetgen_generateVolumeMesh()->____Tetgen failure. Tetgen exit code: %1____").arg(exitCode);
+                mr.message = QString("Tetgen failure. Tetgen exit code: %1____").arg(exitCode);
                 cout<<mr.message.toStdString()<<endl;
                 return mr;
             }
         }
-        else
+        else    // use tetgen library
         {
-            //! --------------------------
-            //! Tetgen will run in memory
-            //! --------------------------
             cout<<"MesherClass::Tetgen_generateVolumeMesh()->____Tetgen will run in memory____"<<endl;
 
             //! --------------------------------------
@@ -1705,6 +1674,9 @@ userMessage MesherClass::Tetgen_generateVolumeMesh(int bodyIndex, int preserveSu
                 cout<<mr.message.toStdString()<<endl;
                 return mr;
             }
+            //! ---------------------------
+            //! set the meshing parameters
+            //! ---------------------------
             myTetMesher->setSwitches(preserveSurfaceMesh, bodyIndex);
 
             tetgenio meshOut;
@@ -1720,18 +1692,21 @@ userMessage MesherClass::Tetgen_generateVolumeMesh(int bodyIndex, int preserveSu
             cout<<"MesherClass::generateMesh()->____Tetgen mesher: building the tetgen mesh datasources____"<<endl;
 
             //! -------------------------
-            //! surface mesh data source
-            //! -------------------------
-            occHandle(Ng_MeshVS_DataSource2D) aMeshDS2D = new Ng_MeshVS_DataSource2D(meshOut);
-            myMeshDB->ArrayOfMeshDS2D.insert(bodyIndex,aMeshDS2D);
-            cout<<"MesherClass::generateMesh()->____surface mesh OK____"<<endl;
-
-            //! -------------------------
             //! volume mesh data sources
             //! -------------------------
             occHandle(Ng_MeshVS_DataSource3D) aMeshDS = new Ng_MeshVS_DataSource3D(meshOut);
             myMeshDB->ArrayOfMeshDS.insert(bodyIndex,aMeshDS);
             cout<<"MesherClass::generateMesh()->____volume mesh OK____"<<endl;
+
+            //! -------------------------
+            //! surface mesh data source
+            //! -------------------------
+            aMeshDS->buildFaceToElementConnectivity();
+            occHandle(Ng_MeshVS_DataSource2D) aMeshDS2D = new Ng_MeshVS_DataSource2D(aMeshDS);
+
+            //occHandle(Ng_MeshVS_DataSource2D) aMeshDS2D = new Ng_MeshVS_DataSource2D(meshOut);
+            //myMeshDB->ArrayOfMeshDS2D.insert(bodyIndex,aMeshDS2D);
+            //cout<<"MesherClass::generateMesh()->____surface mesh OK____"<<endl;
 
             //! -------------------------------
             //! generate the face data sources
@@ -1775,63 +1750,100 @@ userMessage MesherClass::Tetgen_generateVolumeMesh(int bodyIndex, int preserveSu
             return mr;
         }
     }
-    else
+    else    // meshing with boundary mesh
     {
+        //! *******************************************************
+        //!
+        //! block of code for the generation of the boundary mesh
+        //! in PrismaticLayers_generatePrismaticMesh
+        //!
+        //! *******************************************************
         occHandle(Ng_MeshVS_DataSourceFace) theLastInflatedMesh;
         QList<occHandle(Ng_MeshVS_DataSourceFace)> listOfInflatedMeshes;
         mr = this->PrismaticLayers_generatePrismaticMesh(bodyIndex,theLastInflatedMesh,listOfInflatedMeshes);
-
         if(mr.isDone==false)
         {
             mr.isDone = false;
             mr.message = "Error in generating the prismatic 3D mesh";
             return mr;
         }
-//gildotta
-        //! ------------------------
-        //! Tetgen will run on disk
-        //! ------------------------
-        cout<<"____Tetgen will run on disk____"<<endl;
 
-        //! ---------------------------------------------------
-        //! start meshing volume: initialize the tetgen mesher
-        //! ---------------------------------------------------
-        NCollection_Array1<occHandle(Ng_MeshVS_DataSourceFace)> inputArrayOfFaceMeshDS(0,0);
-        inputArrayOfFaceMeshDS.SetValue(0,theLastInflatedMesh);
-
-        //! -------------
-        //! set switches
-        //! -------------
-        preserveSurfaceMesh = 1;
-        myTetMesher->setSwitches(preserveSurfaceMesh, bodyIndex);
-
-        //! -----------------------------------------------------------------
-        //! tetgenArrayOfFaceMeshDS, tetgenVolumeMeshDS, tetgenSurfaceMeshDS
-        //! are the returning data
-        //! -----------------------------------------------------------------
+        //! ----------------------------------------------------------------
+        //! the volume mesh generated starting from the last displaced mesh
+        //! ----------------------------------------------------------------
         occHandle(Ng_MeshVS_DataSource3D) tetgenVolumeMeshDS;
 
-        //! -----------------------------------------------------------------------
-        //! this will generate <bodyName>1.ele, <bodyName>1.face, <bodyName>1.edge
-        //! the file name is internally found by tetMesher from the mesh database
-        //! -----------------------------------------------------------------------
-        int exitCode = myTetMesher->performOnDisk1(inputArrayOfFaceMeshDS, bodyIndex, tetgenVolumeMeshDS);
-        if(exitCode!=0)
+        if(runInMemory==false)  // tetgen run on disk
         {
-            mr.isDone = false;
-            mr.message = QString("Tetgen volume mesh failure %1").arg(exitCode);
-            cout<<mr.message.toStdString()<<endl;
-            return mr;
+            cout<<"____Tetgen will run on disk____"<<endl;
+
+            //! ---------------------------------------------------
+            //! start meshing volume: initialize the tetgen mesher
+            //! ---------------------------------------------------
+            NCollection_Array1<occHandle(Ng_MeshVS_DataSourceFace)> inputArrayOfFaceMeshDS(0,0);
+            inputArrayOfFaceMeshDS.SetValue(0,theLastInflatedMesh);
+
+            //! -------------
+            //! set switches
+            //! -------------
+            preserveSurfaceMesh = 1;
+            myTetMesher->setSwitches(preserveSurfaceMesh, bodyIndex);
+
+            //! -----------------------------------------------------------------------
+            //! this will generate <bodyName>1.ele, <bodyName>1.face, <bodyName>1.edge
+            //! the file name is internally found by tetMesher from the mesh database
+            //! -----------------------------------------------------------------------
+            int exitCode = myTetMesher->performOnDisk1(inputArrayOfFaceMeshDS, bodyIndex, tetgenVolumeMeshDS);
+            if(exitCode!=0)
+            {
+                mr.isDone = false;
+                mr.message = QString("Tetgen volume mesh failure %1").arg(exitCode);
+                cout<<mr.message.toStdString()<<endl;
+                return mr;
+            }
+
+            //! ------------
+            //! "0" success
+            //! ------------
+            // record the post inflation mesh: for testing purposes
+            //myMeshDB->ArrayOfMeshDS.insert(bodyIndex,tetgenVolumeMeshDS);
+        }
+        else  // tetgen run in memory
+        {
+            //! --------------------------------------
+            //! create the PLC using the surface mesh
+            //! --------------------------------------
+            //QList<int> invalidFaceTags;
+            //bool isPLCValid = myTetMesher->buildPLC(bodyIndex,invalidFaceTags);
+            bool isPLCValid = myTetMesher->buildPLC(theLastInflatedMesh);
+            if(isPLCValid==false)
+            {
+                mr.isDone = false;
+                mr.message = QString("Tetgen failure. Error in building PLC for body index: %1").arg(bodyIndex);
+                cout<<mr.message.toStdString()<<endl;
+                return mr;
+            }
+
+            //! ---------------------------
+            //! set the meshing parameters
+            //! ---------------------------
+            int preserveSurfaceMesh = true;
+            myTetMesher->setSwitches(preserveSurfaceMesh, bodyIndex);
+
+            tetgenio meshOut;
+            bool isVolDone = myTetMesher->perform(&meshOut, bodyIndex, false);
+            if(isVolDone==false)
+            {
+                mr.isDone = false;
+                mr.message = QString("Tetgen meshing failure on body index: %1").arg(bodyIndex);
+                cout<<mr.message.toStdString()<<endl;
+                return mr;
+            }
+            tetgenVolumeMeshDS = new Ng_MeshVS_DataSource3D(meshOut);
         }
 
-        //! ------------
-        //! "0" success
-        //! ------------
-        // record the post inflation mesh: for testing purposes
-        //myMeshDB->ArrayOfMeshDS.insert(bodyIndex,tetgenVolumeMeshDS);
-
         //! --------------------------
-        //! 3D meshes merging process
+        //! volume mesh not generated
         //! --------------------------
         if(tetgenVolumeMeshDS.IsNull())
         {
@@ -1841,24 +1853,18 @@ userMessage MesherClass::Tetgen_generateVolumeMesh(int bodyIndex, int preserveSu
         }
 
         //! -------------------------------------------------
+        //! merge the volume meshes
         //! retrieve the prismatic 3D mesh from the database
         //! -------------------------------------------------
         occHandle(Ng_MeshVS_DataSource3D) prismatic3DMesh =
                 occHandle(Ng_MeshVS_DataSource3D)::DownCast(myMeshDB->ArrayOfMeshDS.value(bodyIndex));
 
-        //! -----------------------------------------------
-        //! pile up the prismatic mesh and the volume mesh
-        //! -----------------------------------------------
-        //occHandle(Ng_MeshVS_DataSource3D) mainMesh3D = new Ng_MeshVS_DataSource3D(prismatic3DMesh,tetgenVolumeMeshDS);
-
-        //QList<meshElementByCoords> elementList1, elementList2;
         std::vector<meshElementByCoords> elementList1, elementList2;
         MeshTools::toListOf3DElements(prismatic3DMesh,elementList1);
         MeshTools::toListOf3DElements(tetgenVolumeMeshDS,elementList2);
-        //elementList1<<elementList2;
         elementList1.reserve(elementList1.size()+elementList2.size());
         elementList1.insert(elementList1.end(),elementList2.begin(),elementList2.end());
-        occHandle(Ng_MeshVS_DataSource3D) mainMesh3D = new Ng_MeshVS_DataSource3D(elementList1);
+        occHandle(Ng_MeshVS_DataSource3D) mainMesh3D = new Ng_MeshVS_DataSource3D(elementList1,true,true);
         if(mainMesh3D.IsNull())
         {
             mr.isDone = false;

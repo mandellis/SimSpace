@@ -70,12 +70,14 @@ public:
     //! build the PLC running in memory
     //! --------------------------------
 #ifdef PLCNEW
-    bool buildPLC(int bodyIndex, QList<int> &invalidFaceTags, bool saveTetgenFiles = true);
+    bool buildPLC(int bodyIndex, QList<int> &invalidFaceTags, bool saveTetgenFiles = false);
 #endif
 
 #ifndef PLCNEW
-    bool buildPLC(int bodyIndex, QList<int> &invalidFaceTags, bool saveTetgenFiles = true);
+    bool buildPLC(int bodyIndex, QList<int> &invalidFaceTags, bool saveTetgenFiles = false);
 #endif
+
+    bool buildPLC(const occHandle(MeshVS_DataSource) &aSurfaceMesh);
 
     //! --------------------
     //! set Tetgen switches

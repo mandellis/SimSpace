@@ -612,20 +612,20 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(Ng_Mesh *aMesh, int faceNr)
 //! function: constructor
 //! details:  from Tetgen i/o and face number
 //! ------------------------------------------
-Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(tetgenio *aMesh,int faceNr)
+Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(tetgenio *aMesh, int faceNr)
 {
     if(aMesh==NULL)
     {
         cerr<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____Tetgen i/o for face Nr. "<<faceNr<<" is null____"<<endl;
         return;
     }
-    cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____Tetgen constructor called for face Nr. "<<faceNr<<"____"<<endl;
+    //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____Tetgen constructor called for face Nr. "<<faceNr<<"____"<<endl;
 
     //! ---------------------------------------
     //! number of triangles of the Tetgen mesh
     //! ---------------------------------------
     int N_TriFaces = aMesh->numberoftrifaces;
-    std::vector<int> nodeVector;
+    std::set<int> nodeVector_;
 
     //! -----------------------
     //! "i" global element ID
@@ -633,10 +633,8 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(tetgenio *aMesh,int faceNr)
     for(int i=0; i<N_TriFaces; i++)
     {
         int faceMarker = aMesh->trifacemarkerlist[i];
-        //! ---------------------------------
-        //! the triangle belongs to the face
-        //! ---------------------------------
-        if(faceMarker==faceNr)
+
+        if(faceMarker==faceNr)      // the triangle belong to the face
         {
             myElements.Add(i+1);      //! "i" global element ID
             myElementsMap.Add(i+1);   //! "i" global element ID
@@ -646,22 +644,11 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(tetgenio *aMesh,int faceNr)
                 //! "nodeID" is the Tetgen node ID
                 //! -------------------------------
                 int nodeID = aMesh->trifacelist[i*3+j];
-                nodeVector.push_back(nodeID);
+                nodeVector_.insert(nodeID);
             }
         }
     }
     myNumberOfElements = int(myElements.Extent());
-
-    //! ------------------------------------------------
-    //! eliminate the duplicates from the list of nodes
-    //! ------------------------------------------------
-    std::set<int> B(nodeVector.begin(), nodeVector.end());
-    std::vector<int> nodeVector_;
-    for(int n=0;n<B.size();n++)
-    {
-        int x = *std::next(B.begin(), n);
-        nodeVector_.push_back(x);
-    }
 
     if(nodeVector_.size()<3)
     {
@@ -680,9 +667,10 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(tetgenio *aMesh,int faceNr)
     //! nodeVector_ is clean from the duplicated values
     //! nodeID is the Tetgen nodeID
     //! ------------------------------------------------
-    for(int k=0; k<nodeVector_.size(); k++)
+    int k=0;
+    for(std::set<int>::iterator it = nodeVector_.begin(); it!=nodeVector_.end(); it++, k++)
     {
-        int globalNodeID = nodeVector_.at(k);
+        int globalNodeID = *it;
 
         //! ----------------------------------------
         //! as for constructor from Ng_Mesh pointer
@@ -705,18 +693,17 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(tetgenio *aMesh,int faceNr)
     //! the face elements are defined through global mesh numbering
     //! "i" here is a local numbering
     //! ------------------------------------------------------------
-    for(int i=1; i<=myNumberOfElements; i++)
+    int localElementID = 0;
+    for(TColStd_MapIteratorOfPackedMapOfInteger it(myElements); it.More(); it.Next())
     {
-        myElemType->SetValue(i,TRIG);
+        localElementID++;
+        myElemType->SetValue(localElementID,TRIG);
 
-        //! -------------------------------------------------
-        //! element definition through global mesh numbering
-        //! -------------------------------------------------
-        int elementID = myElementsMap.FindKey(i);
+        int globalElementID = it.Key();
         for(int k=0; k<3; k++)
         {
-            int globalNodeID = aMesh->trifacelist[3*(elementID-1)+k];
-            myElemNodes->SetValue(i,k+1,globalNodeID);
+            int globalNodeID = aMesh->trifacelist[3*(globalElementID-1)+k];
+            myElemNodes->SetValue(localElementID,k+1,globalNodeID);
         }
     }
 
@@ -724,6 +711,11 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(tetgenio *aMesh,int faceNr)
     //! compute normals at elements
     //! ----------------------------
     this->computeNormalAtElements();
+
+    //! ------------------------
+    //! build elements topology
+    //! ------------------------
+    this->buildElementsTopology();
 }
 
 //! ----------------------------
