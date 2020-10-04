@@ -284,7 +284,6 @@ bool TetgenMesher::buildPLC(const occHandle(MeshVS_DataSource) &aSurfaceMesh)
     myPLC.facetmarkerlist = new int[NSE];
     myPLC.facetlist = new tetgenio::facet[NSE];
 
-
     int NbNodes, aNodeBuf[3];
     TColStd_Array1OfInteger nodeIDs(*aNodeBuf,1,3);
 
@@ -295,13 +294,13 @@ bool TetgenMesher::buildPLC(const occHandle(MeshVS_DataSource) &aSurfaceMesh)
     TColStd_MapIteratorOfPackedMapOfInteger it(aSurfaceMesh->GetAllElements());
     for(int el = 1; el<=aSurfaceMesh->GetAllElements().Extent(); el++, it.Next())
     {
-        tetgenio::facet *facet = &myPLC.facetlist[el-1+S];
+        tetgenio::facet *facet = &myPLC.facetlist[el-1];
 
         facet->numberofpolygons = 1;
         facet->numberofholes = 0;
         facet->holelist = NULL;
 
-        //myPLC.facetmarkerlist[el-1+S] = 1;      // one face one tag i.e. "1"
+        myPLC.facetmarkerlist[el-1] = 1;      // one face one tag i.e. "1"
 
         facet->polygonlist = new tetgenio::polygon[1];
         tetgenio::polygon *polygon = &facet->polygonlist[0];
@@ -315,6 +314,7 @@ bool TetgenMesher::buildPLC(const occHandle(MeshVS_DataSource) &aSurfaceMesh)
 
         for(int j=0; j<NbNodes; j++) polygon->vertexlist[j] = nodeIDs(j+1);
     }
+    return true;
 }
 
 //! -------------------------------------------------------------------------
