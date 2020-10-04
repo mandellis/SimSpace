@@ -1189,10 +1189,10 @@ void occPreGLWidget::buildPrismaticMeshIO()
     }
 }
 
-//!-------------------------------
-//! function: show all the bodies
+//!-------------------------
+//! function: showAllBodies
 //! details:
-//!-------------------------------
+//!-------------------------
 void occPreGLWidget::showAllBodies()
 {
     cout<<"occPreGLWidget::showAllBodies()->____function called____"<<endl;
@@ -1224,7 +1224,6 @@ void occPreGLWidget::showAllBodies()
         case curWorkingMode_onSolution: occContext->SetTransparency(curAISShape,TRANSPARENCY_IN_WORKING_MODE_MODEL,false); break;
         default: occContext->SetTransparency(curAISShape,TRANSPARENCY_IN_WORKING_MODE_MODEL,false); break;
         }
-        //occContext->Display(curAISShape,false);
         int displayMode = occContext->DisplayMode();
         occContext->Display(curAISShape,displayMode,0,false,true,AIS_DS_Displayed);
     }
@@ -2591,7 +2590,7 @@ void occPreGLWidget::hideBody(const TColStd_ListOfInteger &listOfBodyNumbers)
 //! -------------------
 void occPreGLWidget::showBody(const TColStd_ListOfInteger &listOfBodies)
 {
-    cout<<"occPreGLWidget::showBody()->____function called____"<<endl;
+    cout<<"occPreGLWidget::showBody()->____function called for n: "<<listOfBodies.Extent()<<" shapes____"<<endl;
 
     //! the selection mode is the same for all the shapes
     TopAbs_ShapeEnum shapeSelectionMode = this->curSelectionMode();
@@ -2599,18 +2598,22 @@ void occPreGLWidget::showBody(const TColStd_ListOfInteger &listOfBodies)
     for(TColStd_ListIteratorOfListOfInteger it(listOfBodies); it.More(); it.Next())
     {
         int bodyIndex = it.Value();
+        cout<<"____tag00____"<<endl;
         const occHandle(AIS_ExtendedShape) &curAISShape = occHandle(AIS_ExtendedShape)::DownCast(myMapOfInteractiveShapes.value(bodyIndex));
+        cout<<"____tag01____"<<endl;
         if(curAISShape.IsNull()) continue;
-        curAISShape->setShapeVisibility(Standard_True);
-        //occContext->Display(curAISShape,false);
+        cout<<"____tag02____"<<endl;
         occContext->Display(curAISShape,displayMode,AIS_Shape::SelectionMode(shapeSelectionMode),true,AIS_DS_Displayed);
+        cout<<"____tag03____"<<endl;
+        curAISShape->setShapeVisibility(Standard_True);
+        cout<<"____tag04____"<<endl;
     }
 
     //! -------------------------------------------------------------------------
     //! now the selection modes must be reactivated, because when the
     //! context is closed, the selection modes (and the selection list) are lost
     //! -------------------------------------------------------------------------
-    //this->reactivateSelectionMode();
+    this->reactivateSelectionMode();
 
     occContext->UpdateCurrentViewer();
 }

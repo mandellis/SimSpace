@@ -390,7 +390,7 @@ bool mainTreeTools::getTreeItemsFromShapes(QTreeView *tree, const std::vector<To
         SimulationNodeClass *node = childItem->data(Qt::UserRole).value<SimulationNodeClass*>();
         if(node->getType()==SimulationNodeClass::nodeType_pointMass) continue;
         TopoDS_Shape shapeInItem = node->getPropertyValue<TopoDS_Shape>("Shape");
-        if(std::find(vecShapes.begin(), vecShapes.end(), shapeInItem) != vecShapes.end()) continue;
+        if(std::find(vecShapes.begin(), vecShapes.end(), shapeInItem) == vecShapes.end()) continue;
         vecItems.push_back(childItem);
     }
     if(vecItems.size()==0)
