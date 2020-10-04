@@ -138,6 +138,9 @@ public:
 
     //! time stamp
     static QString timeStamp();
+
+    //! get path of executable
+    static std::string getPathOfExecutable();
 };
 
 #endif // TOOLS_H

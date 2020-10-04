@@ -1,6 +1,3 @@
-//#define TETGEN_PATH "D:\\tetgen1.5.0\\build\\Release\\tetgen.exe"
-#define TETGEN_PATH "C:/Tetgen/tetgen.exe"
-
 //! ----------------
 //! custom includes
 //! ----------------
@@ -943,6 +940,7 @@ void TetgenMesher::redirectTetgenOutput()
 //! details:  the array of face datasources is used as an input for building the Tetgen PLC
 //!           the last three arguments are the returning values
 //! ----------------------------------------------------------------------------------------
+#include <sys/stat.h>
 int TetgenMesher::performOnDisk1(const NCollection_Array1<occHandle(Ng_MeshVS_DataSourceFace>) &arrayOfFaceDS,
                                  int bodyIndex,
                                  occHandle(Ng_MeshVS_DataSource3D) &tetgenMesh3D,
@@ -991,10 +989,15 @@ int TetgenMesher::performOnDisk1(const NCollection_Array1<occHandle(Ng_MeshVS_Da
     bool isPLCDone = MeshTools::buildPLC(arrayOfFaceDS,nodeFilePath,polyFilePath,myProgressIndicator);
     if(!isPLCDone) return -1;
 
-    //! ---------------------------
-    //! configure and start Tetgen
-    //! ---------------------------
-    QString program = QString(TETGEN_PATH);
+    //! -----------------------------------------------------------------------------------------------
+    //! search for tetgen.exe - as a general rule the file should placed into the executable directory
+    //! -----------------------------------------------------------------------------------------------
+    std::string exePath = tools::getPathOfExecutable()+"/tetgen.exe";
+    struct stat buf;
+    int fileExist = stat(exePath.c_str(),&buf);
+    if(fileExist!=0) return -3;
+
+    QString program = QString::fromStdString(exePath);
     tetgenProcess->setProgram(program);
 
     //! ------------------
@@ -1078,11 +1081,16 @@ int TetgenMesher::performOnDisk1(const NCollection_Array1<occHandle(Ng_MeshVS_Da
         return -1;
     }
 
-    //! ---------------------------
-    //! configure and start Tetgen
-    //! ---------------------------
-    QString program = QString(TETGEN_PATH);
-    cout<<"TetgenMesher::performOnDisk1()->____program: "<<program.toStdString()<<"____"<<endl;
+    //! -----------------------------------------------------------------------------------------------
+    //! search for tetgen.exe - as a general rule the file should placed into the executable directory
+    //! -----------------------------------------------------------------------------------------------
+    std::string exePath = tools::getPathOfExecutable()+"/tetgen.exe";
+    struct stat buf;
+    int fileExist = stat(exePath.c_str(),&buf);
+    if(fileExist!=0) return -3;
+
+    QString program = QString::fromStdString(exePath);
+    //cout<<"TetgenMesher::performOnDisk1()->____program: "<<program.toStdString()<<"____"<<endl;
     tetgenProcess->setProgram(program);
 
     //! ------------------
@@ -1091,8 +1099,7 @@ int TetgenMesher::performOnDisk1(const NCollection_Array1<occHandle(Ng_MeshVS_Da
     QList<QString> arguments;
     //arguments<<QString::fromLatin1(mySwitches)<<polyFilePath;
     arguments<<QString("-")+QString::fromLatin1(mySwitches)<<polyFilePath;
-
-    cout<<"TetgenMesher::performOnDisk1()->____arguments: "<<mySwitches<<" "<<polyFilePath.toStdString()<<endl;
+    //cout<<"TetgenMesher::performOnDisk1()->____arguments: "<<mySwitches<<" "<<polyFilePath.toStdString()<<endl;
 
     tetgenProcess->setArguments(arguments);
 

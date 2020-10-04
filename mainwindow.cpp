@@ -271,6 +271,7 @@ bool MainWindow::event(QEvent *event)
 //! function: constructor
 //! details:
 //! ----------------------
+#include <tools.h>
 MainWindow::MainWindow(QWidget *parent):QMainWindow(parent),ui(new Ui::MainWindow)
 {
     cout<<"MainWindow::MainWindow()->____constructor called____"<<endl;
@@ -402,9 +403,7 @@ MainWindow::MainWindow(QWidget *parent):QMainWindow(parent),ui(new Ui::MainWindo
     //! ---------------------------------------
     //! the hystogram for the mesh metric view
     //! ---------------------------------------
-    //cout<<"____tag00____"<<endl;
     //myHistogram = new QHistogram(this);
-    //cout<<"____tag01____"<<endl;
 
     /*
     //! ---------------------
@@ -530,6 +529,7 @@ MainWindow::MainWindow(QWidget *parent):QMainWindow(parent),ui(new Ui::MainWindo
 MainWindow::~MainWindow()
 {
     cout<<"MainWindow::~MainWindow()->____DESTRUCTOR CALLED____"<<endl;
+
     //! ------------------------------
     //! delete the progress indicator
     //! ------------------------------
