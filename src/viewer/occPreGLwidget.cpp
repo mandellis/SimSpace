@@ -1010,7 +1010,8 @@ void occPreGLWidget::hideSelectedBodies()
         const occHandle(AIS_ExtendedShape) &curAISShape = occHandle(AIS_ExtendedShape)::DownCast(it.Value());
         curAISShape->setShapeVisibility(false);
         int index = curAISShape->index();
-        occContext->Erase(curAISShape,false);       //! erase the shape from the view
+        occContext->Unhilight(curAISShape,false);    // unhighlight before erasing
+        occContext->Erase(curAISShape,false);        // erase the shape from the view
         if(myMapOfInteractiveMeshes.value(index,occHandle(MeshVS_Mesh)()).IsNull()) continue;
         occMeshContext->Erase(myMapOfInteractiveMeshes.value(index),false);     //! erase the mesh from the view
     }
@@ -2571,8 +2572,7 @@ void occPreGLWidget::hideBody(const TColStd_ListOfInteger &listOfBodyNumbers)
         if(anAISShape.IsNull()) continue;
         anAISShape->setShapeVisibility(Standard_False);
 
-        //! remove highlight before erasing
-        occContext->Unhilight(anAISShape,false);
+        occContext->Unhilight(anAISShape,false);    // remove highlight before erasing
         occContext->Erase(anAISShape, false);
     }
 
