@@ -12613,6 +12613,20 @@ void SimulationManager::generateBoundaryConditionsMeshDS(bool computeDual)
                 //! --------------------------
                 //! work on exact datasources
                 //! --------------------------
+                aBuilder.setShapes(patchConformingTags);
+                IndexedMapOfMeshDataSources exactMeshDS;
+                aBuilder.perform1(exactMeshDS,true);
+
+                //! ----------------------------
+                //! work on inexact datasources
+                //! ----------------------------
+                aBuilder.setShapes(nonPatchConformingTags);
+                IndexedMapOfMeshDataSources inexactMeshDS;
+                aBuilder.perform1(inexactMeshDS,false);
+ /*
+                //! --------------------------
+                //! work on exact datasources
+                //! --------------------------
                 aBuilder.setFaces(patchConformingTags);
                 IndexedMapOfMeshDataSources exactMeshDS;
                 aBuilder.perform2(exactMeshDS,true);
@@ -12623,7 +12637,7 @@ void SimulationManager::generateBoundaryConditionsMeshDS(bool computeDual)
                 aBuilder.setFaces(nonPatchConformingTags);
                 IndexedMapOfMeshDataSources inexactMeshDS;
                 aBuilder.perform2(inexactMeshDS,false);
-
+*/
                 //! --------------------------------------------------------
                 //! merge into a single map
                 //! details: in case of non patch conforming the DSbuilder

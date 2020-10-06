@@ -34,35 +34,39 @@ class faceDataSourceBuilder: public QObject
 public:
 
     faceDataSourceBuilder(QObject *parent = 0);
-    faceDataSourceBuilder(const QList<TopoDS_Face> &aFaceList, meshDataBase *mDB, QObject *parent = 0);
+    //faceDataSourceBuilder(const QList<TopoDS_Face> &aFaceList, meshDataBase *mDB, QObject *parent = 0);
 
-    void setFaces(const QList<TopoDS_Face> &faceList);
+    //void setFaces(const QList<TopoDS_Face> &faceList);
     void setFaces(const std::vector<GeometryTag> &vecLoc);
-    void setFaces(const QMap<int, std::vector<GeometryTag>> &vecLocMap);
+    //void setFaces(const QMap<int, std::vector<GeometryTag>> &vecLocMap);
 
-    void setShape(const std::vector<GeometryTag> &vecLoc);
+    void setShapes(const std::vector<GeometryTag> &vecLoc);
 
     void setMapOfIsMeshExact(const QMap<int,bool> &aMapOfIsMeshExact);
     void setDataBase(meshDataBase *mDB);
 
 public slots:
 
-    bool perform2(IndexedMapOfMeshDataSources &mapOfFaceDS, bool doExact);
+    //bool perform2(IndexedMapOfMeshDataSources &mapOfFaceDS, bool doExact);
+    bool perform1(IndexedMapOfMeshDataSources &mapOfFaceDS, bool doExact);
 
 private:
 
     meshDataBase *myMDB;
     QMap<int,bool> myMapOfIsMeshDSExact;
-    QList<TopoDS_Face> myListOfFaces;
-    QList<TopoDS_Solid> myListOfBodies;
+    //QList<TopoDS_Face> myListOfFaces;
+    //QList<TopoDS_Solid> myListOfBodies;
 
-    QMap<int,QList<TopoDS_Face>> myMapOfListOfFaces;
-    QMap<int,QList<TopoDS_Face>> myMapOfListOfFaces;
-    QMap<int,QList<TopoDS_Face>> myMapOfListOfFaces;
+    std::vector<TopoDS_Shape> myListOfShape;
+
+    //QMap<int,QList<TopoDS_Face>> myMapOfListOfFaces;
+    std::map<int,std::vector<TopoDS_Shape>> myMapOfListOfShape;
 
 private:
 
-    QMap<int,QList<TopoDS_Face>> groupFaces();
+    //QMap<int,QList<TopoDS_Face>> groupFaces();
+    std::map<int,std::vector<TopoDS_Shape>> groupShapes();
+
 
 signals:
 
