@@ -5,7 +5,7 @@
 //! custom includes
 //! ----------------
 #include <surfacemeshsmoother.h>
-#include <facedatasourcebuilder.h>
+#include <datasourcebuilder.h>
 #include <ng_meshvs_datasourceface.h>
 #include <ng_meshvs_datasource2d.h>
 #include <ng_meshvs_datasource3d.h>
@@ -29,40 +29,40 @@ using namespace std;
 
 
 //! --------------------------------
-//! function: faceDataSourceBuilder
+//! function: dataSourceBuilder
 //! details:
 //! --------------------------------
-faceDataSourceBuilder::faceDataSourceBuilder(QObject *parent): QObject(parent)
+dataSourceBuilder::dataSourceBuilder(QObject *parent): QObject(parent)
 {
     ;
 }
-
+/*
 //! --------------------------------
-//! function: faceDataSourceBuilder
+//! function: dataSourceBuilder
 //! details:
 //! --------------------------------
-faceDataSourceBuilder::faceDataSourceBuilder(const QList<TopoDS_Face> &aFaceList, meshDataBase *mDB, QObject *parent):
+dataSourceBuilder::dataSourceBuilder(const QList<TopoDS_Face> &aFaceList, meshDataBase *mDB, QObject *parent):
     myListOfFaces(aFaceList),
     myMDB(mDB),
     QObject(parent)
 {
     ;
 }
-
+*/
 //! ----------------------
 //! function: setDataBase
 //! details:
 //! ----------------------
-void faceDataSourceBuilder::setDataBase(meshDataBase *mDB)
+void dataSourceBuilder::setDataBase(meshDataBase *mDB)
 {
     myMDB = mDB;
 }
-
+/*
 //! -------------------
 //! function: setFaces
 //! details:
 //! -------------------
-void faceDataSourceBuilder::setFaces(const QList<TopoDS_Face> &faceList)
+void dataSourceBuilder::setFaces(const QList<TopoDS_Face> &faceList)
 {
     myListOfFaces.clear();
     for(QList<TopoDS_Face>::const_iterator it = faceList.cbegin(); it!=faceList.cend(); ++it)
@@ -71,22 +71,22 @@ void faceDataSourceBuilder::setFaces(const QList<TopoDS_Face> &faceList)
         myListOfFaces<<aFace;
     }
 }
-
+*/
 
 //! ------------------------------
 //! function: setMapOfIsMeshExact
 //! details:
 //! ------------------------------
-void faceDataSourceBuilder::setMapOfIsMeshExact(const QMap<int,bool> &aMapOfIsMeshExact)
+void dataSourceBuilder::setMapOfIsMeshExact(const QMap<int,bool> &aMapOfIsMeshExact)
 {
     myMapOfIsMeshDSExact = aMapOfIsMeshExact;
 }
-
+/*
 //! ------------------------------------------
 //! function: setFaces
 //! details:  through a vector of GeometryTag
 //! ------------------------------------------
-void faceDataSourceBuilder::setFaces(const std::vector<GeometryTag> &vecLoc)
+void dataSourceBuilder::setFaces(const std::vector<GeometryTag> &vecLoc)
 {
     myListOfFaces.clear();
     for(std::vector<GeometryTag>::const_iterator it = vecLoc.cbegin(); it!= vecLoc.cend(); ++it)
@@ -98,16 +98,20 @@ void faceDataSourceBuilder::setFaces(const std::vector<GeometryTag> &vecLoc)
         if(!aFace.IsNull()) myListOfFaces<<aFace;
     }
 }
-
+*/
 //! ------------------------------------------
 //! function: setScopes
 //! details:  through a vector of GeometryTag
 //! ------------------------------------------
-void faceDataSourceBuilder::setShapes(const std::vector<GeometryTag> &vecLoc)
+void dataSourceBuilder::setShapes(const std::vector<GeometryTag> &vecLoc)
 {
+    cout<<"faceDataSourceBuilder::setShapes()->____function called___"<<endl;
+
     myListOfShape.clear();
     for(std::vector<GeometryTag>::const_iterator it = vecLoc.cbegin(); it!= vecLoc.cend(); ++it)
     {
+        cout<<"faceDataSourceBuilder::setShapes()->____tag00___"<<endl;
+
         const GeometryTag &loc = *it;
         int bodyIndex = loc.parentShapeNr;
         int faceNr = loc.subTopNr;
@@ -116,8 +120,11 @@ void faceDataSourceBuilder::setShapes(const std::vector<GeometryTag> &vecLoc)
         {
         case TopAbs_SOLID:
         {
-            TopoDS_Solid aSolid = TopoDS::Solid(myMDB->MapOfBodyTopologyMap.value(bodyIndex).solidMap.FindKey(bodyIndex));
+            cout<<"faceDataSourceBuilder::setShapes()->____tag01___"<<endl;
+            TopoDS_Solid aSolid = TopoDS::Solid(myMDB->bodyMap.value(bodyIndex));
             if(!aSolid.IsNull()) myListOfShape.push_back(aSolid);
+            cout<<"faceDataSourceBuilder::setShapes()->____tag01___"<<endl;
+
         }
             break;
 
@@ -137,6 +144,7 @@ void faceDataSourceBuilder::setShapes(const std::vector<GeometryTag> &vecLoc)
         }
 
     }
+    cout<<"faceDataSourceBuilder::setShapes()->____function exiting___"<<endl;
 }
 
 
@@ -144,7 +152,7 @@ void faceDataSourceBuilder::setShapes(const std::vector<GeometryTag> &vecLoc)
 //! function: groupShapes
 //! details:  group a list of shape according to the parent body
 //! -------------------------------------------------------------
-std::map<int, std::vector<TopoDS_Shape>> faceDataSourceBuilder::groupShapes()
+std::map<int, std::vector<TopoDS_Shape>> dataSourceBuilder::groupShapes()
 {
     cout<<"faceDataSourceBuilder::groupShapes()->____grouping shapes___"<<endl;
     std::map<int,std::vector<TopoDS_Shape>> bodyShapesMap;
@@ -219,7 +227,7 @@ std::map<int, std::vector<TopoDS_Shape>> faceDataSourceBuilder::groupShapes()
 
 
 //! --------------------------------------------------------------------------------
-//! function: perform1
+//! function: perform
 //! details:  given the list of tags the class is initialized with, group the shape
 //!           according to the parent body; the following map is generated:
 //!           key   => body index
@@ -228,9 +236,9 @@ std::map<int, std::vector<TopoDS_Shape>> faceDataSourceBuilder::groupShapes()
 //!           mesh database, and simpy merged into one mesh datasource; otherwhise,
 //!           an approximate meshDS is created
 //! --------------------------------------------------------------------------------
-bool faceDataSourceBuilder::perform1(IndexedMapOfMeshDataSources &mapOfFaceDS, bool doExact)
+bool dataSourceBuilder::perform(IndexedMapOfMeshDataSources &mapOfDS, bool doExact)
 {
-    cout<<"faceDataSourceBuilder::perform1()->____function called____"<<endl;
+    cout<<"faceDataSourceBuilder::perform()->____function called____"<<endl;
     if(myListOfShape.empty()) return false;
 
     //! ------------------------------------------------------
@@ -238,7 +246,7 @@ bool faceDataSourceBuilder::perform1(IndexedMapOfMeshDataSources &mapOfFaceDS, b
     //! variable "faceDSList" can belong to different bodies:
     //! group them according to the parent
     //! ------------------------------------------------------
-    cout<<"faceDataSourceBuilder::perform1()->____begin grouping shapes____"<<endl;
+    cout<<"faceDataSourceBuilder::perform()->____begin grouping shapes____"<<endl;
     std::map<int,std::vector<TopoDS_Shape>> bodyShapesMap  = this->groupShapes();
 
     //! -------------
@@ -247,7 +255,7 @@ bool faceDataSourceBuilder::perform1(IndexedMapOfMeshDataSources &mapOfFaceDS, b
     if(bodyShapesMap.empty())
     {
         emit taskFinished();
-        cout<<"faceDataSourceBuilder::perform1()->____bodyShapesMap finished____"<<endl;
+        cout<<"faceDataSourceBuilder::perform()->____bodyShapesMap finished____"<<endl;
         return false;
     }
 
@@ -257,7 +265,7 @@ bool faceDataSourceBuilder::perform1(IndexedMapOfMeshDataSources &mapOfFaceDS, b
         {
             int bodyIndex = it->first;
             if(bodyShapesMap.count(bodyIndex)==0) continue;
-            cout<<"faceDataSourceBuilder::perform1()->____doing exact for body nr: "<<bodyIndex<<"____"<<endl;
+            cout<<"faceDataSourceBuilder::perform()->____doing exact for body nr: "<<bodyIndex<<"____"<<endl;
 
             const std::vector<TopoDS_Shape> &shapes = it->second;
             TopoDS_Shape firstShape = shapes.at(0);
@@ -265,25 +273,29 @@ bool faceDataSourceBuilder::perform1(IndexedMapOfMeshDataSources &mapOfFaceDS, b
             {
             case TopAbs_SOLID:
             {
-                QList<occHandle(Ng_MeshVS_DataSource)> listOfBodyMeshDS;
-
                 for(int n=0; n<shapes.size(); n++)
                 {
                     TopoDS_Shape aShape = shapes[n];
                     if(aShape.IsNull()) cout<<"faceDataSourceBuilder::perform1()->____NULL body____"<<endl;
-                    int bodyNr = aShape;
+                    int bodyIndex = myMDB->bodyMap.key(aShape);
+                    cout<<"faceDataSourceBuilder::perform1()->____working on body nr: "<<bodyIndex<<"____"<<endl;
 
-                    cout<<"faceDataSourceBuilder::perform1()->____working on face nr: "<<faceNr<<"____"<<endl;
-
-                    occHandle(Ng_MeshVS_DataSource) aBodyDS = occHandle(Ng_MeshVS_DataSourceFace)::DownCast(myMDB->ArrayOfMeshDSOnFaces.getValue(bodyIndex,faceNr));
+                    occHandle(Ng_MeshVS_DataSource3D) aBodyDS = occHandle(Ng_MeshVS_DataSource3D)::DownCast(myMDB->ArrayOfMeshDS.value(bodyIndex));
                     if(aBodyDS.IsNull())
                     {
-                        cout<<"faceDataSourceBuilder::perform1()->____the mesh data source of body nr: "<<bodyNr<<" is null: jumping over it____"<<endl;
                         continue;
                     }
-                    listOfFaceMeshDS<<aBodyDS;
+                    mapOfDS.insert(bodyIndex,aBodyDS);
                 }
-                mapOfFaceDS.insert(bodyIndex,listOfFaceMeshDS.);
+                if(mapOfDS.isEmpty())
+                {
+                    cout<<"faceDataSourceBuilder::perform()->____mapOfFaceDS empty____"<<endl;
+                    emit taskFinished();
+                    return false;
+                }
+                cout<<"faceDataSourceBuilder::perform()->____function exiting____"<<endl;
+                emit taskFinished();
+                return true;
             }
                 break;
             case TopAbs_FACE:
@@ -323,9 +335,9 @@ bool faceDataSourceBuilder::perform1(IndexedMapOfMeshDataSources &mapOfFaceDS, b
                     cout<<"____the final mesh is null____"<<endl;
                     continue;
                 }
-                mapOfFaceDS.insert(bodyIndex,finalFaceDS);
+                mapOfDS.insert(bodyIndex,finalFaceDS);
             }
-            if(mapOfFaceDS.isEmpty())
+            if(mapOfDS.isEmpty())
             {
                 cout<<"faceDataSourceBuilder::perform1()->____mapOfFaceDS empty____"<<endl;
                 emit taskFinished();
@@ -334,11 +346,6 @@ bool faceDataSourceBuilder::perform1(IndexedMapOfMeshDataSources &mapOfFaceDS, b
             cout<<"faceDataSourceBuilder::perform1()->____function exiting____"<<endl;
             emit taskFinished();
             return true;
-            }
-                break;
-            default:
-            {
-
             }
                 break;
             }
@@ -446,7 +453,7 @@ bool faceDataSourceBuilder::perform1(IndexedMapOfMeshDataSources &mapOfFaceDS, b
             //! -----------------------------------------------------------
             occHandle(Ng_MeshVS_DataSourceFace) finalFaceDS = new Ng_MeshVS_DataSourceFace(listOfFaceMeshDS);
 
-            mapOfFaceDS.insert(bodyIndex, finalFaceDS);
+            mapOfDS.insert(bodyIndex, finalFaceDS);
         }
         cout<<"faceDataSourceBuilder::perform()->____function exiting____"<<endl;
         emit taskFinished();
@@ -454,12 +461,12 @@ bool faceDataSourceBuilder::perform1(IndexedMapOfMeshDataSources &mapOfFaceDS, b
     }
 }
 
-
+/*
 //! -------------------------------------------------
 //! function: setFaces
 //! details:  through a map of vector of GeometryTag
 //! -------------------------------------------------
-void faceDataSourceBuilder::setFaces(const QMap<int,std::vector<GeometryTag>> &vecLocMap)
+void dataSourceBuilder::setFaces(const QMap<int,std::vector<GeometryTag>> &vecLocMap)
 {
     cout<<"faceDataSourceBuilder::setFaces()->____setting up the face list from input geometry tags____"<<endl;
     for(QMap<int,std::vector<GeometryTag>>::const_iterator it = vecLocMap.begin(); it!=vecLocMap.end(); ++it)
@@ -485,7 +492,7 @@ void faceDataSourceBuilder::setFaces(const QMap<int,std::vector<GeometryTag>> &v
         myMapOfListOfFaces.insert(bcNumber,listOfFaces);
     }
 }
-
+*/
 /*
 //! --------------------------------------------------------------------------------
 //! function: perform2

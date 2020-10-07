@@ -971,7 +971,7 @@ void DetailViewer::handleScopingMethodChange()
 //! -----------------------------------------------------------
 #include "markers.h"
 #include "markerbuilder.h"
-#include <facedatasourcebuilder.h>
+#include <datasourcebuilder.h>
 #include <indexedmapofmeshdatasources.h>
 #include "maintreetools.h"
 void DetailViewer::updateTags()
@@ -2082,7 +2082,7 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
             }
         }
             break;
-
+        case SimulationNodeClass::nodeType_structuralAnalysisThermalCondition:
         case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Pressure:
         case SimulationNodeClass::nodeType_thermalAnalysisConvection:
         case SimulationNodeClass::nodeType_thermalAnalysisTemperature:

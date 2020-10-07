@@ -1391,7 +1391,7 @@ void occPreGLWidget::showFaceMesh()
 #endif
 
 #ifdef USE_FACE_DS_BUILDER
-#include <facedatasourcebuilder.h>
+#include <datasourcebuilder.h>
 #include <indexedmapofmeshdatasources.h>
 void occPreGLWidget::showFaceMesh()
 {
@@ -1411,7 +1411,7 @@ void occPreGLWidget::showFaceMesh()
 
     cout<<"occPreGLWidget::showFaceMesh()->____number of selected faces: "<<listOfFaces.length()<<"____"<<endl;
 
-    faceDataSourceBuilder aFaceDSBuilder;
+    dataSourceBuilder aFaceDSBuilder;
     aFaceDSBuilder.setFaces(listOfFaces);
     aFaceDSBuilder.setDataBase(myDS2);
 

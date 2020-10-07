@@ -276,11 +276,11 @@ load load::readLoad(std::ifstream &in)
             loadType == "loadType_pressureMagnitude" ||
             loadType == "loadType_thermalConditionTemperature" ||
             loadType == "loadType_magnitude" ||
+            loadType == "loadType_temperatureMagnitude" ||
             loadType == "loadType_stepEndTime" ||
             loadType == "loadType_time" ||
             loadType == "loadType_boltForce" ||
             loadType == "loadType_boltAdjustment" ||
-            loadType == "loadType_temperatureMagnitude" ||
             loadType == "loadType_thermalFlowMagnitude" ||
             loadType == "loadType_thermalFluxMagnitude" ||
             loadType == "loadType_thermalConvectionFilmCoefficientMagnitude" ||
@@ -289,7 +289,7 @@ load load::readLoad(std::ifstream &in)
         QVector<double> vecDouble = tools::readQVector<double>(in);
         for(int i=0; i<vecDouble.size();i++)
         {
-            //cout<<"____"<<type.toStdString()<<"_____value: "<<vecDouble[i]<<"____"<<endl;
+            cout<<"____"<<type.toStdString()<<"_____value: "<<vecDouble[i]<<"____"<<endl;
             data.setValue(vecDouble.at(i));
             vecVariant.push_back(data);
         }

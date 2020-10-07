@@ -1,5 +1,5 @@
-#ifndef FACEDATASOURCEBUILDER_H
-#define FACEDATASOURCEBUILDER_H
+#ifndef DATASOURCEBUILDER_H
+#define DATASOURCEBUILDER_H
 
 //! ------------------------------------
 //! replacement for opencascade::handle
@@ -27,14 +27,14 @@
 #include <QMap>
 #include <QObject>
 
-class faceDataSourceBuilder: public QObject
+class dataSourceBuilder: public QObject
 {
     Q_OBJECT
 
 public:
 
-    faceDataSourceBuilder(QObject *parent = 0);
-    //faceDataSourceBuilder(const QList<TopoDS_Face> &aFaceList, meshDataBase *mDB, QObject *parent = 0);
+    dataSourceBuilder(QObject *parent = 0);
+    //dataSourceBuilder(const QList<TopoDS_Face> &aFaceList, meshDataBase *mDB, QObject *parent = 0);
 
     //void setFaces(const QList<TopoDS_Face> &faceList);
     void setFaces(const std::vector<GeometryTag> &vecLoc);
@@ -48,7 +48,7 @@ public:
 public slots:
 
     //bool perform2(IndexedMapOfMeshDataSources &mapOfFaceDS, bool doExact);
-    bool perform1(IndexedMapOfMeshDataSources &mapOfFaceDS, bool doExact);
+    bool perform(IndexedMapOfMeshDataSources &mapOfDS, bool doExact);
 
 private:
 
@@ -73,4 +73,4 @@ signals:
     void taskFinished();
 };
 
-#endif // FACEDATASOURCEBUILDER_H
+#endif // DATASOURCEBUILDER_H
