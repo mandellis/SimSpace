@@ -231,7 +231,6 @@ void prismaticLayer::setParameters(prismaticLayerParameters parameters)
     myNbGuidingVectorSmoothingSteps = parameters.NbGuidingVectorSmoothingSteps;
     myCurvatureSensitivityForThicknessSmoothing = parameters.curvatureSensitivityForThicknessSmoothing;
     myNbLayerThicknessSmoothingSteps = parameters.NbLayerThicknessSmoothingSteps;
-
 }
 
 //! -----------------------------------------------------------
@@ -284,43 +283,6 @@ void prismaticLayer::computeVecFieldCutOff(bool lockBoundary)
         //! cutoff
         //! -------
         myLayerHCutOff.insert(nodeID, cutoff);
-    }
-}
-
-//! ----------------------
-//! function: displayMesh
-//! details:
-//! ----------------------
-void prismaticLayer::displayMesh(const occHandle(MeshVS_DataSource) &aMeshDS)
-{
-    static int i;
-    i++;
-    occPreGLWidget *mainViewport = static_cast<occPreGLWidget*>(tools::getWidgetByName("maingwindow"));
-    if(mainViewport!=NULL)
-    {
-        ArrayOfColors colors;
-        if(i<1) mainViewport->hideAllMeshes(true);
-        const occHandle(AIS_InteractiveContext) &theCTX = mainViewport->getMeshContext();
-
-        //! ----------------------------
-        //! the mesh interactive object
-        //! ----------------------------
-        occHandle(MeshVS_Mesh) aFaceMesh = new MeshVS_Mesh();
-        aFaceMesh->SetDataSource(aMeshDS);
-
-        occHandle(MeshVS_MeshPrsBuilder) aBuilder = new MeshVS_MeshPrsBuilder(aFaceMesh);
-        aFaceMesh->AddBuilder(aBuilder,Standard_False);
-
-        Graphic3d_MaterialAspect myAspect(Graphic3d_NOM_GOLD);
-        myAspect.SetColor(Quantity_Color(Quantity_NOC_GREEN));
-
-        aFaceMesh->GetDrawer()->SetMaterial(MeshVS_DA_FrontMaterial, myAspect);
-        aFaceMesh->GetDrawer()->SetBoolean(MeshVS_DA_DisplayNodes, Standard_False);
-        aFaceMesh->GetDrawer()->SetBoolean(MeshVS_DA_ShowEdges, Standard_True);
-        aFaceMesh->GetDrawer()->SetColor(MeshVS_DA_EdgeColor,Quantity_NOC_BLACK);
-        aFaceMesh->SetDisplayMode(MeshVS_DMF_Shading);
-
-        theCTX->Display(aFaceMesh,Standard_True);
     }
 }
 
@@ -414,7 +376,6 @@ bool prismaticLayer::inflateMesh(QList<occHandle(Ng_MeshVS_DataSourceFace)> &inf
         //! 1) normal at nodes
         //! 2) curvature information
         //! -------------------------
-        //theMeshToInflate_new->computeNormalAtElements();
         theMeshToInflate_new->computeNormalAtNodes();
         theMeshToInflate_new->computeAnglesAtNode();
 
@@ -444,7 +405,7 @@ bool prismaticLayer::inflateMesh(QList<occHandle(Ng_MeshVS_DataSourceFace)> &inf
         //! smooth guiding vectors directions
         //! ----------------------------------
         int NbSmoothingSteps = myNbGuidingVectorSmoothingSteps;
-        double cs= myCurvatureSensitivityForGuidingVectorsSmoothing;
+        double cs = myCurvatureSensitivityForGuidingVectorsSmoothing;
         this->fieldSmoother(normals,theMeshToInflate_new,cs,NbSmoothingSteps);
 
         QMap<int,gp_Vec> displacementsField;
@@ -577,7 +538,7 @@ void prismaticLayer::computeShrinkFactor(const occHandle(Ng_MeshVS_DataSourceFac
     //! ----------------
     //! diagnostic file
     //! ----------------
-    FILE *f = fopen("D:/shrink field.txt","w");
+    //FILE *f = fopen("D:/shrink field.txt","w");
 
     int mode = 1; // Gaussian curvature
     if(aMeshDS->myCurvatureGradient.isEmpty()) aMeshDS->computeDiscreteCurvature(mode);
@@ -589,15 +550,15 @@ void prismaticLayer::computeShrinkFactor(const occHandle(Ng_MeshVS_DataSourceFac
         //! ---------------------------
         //! use the gaussian curvature
         //! ---------------------------
-        const double maxShrink = 2.0;
+        const double maxShrink = 1.0;
         double k = myCurvatureSensitivityForShrink;
         double shrink = maxShrink*(1./(1.+exp(-k*sqrt(fabs(curvature)))));
         if(curvature<0) shrink = maxShrink - shrink;
         shrinkFactors.insert(globalNodeID,shrink);
 
-        fprintf(f,"%d\t%lf\t%lf\n",globalNodeID,curvature,shrink);
+        //fprintf(f,"%d\t%lf\t%lf\n",globalNodeID,curvature,shrink);
     }
-    fclose(f);
+    //fclose(f);
 }
 
 //! ---------------------------------
@@ -623,10 +584,10 @@ bool prismaticLayer::buildPrismaticElements(const QList<occHandle(Ng_MeshVS_Data
         cout<<"@  working on mesh pair ("<<i<<","<<i+1<<")"<<endl;
         cout<<"@-----------------------------------@"<<endl;
 
-        const occHandle(Ng_MeshVS_DataSourceFace) &baseMesh=theInflatedMeshes.at(i);
+        const occHandle(Ng_MeshVS_DataSourceFace) &baseMesh = theInflatedMeshes.at(i);
         TColStd_PackedMapOfInteger eMapBase = baseMesh->GetAllElements();
 
-        const occHandle(Ng_MeshVS_DataSourceFace) &topMesh=theInflatedMeshes.at(i+1);
+        const occHandle(Ng_MeshVS_DataSourceFace) &topMesh = theInflatedMeshes.at(i+1);
         TColStd_PackedMapOfInteger eMapTop = topMesh->GetAllElements();
 
         TColStd_MapIteratorOfPackedMapOfInteger eItBase, eItTop;
@@ -652,7 +613,8 @@ bool prismaticLayer::buildPrismaticElements(const QList<occHandle(Ng_MeshVS_Data
             QList<mesh::meshPoint> bottomFace;
             for(int n=0; n<NbNodes; n++)
             {
-                mesh::meshPoint aMeshPoint(coords(3*n+1),coords(3*n+2),coords(3*n+3));
+                int s = 3*n;
+                mesh::meshPoint aMeshPoint(coords(s+1),coords(s+2),coords(s+3));
                 bottomFace<<aMeshPoint;
             }
 
@@ -665,7 +627,8 @@ bool prismaticLayer::buildPrismaticElements(const QList<occHandle(Ng_MeshVS_Data
             QList<mesh::meshPoint> topFace;
             for(int n=0; n<NbNodes; n++)
             {
-                mesh::meshPoint aMeshPoint1(coords1(3*n+1),coords1(3*n+2),coords1(3*n+3));
+                int s = 3*n;
+                mesh::meshPoint aMeshPoint1(coords1(s+1),coords1(s+2),coords1(s+3));
                 topFace<<aMeshPoint1;
             }
 

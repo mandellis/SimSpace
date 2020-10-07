@@ -520,7 +520,7 @@ Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(const QString &tetgenEleFileName,
     //! read the nodes
     //! First line: <# of points> <dimension (3)> <# of attributes> <boundary markers (0 or 1)>
     //! ----------------------------------------------------------------------------------------
-    cout<<"____Start reading: "<<tetgenNodeFileName.toStdString()<<"____"<<endl;
+    //cout<<"____Start reading: "<<tetgenNodeFileName.toStdString()<<"____"<<endl;
     unsigned int NbPoints, dimension, NbAttributes, boundaryMarkerFlag;
     fscanf(tetgenNodeFile,"%d%d%d%d",&NbPoints,&dimension,&NbAttributes,&boundaryMarkerFlag);
 
@@ -544,18 +544,18 @@ Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(const QString &tetgenEleFileName,
         else
         {
             isNodeReading = false;
-            cout<<"____error in reading nodes____"<<endl;
+            cout<<"Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D()->____error in reading nodes____"<<endl;
             break;
         }
     }
 
     if(isNodeReading==false)
     {
-        cout<<"____error in nodes file____"<<endl;
+        cout<<"Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D()->____error in nodes file____"<<endl;
         return;
     }
 
-    cout<<"____Start reading elements file: "<<tetgenEleFileName.toStdString()<<"____"<<endl;
+    //cout<<"____Start reading elements file: "<<tetgenEleFileName.toStdString()<<"____"<<endl;
 
     //! ----------------------------------------------------------------------------------------
     //! read the elements
@@ -572,7 +572,7 @@ Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(const QString &tetgenEleFileName,
     myElemType = new TColStd_HArray1OfInteger(1,NbElements);
     myElemNodes = new TColStd_HArray2OfInteger(1,NbElements,1,10);
 
-    cout<<"____Number of volume elements: "<<NbElements<<"____"<<endl;
+    //cout<<"____Number of volume elements: "<<NbElements<<"____"<<endl;
 
     bool isElementReadingOk = true;
     for(unsigned int line = 1; line<=NbElements; line++)
@@ -611,7 +611,7 @@ Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(const QString &tetgenEleFileName,
         else
         {
             isElementReadingOk = false;
-            cerr<<"____error in reading elements____"<<endl;
+            cout<<"Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D()->____error in reading elements____"<<endl;
             return;
         }
     }
@@ -621,7 +621,7 @@ Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(const QString &tetgenEleFileName,
     //! -------------------------
     this->buildElementsTopology();
 
-    cout<<"Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D()->____constructor from Tetgen files OK____"<<endl;
+    //cout<<"Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D()->____constructor from Tetgen files OK____"<<endl;
 }
 
 //! -----------------------------------------------------------------------------
