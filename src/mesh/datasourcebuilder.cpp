@@ -198,12 +198,13 @@ std::map<int,std::vector<TopoDS_Shape>> dataSourceBuilder::groupShapes()
             //! put the face into the map at position "bodyIndex"
             //! --------------------------------------------------
             std::map<int,std::vector<TopoDS_Shape>>::iterator bodyIt =bodyShapesMap.find(bodyIndex);
-            if(bodyShapesMap.count(bodyIndex)==1)
+            if(/*bodyShapesMap.count(bodyIndex)==1*/bodyIt!=bodyShapesMap.end())
             {
                 std::vector<TopoDS_Shape> listOfShape = bodyIt->second;
                 bodyShapesMap.erase(bodyIndex);
                 listOfShape.push_back(curShape);
                 bodyShapesMap.insert(std::make_pair(bodyIndex,listOfShape));
+                //bodyIt->second = listOfShape;
             }
             else
             {
@@ -250,43 +251,45 @@ bool dataSourceBuilder::perform(IndexedMapOfMeshDataSources &mapOfDS, bool doExa
         return false;
     }
 
-    if(doExact)
+    //if(doExact)
+    //{
+    for(std::map<int,std::vector<TopoDS_Shape>>::iterator it = bodyShapesMap.begin(); it!=bodyShapesMap.end(); ++it)
     {
-        for(std::map<int,std::vector<TopoDS_Shape>>::iterator it = bodyShapesMap.begin(); it!=bodyShapesMap.end(); ++it)
-        {
-            int bodyIndex = it->first;
-            const std::vector<TopoDS_Shape> &shapes = it->second;
-            if(bodyShapesMap.count(bodyIndex)==0)  continue;
+        int bodyIndex = it->first;
+        const std::vector<TopoDS_Shape> &shapes = it->second;
+        if(bodyShapesMap.count(bodyIndex)==0)  continue;
 
-            TopoDS_Shape firstShape = shapes.at(0);
-            switch(firstShape.ShapeType())
+        TopoDS_Shape firstShape = shapes.at(0);
+        switch(firstShape.ShapeType())
+        {
+        case TopAbs_SOLID:
+        {
+            for(std::vector<TopoDS_Shape>::const_iterator n=shapes.cbegin(); n!=shapes.cend() ; ++n)
             {
-            case TopAbs_SOLID:
-            {
-                for(std::vector<TopoDS_Shape>::const_iterator n=shapes.cbegin(); n!=shapes.cend() ; ++n)
+                TopoDS_Shape aShape = *n;
+                if(aShape.IsNull()) cout<<"faceDataSourceBuilder::perform1()->____NULL body____"<<endl;
+                int bodyIndex = myMDB->bodyMap.key(aShape);
+                occHandle(Ng_MeshVS_DataSource3D) aBodyDS = occHandle(Ng_MeshVS_DataSource3D)::DownCast(myMDB->ArrayOfMeshDS.value(bodyIndex));
+                if(aBodyDS.IsNull())
                 {
-                    TopoDS_Shape aShape = *n;
-                    if(aShape.IsNull()) cout<<"faceDataSourceBuilder::perform1()->____NULL body____"<<endl;
-                    int bodyIndex = myMDB->bodyMap.key(aShape);
-                    occHandle(Ng_MeshVS_DataSource3D) aBodyDS = occHandle(Ng_MeshVS_DataSource3D)::DownCast(myMDB->ArrayOfMeshDS.value(bodyIndex));
-                    if(aBodyDS.IsNull())
-                    {
-                        continue;
-                    }
-                    mapOfDS.insert(bodyIndex,aBodyDS);
+                    continue;
                 }
-                if(mapOfDS.isEmpty())
-                {
-                    cout<<"faceDataSourceBuilder::perform()->____mapOfFaceDS empty____"<<endl;
-                    emit taskFinished();
-                    return false;
-                }
-                cout<<"faceDataSourceBuilder::perform()->____function exiting____"<<endl;
-                emit taskFinished();
-                return true;
+                mapOfDS.insert(bodyIndex,aBodyDS);
             }
-                break;
-            case TopAbs_FACE:
+            if(mapOfDS.isEmpty())
+            {
+                cout<<"faceDataSourceBuilder::perform()->____mapOfFaceDS empty____"<<endl;
+                emit taskFinished();
+                return false;
+            }
+            cout<<"faceDataSourceBuilder::perform()->____function exiting____"<<endl;
+            emit taskFinished();
+            return true;
+        }
+            break;
+        case TopAbs_FACE:
+        {
+            if(doExact)
             {
                 QList<occHandle(Ng_MeshVS_DataSourceFace)> listOfFaceMeshDS;
                 TopTools_IndexedMapOfShape faceMap = myMDB->MapOfBodyTopologyMap.value(bodyIndex).faceMap;
@@ -321,21 +324,113 @@ bool dataSourceBuilder::perform(IndexedMapOfMeshDataSources &mapOfDS, bool doExa
                 }
                 mapOfDS.insert(bodyIndex,finalFaceDS);
             }
-                break;
+            else
+            {
+                //! -----------------------------
+                //! the surface mesh of the body
+                //! -----------------------------
+                occHandle(Ng_MeshVS_DataSource2D) surfaceMesh;
+
+                bool mesh2Dtopological = true;
+                if(!mesh2Dtopological)
+                {
+                    //! ----------------------------------------------
+                    //! data source retrieved from the mesh data base
+                    //! ----------------------------------------------
+                    surfaceMesh = occHandle(Ng_MeshVS_DataSource2D)::DownCast(myMDB->ArrayOfMeshDS2D.value(bodyIndex));
+                }
+                else
+                {
+                    //! -----------------------
+                    //! topological - in place
+                    //! -----------------------
+                    const occHandle(Ng_MeshVS_DataSource3D) &volumeMeshDS =
+                            occHandle(Ng_MeshVS_DataSource3D)::DownCast(myMDB->ArrayOfMeshDS.value(bodyIndex));
+                    if(volumeMeshDS.IsNull())
+                    {
+                        cout<<"faceDataSourceBuilder::perform()->____cannot generate the surface mesh from the volume mesh: "<<endl;
+                        return false;
+                    }
+                    if(volumeMeshDS->myFaceToElements.isEmpty())
+                    {
+                        cout<<"faceDataSourceBuilder::perform()->____the face to element connectivity info have been not generated yet. Building____"<<endl;
+                        volumeMeshDS->buildFaceToElementConnectivity();
+                    }
+                    surfaceMesh = new Ng_MeshVS_DataSource2D(volumeMeshDS);
+
+                    //! replace the mesh 2D - test
+                    //! myMDB->ArrayOfMeshDS2D.insert(bodyIndex,surfaceMesh);
+                }
+                if(surfaceMesh.IsNull()) continue;
+
+#ifdef USE_MESH_CUTTER
+                //! ---------------------
+                //! cut the surface mesh
+                //! ---------------------
+                occHandle(MeshVS_DataSource) cutMesh;
+                QList<TopoDS_Shape> ls;
+                for(int i=0; i<listOfFaces.length(); i++) ls<<listOfFaces.at(i);
+                surfaceMeshCutter::cutSurfaceMesh(surfaceMesh,ls,cutMesh);
+#endif
+
+                //! --------------------------------------------
+                //! rebuild the "approximate" MeshVS_DataSource
+                //! and put it into a list "listOfMeshDS"
+                //! --------------------------------------------
+                QList<occHandle(Ng_MeshVS_DataSourceFace)> listOfFaceMeshDS;
+                for(std::vector<TopoDS_Shape>::const_iterator i=shapes.cbegin(); i!=shapes.cend(); ++i)
+                {
+                    TopoDS_Face curFace = TopoDS::Face(*i);
+                    bool autocomputeProximity = false;
+                    double proximity = 0.1;
+#ifndef USE_MESH_CUTTER
+                    occHandle(Ng_MeshVS_DataSourceFace) curFaceRebuiltDS = new Ng_MeshVS_DataSourceFace(curFace,surfaceMesh,autocomputeProximity,proximity);
+#endif
+#ifdef USE_MESH_CUTTER
+                    occHandle(Ng_MeshVS_DataSourceFace) curFaceRebuiltDS = new Ng_MeshVS_DataSourceFace(curFace,cutMesh,autocomputeProximity,proximity);
+#endif
+                    //! -------------
+                    //! sanity check
+                    //! -------------
+                    if(curFaceRebuiltDS.IsNull()) continue;
+                    listOfFaceMeshDS<<curFaceRebuiltDS;
+                }
+
+                //! -------------
+                //! sanity check
+                //! -------------
+                if(shapes.empty())
+                {
+                    cout<<"faceDataSourceBuilder::perform()->____function exiting____"<<endl;
+                    emit taskFinished();
+                    return false;
+                }
+
+                //! -----------------------------------------------------------
+                //! sum the face mesh computed on the current body "bodyIndex"
+                //! When retrieving face mesh data sources from the map use
+                //! Ng_MeshVS_DataSourceFace::DownCast
+                //! -----------------------------------------------------------
+                occHandle(Ng_MeshVS_DataSourceFace) finalFaceDS = new Ng_MeshVS_DataSourceFace(listOfFaceMeshDS);
+                mapOfDS.insert(bodyIndex, finalFaceDS);
             }
         }
-        if(mapOfDS.isEmpty())
-        {
-            cout<<"faceDataSourceBuilder::perform()->____mapOfFaceDS empty____"<<endl;
-            emit taskFinished();
-            return false;
+            break;
         }
-        cout<<"faceDataSourceBuilder::perform()->____function exiting____"<<endl;
-        emit taskFinished();
-        return true;
     }
-    else
+    if(mapOfDS.isEmpty())
     {
+        cout<<"faceDataSourceBuilder::perform()->____mapOfFaceDS empty____"<<endl;
+        emit taskFinished();
+        return false;
+    }
+    cout<<"faceDataSourceBuilder::perform()->____function exiting____"<<endl;
+    emit taskFinished();
+    return true;
+    //}
+    //else
+    //{
+    /*
         //! ------------------------------------------------------------------------------------------
         //! ALGO
         //! for each body
@@ -347,101 +442,134 @@ bool dataSourceBuilder::perform(IndexedMapOfMeshDataSources &mapOfDS, bool doExa
         for(std::map<int,std::vector<TopoDS_Shape>>::iterator it = bodyShapesMap.begin(); it!=bodyShapesMap.end(); ++it)
         {
             int bodyIndex = it->first;
-            std::vector<TopoDS_Shape> listOfShape = it->second;
+            if(bodyShapesMap.count(bodyIndex)==0)  continue;
 
-            //! -----------------------------
-            //! the surface mesh of the body
-            //! -----------------------------
-            occHandle(Ng_MeshVS_DataSource2D) surfaceMesh;
-
-            bool mesh2Dtopological = true;
-            if(!mesh2Dtopological)
+            std::vector<TopoDS_Shape> &shapes = it->second;
+            TopoDS_Shape firstShape = shapes.at(0);
+            switch(firstShape.ShapeType())
             {
-                //! ----------------------------------------------
-                //! data source retrieved from the mesh data base
-                //! ----------------------------------------------
-                surfaceMesh = occHandle(Ng_MeshVS_DataSource2D)::DownCast(myMDB->ArrayOfMeshDS2D.value(bodyIndex));
-            }
-            else
+            case TopAbs_SOLID:
             {
-                //! -----------------------
-                //! topological - in place
-                //! -----------------------
-                const occHandle(Ng_MeshVS_DataSource3D) &volumeMeshDS =
-                        occHandle(Ng_MeshVS_DataSource3D)::DownCast(myMDB->ArrayOfMeshDS.value(bodyIndex));
-                if(volumeMeshDS.IsNull())
+                for(std::vector<TopoDS_Shape>::const_iterator n=shapes.cbegin(); n!=shapes.cend() ; ++n)
                 {
-                    cout<<"faceDataSourceBuilder::perform()->____cannot generate the surface mesh from the volume mesh: "<<endl;
+                    TopoDS_Shape aShape = *n;
+                    if(aShape.IsNull()) cout<<"faceDataSourceBuilder::perform1()->____NULL body____"<<endl;
+                    int bodyIndex = myMDB->bodyMap.key(aShape);
+                    occHandle(Ng_MeshVS_DataSource3D) aBodyDS = occHandle(Ng_MeshVS_DataSource3D)::DownCast(myMDB->ArrayOfMeshDS.value(bodyIndex));
+                    if(aBodyDS.IsNull())
+                    {
+                        continue;
+                    }
+                    mapOfDS.insert(bodyIndex,aBodyDS);
+                }
+                if(mapOfDS.isEmpty())
+                {
+                    cout<<"faceDataSourceBuilder::perform()->____mapOfFaceDS empty____"<<endl;
+                    emit taskFinished();
                     return false;
                 }
-                if(volumeMeshDS->myFaceToElements.isEmpty())
-                {
-                    cout<<"faceDataSourceBuilder::perform()->____the face to element connectivity info have been not generated yet. Building____"<<endl;
-                    volumeMeshDS->buildFaceToElementConnectivity();
-                }
-                surfaceMesh = new Ng_MeshVS_DataSource2D(volumeMeshDS);
-
-                //! replace the mesh 2D - test
-                //! myMDB->ArrayOfMeshDS2D.insert(bodyIndex,surfaceMesh);
+                cout<<"faceDataSourceBuilder::perform()->____function exiting____"<<endl;
+                emit taskFinished();
+                return true;
             }
-            if(surfaceMesh.IsNull()) continue;
-
-    #ifdef USE_MESH_CUTTER
-            //! ---------------------
-            //! cut the surface mesh
-            //! ---------------------
-            occHandle(MeshVS_DataSource) cutMesh;
-            QList<TopoDS_Shape> ls;
-            for(int i=0; i<listOfFaces.length(); i++) ls<<listOfFaces.at(i);
-            surfaceMeshCutter::cutSurfaceMesh(surfaceMesh,ls,cutMesh);
-    #endif
-
-            //! --------------------------------------------
-            //! rebuild the "approximate" MeshVS_DataSource
-            //! and put it into a list "listOfMeshDS"
-            //! --------------------------------------------
-            QList<occHandle(Ng_MeshVS_DataSourceFace)> listOfFaceMeshDS;
-            for(int i=0; i<listOfShape.size(); i++)
+                break;
+            case TopAbs_FACE:
             {
-                TopoDS_Face curFace = TopoDS::Face(listOfShape.at(i));
-                bool autocomputeProximity = false;
-                double proximity = 0.1;
-    #ifndef USE_MESH_CUTTER
-                occHandle(Ng_MeshVS_DataSourceFace) curFaceRebuiltDS = new Ng_MeshVS_DataSourceFace(curFace,surfaceMesh,autocomputeProximity,proximity);
-    #endif
-    #ifdef USE_MESH_CUTTER
-                occHandle(Ng_MeshVS_DataSourceFace) curFaceRebuiltDS = new Ng_MeshVS_DataSourceFace(curFace,cutMesh,autocomputeProximity,proximity);
-    #endif
+                //! -----------------------------
+                //! the surface mesh of the body
+                //! -----------------------------
+                occHandle(Ng_MeshVS_DataSource2D) surfaceMesh;
+
+                bool mesh2Dtopological = true;
+                if(!mesh2Dtopological)
+                {
+                    //! ----------------------------------------------
+                    //! data source retrieved from the mesh data base
+                    //! ----------------------------------------------
+                    surfaceMesh = occHandle(Ng_MeshVS_DataSource2D)::DownCast(myMDB->ArrayOfMeshDS2D.value(bodyIndex));
+                }
+                else
+                {
+                    //! -----------------------
+                    //! topological - in place
+                    //! -----------------------
+                    const occHandle(Ng_MeshVS_DataSource3D) &volumeMeshDS =
+                            occHandle(Ng_MeshVS_DataSource3D)::DownCast(myMDB->ArrayOfMeshDS.value(bodyIndex));
+                    if(volumeMeshDS.IsNull())
+                    {
+                        cout<<"faceDataSourceBuilder::perform()->____cannot generate the surface mesh from the volume mesh: "<<endl;
+                        return false;
+                    }
+                    if(volumeMeshDS->myFaceToElements.isEmpty())
+                    {
+                        cout<<"faceDataSourceBuilder::perform()->____the face to element connectivity info have been not generated yet. Building____"<<endl;
+                        volumeMeshDS->buildFaceToElementConnectivity();
+                    }
+                    surfaceMesh = new Ng_MeshVS_DataSource2D(volumeMeshDS);
+
+                    //! replace the mesh 2D - test
+                    //! myMDB->ArrayOfMeshDS2D.insert(bodyIndex,surfaceMesh);
+                }
+                if(surfaceMesh.IsNull()) continue;
+
+        #ifdef USE_MESH_CUTTER
+                //! ---------------------
+                //! cut the surface mesh
+                //! ---------------------
+                occHandle(MeshVS_DataSource) cutMesh;
+                QList<TopoDS_Shape> ls;
+                for(int i=0; i<listOfFaces.length(); i++) ls<<listOfFaces.at(i);
+                surfaceMeshCutter::cutSurfaceMesh(surfaceMesh,ls,cutMesh);
+        #endif
+
+                //! --------------------------------------------
+                //! rebuild the "approximate" MeshVS_DataSource
+                //! and put it into a list "listOfMeshDS"
+                //! --------------------------------------------
+                QList<occHandle(Ng_MeshVS_DataSourceFace)> listOfFaceMeshDS;
+                for(std::vector<TopoDS_Shape>::const_iterator i=shapes.cbegin(); i!=shapes.cend(); ++i)
+                {
+                    TopoDS_Face curFace = TopoDS::Face(*i);
+                    bool autocomputeProximity = false;
+                    double proximity = 0.1;
+        #ifndef USE_MESH_CUTTER
+                    occHandle(Ng_MeshVS_DataSourceFace) curFaceRebuiltDS = new Ng_MeshVS_DataSourceFace(curFace,surfaceMesh,autocomputeProximity,proximity);
+        #endif
+        #ifdef USE_MESH_CUTTER
+                    occHandle(Ng_MeshVS_DataSourceFace) curFaceRebuiltDS = new Ng_MeshVS_DataSourceFace(curFace,cutMesh,autocomputeProximity,proximity);
+        #endif
+                    //! -------------
+                    //! sanity check
+                    //! -------------
+                    if(curFaceRebuiltDS.IsNull()) continue;
+                    listOfFaceMeshDS<<curFaceRebuiltDS;
+                }
+
                 //! -------------
                 //! sanity check
                 //! -------------
-                if(curFaceRebuiltDS.IsNull()) continue;
-                listOfFaceMeshDS<<curFaceRebuiltDS;
+                if(shapes.empty())
+                {
+                    cout<<"faceDataSourceBuilder::perform()->____function exiting____"<<endl;
+                    emit taskFinished();
+                    return false;
+                }
+
+                //! -----------------------------------------------------------
+                //! sum the face mesh computed on the current body "bodyIndex"
+                //! When retrieving face mesh data sources from the map use
+                //! Ng_MeshVS_DataSourceFace::DownCast
+                //! -----------------------------------------------------------
+                occHandle(Ng_MeshVS_DataSourceFace) finalFaceDS = new Ng_MeshVS_DataSourceFace(listOfFaceMeshDS);
+                mapOfDS.insert(bodyIndex, finalFaceDS);
             }
-
-            //! -------------
-            //! sanity check
-            //! -------------
-            if(listOfShape.empty())
-            {
-                cout<<"faceDataSourceBuilder::perform()->____function exiting____"<<endl;
-                emit taskFinished();
-                return false;
+                break;
             }
-
-            //! -----------------------------------------------------------
-            //! sum the face mesh computed on the current body "bodyIndex"
-            //! When retrieving face mesh data sources from the map use
-            //! Ng_MeshVS_DataSourceFace::DownCast
-            //! -----------------------------------------------------------
-            occHandle(Ng_MeshVS_DataSourceFace) finalFaceDS = new Ng_MeshVS_DataSourceFace(listOfFaceMeshDS);
-
-            mapOfDS.insert(bodyIndex, finalFaceDS);
         }
         cout<<"faceDataSourceBuilder::perform()->____function exiting____"<<endl;
         emit taskFinished();
         return true;
-    }
+    }*/
 }
 
 /*
