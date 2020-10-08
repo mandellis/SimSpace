@@ -13,6 +13,9 @@
 //! ---
 #include <QStandardItemModel>
 
+//! ----
+//! C++
+//! ----
 #include <memory>
 
 //! ---------------------------
@@ -341,13 +344,64 @@ void mainTreeTools::getTreeItemsRecursively(QStandardItemModel* model, QList<QSt
     for(int r = 0; r<model->rowCount(parent); ++r)
     {
         QModelIndex index = model->index(r, 0, parent);
-        // here is your applicable code
         QExtendedStandardItem *item = static_cast<QExtendedStandardItem*>(model->itemFromIndex(index));
         items.push_back(item);
         if(model->hasChildren(index))
         {
             getTreeItemsRecursively(model, items, index);
         }
+    }
+}
+
+//! --------------------------------------------------------------------------------
+//! function: getTreeItemRecursively
+//! details:  return the first occurrence of item containing a node of type "aType"
+//! --------------------------------------------------------------------------------
+QStandardItem* mainTreeTools::getFirstTreeItemOfType(SimulationNodeClass::nodeType aType, QStandardItemModel* model)
+{
+    QStandardItem *curItem = Q_NULLPTR;
+    QList<QStandardItem*> items;
+    mainTreeTools::getTreeItemsRecursively(model,items);
+    for(QList<QStandardItem*>::iterator it = items.begin(); it!= items.end(); it++)
+    {
+        curItem = *it;
+        SimulationNodeClass *curNode = curItem->data(Qt::UserRole).value<SimulationNodeClass*>();
+        if(curNode->getType()==aType) break;
+    }
+    return curItem;
+}
+
+//! ---------------------------------
+//! function: getTreeItemsFromShapes
+//! details:
+//! ---------------------------------
+bool mainTreeTools::getTreeItemsFromShapes(QTreeView *tree, const std::vector<TopoDS_Shape> &vecShapes, std::vector<QStandardItem*> &vecItems)
+{
+    QStandardItemModel *model = (QStandardItemModel*)tree->model();
+    QStandardItem *item = mainTreeTools::getFirstTreeItemOfType(SimulationNodeClass::nodeType_geometry,model);
+    if(item==Q_NULLPTR)
+    {
+        cout<<"mainTreeTools::getTreeItemsFromShapes()->____item geometry not found____"<<endl;
+        return false;
+    }
+    for(int i=0; i<item->rowCount(); i++)               // scan the children, jumping over point mass items
+    {
+        QStandardItem *childItem = item->child(i,0);
+        SimulationNodeClass *node = childItem->data(Qt::UserRole).value<SimulationNodeClass*>();
+        if(node->getType()==SimulationNodeClass::nodeType_pointMass) continue;
+        TopoDS_Shape shapeInItem = node->getPropertyValue<TopoDS_Shape>("Shape");
+        if(std::find(vecShapes.begin(), vecShapes.end(), shapeInItem) == vecShapes.end()) continue;
+        vecItems.push_back(childItem);
+    }
+    if(vecItems.size()==0)
+    {
+        cout<<"mainTreeTools::getTreeItemsFromShapes()->____no items found in tree____"<<endl;
+        return false;
+    }
+    else
+    {
+        cout<<"mainTreeTools::getTreeItemsFromShapes()->____nr. "<<vecItems.size()<<" items found____"<<endl;
+        return true;
     }
 }
 

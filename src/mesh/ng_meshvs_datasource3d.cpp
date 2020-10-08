@@ -520,7 +520,7 @@ Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(const QString &tetgenEleFileName,
     //! read the nodes
     //! First line: <# of points> <dimension (3)> <# of attributes> <boundary markers (0 or 1)>
     //! ----------------------------------------------------------------------------------------
-    cout<<"____Start reading: "<<tetgenNodeFileName.toStdString()<<"____"<<endl;
+    //cout<<"____Start reading: "<<tetgenNodeFileName.toStdString()<<"____"<<endl;
     unsigned int NbPoints, dimension, NbAttributes, boundaryMarkerFlag;
     fscanf(tetgenNodeFile,"%d%d%d%d",&NbPoints,&dimension,&NbAttributes,&boundaryMarkerFlag);
 
@@ -544,148 +544,84 @@ Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(const QString &tetgenEleFileName,
         else
         {
             isNodeReading = false;
-            cout<<"____error in reading nodes____"<<endl;
+            cout<<"Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D()->____error in reading nodes____"<<endl;
             break;
         }
     }
 
-    if(isNodeReading==true)
+    if(isNodeReading==false)
     {
-        cout<<"____Nodes reading OK____"<<endl;
+        cout<<"Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D()->____error in nodes file____"<<endl;
+        return;
     }
 
-    if(isNodeReading==true)
+    //cout<<"____Start reading elements file: "<<tetgenEleFileName.toStdString()<<"____"<<endl;
+
+    //! ----------------------------------------------------------------------------------------
+    //! read the elements
+    //! First line: <# of points> <dimension (3)> <# of attributes> <boundary markers (0 or 1)>
+    //! ----------------------------------------------------------------------------------------
+    unsigned int NbElements;
+    //unsigned int NbPoints;
+    unsigned int region;
+    unsigned int eNumber;
+    unsigned int n1,n2,n3,n4,n5,n6,n7,n8,n9,n10;
+    fscanf(tetgenEleFile,"%d%d%d",&NbElements,&NbPoints,&region);
+
+    myNumberOfElements = NbElements;
+    myElemType = new TColStd_HArray1OfInteger(1,NbElements);
+    myElemNodes = new TColStd_HArray2OfInteger(1,NbElements,1,10);
+
+    //cout<<"____Number of volume elements: "<<NbElements<<"____"<<endl;
+
+    bool isElementReadingOk = true;
+    for(unsigned int line = 1; line<=NbElements; line++)
     {
-        cout<<"____Start reading: "<<tetgenEleFileName.toStdString()<<"____"<<endl;
-        //!ccout("____Start reading: "+tetgenEleFileName+"____");
-
-        //! ----------------------------------------------------------------------------------------
-        //! read the elements
-        //! First line: <# of points> <dimension (3)> <# of attributes> <boundary markers (0 or 1)>
-        //! ----------------------------------------------------------------------------------------
-        unsigned int NbElements;
-        unsigned int NbPoints;
-        unsigned int region;
-        unsigned int eNumber;
-        unsigned int n1,n2,n3,n4,n5,n6,n7,n8,n9,n10;
-        fscanf(tetgenEleFile,"%d%d%d",&NbElements,&NbPoints,&region);
-
-        myNumberOfElements = NbElements;
-        myElemType = new TColStd_HArray1OfInteger(1,NbElements);
-        myElemNodes = new TColStd_HArray2OfInteger(1,NbElements,1,10);
-
-        cout<<"____Number of volume elements: "<<NbElements<<"____"<<endl;
-
-        bool isElementReadingOk = true;
-        for(unsigned int line = 1; line<=NbElements; line++)
+        if(5==fscanf(tetgenEleFile,"%d%d%d%d%d",&eNumber,&n1,&n2,&n3,&n4))
         {
-            if(5==fscanf(tetgenEleFile,"%d%d%d%d%d",&eNumber,&n1,&n2,&n3,&n4))
-            {
-                //! --------------------------
-                //! use Tetgen nodal ordering
-                //! --------------------------
-                myElemType->SetValue(eNumber,TET);
-                myElemNodes->SetValue(eNumber,1,n1);
-                myElemNodes->SetValue(eNumber,2,n2);
-                myElemNodes->SetValue(eNumber,4,n3);
-                myElemNodes->SetValue(eNumber,3,n4);
+            //! --------------------------
+            //! use Tetgen nodal ordering
+            //! --------------------------
+            myElemType->SetValue(eNumber,TET);
+            myElemNodes->SetValue(eNumber,1,n1);
+            myElemNodes->SetValue(eNumber,2,n2);
+            myElemNodes->SetValue(eNumber,4,n3);
+            myElemNodes->SetValue(eNumber,3,n4);
 
-                myElements.Add(eNumber);
-                myElementsMap.Add(eNumber);
-            }
-            else if(11==fscanf(tetgenEleFile,"%d%d%d%d%d%d%d%d%d%d%d",&eNumber,&n1,&n2,&n3,&n4,&n5,&n6,&n7,&n8,&n9,&n10))
-            {
-                //! --------------------------
-                //! use Tetgen nodal ordering
-                //! --------------------------
-                myElemType->SetValue(eNumber,TET10);
-                myElemNodes->SetValue(eNumber,1,n1);
-                myElemNodes->SetValue(eNumber,2,n2);
-                myElemNodes->SetValue(eNumber,3,n3);
-                myElemNodes->SetValue(eNumber,4,n4);
-                myElemNodes->SetValue(eNumber,5,n5);
-                myElemNodes->SetValue(eNumber,6,n6);
-                myElemNodes->SetValue(eNumber,7,n7);
-                myElemNodes->SetValue(eNumber,8,n8);
-                myElemNodes->SetValue(eNumber,9,n9);
-                myElemNodes->SetValue(eNumber,10,n10);
-            }
-            else
-            {
-                isElementReadingOk = false;
-                cout<<"____error in reading elements____"<<endl;
-                break;
-            }
+            myElements.Add(eNumber);
+            myElementsMap.Add(eNumber);
         }
-
-        if(isElementReadingOk==true)
+        else if(11==fscanf(tetgenEleFile,"%d%d%d%d%d%d%d%d%d%d%d",&eNumber,&n1,&n2,&n3,&n4,&n5,&n6,&n7,&n8,&n9,&n10))
         {
-            cout<<"____Elements reading OK____"<<endl;
-        }
-
-        //! --------------------------------
-        //! set the topological information
-        //! --------------------------------
-        if(isElementReadingOk==true)
-        {
-            cout<<"____Setting the topological information____"<<endl;
-            //! -------------------------------------------
-            //! topological information section
-            //! sequence of nodes for the 3D visualization
-            //! 1st order tet: definition of the faces
-            //! Face 1: 1-2-3
-            //! Face 2: 1-4-2
-            //! Face 3: 2-4-3
-            //! Face 4: 3-4-1
-            //! -------------------------------------------
-            TET4MeshData = new MeshVS_HArray1OfSequenceOfInteger(1,4);
-            TColStd_SequenceOfInteger face1, face2, face3, face4;
-
-            face1.Append(0); face1.Append(1); face1.Append(3);
-            face2.Append(0); face2.Append(2); face2.Append(1);
-            face3.Append(1); face3.Append(2); face3.Append(3);
-            face4.Append(3); face4.Append(2); face4.Append(0);
-
-            TET4MeshData->SetValue(1,face1);
-            TET4MeshData->SetValue(2,face2);
-            TET4MeshData->SetValue(3,face3);
-            TET4MeshData->SetValue(4,face4);
-
-            //! -------------------------------------------
-            //! sequence of nodes for the 3D visualization
-            //! 2nd order tet: definition of the faces
-            //! Face 1: 0-6-1-8-3-5
-            //! Face 2: 0-9-2-7-4-6
-            //! Face 3: 1-7-2-4-3-8
-            //! Face 4: 3-4-2-9-0-5
-            //! --------------------------------------------
-            TET10MeshData = new MeshVS_HArray1OfSequenceOfInteger(1,4);
-
-            face1.Clear(); face2.Clear(); face3.Clear(); face4.Clear();
-            face1.Append(0); face1.Append(6); face1.Append(1); face1.Append(8); face1.Append(3); face1.Append(5);
-            face2.Append(0); face2.Append(9); face2.Append(2); face2.Append(7); face2.Append(4); face2.Append(6);
-            face3.Append(1); face3.Append(7); face3.Append(2); face3.Append(4); face3.Append(3); face3.Append(8);
-            face4.Append(3); face4.Append(4); face4.Append(2); face4.Append(9); face4.Append(0); face4.Append(5);
-
-            TET10MeshData->SetValue(1,face1);
-            TET10MeshData->SetValue(2,face2);
-            TET10MeshData->SetValue(3,face3);
-            TET10MeshData->SetValue(4,face4);
+            //! --------------------------
+            //! use Tetgen nodal ordering
+            //! --------------------------
+            myElemType->SetValue(eNumber,TET10);
+            myElemNodes->SetValue(eNumber,1,n1);
+            myElemNodes->SetValue(eNumber,2,n2);
+            myElemNodes->SetValue(eNumber,3,n3);
+            myElemNodes->SetValue(eNumber,4,n4);
+            myElemNodes->SetValue(eNumber,5,n5);
+            myElemNodes->SetValue(eNumber,6,n6);
+            myElemNodes->SetValue(eNumber,7,n7);
+            myElemNodes->SetValue(eNumber,8,n8);
+            myElemNodes->SetValue(eNumber,9,n9);
+            myElemNodes->SetValue(eNumber,10,n10);
         }
         else
         {
-            //! ---------------------------------------------
-            //! reset the node maps and the node coordinates
-            //! ---------------------------------------------
-            myNodes.Clear();
-            myNodesMap.Clear();
-            myNodeCoords.Nullify();
-            myElements.Clear();
-            myElementsMap.Clear();
-            myElemNodes.Nullify();
+            isElementReadingOk = false;
+            cout<<"Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D()->____error in reading elements____"<<endl;
+            return;
         }
     }
-    cout<<"Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D()->____constructor from Tetgen files OK____"<<endl;
+
+    //! -------------------------
+    //! build elements toipology
+    //! -------------------------
+    this->buildElementsTopology();
+
+    //cout<<"Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D()->____constructor from Tetgen files OK____"<<endl;
 }
 
 //! -----------------------------------------------------------------------------

@@ -84,11 +84,6 @@ public:
     bool inflateMeshAndCompress(QList<occHandle(Ng_MeshVS_DataSourceFace)> &theInflatedMeshes,
                                 occHandle(Ng_MeshVS_DataSource3D) &preInflationVolumeMeshDS);
 
-    //! ---------------------------------------------
-    //! display merged meshes - for testing purposes
-    //! ---------------------------------------------
-    void displayMesh(const occHandle(MeshVS_DataSource) &aMeshDS);
-
     //! -----------------------------
     //! build the prismatic elements
     //! -----------------------------

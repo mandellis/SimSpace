@@ -367,7 +367,6 @@ std::vector<int> tools::clearFromDuplicates(const std::vector<int> &aVec)
     return vec;
 }
 
-
 //! ---------------------------
 //! function: timeStamp
 //! details:  time stamp label
@@ -383,4 +382,21 @@ QString tools::timeStamp()
     timeStamp.append("Date: ").append(dateString).append("\n").append("Time: ").append(timeString);
 
     return timeStamp;
+}
+
+//! ------------------------------
+//! function: getPathOfExecutable
+//! details:
+//! ------------------------------
+#include <Windows.h>
+std::string tools::getPathOfExecutable()
+{
+    LPWSTR buffer;
+    GetModuleFileName(NULL, buffer, MAX_PATH);
+    std::string aString;
+    aString.reserve(wcslen(buffer));
+    for (;*buffer; buffer++) aString += (char)*buffer;
+    std::string::size_type pos = aString.find_last_of("\\/");
+    if (pos == std::string::npos) return "";
+    return aString.substr(0, pos);
 }

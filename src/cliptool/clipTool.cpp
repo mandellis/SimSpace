@@ -98,6 +98,15 @@ clipTool::clipTool(QWidget *parent):QTableView(parent),
     connect(theDelegate,SIGNAL(currentCSTranslationApplied(int)),this,SLOT(updateCSTranslation(int)));
 }
 
+//! ------------------------------
+//! function: setCurrentClipPlane
+//! details:
+//! ------------------------------
+void clipTool::setCurrentClipPlane(int curClipPlaneID)
+{
+    myOCCViewer->setCurrentClipPlane(curClipPlaneID);
+}
+
 //! --------------------------
 //! function: setMeshDataBase
 //! details:

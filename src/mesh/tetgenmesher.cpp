@@ -1,6 +1,3 @@
-//#define TETGEN_PATH "D:\\tetgen1.5.0\\build\\Release\\tetgen.exe"
-#define TETGEN_PATH "C:\\Tetgen\\tetgen.exe"
-
 //! ----------------
 //! custom includes
 //! ----------------
@@ -11,7 +8,6 @@
 #include <ng_meshvs_datasourceface.h>
 #include "se_exception.h"
 #include "mydefines.h"
-#include "ccout.h"
 #include "tools.h"
 #include "qprogressevent.h"
 
@@ -94,15 +90,13 @@ void TetgenMesher::setProgressIndicator (QProgressIndicator *aProgressIndicator)
 }
 
 #ifndef PLCNEW
-//! -------------------------------------------------------
+//! -------------------
 //! function: buildPLC
-//! details:  build the PLC reprentation of a TopoDS_Shape
-//! -------------------------------------------------------
+//! details:
+//! -------------------
 bool TetgenMesher::buildPLC(int bodyIndex, QList<int> &invalidFaceTags, bool saveTetgenFiles)
 {
-    cout<<"------------------------------"<<endl;
-    cout<<"- TETGEN IS BUILDING THE PLC -"<<endl;
-    cout<<"------------------------------"<<endl;
+    cout<<"TetgenMesher::buildPLC()->____function called____"<<endl;
 
     myPLC.initialize();
     myPLC.firstnumber = 1;
@@ -110,182 +104,215 @@ bool TetgenMesher::buildPLC(int bodyIndex, QList<int> &invalidFaceTags, bool sav
     //! ----------------------------
     //! the overall 2D surface mesh
     //! ----------------------------
-    occHandle(Ng_MeshVS_DataSource2D) meshDS2D = occHandle(Ng_MeshVS_DataSource2D)::DownCast(myMeshDB->ArrayOfMeshDS2D.value(bodyIndex));
-    if(!meshDS2D.IsNull())
-    {
-        //! ------------------------------
-        //! number of surface mesh points
-        //! ------------------------------
-        myPLC.numberofpoints = meshDS2D->GetAllNodes().Extent();
-
-        cout<<"TetgenMesher::init()->____number of PLC nodes: "<<myPLC.numberofpoints<<"____"<<endl;
-
-        //! ------------
-        //! points list
-        //! ------------
-        myPLC.pointlist = new REAL [myPLC.numberofpoints*3];          //! list of REAL
-        myPLC.pointmarkerlist = new int[myPLC.numberofpoints*3];      //! list of int
-
-        //! --------------------------------------
-        //! nodes coordinates from the datasource
-        //! --------------------------------------
-        TColStd_PackedMapOfInteger nodeMap = meshDS2D->GetAllNodes();
-        TColStd_MapIteratorOfPackedMapOfInteger nodeIter;
-        Standard_Real aCoordsBuf[3];
-        TColStd_Array1OfReal Coords(*aCoordsBuf,1,3);
-
-        int S=0;
-        Standard_Integer nbNodes;
-        MeshVS_EntityType aType;
-        for(nodeIter.Initialize(nodeMap);nodeIter.More();nodeIter.Next())
-        {
-            int nodeID = nodeIter.Key();
-            if(!meshDS2D->GetGeom(nodeID,Standard_False,Coords,nbNodes,aType))
-            {
-                cout<<"TetgenMesher()->TetgenMesher::init()->____nodeID "<<nodeID<<" not found____"<<endl;
-                continue;
-            }
-
-            for(int j=1;j<=3;j++)
-            {
-                myPLC.pointlist[S]=Coords(j);
-                //! ----------------------------------
-                //! tag the point as a boundary point
-                //! ----------------------------------
-                myPLC.pointmarkerlist[S]=1;
-                S++;
-            }
-        }
-
-        //! -----------------------------------------
-        //! each surface element is taken as a facet
-        //! -----------------------------------------
-        int NSE = meshDS2D->GetAllElements().Extent();
-        myPLC.numberoffacets = NSE;
-
-        cout<<"TetgenMesher::init()->____number of PLC facets: "<<NSE<<"____"<<endl;
-
-        myPLC.facetmarkerlist = new int[NSE];
-        myPLC.facetlist = new tetgenio::facet[NSE];
-
-        int NFaces = myMeshDB->MapOfBodyTopologyMap.value(bodyIndex).faceMap.Extent();
-
-        cout<<"TetgenMesher::init()->____number of geometry faces: "<<NFaces<<"____"<<endl;
-
-        //! -----------------------------------------------
-        //! build the PLC using the face mesh data sources
-        //! -----------------------------------------------
-        for(int faceNr=0, S=0; faceNr<=NFaces; faceNr++)
-        {
-            //!cout<<"TetgenMesher::init()->____Working on face Nr: "<<faceNr<<"____"<<endl;
-
-            const occHandle(Ng_MeshVS_DataSourceFace) &curFaceDS = occHandle(Ng_MeshVS_DataSourceFace)::DownCast(myMeshDB->ArrayOfMeshDSOnFaces.getValue(bodyIndex,faceNr));
-
-            //! -------------------------------
-            //! one of the face meshes is null
-            //! -------------------------------
-            if((curFaceDS.IsNull() || curFaceDS->GetAllElements().Extent()==0) && faceNr==0)
-            {
-                //!cout<<"TetgenMesher::init()->____the fake ace Nr: "<<faceNr<<" has no elements: jumping over this face"<<endl;
-
-                invalidFaceTags<<faceNr;
-                continue;
-            }
-            if((curFaceDS.IsNull() || curFaceDS->GetAllElements().Extent()==0) && faceNr!=0)
-            {
-                //!cout<<"TetgenMesher::init()->____the face Nr: "<<faceNr<<" has no elements: jumping over this face"<<endl;
-
-                invalidFaceTags<<faceNr;
-                continue;
-            }
-            else
-            {
-                const occHandle(Ng_MeshVS_DataSourceFace) &faceMeshDS =
-                        occHandle(Ng_MeshVS_DataSourceFace)::DownCast(myMeshDB->ArrayOfMeshDSOnFaces.getValue(bodyIndex,faceNr));
-
-                int NbNodes;
-                Standard_Integer aNodeBuf[3];
-                TColStd_Array1OfInteger nodeIDs(*aNodeBuf,1,3);
-
-                //! ------------------------------------------------------
-                //! scan all the elements (triangles) of the surface mesh
-                //! el is the local (face) element number
-                //! ------------------------------------------------------
-                for(int el = 1; el<=faceMeshDS->GetAllElements().Extent(); el++)
-                {
-                    //cout<<"_____Adding facet Nr: "<<el<<" ->";
-                    tetgenio::facet *facet = &myPLC.facetlist[el-1+S];
-
-                    //! the "facet" is a triangle
-                    facet->numberofpolygons = 1;
-                    facet->numberofholes = 0;
-                    facet->holelist = NULL;
-
-                    myPLC.facetmarkerlist[el-1+S] = faceNr;
-
-                    facet->polygonlist = new tetgenio::polygon[1];
-                    tetgenio::polygon *polygon = &facet->polygonlist[0];
-
-                    int globalElementID =faceMeshDS->myElementsMap.FindKey(el);
-
-                    //! ------------------------
-                    //! use the overall 2D mesh
-                    //! ------------------------
-                    bool nodesOfTheElementFound = meshDS2D->GetNodesByElement(globalElementID,nodeIDs,NbNodes);
-
-                    if(nodesOfTheElementFound!=true)
-                    {
-                        //! 2D mesh not consistent
-                        return false;
-                    }
-
-                    polygon->numberofvertices = NbNodes;
-                    polygon->vertexlist = new int[NbNodes];
-
-                    for(int j=0; j<NbNodes; j++)
-                    {
-                        polygon->vertexlist[j] = nodeIDs(j+1);
-                    }
-                }
-                S = S + faceMeshDS->GetAllElements().Extent();
-            }
-        }
-
-        //! -----------
-        //! diagnostic
-        //! -----------
-        cout<<"TetgenMesher::init()->____the following faces have not a mesh: ";
-        for(int i=0; i<invalidFaceTags.length()-1; i++) cout<<invalidFaceTags.at(i)<<", ";
-        cout<<invalidFaceTags.last()<<endl;
-
-        cout<<"TetgenMesher::init()->____The PLC has been built____"<<endl;
-
-        if(saveTetgenFiles)
-        {
-            cout<<"TetgenMesher::init()->____Tetgen is writing the PLC on disk____"<<endl;
-            char fp[512];
-            QDir curDir(myPLCDir);
-            QString fileName = myMeshDB->MapOfBodyNames.value(bodyIndex);
-            QString filePath = curDir.absolutePath()+"/"+fileName;
-            sprintf(fp,filePath.toStdString().c_str());
-
-            cout<<"TetgenMesher::init->___saving PLC nodes : "<<filePath.toStdString()<<"____"<<endl;
-            myPLC.save_nodes(fp);
-
-            cout<<"TetgenMesher::init->___saving PLC facets: "<<filePath.toStdString()<<"____"<<endl;
-            myPLC.save_poly(fp);
-
-            cout<<"TetgenMesher::init()->____nodes and facets written____"<<endl;
-        }
-        return true;
-    }
-    else
+    const occHandle(MeshVS_DataSource) &meshDS2D = myMeshDB->ArrayOfMeshDS2D.value(bodyIndex);
+    if(meshDS2D.IsNull())
     {
         cout<<"TetgenMesher::init()->____error in generating the PLC: the input surface mesh is null____"<<endl;
         return false;
     }
+
+    //! ------------------------------
+    //! number of surface mesh points
+    //! ------------------------------
+    myPLC.numberofpoints = meshDS2D->GetAllNodes().Extent();
+
+    cout<<"TetgenMesher::init()->____number of PLC nodes: "<<myPLC.numberofpoints<<"____"<<endl;
+
+    //! ------------
+    //! points list
+    //! ------------
+    myPLC.pointlist = new double [myPLC.numberofpoints*3];          //! list of REAL
+    myPLC.pointmarkerlist = new int[myPLC.numberofpoints*3];        //! list of int
+
+    //! --------------------------------------
+    //! nodes coordinates from the datasource
+    //! --------------------------------------
+    double bufd[3];
+    TColStd_Array1OfReal Coords(*bufd,1,3);
+
+    int S=0, nbNodes;
+    MeshVS_EntityType aType;
+    for(TColStd_MapIteratorOfPackedMapOfInteger nodeIter(meshDS2D->GetAllNodes());nodeIter.More();nodeIter.Next())
+    {
+        int globalNodeID = nodeIter.Key();
+        if(!meshDS2D->GetGeom(globalNodeID,Standard_False,Coords,nbNodes,aType)) continue;
+        for(int j=1;j<=3;j++)
+        {
+            myPLC.pointlist[S]=Coords(j);
+            myPLC.pointmarkerlist[S]=1;     // tag the point as a boundary point
+            S++;
+        }
+    }
+
+    //! ---------------------------------
+    //! each surface triangle is a facet
+    //! ---------------------------------
+    int NSE = meshDS2D->GetAllElements().Extent();
+    myPLC.numberoffacets = NSE;
+    myPLC.facetmarkerlist = new int[NSE];
+    myPLC.facetlist = new tetgenio::facet[NSE];
+
+    int NFaces = myMeshDB->MapOfBodyTopologyMap.value(bodyIndex).faceMap.Extent();
+
+    //! -----------------------------------------------
+    //! build the PLC using the face mesh data sources
+    //! -----------------------------------------------
+    for(int faceNr=0, S=0; faceNr<=NFaces; faceNr++)
+    {
+        const occHandle(Ng_MeshVS_DataSourceFace) &curFaceDS = occHandle(Ng_MeshVS_DataSourceFace)::DownCast(myMeshDB->ArrayOfMeshDSOnFaces.getValue(bodyIndex,faceNr));
+
+        //! -------------------------------
+        //! one of the face meshes is null
+        //! -------------------------------
+        if(curFaceDS.IsNull())
+        {
+            invalidFaceTags<<faceNr;
+            continue;
+        }
+        if(curFaceDS->GetAllElements().Extent()==0 && faceNr!=0)
+        {
+            //cout<<"TetgenMesher::init()->____the face Nr: "<<faceNr<<" has no elements: jumping over this face"<<endl;
+            invalidFaceTags<<faceNr;
+            continue;
+        }
+        else
+        {
+            const occHandle(MeshVS_DataSource) &faceMeshDS = myMeshDB->ArrayOfMeshDSOnFaces.getValue(bodyIndex,faceNr);
+
+            int NbNodes, aNodeBuf[3];
+            TColStd_Array1OfInteger nodeIDs(*aNodeBuf,1,3);
+
+            //! -------------------------------------------
+            //! scan all the triangles of the surface mesh
+            //! el is the local element ID
+            //! -------------------------------------------
+            TColStd_MapIteratorOfPackedMapOfInteger it(faceMeshDS->GetAllElements());
+            for(int el = 1; el<=faceMeshDS->GetAllElements().Extent(); el++, it.Next())
+            {
+                tetgenio::facet *facet = &myPLC.facetlist[el-1+S];
+
+                facet->numberofpolygons = 1;
+                facet->numberofholes = 0;
+                facet->holelist = NULL;
+
+                myPLC.facetmarkerlist[el-1+S] = faceNr;
+
+                facet->polygonlist = new tetgenio::polygon[1];
+                tetgenio::polygon *polygon = &facet->polygonlist[0];
+
+                int globalElementID = it.Key();
+                bool nodesOfTheElementFound = meshDS2D->GetNodesByElement(globalElementID,nodeIDs,NbNodes);
+                if(nodesOfTheElementFound == false) return false; // 2D mesh not consistent
+
+                polygon->numberofvertices = NbNodes;
+                polygon->vertexlist = new int[NbNodes];
+
+                for(int j=0; j<NbNodes; j++) polygon->vertexlist[j] = nodeIDs(j+1);
+            }
+            S += faceMeshDS->GetAllElements().Extent();
+        }
+    }
+
+    //! -----------
+    //! diagnostic
+    //! -----------
+    cout<<"TetgenMesher::init()->____number of invalid faces: "<<invalidFaceTags.size()<<"____"<<endl;
+    cout<<"TetgenMesher::init()->____The PLC has been built____"<<endl;
+
+    /*
+    if(saveTetgenFiles)
+    {
+        cout<<"TetgenMesher::init()->____writing the PLC on disk____"<<endl;
+        char fp[512];
+        QDir curDir(myPLCDir);
+        QString fileName = myMeshDB->MapOfBodyNames.value(bodyIndex);
+        QString filePath = curDir.absolutePath()+"/"+fileName;
+        sprintf(fp,filePath.toStdString().c_str());
+
+        cout<<"TetgenMesher::init->___saving PLC nodes : "<<filePath.toStdString()<<"____"<<endl;
+        myPLC.save_nodes(fp);
+
+        cout<<"TetgenMesher::init->___saving PLC facets: "<<filePath.toStdString()<<"____"<<endl;
+        myPLC.save_poly(fp);
+
+        cout<<"TetgenMesher::init()->____nodes and facets written____"<<endl;
+    }
+    */
+    return true;
 }
 #endif
+
+//! ----------------------------------
+//! function: buildPLC
+//! details:  from a mesh data source
+//! ----------------------------------
+bool TetgenMesher::buildPLC(const occHandle(MeshVS_DataSource) &aSurfaceMesh)
+{
+    if(aSurfaceMesh.IsNull()) return false;
+    if(aSurfaceMesh->GetAllElements().Extent()==0) return false;
+
+    myPLC.initialize();
+    myPLC.firstnumber = 1;
+
+    myPLC.numberofpoints = aSurfaceMesh->GetAllNodes().Extent();
+
+    myPLC.pointlist = new double [myPLC.numberofpoints*3];          //! list of REAL
+    myPLC.pointmarkerlist = new int[myPLC.numberofpoints*3];        //! list of int
+
+    double bufd[3];
+    TColStd_Array1OfReal Coords(*bufd,1,3);
+
+    int S=0, nbNodes;
+    MeshVS_EntityType aType;
+    for(TColStd_MapIteratorOfPackedMapOfInteger nodeIter(aSurfaceMesh->GetAllNodes());nodeIter.More();nodeIter.Next())
+    {
+        int globalNodeID = nodeIter.Key();
+        if(!aSurfaceMesh->GetGeom(globalNodeID,Standard_False,Coords,nbNodes,aType)) continue;
+        for(int j=1;j<=3;j++)
+        {
+            myPLC.pointlist[S]=Coords(j);
+            myPLC.pointmarkerlist[S]=1;     // tag the point as a boundary point
+            S++;
+        }
+    }
+
+    int NSE = aSurfaceMesh->GetAllElements().Extent();
+    myPLC.numberoffacets = NSE;
+    myPLC.facetmarkerlist = new int[NSE];
+    myPLC.facetlist = new tetgenio::facet[NSE];
+
+    int NbNodes, aNodeBuf[3];
+    TColStd_Array1OfInteger nodeIDs(*aNodeBuf,1,3);
+
+    //! -------------------------------------------
+    //! scan all the triangles of the surface mesh
+    //! el is the local element ID
+    //! -------------------------------------------
+    TColStd_MapIteratorOfPackedMapOfInteger it(aSurfaceMesh->GetAllElements());
+    for(int el = 1; el<=aSurfaceMesh->GetAllElements().Extent(); el++, it.Next())
+    {
+        tetgenio::facet *facet = &myPLC.facetlist[el-1];
+
+        facet->numberofpolygons = 1;
+        facet->numberofholes = 0;
+        facet->holelist = NULL;
+
+        myPLC.facetmarkerlist[el-1] = 1;      // one face one tag i.e. "1"
+
+        facet->polygonlist = new tetgenio::polygon[1];
+        tetgenio::polygon *polygon = &facet->polygonlist[0];
+
+        int globalElementID = it.Key();
+        bool nodesOfTheElementFound = aSurfaceMesh->GetNodesByElement(globalElementID,nodeIDs,NbNodes);
+        if(nodesOfTheElementFound == false) return false; // 2D mesh not consistent
+
+        polygon->numberofvertices = NbNodes;
+        polygon->vertexlist = new int[NbNodes];
+
+        for(int j=0; j<NbNodes; j++) polygon->vertexlist[j] = nodeIDs(j+1);
+    }
+    return true;
+}
 
 //! -------------------------------------------------------------------------
 //! function: SEfunc
@@ -305,7 +332,7 @@ void TetgenMesher::SEFunc(tetgenio *meshOut)
         //! ------------------------------
         cout<<"TetgenMesher::SEFunc()->____try: tetrahedralize called____"<<endl;
         tetrahedralize(mySwitches, &myPLC, meshOut);
-        cout<<"TetgenMesher::SEFunc()->__try: MESHING DONE____"<<endl;
+        cout<<"TetgenMesher::SEFunc()->____try: tetrahedralize done____"<<endl;
     }
     __finally
     {
@@ -321,10 +348,10 @@ void trans_func_T(unsigned int u, EXCEPTION_POINTERS* pExp)
     throw SE_Exception();
 }
 
-//! -------------------------
+//! ------------------
 //! function: perform
-//! details:  build the mesh
-//! -------------------------
+//! details:
+//! ------------------
 bool TetgenMesher::perform(tetgenio *meshOut, int bodyIndex, bool saveMesh)
 {
     cout<<"TetgenMesher::perform()->____perform called____"<<endl;
@@ -337,7 +364,7 @@ bool TetgenMesher::perform(tetgenio *meshOut, int bodyIndex, bool saveMesh)
     catch(SE_Exception e)
     {
         Q_UNUSED(e)
-        cout<<"TetgenMesher::perform()->____Caught a __try exception with SE_Exception"<<endl;
+        cout<<"TetgenMesher::perform()->____caught a __try exception with SE_Exception"<<endl;
         return false;
     }
     catch(int tetgenError)
@@ -363,6 +390,11 @@ bool TetgenMesher::perform(tetgenio *meshOut, int bodyIndex, bool saveMesh)
         return false;
     }
 
+    //! ---------------------------------------
+    //! no tetgen error, but no mesh generated
+    //! ---------------------------------------
+    if(meshOut->tetrahedronlist == NULL) return false;
+
     //! --------------
     //! save the mesh
     //! --------------
@@ -373,7 +405,6 @@ bool TetgenMesher::perform(tetgenio *meshOut, int bodyIndex, bool saveMesh)
         QString outFilePath = curDir.absolutePath()+"/"+outFileName+"_out";
         char fpout[512];
         sprintf(fpout,outFilePath.toStdString().c_str());
-        ccout(QString("TetgenMesher::perform()->____saving Tetgen final mesh: ")+outFilePath+"_____");
         meshOut->save_nodes(fpout);
         meshOut->save_elements(fpout);
         meshOut->save_faces(fpout);
@@ -381,16 +412,16 @@ bool TetgenMesher::perform(tetgenio *meshOut, int bodyIndex, bool saveMesh)
     return true;
 }
 
-//! ---------------------------------------------------------
+//! --------------------------------------------------
 //! function: setSwitches
-//! details:  set meshing parameters
-//!           When defining the switch string do not use "-"
-//! ---------------------------------------------------------
+//! details:  set meshing parameters (do not use "-")
+//! --------------------------------------------------
 void TetgenMesher::setSwitches(int preserveSurfaceMesh, int bodyIndex)
 {
     double tolerance = TOLERANCE;
     double L = myMeshDB->ArrayOfMaxBodyElementSize.value(bodyIndex);
     double maxVolSize = (4.0/3.0)*3.14159*pow(L,3);
+    //double maxVolSize = L;
 
     switch(preserveSurfaceMesh)
     {
@@ -403,6 +434,7 @@ void TetgenMesher::setSwitches(int preserveSurfaceMesh, int bodyIndex)
         //!    Attach "O10/7"
         //! ------------------------------------------------
         sprintf(mySwitches,"pq1.4/0.0a%.2lfT%.2eV",maxVolSize,tolerance);
+        //sprintf(mySwitches,"pq1.4/0.0a%.2lfT%.2eVO10/7",maxVolSize,tolerance);
     }
         break;
 
@@ -414,6 +446,7 @@ void TetgenMesher::setSwitches(int preserveSurfaceMesh, int bodyIndex)
         //!    Attach "O10/7"
         //! ------------------------------------------------
         sprintf(mySwitches,"pYq1.4/0.0a%.2lfT%.2eV",maxVolSize,tolerance);
+        //sprintf(mySwitches,"pYq1.4/0.0a%.2lfT%.2eVO10/7",maxVolSize,tolerance);
     }
         break;
     }
@@ -430,8 +463,6 @@ void TetgenMesher::createTetgenDirs()
     //! ---------------------------------------------------
     QDir curDir;
     curDir.cd(tools::getWorkingDir());
-
-    ccout("TetgenMesher::creatingTetgenDirs->____creating the Tetgen directories____");
 
     if(curDir.cd("Tetgen PLC")==false)
     {
@@ -472,8 +503,6 @@ void TetgenMesher::createTetgenSupportFilesDir(bool clearPreviousContent)
 {
     QDir curDir;
     curDir.cd(tools::getWorkingDir());
-
-    ccout("TetgenMesher::createTetgenSupportFilesDir->____creating the Tetgen directories____");
     if(curDir.cd("TetgenSupportFiles")==false)
     {
         curDir.mkdir("TetgenSupportFiles");
@@ -544,9 +573,7 @@ bool TetgenMesher::retrieveMeshDataSourcesFromDisk(int bodyIndex,
     //! -----------------------------------------------
     //! generate the face to element connectivity data
     //! -----------------------------------------------
-    cout<<"TetgenMesher::retrieveMeshDataSourcesFromDisk()->____generating the face to element connectivity data____"<<endl;
     this->setStopButtonEnabled(false);
-    volumeMeshDS->buildFaceToElementConnectivity();
 
     //! --------------------------------------------
     //! post an event: the surface mesh data source
@@ -572,20 +599,25 @@ bool TetgenMesher::retrieveMeshDataSourcesFromDisk(int bodyIndex,
     //! test if the .face file exists
     //! ------------------------------
     cout<<"TetgenMesher::retrieveMeshDataSourcesFromDisk()->____retrieving the overall surface mesh____"<<endl;
-    FILE *faceFile = fopen(faceFileName.toStdString().c_str(),"r");
-    if(faceFile==NULL)
-    {
-        cout<<"TetgenMesher::retrieveMeshDataSourcesFromDisk()->____cannot retrieve the surface mesh datasource for body: "<<bodyName.toStdString()<<"____"<<endl;
-        return false;
-    }
-    fclose(faceFile);
+    //FILE *faceFile = fopen(faceFileName.toStdString().c_str(),"r");
+    //if(faceFile==NULL)
+    //{
+    //    cout<<"TetgenMesher::retrieveMeshDataSourcesFromDisk()->____cannot retrieve the surface mesh datasource for body: "<<bodyName.toStdString()<<"____"<<endl;
+    //    return false;
+    //}
+    //fclose(faceFile);
+    //surfaceMeshDS = new Ng_MeshVS_DataSource2D(faceFileName,nodeFileName);
+    //if(surfaceMeshDS.IsNull())
+    //{
+    //    cout<<"TetgenMesher::retrieveMeshDataSourcesFromDisk()->____error in generating the surface mesh____"<<endl;
+    //    return false;
+    //}
 
-    surfaceMeshDS = new Ng_MeshVS_DataSource2D(faceFileName,nodeFileName);
-    if(surfaceMeshDS.IsNull())
-    {
-        cout<<"TetgenMesher::retrieveMeshDataSourcesFromDisk()->____error in generating the surface mesh____"<<endl;
-        return false;
-    }
+    //! -------------------------------------
+    //! build the surface mesh topologically
+    //! -------------------------------------
+    volumeMeshDS->buildFaceToElementConnectivity();
+    surfaceMeshDS = new Ng_MeshVS_DataSource2D(volumeMeshDS);
 
     //! --------------------------------------------
     //! post an event: the surface mesh data source
@@ -695,139 +727,105 @@ bool TetgenMesher::retrieveVolumeMeshDataSourceOnly(int bodyIndex, occHandle(Ng_
 }
 
 #ifdef PLCNEW
-//! -------------------------------------------------------------
+//! -----------------------------------------------------
 //! function: buildPLC
-//! details:  build the PLC reprentation of a TopoDS_Shape
-//!           this version does not use the overall surface mesh
-//! -------------------------------------------------------------
+//! details:  this version does not use the surface mesh
+//! -----------------------------------------------------
 bool TetgenMesher::buildPLC(int bodyIndex, QList<int> &invalidFaceTags, bool saveTetgenFiles)
 {
-    ccout("TetgenMesher::init()->____function called____");
+    cout<<"TetgenMesher::buildPLC()->____function called____"<<endl;
 
-    if(myMeshDB!=NULL)
+    if(myMeshDB == NULL)
     {
-        cout<<"------------------------------"<<endl;
-        cout<<"- TETGEN IS BUILDING THE PLC -"<<endl;
-        cout<<"------------------------------"<<endl;
+        cout<<"TetgenMesher::buildPLC()->____cannot build the PLC: the mesh data base is NULL____"<<endl;
+        return false;
+    }
 
-        ccout(QString("------------------------------"));
-        ccout(QString("- TETGEN IS BUILDING THE PLC -"));
-        ccout(QString("------------------------------"));
+    QList<mesh::meshPoint> pointList;
 
-        QList<QVector<double>> pointList;
+    myPLC.initialize();
+    myPLC.firstnumber = 1;
 
-        myPLC.initialize();
-        myPLC.firstnumber = 1;
+    int NbFacets = 0;
+    int NbGeometryFaces = myMeshDB->MapOfBodyTopologyMap.value(bodyIndex).faceMap.Extent();
 
-        int NbFacets = 0;
-        int NbTopologyFaces = myMeshDB->MapOfBodyTopologyMap.value(bodyIndex).faceMap.Extent();
-
-        cout<<"TetgenMesher::buildPLC()->____number of topology faces: "<<NbTopologyFaces<<"____"<<endl;
-        ccout(QString("TetgenMesher::buildPLC()->____number of topology faces: %1____").arg(NbTopologyFaces));
-
-        int S = 0;
-        for(int faceNr = 0; faceNr<=NbTopologyFaces; faceNr++)
+    int S = 0;
+    for(int faceNr = 0; faceNr<=NbGeometryFaces; faceNr++)
+    {
+        //cout<<"____face nr: "<<faceNr<<"____"<<endl;
+        const occHandle(Ng_MeshVS_DataSourceFace) &curFaceMeshDS = occHandle(Ng_MeshVS_DataSourceFace)::DownCast(myMeshDB->ArrayOfMeshDSOnFaces.getValue(bodyIndex,faceNr));
+        if(curFaceMeshDS.IsNull() == true)
         {
-            const occHandle(Ng_MeshVS_DataSourceFace) &curFaceMeshDS = occHandle(Ng_MeshVS_DataSourceFace)::DownCast(myMeshDB->ArrayOfMeshDSOnFaces.getValue(bodyIndex,faceNr));
-            if(!curFaceMeshDS.IsNull())
+            invalidFaceTags<<faceNr;
+            continue;
+        }
+        if(curFaceMeshDS->GetAllElements().Extent()>0)
+        {
+            MeshVS_EntityType type;
+            int NbNodes;
+            double buf[24];
+            TColStd_Array1OfReal coords(*buf,1,24);
+            for(TColStd_MapIteratorOfPackedMapOfInteger eIt(curFaceMeshDS->GetAllElements()); eIt.More(); eIt.Next(), S++)
             {
-                if(curFaceMeshDS->GetAllElements().Extent()>0)
+                int globalNodeID = eIt.Key();
+                if(curFaceMeshDS->GetGeom(globalNodeID,true,coords,NbNodes,type)==false) continue;
+                for(int k=0; k<NbNodes; k++)
                 {
-                    cout<<"TetgenMesher::buildPLC()->____working (1) on face nr: "<<faceNr<<"____"<<endl;
-                    ccout(QString("TetgenMesher::buildPLC()->____working (1) on face nr: %1____").arg(faceNr));
+                    int s = 3*k;
+                    mesh::meshPoint aP(coords(s+1),coords(s+2),coords(s+3));
+                    if(pointList.contains(aP)==false) pointList<<aP;
+                }
+            }
+            NbFacets += curFaceMeshDS->GetAllElements().Extent();
+        }
+    }
 
-                    TColStd_PackedMapOfInteger eMap = curFaceMeshDS->GetAllElements();
-                    TColStd_MapIteratorOfPackedMapOfInteger eIt;
-                    MeshVS_EntityType type;
+    myPLC.numberoffacets = NbFacets;
+    myPLC.facetlist = new tetgenio::facet[NbFacets];
+    myPLC.facetmarkerlist = new int[NbFacets];
+
+    S = 0;
+    for(int faceNr=0; faceNr<=NbGeometryFaces; faceNr++)
+    {
+        if(invalidFaceTags.contains(faceNr)) continue;
+        const occHandle(Ng_MeshVS_DataSourceFace) &curFaceMeshDS = occHandle(Ng_MeshVS_DataSourceFace)::DownCast(myMeshDB->ArrayOfMeshDSOnFaces.getValue(bodyIndex,faceNr));
+        if(!curFaceMeshDS.IsNull())
+        {
+            if(curFaceMeshDS->GetAllElements().Extent()>0)
+            {
+                int el = 1;
+                for(TColStd_MapIteratorOfPackedMapOfInteger eIt(curFaceMeshDS->GetAllElements());eIt.More();eIt.Next(), el++)
+                {
+                    int ID = eIt.Key();
                     int NbNodes;
                     double buf[24];
+                    MeshVS_EntityType type;
                     TColStd_Array1OfReal coords(*buf,1,24);
-                    for(eIt.Initialize(eMap); eIt.More(); eIt.Next(), S++)
+                    curFaceMeshDS->GetGeom(ID,true,coords,NbNodes,type);
+
+                    myPLC.facetmarkerlist[el-1+S] = faceNr;
+
+                    tetgenio::facet *facet = &myPLC.facetlist[el-1+S];
+                    facet->numberofpolygons = 1;
+                    facet->numberofholes = 0;
+                    facet->holelist = NULL;
+                    facet->polygonlist = new tetgenio::polygon[1];
+                    tetgenio::polygon *polygon = &facet->polygonlist[0];
+
+                    polygon->numberofvertices = NbNodes;
+                    polygon->vertexlist = new int[NbNodes];
+
+                    int index;
+                    for(int j=0; j<NbNodes; j++)
                     {
-                        int ID = eIt.Key();
-                        curFaceMeshDS->GetGeom(ID,true,coords,NbNodes,type);
-                        for(int k=0; k<NbNodes; k++)
-                        {
-                            QVector<double> P;
-                            P.push_back(coords(3*k+1));
-                            P.push_back(coords(3*k+2));
-                            P.push_back(coords(3*k+3));
-                            if(!pointList.contains(P))
-                            {
-                                pointList<<P;
-                            }
-                        }
-                    }
-                    NbFacets = NbFacets + curFaceMeshDS->GetAllElements().Extent();
-                }
-            }
-            else
-            {
-                cout<<"TetgenMesher::buildPLC()->____working (1) on face nr: "<<faceNr<<". The face has a null mesh: jumping over it____"<<endl;
-                ccout(QString("TetgenMesher::buildPLC()->____working (1) on face nr: %1. The face has a null mesh: jumping over it____").arg(faceNr));
-
-                invalidFaceTags<<faceNr;
-            }
-        }
-
-        myPLC.numberoffacets = NbFacets;
-        myPLC.facetlist = new tetgenio::facet[NbFacets];
-        myPLC.facetmarkerlist = new int[NbFacets];
-
-        ccout(QString("____Number of facets %1").arg(NbFacets));
-
-        S = 0;
-        for(int faceNr=0; faceNr<=NbTopologyFaces; faceNr++)
-        {
-            const occHandle(Ng_MeshVS_DataSourceFace) &curFaceMeshDS = occHandle(Ng_MeshVS_DataSourceFace)::DownCast(myMeshDB->ArrayOfMeshDSOnFaces.getValue(bodyIndex,faceNr));
-            if(!curFaceMeshDS.IsNull())
-            {
-                if(curFaceMeshDS->GetAllElements().Extent()>0)
-                {
-                    cout<<"TetgenMesher::buildPLC()->____working (2) on face nr: "<<faceNr<<"____"<<endl;
-                    ccout(QString("____working on face nr: %1____").arg(faceNr));
-
-                    TColStd_PackedMapOfInteger eMap = curFaceMeshDS->GetAllElements();
-                    TColStd_MapIteratorOfPackedMapOfInteger eIt;
-
-                    int el = 1;
-                    for(eIt.Initialize(eMap);eIt.More();eIt.Next(), el++)
-                    {
-                        int ID = eIt.Key();
-                        int NbNodes;
-                        double buf[24];
-                        MeshVS_EntityType type;
-                        TColStd_Array1OfReal coords(*buf,1,24);
-                        curFaceMeshDS->GetGeom(ID,true,coords,NbNodes,type);
-
-                        myPLC.facetmarkerlist[el-1+S] = faceNr;
-
-                        tetgenio::facet *facet = &myPLC.facetlist[el-1+S];
-                        facet->numberofpolygons = 1;
-                        facet->numberofholes = 0;
-                        facet->holelist = NULL;
-                        facet->polygonlist = new tetgenio::polygon[1];
-                        tetgenio::polygon *polygon = &facet->polygonlist[0];
-
-                        polygon->numberofvertices = NbNodes;
-                        polygon->vertexlist = new int[NbNodes];
-
-                        int index;
-                        for(int j=0; j<NbNodes; j++)
-                        {
-                            QVector<double> P;
-                            P.push_back(coords(3*j+1));
-                            P.push_back(coords(3*j+2));
-                            P.push_back(coords(3*j+3));
-
-                            polygon->vertexlist[j] = pointList.indexOf(P)+1;
-                            index = polygon->vertexlist[j];
-                        }
-                        //cout<<"____"<<el-1+S<<"____"<<NbNodes<<"____"<<"____"<<index<<"____"<<endl;
+                        int s = 3*j;
+                        mesh::meshPoint aP(coords(s+1),coords(s+2),coords(s+3));
+                        polygon->vertexlist[j] = pointList.indexOf(aP)+1;
+                        index = polygon->vertexlist[j];
                     }
                 }
-                S = S+curFaceMeshDS->GetAllElements().Extent();
             }
+            S += curFaceMeshDS->GetAllElements().Extent();
         }
 
         //! --------------------
@@ -837,69 +835,35 @@ bool TetgenMesher::buildPLC(int bodyIndex, QList<int> &invalidFaceTags, bool sav
         myPLC.pointlist = new REAL [myPLC.numberofpoints*3];
         myPLC.pointmarkerlist = new int[myPLC.numberofpoints*3];
 
-        ccout(QString("____Number of points: %1____").arg(pointList.length()));
-
-        for(int S=0; S<pointList.length(); S++)
+        for(int s=0; s<pointList.length(); s++)
         {
-            const QVector<double> &P = pointList.at(S);
-            for(int j=0;j<3;j++)
-            {
-                myPLC.pointlist[3*S+j]=P.at(j);
-            }
-            //! ----------------------------------
-            //! tag the point as a boundary point
-            //! ----------------------------------
-            myPLC.pointmarkerlist[S]=1;
+            const mesh::meshPoint &aP = pointList[s];
+            int n = 3*s;
+            myPLC.pointlist[n+1]=aP.x;
+            myPLC.pointlist[n+2]=aP.y;
+            myPLC.pointlist[n+3]=aP.z;
+            myPLC.pointmarkerlist[s]=1;     // tag the point as a boundary point
         }
+        cout<<"TetgenMesher::buildPLC()->____PLC built____"<<endl;
 
-        cout<<"------------------------------"<<endl;
-        cout<<"- THE PLC HAS BEEN BUILT     -"<<endl;
-        cout<<"------------------------------"<<endl;
-
-        ccout(QString("------------------------------"));
-        ccout(QString("- THE PLC HAS BEEN BUILT     -"));
-        ccout(QString("------------------------------"));
-
+        /*
         if(saveTetgenFiles)
         {
-            cout<<"------------------------------"<<endl;
-            cout<<"- TETGEN IS WRITING THE PlC  -"<<endl;
-            cout<<"------------------------------"<<endl;
-            ccout("------------------------------");
-            ccout("- TETGEN IS WRITING THE PlC  -");
-            ccout("------------------------------");
-
             char fp[512];
             QDir curDir(myPLCDir);
-            QString fileName = myMeshDB->mapOfBodyNames.value(bodyIndex);
+            QString fileName = myMeshDB->MapOfBodyNames.value(bodyIndex);
             QString filePath = curDir.absolutePath()+"/"+fileName;
             sprintf(fp,filePath.toStdString().c_str());
 
-            ccout(QString("TetgenMesher::init->___saving PLC nodes : ").append(filePath).append("____"));
+            cout<<"TetgenMesher::init->___saving PLC nodes___"<<endl;
             myPLC.save_nodes(fp);
 
-            ccout(QString("TetgenMesher::init->___saving PLC facets: ").append(filePath).append("____"));
+            cout<<"TetgenMesher::init->___saving PLC facets: "<<endl;
             myPLC.save_poly(fp);
-
-            cout<<"------------------------------"<<endl;
-            cout<<"- NODES AND FACES WRITTEN    -"<<endl;
-            cout<<"------------------------------"<<endl;
-            ccout("------------------------------");
-            ccout("- NODES AND FACES WRITTEN    -");
-            ccout("------------------------------");
         }
-        return true;
+        */
     }
-    else
-    {
-        cout<<"------------------------------------------------------"<<endl;
-        cout<<"- CANNOT BUILD THE PLC: THE MESH DATABASE IS NULL    -"<<endl;
-        cout<<"------------------------------------------------------"<<endl;
-        ccout("------------------------------------------------------");
-        ccout("- CANNOT BUILD THE PLC: THE MESH DATABASE IS NULL    -");
-        ccout("------------------------------------------------------");
-        return false;
-    }
+    return true;
 }
 #endif
 
@@ -976,6 +940,7 @@ void TetgenMesher::redirectTetgenOutput()
 //! details:  the array of face datasources is used as an input for building the Tetgen PLC
 //!           the last three arguments are the returning values
 //! ----------------------------------------------------------------------------------------
+#include <sys/stat.h>
 int TetgenMesher::performOnDisk1(const NCollection_Array1<occHandle(Ng_MeshVS_DataSourceFace>) &arrayOfFaceDS,
                                  int bodyIndex,
                                  occHandle(Ng_MeshVS_DataSource3D) &tetgenMesh3D,
@@ -1024,10 +989,15 @@ int TetgenMesher::performOnDisk1(const NCollection_Array1<occHandle(Ng_MeshVS_Da
     bool isPLCDone = MeshTools::buildPLC(arrayOfFaceDS,nodeFilePath,polyFilePath,myProgressIndicator);
     if(!isPLCDone) return -1;
 
-    //! ---------------------------
-    //! configure and start Tetgen
-    //! ---------------------------
-    QString program = QString(TETGEN_PATH);
+    //! -----------------------------------------------------------------------------------------------
+    //! search for tetgen.exe - as a general rule the file should placed into the executable directory
+    //! -----------------------------------------------------------------------------------------------
+    std::string exePath = tools::getPathOfExecutable()+"/tetgen.exe";
+    struct stat buf;
+    int fileExist = stat(exePath.c_str(),&buf);
+    if(fileExist!=0) return -3;
+
+    QString program = QString::fromStdString(exePath);
     tetgenProcess->setProgram(program);
 
     //! ------------------
@@ -1111,11 +1081,16 @@ int TetgenMesher::performOnDisk1(const NCollection_Array1<occHandle(Ng_MeshVS_Da
         return -1;
     }
 
-    //! ---------------------------
-    //! configure and start Tetgen
-    //! ---------------------------
-    QString program = QString(TETGEN_PATH);
-    cout<<"TetgenMesher::performOnDisk1()->____program: "<<program.toStdString()<<"____"<<endl;
+    //! -----------------------------------------------------------------------------------------------
+    //! search for tetgen.exe - as a general rule the file should placed into the executable directory
+    //! -----------------------------------------------------------------------------------------------
+    std::string exePath = tools::getPathOfExecutable()+"/tetgen.exe";
+    struct stat buf;
+    int fileExist = stat(exePath.c_str(),&buf);
+    if(fileExist!=0) return -3;
+
+    QString program = QString::fromStdString(exePath);
+    //cout<<"TetgenMesher::performOnDisk1()->____program: "<<program.toStdString()<<"____"<<endl;
     tetgenProcess->setProgram(program);
 
     //! ------------------
@@ -1124,8 +1099,7 @@ int TetgenMesher::performOnDisk1(const NCollection_Array1<occHandle(Ng_MeshVS_Da
     QList<QString> arguments;
     //arguments<<QString::fromLatin1(mySwitches)<<polyFilePath;
     arguments<<QString("-")+QString::fromLatin1(mySwitches)<<polyFilePath;
-
-    cout<<"TetgenMesher::performOnDisk1()->____arguments: "<<mySwitches<<" "<<polyFilePath.toStdString()<<endl;
+    //cout<<"TetgenMesher::performOnDisk1()->____arguments: "<<mySwitches<<" "<<polyFilePath.toStdString()<<endl;
 
     tetgenProcess->setArguments(arguments);
 

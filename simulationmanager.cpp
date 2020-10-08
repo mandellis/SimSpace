@@ -2116,20 +2116,25 @@ void SimulationManager::handleItem(int type)
         {
             SimulationNodeClass *curNode = selectedIndexes.at(i).data(Qt::UserRole).value<SimulationNodeClass*>();
             int bodyIndex = curNode->getPropertyValue<int>("Map index");
+            cout<<"____action 65: map index: "<<bodyIndex<<"____"<<endl;
             Property::SuppressionStatus isSuppressed = curNode->getPropertyValue<Property::SuppressionStatus>("Suppressed");
             if(isSuppressed == Property::SuppressionStatus_Suppressed) continue;
 
-            disconnect(curNode->getModel(),SIGNAL(itemChanged(QStandardItem*)),this,SLOT(handleItemChange(QStandardItem*)));
-            QVariant data;
-            data.setValue(true);
-            Property prop_visible("Visible",data,Property::PropertyGroup_GraphicProperties);
-            curNode->replaceProperty("Visible",prop_visible);
+            //disconnect(curNode->getModel(),SIGNAL(itemChanged(QStandardItem*)),this,SLOT(handleItemChange(QStandardItem*)));
+            //QVariant data;
+            //data.setValue(true);
+            //Property prop_visible("Visible",data,Property::PropertyGroup_GraphicProperties);
+            //curNode->replaceProperty("Visible",prop_visible);
             bodiesToShow.Append(bodyIndex);
-            connect(curNode->getModel(),SIGNAL(itemChanged(QStandardItem*)),this,SLOT(handleItemChange(QStandardItem*)));
-            QExtendedStandardItem *curItem = static_cast<QExtendedStandardItem*>(myModel->itemFromIndex(selectedIndexes.at(i)));
-            tools::changeIconOpacity(curItem,false);        // icon not opaque
+            //connect(curNode->getModel(),SIGNAL(itemChanged(QStandardItem*)),this,SLOT(handleItemChange(QStandardItem*)));
+            //QExtendedStandardItem *curItem = static_cast<QExtendedStandardItem*>(myModel->itemFromIndex(selectedIndexes.at(i)));
+            //tools::changeIconOpacity(curItem,false);        // icon not opaque
         }
-        if(!bodiesToShow.IsEmpty()) emit requestShowBody(bodiesToShow);
+        if(!bodiesToShow.IsEmpty())
+        {
+            emit requestShowBody(bodiesToShow);
+            this->synchVisibility();
+        }
     }
         break;
     case 66:    // show all bodies
@@ -4654,8 +4659,7 @@ void SimulationManager::handleItemChange(QStandardItem *item)
     //! would be called two times both for the change in the "Shape selector", both for the
     //! change in the "Tags"/"Master tags"/"Slave tags" property
     //! ------------------------------------------------------------------------------------
-    QString propertyName = item->data(Qt::UserRole).value<Property>().getName();
-
+    const QString &propertyName = item->data(Qt::UserRole).value<Property>().getName();
     cout<<"____changed property: \""<<propertyName.toStdString()<<"\"____"<<endl;
     if(propertyName =="Source file path")
     {
@@ -4670,9 +4674,18 @@ void SimulationManager::handleItemChange(QStandardItem *item)
     //! simulation item and node
     //! -------------------------
     QExtendedStandardItem *curItem = static_cast<QExtendedStandardItem*>(myModel->itemFromIndex(myTreeView->currentIndex()));
+
+    cout<<"____tag00____"<<endl;
+
     SimulationNodeClass *curNode = curItem->data(Qt::UserRole).value<SimulationNodeClass*>();
+
+    cout<<"____tag01____"<<endl;
+
     SimulationNodeClass::nodeType family = curNode->getFamily();
+    cout<<"____tag02____"<<endl;
+
     SimulationNodeClass::nodeType type = curNode->getType();
+    cout<<"____tag03____"<<endl;
 
     //! ------------------------------------------------
     //! parse the item after the change
@@ -6309,63 +6322,63 @@ QList<QStandardItem*> SimulationManager::ItemListFromListOfShape(TopTools_ListOf
 //! ----------------------------------------------------------
 //! function: synchVisibility
 //! details:  update the "Visible" property of the node model
-//!           when "hide"/"show" are called from the viewer
+//!           when "hide", "show" are called from the viewer
 //! ----------------------------------------------------------
 void SimulationManager::synchVisibility()
 {
-    //!cout<<"SimulationManager::synchVisibility()->____function called____"<<endl;
-    AIS_ListOfInteractive listOfDisplayedObjects, listOfHiddenObjects;
-    TopTools_ListOfShape listOfDisplayedShapes, listOfHiddenShapes;
+    cout<<"SimulationManager::synchVisibility()->____function called____"<<endl;
 
-    myCTX->DisplayedObjects(AIS_KOI_Shape,-1,listOfDisplayedObjects);
-    myCTX->ErasedObjects(AIS_KOI_Shape,-1,listOfHiddenObjects);
-
-    AIS_ListIteratorOfListOfInteractive anIter;
-    for(anIter.Initialize(listOfDisplayedObjects);anIter.More();anIter.Next())
+    std::vector<TopoDS_Shape> vecDisplayed, vecHidden;
+    AIS_ListOfInteractive listOfIOs;
+    myCTX->ObjectsByDisplayStatus(AIS_KOI_Shape,-1,AIS_DS_Displayed,listOfIOs);                 // visible shapes
+    for(AIS_ListIteratorOfListOfInteractive it(listOfIOs); it.More(); it.Next())
     {
-        const occHandle(AIS_Shape) &theAISShape = occHandle(AIS_Shape)::DownCast(anIter.Value());
-        if(theAISShape.IsNull()) continue;
-        const TopoDS_Shape &theShape = theAISShape->Shape();
-        listOfDisplayedShapes.Append(theShape);
+        const occHandle(AIS_Shape) &anAISShape = occHandle(AIS_Shape)::DownCast(it.Value());
+        if(anAISShape.IsNull()) continue;
+        vecDisplayed.push_back(anAISShape->Shape());
+    }
+    listOfIOs.Clear();
+    myCTX->ObjectsByDisplayStatus(AIS_KOI_Shape,-1,AIS_DS_Erased,listOfIOs);                    // erased shapes
+    for(AIS_ListIteratorOfListOfInteractive it(listOfIOs); it.More(); it.Next())
+    {
+        const occHandle(AIS_Shape) &anAISShape = occHandle(AIS_Shape)::DownCast(it.Value());
+        if(anAISShape.IsNull()) continue;
+        vecHidden.push_back(anAISShape->Shape());
     }
 
-    //!cout<<"SimulationManager::synchVisibility()->____displayed TopoDS_Shape: "<<listOfDisplayedShapes.Extent()<<"____"<<endl;
-
-    QVariant data;
-    data.setValue(true);
-    Property property_visible("Visible",data,Property::PropertyGroup_GraphicProperties);
-    QList<QStandardItem*> theListOfDisplayedItems = this->ItemListFromListOfShape(&listOfDisplayedShapes);
-    for(int i=0;i<theListOfDisplayedItems.length();i++)
+    std::vector<QStandardItem*> vecItems;
+    bool isDone = mainTreeTools::getTreeItemsFromShapes(myTreeView,vecDisplayed,vecItems);
+    if(isDone == true)
     {
-        QExtendedStandardItem *item = static_cast<QExtendedStandardItem *>(theListOfDisplayedItems.at(i));
-        SimulationNodeClass *theNode = item->data(Qt::UserRole).value<SimulationNodeClass*>();
-        theNode->getModel()->blockSignals(false);
-        theNode->replaceProperty("Visible",property_visible);
-        tools::changeIconOpacity(item,false);
-        theNode->getModel()->blockSignals(false);
+        QVariant data;
+        data.setValue(true);
+        for(std::vector<QStandardItem*>::iterator it = vecItems.begin(); it!= vecItems.end(); it++)
+        {
+            QStandardItem *curItem = *it;
+            SimulationNodeClass *node = curItem->data(Qt::UserRole).value<SimulationNodeClass*>();
+            disconnect(node->getModel(),SIGNAL(itemChanged(QStandardItem*)),this,SLOT(handleItemChange(QStandardItem*)));
+            node->replaceProperty("Visible",Property("Visible",data,Property::PropertyGroup_GraphicProperties));
+            tools::changeIconOpacity((QExtendedStandardItem*)(curItem),false);
+            connect(node->getModel(),SIGNAL(itemChanged(QStandardItem*)),this,SLOT(handleItemChange(QStandardItem*)));
+        }
+        cout<<"SimulationManager::synchVisibility()->____number of visible shapes: "<<vecItems.size()<<"____"<<endl;
     }
-
-    for(anIter.Initialize(listOfHiddenObjects);anIter.More();anIter.Next())
+    vecItems.clear();
+    isDone = mainTreeTools::getTreeItemsFromShapes(myTreeView,vecHidden,vecItems);
+    if(isDone == true)
     {
-        const occHandle(AIS_Shape) &theAISShape = occHandle(AIS_Shape)::DownCast(anIter.Value());
-        if(theAISShape.IsNull()) continue;
-        const TopoDS_Shape &theShape = theAISShape->Shape();
-        listOfHiddenShapes.Append(theShape);
-    }
-
-    //!cout<<"SimulationManager::synchVisibility()->____hidden TopoDS_Shape: "<<listOfHiddenShapes.Extent()<<"____"<<endl;
-
-    data.setValue(false);
-    Property property_hidden("Visible",data,Property::PropertyGroup_GraphicProperties);
-    QList<QStandardItem*> theListOfHiddenItems = this->ItemListFromListOfShape(&listOfHiddenShapes);
-    for(int i=0;i<theListOfHiddenItems.length();i++)
-    {
-        QExtendedStandardItem *item = static_cast<QExtendedStandardItem *>(theListOfHiddenItems.at(i));
-        SimulationNodeClass *theNode = item->data(Qt::UserRole).value<SimulationNodeClass*>();
-        theNode->getModel()->blockSignals(true);
-        theNode->replaceProperty("Visible",property_hidden);
-        tools::changeIconOpacity(item,true);
-        theNode->getModel()->blockSignals(false);
+        QVariant data;
+        data.setValue(false);
+        for(std::vector<QStandardItem*>::iterator it = vecItems.begin(); it!= vecItems.end(); it++)
+        {
+            QStandardItem *curItem = *it;
+            SimulationNodeClass *node = curItem->data(Qt::UserRole).value<SimulationNodeClass*>();
+            disconnect(node->getModel(),SIGNAL(itemChanged(QStandardItem*)),this,SLOT(handleItemChange(QStandardItem*)));
+            node->replaceProperty("Visible",Property("Visible",false,Property::PropertyGroup_GraphicProperties));
+            tools::changeIconOpacity((QExtendedStandardItem*)(curItem),true);
+            connect(node->getModel(),SIGNAL(itemChanged(QStandardItem*)),this,SLOT(handleItemChange(QStandardItem*)));
+        }
+        cout<<"SimulationManager::synchVisibility()->____number of hidden shapes: "<<vecItems.size()<<"____"<<endl;
     }
 }
 
@@ -6628,7 +6641,7 @@ void SimulationManager::changeColor()
     //! -------------------------
     //! this version uses "Tags"
     //! -------------------------
-    //cout<<"SimulationManager::changeColor()->____function called____"<<endl;
+    cout<<"SimulationManager::changeColor()->____function called____"<<endl;
     QModelIndex index = mySelectionModel->currentIndex();
     if(!index.isValid()) return;
 
@@ -6645,11 +6658,10 @@ void SimulationManager::changeColor()
     {
     case SimulationNodeClass::nodeType_connection:
     {
-        //! -------------------------------------------------------------
-        //! handle the particular case of a contact pairs, which must be
-        //! highlighted with two colors, one for the master and one for
-        //! the slave face(s)
-        //! -------------------------------------------------------------
+        //! ----------------------------------------------
+        //! handle the particular case of a contact pairs
+        //! which must be highlighted with two colors
+        //! ----------------------------------------------
         if(theType != SimulationNodeClass::nodeType_connection && theType != SimulationNodeClass::nodeType_connectionGroup)
         {
             QExtendedStandardItem* itemMasterTags = node->getPropertyItem("Tags master");
@@ -6659,7 +6671,7 @@ void SimulationManager::changeColor()
 
             std::vector<GeometryTag> vecLocs;
             GeometryTag loc;
-            if(itemMasterTags!=NULL)
+            if(itemMasterTags!=Q_NULLPTR)
             {
                 vecLocs = itemMasterTags->data(Qt::UserRole).value<Property>().getData().value<std::vector<GeometryTag>>();
                 std::vector<int> vecParentShapes;
@@ -6786,6 +6798,7 @@ void SimulationManager::changeColor()
 
     default:
     {
+
         //! ---------------------------------------------------------
         //! all the items requiring a color, apart from contact pair
         //! which is handled within the previous case

@@ -15,6 +15,11 @@
 #include "geometrytag.h"
 #include "simulationnodeclass.h"
 
+//! ----
+//! C++
+//! ----
+#include <set>
+
 class mainTreeTools
 {
 public:
@@ -48,6 +53,8 @@ public:
     static SimulationNodeClass* getAnalysisSettingsNodeFromIndex(QModelIndex curIndex);
     static QStandardItem* getAnalysisSettingsItemFromCurrentItem(QTreeView *treeView);
     static SimulationNodeClass* getAnalysisSettingsNodeFromCurrentItem(QTreeView *treeView);
+    static QStandardItem* getFirstTreeItemOfType(SimulationNodeClass::nodeType aType, QStandardItemModel* model);
+    static bool getTreeItemsFromShapes(QTreeView *tree, const std::vector<TopoDS_Shape> &vecShapes, std::vector<QStandardItem*> &vecItems);
 };
 
 #endif // MAINTREETOOLS_H

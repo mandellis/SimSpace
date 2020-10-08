@@ -1089,6 +1089,7 @@ bool MeshTools::buildPLC(const NCollection_Array1<occHandle(Ng_MeshVS_DataSource
         cout<<"MeshTools::buildPLC->____warning: the progress indicator is NULL. No progress will be shown____"<<endl;
     }
 
+    QList<mesh::meshPoint> pointList_;
     QList<QVector<double>> pointList;
     int NbFacets = 0;
     int globalNodeNumber = 0;
@@ -1097,7 +1098,7 @@ bool MeshTools::buildPLC(const NCollection_Array1<occHandle(Ng_MeshVS_DataSource
     int NbFaces = arrayOfFaceDS.Upper();
 
     //! -------------------
-    //! send an Init event
+    //! send an init event
     //! -------------------
     if(progressIndicator!=Q_NULLPTR)
     {
@@ -1110,16 +1111,15 @@ bool MeshTools::buildPLC(const NCollection_Array1<occHandle(Ng_MeshVS_DataSource
     //! ----------------------------------------
     //! iterate over the face mesh data sources
     //! ----------------------------------------
-    for(int faceDSNr = startFaceNr; faceDSNr<=NbFaces; faceDSNr++)
+    for(int faceDSNr = startFaceNr; faceDSNr<=arrayOfFaceDS.Upper(); faceDSNr++)
     {
-        cout<<"MeshTools::buildPLC()->____node file: working on face data source nr: "<<faceDSNr<<"____"<<endl;
+        //cout<<"MeshTools::buildPLC()->____node file: working on face data source nr: "<<faceDSNr<<"____"<<endl;
 
         //! -------------------
         //! check interruption
         //! -------------------
         if(Global::status().code==0)
         {
-            //Global::status().code = 1;
             cout<<"MeshTools::buildPLC()->____process interrupted by the user____"<<endl;
             return false;
         }
@@ -1129,14 +1129,12 @@ bool MeshTools::buildPLC(const NCollection_Array1<occHandle(Ng_MeshVS_DataSource
 
         if(curFaceMeshDS->GetAllElements().Extent()>0)
         {
-            TColStd_PackedMapOfInteger eMap = curFaceMeshDS->GetAllElements();
-            TColStd_MapIteratorOfPackedMapOfInteger eIt;
             int localElementID = 0;
             MeshVS_EntityType type;
             int NbNodes;
             double buf[24];
             TColStd_Array1OfReal coords(*buf,1,24);
-            for(eIt.Initialize(eMap); eIt.More(); eIt.Next())
+            for(TColStd_MapIteratorOfPackedMapOfInteger eIt(curFaceMeshDS->GetAllElements()); eIt.More(); eIt.Next())
             {
                 localElementID++;
                 int globalElementID = eIt.Key();
@@ -1144,19 +1142,22 @@ bool MeshTools::buildPLC(const NCollection_Array1<occHandle(Ng_MeshVS_DataSource
                 curFaceMeshDS->GetGeom(globalElementID,true,coords,NbNodes,type);
                 for(int k=0; k<NbNodes; k++)
                 {
-                    QVector<double> P;
-                    P.push_back(coords(3*k+1));
-                    P.push_back(coords(3*k+2));
-                    P.push_back(coords(3*k+3));
+                    int s = 3*k;
+                    QVector<double> P {coords(s+1),coords(s+2),coords(s+3)};
+                    //mesh::meshPoint aP {coords(s+1),coords(s+2),coords(s+3)}; new
+                    //if(!pointList_.contains(aP))
+                    //{
+                    //    globalNodeNumber++;
+                    //    pointList_<<aP;
+                    //}
                     if(!pointList.contains(P))
                     {
                         globalNodeNumber++;
                         pointList<<P;
-                        //cout<<"____"<<globalNodeNumber<<"("<<P.at(0)<<", "<<P.at(1)<<", "<<P.at(2)<<")____"<<endl;
                     }
                 }
             }
-            NbFacets = NbFacets + curFaceMeshDS->GetAllElements().Extent();
+            NbFacets += curFaceMeshDS->GetAllElements().Extent();
         }
 
         //! ----------------------
@@ -1169,6 +1170,17 @@ bool MeshTools::buildPLC(const NCollection_Array1<occHandle(Ng_MeshVS_DataSource
             QApplication::postEvent(progressIndicator,progressEvent);
             QApplication::processEvents();
         }
+    }
+
+    //! ------------------------------------------------
+    //! reset the progress bar after generating the PLC
+    //! ------------------------------------------------
+    if(progressIndicator!=Q_NULLPTR)
+    {
+        QProgressEvent *progressEvent = new QProgressEvent(QProgressEvent_None,0,9999,0,"Building the PLC - done",
+                                                           QProgressEvent_Update,0,9999,0,"MeshTools building PLC on disk");
+        QApplication::postEvent(progressIndicator,progressEvent);
+        QApplication::processEvents();
     }
 
     //! ---------------------
@@ -1185,10 +1197,15 @@ bool MeshTools::buildPLC(const NCollection_Array1<occHandle(Ng_MeshVS_DataSource
     //! First line: <# of points> <dimension (3)> <# of attributes> <boundary markers (0 or 1)>
     //! ----------------------------------------------------------------------------------------
     fprintf(nodeFile,"%d\t3\t0\t1\n",pointList.length());
+
     for(int i=0; i<pointList.length(); i++)
+    //for(int i=0; i<pointList_.length(); i++)  new
     {
         const QVector<double> &P = pointList.at(i);
         fprintf(nodeFile,"%d\t%.12e\t%.12e\t%.12e\t%d\n",i+1,P.at(0),P.at(1),P.at(2),1);
+
+        //const mesh::meshPoint &aP_ = pointList_[i];
+        //fprintf(nodeFile,"%d\t%.12e\t%.12e\t%.12e\t%d\n",i+1,aP_.x,aP_.y,aP_.z,1);
     }
     fclose(nodeFile);
 
@@ -1218,21 +1235,16 @@ bool MeshTools::buildPLC(const NCollection_Array1<occHandle(Ng_MeshVS_DataSource
     fprintf(polyFile,"%d\t%d\n",NbFacets,1);
     for(int faceDSNr = arrayOfFaceDS.Lower(); faceDSNr<=arrayOfFaceDS.Upper(); faceDSNr++)
     {
-        //!cout<<"MeshTools::buildPLC()->____poly file: working of face data source "<<faceDSNr<<"____"<<endl;
-        ccout(QString("MeshTools::buildPLC()->____poly file: working on face data source %1____").arg(faceDSNr));
-
         const occHandle(Ng_MeshVS_DataSourceFace) &curFaceMeshDS = arrayOfFaceDS.Value(faceDSNr);
         if(!curFaceMeshDS.IsNull())
         {
-            TColStd_PackedMapOfInteger eMap = curFaceMeshDS->GetAllElements();
-            TColStd_MapIteratorOfPackedMapOfInteger eIt;
             int localElementID = 0;
             int NbNodes;
             MeshVS_EntityType type;
             double buf[24];
             TColStd_Array1OfReal coords(*buf,1,24);
 
-            for(eIt.Initialize(eMap);eIt.More();eIt.Next())
+            for(TColStd_MapIteratorOfPackedMapOfInteger eIt(curFaceMeshDS->GetAllElements());eIt.More();eIt.Next())
             {
                 //! ---------------------------------------------------------
                 //! One line: <# of polygons> [# of holes] [boundary marker]
@@ -1252,16 +1264,13 @@ bool MeshTools::buildPLC(const NCollection_Array1<occHandle(Ng_MeshVS_DataSource
 
                 for(int k=0; k<NbNodes-1; k++)
                 {
-                    QVector<double> P;
-                    P.push_back(coords(3*k+1));
-                    P.push_back(coords(3*k+2));
-                    P.push_back(coords(3*k+3));
+                    int s = 3*k;
+                    QVector<double> P { coords(s+1), coords(s+2), coords(s+3) };
                     fprintf(polyFile,"%d\t",pointList.indexOf(P)+1);
                 }
-                QVector<double> P;
-                P.push_back(coords(3*(NbNodes-1)+1));
-                P.push_back(coords(3*(NbNodes-1)+2));
-                P.push_back(coords(3*(NbNodes-1)+3));
+
+                int n = 3*(NbNodes-1);
+                QVector<double> P { coords(n+1), coords(n+2), coords(n+3) };
                 fprintf(polyFile,"%d\n",pointList.indexOf(P)+1);
             }
         }
