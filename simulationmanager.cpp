@@ -49,7 +49,7 @@
 #include <edgemeshdatasourcebuildesclass.h>
 #include <ng_meshvs_datasource3d.h>
 #include <mesherclass.h>
-#include <facedatasourcebuilder.h>
+#include <datasourcebuilder.h>
 #include <elementtypes.h>
 #include "meshvs_mesh_handle_reg.h"
 
@@ -7772,6 +7772,9 @@ void SimulationManager::HandleTabularData()
         case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RemoteRotation:
             load_magnitude.setType(Property::loadType_remoteRotationMagnitude);
             break;
+        case SimulationNodeClass::nodeType_structuralAnalysisThermalCondition:
+            load_magnitude.setType(Property::loadType_temperatureMagnitude);
+            break;
         }
 
         tabData->setLoadToInsert(load_magnitude);
@@ -8118,6 +8121,7 @@ void SimulationManager::handleLoadMagnitudeDefinitionChanged(const QString& text
         aLoadType = Property::loadType_pressureMagnitude;
         break;
     case SimulationNodeClass::nodeType_thermalAnalysisTemperature:
+    case SimulationNodeClass::nodeType_structuralAnalysisThermalCondition:
         aLoadType = Property::loadType_temperatureMagnitude;
         break;
     case SimulationNodeClass::nodeType_thermalAnalysisThermalFlow:
@@ -12552,7 +12556,7 @@ void SimulationManager::generateBoundaryConditionsMeshDS(bool computeDual)
     //! --------------------------------------
     //! create a data source builder and init
     //! --------------------------------------
-    faceDataSourceBuilder aBuilder;
+    dataSourceBuilder aBuilder;
     aBuilder.setDataBase(mySimulationDataBase);
     aBuilder.setMapOfIsMeshExact(mapOfIsMeshDSExact);
 
@@ -12609,15 +12613,34 @@ void SimulationManager::generateBoundaryConditionsMeshDS(bool computeDual)
             else
             {
                 cout<<"____valid BC detected____"<<endl;
+                bool hasLocParent;
                 const std::vector<GeometryTag> &vecLoc = curNode->getPropertyValue<std::vector<GeometryTag>>("Tags");
                 for(int i=0; i<vecLoc.size(); i++)
                 {
-                    int bodyIndex = vecLoc.at(i).parentShapeNr;
+                    GeometryTag loc= vecLoc.at(i);
+                    int bodyIndex = loc.parentShapeNr;
+                    hasLocParent = loc.isParent;
                     bool isMeshDSExactOnBody = mapOfIsMeshDSExact.value(bodyIndex);
                     if(isMeshDSExactOnBody) patchConformingTags.push_back(vecLoc.at(i));
                     else nonPatchConformingTags.push_back(vecLoc.at(i));
                 }
 
+                if(hasLocParent == true)
+                    cout<<" is Solid "<<endl;
+                //! --------------------------
+                //! work on exact datasources
+                //! --------------------------
+                aBuilder.setShapes(patchConformingTags);
+                IndexedMapOfMeshDataSources exactMeshDS;
+                aBuilder.perform(exactMeshDS,true);
+
+                //! ----------------------------
+                //! work on inexact datasources
+                //! ----------------------------
+                aBuilder.setShapes(nonPatchConformingTags);
+                IndexedMapOfMeshDataSources inexactMeshDS;
+                aBuilder.perform(inexactMeshDS,false);
+ /*
                 //! --------------------------
                 //! work on exact datasources
                 //! --------------------------
@@ -12631,7 +12654,7 @@ void SimulationManager::generateBoundaryConditionsMeshDS(bool computeDual)
                 aBuilder.setFaces(nonPatchConformingTags);
                 IndexedMapOfMeshDataSources inexactMeshDS;
                 aBuilder.perform2(inexactMeshDS,false);
-
+*/
                 //! --------------------------------------------------------
                 //! merge into a single map
                 //! details: in case of non patch conforming the DSbuilder
@@ -12731,15 +12754,15 @@ void SimulationManager::generateBoundaryConditionsMeshDS(bool computeDual)
                             //! --------------------------
                             //! work on exact datasources
                             //! --------------------------
-                            aBuilder.setFaces(patchConformingTags);
+                            aBuilder.setShapes(patchConformingTags);
                             IndexedMapOfMeshDataSources exactMeshDS;
-                            aBuilder.perform2(exactMeshDS,true);
+                            aBuilder.perform(exactMeshDS,true);
                             //! ----------------------------
                             //! work on inexact datasources
                             //! ----------------------------
-                            aBuilder.setFaces(nonPatchConformingTags);
+                            aBuilder.setShapes(nonPatchConformingTags);
                             IndexedMapOfMeshDataSources inexactMeshDS;
-                            aBuilder.perform2(inexactMeshDS,false);
+                            aBuilder.perform(inexactMeshDS,false);
 
                             //! ------------------------
                             //! merge into a single map   // check if is it a real merge or a replacement
@@ -12827,16 +12850,16 @@ void SimulationManager::generateBoundaryConditionsMeshDS(bool computeDual)
                 //! --------------------------
                 //! work on exact datasources
                 //! --------------------------
-                aBuilder.setFaces(patchConformingTags);
+                aBuilder.setShapes(patchConformingTags);
                 IndexedMapOfMeshDataSources exactMeshDS;
-                aBuilder.perform2(exactMeshDS,true);
+                aBuilder.perform(exactMeshDS,true);
 
                 //! ----------------------------
                 //! work on inexact datasources
                 //! ----------------------------
-                aBuilder.setFaces(nonPatchConformingTags);
+                aBuilder.setShapes(nonPatchConformingTags);
                 IndexedMapOfMeshDataSources inexactMeshDS;
-                aBuilder.perform2(inexactMeshDS,false);
+                aBuilder.perform(inexactMeshDS,false);
 
                 //! --------------------------------------------------------
                 //! merge into a single map

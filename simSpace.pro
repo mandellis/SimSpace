@@ -149,7 +149,6 @@ SOURCES += main.cpp\
     src/mesh/mshconvert.cpp \
     src/mesh/backgroundmeshbuilder.cpp \
     src/mesh/meshuvprojection.cpp \
-    src/mesh/facedatasourcebuilder.cpp \
     src/mesh/customMesher/custommesher.cpp \
     src/mesh/surfacemeshcutter.cpp \
     openfoamcontroller.cpp \
@@ -184,7 +183,8 @@ SOURCES += main.cpp\
     src/mesh/isostripbuilder.cpp \
     src/mesh/rayintersectmesh.cpp \
     meshselector.cpp \
-    src/post/rainflow.cpp
+    src/post/rainflow.cpp \
+    src/mesh/datasourcebuilder.cpp
 
 HEADERS  += mainwindow.h \
     actions3d.h \
@@ -364,7 +364,6 @@ HEADERS  += mainwindow.h \
     src/mesh/backgroundmeshbuilder.h \
     libigl/include/igl/copyleft/cgal/test.h \
     src/mesh/meshuvprojection.h \
-    src/mesh/facedatasourcebuilder.h \
     src/mesh/indexedmapofmeshdatasources.h \
     src/mesh/customMesher/custommesher.h \
     connectionpairgenerationoptions.h \
@@ -419,7 +418,8 @@ HEADERS  += mainwindow.h \
     src/mesh/isostripbuilder.h \
     src/mesh/rayintersectmesh.h \
     meshselector.h \
-    src/post/rainflow.h
+    src/post/rainflow.h \
+    src/mesh/datasourcebuilder.h
 
 FORMS    += mainwindow.ui
 

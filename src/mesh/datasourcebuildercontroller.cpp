@@ -2,7 +2,7 @@
 //! custom includes
 //! ----------------
 #include "datasourcebuildercontroller.h"
-#include <facedatasourcebuilder.h>
+#include <datasourcebuilder.h>
 
 //! ---
 //! Qt
@@ -18,7 +18,7 @@ dataSourceBuilderController::dataSourceBuilderController()
     //! --------------
     //! Worker thread
     //! --------------
-    faceDataSourceBuilder *worker = new faceDataSourceBuilder();
+    dataSourceBuilder *worker = new dataSourceBuilder();
     worker->moveToThread(&workerThread);
 
 }

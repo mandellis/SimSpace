@@ -1584,7 +1584,13 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
             data.setValue(prop_loadMagnitude);
             vecProp.push_back(prop_loadMagnitude);
         }
-
+        else if(type == SimulationNodeClass::nodeType_structuralAnalysisThermalCondition)
+        {
+            data.setValue(Property::loadDefinition_constant);
+            Property prop_loadMagnitude("Magnitude",data,Property::PropertyGroup_Definition);
+            data.setValue(prop_loadMagnitude);
+            vecProp.push_back(prop_loadMagnitude);
+        }
         //! -----------------------------------
         //! advanced properties for "Coupling"
         //! -----------------------------------
