@@ -9946,7 +9946,7 @@ void SimulationManager::interpolatePrivate(int mode)
     //! -----------------------------
     //! results of the interpolation
     //! -----------------------------
-    QList<QMap<int,std::pair<double,double>>> listMapMinMax;
+    std::vector<std::map<int,std::pair<double,double>>> listMapMinMax;
     std::vector<std::map<GeometryTag,std::vector<std::map<int,double>>>> listMapOfRes;
 
     //! --------------------------
@@ -10019,7 +10019,7 @@ void SimulationManager::interpolatePrivate(int mode)
             cout<<"SimulationManager::interpolatePrivate()->____mapping finished____"<<endl;
             for(int pos=0;pos<NbStep;pos++)
             {
-                QMap<int,std::pair<double,double>> mapMinMax;
+                std::map<int,std::pair<double,double>> mapMinMax;
                 std::vector<std::map<int,double>> listOfRes;
                 std::map<GeometryTag,std::vector<std::map<int,double>>> mapOfRes;
 
@@ -10039,7 +10039,7 @@ void SimulationManager::interpolatePrivate(int mode)
                     mapOfRes.insert(std::make_pair(loc,listOfRes));
 
                     //! insert all results type into the "time" list of results
-                    listMapMinMax<<mapMinMax;
+                    listMapMinMax.pushback(mapMinMax);
                     listMapOfRes.push_back(mapOfRes);
                 }
                 else
@@ -10053,7 +10053,8 @@ void SimulationManager::interpolatePrivate(int mode)
                     //! --------------------------------------------
                     //! insert all results into the list of results
                     //! --------------------------------------------
-                    listMapMinMax.replace(pos,mapMinMax);
+                    listMapMinMax.erase(pos);
+                    listMapMinMax.insert(pos,mapMinMax);
                     listMapOfRes[pos] = mapOfRes;
                     //std::replace(listMapOfRes.begin(),listMapOfRes.end(),listMapOfRes.at(pos),mapOfRes);
                 }
@@ -10149,16 +10150,28 @@ void SimulationManager::interpolatePrivate(int mode)
         //! QMap<GeometryTag,QList<QMap<int,double>>> => std::map<GeometryTag,std::vector<std::map<int,double>>>
         //! -----------------------------------------------------------------------------------------------------
         std::map<GeometryTag,std::vector<std::map<int,double>>> mapOfRes = listMapOfRes.at(t);
-
+        std::map<int,std::pair<double,double>> mapMinMax = listMapMinMax.at(t);
+        double min,max;
+        std:vector<double> listOfmin,listOfMax;
+        for(std::map<int,std::pair<double,double>>::iterator it=mapMinMax.begin();it!=mapMinMax.end;++it)
+        {
+            std::pair<double,double> &aPair = it->second;
+            listOfMax.push_back(aPair.second);
+            listOfMin.push_back(aPair.first);
+        }
+        std::sort(listOfMax.begin(),listOfMax.end());
+        max = listOfMax.at(listOfMax.end());
+        std::sort(listOfMin.begin(),listOfMin.end());
+        min = listOfMin.at(listOfMin.begin());
         //! ---------------------------------------------------------------------
         //! create the post object: 1-st column of data, 10 levels, autoscale ON
         //! ---------------------------------------------------------------------
         sharedPostObject aPostObject = std::make_shared<postObject>(mapOfRes,vecLocs,postObjectName);
         int component = 0;
         int NbLevels = 10;
-        bool isAutoscale = true;
+        bool isAutoscale = false;
         aPostObject->init(static_cast<meshDataBase*>(this->getDataBase()));
-        aPostObject->buildMeshIO(-1,-1,NbLevels,isAutoscale,component);
+        aPostObject->buildMeshIO(min,max,NbLevels,isAutoscale,component);
 
         QVariant data;
         data.setValue(aPostObject);

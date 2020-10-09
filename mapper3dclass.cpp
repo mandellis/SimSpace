@@ -769,7 +769,7 @@ void Mapper3DClass::putScalarOnTargetNode(int interpolationTypeFunction)
         }
 
         int sizeList = values.length();     //! number of times
-        int m = values.at(0).size();        //!
+        int m = int(values.at(0).size());        //!
 
         switch(interpolationTypeFunction)
         {
@@ -1259,6 +1259,7 @@ void Mapper3DClass::performNearestNeighboring(double pinball)
                         int nodeID = aTargetMeshNode.nodeID;
                         const std::vector<double> &vecVal = aTargetMeshNode.values;
                         //myMultiRes.insert(nodeID,vecVal);
+                        myMultiRes.erase(nodeID);
                         myMultiRes.insert(std::make_pair(nodeID,vecVal));
                         minDistance = curDistance;
                         success = true;

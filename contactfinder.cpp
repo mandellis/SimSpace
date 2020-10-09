@@ -38,7 +38,8 @@
 #include <NCollection_Array1.hxx>
 #include <Bnd_Box.hxx>
 #include <BRepBndLib.hxx>
-
+#include <TopoDS_Face.hxx>
+#include <TopAbs.hxx>
 //! ---
 //! Qt
 //! ---
@@ -396,7 +397,6 @@ bool contactFinder::perform(const std::vector<std::pair<GeometryTag,GeometryTag>
             aMasterTag.parentShapeNr = masterBodyIndex;
             aMasterTag.subTopNr = apair.first;
             aMasterTag.subShapeType = TopAbs_FACE;
-
             tagsMaster.push_back(aMasterTag);
 
             GeometryTag aSlaveTag;

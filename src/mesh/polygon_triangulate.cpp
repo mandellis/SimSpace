@@ -1759,7 +1759,7 @@ int s_len_trim ( string s )
 {
     int n;
 
-    n = s.length ( );
+    n = int(s.length( ));
 
     while ( 0 < n )
     {
@@ -2130,7 +2130,7 @@ bool s_to_r8vec ( string s, int n, double rvec[] )
     int length;
 
     begin = 0;
-    length = s.length ( );
+    length = int(s.length( ));
     error = 0;
 
     for ( i = 0; i < n; i++ )
@@ -2185,7 +2185,7 @@ int s_word_count ( string s )
     word_count = 0;
     blank = true;
 
-    char_count = s.length ( );
+    char_count = int(s.length( ));
 
     for ( i = 0; i < char_count; i++ )
     {
