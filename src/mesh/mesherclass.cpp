@@ -1279,11 +1279,6 @@ userMessage MesherClass::PrismaticLayers_generatePrismaticMesh(int bodyIndex,
     if(myProgressIndicator!=Q_NULLPTR) prismaticLayerBuilder.setProgressIndicator(myProgressIndicator);
     prismaticLayerBuilder.setBody(bodyIndex);
 
-    //! ---------------------------
-    //! set the progress indicator
-    //! ---------------------------
-    if(myProgressIndicator!=Q_NULLPTR) prismaticLayerBuilder.setProgressIndicator(myProgressIndicator);
-
     //! --------------------------------------------------------------------------
     //!  retrieve the list of the prismatic faces for the body (list of face IDs)
     //! --------------------------------------------------------------------------
@@ -1752,12 +1747,12 @@ userMessage MesherClass::Tetgen_generateVolumeMesh(int bodyIndex, int preserveSu
     }
     else    // meshing with boundary mesh
     {
-        //! *******************************************************
+        //! **********************************************************
         //!
-        //! block of code for the generation of the boundary mesh
-        //! in PrismaticLayers_generatePrismaticMesh
+        //! the block of code for the generation of the boundary mesh
+        //! is in PrismaticLayers_generatePrismaticMesh
         //!
-        //! *******************************************************
+        //! **********************************************************
         occHandle(Ng_MeshVS_DataSourceFace) theLastInflatedMesh;
         QList<occHandle(Ng_MeshVS_DataSourceFace)> listOfInflatedMeshes;
         mr = this->PrismaticLayers_generatePrismaticMesh(bodyIndex,theLastInflatedMesh,listOfInflatedMeshes);
@@ -1871,7 +1866,10 @@ userMessage MesherClass::Tetgen_generateVolumeMesh(int bodyIndex, int preserveSu
             mr.message = QString("Error in merging the prismatic and interionr mesh for body %1").arg(bodyIndex);
             return mr;
         }
-        myMeshDB->ArrayOfMeshDS.insert(bodyIndex,mainMesh3D);
+        //myMeshDB->ArrayOfMeshDS.insert(bodyIndex,mainMesh3D);
+
+        //! for testing purposes - show the interior mesh
+        myMeshDB->ArrayOfMeshDS.insert(bodyIndex,tetgenVolumeMeshDS);
 
         mr.isDone = true;
         mr.message = QString("Prismatic 3D mesh and interior mesh for body %1 successfully merged").arg(bodyIndex);

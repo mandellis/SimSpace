@@ -1,5 +1,3 @@
-//#define USE_FACE_DS_BUILDER
-
 //! ----------------
 //! custom includes
 //! ----------------
@@ -3698,6 +3696,47 @@ void occPreGLWidget::clipMesh()
     }
     occMeshContext->UpdateCurrentViewer();
     cout<<"occPreGLWidget::clipMesh()->____exiting function____"<<endl;
+
+    /*
+    //! ----------------------------------------------
+    //! slice by creating a slice mesh - experimental
+    //! ----------------------------------------------
+    for(AIS_ListIteratorOfListOfInteractive it(listOfIO); it.More(); it.Next())
+    {
+        const occHandle(MeshVS_Mesh) &aMesh = occHandle(MeshVS_Mesh)::DownCast(it.Value());
+        if(aMesh.IsNull()) continue;
+
+        const occHandle(MeshVS_DataSource) &aMeshDS = aMesh->GetDataSource();
+        if(aMeshDS.IsNull()) continue;
+
+        aSlicer.setMeshDataSource(aMeshDS);
+
+        for(QMap<int,occHandle(Graphic3d_ClipPlane)>::const_iterator itplane = myMapOfClipPlanes.cbegin(); itplane != myMapOfClipPlanes.cend(); itplane++)
+        {
+            const occHandle(Graphic3d_ClipPlane) &aClipPlane = itplane.value();
+            if(aClipPlane->IsOn()==false) continue;
+            Graphic3d_ClipPlane::Equation eq = aClipPlane->GetEquation();
+            double a = eq.GetData()[0];
+            double b = eq.GetData()[1];
+            double c = eq.GetData()[2];
+            double d = eq.GetData()[3];
+
+            occHandle(Ng_MeshVS_DataSourceFace) aSliceMesh;
+            bool isDone = aSlicer.planeMeshIntersection(aSliceMesh,a,b,c,d);
+            if(isDone == false)
+            {
+                cerr<<"____slicer failure____"<<endl;
+                continue;
+            }
+            this->displayMesh(aSliceMesh);
+        }
+    }
+    occMeshContext->UpdateCurrentViewer();
+    //! -----------------
+    //! end experimental
+    //! -----------------
+    */
+    //cout<<"occPreGLWidget::clipMesh()->____exiting function____"<<endl;
 }
 
 //! ---------------

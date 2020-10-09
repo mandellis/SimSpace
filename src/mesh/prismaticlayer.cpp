@@ -428,7 +428,7 @@ bool prismaticLayer::inflateMesh(QList<occHandle(Ng_MeshVS_DataSourceFace)> &inf
         //! -------------------------------
         //! smooth the displacements field
         //! -------------------------------
-        this->smoothDisplacementField(displacementsField,normals,theMeshToInflate_new);
+        //this->smoothDisplacementField(displacementsField,normals,theMeshToInflate_new);
 
         //! ------------------
         //! displace the mesh
@@ -535,30 +535,35 @@ bool prismaticLayer::mergeFaceMeshes()
 void prismaticLayer::computeShrinkFactor(const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS,
                                          QMap<int,double> &shrinkFactors)
 {
-    //! ----------------
-    //! diagnostic file
-    //! ----------------
-    //FILE *f = fopen("D:/shrink field.txt","w");
-
     int mode = 1; // Gaussian curvature
     if(aMeshDS->myCurvatureGradient.isEmpty()) aMeshDS->computeDiscreteCurvature(mode);
+    aMeshDS->computeNormalAtNodes();
+    aMeshDS->computeAnglesAtNode();
+
     for(TColStd_MapIteratorOfPackedMapOfInteger it(aMeshDS->GetAllNodes()); it.More(); it.Next())
     {
         int globalNodeID = it.Key();
-        double curvature = aMeshDS->myCurvature.value(globalNodeID);
+
+        const QList<double> &angles = aMeshDS->myAnglesAtNode.value(globalNodeID);
+        double angle = 0;
+        double beta = 0;
+        for(int i=0; i<angles.length(); i++) angle +=angles[i];
+        angle /=angles.size();
 
         //! ---------------------------
         //! use the gaussian curvature
         //! ---------------------------
-        const double maxShrink = 1.0;
-        double k = myCurvatureSensitivityForShrink;
-        double shrink = maxShrink*(1./(1.+exp(-k*sqrt(fabs(curvature)))));
-        if(curvature<0) shrink = maxShrink - shrink;
-        shrinkFactors.insert(globalNodeID,shrink);
+        //double curvature = aMeshDS->myCurvature.value(globalNodeID);
+        //const double maxShrink = 2.0;
+        //double k = myCurvatureSensitivityForShrink;
+        //double shrink = maxShrink*(1./(1.+exp(-k*curvature)));                // possible alternative form
+        //shrinkFactors.insert(globalNodeID,shrink);
 
-        //fprintf(f,"%d\t%lf\t%lf\n",globalNodeID,curvature,shrink);
+        cout<<"____angle: "<<angle<<"____"<<endl;
+        if(angle<0.785398) beta = 1-fabs(cos(angle));
+        else beta = 1+fabs(cos(angle));
+        shrinkFactors.insert(globalNodeID,beta);
     }
-    //fclose(f);
 }
 
 //! ---------------------------------
@@ -776,7 +781,7 @@ bool prismaticLayer::inflateMeshAndCompress(QList<occHandle(Ng_MeshVS_DataSource
         //! ------------------
         //! compute curvature
         //! ------------------
-        int curvatureType = 1;      //! gaussian
+        int curvatureType = 1;      // gaussian
         theMeshToInflate_new->computeDiscreteCurvature(curvatureType);
 
         //! -----------------------
@@ -1190,7 +1195,7 @@ void prismaticLayer::generateOneTetLayer(occHandle(Ng_MeshVS_DataSourceFace) &th
     //! calculate the discrete curvature and the curvature gradient amplitude
     //! compute the shrink factor
     //! ----------------------------------------------------------------------
-    int curvatureType = 1;  //! gaussian curvature
+    int curvatureType = 1;  // gaussian curvature
     theMeshToInflate->computeDiscreteCurvature(curvatureType);
     QMap<int,double> shrinkFactors;
     this->computeShrinkFactor(theMeshToInflate,shrinkFactors);
@@ -1315,7 +1320,7 @@ void prismaticLayer::generateOneTetLayer(occHandle(Ng_MeshVS_DataSourceFace) &th
             aTetQuality.setPoints(aVolElement.getPoints());
 
             double V = aTetQuality.Volume();
-            if(V<0.0)
+            if(V<=0.0)
             {
                 //NumberOfInvertedTet++;
                 cout<<"____INVERTED ELEMENT: CANNOT MOVE____"<<endl;
@@ -1327,18 +1332,19 @@ void prismaticLayer::generateOneTetLayer(occHandle(Ng_MeshVS_DataSourceFace) &th
 
             //! -------------------------------------------------------
             //! check if the volume element is valid, and can be added
+            //! - by pass a full element quality check -
             //! -------------------------------------------------------
-            double q0, q1, q2;
-            aTetQuality.setPoints(aVolElement.getPoints());
-            aTetQuality.getQualityMeasure(q0,q1,q2,V);
+            //double q0, q1, q2;
+            //aTetQuality.setPoints(aVolElement.getPoints());
+            //aTetQuality.getQualityMeasure(q0,q1,q2,V);
 
-            const double QUALITY_LIMIT = 0.01;
-            if(q2<QUALITY_LIMIT)
-            {
-                cout<<"____CANNOT MOVE____"<<endl;
-                canMove = false;
-                break;
-            }
+            //const double QUALITY_LIMIT = 0.01;
+            //if(q2<QUALITY_LIMIT)
+            //{
+            //    cout<<"____CANNOT MOVE____"<<endl;
+            //    canMove = false;
+            //    break;
+            //}
             vecElementsToAdd.push_back(aVolElement);
         }
         if(canMove)
@@ -1395,6 +1401,21 @@ void prismaticLayer::generateOneTetLayer(occHandle(Ng_MeshVS_DataSourceFace) &th
 //! function: fieldSmoother
 //! details:
 //! ------------------------
+double kij(double n, const std::vector<double> &P, const std::vector<double> &S, double Sdij)
+{
+    double dij = sqrt(pow(P[0]-S[0],2)+pow(P[1]-S[1],2)+pow(P[2]-S[2],2));
+    double val = n*dij/Sdij;
+    return val;
+}
+
+double wij(double curvature, const std::vector<double> &P, const std::vector<double> &S, double Sdij, double n)
+{
+    double val = 1.0;
+    if(curvature>=1e-3) val = pow(kij(n,P,S,Sdij),2);
+    if(curvature<=1e-3) val = 1/pow(kij(n,P,S,Sdij),2);
+    return val;
+}
+
 void prismaticLayer::fieldSmoother(QMap<int,QList<double>> &field,
                                    const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS,
                                    double k,
@@ -1411,15 +1432,18 @@ void prismaticLayer::fieldSmoother(QMap<int,QList<double>> &field,
     //! ----------------
     //! smoothing steps
     //! ----------------
-    for(int q = 1; q<=NbSteps; q++)
+    for(int n = 1; n<=NbSteps; n++)
     {
         QMap<int,QList<double>> smoothedField;
         for(QMap<int,QList<double>>::iterator it = field.begin(); it!= field.end(); ++it)
         {
+            double snx, sny, snz;
+            snx = sny = snz = 0;
+
             int globalNodeID = it.key();
             int localNodeID = aMeshDS->myNodesMap.FindIndex(globalNodeID);
-
             const std::vector<double> &P = aMeshDS->getNodeCoordinates(localNodeID);
+            double curvature = aMeshDS->myCurvature.value(globalNodeID);
 
             //! -------------------------------------------
             //! value of the field at the current position
@@ -1429,7 +1453,7 @@ void prismaticLayer::fieldSmoother(QMap<int,QList<double>> &field,
             //! --------------------------
             //! get the surrounding nodes
             //! --------------------------
-            std::vector<int> surroundingNodes;
+            std::set<int> surroundingNodes;
             QList<int> elements = aMeshDS->myNodeToElements.value(localNodeID);
             for(int i=0; i<elements.length(); i++)
             {
@@ -1438,65 +1462,54 @@ void prismaticLayer::fieldSmoother(QMap<int,QList<double>> &field,
                 int NbNodes, buf[20];
                 TColStd_Array1OfInteger nodeIDs(*buf,1,20);
                 aMeshDS->GetNodesByElement(globalElementID,nodeIDs,NbNodes);
-                for(int n=1; n<=NbNodes; n++)
-                {
-                    int globalNodeID_ = nodeIDs(n);
+                for(int j=1; j<=NbNodes; j++) surroundingNodes.insert(nodeIDs(j));
 
-                    if(globalNodeID_==globalNodeID) continue;
-                    if(std::find(surroundingNodes.begin(),surroundingNodes.end(),globalNodeID_)==surroundingNodes.end())
-                        surroundingNodes.push_back(globalNodeID_);
-                }
             }
-            //bool isDone = aMeshDS->getSurroundingNodes(localNodeID,surroundingNodes);
-            //if(!isDone) exit(22);
+            std::set<int>::iterator itt = surroundingNodes.find(globalNodeID);
+            if(itt!=surroundingNodes.end()) surroundingNodes.erase(itt);
 
-            int NbSurrounding = int(surroundingNodes.size());
-
-            //cout<<"@____begin smoothing at node____@"<<endl;
-            //cout<<"@____nodeID: "<<globalNodeID<<" number of surrounding: "<<NbSurrounding<<"____@"<<endl;
-
-            double denom = 0;
-            double num_x, num_y, num_z;
-            num_x = num_y = num_z = 0;
-
-            for(int n=0; n<NbSurrounding; n++)
+            //! ---------------------------------------------------------
+            //! sum of all the distances from the current advancing node
+            //! ---------------------------------------------------------
+            double Sdij = 0;
+            for(std::set<int>::iterator it = surroundingNodes.begin(); it!=surroundingNodes.end(); it++)
             {
-                //cout<<"____n-th surrounding: "<<n+1<<"____"<<endl;
-                int globalNodeID_surrounding = surroundingNodes[n];
+                int globalNodeID_surrounding = *it;
                 int localNodeID_surrounding = aMeshDS->myNodesMap.FindIndex(globalNodeID_surrounding);
                 const std::vector<double> &S = aMeshDS->getNodeCoordinates(localNodeID_surrounding);
                 double d = sqrt(pow(S[0]-P[0],2)+pow(S[1]-P[1],2)+pow(S[2]-P[2],2));
-                //cout<<"____distance ("<<globalNodeID<<", "<<globalNodeID_surrounding<<") ="<<d<<"____"<<endl;
-                denom += 1.0/d;
-                const QList<double> &localValue_surrounding = field.value(globalNodeID_surrounding);
-                num_x += (1.0/d)*localValue_surrounding[0];
-                num_y += (1.0/d)*localValue_surrounding[1];
-                num_z += (1.0/d)*localValue_surrounding[2];
-                //cout<<"____"<<num_x<<", "<<num_y<<", "<<num_z<<"____"<<endl;
+                Sdij += d;
             }
-            if(denom == 0)
+
+            double Swij = 0;
+            size_t n = surroundingNodes.size();
+            for(std::set<int>::iterator it = surroundingNodes.begin(); it!=surroundingNodes.end(); it++)
             {
-                cerr<<"____zero denominator during laplacian smoothing____"<<endl;
-                exit(20);
+                int globalNodeID_surrounding = *it;
+                int localNodeID_surrounding = aMeshDS->myNodesMap.FindIndex(globalNodeID_surrounding);
+                const std::vector<double> &S = aMeshDS->getNodeCoordinates(localNodeID_surrounding);
+                Swij += wij(curvature,P,S,Sdij,n);
             }
 
-            double curvature = aMeshDS->myCurvature.value(globalNodeID);
-            const double maxOmega = 1.0;
-            double omega = maxOmega*(1-1/(1+exp(-k*sqrt(fabs(curvature)))));
-            if(curvature<0) omega = maxOmega-omega;
+            double a0,a1,a2;
+            a0=a1=a2=0.0;
+            for(std::set<int>::iterator it = surroundingNodes.begin(); it!=surroundingNodes.end(); it++)
+            {
+                int globalNodeID_surrounding = *it;
+                int localNodeID_surrounding = aMeshDS->myNodesMap.FindIndex(globalNodeID_surrounding);
+                const std::vector<double> &S = aMeshDS->getNodeCoordinates(localNodeID_surrounding);
+                const QList<double> &localValue_surrounding = field.value(globalNodeID_surrounding);
+                a0 += localValue_surrounding[0]*wij(curvature,P,S,Sdij,n);
+                a1 += localValue_surrounding[1]*wij(curvature,P,S,Sdij,n);
+                a2 += localValue_surrounding[2]*wij(curvature,P,S,Sdij,n);
+            }
 
-            double snx = omega*localValue[0]+(1-omega)*(num_x/denom);
-            double sny = omega*localValue[1]+(1-omega)*(num_y/denom);
-            double snz = omega*localValue[2]+(1-omega)*(num_z/denom);
+            //! to be defined ...
+            double omega = 1-1/(1+exp(-k*curvature));
 
-            double l = sqrt(snx*snx+sny*sny+snz*snz);
-            snx /= l;
-            sny /= l;
-            snz /= l;
-
-            //cout<<"____old field value ("<<field.value(globalNodeID).at(0)<<", "<<field.value(globalNodeID).at(1)<<", "<<field.value(globalNodeID).at(2)<<")____"<<endl;
-            //cout<<"____new field value ("<<snx<<", "<<sny<<", "<<snz<<")____"<<endl;
-            //cout<<"@____end smoothing at node____@"<<endl<<endl;
+            snx = (1-omega)*localValue[0] + (omega/Swij)*a0;
+            sny = (1-omega)*localValue[1] + (omega/Swij)*a1;
+            snz = (1-omega)*localValue[2] + (omega/Swij)*a2;
 
             QList<double> localFieldValueSmoothed;
             localFieldValueSmoothed<<snx<<sny<<snz;

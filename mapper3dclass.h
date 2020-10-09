@@ -292,7 +292,6 @@ public:
     //! -----------
     //! get result
     //! -----------
-    //QMap<int,double> getResults();
     std::map<int,double> getResults();
 
     //! --------------------------
@@ -350,14 +349,8 @@ private:
     std::vector<mesh::meshElement> myVecElements;
     std::vector<mesh::meshElement> myVecEmptyElements;
 
-    //QMap<int,std::vector<double>> myMapOfNodes;               //! target mesh nodes - key->nodeID, value[3]->coords(x, y, z)
-    //QMap<int,double> myRes;                             //! target mesh nodes - key->nodeID, averaged interpolated scalar value
-
     std::map<int,std::vector<double>> myMapOfNodes;         //! target mesh nodes - key->nodeID, value[3]->coords(x, y, z)
     std::map<int,double> myRes;                             //! target mesh nodes - key->nodeID, averaged interpolated scalar value
-
-    //QMultiMap<int,std::vector<double>> myMultiResNodes; //! target mesh nodes - intermediate result of the multiInterpolation
-    //QMap<int,std::vector<double>> myMultiRes;           //! target mesh nodes - key->nodeID, averaged interpolated scalar value for multiinterpolate
 
     std::multimap<int,std::vector<double>> myMultiResNodes; //! target mesh nodes - intermediate result of the multiInterpolation
     std::map<int,std::vector<double>> myMultiRes;           //! target mesh nodes - key->nodeID, averaged interpolated scalar value for multiinterpolate
