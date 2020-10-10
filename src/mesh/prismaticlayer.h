@@ -274,6 +274,10 @@ private:
                                  const QMap<int,QList<double>> &normals,
                                  const occHandle(Ng_MeshVS_DataSourceFace) &theMeshToInflate);
 
+    //! -------------
+    //! compute beta
+    //! -------------
+    void computeBeta(const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS, int globalNodeID, double &betaMax, double &betaAve);
 
     //! --------------------------------------------------
     //! enable/disable the progress indicator stop button

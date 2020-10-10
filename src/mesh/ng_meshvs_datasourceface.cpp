@@ -1087,11 +1087,8 @@ Standard_Boolean Ng_MeshVS_DataSourceFace::GetNormal(const Standard_Integer Id,
         nz = myElemNormals->Value(localElementID,3);
         return Standard_True;
     }
-    else
-    {
-        cerr<<"Ng_MeshVS_DataSourceFace::GetNormal()->____error element ID: "<<Id<<" out of range____"<<endl;
-        return Standard_False;
-    }
+    cerr<<"Ng_MeshVS_DataSourceFace::GetNormal()->____error element ID: "<<Id<<" out of range____"<<endl;
+    return Standard_False;
 }
 
 //! -------------------
