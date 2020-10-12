@@ -245,8 +245,8 @@ public:
     //! ----------------
     //! displace myself
     //! ----------------
-    void displaceMySelf(const QMap<int, gp_Vec> &displacementField);
-    void displaceMySelf_asRigidAsPossible(const QMap<int, gp_Vec> &displacementField, const std::vector<int> &nodeGroup, int mode);
+    void displaceMySelf(const QMap<int, QList<double> > &displacementField);
+    void displaceMySelf_asRigidAsPossible(const QMap<int, QList<double> > &displacementField, const std::vector<int> &nodeGroup, int mode);
 
     //! ----------------------------------------
     //! compute element to element connectivity

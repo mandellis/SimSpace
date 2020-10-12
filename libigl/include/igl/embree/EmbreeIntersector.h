@@ -21,8 +21,10 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 
-#include <embree3/rtcore.h>
-#include <embree3/rtcore_ray.h>
+//#include <embree3/rtcore.h>
+//#include <embree3/rtcore_ray.h>
+#include <libigl/external/embree/include/embree3/rtcore.h>
+#include <libigl/external/embree/include/embree3/rtcore_ray.h>
 #include <iostream>
 #include <vector>
 
@@ -188,7 +190,8 @@ namespace igl
 }
 
 // Implementation
-#include <igl/EPS.h>
+//#include <igl/EPS.h>
+#include <libigl/include/igl/EPS.h>
 // This unfortunately cannot be a static field of EmbreeIntersector because it
 // would depend on the template and then we might end up with initializing
 // embree twice. If only there was a way to ask embree if it's already

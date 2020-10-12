@@ -258,22 +258,6 @@ private:
                              double displacement,
                              std::vector<meshElementByCoords> &volumeElementsAtWalls);
 
-
-    //! ---------------------------------
-    //! field smoother - curvature based
-    //! ---------------------------------
-    void fieldSmoother(QMap<int,QList<double>> &field,
-                       const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS,
-                       double k,
-                       int NbSteps);
-
-    //! ---------------------------------------
-    //! smooth the displacement field - helper
-    //! ---------------------------------------
-    void smoothDisplacementField(QMap<int,gp_Vec> &displacementsField,
-                                 const QMap<int,QList<double>> &normals,
-                                 const occHandle(Ng_MeshVS_DataSourceFace) &theMeshToInflate);
-
     //! -------------
     //! compute beta
     //! -------------
@@ -283,9 +267,6 @@ private:
     //! enable/disable the progress indicator stop button
     //! --------------------------------------------------
     void setStopButtonEnabled(bool isEnabled);
-
-
-
 };
 
 #endif // PRISMATICLAYER_H

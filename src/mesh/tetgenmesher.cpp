@@ -38,6 +38,11 @@
 #include <iostream>
 using namespace std;
 
+//! --------
+//! Windows
+//! --------
+#include <sys/stat.h>
+
 //! -------
 //! global
 //! -------
@@ -421,7 +426,7 @@ void TetgenMesher::setSwitches(int preserveSurfaceMesh, int bodyIndex)
     double tolerance = TOLERANCE;
     double L = myMeshDB->ArrayOfMaxBodyElementSize.value(bodyIndex);
     double maxVolSize = (4.0/3.0)*3.14159*pow(L,3);
-    //double maxVolSize = L;
+    maxVolSize = pow(maxVolSize,0.3333);
 
     switch(preserveSurfaceMesh)
     {
@@ -434,7 +439,6 @@ void TetgenMesher::setSwitches(int preserveSurfaceMesh, int bodyIndex)
         //!    Attach "O10/7"
         //! ------------------------------------------------
         sprintf(mySwitches,"pq1.4/0.0a%.2lfT%.2eV",maxVolSize,tolerance);
-        //sprintf(mySwitches,"pq1.4/0.0a%.2lfT%.2eVO10/7",maxVolSize,tolerance);
     }
         break;
 
@@ -446,7 +450,6 @@ void TetgenMesher::setSwitches(int preserveSurfaceMesh, int bodyIndex)
         //!    Attach "O10/7"
         //! ------------------------------------------------
         sprintf(mySwitches,"pYq1.4/0.0a%.2lfT%.2eV",maxVolSize,tolerance);
-        //sprintf(mySwitches,"pYq1.4/0.0a%.2lfT%.2eVO10/7",maxVolSize,tolerance);
     }
         break;
     }
@@ -940,7 +943,6 @@ void TetgenMesher::redirectTetgenOutput()
 //! details:  the array of face datasources is used as an input for building the Tetgen PLC
 //!           the last three arguments are the returning values
 //! ----------------------------------------------------------------------------------------
-#include <sys/stat.h>
 int TetgenMesher::performOnDisk1(const NCollection_Array1<occHandle(Ng_MeshVS_DataSourceFace>) &arrayOfFaceDS,
                                  int bodyIndex,
                                  occHandle(Ng_MeshVS_DataSource3D) &tetgenMesh3D,
@@ -1014,7 +1016,7 @@ int TetgenMesher::performOnDisk1(const NCollection_Array1<occHandle(Ng_MeshVS_Da
     //! --------------------------
     //! set the working directory
     //! --------------------------
-    cout<<"TetgenMesher::performOnDisk()->____setting the output directory: "<<myTetgenSupportFilesDir.toStdString()<<"____"<<endl;
+    cout<<"TetgenMesher::performOnDisk1()->____setting the output directory: "<<myTetgenSupportFilesDir.toStdString()<<"____"<<endl;
     tetgenProcess->setWorkingDirectory(myTetgenSupportFilesDir);
 
     cout<<"TetgenMesher::performOnDisk1()->____Tetgen meshing started____"<<endl;
@@ -1108,7 +1110,7 @@ int TetgenMesher::performOnDisk1(const NCollection_Array1<occHandle(Ng_MeshVS_Da
     //! --------------------------
     tetgenProcess->setWorkingDirectory(myTetgenSupportFilesDir);
 
-    cout<<"TetgenMesher::performOnDisk()->____setting the output directory: "<<myTetgenSupportFilesDir.toStdString()<<"____"<<endl;
+    cout<<"TetgenMesher::performOnDisk1()->____setting the output directory: "<<myTetgenSupportFilesDir.toStdString()<<"____"<<endl;
     cout<<"TetgenMesher::performOnDisk1()->____Tetgen meshing started____"<<endl;
 
     disconnect(tetgenProcess,SIGNAL(readyReadStandardOutput()),this,SLOT(redirectTetgenOutput()));

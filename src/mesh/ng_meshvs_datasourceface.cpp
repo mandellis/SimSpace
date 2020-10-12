@@ -1722,20 +1722,17 @@ void Ng_MeshVS_DataSourceFace::computeNormalAtElements()
 //!           the key of the input map should be the global element ID
 //!           update normals at elements, at nodes, and 1D boundary
 //! -------------------------------------------------------------------
-void Ng_MeshVS_DataSourceFace::displaceMySelf(const QMap<int, gp_Vec> &displacementField)
+void Ng_MeshVS_DataSourceFace::displaceMySelf(const QMap<int, QList<double>> &displacementField)
 {
-    for(QMap<int, gp_Vec>::const_iterator it = displacementField.cbegin(); it!= displacementField.cend(); ++it)
+    for(QMap<int, QList<double>>::const_iterator it = displacementField.cbegin(); it!= displacementField.cend(); ++it)
     {
         int globalNodeID = it.key();
         int localNodeID = this->myNodesMap.FindIndex(globalNodeID);
         if(localNodeID<1 || localNodeID>myNumberOfNodes) continue;
-        const gp_Vec &curVec = it.value();
-        double dX = curVec.X();
-        double dY = curVec.Y();
-        double dZ = curVec.Z();
-        myNodeCoords->ChangeValue(localNodeID,1) = myNodeCoords->Value(localNodeID,1)+dX;
-        myNodeCoords->ChangeValue(localNodeID,2) = myNodeCoords->Value(localNodeID,2)+dY;
-        myNodeCoords->ChangeValue(localNodeID,3) = myNodeCoords->Value(localNodeID,3)+dZ;
+        const QList<double> &curVec = it.value();
+        myNodeCoords->ChangeValue(localNodeID,1) = myNodeCoords->Value(localNodeID,1)+curVec[0];
+        myNodeCoords->ChangeValue(localNodeID,2) = myNodeCoords->Value(localNodeID,2)+curVec[1];
+        myNodeCoords->ChangeValue(localNodeID,3) = myNodeCoords->Value(localNodeID,3)+curVec[2];
     }
 
     //! -----------------------------
