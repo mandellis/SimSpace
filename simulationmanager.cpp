@@ -12130,21 +12130,17 @@ bool SimulationManager::COSTAMP_addProcessParameters()
             int index=0;
             for(int i=0;i<groupShapeList.length();i++)
             {
-                cout<<"____tag00____"<<endl;
                 ListOfShape scope = groupShapeList.at(i);
                 if(scope.IsEmpty()) continue;
                 this->createSimulationNode(SimulationNodeClass::nodeType_meshMethod);
                 //myTreeView->setCurrentIndex(Mesh_RootItem->index().child(i,0));
                 SimulationNodeClass *curMeshControl = myTreeView->currentIndex().data(Qt::UserRole).value<SimulationNodeClass*>();
                 curMeshControl->getModel()->blockSignals(true);
-                cout<<"____tag01____"<<endl;
-
                 //! scope
                 std::vector<GeometryTag> bodyLoc = TopologyTools::generateLocationPairs(mySimulationDataBase, scope);
                 data.setValue(bodyLoc);
                 Property prop_scopeAllBodies("Geometry",data,Property::PropertyGroup_Scope);
                 Property prop_tagsAllBodies("Tags",data,Property::PropertyGroup_Scope);
-                cout<<"____tag02____"<<endl;
 
                 curMeshControl->replaceProperty("Geometry",prop_scopeAllBodies);
                 curMeshControl->replaceProperty("Tags",prop_tagsAllBodies);
@@ -12156,7 +12152,6 @@ bool SimulationManager::COSTAMP_addProcessParameters()
                 data.setValue(on);
                 Property prop_mMethod("Patch conforming",data,Property::PropertyGroup_Method);
                 curMeshControl->replaceProperty("Patch conforming",prop_mMethod);
-                cout<<"____tag03____"<<endl;
 
                 detailViewer->handleBRepFlagChanged();
                 if(on == false)
@@ -12221,7 +12216,6 @@ bool SimulationManager::COSTAMP_addProcessParameters()
                 curSizingControl->getModel()->blockSignals(true);
 
                 //! scope
-
                 data.setValue(casting);
                 Property prop_scopeCasting("Geometry",data,Property::PropertyGroup_Scope);
                 Property prop_tagsCasting("Tags",data,Property::PropertyGroup_Scope);
@@ -12234,6 +12228,15 @@ bool SimulationManager::COSTAMP_addProcessParameters()
                 Property prop_size("Face sizing",data,Property::PropertyGroup_Definition);
                 curSizingControl->replaceProperty("Face sizing",prop_size);
                 curSizingControl->getModel()->blockSignals(true);
+
+                //! casting refinement
+                this->createSimulationNode(SimulationNodeClass::nodeType_meshPrismaticLayer);
+                SimulationNodeClass *curPrismControl = myTreeView->currentIndex().data(Qt::UserRole).value<SimulationNodeClass*>();
+                curPrismControl->getModel()->blockSignals(true);
+
+                //! scope
+                curPrismControl->replaceProperty("Geometry",prop_scopeCasting);
+                curPrismControl->replaceProperty("Tags",prop_tagsCasting);
             }
             //! -----------------------
             //! set contact properties
@@ -12259,6 +12262,10 @@ bool SimulationManager::COSTAMP_addProcessParameters()
             cGnode->replaceProperty("Geometry",prop_scopeAllBodies);
             cGnode->replaceProperty("Tags",prop_tagsAllBodies);
             cGnode->getModel()->blockSignals(false);
+            //! starts automatic contact creation
+            this->createAutomaticConnections();
+
+            //! TO DO ____set automatic contact
 
             //! change scope to importedBS item
             importedBSNode->getModel()->blockSignals(true);
@@ -12501,6 +12508,34 @@ void SimulationManager::createAutomaticConnections()
         const std::pair<std::vector<GeometryTag>,std::vector<GeometryTag>> &curPair = *it;
         int masterBodyIndex = curPair.first[0].parentShapeNr;
         int slaveBodyIndex = curPair.second[0].parentShapeNr;
+#ifdef COSTAMP_VERSION
+    //! filter the geomety tag, erase all non planar faces
+
+        for(std::vector<GeometryTag>::const_iterator mIt=curPair.first.cbegin() ;mIt!=curPair.first.cend();++mIt)
+        {
+            GeometryTag mLoc = *mIt;
+            int curMasterBodyIndex = mLoc.parentShapeNr;
+            int curMasterFaceIndex = mLoc.subTopNr ;
+
+            TopoDS_Shape masterFace = mySimulationDataBase->MapOfBodyTopologyMap.value(curMasterBodyIndex).faceMap.FindKey(curMasterFaceIndex);
+            GeomAbs_SurfaceType theMasterSurfaceType;
+            GeomToolsClass::getFaceType(TopoDS::Face(masterFace),theMasterSurfaceType);
+            if(theMasterSurfaceType!=GeomAbs_Plane) //curPair.first.erase(mIt);
+        }
+        for(std::vector<GeometryTag>::const_iterator sIt=curPair.second.cbegin() ;sIt!=curPair.second.cend();++sIt)
+        {
+            GeometryTag sLoc = *sIt;
+            int curSlaveBodyIndex = sLoc.parentShapeNr;
+            int curSlaveFaceIndex = sLoc.subTopNr ;
+
+            TopoDS_Shape slaveFace = mySimulationDataBase->MapOfBodyTopologyMap.value(curSlaveBodyIndex).faceMap.FindKey(curSlaveFaceIndex);
+            GeomAbs_SurfaceType theSlaveSurfaceType;
+            GeomToolsClass::getFaceType(TopoDS::Face(slaveFace),theSlaveSurfaceType);
+
+            if(theSlaveSurfaceType!=GeomAbs_Plane) //curPair.second.erase(sIt);
+        }
+        if(curPair.first.empty() || curPair.second.empty()) continue;
+#endif
 
         //! -------------------------------
         //! a name for the connection item
