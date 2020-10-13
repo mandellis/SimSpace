@@ -5242,7 +5242,7 @@ void DetailViewer::handleColorBoxScaleChanged()
 }
 
 //! -----------------------------------------------------------
-//! function: handleMeshDefeaturingByChanged()
+//! function: handleMeshDefeaturingChanged()
 //! details:  enable/disable mesh healing/defeaturing controls
 //! -----------------------------------------------------------
 void DetailViewer::handleMeshDefeaturingChanged()
