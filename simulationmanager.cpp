@@ -12251,8 +12251,9 @@ bool SimulationManager::COSTAMP_addProcessParameters()
             {
                 TopoDS_Solid aSolid = TopoDS::Solid(mySimulationDataBase->bodyMap.value(i));
                 int bodyIndex = mySimulationDataBase->bodyMap.key(aSolid);
-
-                if(mySimulationDataBase->MapOfIsActive.value(bodyIndex)==true)
+                QString bodyName = mySimulationDataBase->MapOfBodyNames.value(bodyIndex);
+                //if(mySimulationDataBase->MapOfIsActive.value(bodyIndex)==true)
+                if(bodyName!="CASTING")
                 scopes.Append(aSolid);
             }
             std::vector<GeometryTag> vecLocAllBodies = TopologyTools::generateLocationPairs(mySimulationDataBase, scopes);
