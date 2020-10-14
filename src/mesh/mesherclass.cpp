@@ -1418,10 +1418,8 @@ userMessage MesherClass::Netgen_generateVolumeMesh(int bodyIndex,
             //! which perform the automatic node renumbering
             //! -------------------------------------------------------------
             std::vector<meshElementByCoords> elementList1, elementList2;
-            //QList<meshElementByCoords> elementList1, elementList2;
             MeshTools::toListOf3DElements(prismatic3DMesh,elementList1);
             MeshTools::toListOf3DElements(postInflationVolumeMesh,elementList2);
-            //elementList1<<elementList2;
             elementList1.reserve(elementList1.size()+elementList2.size());
             elementList1.insert(elementList1.end(),elementList2.begin(),elementList2.end());
             mainMesh3D = new Ng_MeshVS_DataSource3D(elementList1);
@@ -2020,7 +2018,6 @@ userMessage MesherClass::Netgen_STL_generateVolumeMesh(int bodyIndex,
             std::vector<meshElementByCoords> elementList1, elementList2;
             MeshTools::toListOf3DElements(prismatic3DMesh,elementList1);
             MeshTools::toListOf3DElements(postInflationVolumeMesh,elementList2);
-            //elementList1<<elementList2;
             elementList1.reserve(elementList1.size()+elementList2.size());
             elementList1.insert(elementList1.end(),elementList2.begin(),elementList2.end());
             mainMesh3D = new Ng_MeshVS_DataSource3D(elementList1);

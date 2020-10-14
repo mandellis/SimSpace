@@ -42,6 +42,7 @@
 //! ----
 #include <iostream>
 #include <memory>
+#include <algorithm>
 
 //! ----
 //! OCC
@@ -533,78 +534,263 @@ bool prismaticLayer::mergeFaceMeshes()
     return true;
 }
 
-//! ----------------------------------------------------------------------
+//! -------------------------------------------------------------------------------------
 //! function: computeBeta
 //! details:  return the average of angles between neighbour face normals
-//! ----------------------------------------------------------------------
-void prismaticLayer::computeBeta(const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS, int globalNodeID, double &betaMax, double &betaAve)
+//!           https://stackoverflow.com/questions/5188561/
+//!           signed-angle-between-two-3d-vectors-with-same-origin-within-the-same-plane
+//! -------------------------------------------------------------------------------------
+double angleBetweenVector(const std::vector<double> &n1, const std::vector<double> &n2)
 {
-    //cout<<"prismaticLayer::computeBeta()->____function called____"<<endl;
-    //if(aMeshDS->myCurvature.isEmpty()) aMeshDS->computeDiscreteCurvature(0);
+    double cx = (n1[1]*n2[2]-n1[2]*n2[1]);
+    double cy = (n1[2]*n2[0]-n1[0]*n2[2]);
+    double cz = (n1[0]*n2[1]-n1[1]*n2[0]);
+    double l = sqrt(cx*cx+cy*cy+cz*cz);
+    double nnx, nny, nnz; nnx = nny = nnz = 0.0;
+    if(l>1e-8)
+    {
+        nnx = cx/l; nny = cy/l; nnz = cz/l;
+        double X = n1[0]*n2[0]+n1[1]*n2[1]+n1[2]*n2[2];
+        double Y = cx*nnx+cy*nny+cz*nnz;
+        double angle = std::atan2(Y,X);
+        return angle;
+    }
+    else
+    {
+        return 0.0;
+    }
+}
 
+bool areSharingEdge(const std::vector<int> &trig1, const std::vector<int> &trig2)
+{
+    std::set<int> aSet;
+    for(std::vector<int>::iterator it = trig1.begin(); it!=trig1.end(); it++) aSet.insert(*it);
+    for(std::vector<int>::iterator it = trig2.begin(); it!=trig2.end(); it++) aSet.insert(*it);
+    return (aSet.size()-trig1.size()+trig2.size()) && 2;
+}
+
+void prismaticLayer::computeBeta(const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS, int globalNodeID,
+                                 double &betaMax, double &betaAve, double &betaVisibility)
+{
+    cout<<"prismaticLayer::computeBeta()->____function called____"<<endl;
+    const double PI = 3.1415926538;
+
+    //! -----------------------------------
+    //! face elements attached to the node
+    //! -----------------------------------
     if(aMeshDS->myNodeToElements.isEmpty()) aMeshDS->computeNodeToElementsConnectivity();
     const QMap<int,QList<int>> &nodeToElementsMap = aMeshDS->myNodeToElements;
 
     const QList<int> &attachedElements_localIDs = nodeToElementsMap.value(globalNodeID);
     int NbAttachedElements = attachedElements_localIDs.length();
-    //cout<<"prismaticLayer::computeBeta()->____number of attached elements: "<<NbAttachedElements<<"____"<<endl;
 
-    std::map<int,std::vector<double>> nodeToNormal;
+    std::map<int,int> indexedMapOfElements;                     // index, element ID
+    std::map<int,std::vector<double>> indexedMapOfNormals;      // index, normal of the element ID
     for(int i=0; i<NbAttachedElements; i++)
     {
         int localElementID = attachedElements_localIDs[i];
         int globalElementID = aMeshDS->myElementsMap.FindKey(localElementID);
         double nx,ny,nz;
+        nx = ny = nz = 0;
         aMeshDS->GetNormal(globalElementID,10,nx,ny,nz);
-        std::vector<double> nv {nx,ny,nz};
-        nodeToNormal.insert(std::make_pair(i,nv));
+        std::vector<double> aNormal {nx, ny, nz};
+        indexedMapOfElements.insert(std::make_pair(i,globalElementID));
+        indexedMapOfNormals.insert(std::make_pair(i,aNormal));
     }
 
+    //! --------------------------
     //! generate pairs of normals
+    //! --------------------------
     std::vector<std::pair<int,int>> vecPairs;
-    for(int i=0; i<NbAttachedElements-1; i++)
-        for(int j=i+1; j<NbAttachedElements; j++)
-        //{
+    size_t NbNormals = indexedMapOfNormals.size();
+    for(size_t i=0; i<NbNormals-1; i++)
+    {
+        for(size_t j=i+1; j<NbNormals; j++)
+        {
             vecPairs.push_back(std::make_pair(i,j));
-        //    cout<<"____("<<i<<", "<<j<<")____"<<endl;
-        //}
+            //cout<<"____("<<i<<", "<<j<<")____"<<endl;
+        }
+    }
+
+    //! ------------------------------------------------------------------
+    //! these are the indexes of the triangles of the minimum angle wedge
+    //! ------------------------------------------------------------------
+    int t1,t2;
 
     double sumBeta = 0.0;
     betaMax = -1e10;
+    double betaMin = 1e10;
     for(std::vector<std::pair<int,int>>::iterator it = vecPairs.begin(); it!=vecPairs.end(); it++)
     {
         int fn = it->first;
         int sn = it->second;
-        //cout<<"____("<<fn<<", "<<sn<<")____"<<endl;
-        const std::vector<double> &n1 = nodeToNormal.at(fn);
-        const std::vector<double> &n2 = nodeToNormal.at(sn);
-        //cout<<"____n1("<<n1[0]<<", "<<n1[1]<<", "<<n1[2]<<")____"<<endl;
-        //cout<<"____n2("<<n2[0]<<", "<<n2[1]<<", "<<n2[2]<<")____"<<endl;
-        double cx = (n1[1]*n2[2]-n1[2]*n2[1]);    //!  10  11  12
-        double cy = (n1[2]*n2[0]-n1[0]*n2[2]);    //!  20  21  22
-        double cz = (n1[0]*n2[1]-n1[1]*n2[0]);
-        double l = sqrt(cx*cx+cy*cy+cz*cz);
-        double nnx, nny, nnz; nnx = nny = nnz = 0.0;
-        if(l>1e-8)
-        {
-            nnx = cx/l; nny = cy/l; nnz = cz/l;
-        }
 
-        double X = n1[0]*n2[0]+n1[1]*n2[1]+n1[2]*n2[2];
-        //if(X>1) X = 1; if(X<-1) X=-1;
-        double Y = cx*nnx+cy*nny+cz*nnz;
-        //if(Y > 1) Y = 1; if(Y < -1) Y = -1;
-        //cout<<"____X = "<<X<<" Y = "<<Y<<"____"<<endl;
-        //! https://stackoverflow.com/questions/5188561/signed-angle-between-two-3d-vectors-with-same-origin-within-the-same-plane
+        //! ------------------------------
+        //! check triangle pair adjacency
+        //! ------------------------------
+        int buf[3], NbNodes;
+        TColStd_Array1OfInteger nodeIDs1(*buf,1,3);
+        TColStd_Array1OfInteger nodeIDs2(*buf,1,3);
+        aMeshDS->GetNodesByElement(indexedMapOfElements.at(fn),nodeIDs1,NbNodes);
+        aMeshDS->GetNodesByElement(indexedMapOfElements.at(sn),nodeIDs2,NbNodes);
 
-        //double angle = std::acos(X);
-        double angle = std::atan2(Y,X);
-        //cout<<"____angle = "<<angle*180/3.141592654<<"____"<<endl;
+
+        //! ----------
+        //! end check
+        //! ----------
+        const std::vector<double> &n1 = indexedMapOfNormals.at(fn);
+        const std::vector<double> &n2 = indexedMapOfNormals.at(sn);
+
+        double angle_ = angleBetweenVector(n1,n2);
+        double angle = PI-angle_;
         if(angle>betaMax) betaMax = angle;
+        if(angle<betaMin)
+        {
+            t1 = indexedMapOfElements.at(fn);
+            t2 = indexedMapOfElements.at(sn);
+            betaMin = angle;
+        }
         sumBeta += angle;
     }
-    betaAve = sumBeta/vecPairs.size();
-    //cout<<"____betaAve = "<<betaAve<<" betaMax: "<<betaMax<<"____"<<endl;
+    betaAve = sumBeta/vecPairs.size();          // average angled
+
+    //cout<<"____betaAve: "<<betaAve*180/PI<<"____"<<endl;
+    //cout<<"____minimum angle wedge defined by element IDS ("<<t1<<", "<<t2<<")____"<<endl;
+
+    std::vector<int> supportVector;
+    std::vector<int> commonEdge;
+    //std::vector<int> vertexesForMidPointCalculation;
+
+    int buf[3], NbNodes;
+    TColStd_Array1OfInteger nodeIDs1(*buf,1,3);         // first triangle
+    aMeshDS->GetNodesByElement(t1,nodeIDs1,NbNodes);
+    for(int i=1; i<=NbNodes; i++)
+    {
+        int currentNodeID = nodeIDs1(i);
+        supportVector.push_back(currentNodeID);
+        cout<<"____first wedge triangle: "<<currentNodeID<<"____"<<endl;
+    }
+    TColStd_Array1OfInteger nodeIDs2(*buf,1,3);         // second triangle
+    aMeshDS->GetNodesByElement(t2,nodeIDs2,NbNodes);
+    for(int i=1; i<=NbNodes; i++)
+    {
+        int currentNodeID = nodeIDs2(i);
+        cout<<"____second wedge triangle: "<<currentNodeID<<"____"<<endl;
+        std::vector<int>::iterator it = std::find(supportVector.begin(), supportVector.end(), currentNodeID);
+        if(it == supportVector.end()) supportVector.push_back(currentNodeID);
+        else commonEdge.push_back(currentNodeID);
+    }
+    if(commonEdge.size()==1)
+    for(int i=0; i<supportVector.size(); i++) cout<<"____support vector IDs: "<<supportVector[i]<<"____"<<endl;
+
+    cout<<"____common edge ("<<commonEdge[0]<<", "<<commonEdge[1]<<")____"<<endl;
+    std::vector<int>::iterator it = std::find(supportVector.begin(), supportVector.end(), commonEdge[0]);
+    supportVector.erase(it);
+    it = std::find(supportVector.begin(), supportVector.end(), commonEdge[1]);
+    supportVector.erase(it);
+
+    // now the support map contains A and B
+    int globalNodeID_A = supportVector[0];
+    int globalNodeID_B = supportVector[1];
+
+    //cout<<"____A: "<<globalNodeID_A<<", B: "<<globalNodeID_B<<"____"<<endl;
+
+    MeshVS_EntityType aType;
+    int NbNodes_;
+    double bufd[3];
+    TColStd_Array1OfReal coordsNodeA(*bufd,1,3);
+    TColStd_Array1OfReal coordsNodeB(*bufd,1,3);
+    TColStd_Array1OfReal coordsNodeP(*bufd,1,3);
+
+    //! --------------------------
+    //! point A, point B, point P
+    //! --------------------------
+    aMeshDS->GetGeom(globalNodeID_A,false,coordsNodeA,NbNodes_,aType);
+    double xA = coordsNodeA(1);
+    double yA = coordsNodeA(2);
+    double zA = coordsNodeA(3);
+    cout<<"____A("<<xA<<", "<<yA<<", "<<zA<<")____"<<endl;
+
+    aMeshDS->GetGeom(globalNodeID_B,false,coordsNodeB,NbNodes_,aType);
+    double xB = coordsNodeB(1);
+    double yB = coordsNodeB(2);
+    double zB = coordsNodeB(3);
+    cout<<"____B("<<xB<<", "<<yB<<", "<<zB<<")____"<<endl;
+
+    aMeshDS->GetGeom(globalNodeID,false,coordsNodeP,NbNodes_,aType);
+    double xP = coordsNodeP(1);
+    double yP = coordsNodeP(2);
+    double zP = coordsNodeP(3);
+    cout<<"____P("<<xP<<", "<<yP<<", "<<zP<<")____"<<endl;
+
+    //! ------------
+    //! angle alpha
+    //! ------------
+    double l_AP = sqrt(pow(xA-xP,2)+pow(yA-yP,2)+pow(zA-zP,2));
+    double l_BP = sqrt(pow(xB-xP,2)+pow(yB-yP,2)+pow(zB-zP,2));
+    double l_AB = sqrt(pow(xA-xB,2)+pow(yA-yB,2)+pow(zA-zB,2));
+
+    //double alpha = std::acos(((xA-xP)*(xB-xP)+(yA-yP)*(yB-yP)+(zA-zP)*(zB-zP))/(l_AP*l_BP));
+
+    double l_AN = (l_AP*l_AB)/(l_AP+l_BP);
+
+    //! ------------------------------
+    //! direction of AB (from A to B)
+    //! ------------------------------
+    double ix = (xB-xA)/l_AB;
+    double iy = (yB-yA)/l_AB;
+    double iz = (zB-zA)/l_AB;
+
+    double xN = xA + ix*l_AN;
+    double yN = yA + iy*l_AN;
+    double zN = zA + iz*l_AN;
+
+    double l_NP = sqrt(pow(xN-xP,2)+pow(yN-yP,2)+pow(zN-zP,2));
+    std::vector<double> guidingVector {(xN-xP)/l_NP, (yN-yP)/l_NP, (zN-zP)/l_NP};
+    cout<<"____guiding vector ("<<(xN-xP)/l_NP<<", "<<(yN-yP)/l_NP<<", "<<(zN-zP)/l_NP<<")____"<<endl;
+
+    //! -----------------------
+    //! also point C is needed
+    //! -----------------------
+    int globalNodeID_C;
+    if(commonEdge[0] == globalNodeID) globalNodeID_C = commonEdge[1];
+    else globalNodeID_C = commonEdge[0];
+    TColStd_Array1OfReal coordsNodeC(*bufd,1,3);
+    aMeshDS->GetGeom(globalNodeID_C,false,coordsNodeC,NbNodes_,aType);
+    double xC = coordsNodeC(1);
+    double yC = coordsNodeC(2);
+    double zC = coordsNodeC(3);
+    cout<<"____C("<<xC<<", "<<yC<<", "<<zC<<")____"<<endl;
+
+    //! -----------------
+    //! visibility angle
+    //! -----------------
+    std::vector<double> NP {xN-xP,yN-yP,zN-zP};
+    std::vector<double> CP {xC-xP,yC-yP,zC-zP};
+    betaVisibility = angleBetweenVector(NP,CP);
+
+    cout<<"____betaAve = "<<betaAve<<" betaMax: "<<betaMax<<"____"<<endl;
+
+    double l_CP = sqrt(pow(xC-xP,2)+pow(yC-yP,2)+pow(zC-zP,2));
+    double l_CN = sqrt(pow(xC-xN,2)+pow(yC-yN,2)+pow(zC-zN,2));
+
+    double y = (l_CP*l_CN)/(l_NP+l_CP);
+
+    double ix_ = (xN-xC)/l_CN;
+    double iy_ = (yN-yC)/l_CN;
+    double iz_ = (zN-zC)/l_CN;
+
+    double xN1 = xN + y*ix_;
+    double yN1 = yN + y*iy_;
+    double zN1 = zN + y*iz_;
+
+    std::vector<double> N1P {xN1-xP,yN1-yP,zN1-zP};
+    double l_N1P = sqrt(pow(xN1-xP,2)+pow(yN1-yP,2)+pow(zN1-zP,2));
+    betaVisibility = angleBetweenVector(N1P,CP);
+    cout<<"____final beta visibility: "<<betaVisibility*180/PI<<"____"<<endl;
+    std::vector<double> guidingVector_ {(xN1-xP)/l_N1P, (yN1-yP)/l_N1P, (zN1-zP)/l_N1P};
+    cout<<"____final guiding vector ("<<(xN1-xP)/l_N1P<<", "<<(yN1-yP)/l_N1P<<", "<<(zN1-zP)/l_N1P<<")____"<<endl;
+    //exit(9999);
 }
 
 //! ------------------------------
@@ -615,40 +801,48 @@ void prismaticLayer::computeShrinkFactor(const occHandle(Ng_MeshVS_DataSourceFac
                                          QMap<int,double> &shrinkFactors)
 {
     FILE *fp = fopen("D:/shrink.txt","w");
+
     /*
     //! ---------------------------
     //! use the gaussian curvature
     //! ---------------------------
     int mode = 1; // Gaussian curvature
-    if(aMeshDS->myCurvatureGradient.isEmpty()) aMeshDS->computeDiscreteCurvature(mode);
+    if(aMeshDS->myCurvature.isEmpty()) aMeshDS->computeDiscreteCurvature(mode);
     aMeshDS->computeNormalAtNodes();
     for(TColStd_MapIteratorOfPackedMapOfInteger it(aMeshDS->GetAllNodes()); it.More(); it.Next())
     {
         int globalNodeID = it.Key();
         double curvature = aMeshDS->myCurvature.value(globalNodeID);
-        const double maxShrink = 2.0;
-        double k = myCurvatureSensitivityForShrink;
-        double shrink = maxShrink*(1./(1.+exp(-k*curvature)));                // possible alternative form
+        double shrink = 2*(1/(1+exp(100*curvature))-1)+1;              // possible alternative form
         shrinkFactors.insert(globalNodeID,shrink);
+        fprintf(fp,"%d\t%lf\t%lf\n",globalNodeID,shrink,curvature);
     }
     */
 
     //! ---------
     //! use beta
     //! ---------
+    fprintf(fp,"#NodeID\tx\ty\tz\tbetaAve\tshrink\n");
     const double PI = 3.1415926534;
     for(TColStd_MapIteratorOfPackedMapOfInteger it(aMeshDS->GetAllNodes()); it.More(); it.Next())
     {
         int globalNodeID = it.Key();
-        double betaMax,betaAve;
-        this->computeBeta(aMeshDS,globalNodeID,betaMax,betaAve);
-        double shrink = 1;
+        double betaMax,betaAve, betaVisibility;
+        this->computeBeta(aMeshDS,globalNodeID,betaMax,betaAve,betaVisibility);
+        double shrink = 0;
         double curvature = aMeshDS->myCurvature.value(globalNodeID);
-        if(curvature<0) shrink = 1 - fabs(cos(betaAve));    // retraction in convex points
-        if(curvature>0) shrink = 1 + fabs(cos(betaAve));    // expansion in concave points
+        if(curvature<0) shrink = - fabs(cos(betaAve));    // retraction in convex points
+        if(curvature>0) shrink = + fabs(cos(betaAve));    // expansion in "not convex" points
         shrinkFactors.insert(globalNodeID,shrink);
-        fprintf(fp,"%d\t%lf\n",globalNodeID,shrink);
+
+        int NbNodes;
+        MeshVS_EntityType aType;
+        double buf[3];
+        TColStd_Array1OfReal coords(*buf,1,3);
+        aMeshDS->GetGeom(globalNodeID,false,coords,NbNodes,aType);
+        fprintf(fp,"%d\t%lf\t%lf\t%lf\t%lf\t%lf\n",globalNodeID,coords(1),coords(2),coords(3),betaVisibility*180/PI,shrink);
     }
+
     fclose(fp);
 }
 
@@ -1312,14 +1506,14 @@ void prismaticLayer::generateOneTetLayer(occHandle(Ng_MeshVS_DataSourceFace) &th
         int globalNodeID = it.key();
         double shrinkFactor = shrinkFactors.value(globalNodeID);
         double cutOff = myLayerHCutOff.value(globalNodeID);
-        double marchingDistance = displacement*shrinkFactor*cutOff;
+        double marchingDistance = displacement*(1+shrinkFactor)*cutOff;
         marchingDistanceMap.insert(globalNodeID,marchingDistance);
     }
 
-    //! ------------------------------
-    //! smooth the marching distances
-    //! ------------------------------
-    smoothingTools::scalarFieldSmoother(marchingDistanceMap,theMeshToInflate,1,10);     // fixed parameters - no GUI
+    //! --------------------------------------------------------------------------
+    //! smooth the marching distances - at least 10 smoothing steps for this algo
+    //! --------------------------------------------------------------------------
+    smoothingTools::scalarFieldSmoother(marchingDistanceMap,theMeshToInflate,10000,10);     // fixed parameters - no GUI
 
     QMap<int,QList<double>> displacementsField;
     for(QMap<int,QList<double>>::const_iterator it = normals.cbegin(); it!= normals.cend(); ++it)
@@ -1335,8 +1529,6 @@ void prismaticLayer::generateOneTetLayer(occHandle(Ng_MeshVS_DataSourceFace) &th
         //! --------------
         //! shrink factor
         //! --------------
-        double shrinkFactor = shrinkFactors.value(globalNodeID);
-        double cutOff = myLayerHCutOff.value(globalNodeID);
         double marchingDistance = marchingDistanceMap.value(globalNodeID);
         double vx = -curNormal.at(0)*marchingDistance;
         double vy = -curNormal.at(1)*marchingDistance;

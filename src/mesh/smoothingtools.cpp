@@ -255,3 +255,7 @@ void smoothingTools::fieldSmoother(QMap<int,QList<double>> &field,
         }
     }
 }
+
+
+//! function: scalarFieldSmoother
+//! details:

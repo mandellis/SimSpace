@@ -33,8 +33,6 @@ private:
 
 private:
 
-    //Eigen::MatrixXd V;
-    //Eigen::MatrixXi F;
     igl::embree::EmbreeIntersector myEmbree;
 };
 

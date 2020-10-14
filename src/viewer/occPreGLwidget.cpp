@@ -3354,8 +3354,13 @@ void occPreGLWidget::displayCurvatureMap()
             curvatureData.insert(std::make_pair(it.key(),it.value()));
         }
         MeshTools::buildColoredMesh(summedDS,curvatureData,coloredMesh,0,6.28,10,true);
-        //MeshTools::buildColoredMesh(summedDS,summedDS->myCurvatureGradient,coloredMesh,0,6.28,10,true);
 
+        FILE *fp = fopen("D:/curvature.txt","w");
+        for(std::map<int,double>::iterator it = curvatureData.begin(); it!=curvatureData.end(); it++)
+        {
+            fprintf(fp,"%d\t%lf\n",it->first,it->second);
+        }
+        fclose(fp);
         occMeshContext->Display(coloredMesh,false);
         occMeshContext->UpdateCurrentViewer();
     }

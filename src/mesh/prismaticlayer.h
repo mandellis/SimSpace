@@ -261,7 +261,8 @@ private:
     //! -------------
     //! compute beta
     //! -------------
-    void computeBeta(const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS, int globalNodeID, double &betaMax, double &betaAve);
+    void computeBeta(const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS, int globalNodeID,
+                     double &betaMax, double &betaAve, double &betaVisibility);
 
     //! --------------------------------------------------
     //! enable/disable the progress indicator stop button
