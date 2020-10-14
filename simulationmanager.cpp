@@ -11884,12 +11884,18 @@ bool SimulationManager::COSTAMP_addProcessParameters()
             bodyList<<"12"<<"11"<<"22"<<"21"<<"23"<<"13"<<"14";
             ListOfShape slaveScope,masterScope;
 
+            //! create master and slave scope and assign material
             for(int i=1; i<=Geometry_RootItem->rowCount();i++)
             {
                 QStandardItem *curBody = Geometry_RootItem->child(i-1,0);
                 SimulationNodeClass *curBodyNode = curBody->data(Qt::UserRole).value<SimulationNodeClass*>();
                 QString bodyName = curBodyNode->getName();
                 TopoDS_Solid aSolid = TopoDS::Solid(mySimulationDataBase->bodyMap.value(i));
+
+                int matNumber = 2; //H11 only available
+                data.setValue(matNumber);
+                Property prop_material("Assignment",data,Property::PropertyGroup_Material);
+                curBodyNode->replaceProperty("Assignment",prop_material);
 
                 if(bodyName == "CASTING")
                 {
@@ -12074,10 +12080,10 @@ bool SimulationManager::COSTAMP_addProcessParameters()
                     data.setValue(Property::SuppressionStatus_Suppressed);
                     Property property_isSuppressed("Suppressed",data,Property::PropertyGroup_Definition);
                     curBodyNode->replaceProperty("Suppressed",property_isSuppressed);
+                    //this->changeNodeSuppressionStatus(Property::SuppressionStatus_Suppressed);
                 }
                 curBodyNode->getModel()->blockSignals(false);
             }
-
             //! --------------------
             //! set mesh parameters
             //! --------------------
@@ -12088,6 +12094,7 @@ bool SimulationManager::COSTAMP_addProcessParameters()
             QList<ListOfShape> groupShapeList;
             ListOfShape scopeDie,scopeHoldings,scopePlate;
 
+            //! group bodies according to theri function and assing material
             QList<std::vector<double>>groupBB;
             std::vector<double> vecBB_Die,vecBB_Holdings,vecBB_Plate; // vector of bounding box max for each group
             for(int i=1; i<=NbBodies; i++)
@@ -12106,24 +12113,25 @@ bool SimulationManager::COSTAMP_addProcessParameters()
                 {
                     scopeDie.Append(aSolid);
                     vecBB_Die.push_back(curBB);
-                    continue;
                 }
                 //! is portastampo
-                if(bName.startsWith(bodyList.at(0)) || bName.startsWith(bodyList.at(1)))
+                else if(bName.startsWith(bodyList.at(0)) || bName.startsWith(bodyList.at(1)))
                 {
                     scopeHoldings.Append(aSolid);
                     vecBB_Holdings.push_back(curBB);
-                    continue;
                 }
                 //! is Plate/lardoni
-                if(bName.startsWith(bodyList.at(6)) || bName.startsWith(bodyList.at(7)))
+                else if(bName.startsWith(bodyList.at(6)) || bName.startsWith(bodyList.at(7)))
                 {
                     scopePlate.Append(aSolid);
                     vecBB_Plate.push_back(curBB);
-                    continue;
                 }
+                else if(!bName.startsWith(bodyList.at(0)) || !bName.startsWith(bodyList.at(1)) ||
+                        !bName.startsWith(bodyList.at(2)) || !bName.startsWith(bodyList.at(3)) ||
+                        !bName.startsWith(bodyList.at(4)) || !bName.startsWith(bodyList.at(5)) ||
+                        !bName.startsWith(bodyList.at(6)) || !bName.startsWith(bodyList.at(7)))
+                    continue;
             }
-
             groupBB<<vecBB_Die<<vecBB_Holdings<<vecBB_Plate;
             groupShapeList<<scopeDie<<scopeHoldings<<scopePlate;
             DetailViewer *detailViewer = static_cast<DetailViewer*>(tools::getWidgetByName("detailViewer"));
@@ -12133,7 +12141,6 @@ bool SimulationManager::COSTAMP_addProcessParameters()
                 ListOfShape scope = groupShapeList.at(i);
                 if(scope.IsEmpty()) continue;
                 this->createSimulationNode(SimulationNodeClass::nodeType_meshMethod);
-                //myTreeView->setCurrentIndex(Mesh_RootItem->index().child(i,0));
                 SimulationNodeClass *curMeshControl = myTreeView->currentIndex().data(Qt::UserRole).value<SimulationNodeClass*>();
                 curMeshControl->getModel()->blockSignals(true);
                 //! scope
@@ -12207,6 +12214,7 @@ bool SimulationManager::COSTAMP_addProcessParameters()
                 curSizingControl->getModel()->blockSignals(true);
                 index++;
             }
+            cout<<"___tag02___"<<endl;
 
             if(!casting.empty())
             {
@@ -12252,8 +12260,7 @@ bool SimulationManager::COSTAMP_addProcessParameters()
                 TopoDS_Solid aSolid = TopoDS::Solid(mySimulationDataBase->bodyMap.value(i));
                 int bodyIndex = mySimulationDataBase->bodyMap.key(aSolid);
                 QString bodyName = mySimulationDataBase->MapOfBodyNames.value(bodyIndex);
-                //if(mySimulationDataBase->MapOfIsActive.value(bodyIndex)==true)
-                if(bodyName!="CASTING")
+                if(mySimulationDataBase->MapOfIsActive.value(bodyIndex)==true || bodyName!="CASTING")
                 scopes.Append(aSolid);
             }
             std::vector<GeometryTag> vecLocAllBodies = TopologyTools::generateLocationPairs(mySimulationDataBase, scopes);
@@ -12265,6 +12272,7 @@ bool SimulationManager::COSTAMP_addProcessParameters()
             cGnode->getModel()->blockSignals(false);
             //! starts automatic contact creation
             this->createAutomaticConnections();
+            cout<<"___tag03___"<<endl;
 
             //! TO DO ____set automatic contact
 
@@ -12422,7 +12430,7 @@ void SimulationManager::createAutomaticConnections()
 
     //! ---------------------------------------------------
     //! grouping options - compatibility with old versions
-    //! default "By master body"
+    //! default "By bodies"
     //! ---------------------------------------------------
     int grouping = 0;
     if(curNode->getPropertyItem("Grouping")!=Q_NULLPTR) grouping = curNode->getPropertyValue<int>("Grouping");
@@ -12511,7 +12519,7 @@ void SimulationManager::createAutomaticConnections()
         int slaveBodyIndex = curPair.second[0].parentShapeNr;
 #ifdef COSTAMP_VERSION
     //! filter the geomety tag, erase all non planar faces
-
+        std::vector<GeometryTag> master,slave;
         for(std::vector<GeometryTag>::const_iterator mIt=curPair.first.cbegin() ;mIt!=curPair.first.cend();++mIt)
         {
             GeometryTag mLoc = *mIt;
@@ -12521,7 +12529,8 @@ void SimulationManager::createAutomaticConnections()
             TopoDS_Shape masterFace = mySimulationDataBase->MapOfBodyTopologyMap.value(curMasterBodyIndex).faceMap.FindKey(curMasterFaceIndex);
             GeomAbs_SurfaceType theMasterSurfaceType;
             GeomToolsClass::getFaceType(TopoDS::Face(masterFace),theMasterSurfaceType);
-            if(theMasterSurfaceType!=GeomAbs_Plane) //curPair.first.erase(mIt);
+            if(theMasterSurfaceType!=GeomAbs_Plane) continue;
+            master.push_back(mLoc);
         }
         for(std::vector<GeometryTag>::const_iterator sIt=curPair.second.cbegin() ;sIt!=curPair.second.cend();++sIt)
         {
@@ -12533,9 +12542,10 @@ void SimulationManager::createAutomaticConnections()
             GeomAbs_SurfaceType theSlaveSurfaceType;
             GeomToolsClass::getFaceType(TopoDS::Face(slaveFace),theSlaveSurfaceType);
 
-            if(theSlaveSurfaceType!=GeomAbs_Plane) //curPair.second.erase(sIt);
+            if(theSlaveSurfaceType!=GeomAbs_Plane) continue;
+            slave.push_back(sLoc);
         }
-        if(curPair.first.empty() || curPair.second.empty()) continue;
+        if(master.empty() || slave.empty()) continue;
 #endif
 
         //! -------------------------------
@@ -12558,12 +12568,22 @@ void SimulationManager::createAutomaticConnections()
         SimulationNodeClass *aContactNode = nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType_connectionPair,0,0,data);
 
         aContactNode->getModel()->blockSignals(true);
+#ifdef COSTAMP_VERSION
+        data.setValue(master);
+#endif
+#ifndef COSTAMP_VERSION
         data.setValue(curPair.first);
+#endif
         Property prop_master("Master",data,Property::PropertyGroup_Scope);
         Property prop_tagsMaster("Tags master",data,Property::PropertyGroup_Scope);
         aContactNode->replaceProperty("Master",prop_master);
         aContactNode->replaceProperty("Tags master",prop_tagsMaster);
+#ifdef COSTAMP_VERSION
+        data.setValue(slave);
+#endif
+#ifndef COSTAMP_VERSION
         data.setValue(curPair.second);
+#endif
         Property prop_slave("Slave",data,Property::PropertyGroup_Scope);
         Property prop_tagsSlave("Tags slave",data,Property::PropertyGroup_Scope);
         aContactNode->replaceProperty("Slave",prop_slave);
