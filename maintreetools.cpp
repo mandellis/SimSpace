@@ -704,7 +704,9 @@ void mainTreeTools::getAllBoundaryConditionsTags(QTreeView *tree, int type, std:
             {
                 QStandardItem *itemMeshControl = item->child(j,0);
                 SimulationNodeClass *nodeMeshControl = itemMeshControl->data(Qt::UserRole).value<SimulationNodeClass*>();
-                if(nodeMeshControl->getType()!=SimulationNodeClass::nodeType_meshFaceSize) continue;
+
+                if(nodeMeshControl->getType()!=SimulationNodeClass::nodeType_meshFaceSize)
+                    continue;
                 std::vector<GeometryTag> faceSizingTags = nodeMeshControl->getPropertyValue<std::vector<GeometryTag>>("Tags");
                 for(int m=0; m<faceSizingTags.size(); m++)
                 {

@@ -12214,7 +12214,18 @@ bool SimulationManager::COSTAMP_addProcessParameters()
                 curSizingControl->getModel()->blockSignals(true);
                 index++;
             }
-            cout<<"___tag02___"<<endl;
+
+            //! vecAllBodies scope on every body
+            ListOfShape scopes;
+            for(int i=1; i<= NbBodies; i++)
+            {
+                TopoDS_Solid aSolid = TopoDS::Solid(mySimulationDataBase->bodyMap.value(i));
+                int bodyIndex = mySimulationDataBase->bodyMap.key(aSolid);
+                QString bodyName = mySimulationDataBase->MapOfBodyNames.value(bodyIndex);
+                if(mySimulationDataBase->MapOfIsActive.value(bodyIndex)==true || bodyName!="CASTING")
+                scopes.Append(aSolid);
+            }
+            std::vector<GeometryTag> vecLocAllBodies = TopologyTools::generateLocationPairs(mySimulationDataBase, scopes);
 
             if(!casting.empty())
             {
@@ -12237,14 +12248,44 @@ bool SimulationManager::COSTAMP_addProcessParameters()
                 curSizingControl->replaceProperty("Face sizing",prop_size);
                 curSizingControl->getModel()->blockSignals(true);
 
-                //! casting refinement
+                //! Prism layer
                 this->createSimulationNode(SimulationNodeClass::nodeType_meshPrismaticLayer);
                 SimulationNodeClass *curPrismControl = myTreeView->currentIndex().data(Qt::UserRole).value<SimulationNodeClass*>();
                 curPrismControl->getModel()->blockSignals(true);
 
                 //! scope
-                curPrismControl->replaceProperty("Geometry",prop_scopeCasting);
-                curPrismControl->replaceProperty("Tags",prop_tagsCasting);
+                data.setValue(vecLocAllBodies);
+                Property prop_geometry("Geometry",data,Property::PropertyGroup_Scope);
+                curPrismControl->replaceProperty("Geometry",prop_geometry);
+                data.setValue(casting);
+                Property prop_boundaryCasting("Geometry",data,Property::PropertyGroup_Definition);
+                curPrismControl->replaceProperty("Boundary",prop_boundaryCasting);
+
+                //! boundary mesh
+                int bmesh = 1;
+                data.setValue(bmesh);
+                Property prop_boundaryMesh("Boundary mesh type",data,Property::PropertyGroup_Definition);
+                curPrismControl->replaceProperty("Boundary mesh type",prop_boundaryMesh);
+                curPrismControl->getModel()->blockSignals(true);
+
+                //! Nb layers
+                double nBlayer = 5;
+                data.setValue(nBlayer);
+                Property prop_nBlayer("Number of layers",data,Property::PropertyGroup_Definition);
+                curPrismControl->replaceProperty("Number of layers",prop_nBlayer);
+
+                //! layer thickness
+                double thick = 0.4;
+                data.setValue(thick);
+                Property prop_thick("First layer thickness",data,Property::PropertyGroup_Definition);
+                curPrismControl->replaceProperty("First layer thickness",prop_thick);
+
+                //! expansion
+                double exp = 1.1;
+                data.setValue(exp);
+                Property prop_exp("Expansion ratio",data,Property::PropertyGroup_Definition);
+                curPrismControl->replaceProperty("Expansion ratio",prop_exp);
+                curPrismControl->getModel()->blockSignals(true);
             }
             //! -----------------------
             //! set contact properties
@@ -12254,16 +12295,6 @@ bool SimulationManager::COSTAMP_addProcessParameters()
             SimulationNodeClass *cGnode = myTreeView->currentIndex().data(Qt::UserRole).value<SimulationNodeClass*>();
             cGnode->getModel()->blockSignals(true);
 
-            ListOfShape scopes;
-            for(int i=1; i<= NbBodies; i++)
-            {
-                TopoDS_Solid aSolid = TopoDS::Solid(mySimulationDataBase->bodyMap.value(i));
-                int bodyIndex = mySimulationDataBase->bodyMap.key(aSolid);
-                QString bodyName = mySimulationDataBase->MapOfBodyNames.value(bodyIndex);
-                if(mySimulationDataBase->MapOfIsActive.value(bodyIndex)==true || bodyName!="CASTING")
-                scopes.Append(aSolid);
-            }
-            std::vector<GeometryTag> vecLocAllBodies = TopologyTools::generateLocationPairs(mySimulationDataBase, scopes);
             data.setValue(vecLocAllBodies);
             Property prop_scopeAllBodies("Geometry",data,Property::PropertyGroup_Scope);
             Property prop_tagsAllBodies("Tags",data,Property::PropertyGroup_Scope);
@@ -12272,9 +12303,8 @@ bool SimulationManager::COSTAMP_addProcessParameters()
             cGnode->getModel()->blockSignals(false);
             //! starts automatic contact creation
             this->createAutomaticConnections();
-            cout<<"___tag03___"<<endl;
 
-            //! TO DO ____set automatic contact
+            //! TO DO MAYBE__now all contacts are MPC, set frictional contact
 
             //! change scope to importedBS item
             importedBSNode->getModel()->blockSignals(true);
