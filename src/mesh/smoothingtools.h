@@ -17,10 +17,17 @@ class smoothingTools
 public:
 
     //! smooth a scalar field
-    static void scalarFieldSmoother(QMap<int,double> &field, const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS, double k, int NbSteps);
+    static void scalarFieldSmoother(QMap<int,double> &field,
+                                    const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS,
+                                    const std::map<int,double> &betaAveField,
+                                    int NbSteps);
 
     //! smooth a vectorial field
-    static void fieldSmoother(QMap<int,QList<double>> &field, const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS, double k, int NbSteps, bool normalize);
+    static void fieldSmoother(QMap<int,QList<double>> &field,
+                              const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS,
+                              const std::map<int,double> &betaAveField,
+                              int NbSteps,
+                              bool normalize);
 };
 
 #endif // SMOOTHINGTOOLS_H

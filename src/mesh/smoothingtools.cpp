@@ -17,34 +17,40 @@
 //! ----------------------------------
 //! definition of auxiliary functions
 //! ----------------------------------
+double fomega(double betaAve)
+{
+    double val = 0.5*(cos(betaAve)+1);
+    return val;
+}
+
 double kij(double n, const std::vector<double> &P, const std::vector<double> &S, double Sdij)
 {
     double dij = sqrt(pow(P[0]-S[0],2)+pow(P[1]-S[1],2)+pow(P[2]-S[2],2));
     double val = n*dij/Sdij;
     return val;
 }
-double wij(double curvature, const std::vector<double> &P, const std::vector<double> &S, double Sdij, double n)
+
+double wij(double betaAve, const std::vector<double> &P, const std::vector<double> &S, double Sdij, double n)
 {
+    const double PI = 3.1415926538;
+    const double eps = 0.17453;
     double val = 1.0;
-    if(curvature>0) val = pow(kij(n,P,S,Sdij),2);
-    if(curvature<0) val = 1/pow(kij(n,P,S,Sdij),2);
+    if(betaAve<PI-eps) val = 1/pow(kij(n,P,S,Sdij),2);        // "concave" point
+    if(betaAve>PI+eps) val = pow(kij(n,P,S,Sdij),2);          // "convex" point
     return val;
 }
+
+//! ------------------------------
+//! function: scalarFieldSmoother
+//! details:
+//! ------------------------------
 void smoothingTools::scalarFieldSmoother(QMap<int,double> &field,
                                          const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS,
-                                         double k,
+                                         const std::map<int,double> &betaAveField,
                                          int NbSteps)
 {
     cout<<"prismaticLayer::scalarFieldSmoother()->____function called____"<<endl;
 
-    //! ---------------------------------------------------------------------
-    //! check if the mesh has curvature data inside - use gaussian curvature
-    //! ---------------------------------------------------------------------
-    if(aMeshDS->myCurvature.isEmpty()) aMeshDS->computeDiscreteCurvature(1);
-
-    //! ----------------
-    //! smoothing steps
-    //! ----------------
     for(int n = 1; n<=NbSteps; n++)
     {
         QMap<int,double> smoothedField;
@@ -54,12 +60,16 @@ void smoothingTools::scalarFieldSmoother(QMap<int,double> &field,
             int globalNodeID = it.key();
             int localNodeID = aMeshDS->myNodesMap.FindIndex(globalNodeID);
             const std::vector<double> &P = aMeshDS->getNodeCoordinates(localNodeID);
-            double curvature = aMeshDS->myCurvature.value(globalNodeID);
 
             //! -------------------------------------------
             //! value of the field at the current position
             //! -------------------------------------------
             double localValue = it.value();
+
+            //! ------------------------
+            //! manifold characteristic
+            //! ------------------------
+            double betaAve = betaAveField.at(globalNodeID);
 
             //! --------------------------
             //! get the surrounding nodes
@@ -99,7 +109,7 @@ void smoothingTools::scalarFieldSmoother(QMap<int,double> &field,
                 int globalNodeID_surrounding = *it;
                 int localNodeID_surrounding = aMeshDS->myNodesMap.FindIndex(globalNodeID_surrounding);
                 const std::vector<double> &S = aMeshDS->getNodeCoordinates(localNodeID_surrounding);
-                Swij += wij(curvature,P,S,Sdij,n);
+                Swij += wij(betaAve,P,S,Sdij,n);
             }
 
             double a0 = 0.0;
@@ -109,15 +119,15 @@ void smoothingTools::scalarFieldSmoother(QMap<int,double> &field,
                 int localNodeID_surrounding = aMeshDS->myNodesMap.FindIndex(globalNodeID_surrounding);
                 const std::vector<double> &S = aMeshDS->getNodeCoordinates(localNodeID_surrounding);
                 double localValue_surrounding = field.value(globalNodeID_surrounding);
-                a0 += localValue_surrounding*wij(curvature,P,S,Sdij,n);
+                a0 += localValue_surrounding*wij(betaAve,P,S,Sdij,n);
             }
 
-            //! -------------------------------------------------------------
-            //! other definitions are possible based on local manifold angle
-            //! -------------------------------------------------------------
-            double omega = 1/(1+exp(-k*curvature));
+            //! -----------------------
+            //! over relaxation factor
+            //! -----------------------
+            double omega = fomega(betaAve);
 
-            snx = (1-omega)*localValue + (omega/Swij)*a0;
+            snx = (1-omega)*localValue+(omega/Swij)*a0;
             smoothedField.insert(globalNodeID,snx);
         }
 
@@ -133,13 +143,13 @@ void smoothingTools::scalarFieldSmoother(QMap<int,double> &field,
 }
 
 //! ----------------------------------------------------------------------------
-//! function: scalarFieldSmoother
-//! details:  same of previous working on a vectorial field
+//! function: fieldSmoother
+//! details:  same of previous but working on a vectorial field
 //!           provide also normalization in case only vector rotation is needed
 //! ----------------------------------------------------------------------------
 void smoothingTools::fieldSmoother(QMap<int,QList<double>> &field,
                                    const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS,
-                                   double k,
+                                   const std::map<int,double> &betaAveField,
                                    int NbSteps,
                                    bool normalize)
 {
@@ -164,7 +174,11 @@ void smoothingTools::fieldSmoother(QMap<int,QList<double>> &field,
             int globalNodeID = it.key();
             int localNodeID = aMeshDS->myNodesMap.FindIndex(globalNodeID);
             const std::vector<double> &P = aMeshDS->getNodeCoordinates(localNodeID);
-            double curvature = aMeshDS->myCurvature.value(globalNodeID);
+
+            //! ---------------------------------------------
+            //! manifold characteristic at the current point
+            //! ---------------------------------------------
+            double betaAve = betaAveField.at(globalNodeID);
 
             //! -------------------------------------------
             //! value of the field at the current position
@@ -209,7 +223,7 @@ void smoothingTools::fieldSmoother(QMap<int,QList<double>> &field,
                 int globalNodeID_surrounding = *it;
                 int localNodeID_surrounding = aMeshDS->myNodesMap.FindIndex(globalNodeID_surrounding);
                 const std::vector<double> &S = aMeshDS->getNodeCoordinates(localNodeID_surrounding);
-                Swij += wij(curvature,P,S,Sdij,n);
+                Swij += wij(betaAve,P,S,Sdij,n);
             }
 
             double a0,a1,a2;
@@ -220,13 +234,15 @@ void smoothingTools::fieldSmoother(QMap<int,QList<double>> &field,
                 int localNodeID_surrounding = aMeshDS->myNodesMap.FindIndex(globalNodeID_surrounding);
                 const std::vector<double> &S = aMeshDS->getNodeCoordinates(localNodeID_surrounding);
                 const QList<double> &localValue_surrounding = field.value(globalNodeID_surrounding);
-                a0 += localValue_surrounding[0]*wij(curvature,P,S,Sdij,n);
-                a1 += localValue_surrounding[1]*wij(curvature,P,S,Sdij,n);
-                a2 += localValue_surrounding[2]*wij(curvature,P,S,Sdij,n);
+                a0 += localValue_surrounding[0]*wij(betaAve,P,S,Sdij,n);
+                a1 += localValue_surrounding[1]*wij(betaAve,P,S,Sdij,n);
+                a2 += localValue_surrounding[2]*wij(betaAve,P,S,Sdij,n);
             }
 
-            //! to be defined ...
-            double omega = 1-1/(1+exp(-k*curvature));
+            //! ----------------------
+            //! overrelaxation factor
+            //! ----------------------
+            double omega = fomega(betaAve);
 
             snx = (1-omega)*localValue[0] + (omega/Swij)*a0;
             sny = (1-omega)*localValue[1] + (omega/Swij)*a1;
@@ -255,7 +271,3 @@ void smoothingTools::fieldSmoother(QMap<int,QList<double>> &field,
         }
     }
 }
-
-
-//! function: scalarFieldSmoother
-//! details:

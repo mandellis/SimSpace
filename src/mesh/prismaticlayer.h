@@ -31,6 +31,7 @@
 //! C++
 //! ----
 #include <vector>
+#include <map>
 #include <iostream>
 using namespace std;
 
@@ -251,6 +252,12 @@ private:
 
 private:
 
+    //! -----------------------------------------------------
+    //! map of manifold characteristic and visibility angles
+    //! -----------------------------------------------------
+    std::map<int,double> betaAverageField;
+    std::map<int,double> betaVisibilityField;
+
     //! --------------------
     //! generateOneTetLayer
     //! --------------------
@@ -261,8 +268,7 @@ private:
     //! -------------
     //! compute beta
     //! -------------
-    void computeBeta(const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS, int globalNodeID,
-                     double &betaMax, double &betaAve, double &betaVisibility);
+    void computeBeta(const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS);
 
     //! --------------------------------------------------
     //! enable/disable the progress indicator stop button
