@@ -564,7 +564,7 @@ double angleBetweenVector(const std::vector<double> &n1, const std::vector<doubl
     double l1 = sqrt(pow(n1[0],2)+pow(n1[1],2)+pow(n1[2],2));
     double l2 = sqrt(pow(n2[0],2)+pow(n2[1],2)+pow(n2[2],2));
 
-    if(l1 * l2 == 0) l1 = 1e-10; //exit(9999);
+    if(l1 * l2 == 0) exit(9999);
 
     double dot = (n1[0]*n2[0]+n1[1]*n2[1]+n1[2]*n2[2])/(l1*l2);
     if(dot > 1) dot = 1;
