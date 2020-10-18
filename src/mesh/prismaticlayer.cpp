@@ -535,7 +535,7 @@ bool prismaticLayer::mergeFaceMeshes()
 }
 
 //! -------------------------------------------------------------------------------------
-//! function: computeBetaAtNode
+//! function: computeBeta
 //! details:  return the average of angles between neighbour face normals
 //!           https://stackoverflow.com/questions/5188561/
 //!           signed-angle-between-two-3d-vectors-with-same-origin-within-the-same-plane
@@ -543,41 +543,29 @@ bool prismaticLayer::mergeFaceMeshes()
 double angleBetweenVector(const std::vector<double> &n1, const std::vector<double> &n2, const std::vector<double> &refdir)
 {
     const double PI = 3.1415926538;
-    /*
-    double cx = (n1[1]*n2[2]-n1[2]*n2[1]);
-    double cy = (n1[2]*n2[0]-n1[0]*n2[2]);
-    double cz = (n1[0]*n2[1]-n1[1]*n2[0]);
-    double l = sqrt(cx*cx+cy*cy+cz*cz);
-    double nnx, nny, nnz; nnx = nny = nnz = 0.0;
-    if(l<1e-8) return 0;
-
-    nnx = cx/l; nny = cy/l; nnz = cz/l;
-    double X = n1[0]*n2[0]+n1[1]*n2[1]+n1[2]*n2[2];
-    double Y = cx*nnx+cy*nny+cz*nnz;
-    double angle = std::atan2(Y,X);
-
-    double v = -refdir[0]*cx-refdir[1]*cy-refdir[2]*cz;
-    if(v<0) angle = PI+angle;
-    return angle;
-    */
+    double tolerance = 10*PI/180;
 
     double l1 = sqrt(pow(n1[0],2)+pow(n1[1],2)+pow(n1[2],2));
     double l2 = sqrt(pow(n2[0],2)+pow(n2[1],2)+pow(n2[2],2));
 
-    if(l1 * l2 == 0) exit(9999);
+    if(l1 * l2 == 0) exit(10);    // questo non dovrebbe mai succedere
 
     double dot = (n1[0]*n2[0]+n1[1]*n2[1]+n1[2]*n2[2])/(l1*l2);
-    if(dot > 1) dot = 1;
-    if(dot < -1) dot = -1;
+    if(dot > 1) dot = 1;        // avoids domain error
+    if(dot < -1) dot = -1;      // avoids domain error
     double angle = std::acos(dot);
-
-    double cx = (n1[1]*n2[2]-n1[2]*n2[1]);
-    double cy = (n1[2]*n2[0]-n1[0]*n2[2]);
+    double cx = (n1[1]*n2[2]-n1[2]*n2[1]);      //  n1[0]   n1[1]   n1[2]
+    double cy = (n1[2]*n2[0]-n1[0]*n2[2]);      //  n2[0]   n2[1]   n2[2]
     double cz = (n1[0]*n2[1]-n1[1]*n2[0]);
 
-    double v = -refdir[0]*cx-refdir[1]*cy-refdir[2]*cz;
-    if(v<0) angle = angle + PI;
-    return angle;
+    double l_cross = sqrt(cx*cx+cy*cy+cz*cz);
+    cx /= l_cross;
+    cy /= l_cross;
+    cz /= l_cross;
+
+    double v = refdir[0]*cx+refdir[1]*cy+refdir[2]*cz;
+    if(v<0.0) return -angle;
+    else return angle;
 }
 
 //! ------------------------------------
@@ -592,11 +580,140 @@ bool areAdjacent(const std::vector<int> &aFaceElement1, const std::vector<int> &
     return false;
 }
 
+//! ---------------------------
+//! function: getLocalFanNodes
+//! details:
+//! ---------------------------
+bool prismaticLayer::getLocalFanNodes(const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS, int vertexGlobalNodeID,
+                                      int t1, int t2,
+                                      mesh::meshPoint &A,
+                                      mesh::meshPoint &B,
+                                      mesh::meshPoint &C,
+                                      mesh::meshPoint &P)
+{
+    //cout<<"prismaticLayer::getLocalFanNodes()->____function called____"<<endl;
+
+    std::vector<int> supportVector;
+    std::vector<int> commonEdge;
+
+    int buf[3], NbNodes;
+    TColStd_Array1OfInteger nodeIDs1(*buf,1,3);         // first triangle
+    aMeshDS->GetNodesByElement(t1,nodeIDs1,NbNodes);
+    for(int i=1; i<=NbNodes; i++)
+    {
+        int currentNodeID = nodeIDs1(i);
+        supportVector.push_back(currentNodeID); // contains A,P,C
+        //cout<<"____first wedge triangle: "<<currentNodeID<<"____"<<endl;
+    }
+    TColStd_Array1OfInteger nodeIDs2(*buf,1,3);         // second triangle
+    aMeshDS->GetNodesByElement(t2,nodeIDs2,NbNodes);
+    for(int i=1; i<=NbNodes; i++)
+    {
+        int currentNodeID = nodeIDs2(i);
+        //cout<<"____second wedge triangle: "<<currentNodeID<<"____"<<endl;
+        std::vector<int>::iterator it = std::find(supportVector.begin(), supportVector.end(), currentNodeID);
+        if(it == supportVector.end()) supportVector.push_back(currentNodeID);
+        else commonEdge.push_back(currentNodeID);
+    }
+
+    //cout<<"____common edge ("<<commonEdge[0]<<", "<<commonEdge[1]<<")____"<<endl;
+    std::vector<int>::iterator it_ = std::find(supportVector.begin(), supportVector.end(), commonEdge[0]);
+    supportVector.erase(it_);
+    it_ = std::find(supportVector.begin(), supportVector.end(), commonEdge[1]);
+    supportVector.erase(it_);
+
+    // now the support vector contains A and B
+    // here we are not sure if A and B are correct
+    // they could be swapped - see at the end
+    int globalNodeID_A = supportVector[0];
+    int globalNodeID_B = supportVector[1];
+
+    //cout<<"____A: "<<globalNodeID_A<<", B: "<<globalNodeID_B<<"____"<<endl;
+
+    MeshVS_EntityType aType;
+    int NbNodes_;
+    double bufd[3];
+    TColStd_Array1OfReal coordsNodeA(*bufd,1,3);
+    TColStd_Array1OfReal coordsNodeB(*bufd,1,3);
+    TColStd_Array1OfReal coordsNodeP(*bufd,1,3);
+
+    //! --------------------------
+    //! point A, point B, point P
+    //! --------------------------
+    aMeshDS->GetGeom(globalNodeID_A,false,coordsNodeA,NbNodes_,aType);
+    A.ID = globalNodeID_A;
+    A.x = coordsNodeA(1);
+    A.y = coordsNodeA(2);
+    A.z = coordsNodeA(3);
+    //cout<<"____A("<<A.x<<", "<<A.y<<", "<<A.z<<")____"<<endl;
+
+    aMeshDS->GetGeom(globalNodeID_B,false,coordsNodeB,NbNodes_,aType);
+    B.ID = globalNodeID_B;
+    B.x = coordsNodeB(1);
+    B.y = coordsNodeB(2);
+    B.z = coordsNodeB(3);
+    //cout<<"____B("<<B.x<<", "<<B.y<<", "<<B.z<<")____"<<endl;
+
+    aMeshDS->GetGeom(vertexGlobalNodeID,false,coordsNodeP,NbNodes_,aType);
+    P.ID = vertexGlobalNodeID;
+    P.x = coordsNodeP(1);
+    P.y = coordsNodeP(2);
+    P.z = coordsNodeP(3);
+    //cout<<"____P("<<P.x<<", "<<P.y<<", "<<P.z<<")____"<<endl;
+
+    //! -----------------------
+    //! also point C is needed
+    //! -----------------------
+    int globalNodeID_C;
+    if(commonEdge[0] == vertexGlobalNodeID) globalNodeID_C = commonEdge[1];
+    else globalNodeID_C = commonEdge[0];
+    TColStd_Array1OfReal coordsNodeC(*bufd,1,3);
+    aMeshDS->GetGeom(globalNodeID_C,false,coordsNodeC,NbNodes_,aType);
+    C.ID = globalNodeID_C;
+    C.x = coordsNodeC(1);
+    C.y = coordsNodeC(2);
+    C.z = coordsNodeC(3);
+    //cout<<"____C("<<C.x<<", "<<C.y<<", "<<C.z<<")____"<<endl;
+
+    //! (A-P) x (C-P)
+    double xAP = A.x-P.x;
+    double yAP = A.y-P.y;
+    double zAP = A.z-P.z;
+
+    double xCP = C.x-P.x;
+    double yCP = C.y-P.y;
+    double zCP = C.z-P.z;
+
+    //! i    j    k
+    //! xAP  yAP  zAP
+    //! xCP  yCP  zCP
+    double vx = yAP*zCP-zAP*yCP;
+    double vy = zAP*xCP-xAP*zCP;
+    double vz = xAP*yCP-yAP*xCP;
+
+    //! the normal of the element containing "A"
+    double nx, ny, nz;
+    aMeshDS->GetNormal(t1,10,nx,ny,nz);
+
+    double scalarP = vx*nx+vy*ny+vz*nz;
+    if(scalarP<0)   // swap A and B
+    {
+        mesh::meshPoint S = B;
+        B = mesh::meshPoint(A);
+        A = S;
+        return true;
+    }
+    return false;
+}
+
 void prismaticLayer::computeBeta(const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS)
 {
     cout<<"prismaticLayer::computeBeta()->____function called____"<<endl;
 
+    FILE *fp = fopen("D:/betaAve.txt","w");
     const double PI = 3.1415926538;
+
+    //aMeshDS->computeDiscreteCurvature(1);
 
     //! --------------------------
     //! clear the private members
@@ -616,7 +733,12 @@ void prismaticLayer::computeBeta(const occHandle(Ng_MeshVS_DataSourceFace) &aMes
     for(TColStd_MapIteratorOfPackedMapOfInteger it(aMeshDS->GetAllNodes()); it.More(); it.Next())
     {
         int globalNodeID = it.Key();
-        const QList<int> &attachedElements_localIDs = nodeToElementsMap.value(globalNodeID);
+        int localNodeID = aMeshDS->myNodesMap.FindIndex(globalNodeID);
+        cout<<"____nodeID (global): "<<globalNodeID<<"____"<<endl;
+
+        //const QList<int> &attachedElements_localIDs = nodeToElementsMap.value(globalNodeID);
+        const QList<int> &attachedElements_localIDs = nodeToElementsMap.value(localNodeID);
+
         int NbAttachedElements = attachedElements_localIDs.length();
 
         std::map<int,int> indexedMapOfElements;                     // index, element ID
@@ -628,6 +750,9 @@ void prismaticLayer::computeBeta(const occHandle(Ng_MeshVS_DataSourceFace) &aMes
             double nx,ny,nz;
             nx = ny = nz = 0;
             aMeshDS->GetNormal(globalElementID,10,nx,ny,nz);
+
+            if(sqrt(nx*nx+ny*ny+nz*nz)==0) exit(13);
+
             std::vector<double> aNormal {nx, ny, nz};
             indexedMapOfElements.insert(std::make_pair(i,globalElementID));
             indexedMapOfNormals.insert(std::make_pair(i,aNormal));
@@ -642,14 +767,6 @@ void prismaticLayer::computeBeta(const occHandle(Ng_MeshVS_DataSourceFace) &aMes
             for(size_t j=i+1; j<NbNormals; j++)
                 vecPairs.push_back(std::make_pair(i,j));
 
-        //! ----------------
-        //! normal at point
-        //! ----------------
-        double nx,ny,nz;
-        nx = ny = nz = 0;
-        aMeshDS->GetNormal(globalNodeID,10,nx,ny,nz);
-        std::vector<double> refDir {nx, ny, nz};
-
         //! ------------------------------------------------------------------
         //! these are the indexes of the triangles of the minimum angle wedge
         //! ------------------------------------------------------------------
@@ -657,7 +774,6 @@ void prismaticLayer::computeBeta(const occHandle(Ng_MeshVS_DataSourceFace) &aMes
 
         double sumBeta = 0.0;
         double betaAve = 0.0;
-        double betaMax = -1e10;
         double betaMin = 1e10;
         int NbAdjacentPairs = 0;
         for(std::vector<std::pair<int,int>>::iterator it = vecPairs.begin(); it!=vecPairs.end(); it++)
@@ -686,161 +802,132 @@ void prismaticLayer::computeBeta(const occHandle(Ng_MeshVS_DataSourceFace) &aMes
             NbAdjacentPairs++;
             const std::vector<double> &n1 = indexedMapOfNormals.at(fn);
             const std::vector<double> &n2 = indexedMapOfNormals.at(sn);
+            if(sqrt(n1[0]*n1[0]+n1[1]*n1[1]+n1[2]*n1[2])==0) exit(11);   // should never occur
+            if(sqrt(n2[0]*n2[0]+n2[1]*n2[1]+n2[2]*n2[2])==0) exit(12);   // should never occur
 
-            double angle = angleBetweenVector(n1,n2,refDir);
-            if(angle>betaMax) betaMax = angle;
-            if(angle<betaMin)
+            //! ---------------------------------------------------------
+            //! get ABCD and define as reference direction for the angle
+            //! calculation the common edge (C-P)
+            //! ---------------------------------------------------------
+            mesh::meshPoint A,B,C,P;
+            int element1 = indexedMapOfElements.at(fn);
+            int element2 = indexedMapOfElements.at(sn);
+
+            bool swappedAB = this->getLocalFanNodes(aMeshDS,globalNodeID,element1,element2,A,B,C,P);
+
+            double l_CP = sqrt(pow(P.x-C.x,2)+pow(P.y-C.y,2)+pow(P.z-C.z,2));
+            std::vector<double> refDir { -(C.x-P.x)/l_CP, -(C.y-P.y)/l_CP, -(C.z-P.z)/l_CP };
+
+            double angle;
+            if(swappedAB == false) angle = angleBetweenVector(n1,n2,refDir);
+            else angle = angleBetweenVector(n2,n1,refDir);
+
+            //cout<<"____angle: "<<angle<<"____"<<endl;
+            if(PI-angle<betaMin)
             {
-                t1 = indexedMapOfElements.at(fn);
-                t2 = indexedMapOfElements.at(sn);
-                betaMin = angle;
+                if(swappedAB==false)
+                {
+                    t1 = indexedMapOfElements.at(fn);
+                    t2 = indexedMapOfElements.at(sn);
+                }
+                else
+                {
+                    t2 = indexedMapOfElements.at(fn);
+                    t1 = indexedMapOfElements.at(sn);
+                }
+                betaMin = PI-angle;
             }
             sumBeta += angle;
         }
         betaAve = sumBeta/NbAdjacentPairs;          // average angle
-        betaAve += PI;
+        //MeshVS_EntityType at;
+        //int nn;
+        //double o[3];
+        //TColStd_Array1OfReal c(*o,1,3);
+        //aMeshDS->GetGeom(globalNodeID,false,c,nn,at);
+        //fprintf(fp,"%d\t%lf\t%lf\t%lf\t%lf\n",globalNodeID,c(1),c(2),c(3),betaAve);
 
-        //cout<<"____betaAve: "<<betaAve*180/PI<<"____"<<endl;
-        //cout<<"____minimum angle wedge defined by element IDS ("<<t1<<", "<<t2<<")____"<<endl;
-
-        std::vector<int> supportVector;
-        std::vector<int> commonEdge;
-
-        int buf[3], NbNodes;
-        TColStd_Array1OfInteger nodeIDs1(*buf,1,3);         // first triangle
-        aMeshDS->GetNodesByElement(t1,nodeIDs1,NbNodes);
-        for(int i=1; i<=NbNodes; i++)
-        {
-            int currentNodeID = nodeIDs1(i);
-            supportVector.push_back(currentNodeID);
-            //cout<<"____first wedge triangle: "<<currentNodeID<<"____"<<endl;
-        }
-        TColStd_Array1OfInteger nodeIDs2(*buf,1,3);         // second triangle
-        aMeshDS->GetNodesByElement(t2,nodeIDs2,NbNodes);
-        for(int i=1; i<=NbNodes; i++)
-        {
-            int currentNodeID = nodeIDs2(i);
-            //cout<<"____second wedge triangle: "<<currentNodeID<<"____"<<endl;
-            std::vector<int>::iterator it = std::find(supportVector.begin(), supportVector.end(), currentNodeID);
-            if(it == supportVector.end()) supportVector.push_back(currentNodeID);
-            else commonEdge.push_back(currentNodeID);
-        }
-        if(commonEdge.size()==1)
-        for(int i=0; i<supportVector.size(); i++) cout<<"____support vector IDs: "<<supportVector[i]<<"____"<<endl;
-
-        //cout<<"____common edge ("<<commonEdge[0]<<", "<<commonEdge[1]<<")____"<<endl;
-        std::vector<int>::iterator it_ = std::find(supportVector.begin(), supportVector.end(), commonEdge[0]);
-        supportVector.erase(it_);
-        it_ = std::find(supportVector.begin(), supportVector.end(), commonEdge[1]);
-        supportVector.erase(it_);
-
-        // now the support vector contains A and B
-        int globalNodeID_A = supportVector[0];
-        int globalNodeID_B = supportVector[1];
-
-        //cout<<"____A: "<<globalNodeID_A<<", B: "<<globalNodeID_B<<"____"<<endl;
-
-        MeshVS_EntityType aType;
-        int NbNodes_;
-        double bufd[3];
-        TColStd_Array1OfReal coordsNodeA(*bufd,1,3);
-        TColStd_Array1OfReal coordsNodeB(*bufd,1,3);
-        TColStd_Array1OfReal coordsNodeP(*bufd,1,3);
-
-        //! --------------------------
-        //! point A, point B, point P
-        //! --------------------------
-        aMeshDS->GetGeom(globalNodeID_A,false,coordsNodeA,NbNodes_,aType);
-        double xA = coordsNodeA(1);
-        double yA = coordsNodeA(2);
-        double zA = coordsNodeA(3);
-        //cout<<"____A("<<xA<<", "<<yA<<", "<<zA<<")____"<<endl;
-
-        aMeshDS->GetGeom(globalNodeID_B,false,coordsNodeB,NbNodes_,aType);
-        double xB = coordsNodeB(1);
-        double yB = coordsNodeB(2);
-        double zB = coordsNodeB(3);
-        //cout<<"____B("<<xB<<", "<<yB<<", "<<zB<<")____"<<endl;
-
-        aMeshDS->GetGeom(globalNodeID,false,coordsNodeP,NbNodes_,aType);
-        double xP = coordsNodeP(1);
-        double yP = coordsNodeP(2);
-        double zP = coordsNodeP(3);
-        //cout<<"____P("<<xP<<", "<<yP<<", "<<zP<<")____"<<endl;
+        //! ********************************************************
+        //!
+        //! the following work is done on the "minimum angle wedge"
+        //!
+        //! ********************************************************
+        mesh::meshPoint A,B,C,P;
+        this->getLocalFanNodes(aMeshDS,globalNodeID,t1,t2,A,B,C,P);
 
         //! ------------
         //! angle alpha
         //! ------------
-        double l_AP = sqrt(pow(xA-xP,2)+pow(yA-yP,2)+pow(zA-zP,2));
-        double l_BP = sqrt(pow(xB-xP,2)+pow(yB-yP,2)+pow(zB-zP,2));
-        double l_AB = sqrt(pow(xA-xB,2)+pow(yA-yB,2)+pow(zA-zB,2));
-
-        //double alpha = std::acos(((xA-xP)*(xB-xP)+(yA-yP)*(yB-yP)+(zA-zP)*(zB-zP))/(l_AP*l_BP));
+        double l_AP = sqrt(pow(A.x-P.x,2)+pow(A.y-P.y,2)+pow(A.z-P.z,2));
+        double l_BP = sqrt(pow(B.x-P.x,2)+pow(B.y-P.y,2)+pow(B.z-P.z,2));
+        double l_AB = sqrt(pow(A.x-B.x,2)+pow(A.y-B.y,2)+pow(A.z-B.z,2));
 
         double l_AN = (l_AP*l_AB)/(l_AP+l_BP);
 
-        //! ------------------------------
-        //! direction of AB (from A to B)
-        //! ------------------------------
-        double ix = (xB-xA)/l_AB;
-        double iy = (yB-yA)/l_AB;
-        double iz = (zB-zA)/l_AB;
+        //! -------------------
+        //! direction of (B-A)
+        //! -------------------
+        double ix = (B.x-A.x)/l_AB;
+        double iy = (B.y-A.y)/l_AB;
+        double iz = (B.z-A.z)/l_AB;
 
-        double xN = xA + ix*l_AN;
-        double yN = yA + iy*l_AN;
-        double zN = zA + iz*l_AN;
+        //! --------
+        //! point N
+        //! --------
+        double xN = A.x + ix*l_AN;
+        double yN = A.y + iy*l_AN;
+        double zN = A.z + iz*l_AN;
 
-        double l_NP = sqrt(pow(xN-xP,2)+pow(yN-yP,2)+pow(zN-zP,2));
-        std::vector<double> guidingVector {(xN-xP)/l_NP, (yN-yP)/l_NP, (zN-zP)/l_NP};
-        //cout<<"____guiding vector ("<<(xN-xP)/l_NP<<", "<<(yN-yP)/l_NP<<", "<<(zN-zP)/l_NP<<")____"<<endl;
+        double l_NP = sqrt(pow(xN-P.x,2)+pow(yN-P.y,2)+pow(zN-P.z,2));
 
-        //! -----------------------
-        //! also point C is needed
-        //! -----------------------
-        int globalNodeID_C;
-        if(commonEdge[0] == globalNodeID) globalNodeID_C = commonEdge[1];
-        else globalNodeID_C = commonEdge[0];
-        TColStd_Array1OfReal coordsNodeC(*bufd,1,3);
-        aMeshDS->GetGeom(globalNodeID_C,false,coordsNodeC,NbNodes_,aType);
-        double xC = coordsNodeC(1);
-        double yC = coordsNodeC(2);
-        double zC = coordsNodeC(3);
-        //cout<<"____C("<<xC<<", "<<yC<<", "<<zC<<")____"<<endl;
+        //! ------------------------------------------------
+        //! pre-visibility angle (before further bisection)
+        //! ------------------------------------------------
+        std::vector<double> NP {xN-P.x,yN-P.y,zN-P.z};
+        std::vector<double> CP {C.x-P.x,C.y-P.y,C.z-P.z};
 
-        //! ----------------------------------
-        //! visibility angle before bisection
-        //! ----------------------------------
-        std::vector<double> NP {xN-xP,yN-yP,zN-zP};
-        std::vector<double> CP {xC-xP,yC-yP,zC-zP};
-        //double betaAve = angleBetweenVector(NP,CP,refDir);
-        //cout<<"____betaAve = "<<betaAve<<" betaMax: "<<betaMax<<"____"<<endl;
-
-        double l_CP = sqrt(pow(xC-xP,2)+pow(yC-yP,2)+pow(zC-zP,2));
-        double l_CN = sqrt(pow(xC-xN,2)+pow(yC-yN,2)+pow(zC-zN,2));
-
+        double l_CP = sqrt(pow(C.x-P.x,2)+pow(C.y-P.y,2)+pow(C.z-P.z,2));
+        double l_CN = sqrt(pow(C.x-xN,2)+pow(C.y-yN,2)+pow(C.z-zN,2));
         double l_CN1 = (l_CP*l_CN)/(l_NP+l_CP);
 
-        double ix_ = (xN-xC)/l_CN;
-        double iy_ = (yN-yC)/l_CN;
-        double iz_ = (zN-zC)/l_CN;
+        double ix_ = (xN-C.x)/l_CN;
+        double iy_ = (yN-C.y)/l_CN;
+        double iz_ = (zN-C.z)/l_CN;
 
-        double xN1 = xC + l_CN1*ix_;
-        double yN1 = yC + l_CN1*iy_;
-        double zN1 = zC + l_CN1*iz_;
+        double xN1 = C.x + l_CN1*ix_;
+        double yN1 = C.y + l_CN1*iy_;
+        double zN1 = C.z + l_CN1*iz_;
 
-        std::vector<double> N1P {xN1-xP,yN1-yP,zN1-zP};
-        double l_N1P = sqrt(pow(xN1-xP,2)+pow(yN1-yP,2)+pow(zN1-zP,2));
-        double betaVisibility = angleBetweenVector(N1P,CP,refDir);
-        cout<<"____final beta visibility: "<<betaVisibility*180/PI<<"____"<<endl;
-        //std::vector<double> guidingVector_ {(xN1-xP)/l_N1P, (yN1-yP)/l_N1P, (zN1-zP)/l_N1P};
-        //cout<<"____final guiding vector ("<<(xN1-xP)/l_N1P<<", "<<(yN1-yP)/l_N1P<<", "<<(zN1-zP)/l_N1P<<")____"<<endl;
+        cout<<"____tag02____"<<endl;
+        std::vector<double> N1P {xN1-P.x,yN1-P.y,zN1-P.z};
+        double l_N1P = sqrt(pow(xN1-P.x,2)+pow(yN1-P.y,2)+pow(zN1-P.z,2));
+
+        if(l_N1P==0) exit(20);
+        if(l_CP==0) exit(21);
+
+        //double aDot = (xN1-P.x)*(C.x-P.x)+(yN1-P.y)*(C.y-P.y)+(zN1-P.z)*(C.z-P.z);
+        //aDot /= l_N1P;
+        //if(aDot < -1) aDot = -1;
+        //if(aDot > 1) aDot = 1;
+        //double betaVisibility = std::acos(aDot);
+        //cout<<"____tag03____"<<endl;
+
+        std::vector<double> refDir_{-ix,-iy,-iz};
+        double betaVisibility = angleBetweenVector(N1P,CP,refDir_);
+        //if(NbAdjacentPairs==3)
+        //{
+        cout<<"____adjacent pairs: "<<NbAdjacentPairs<<"____"<<endl;
+        cout<<"____betaAve: "<<180-betaAve*180/PI<<"____"<<endl;
+        cout<<"____betaVisibility: "<<(betaVisibility*180)/PI<<"____"<<endl;
+        //}
 
         //! ------------------------
         //! fill the map of results
         //! ------------------------
-        betaAverageField.insert(std::make_pair(globalNodeID,betaAve));
+        betaAverageField.insert(std::make_pair(globalNodeID,PI-betaAve));
         betaVisibilityField.insert(std::make_pair(globalNodeID,betaVisibility));
     }
+    fclose(fp);
 }
 
 //! ------------------------------
@@ -855,7 +942,7 @@ void prismaticLayer::computeShrinkFactor(const occHandle(Ng_MeshVS_DataSourceFac
     fprintf(fp,"#NodeID\tx\ty\tz\tbetaAve\tbetaVisibility\tshrink\n");
 
     const double PI = 3.1415926534;
-    const double eps = 0.17453;         // 10 degrees
+    const double eps = 10*PI/180;           // 10 degrees
 
     for(TColStd_MapIteratorOfPackedMapOfInteger it(aMeshDS->GetAllNodes()); it.More(); it.Next())
     {
@@ -865,8 +952,8 @@ void prismaticLayer::computeShrinkFactor(const occHandle(Ng_MeshVS_DataSourceFac
         double betaVisibility = betaVisibilityField.at(globalNodeID);
         double shrink = 0;
 
-        if(betaAve<PI-eps) shrink =  -fabs(cos(betaVisibility));    // retraction in "not convex" points
-        if(betaAve>PI+eps) shrink =  +fabs(cos(betaVisibility));    // expansion in convex points
+        if(betaAve<PI-eps) shrink =  +fabs(cos(betaVisibility));    // expansion in concave points
+        if(betaAve>PI+eps) shrink =  -fabs(cos(betaVisibility));    // retraction in not concave points
 
         if(betaAve>=PI-eps && betaAve<=PI+eps) shrink = 0;
         shrinkFactors.insert(globalNodeID,shrink);
@@ -878,7 +965,6 @@ void prismaticLayer::computeShrinkFactor(const occHandle(Ng_MeshVS_DataSourceFac
         aMeshDS->GetGeom(globalNodeID,false,coords,NbNodes,aType);
         fprintf(fp,"%d\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n",globalNodeID,coords(1),coords(2),coords(3),betaAve*180/PI,betaVisibility*180/PI,shrink);
     }
-
     fclose(fp);
 }
 

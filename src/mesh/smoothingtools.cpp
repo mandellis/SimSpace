@@ -19,7 +19,9 @@
 //! ----------------------------------
 double fomega(double betaAve)
 {
-    double val = 0.5*(cos(betaAve)+1);
+    //double val = 0.5*(1-cos(betaAve));
+    const double PI = 3.1415926538;
+    double val = (PI-betaAve/2)*(1/(PI));
     return val;
 }
 
@@ -33,7 +35,7 @@ double kij(double n, const std::vector<double> &P, const std::vector<double> &S,
 double wij(double betaAve, const std::vector<double> &P, const std::vector<double> &S, double Sdij, double n)
 {
     const double PI = 3.1415926538;
-    const double eps = 0.17453;
+    const double eps = 10.0*PI/180.0;
     double val = 1.0;
     if(betaAve<PI-eps) val = 1/pow(kij(n,P,S,Sdij),2);        // "concave" point
     if(betaAve>PI+eps) val = pow(kij(n,P,S,Sdij),2);          // "convex" point
@@ -126,7 +128,6 @@ void smoothingTools::scalarFieldSmoother(QMap<int,double> &field,
             //! over relaxation factor
             //! -----------------------
             double omega = fomega(betaAve);
-
             snx = (1-omega)*localValue+(omega/Swij)*a0;
             smoothedField.insert(globalNodeID,snx);
         }

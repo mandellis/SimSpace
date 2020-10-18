@@ -270,6 +270,16 @@ private:
     //! -------------
     void computeBeta(const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS);
 
+    //! ---------------
+    //! local manifold
+    //! ---------------
+    bool getLocalFanNodes(const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS, int vertexGlobalNodeID,
+                          int t1, int t2,
+                          mesh::meshPoint &A,
+                          mesh::meshPoint &B,
+                          mesh::meshPoint &C,
+                          mesh::meshPoint &P);
+
     //! --------------------------------------------------
     //! enable/disable the progress indicator stop button
     //! --------------------------------------------------
