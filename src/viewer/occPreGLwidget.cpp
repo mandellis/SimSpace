@@ -2598,15 +2598,10 @@ void occPreGLWidget::showBody(const TColStd_ListOfInteger &listOfBodies)
     for(TColStd_ListIteratorOfListOfInteger it(listOfBodies); it.More(); it.Next())
     {
         int bodyIndex = it.Value();
-        cout<<"____tag00____"<<endl;
         const occHandle(AIS_ExtendedShape) &curAISShape = occHandle(AIS_ExtendedShape)::DownCast(myMapOfInteractiveShapes.value(bodyIndex));
-        cout<<"____tag01____"<<endl;
         if(curAISShape.IsNull()) continue;
-        cout<<"____tag02____"<<endl;
         occContext->Display(curAISShape,displayMode,AIS_Shape::SelectionMode(shapeSelectionMode),true,AIS_DS_Displayed);
-        cout<<"____tag03____"<<endl;
         curAISShape->setShapeVisibility(Standard_True);
-        cout<<"____tag04____"<<endl;
     }
 
     //! -------------------------------------------------------------------------

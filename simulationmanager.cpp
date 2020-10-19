@@ -12077,10 +12077,11 @@ bool SimulationManager::COSTAMP_addProcessParameters()
                 curBodyNode->getModel()->blockSignals(true);
                 if(bodyName == "CASTING")
                 {
-                    data.setValue(Property::SuppressionStatus_Suppressed);
-                    Property property_isSuppressed("Suppressed",data,Property::PropertyGroup_Definition);
-                    curBodyNode->replaceProperty("Suppressed",property_isSuppressed);
-                    //this->changeNodeSuppressionStatus(Property::SuppressionStatus_Suppressed);
+                    //data.setValue(Property::SuppressionStatus_Suppressed);
+                    //Property property_isSuppressed("Suppressed",data,Property::PropertyGroup_Definition);
+                    //curBodyNode->replaceProperty("Suppressed",property_isSuppressed);
+                    myTreeView->setCurrentIndex(curBody->index());
+                    this->changeNodeSuppressionStatus(Property::SuppressionStatus_Suppressed);
                 }
                 curBodyNode->getModel()->blockSignals(false);
             }
