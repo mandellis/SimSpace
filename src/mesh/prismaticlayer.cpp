@@ -542,9 +542,6 @@ bool prismaticLayer::mergeFaceMeshes()
 //! -------------------------------------------------------------------------------------
 double angleBetweenVector(const std::vector<double> &n1, const std::vector<double> &n2, const std::vector<double> &refdir)
 {
-    const double PI = 3.1415926538;
-    double tolerance = 10*PI/180;
-
     double l1 = sqrt(pow(n1[0],2)+pow(n1[1],2)+pow(n1[2],2));
     double l2 = sqrt(pow(n2[0],2)+pow(n2[1],2)+pow(n2[2],2));
 
@@ -885,7 +882,12 @@ void prismaticLayer::computeBeta(const occHandle(Ng_MeshVS_DataSourceFace) &aMes
         //! ------------------------------------------------
         std::vector<double> NP {xN-P.x,yN-P.y,zN-P.z};
         std::vector<double> CP {C.x-P.x,C.y-P.y,C.z-P.z};
+        std::vector<double> AP {A.x-P.x,A.y-P.y,A.z-P.z};       // new
 
+        std::vector<double> refDir_ {A.x-C.x,A.y-C.y,A.z-C.z};  // new
+        double betaVisibility = angleBetweenVector(NP,AP,refDir_);  //new
+
+        /*
         double l_CP = sqrt(pow(C.x-P.x,2)+pow(C.y-P.y,2)+pow(C.z-P.z,2));
         double l_CN = sqrt(pow(C.x-xN,2)+pow(C.y-yN,2)+pow(C.z-zN,2));
         double l_CN1 = (l_CP*l_CN)/(l_NP+l_CP);
@@ -898,28 +900,22 @@ void prismaticLayer::computeBeta(const occHandle(Ng_MeshVS_DataSourceFace) &aMes
         double yN1 = C.y + l_CN1*iy_;
         double zN1 = C.z + l_CN1*iz_;
 
-        cout<<"____tag02____"<<endl;
         std::vector<double> N1P {xN1-P.x,yN1-P.y,zN1-P.z};
         double l_N1P = sqrt(pow(xN1-P.x,2)+pow(yN1-P.y,2)+pow(zN1-P.z,2));
 
-        if(l_N1P==0) exit(20);
-        if(l_CP==0) exit(21);
-
-        //double aDot = (xN1-P.x)*(C.x-P.x)+(yN1-P.y)*(C.y-P.y)+(zN1-P.z)*(C.z-P.z);
-        //aDot /= l_N1P;
-        //if(aDot < -1) aDot = -1;
-        //if(aDot > 1) aDot = 1;
-        //double betaVisibility = std::acos(aDot);
-        //cout<<"____tag03____"<<endl;
+        //if(l_N1P==0) exit(20);
+        //if(l_CP==0) exit(21);
 
         std::vector<double> refDir_{-ix,-iy,-iz};
         double betaVisibility = angleBetweenVector(N1P,CP,refDir_);
+
         //if(NbAdjacentPairs==3)
         //{
         cout<<"____adjacent pairs: "<<NbAdjacentPairs<<"____"<<endl;
         cout<<"____betaAve: "<<180-betaAve*180/PI<<"____"<<endl;
         cout<<"____betaVisibility: "<<(betaVisibility*180)/PI<<"____"<<endl;
         //}
+        */
 
         //! ------------------------
         //! fill the map of results
@@ -952,8 +948,8 @@ void prismaticLayer::computeShrinkFactor(const occHandle(Ng_MeshVS_DataSourceFac
         double betaVisibility = betaVisibilityField.at(globalNodeID);
         double shrink = 0;
 
-        if(betaAve<PI-eps) shrink =  +fabs(cos(betaVisibility));    // expansion in concave points
-        if(betaAve>PI+eps) shrink =  -fabs(cos(betaVisibility));    // retraction in not concave points
+        if(betaAve>eps && betaAve<PI-eps) shrink =  +fabs(cos(betaVisibility-PI/2));    // expansion in concave points
+        if(betaAve>PI+eps && betaAve<2*PI) shrink =  -fabs(cos(betaVisibility-PI/2));    // retraction in not concave points
 
         if(betaAve>=PI-eps && betaAve<=PI+eps) shrink = 0;
         shrinkFactors.insert(globalNodeID,shrink);
@@ -1634,7 +1630,7 @@ void prismaticLayer::generateOneTetLayer(occHandle(Ng_MeshVS_DataSourceFace) &th
     //! --------------------------------------------------------------------------
     //! smooth the marching distances - at least 10 smoothing steps for this algo
     //! --------------------------------------------------------------------------
-    smoothingTools::scalarFieldSmoother(marchingDistanceMap,theMeshToInflate,betaAverageField,10);
+    smoothingTools::scalarFieldSmoother(marchingDistanceMap,theMeshToInflate,betaAverageField,2);
 
     QMap<int,QList<double>> displacementsField;
     for(QMap<int,QList<double>>::const_iterator it = normals.cbegin(); it!= normals.cend(); ++it)
