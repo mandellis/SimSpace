@@ -12253,8 +12253,18 @@ bool SimulationManager::COSTAMP_addProcessParameters()
                 SimulationNodeClass *curPrismControl = myTreeView->currentIndex().data(Qt::UserRole).value<SimulationNodeClass*>();
                 curPrismControl->getModel()->blockSignals(true);
 
+                ListOfShape prismShape;
                 //! scope
-                data.setValue(vecLocAllBodies);
+                for(std::vector<GeometryTag>::iterator tagIt=casting.begin();tagIt!=casting.end();++tagIt)
+                {
+                    GeometryTag curLoc = *tagIt;
+                    TopoDS_Solid aSolid = TopoDS::Solid(mySimulationDataBase->bodyMap.value(curLoc.parentShapeNr));
+                            if(prismShape.Contains(aSolid)) continue;
+                    else prismShape.Append(aSolid);
+                }
+                std::vector<GeometryTag> prismScope = TopologyTools::generateLocationPairs(mySimulationDataBase,prismShape);
+
+                data.setValue(prismScope);
                 Property prop_geometry("Geometry",data,Property::PropertyGroup_Scope);
                 curPrismControl->replaceProperty("Geometry",prop_geometry);
                 data.setValue(casting);
@@ -12266,7 +12276,6 @@ bool SimulationManager::COSTAMP_addProcessParameters()
                 data.setValue(bmesh);
                 Property prop_boundaryMesh("Boundary mesh type",data,Property::PropertyGroup_Definition);
                 curPrismControl->replaceProperty("Boundary mesh type",prop_boundaryMesh);
-                curPrismControl->getModel()->blockSignals(true);
 
                 //! Nb layers
                 double nBlayer = 5;

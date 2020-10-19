@@ -642,7 +642,6 @@ void mainTreeTools::getAllBoundaryConditionsTags(QTreeView *tree, int type, std:
     {
         QStandardItem *item = RootItem->child(i,0);
         SimulationNodeClass *node = item->data(Qt::UserRole).value<SimulationNodeClass*>();
-
         //! -----------------------
         //! connections root found
         //! -----------------------
@@ -679,11 +678,12 @@ void mainTreeTools::getAllBoundaryConditionsTags(QTreeView *tree, int type, std:
         //! --------------------
         if(node->isAnalysisRoot())
         {
-            for(int j=0; j<item->rowCount();j++)
+            for(int j=1; j<item->rowCount();j++)
             {
                 QStandardItem *itemBC = item->child(j,0);
                 SimulationNodeClass *nodeBC = itemBC->data(Qt::UserRole).value<SimulationNodeClass*>();
                 if(nodeBC->isSimulationSetUpNode()==false || nodeBC->isChildSimulationSetUpNode() || nodeBC->isNephewSimulationSetUpNode()) continue;
+                if(nodeBC->getPropertyItem("Tags")==Q_NULLPTR) continue;
                 std::vector<GeometryTag> BCTags = nodeBC->getPropertyValue<std::vector<GeometryTag>>("Tags");
                 for(int m=0; m<BCTags.size(); m++)
                 {
@@ -697,6 +697,8 @@ void mainTreeTools::getAllBoundaryConditionsTags(QTreeView *tree, int type, std:
             }
         }
 
+        if(!node->isAnalysisRoot() || node->getType()==SimulationNodeClass::nodeType_connection) continue;
+    /* NO need to keep mesh control boundary
         if(node->getType()==SimulationNodeClass::nodeType_meshControl)
         {
             cout<<"____MESH CONTROL____"<<endl;
@@ -719,6 +721,7 @@ void mainTreeTools::getAllBoundaryConditionsTags(QTreeView *tree, int type, std:
                 }
             }
         }
+    */
     }
     cout<<"mainTreeTools::getAllBoundaryConditionsTags()->____function exiting____"<<endl;
 }
