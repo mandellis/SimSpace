@@ -1,7 +1,3 @@
-#ifdef COSTAMP_VERSION
-#include "src/TimeStepBuilder/timestepbuilder.h"
-#endif
-
 //! ----------------
 //! custom includes
 //! ----------------
@@ -11713,8 +11709,9 @@ bool SimulationManager::COSTAMP_addProcessParameters()
             //!  2: OpenAssembly,
             std::vector<int> timeStepNr,type;
             std::vector<double>  prevTime,curTime;
-            double closureForceValue, innerPressureValue;
-            int closureForceDir;
+            double closureForceValue=0;
+            double innerPressureValue=0;
+            int closureForceDir=0;
             int n=0;
             if(is.is_open())
                 while(!is.eof())
@@ -11737,12 +11734,15 @@ bool SimulationManager::COSTAMP_addProcessParameters()
                         int c;
                         //std::getline(is,val);
                         //std::getline(is,val);
+
                         if(2 == sscanf(val.c_str(),"%d%lf",&c,&a))
                         {
                             closureForceDir = c;
                             closureForceValue = a;
+                            std::getline(is,val);
                         }
-                        if(1 ==sscanf(val.c_str(),"%lf",&b)) innerPressureValue = b;
+                        if(1 ==sscanf(val.c_str(),"%lf",&b))
+                            innerPressureValue = b;
                     }
                 }
             is.close();
@@ -11946,12 +11946,13 @@ bool SimulationManager::COSTAMP_addProcessParameters()
                     Property prop_loadMagnitude("Magnitude",data,Property::PropertyGroup_Definition);
                     curNode->replaceProperty("Magnitude",prop_loadMagnitude);
                     QVector<double> vec;
+                    vec<<0.0<<0.0<<0.0;
                     if(closureForceDir==1)
-                    {vec.push_back(1.0);vec.push_back(0.0);vec.push_back(0.0);}
+                        vec.push_back(1.0);vec.push_back(0.0);vec.push_back(0.0);
                     if(closureForceDir==2)
-                    {vec.push_back(0.0);vec.push_back(1.0);vec.push_back(0.0);}
+                        vec.push_back(0.0);vec.push_back(1.0);vec.push_back(0.0);
                     if(closureForceDir==3)
-                    {vec.push_back(0.0);vec.push_back(0.0);vec.push_back(1.0);}
+                        vec.push_back(0.0);vec.push_back(0.0);vec.push_back(1.0);
                     data.setValue(vec);
                     Property prop_loadDirection("Direction",data,Property::PropertyGroup_Definition);
                     curNode->replaceProperty("Direction",prop_loadDirection);
