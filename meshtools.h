@@ -2,6 +2,11 @@
 #define MESHTOOLS_H
 
 //! ----
+//! C++
+//! ----
+#include <map>
+
+//! ----
 //! OCC
 //! ----
 #include <MeshVS_Mesh.hxx>
@@ -150,6 +155,7 @@ public:
     static void toListOf3DElements(const occHandle(Ng_MeshVS_DataSource3D) &inputMesh, std::vector<meshElementByCoords> &elements);
     static std::map<GeometryTag,std::vector<occHandle(MeshVS_Mesh)>> groupMeshes(const std::map<GeometryTag,occHandle(MeshVS_Mesh)> &mapOfMeshes);
     static occHandle(MeshVS_DataSource) mergeMesh(const occHandle(MeshVS_DataSource) &mesh1, const occHandle(MeshVS_DataSource) &mesh2);
+    static void computeAngleDefectMap(const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS, std::map<int,double> &mapOfAngleDefect);
 
 };
 

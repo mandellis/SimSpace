@@ -1611,3 +1611,190 @@ occHandle(MeshVS_DataSource) MeshTools::mergeMesh(const occHandle(MeshVS_DataSou
 
     return retMeshDS;
 }
+
+
+//! --------------------------------
+//! function: computeAngleDefectMap
+//! details:
+//! --------------------------------
+void MeshTools::computeAngleDefectMap(const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS, std::map<int,double> &mapOfAngleDefect)
+{
+    cout<<"MeshTools::computeAngleDefectMap()->____function called____"<<endl;
+
+    const double PI = 3.1415926538;
+
+    if(aMeshDS.IsNull()) return;
+    if(aMeshDS->myNodeToElements.isEmpty()) aMeshDS->computeNodeToElementsConnectivity();   // nodes and elements local numbering
+    if(aMeshDS->myNodeNormals.isEmpty()) aMeshDS->computeNormalAtNodes();
+    if(aMeshDS->myBoundaryPoints.isEmpty()) aMeshDS->computeFreeMeshSegments();
+    cout<<"____number of boundary points: "<<aMeshDS->myBoundaryPoints.length()<<"____"<<endl;
+
+    //! --------------------
+    //! scan the mesh nodes
+    //! --------------------
+    TColStd_MapIteratorOfPackedMapOfInteger it(aMeshDS->GetAllNodes());
+    int NbMeshNodes = aMeshDS->GetAllNodes().Extent();
+    for(int localNodeID = 1; localNodeID<=NbMeshNodes; localNodeID++, it.Next())
+    {
+        int globalNodeID = it.Key();
+
+        cout<<" ***************************************"<<endl;
+        cout<<"  computing angle deficit @ nodeID: "<<globalNodeID<<endl;
+
+        const QList<int> &attachedElements_local = aMeshDS->myNodeToElements.value(localNodeID);
+        int NbAttachedElements = attachedElements_local.length();
+
+        cout<<"  attached elements: "<<NbAttachedElements<<endl;
+        cout<<" ***************************************"<<endl;
+
+        std::set<int> surroundingNodes_global;
+        for(int n = 0; n<NbAttachedElements; n++)
+        {
+            int localElementID_attached = attachedElements_local[n];
+            int globalElementID_attached = aMeshDS->myElementsMap.FindKey(localElementID_attached);
+            int buf[20], NbElementNodes;
+            TColStd_Array1OfInteger nodeIDs(*buf,1,20);
+            aMeshDS->GetNodesByElement(globalElementID_attached,nodeIDs,NbElementNodes);
+            for(int i=1; i<=NbElementNodes; i++)
+                surroundingNodes_global.insert(nodeIDs(i));
+        }
+        for(std::set<int>::iterator it = surroundingNodes_global.begin(); it !=surroundingNodes_global.end(); it++)
+            cout<<"*____node ID: "<<*it<<"____"<<endl;
+
+        //! -----------------------------------------------
+        //! discard the "globalNodeID" - center of the fan
+        //! -----------------------------------------------
+        std::set<int>::iterator it__ = surroundingNodes_global.find(globalNodeID);
+        if(it__==surroundingNodes_global.end()) exit(20);       // questo non deve mai capitare
+        surroundingNodes_global.erase(it__);
+
+
+        for(std::set<int>::iterator it = surroundingNodes_global.begin(); it !=surroundingNodes_global.end(); it++)
+            cout<<"*____node ID: "<<*it<<"____"<<endl;
+
+
+        //! ---------------------------
+        //! center of the triangle fan
+        //! ---------------------------
+        int NbNodes_;
+        double bufd[3];
+        TColStd_Array1OfReal coords(*bufd,1,3);
+        MeshVS_EntityType aType;
+        aMeshDS->GetGeom(globalNodeID,false,coords,NbNodes_,aType);     // center of the triangle fan
+        double xP = coords(1);
+        double yP = coords(2);
+        double zP = coords(3);
+
+        //! ------------------------------
+        //! convert the set into a vector
+        //! ------------------------------
+        std::vector<int> vecOfSurroundingNodes;
+        for(std::set<int>::iterator it_ = surroundingNodes_global.begin(); it_ != surroundingNodes_global.end(); it_++)
+        {
+            cout<<"____surrounding nodes: "<<*it_<<"____"<<endl;
+            vecOfSurroundingNodes.push_back(*it_);
+        }
+
+        //! ---------------------------------------------------
+        //! first point of the vector (first surrounding node)
+        //! ---------------------------------------------------
+        aMeshDS->GetGeom(vecOfSurroundingNodes[0],false,coords,NbNodes_,aType);
+        double xP0 = coords(1);
+        double yP0 = coords(2);
+        double zP0 = coords(3);
+
+        double vecstartx = xP0-xP;
+        double vecstarty = yP0-yP;
+        double vecstartz = zP0-zP;
+
+        //! -----------------------------------------------------------
+        //! vector for the orientation: the normal at the current node
+        //! -----------------------------------------------------------
+        QList<double> nodeNormal;
+        aMeshDS->myNodeNormals.value(globalNodeID,nodeNormal);
+        double nx = nodeNormal[0];
+        double ny = nodeNormal[1];
+        double nz = nodeNormal[2];
+
+        std::map<double,int> angleMap;
+        angleMap.insert(std::make_pair(0.0,vecOfSurroundingNodes[0]));
+
+        double lP0P = sqrt(pow((xP0-xP),2)+pow((yP0-yP),2)+pow((zP0-zP),2));
+        size_t Nb = vecOfSurroundingNodes.size();
+        for(int i = 1; i<Nb; i++)
+        {
+            aMeshDS->GetGeom(vecOfSurroundingNodes[i],false,coords,NbNodes_,aType);
+            double xPi = coords(1);
+            double yPi = coords(2);
+            double zPi = coords(3);
+
+            double lP1P = sqrt(pow((xPi-xP),2)+pow((yPi-yP),2)+pow((zPi-zP),2));
+            double dot = (xP0-xP)*(xPi-xP)+(yP0-yP)*(yPi-yP)+(zP0-zP)*(zPi-zP);
+            dot /= lP0P*lP1P;
+
+            if(dot<-1) dot = -1;
+            if(dot>1) dot = 1;
+            double angle = std::acos(dot);
+
+            //! ----------------------------------
+            //! i           j           k
+            //! vecstartx   vecstarty   vecstartz
+            //! vecx        vecy        vecz
+            //! ----------------------------------
+            double vecx = xPi-xP;
+            double vecy = yPi-yP;
+            double vecz = zPi-zP;
+
+            double crossx = vecstarty*vecz-vecstartz*vecy;
+            double crossy = vecstartz*vecx-vecstartx*vecz;
+            double crossz = vecstartx*vecy-vecstarty*vecx;
+
+            double flag = crossx*nx+crossy*ny+crossz*nz;
+            if(flag < 0) angle = 2*PI - angle;
+            angleMap.insert(std::make_pair(angle,vecOfSurroundingNodes[i]));
+        }
+
+        //std::vector<int> reordererArray { globalNodeID };
+        std::vector<int> reordererArray;
+        for(std::map<double,int>::iterator it = angleMap.begin(); it!=angleMap.end(); it++)
+        {
+            int globalNodeID_ = it->second;
+            double angle = it->first;
+            reordererArray.push_back(globalNodeID_);
+            cout<<"____inserting nodes: "<<globalNodeID_<<" angle: "<<angle*180/PI<<" into the support map____"<<endl;
+        }
+
+        size_t N = reordererArray.size();
+
+        for(int i=0; i<N; i++) cout<<"____reordered array: "<<reordererArray[i]<<"____"<<endl;
+
+        double angleDefect = 0;
+        for(int i=0; i<N; i++)
+        {
+            int i1 = i%N;
+            aMeshDS->GetGeom(vecOfSurroundingNodes[i1],false,coords,NbNodes_,aType);
+            double xi = coords(1);
+            double yi = coords(2);
+            double zi = coords(3);
+
+            int i2 = (i+1)%N;
+            aMeshDS->GetGeom(vecOfSurroundingNodes[i2],false,coords,NbNodes_,aType);
+            double xii = coords(1);
+            double yii = coords(2);
+            double zii = coords(3);
+
+            double dot = (xii-xP)*(xi-xP)+(yii-yP)*(yi-yP)+(zii-zP)*(zi-zP);
+            double li = sqrt(pow((xi-xP),2)+pow((yi-yP),2)+pow((zi-zP),2));
+            double lii = sqrt(pow((xii-xP),2)+pow((yii-yP),2)+pow((zii-zP),2));
+            dot /= li*lii;
+            if(dot<-1) dot = -1;
+            if(dot>1) dot = 1;
+
+            angleDefect += std::acos(dot);
+        }
+        angleDefect = 2*PI-angleDefect;
+        if(aMeshDS->myBoundaryPoints.contains(globalNodeID)) angleDefect = PI-angleDefect;
+        cout<<"____(nodeID, angleDeficit) = ("<<globalNodeID<<", "<<angleDefect*180/PI<<")____"<<endl;
+        mapOfAngleDefect.insert(std::make_pair(globalNodeID,angleDefect));
+    }
+}

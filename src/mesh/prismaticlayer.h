@@ -1,5 +1,6 @@
 #ifndef PRISMATICLAYER_H
 #define PRISMATICLAYER_H
+
 //! ------------------------------------------------------------
 //! Definition:
 //! "prismatic face" is a face that will undergo mesh inflation
@@ -279,6 +280,13 @@ private:
                           mesh::meshPoint &B,
                           mesh::meshPoint &C,
                           mesh::meshPoint &P);
+
+    double angleBetweenNonAdjacent(const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS, int globalNodeID,int element1, int elements);
+
+    //! ----------------------
+    //! polyhedral cone angle
+    //! ----------------------
+    void polyhedralConeAngle(std::vector<mesh::meshPoint> &vecPoints, const mesh::meshPoint &P, double &omega, double &coneAngle);
 
     //! --------------------------------------------------
     //! enable/disable the progress indicator stop button

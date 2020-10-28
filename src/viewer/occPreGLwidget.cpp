@@ -3299,7 +3299,6 @@ void occPreGLWidget::displayCurvatureMap()
 {
     cout<<"occPreGLWidget::displayCurvatureMap()->____function called____"<<endl;
     this->hideAllMeshes();
-
     occContext->InitSelected();
     if(occContext->MoreSelected())
     {
@@ -3344,23 +3343,27 @@ void occPreGLWidget::displayCurvatureMap()
         occHandle(Ng_MeshVS_DataSourceFace) summedDS = new Ng_MeshVS_DataSourceFace(faceMeshDSlist);
 
         occHandle(MeshVS_Mesh) coloredMesh;
-        int mode = 1;   //! Gaussian curvature
-        summedDS->computeDiscreteCurvature(mode);
+        //int mode = 1;   //! Gaussian curvature
+        //summedDS->computeDiscreteCurvature(mode);
+        //std::map<int,double> curvatureData; //! patch: convert QMap<int,int> into std::map<int,int>
+        //for(QMap<int,double>::iterator it = summedDS->myCurvature.begin(); it != summedDS->myCurvature.end(); it++)
+        //    curvatureData.insert(std::make_pair(it.key(),it.value()));
+        //MeshTools::buildColoredMesh(summedDS,curvatureData,coloredMesh,0,6.28,10,true);
 
-        //! patch: convert QMap<int,int> into std::map<int,int>
-        std::map<int,double> curvatureData;
-        for(QMap<int,double>::iterator it = summedDS->myCurvature.begin(); it != summedDS->myCurvature.end(); it++)
-        {
-            curvatureData.insert(std::make_pair(it.key(),it.value()));
-        }
-        MeshTools::buildColoredMesh(summedDS,curvatureData,coloredMesh,0,6.28,10,true);
+        std::map<int,double> mapOfAngleDeficit;
+        MeshTools::computeAngleDefectMap(summedDS,mapOfAngleDeficit);
+        MeshTools::buildColoredMesh(summedDS,mapOfAngleDeficit,coloredMesh,0,6.28,10,true);
 
-        FILE *fp = fopen("D:/curvature.txt","w");
-        for(std::map<int,double>::iterator it = curvatureData.begin(); it!=curvatureData.end(); it++)
+        //FILE *fp = fopen("D:/curvature.txt","w");
+        FILE *fp = fopen("D:/angleDeficit.txt","w");
+
+        for(std::map<int,double>::iterator it = mapOfAngleDeficit.begin(); it!=mapOfAngleDeficit.end(); it++)
+        //for(std::map<int,double>::iterator it = curvatureData.begin(); it!=curvatureData.end(); it++)
         {
-            fprintf(fp,"%d\t%lf\n",it->first,it->second);
+            fprintf(fp,"%d\t%lf\n",it->first,180*(1/3.1415926538)*it->second);
         }
         fclose(fp);
+
         occMeshContext->Display(coloredMesh,false);
         occMeshContext->UpdateCurrentViewer();
     }

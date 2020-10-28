@@ -1321,209 +1321,6 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const QList<mesh::meshPoint> 
     this->buildElementsTopology();
 }
 
-//! ---------------------------------------------
-//! function: compute normal at nodes
-//! details:  compute an average normal at nodes
-//! ---------------------------------------------
-#ifndef LIBIGLNORMAL
-
-void Ng_MeshVS_DataSourceFace::computeNormalAtNodes()
-{
-    //cout<<"Ng_MeshVS_DataSourceFace::computeNormalAtNodes()->____function called____"<<endl;
-
-    //! ---------------------------------------------
-    //! tolerance for normal comparisons: <n> degrees
-    //! ---------------------------------------------
-    const double tolerance = (10.0/180.0)*3.141592654;
-
-    //! ---------------------------------------
-    //! key: node number
-    //! value: normal of the attached elements
-    //! ---------------------------------------
-    QMap<int,QList<mesh::elementNormal>> nodeNormals;
-    for(TColStd_MapIteratorOfPackedMapOfInteger eIt(myElements);eIt.More();eIt.Next())
-    {
-        int globalElementID = eIt.Key();
-        int localElementID = myElementsMap.FindIndex(globalElementID);
-
-        //! -------------------
-        //! the element normal
-        //! -------------------
-        double ne_x = myElemNormals->Value(localElementID,1);
-        double ne_y = myElemNormals->Value(localElementID,2);
-        double ne_z = myElemNormals->Value(localElementID,3);
-
-        mesh::elementNormal anElementNormal(ne_x,ne_y,ne_z,tolerance);
-        switch(myElemType->Value(localElementID))
-        {
-        case TRIG:
-        {
-            for(int col=1; col<=3; col++)
-            {
-                int globalNodeID = myElemNodes->Value(localElementID,col);
-                //int localNodeID = myNodesMap.FindIndex(globalNodeID);
-
-                //! ---------------------------------------------------------
-                //! build the map "nodeNormals" using the global node number
-                //! ---------------------------------------------------------
-                if(!nodeNormals.contains(globalNodeID))
-                {
-                    QList<mesh::elementNormal> normalList;
-                    normalList<<anElementNormal;
-                    nodeNormals.insert(globalNodeID,normalList);
-                }
-                else
-                {
-                    QList<mesh::elementNormal> normalList = nodeNormals[globalNodeID];
-                    normalList<<anElementNormal;
-                    nodeNormals.insert(globalNodeID,normalList);
-                }
-            }
-        }
-            break;
-        }
-    }
-
-    //! -----------------------------
-    //! average the normals at nodes
-    //! -----------------------------
-    for(QMap<int,QList<mesh::elementNormal>>::iterator it = nodeNormals.begin(); it!=nodeNormals.end(); it++)
-    {
-        int globalNodeID = it.key();
-        QList<mesh::elementNormal> nodalNormals = it.value();
-        std::set<mesh::elementNormal> setOfNodeNormals;
-
-        //! -----------------------------------------------------------------------------
-        //! use the insertion into a set for eliminating almost equally directed normals
-        //! -----------------------------------------------------------------------------
-        for(int j=0; j<nodalNormals.length(); j++)
-        {
-            setOfNodeNormals.insert(nodalNormals.at(j));
-        }
-        double ntotx = 0; double ntoty = 0; double ntotz = 0;
-        for(std::set<mesh::elementNormal>::iterator it = setOfNodeNormals.begin(); it!=setOfNodeNormals.end(); it++)
-        {
-            ntotx += (*it).nx;
-            ntoty += (*it).ny;
-            ntotz += (*it).nz;
-            //cout<<"____("<<ntotx<<", "<<ntoty<<", "<<ntotz<<")____"<<endl;
-        }
-        //! -------------------
-        //! average the normal
-        //! -------------------
-        int NbNormals = int(setOfNodeNormals.size());
-        ntotx /= NbNormals;
-        ntoty /= NbNormals;
-        ntotz /= NbNormals;
-        double l = sqrt(ntotx*ntotx+ntoty*ntoty+ntotz*ntotz);
-        if(l>1e-9)
-        {
-            ntotx /= l;
-            ntoty /= l;
-            ntotz /= l;
-        }
-        else { ntotx = ntoty = ntotz = 0.0; }
-        QList<double> aveNormal {ntotx, ntoty, ntotz};
-        myNodeNormals.insert(globalNodeID, aveNormal);
-    }
-
-    //! -----------------------------------------------------------------------------------
-    //! the old version included the calculation of the node to elements connectivity
-    //! for compatibility the new function computeNodeToElementsConnectivity is called here
-    //! -----------------------------------------------------------------------------------
-    this->computeNodeToElementsConnectivity();
-}
-#endif
-
-#ifdef LIBIGLNORMAL
-void Ng_MeshVS_DataSourceFace::computeNormalAtNodes()
-{
-    cout<<"Ng_MeshVS_DataSourceFace::computeNormalAtNodes()->____function called with igl library____"<<endl;
-
-    //! -----------------------------
-    //! node to element connectivity
-    //! -----------------------------
-    QMultiMap<int,int> nodeToElements;
-    TColStd_MapIteratorOfPackedMapOfInteger eIt;
-    for(eIt.Initialize(myElements);eIt.More();eIt.Next())
-    {
-        int localElementID = myElementsMap.FindIndex(eIt.Key());
-        //cout<<"____local el id: "<<localElementID<<endl;
-        switch(myElemType->Value(localElementID))
-        {
-        case TRIG:
-        {
-            for(int col=1; col<=3; col++)
-            {
-                int globalNodeID = myElemNodes->Value(localElementID,col);
-                int localNodeID = myNodesMap.FindIndex(globalNodeID);
-                //! ---------------------------------------------------
-                //! a choice for defining node to element connectivity
-                //! using local numbering or global numbering
-                //! ---------------------------------------------------
-                nodeToElements.insert(localNodeID,localElementID);
-           }
-        }
-            break;
-
-        default:
-        {
-            //! other elements
-        }
-            break;
-        }
-    }
-
-    //! -----------------------------------------------
-    //! re-organize node to element connectivity info
-    //! the "nodeNumber" can be local or global
-    //! according to the previous choice
-    //! Here the key is the local node ID and the
-    //! value is a list of local element IDs
-    //! ----------------------------------------------
-    QList<int> keys = nodeToElements.keys();
-    int curKey_old = -1;
-    for(int i=0; i<keys.length(); i++)
-    {
-        int curKey = keys.at(i);
-        if(curKey==curKey_old) continue;
-        curKey_old = curKey;
-
-        //! ---------------------------------------------------------
-        //! retrieve from the QMultiMap the list of surface elements
-        //! associated to the current key (current node)
-        //! ---------------------------------------------------------
-        QList<int> elementNumbers = nodeToElements.values(curKey);
-        myNodeToElements.insert(curKey,elementNumbers);
-    }
-
-    //! -----------------------------
-    //! compute the normals at nodes
-    //! -----------------------------
-    Eigen::MatrixXd V, N;
-    Eigen::MatrixXi F;
-
-    //! -----------------------------------------
-    //! convert the current mesh into Eigen form
-    //! -----------------------------------------
-    iglTools::OCCMeshToIglMesh(this,V,F);
-    igl::per_vertex_normals(V,F,N);
-
-    for(int i=0; i<N.rows(); i++)
-    {
-        double nx = N(i,0);
-        double ny = N(i,1);
-        double nz = N(i,2);
-
-        QList<double> normal;
-        normal<<nx<<ny<<nz;
-        int localNodeID = i+1;
-        int globalNodeID = this->myNodesMap.FindKey(localNodeID);
-        myNodeNormals.insert(globalNodeID,normal);
-    }
-}
-#endif
-
 //! ------------------------------------------------------------------------
 //! function: computeFreeMeshSegments
 //! details:  retrieve the mesh points on the 1D boundary of the face mesh
@@ -5295,3 +5092,368 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const occHandle(Ng_MeshVS_Dat
     //! ------------------
     this->buildElementsTopology();
 }
+
+//! ---------------------------------------------
+//! function: compute normal at nodes
+//! details:  compute an average normal at nodes
+//! ---------------------------------------------
+void Ng_MeshVS_DataSourceFace::computeNormalAtNodes()
+{
+    cout<<"Ng_MeshVS_DataSourceFace::computeNormalAtNodes()->____function called____"<<endl;
+
+    //! -----------------------------
+    //! node to element connectivity
+    //! -----------------------------
+    this->computeNodeToElementsConnectivity();
+
+    const double PI = 3.14159236538;
+    const double limit = 1.0*PI/180;
+    const double b = 0.5;   // relaxation
+    int localNodeID = 0;
+    for(TColStd_MapIteratorOfPackedMapOfInteger it(myNodes); it.More(); it.Next())
+    {
+        localNodeID++;
+        int globalNodeID = it.Key();
+        cout<<"____nodeID("<<localNodeID<<", "<<globalNodeID<<")____"<<endl;
+
+        const QList<int> &attachedElementsLocalIDs = myNodeToElements.value(localNodeID);
+        int N = attachedElementsLocalIDs.length();
+        std::vector<int> surroundingElementsGlobalIDs;  // same information using global numbering
+
+        //! -----------------------
+        //! initialize the weights
+        //! -----------------------
+        std::vector<double> wg;
+        for(int n=0; n<N; n++)
+        {
+            wg.push_back(1.0/N);
+
+            int curLocalElementID = attachedElementsLocalIDs[n];
+            int curGlobalElementID = this->myElementsMap.FindKey(curLocalElementID);
+            surroundingElementsGlobalIDs.push_back(curGlobalElementID);
+            //cout<<"____surrounding element: "<<curGlobalElementID<<"____"<<endl;
+        }
+
+        //! -----------------------------
+        //! initial guess for the normal
+        //! -----------------------------
+        double NP[3] {0,0,0}, NPnew[3] {0,0,0}, NPcorrection[3] {0,0,0};
+        for(int n=0; n<N; n++)
+        {
+            int curGlobalElementID = surroundingElementsGlobalIDs[n];
+            double cnx, cny, cnz;
+            this->GetNormal(curGlobalElementID,10,cnx,cny,cnz);
+            double w = wg[n];
+            NP[0] += w*cnx;
+            NP[1] += w*cny;
+            NP[2] += w*cnz;
+        }
+        double norm = sqrt(NP[0]*NP[0]+NP[1]*NP[1]+NP[2]*NP[2]);
+        NP[0] /= norm;
+        NP[1] /= norm;
+        NP[2] /= norm;
+
+        cout<<"***************************************************"<<endl;
+        cout<<" Initial normal ("<<NP[0]<<", "<<NP[1]<<", "<<NP[2]<<")"<<endl;
+
+        const int NMaxSteps = 1000;
+        double dotErr = 1e10;
+        double angleErr = 1e10;
+        int step = 0;
+        for(step =1; step<=NMaxSteps; step++)
+        {
+            std::vector<double> alpha;
+            double alphaSum = 0;
+            for(int i=0; i<N; i++)
+            {
+                int curGlobalElementID = surroundingElementsGlobalIDs[i];
+                double nx_i, ny_i, nz_i;
+                this->GetNormal(curGlobalElementID,10,nx_i,ny_i,nz_i);
+                double dot = nx_i*NP[0]+ny_i*NP[1]+nz_i*NP[2];
+                dot /= sqrt(nx_i*nx_i+ny_i*ny_i+nz_i*nz_i)*sqrt(pow(NP[0],2)+pow(NP[1],2)+pow(NP[2],2));
+                //cout<<"____dot: "<<dot<<"____"<<endl;
+                if(dot<-1) dot = -1;
+                if(dot>1) dot = 1;
+                double curAlpha = std::acos(dot);
+                //cout<<"____curAlpha: "<<curAlpha<<"____"<<endl;
+                alpha.push_back(curAlpha);
+                alphaSum += curAlpha;
+            }
+
+            if(fabs(alphaSum/N)<=0.01745329)    // 1 degree
+            {
+                cout<<" => this is a flat node <="<<endl;
+                break;
+            }
+
+            //! ------------------------
+            //! compute the new weights
+            //! ------------------------
+            double sumOfWeights = 0;
+            for(int i=0; i<N; i++)
+            {
+                wg[i] += alpha[i]/alphaSum;
+                sumOfWeights += wg[i];
+            }
+
+            //if(sumOfWeights==0) exit(2);        // should never occur
+
+            //! ----------------------
+            //! normalize the weights
+            //! ----------------------
+            for(int i=0; i<N; i++) wg[i] /= sumOfWeights;
+
+            //! -----------------------------------
+            //! compute a new normal approximation
+            //! -----------------------------------
+            double Sx, Sy, Sz;
+            Sx = Sy = Sz = 0;
+            for(int i=0; i<N; i++)
+            {
+                int curGlobalElementID = surroundingElementsGlobalIDs[i];
+                double nx_i, ny_i, nz_i;
+                this->GetNormal(curGlobalElementID,10,nx_i,ny_i,nz_i);
+                double w_i = wg[i];
+                Sx += w_i*nx_i;
+                Sy += w_i*ny_i;
+                Sz += w_i*nz_i;
+            }
+            double normS = sqrt(Sx*Sx+Sy*Sy+Sz*Sz);
+
+            if(normS==0) exit(2);               // should never occur
+
+            NPcorrection[0] = Sx/normS;
+            NPcorrection[1] = Sy/normS;
+            NPcorrection[2] = Sz/normS;
+
+            NPnew[0] = b*NPcorrection[0] + (1-b)*NP[0];
+            NPnew[1] = b*NPcorrection[1] + (1-b)*NP[1];
+            NPnew[2] = b*NPcorrection[2] + (1-b)*NP[2];
+
+            double lNpNew = sqrt(pow(NPnew[0],2)+pow(NPnew[1],2)+pow(NPnew[2],2));
+            NPnew[0] /= lNpNew;
+            NPnew[1] /= lNpNew;
+            NPnew[2] /= lNpNew;
+
+            dotErr = NPnew[0]*NP[0]+NPnew[1]*NP[1]+NPnew[2]*NP[2];
+            dotErr /= sqrt(pow(NPnew[0],2)+pow(NPnew[1],2)+pow(NPnew[2],2))*sqrt(pow(NP[0],2)+pow(NP[1],2)+pow(NP[2],2));
+
+            NP[0] = NPnew[0];
+            NP[1] = NPnew[1];
+            NP[2] = NPnew[2];
+
+            if(dotErr<-1) dotErr = -1;
+            if(dotErr> 1) dotErr = 1;
+            angleErr = std::acos(dotErr);
+            if(angleErr<=limit) break;
+            //if(fabs(angleErr)>=0.99984769) break;
+        }
+        QList<double> aNormal { NP[0],NP[1],NP[2] };
+        myNodeNormals.insert(globalNodeID,aNormal);
+
+        cout<<" Final normal   ("<<NP[0]<<", "<<NP[1]<<", "<<NP[2]<<")"<<endl;
+        cout<<" angle: "<<angleErr*180.0/PI<<endl;
+        cout<<" number of steps: "<<step<<endl;
+        cout<<"***************************************************"<<endl;
+    }
+}
+
+/*
+#ifndef LIBIGLNORMAL
+void Ng_MeshVS_DataSourceFace::computeNormalAtNodes()
+{
+    //cout<<"Ng_MeshVS_DataSourceFace::computeNormalAtNodes()->____function called____"<<endl;
+
+    //! ---------------------------------------------
+    //! tolerance for normal comparisons: <n> degrees
+    //! ---------------------------------------------
+    const double tolerance = (10.0/180.0)*3.141592654;
+
+    //! ---------------------------------------
+    //! key: node number
+    //! value: normal of the attached elements
+    //! ---------------------------------------
+    QMap<int,QList<mesh::elementNormal>> nodeNormals;
+    for(TColStd_MapIteratorOfPackedMapOfInteger eIt(myElements);eIt.More();eIt.Next())
+    {
+        int globalElementID = eIt.Key();
+        int localElementID = myElementsMap.FindIndex(globalElementID);
+
+        //! -------------------
+        //! the element normal
+        //! -------------------
+        double ne_x = myElemNormals->Value(localElementID,1);
+        double ne_y = myElemNormals->Value(localElementID,2);
+        double ne_z = myElemNormals->Value(localElementID,3);
+
+        mesh::elementNormal anElementNormal(ne_x,ne_y,ne_z,tolerance);
+        switch(myElemType->Value(localElementID))
+        {
+        case TRIG:
+        {
+            for(int col=1; col<=3; col++)
+            {
+                int globalNodeID = myElemNodes->Value(localElementID,col);
+                //int localNodeID = myNodesMap.FindIndex(globalNodeID);
+
+                //! ---------------------------------------------------------
+                //! build the map "nodeNormals" using the global node number
+                //! ---------------------------------------------------------
+                if(!nodeNormals.contains(globalNodeID))
+                {
+                    QList<mesh::elementNormal> normalList;
+                    normalList<<anElementNormal;
+                    nodeNormals.insert(globalNodeID,normalList);
+                }
+                else
+                {
+                    QList<mesh::elementNormal> normalList = nodeNormals[globalNodeID];
+                    normalList<<anElementNormal;
+                    nodeNormals.insert(globalNodeID,normalList);
+                }
+            }
+        }
+            break;
+        }
+    }
+
+    //! -----------------------------
+    //! average the normals at nodes
+    //! -----------------------------
+    for(QMap<int,QList<mesh::elementNormal>>::iterator it = nodeNormals.begin(); it!=nodeNormals.end(); it++)
+    {
+        int globalNodeID = it.key();
+        QList<mesh::elementNormal> nodalNormals = it.value();
+        std::set<mesh::elementNormal> setOfNodeNormals;
+
+        //! -----------------------------------------------------------------------------
+        //! use the insertion into a set for eliminating almost equally directed normals
+        //! -----------------------------------------------------------------------------
+        for(int j=0; j<nodalNormals.length(); j++)
+        {
+            setOfNodeNormals.insert(nodalNormals.at(j));
+        }
+        double ntotx = 0; double ntoty = 0; double ntotz = 0;
+        for(std::set<mesh::elementNormal>::iterator it = setOfNodeNormals.begin(); it!=setOfNodeNormals.end(); it++)
+        {
+            ntotx += (*it).nx;
+            ntoty += (*it).ny;
+            ntotz += (*it).nz;
+            //cout<<"____("<<ntotx<<", "<<ntoty<<", "<<ntotz<<")____"<<endl;
+        }
+        //! -------------------
+        //! average the normal
+        //! -------------------
+        int NbNormals = int(setOfNodeNormals.size());
+        ntotx /= NbNormals;
+        ntoty /= NbNormals;
+        ntotz /= NbNormals;
+        double l = sqrt(ntotx*ntotx+ntoty*ntoty+ntotz*ntotz);
+        if(l>1e-9)
+        {
+            ntotx /= l;
+            ntoty /= l;
+            ntotz /= l;
+        }
+        else { ntotx = ntoty = ntotz = 0.0; }
+        QList<double> aveNormal {ntotx, ntoty, ntotz};
+        myNodeNormals.insert(globalNodeID, aveNormal);
+    }
+
+    //! -----------------------------------------------------------------------------------
+    //! the old version included the calculation of the node to elements connectivity
+    //! for compatibility the new function computeNodeToElementsConnectivity is called here
+    //! -----------------------------------------------------------------------------------
+    this->computeNodeToElementsConnectivity();
+}
+#endif
+
+#ifdef LIBIGLNORMAL
+void Ng_MeshVS_DataSourceFace::computeNormalAtNodes()
+{
+    cout<<"Ng_MeshVS_DataSourceFace::computeNormalAtNodes()->____function called with igl library____"<<endl;
+
+    //! -----------------------------
+    //! node to element connectivity
+    //! -----------------------------
+    QMultiMap<int,int> nodeToElements;
+    TColStd_MapIteratorOfPackedMapOfInteger eIt;
+    for(eIt.Initialize(myElements);eIt.More();eIt.Next())
+    {
+        int localElementID = myElementsMap.FindIndex(eIt.Key());
+        //cout<<"____local el id: "<<localElementID<<endl;
+        switch(myElemType->Value(localElementID))
+        {
+        case TRIG:
+        {
+            for(int col=1; col<=3; col++)
+            {
+                int globalNodeID = myElemNodes->Value(localElementID,col);
+                int localNodeID = myNodesMap.FindIndex(globalNodeID);
+                //! ---------------------------------------------------
+                //! a choice for defining node to element connectivity
+                //! using local numbering or global numbering
+                //! ---------------------------------------------------
+                nodeToElements.insert(localNodeID,localElementID);
+           }
+        }
+            break;
+
+        default:
+        {
+            //! other elements
+        }
+            break;
+        }
+    }
+
+    //! -----------------------------------------------
+    //! re-organize node to element connectivity info
+    //! the "nodeNumber" can be local or global
+    //! according to the previous choice
+    //! Here the key is the local node ID and the
+    //! value is a list of local element IDs
+    //! ----------------------------------------------
+    QList<int> keys = nodeToElements.keys();
+    int curKey_old = -1;
+    for(int i=0; i<keys.length(); i++)
+    {
+        int curKey = keys.at(i);
+        if(curKey==curKey_old) continue;
+        curKey_old = curKey;
+
+        //! ---------------------------------------------------------
+        //! retrieve from the QMultiMap the list of surface elements
+        //! associated to the current key (current node)
+        //! ---------------------------------------------------------
+        QList<int> elementNumbers = nodeToElements.values(curKey);
+        myNodeToElements.insert(curKey,elementNumbers);
+    }
+
+    //! -----------------------------
+    //! compute the normals at nodes
+    //! -----------------------------
+    Eigen::MatrixXd V, N;
+    Eigen::MatrixXi F;
+
+    //! -----------------------------------------
+    //! convert the current mesh into Eigen form
+    //! -----------------------------------------
+    iglTools::OCCMeshToIglMesh(this,V,F);
+    igl::per_vertex_normals(V,F,N);
+
+    for(int i=0; i<N.rows(); i++)
+    {
+        double nx = N(i,0);
+        double ny = N(i,1);
+        double nz = N(i,2);
+
+        QList<double> normal;
+        normal<<nx<<ny<<nz;
+        int localNodeID = i+1;
+        int globalNodeID = this->myNodesMap.FindKey(localNodeID);
+        myNodeNormals.insert(globalNodeID,normal);
+    }
+}
+#endif
+*/
