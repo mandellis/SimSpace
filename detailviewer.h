@@ -228,10 +228,10 @@ private slots:
     void handleRemotePointChangedByLocation();
     void handleRemotePointSystemOfReferenceChanged();
 
-    void handleMeshMethodChanged();
-    void handleMeshDefeaturingChanged();
-    void handleMeshSimplificationChanged();
-    void handleMeshSimplificationByChanged();
+    //void handleMeshDefeaturingChanged();
+    //void handleMeshSimplificationChanged();
+    //void handleMeshSimplificationByChanged();
+    //void handleMeshMethodChanged();
 
     //! -----------------
     //! prismatic layers
@@ -239,7 +239,7 @@ private slots:
     void handlePrismaticLayerOptions();
     void handleBoundaryScopingMethodChanged();
     void updateBoudaryTags();
-
+/*
     //! ------------
     //! mesh method
     //! ------------
@@ -248,7 +248,7 @@ private slots:
     void handleSimplificationFlagChanged();
     void handleVolumeMesherChanged();
     void handleTessellatorChanged();
-
+*/
     //! ---------------------------
     //! geometry importing options
     //! ---------------------------
@@ -296,6 +296,18 @@ public slots:
     void handleCouplingChanged();
     void handleColorBoxScaleChanged();
 
+    //! ------------
+    //! mesh method
+    //! ------------
+    void handleBRepFlagChanged();
+    void handleDefeaturingFlagChanged();
+    void handleSimplificationFlagChanged();
+    void handleVolumeMesherChanged();
+    void handleTessellatorChanged();
+    void handleMeshDefeaturingChanged();
+    void handleMeshSimplificationChanged();
+    void handleMeshSimplificationByChanged();
+    void handleMeshMethodChanged();
     //! -----------------------
     //! "By" time/step-substep
     //! -----------------------

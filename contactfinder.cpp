@@ -38,7 +38,8 @@
 #include <NCollection_Array1.hxx>
 #include <Bnd_Box.hxx>
 #include <BRepBndLib.hxx>
-
+#include <TopoDS_Face.hxx>
+#include <TopAbs.hxx>
 //! ---
 //! Qt
 //! ---
@@ -396,7 +397,6 @@ bool contactFinder::perform(const std::vector<std::pair<GeometryTag,GeometryTag>
             aMasterTag.parentShapeNr = masterBodyIndex;
             aMasterTag.subTopNr = apair.first;
             aMasterTag.subShapeType = TopAbs_FACE;
-
             tagsMaster.push_back(aMasterTag);
 
             GeometryTag aSlaveTag;
@@ -1336,10 +1336,10 @@ void contactFinder::groupBy(const std::vector<std::pair<std::vector<GeometryTag>
         //! ----------------------------------------
         std::map<int,std::vector<int>> supportMap;
         int Nb = int(allContactsPairs.size());
+
         for(int i=0; i<Nb; i++)
         {
             std::pair<std::vector<GeometryTag>,std::vector<GeometryTag>> aContact = allContactsPairs[i];
-
             //! ----------------------------------------------------------------
             //! by definition the "masterTags" vector contains only one element
             //! ----------------------------------------------------------------
@@ -1361,6 +1361,7 @@ void contactFinder::groupBy(const std::vector<std::pair<std::vector<GeometryTag>
 
         for(std::map<int,std::vector<int>>::iterator it = supportMap.begin(); it!=supportMap.end(); it++)
         {
+
             std::vector<int> listOfIndexOfContactPairs = (*it).second;
             std::vector<GeometryTag> masterTags, slaveTags;
             for(int k=0; k<listOfIndexOfContactPairs.size(); k++)
@@ -1370,7 +1371,6 @@ void contactFinder::groupBy(const std::vector<std::pair<std::vector<GeometryTag>
                 masterTags.insert(masterTags.end(),apair.first.begin(),apair.first.end());
                 slaveTags.insert(slaveTags.end(),apair.second.begin(),apair.second.end());
             }
-
             if(masterTags.size()==0) { cerr<<"____EMPTY MASTER TAGS____"<<endl; exit(1); }
             if(slaveTags.size()==0) { cerr<<"____EMPTY SLAVE TAGS____"<<endl; exit(2); }
 
