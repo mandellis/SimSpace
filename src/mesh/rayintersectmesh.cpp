@@ -92,7 +92,7 @@ bool rayIntersectMesh::planeMeshIntersection(occHandle(Ng_MeshVS_DataSourceFace)
             v1 = aSegment.v1; v2 = aSegment.v2;
             return *this;
         }
-        void sort() { if(v2<v1) { int x=v1; v2=v1; v1=x; } }
+        void sort() { if(v2<v1) { int x=v2; v2=v1; v1=x; } }
         bool operator < (const segment &aSegment) const
         {
             //sort the node IDs of the segments
@@ -138,7 +138,7 @@ bool rayIntersectMesh::planeMeshIntersection(occHandle(Ng_MeshVS_DataSourceFace)
         double c = myDirection[2];
         double d = -a*myOrigin[0]-b*myOrigin[1]-c*myOrigin[2];
         bool intersect = polygon::testPolygonPlaneIntersection(aCloud,a,b,c,d);
-        if(!intersect) continue;
+        if(intersect == false) continue;
 
         //! ---------------
         //! scan the faces

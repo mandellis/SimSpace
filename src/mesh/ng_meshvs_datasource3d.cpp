@@ -2544,20 +2544,17 @@ void Ng_MeshVS_DataSource3D::buildCCXFaceToElementConnectivity(std::map<meshElem
 //!           the key of the input map should be the global element ID
 //!           update normals at elements, at nodes, and 1D boundary
 //! -------------------------------------------------------------------
-void Ng_MeshVS_DataSource3D::displaceMySelf(const QMap<int, gp_Vec> &displacementField)
+void Ng_MeshVS_DataSource3D::displaceMySelf(const QMap<int, QList<double>> &displacementField)
 {
-    for(QMap<int, gp_Vec>::const_iterator it = displacementField.cbegin(); it!= displacementField.cend(); ++it)
+    for(QMap<int, QList<double>>::const_iterator it = displacementField.cbegin(); it!= displacementField.cend(); ++it)
     {
         int globalNodeID = it.key();
         int localNodeID = this->myNodesMap.FindIndex(globalNodeID);
         if(localNodeID<0 || localNodeID>myNumberOfNodes) return;
-        const gp_Vec &curVec = it.value();
-        double dX = curVec.X();
-        double dY = curVec.Y();
-        double dZ = curVec.Z();
-        myNodeCoords->ChangeValue(localNodeID,1) = myNodeCoords->Value(localNodeID,1)+dX;
-        myNodeCoords->ChangeValue(localNodeID,2) = myNodeCoords->Value(localNodeID,2)+dY;
-        myNodeCoords->ChangeValue(localNodeID,3) = myNodeCoords->Value(localNodeID,3)+dZ;
+        const QList<double> &curVec = it.value();
+        myNodeCoords->ChangeValue(localNodeID,1) = myNodeCoords->Value(localNodeID,1)+curVec[0];
+        myNodeCoords->ChangeValue(localNodeID,2) = myNodeCoords->Value(localNodeID,2)+curVec[1];
+        myNodeCoords->ChangeValue(localNodeID,3) = myNodeCoords->Value(localNodeID,3)+curVec[2];
     }
 }
 
@@ -2565,7 +2562,7 @@ void Ng_MeshVS_DataSource3D::displaceMySelf(const QMap<int, gp_Vec> &displacemen
 //! function: displaceMySelf_asRigidAsPossible
 //! details:
 //! -------------------------------------------
-void Ng_MeshVS_DataSource3D::displaceMySelf_asRigidAsPossible(const QMap<int, gp_Vec> &displacementField,
+void Ng_MeshVS_DataSource3D::displaceMySelf_asRigidAsPossible(const QMap<int, QList<double>> &displacementField,
                                                               const std::vector<int> &nodeGroup,
                                                               int mode)
 {
@@ -2614,21 +2611,21 @@ void Ng_MeshVS_DataSource3D::displaceMySelf_asRigidAsPossible(const QMap<int, gp
     //! --------------------
     //! the displaced nodes
     //! --------------------
-    for(QMap<int,gp_Vec>::const_iterator it = displacementField.cbegin(); it != displacementField.cend(); it++)
+    for(QMap<int,QList<double>>::const_iterator it = displacementField.cbegin(); it != displacementField.cend(); it++)
     {
         int globalNodeID = it.key();
         int localNodeID = myNodesMap.FindIndex(globalNodeID);
-        gp_Vec displ = it.value();
+        const QList<double> &displ = it.value();
 
         b(i) = localNodeID-1;
 
-        bc(i,0)= displ.X();
-        bc(i,1)= displ.Y();
-        bc(i,2)= displ.Z();
+        bc(i,0)= displ[0];
+        bc(i,1)= displ[1];
+        bc(i,2)= displ[2];
 
-        bc_arap(i,0)= myNodeCoords->Value(localNodeID,1)+displ.X();
-        bc_arap(i,1)= myNodeCoords->Value(localNodeID,2)+displ.Y();
-        bc_arap(i,2)= myNodeCoords->Value(localNodeID,3)+displ.Z();
+        bc_arap(i,0)= myNodeCoords->Value(localNodeID,1)+displ[0];
+        bc_arap(i,1)= myNodeCoords->Value(localNodeID,2)+displ[1];
+        bc_arap(i,2)= myNodeCoords->Value(localNodeID,3)+displ[2];
 
         i++;
     }

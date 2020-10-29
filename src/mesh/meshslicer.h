@@ -8,6 +8,8 @@
 #include <MeshVS_DataSource.hxx>
 #include <ng_meshvs_datasource3d.h>
 
+class Ng_MeshVS_DataSourceFace;
+
 class meshSlicer
 {
 public:
@@ -20,6 +22,9 @@ public:
 
     //! perform
     bool perform(double a, double b, double c, double d, occHandle(TColStd_HPackedMapOfInteger) &hiddenElementIDs);
+
+    //! plane mesh intersection
+    bool planeMeshIntersection(occHandle(Ng_MeshVS_DataSourceFace) &aSliceMesh, double a, double b,double c, double d);
 
 private:
 

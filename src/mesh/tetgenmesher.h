@@ -1,7 +1,7 @@
 #ifndef TETGENMESHER_H
 #define TETGENMESHER_H
 
-#define TOLERANCE 1.0E-6
+#define TOLERANCE 1.0E-8
 
 //#define PLCNEW
 

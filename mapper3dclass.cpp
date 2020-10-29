@@ -1094,7 +1094,6 @@ void Mapper3DClass::performNearest(double pinball)
                 {
                     int nodeID = aTargetMeshNode.nodeID;
                     const std::vector<double> &vecVal = aTargetMeshNode.values;
-                    //myMultiRes.insert(nodeID,vecVal);
                     myMultiRes.insert(std::make_pair(nodeID,vecVal));
                     success = true;
                     break;
@@ -1155,10 +1154,10 @@ void Mapper3DClass::perform(int theAlgo, const opencascade::handle<MeshVS_DataSo
     }
 }
 
-//! -------------------------------------
-//! function: performNearest Neighboring
+//! ------------------------------------
+//! function: performNearestNeighboring
 //! details:
-//! -------------------------------------
+//! ------------------------------------
 void Mapper3DClass::performNearestNeighboring(double pinball)
 {
     cout<<"Mapper3DClass::performNearestNeighboring()->____function called____"<<endl;
@@ -1258,21 +1257,19 @@ void Mapper3DClass::performNearestNeighboring(double pinball)
                     {
                         int nodeID = aTargetMeshNode.nodeID;
                         const std::vector<double> &vecVal = aTargetMeshNode.values;
-                        //myMultiRes.insert(nodeID,vecVal);
                         myMultiRes.erase(nodeID);
                         myMultiRes.insert(std::make_pair(nodeID,vecVal));
                         minDistance = curDistance;
-                        success = true;
                     }
                 }
             }
+            success = true;
             if(success)
             {
                 NbMappedNodes++;
                 break;              //! exit remapping cycle
             }
         }
-
         //! --------------
         //! send progress
         //! --------------
@@ -1286,7 +1283,6 @@ void Mapper3DClass::performNearestNeighboring(double pinball)
             }
         }
     }
-
     //! -----------------------------------------------------------------
     //! check the number of mapped target nodes with the current pinball
     //! -----------------------------------------------------------------

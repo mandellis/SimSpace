@@ -1,5 +1,3 @@
-//#define USE_FACE_DS_BUILDER
-
 //! ----------------
 //! custom includes
 //! ----------------
@@ -3296,7 +3294,6 @@ void occPreGLWidget::displayCurvatureMap()
 {
     cout<<"occPreGLWidget::displayCurvatureMap()->____function called____"<<endl;
     this->hideAllMeshes();
-
     occContext->InitSelected();
     if(occContext->MoreSelected())
     {
@@ -3341,17 +3338,26 @@ void occPreGLWidget::displayCurvatureMap()
         occHandle(Ng_MeshVS_DataSourceFace) summedDS = new Ng_MeshVS_DataSourceFace(faceMeshDSlist);
 
         occHandle(MeshVS_Mesh) coloredMesh;
-        int mode = 1;   //! Gaussian curvature
-        summedDS->computeDiscreteCurvature(mode);
+        //int mode = 1;   //! Gaussian curvature
+        //summedDS->computeDiscreteCurvature(mode);
+        //std::map<int,double> curvatureData; //! patch: convert QMap<int,int> into std::map<int,int>
+        //for(QMap<int,double>::iterator it = summedDS->myCurvature.begin(); it != summedDS->myCurvature.end(); it++)
+        //    curvatureData.insert(std::make_pair(it.key(),it.value()));
+        //MeshTools::buildColoredMesh(summedDS,curvatureData,coloredMesh,0,6.28,10,true);
 
-        //! patch: convert QMap<int,int> into std::map<int,int>
-        std::map<int,double> curvatureData;
-        for(QMap<int,double>::iterator it = summedDS->myCurvature.begin(); it != summedDS->myCurvature.end(); it++)
+        std::map<int,double> mapOfAngleDeficit;
+        MeshTools::computeAngleDefectMap(summedDS,mapOfAngleDeficit);
+        MeshTools::buildColoredMesh(summedDS,mapOfAngleDeficit,coloredMesh,0,6.28,10,true);
+
+        //FILE *fp = fopen("D:/curvature.txt","w");
+        FILE *fp = fopen("D:/angleDeficit.txt","w");
+
+        for(std::map<int,double>::iterator it = mapOfAngleDeficit.begin(); it!=mapOfAngleDeficit.end(); it++)
+        //for(std::map<int,double>::iterator it = curvatureData.begin(); it!=curvatureData.end(); it++)
         {
-            curvatureData.insert(std::make_pair(it.key(),it.value()));
+            fprintf(fp,"%d\t%lf\n",it->first,180*(1/3.1415926538)*it->second);
         }
-        MeshTools::buildColoredMesh(summedDS,curvatureData,coloredMesh,0,6.28,10,true);
-        //MeshTools::buildColoredMesh(summedDS,summedDS->myCurvatureGradient,coloredMesh,0,6.28,10,true);
+        fclose(fp);
 
         occMeshContext->Display(coloredMesh,false);
         occMeshContext->UpdateCurrentViewer();
@@ -3693,6 +3699,47 @@ void occPreGLWidget::clipMesh()
     }
     occMeshContext->UpdateCurrentViewer();
     cout<<"occPreGLWidget::clipMesh()->____exiting function____"<<endl;
+
+    /*
+    //! ----------------------------------------------
+    //! slice by creating a slice mesh - experimental
+    //! ----------------------------------------------
+    for(AIS_ListIteratorOfListOfInteractive it(listOfIO); it.More(); it.Next())
+    {
+        const occHandle(MeshVS_Mesh) &aMesh = occHandle(MeshVS_Mesh)::DownCast(it.Value());
+        if(aMesh.IsNull()) continue;
+
+        const occHandle(MeshVS_DataSource) &aMeshDS = aMesh->GetDataSource();
+        if(aMeshDS.IsNull()) continue;
+
+        aSlicer.setMeshDataSource(aMeshDS);
+
+        for(QMap<int,occHandle(Graphic3d_ClipPlane)>::const_iterator itplane = myMapOfClipPlanes.cbegin(); itplane != myMapOfClipPlanes.cend(); itplane++)
+        {
+            const occHandle(Graphic3d_ClipPlane) &aClipPlane = itplane.value();
+            if(aClipPlane->IsOn()==false) continue;
+            Graphic3d_ClipPlane::Equation eq = aClipPlane->GetEquation();
+            double a = eq.GetData()[0];
+            double b = eq.GetData()[1];
+            double c = eq.GetData()[2];
+            double d = eq.GetData()[3];
+
+            occHandle(Ng_MeshVS_DataSourceFace) aSliceMesh;
+            bool isDone = aSlicer.planeMeshIntersection(aSliceMesh,a,b,c,d);
+            if(isDone == false)
+            {
+                cerr<<"____slicer failure____"<<endl;
+                continue;
+            }
+            this->displayMesh(aSliceMesh);
+        }
+    }
+    occMeshContext->UpdateCurrentViewer();
+    //! -----------------
+    //! end experimental
+    //! -----------------
+    */
+    //cout<<"occPreGLWidget::clipMesh()->____exiting function____"<<endl;
 }
 
 //! ---------------

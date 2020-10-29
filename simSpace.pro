@@ -184,7 +184,9 @@ SOURCES += main.cpp\
     src/mesh/rayintersectmesh.cpp \
     meshselector.cpp \
     src/post/rainflow.cpp \
-    src/mesh/datasourcebuilder.cpp
+    src/mesh/datasourcebuilder.cpp \
+    src/mesh/smoothingtools.cpp \
+    src/mesh/pointtomeshdistance.cpp
 
 HEADERS  += mainwindow.h \
     actions3d.h \
@@ -419,7 +421,9 @@ HEADERS  += mainwindow.h \
     src/mesh/rayintersectmesh.h \
     meshselector.h \
     src/post/rainflow.h \
-    src/mesh/datasourcebuilder.h
+    src/mesh/datasourcebuilder.h \
+    src/mesh/smoothingtools.h \
+    src/mesh/pointtomeshdistance.h
 
 FORMS    += mainwindow.ui
 
@@ -458,7 +462,7 @@ INCLUDEPATH = D:/Work/Qt/SimSpace/src/geometry \
               C:/local/boost_1_69_0   \                 # needed by cgal
               C:/CGAL-4.14/auxiliary/gmp/include    \   # needed by cgal
               D:/Work/Qt/SimSpace/libigl   \
-              D:/Work/Qt/SimSpace/src/pymesh
+              D:/Work/Qt/SimSpace/src/pymesh    \
 
 LIBS += \
 -lC:\OpenCASCADE7.3.0-vc14-64\opencascade-7.3.0\win64\vc14\lib\TKBin   \
@@ -645,10 +649,10 @@ LIBS += -L$$PWD/QCustomPlot/qcp/ -lqcustomplot2
 INCLUDEPATH += $$PWD/QCustomPlot/qcp
 DEPENDPATH += $$PWD/QCustomPlot/qcp
 
-# --------------
-# manifest file
-# --------------
-#win32:
-#{
-#QMAKE_POST_LINK += mt -nologo -manifest $$PWD/manifest.xml -outputresource:$$OUT_PWD/$$TARGET”.exe” $$escape_expand(\n\t)
-#}
+# -------
+# embree
+# -------
+win32: LIBS += -L$$PWD/Embree/embree-3.11.0.x64.vc14.windows/lib/ -lembree3
+
+INCLUDEPATH += $$PWD/Embree/embree-3.11.0.x64.vc14.windows/include/embree3
+DEPENDPATH += $$PWD/Embree/embree-3.11.0.x64.vc14.windows/include/embree3

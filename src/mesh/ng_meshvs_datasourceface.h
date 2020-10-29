@@ -318,7 +318,7 @@ public:
     //! --------------------------------------------------
     //! deform the mesh using a vector displacement field
     //! --------------------------------------------------
-    void displaceMySelf(const QMap<int, gp_Vec> &displacementField);
+    void displaceMySelf(const QMap<int, QList<double> > &displacementField);
 
     //! ------------------------------------------------
     //! compute the gradient of the normal at each node

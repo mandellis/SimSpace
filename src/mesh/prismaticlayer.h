@@ -1,5 +1,6 @@
 #ifndef PRISMATICLAYER_H
 #define PRISMATICLAYER_H
+
 //! ------------------------------------------------------------
 //! Definition:
 //! "prismatic face" is a face that will undergo mesh inflation
@@ -31,6 +32,7 @@
 //! C++
 //! ----
 #include <vector>
+#include <map>
 #include <iostream>
 using namespace std;
 
@@ -251,6 +253,12 @@ private:
 
 private:
 
+    //! -----------------------------------------------------
+    //! map of manifold characteristic and visibility angles
+    //! -----------------------------------------------------
+    std::map<int,double> betaAverageField;
+    std::map<int,double> betaVisibilityField;
+
     //! --------------------
     //! generateOneTetLayer
     //! --------------------
@@ -258,30 +266,32 @@ private:
                              double displacement,
                              std::vector<meshElementByCoords> &volumeElementsAtWalls);
 
+    //! -------------
+    //! compute beta
+    //! -------------
+    void computeBeta(const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS);
 
-    //! ---------------------------------
-    //! field smoother - curvature based
-    //! ---------------------------------
-    void fieldSmoother(QMap<int,QList<double>> &field,
-                       const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS,
-                       double k,
-                       int NbSteps);
+    //! ---------------
+    //! local manifold
+    //! ---------------
+    bool getLocalFanNodes(const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS, int vertexGlobalNodeID,
+                          int t1, int t2,
+                          mesh::meshPoint &A,
+                          mesh::meshPoint &B,
+                          mesh::meshPoint &C,
+                          mesh::meshPoint &P);
 
-    //! ---------------------------------------
-    //! smooth the displacement field - helper
-    //! ---------------------------------------
-    void smoothDisplacementField(QMap<int,gp_Vec> &displacementsField,
-                                 const QMap<int,QList<double>> &normals,
-                                 const occHandle(Ng_MeshVS_DataSourceFace) &theMeshToInflate);
+    double angleBetweenNonAdjacent(const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS, int globalNodeID,int element1, int elements);
 
+    //! ----------------------
+    //! polyhedral cone angle
+    //! ----------------------
+    void polyhedralConeAngle(std::vector<mesh::meshPoint> &vecPoints, const mesh::meshPoint &P, double &omega, double &coneAngle);
 
     //! --------------------------------------------------
     //! enable/disable the progress indicator stop button
     //! --------------------------------------------------
     void setStopButtonEnabled(bool isEnabled);
-
-
-
 };
 
 #endif // PRISMATICLAYER_H

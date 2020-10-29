@@ -1279,11 +1279,6 @@ userMessage MesherClass::PrismaticLayers_generatePrismaticMesh(int bodyIndex,
     if(myProgressIndicator!=Q_NULLPTR) prismaticLayerBuilder.setProgressIndicator(myProgressIndicator);
     prismaticLayerBuilder.setBody(bodyIndex);
 
-    //! ---------------------------
-    //! set the progress indicator
-    //! ---------------------------
-    if(myProgressIndicator!=Q_NULLPTR) prismaticLayerBuilder.setProgressIndicator(myProgressIndicator);
-
     //! --------------------------------------------------------------------------
     //!  retrieve the list of the prismatic faces for the body (list of face IDs)
     //! --------------------------------------------------------------------------
@@ -1423,10 +1418,8 @@ userMessage MesherClass::Netgen_generateVolumeMesh(int bodyIndex,
             //! which perform the automatic node renumbering
             //! -------------------------------------------------------------
             std::vector<meshElementByCoords> elementList1, elementList2;
-            //QList<meshElementByCoords> elementList1, elementList2;
             MeshTools::toListOf3DElements(prismatic3DMesh,elementList1);
             MeshTools::toListOf3DElements(postInflationVolumeMesh,elementList2);
-            //elementList1<<elementList2;
             elementList1.reserve(elementList1.size()+elementList2.size());
             elementList1.insert(elementList1.end(),elementList2.begin(),elementList2.end());
             mainMesh3D = new Ng_MeshVS_DataSource3D(elementList1);
@@ -1752,12 +1745,12 @@ userMessage MesherClass::Tetgen_generateVolumeMesh(int bodyIndex, int preserveSu
     }
     else    // meshing with boundary mesh
     {
-        //! *******************************************************
+        //! **********************************************************
         //!
-        //! block of code for the generation of the boundary mesh
-        //! in PrismaticLayers_generatePrismaticMesh
+        //! the block of code for the generation of the boundary mesh
+        //! is in PrismaticLayers_generatePrismaticMesh
         //!
-        //! *******************************************************
+        //! **********************************************************
         occHandle(Ng_MeshVS_DataSourceFace) theLastInflatedMesh;
         QList<occHandle(Ng_MeshVS_DataSourceFace)> listOfInflatedMeshes;
         mr = this->PrismaticLayers_generatePrismaticMesh(bodyIndex,theLastInflatedMesh,listOfInflatedMeshes);
@@ -1871,7 +1864,10 @@ userMessage MesherClass::Tetgen_generateVolumeMesh(int bodyIndex, int preserveSu
             mr.message = QString("Error in merging the prismatic and interionr mesh for body %1").arg(bodyIndex);
             return mr;
         }
-        myMeshDB->ArrayOfMeshDS.insert(bodyIndex,mainMesh3D);
+        //myMeshDB->ArrayOfMeshDS.insert(bodyIndex,mainMesh3D);
+
+        //! for testing purposes - show the interior mesh
+        myMeshDB->ArrayOfMeshDS.insert(bodyIndex,tetgenVolumeMeshDS);
 
         mr.isDone = true;
         mr.message = QString("Prismatic 3D mesh and interior mesh for body %1 successfully merged").arg(bodyIndex);
@@ -2022,7 +2018,6 @@ userMessage MesherClass::Netgen_STL_generateVolumeMesh(int bodyIndex,
             std::vector<meshElementByCoords> elementList1, elementList2;
             MeshTools::toListOf3DElements(prismatic3DMesh,elementList1);
             MeshTools::toListOf3DElements(postInflationVolumeMesh,elementList2);
-            //elementList1<<elementList2;
             elementList1.reserve(elementList1.size()+elementList2.size());
             elementList1.insert(elementList1.end(),elementList2.begin(),elementList2.end());
             mainMesh3D = new Ng_MeshVS_DataSource3D(elementList1);
