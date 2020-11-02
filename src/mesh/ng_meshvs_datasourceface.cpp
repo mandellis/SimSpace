@@ -2210,10 +2210,7 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const QList<occHandle(Ng_Mesh
             //! an element from been inserted more than one time
             //! ----------------------------------------------------------
             mesh::meshElement aMeshElement;
-            for(int n=1; n<=NbNodes; n++)
-            {
-                aMeshElement.theNodeIDs.push_back(nodeIDs(n));
-            }
+            for(int n=1; n<=NbNodes; n++) aMeshElement.theNodeIDs.push_back(nodeIDs(n));
 
             if(alreadyVisitedElements.contains(aMeshElement))
             {
@@ -5017,7 +5014,6 @@ void Ng_MeshVS_DataSourceFace::buildElementsTopology()
     }
 }
 
-
 //! ----------------------
 //! function: constructor
 //! details:
@@ -5093,28 +5089,34 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const occHandle(Ng_MeshVS_Dat
     this->buildElementsTopology();
 }
 
-//! ---------------------------------------------
-//! function: compute normal at nodes
-//! details:  compute an average normal at nodes
-//! ---------------------------------------------
+//! -------------------------------
+//! function: computeNormalAtNodes
+//! details:
+//! -------------------------------
+#define ITERATIVE_NORMAL
+#ifdef ITERATIVE_NORMAL
 void Ng_MeshVS_DataSourceFace::computeNormalAtNodes()
 {
     cout<<"Ng_MeshVS_DataSourceFace::computeNormalAtNodes()->____function called____"<<endl;
+    FILE *fp = fopen("D:/nodeNormals_iterative.txt","w");
 
     //! -----------------------------
     //! node to element connectivity
     //! -----------------------------
     this->computeNodeToElementsConnectivity();
 
+    //! ----------------------------
+    //! parameters of the algorithm
+    //! ----------------------------
     const double PI = 3.14159236538;
-    const double limit = 1.0*PI/180;
+    const double limit = 0.001*PI/180;
+    const int NMaxSteps = 2000;
     const double b = 0.5;   // relaxation
-    int localNodeID = 0;
+
     for(TColStd_MapIteratorOfPackedMapOfInteger it(myNodes); it.More(); it.Next())
     {
-        localNodeID++;
         int globalNodeID = it.Key();
-        cout<<"____nodeID("<<localNodeID<<", "<<globalNodeID<<")____"<<endl;
+        int localNodeID = myNodesMap.FindIndex(globalNodeID);
 
         const QList<int> &attachedElementsLocalIDs = myNodeToElements.value(localNodeID);
         int N = attachedElementsLocalIDs.length();
@@ -5128,61 +5130,77 @@ void Ng_MeshVS_DataSourceFace::computeNormalAtNodes()
         {
             wg.push_back(1.0/N);
 
-            int curLocalElementID = attachedElementsLocalIDs[n];
+            int curLocalElementID = attachedElementsLocalIDs[n];   
             int curGlobalElementID = this->myElementsMap.FindKey(curLocalElementID);
             surroundingElementsGlobalIDs.push_back(curGlobalElementID);
-            //cout<<"____surrounding element: "<<curGlobalElementID<<"____"<<endl;
         }
 
         //! -----------------------------
         //! initial guess for the normal
         //! -----------------------------
-        double NP[3] {0,0,0}, NPnew[3] {0,0,0}, NPcorrection[3] {0,0,0};
+        double NP[3] {0,0,0};
+        double NPnew[3] {0,0,0};
+        double NPcorrection[3] {0,0,0};
         for(int n=0; n<N; n++)
         {
-            int curGlobalElementID = surroundingElementsGlobalIDs[n];
-            double cnx, cny, cnz;
-            this->GetNormal(curGlobalElementID,10,cnx,cny,cnz);
+            int curLocalElementID = attachedElementsLocalIDs[n];
+            double cnx = myElemNormals->Value(curLocalElementID,1);
+            double cny = myElemNormals->Value(curLocalElementID,2);
+            double cnz = myElemNormals->Value(curLocalElementID,3);
+
+            //int curGlobalElementID = surroundingElementsGlobalIDs[n];
+            //double cnx, cny, cnz;
+            //this->GetNormal(curGlobalElementID,10,cnx,cny,cnz);
             double w = wg[n];
             NP[0] += w*cnx;
             NP[1] += w*cny;
             NP[2] += w*cnz;
         }
-        double norm = sqrt(NP[0]*NP[0]+NP[1]*NP[1]+NP[2]*NP[2]);
+        double norm = sqrt(pow(NP[0],2)+pow(NP[1],2)+pow(NP[2],2));
         NP[0] /= norm;
         NP[1] /= norm;
         NP[2] /= norm;
 
-        cout<<"***************************************************"<<endl;
-        cout<<" Initial normal ("<<NP[0]<<", "<<NP[1]<<", "<<NP[2]<<")"<<endl;
+        //cout<<"***************************************************"<<endl;
+        //cout<<" Initial normal ("<<NP[0]<<", "<<NP[1]<<", "<<NP[2]<<")"<<endl;
 
-        const int NMaxSteps = 1000;
+        //fprintf(fp,"*************************************\n");
+        //fprintf(fp,"%d\n",globalNodeID);
+        //fprintf(fp,"guess %lf\t%lf\t%lf\n",NP[0],NP[1],NP[2]);
+
+        //! ----------------
+        //! start iterating
+        //! ----------------
         double dotErr = 1e10;
         double angleErr = 1e10;
         int step = 0;
-        for(step =1; step<=NMaxSteps; step++)
+        for(step=1; step<=NMaxSteps; step++)
         {
             std::vector<double> alpha;
             double alphaSum = 0;
             for(int i=0; i<N; i++)
             {
-                int curGlobalElementID = surroundingElementsGlobalIDs[i];
-                double nx_i, ny_i, nz_i;
-                this->GetNormal(curGlobalElementID,10,nx_i,ny_i,nz_i);
+                //int curGlobalElementID = surroundingElementsGlobalIDs[i];
+                //double nx_i, ny_i, nz_i;
+                //this->GetNormal(curGlobalElementID,10,nx_i,ny_i,nz_i);
+
+                int curLocalElementID = attachedElementsLocalIDs[i];
+                double nx_i = myElemNormals->Value(curLocalElementID,1);
+                double ny_i = myElemNormals->Value(curLocalElementID,2);
+                double nz_i = myElemNormals->Value(curLocalElementID,3);
+
                 double dot = nx_i*NP[0]+ny_i*NP[1]+nz_i*NP[2];
                 dot /= sqrt(nx_i*nx_i+ny_i*ny_i+nz_i*nz_i)*sqrt(pow(NP[0],2)+pow(NP[1],2)+pow(NP[2],2));
-                //cout<<"____dot: "<<dot<<"____"<<endl;
                 if(dot<-1) dot = -1;
                 if(dot>1) dot = 1;
                 double curAlpha = std::acos(dot);
-                //cout<<"____curAlpha: "<<curAlpha<<"____"<<endl;
                 alpha.push_back(curAlpha);
                 alphaSum += curAlpha;
             }
 
             if(fabs(alphaSum/N)<=0.01745329)    // 1 degree
             {
-                cout<<" => this is a flat node <="<<endl;
+                //cout<<" => this is a flat node <="<<endl;
                 break;
             }
 
@@ -5192,11 +5210,11 @@ void Ng_MeshVS_DataSourceFace::computeNormalAtNodes()
             double sumOfWeights = 0;
             for(int i=0; i<N; i++)
             {
-                wg[i] += alpha[i]/alphaSum;
+                wg[i] *= alpha[i]/alphaSum;
                 sumOfWeights += wg[i];
             }
 
-            //if(sumOfWeights==0) exit(2);        // should never occur
+            if(sumOfWeights==0) exit(2);        // should never occur
 
             //! ----------------------
             //! normalize the weights
@@ -5210,9 +5228,15 @@ void Ng_MeshVS_DataSourceFace::computeNormalAtNodes()
             Sx = Sy = Sz = 0;
             for(int i=0; i<N; i++)
             {
-                int curGlobalElementID = surroundingElementsGlobalIDs[i];
-                double nx_i, ny_i, nz_i;
-                this->GetNormal(curGlobalElementID,10,nx_i,ny_i,nz_i);
+                //int curGlobalElementID = surroundingElementsGlobalIDs[i];
+                //double nx_i, ny_i, nz_i;
+                //this->GetNormal(curGlobalElementID,10,nx_i,ny_i,nz_i);
+
+                int curLocalElementID = attachedElementsLocalIDs[i];
+                double nx_i = myElemNormals->Value(curLocalElementID,1);
+                double ny_i = myElemNormals->Value(curLocalElementID,2);
+                double nz_i = myElemNormals->Value(curLocalElementID,3);
+
                 double w_i = wg[i];
                 Sx += w_i*nx_i;
                 Sy += w_i*ny_i;
@@ -5220,12 +5244,15 @@ void Ng_MeshVS_DataSourceFace::computeNormalAtNodes()
             }
             double normS = sqrt(Sx*Sx+Sy*Sy+Sz*Sz);
 
-            if(normS==0) exit(2);               // should never occur
+            if(normS==0) exit(3);               // should never occur
 
             NPcorrection[0] = Sx/normS;
             NPcorrection[1] = Sy/normS;
             NPcorrection[2] = Sz/normS;
 
+            //! -------------
+            //! relax normal
+            //! -------------
             NPnew[0] = b*NPcorrection[0] + (1-b)*NP[0];
             NPnew[1] = b*NPcorrection[1] + (1-b)*NP[1];
             NPnew[2] = b*NPcorrection[2] + (1-b)*NP[2];
@@ -5246,23 +5273,36 @@ void Ng_MeshVS_DataSourceFace::computeNormalAtNodes()
             if(dotErr> 1) dotErr = 1;
             angleErr = std::acos(dotErr);
             if(angleErr<=limit) break;
-            //if(fabs(angleErr)>=0.99984769) break;
         }
+
+        //! --------------------------------------
+        //! record the normal at the current node
+        //! --------------------------------------
         QList<double> aNormal { NP[0],NP[1],NP[2] };
         myNodeNormals.insert(globalNodeID,aNormal);
 
-        cout<<" Final normal   ("<<NP[0]<<", "<<NP[1]<<", "<<NP[2]<<")"<<endl;
-        cout<<" angle: "<<angleErr*180.0/PI<<endl;
-        cout<<" number of steps: "<<step<<endl;
-        cout<<"***************************************************"<<endl;
-    }
-}
+        //cout<<" Final normal   ("<<NP[0]<<", "<<NP[1]<<", "<<NP[2]<<")"<<endl;
+        //cout<<" angle: "<<angleErr*180.0/PI<<endl;
+        //cout<<" number of steps: "<<step<<endl;
+        //cout<<"***************************************************"<<endl;
 
-/*
+        //fprintf(fp,"final %lf\t%lf\t%lf\n",NP[0],NP[1],NP[2]);
+        //fprintf(fp,"length %lf\n",sqrt(pow(NP[0],2)+pow(NP[1],2)+pow(NP[2],2)));
+        //fprintf(fp,"steps %d\n",step);
+
+        fprintf(fp,"%d\t%lf\t%lf\t%lf\n",globalNodeID,NP[0],NP[1],NP[2]);
+    }
+    fclose(fp);
+}
+#endif
+
+#ifndef ITERATIVE_NORMAL
 #ifndef LIBIGLNORMAL
 void Ng_MeshVS_DataSourceFace::computeNormalAtNodes()
 {
     //cout<<"Ng_MeshVS_DataSourceFace::computeNormalAtNodes()->____function called____"<<endl;
+
+    FILE *fp = fopen("D:/nodeNormals_average.txt","w");
 
     //! ---------------------------------------------
     //! tolerance for normal comparisons: <n> degrees
@@ -5358,8 +5398,10 @@ void Ng_MeshVS_DataSourceFace::computeNormalAtNodes()
         else { ntotx = ntoty = ntotz = 0.0; }
         QList<double> aveNormal {ntotx, ntoty, ntotz};
         myNodeNormals.insert(globalNodeID, aveNormal);
-    }
 
+        fprintf(fp,"%d\t%lf\t%lf\t%lf\n",globalNodeID,ntotx,ntoty,ntotz);
+    }
+    fclose(fp);
     //! -----------------------------------------------------------------------------------
     //! the old version included the calculation of the node to elements connectivity
     //! for compatibility the new function computeNodeToElementsConnectivity is called here
@@ -5456,4 +5498,4 @@ void Ng_MeshVS_DataSourceFace::computeNormalAtNodes()
     }
 }
 #endif
-*/
+#endif

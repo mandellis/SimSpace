@@ -271,6 +271,13 @@ private:
     //! -------------
     void computeBeta(const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS);
 
+    //! ---------------------------------------------
+    //! check lateral distribution marhing distances
+    //! ---------------------------------------------
+    void checkLateralDistributionMarchingDistance(const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS,
+                                                  const std::map<int,double> displacementMapOld,
+                                                  std::vector<int,double> &displacementMap);
+
     //! ---------------
     //! local manifold
     //! ---------------
@@ -281,12 +288,11 @@ private:
                           mesh::meshPoint &C,
                           mesh::meshPoint &P);
 
-    double angleBetweenNonAdjacent(const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS, int globalNodeID,int element1, int elements);
-
-    //! ----------------------
-    //! polyhedral cone angle
-    //! ----------------------
-    void polyhedralConeAngle(std::vector<mesh::meshPoint> &vecPoints, const mesh::meshPoint &P, double &omega, double &coneAngle);
+    //! ---------------
+    //! classify nodes
+    //! ---------------
+    void classifyNodes(const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS,
+                       std::map<int,int> &mapCat1);
 
     //! --------------------------------------------------
     //! enable/disable the progress indicator stop button

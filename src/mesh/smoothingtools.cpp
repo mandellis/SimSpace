@@ -19,9 +19,9 @@
 //! ----------------------------------
 double fomega(double betaAve)
 {
-    //double val = 0.5*(1-cos(betaAve));
-    const double PI = 3.1415926538;
-    double val = (PI-betaAve/2)*(1/(PI));
+    double val = 0.5*(1+cos(betaAve/2));
+    //const double PI = 3.1415926538;
+    //double val = (PI-betaAve/2)*(1/(PI));
     return val;
 }
 
@@ -49,6 +49,7 @@ double wij(double betaAve, const std::vector<double> &P, const std::vector<doubl
 void smoothingTools::scalarFieldSmoother(QMap<int,double> &field,
                                          const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS,
                                          const std::map<int,double> &betaAveField,
+                                         const std::map<int,int> &mapOfNodeTypes,
                                          int NbSteps)
 {
     cout<<"prismaticLayer::scalarFieldSmoother()->____function called____"<<endl;
@@ -60,76 +61,191 @@ void smoothingTools::scalarFieldSmoother(QMap<int,double> &field,
         {
             double snx = 0;
             int globalNodeID = it.key();
-            int localNodeID = aMeshDS->myNodesMap.FindIndex(globalNodeID);
-            const std::vector<double> &P = aMeshDS->getNodeCoordinates(localNodeID);
-
-            //! -------------------------------------------
-            //! value of the field at the current position
-            //! -------------------------------------------
-            double localValue = it.value();
-
-            //! ------------------------
-            //! manifold characteristic
-            //! ------------------------
-            double betaAve = betaAveField.at(globalNodeID);
-
-            //! --------------------------
-            //! get the surrounding nodes
-            //! --------------------------
-            std::set<int> surroundingNodes;
-            QList<int> elements = aMeshDS->myNodeToElements.value(localNodeID);
-            for(int i=0; i<elements.length(); i++)
-            {
-                int localElementID = elements[i];
-                int globalElementID = aMeshDS->myElementsMap.FindKey(localElementID);
-                int NbNodes, buf[20];
-                TColStd_Array1OfInteger nodeIDs(*buf,1,20);
-                aMeshDS->GetNodesByElement(globalElementID,nodeIDs,NbNodes);
-                for(int j=1; j<=NbNodes; j++) surroundingNodes.insert(nodeIDs(j));
-
-            }
-            std::set<int>::iterator itt = surroundingNodes.find(globalNodeID);
-            if(itt!=surroundingNodes.end()) surroundingNodes.erase(itt);
-
-            //! ---------------------------------------------------------
-            //! sum of all the distances from the current advancing node
-            //! ---------------------------------------------------------
-            double Sdij = 0;
-            for(std::set<int>::iterator it = surroundingNodes.begin(); it!=surroundingNodes.end(); it++)
-            {
-                int globalNodeID_surrounding = *it;
-                int localNodeID_surrounding = aMeshDS->myNodesMap.FindIndex(globalNodeID_surrounding);
-                const std::vector<double> &S = aMeshDS->getNodeCoordinates(localNodeID_surrounding);
-                double d = sqrt(pow(S[0]-P[0],2)+pow(S[1]-P[1],2)+pow(S[2]-P[2],2));
-                Sdij += d;
-            }
-
-            double Swij = 0;
-            size_t n = surroundingNodes.size();
-            for(std::set<int>::iterator it = surroundingNodes.begin(); it!=surroundingNodes.end(); it++)
-            {
-                int globalNodeID_surrounding = *it;
-                int localNodeID_surrounding = aMeshDS->myNodesMap.FindIndex(globalNodeID_surrounding);
-                const std::vector<double> &S = aMeshDS->getNodeCoordinates(localNodeID_surrounding);
-                Swij += wij(betaAve,P,S,Sdij,n);
-            }
-
-            double a0 = 0.0;
-            for(std::set<int>::iterator it = surroundingNodes.begin(); it!=surroundingNodes.end(); it++)
-            {
-                int globalNodeID_surrounding = *it;
-                int localNodeID_surrounding = aMeshDS->myNodesMap.FindIndex(globalNodeID_surrounding);
-                const std::vector<double> &S = aMeshDS->getNodeCoordinates(localNodeID_surrounding);
-                double localValue_surrounding = field.value(globalNodeID_surrounding);
-                a0 += localValue_surrounding*wij(betaAve,P,S,Sdij,n);
-            }
 
             //! -----------------------
-            //! over relaxation factor
+            //! check the type of node
             //! -----------------------
-            double omega = fomega(betaAve);
-            snx = (1-omega)*localValue+(omega/Swij)*a0;
-            smoothedField.insert(globalNodeID,snx);
+            int nodeType = mapOfNodeTypes.find(globalNodeID)->second;
+
+            switch(nodeType)
+            {
+                //! ---------------------------------------------------------------------------
+                //! node fixed - nor the guiding vector nor the marching distance are smoothed
+                //! use the current value of the field as smoothed value
+                //! "p is in this category if p 2 F with its manifold  and if (ti,tj)>=60°
+                //! The marching vector and distance of p are fixed"
+                //! ---------------------------------------------------------------------------
+            case 1:
+            {
+                double localValue = it.value();
+                smoothedField.insert(globalNodeID,localValue);
+                //continue;
+            }
+                break;
+
+                //! ---------------------------------------------------------------------------------
+                //! node on the prismatic/non prismatic boundary
+                //! "Its marching vector and distance are weighted averages of
+                //! the marching vector and step of the neighbouring points belonging to Category 2"
+                //! ---------------------------------------------------------------------------------
+            case 2:
+            {
+                //! search for the surrounding points in cat 2
+                int localNodeID = aMeshDS->myNodesMap.FindIndex(globalNodeID);
+                const QList<int> &surroundingElements_local = aMeshDS->myNodeToElements.value(localNodeID);
+                int NbSurroundingElements = surroundingElements_local.length();
+                std::set<int> setOfSurroundingNodes;
+                for(int n=0; n<NbSurroundingElements; n++)
+                {
+                    int localElementID_surr = surroundingElements_local[n];
+                    int globalElementID_surr = aMeshDS->myElementsMap.FindKey(localElementID_surr);
+                    int NbNodes, buf[12];
+                    TColStd_HArray1OfInteger nodeIDs(*buf,1,10);
+                    aMeshDS->GetNodesByElement(globalElementID_surr,nodeIDs,NbNodes);
+                    for(int n=0; n<NbNodes; n++) setOfSurroundingNodes.insert(nodeIDs(n));
+                }
+                std::set<int>::iterator it_ = setOfSurroundingNodes.find(globalNodeID);
+                setOfSurroundingNodes.erase(it_);
+
+                std::vector<int> surroundingNodesOfType2;
+                for(std::set<int>::iterator it_ = setOfSurroundingNodes.begin(); it_!=setOfSurroundingNodes.end(); it++)
+                {
+                    int curGlobalNodeID_surr = *it_;
+                    int typeOfNode = mapOfNodeTypes.at(curGlobalNodeID_surr);
+                    if(typeOfNode!=2) continue;
+                    surroundingNodesOfType2.push_back(curGlobalNodeID_surr);
+                }
+
+                //! in case no surrounding node of type 2 exists, use the current
+                //! value of the field as smoothed value
+                if(surroundingNodesOfType2.size()==0)
+                {
+                    double localValue = it.value();
+                    smoothedField.insert(globalNodeID,localValue);
+                    break;
+                }
+
+                //! perform weighted average of displacements - use distances as weight
+                //! this could be changed according to the answer of emailed question
+                double bufd[3];
+                int NbNodes_;
+                TColStd_Array1OfReal coords(*bufd,1,3);
+                MeshVS_EntityType aType;
+                aMeshDS->GetGeom(globalNodeID,false,coords,NbNodes_,aType);
+                double xP = coords(1);
+                double yP = coords(2);
+                double zP = coords(3);
+                double Scurr = 0, S = 0;
+                for(std::vector<int>::iterator it = surroundingNodesOfType2.begin(); it!=surroundingNodesOfType2.end(); it++)
+                {
+                    int curGlobalNodeID_surr_type2 = *it;
+                    aMeshDS->GetGeom(curGlobalNodeID_surr_type2,false,coords,NbNodes_,aType);
+                    double xn = coords(1);
+                    double yn = coords(2);
+                    double zn = coords(3);
+                    double curDist = sqrt(pow(xP-xn,2)+pow(yP-yn,2)+pow(zP-zn,2));
+                    S += sqrt(pow(xP-xn,2)+pow(yP-yn,2)+pow(zP-zn,2));
+                    Scurr += curDist*field.value(curGlobalNodeID_surr_type2);
+                }
+                Scurr /= S;
+                smoothedField.insert(globalNodeID,Scurr);
+            }
+                break;
+
+                //! --------------------------------------------------------------------------------
+                //! The marching distance is not smoothed, and only its marching vector is smoothed
+                //! Use the current value of the field as smoothed value
+                //! --------------------------------------------------------------------------------
+            case 3:
+            {
+                double localValue = it.value();
+                smoothedField.insert(globalNodeID,localValue);
+                //continue;
+            }
+                break;
+
+                //! -------------------------------------------------------------------------------
+                //! free node - both the guiding vector and both the marching distance are updated
+                //! "All the neighbouring points of p in its manifold  contribute to the smoothing
+                //! of its marching vector and distance."
+                //! -------------------------------------------------------------------------------
+            case 4:
+            {
+                int localNodeID = aMeshDS->myNodesMap.FindIndex(globalNodeID);
+                const std::vector<double> &P = aMeshDS->getNodeCoordinates(localNodeID);
+
+                //! -------------------------------------------
+                //! value of the field at the current position
+                //! -------------------------------------------
+                double localValue = it.value();
+
+                //! ------------------------
+                //! manifold characteristic
+                //! ------------------------
+                double betaAve = betaAveField.at(globalNodeID);
+
+                //! --------------------------
+                //! get the surrounding nodes
+                //! --------------------------
+                std::set<int> surroundingNodes;
+                const QList<int> &elements = aMeshDS->myNodeToElements.value(localNodeID);
+                for(int i=0; i<elements.length(); i++)
+                {
+                    int localElementID = elements[i];
+                    int globalElementID = aMeshDS->myElementsMap.FindKey(localElementID);
+                    int NbNodes, buf[20];
+                    TColStd_Array1OfInteger nodeIDs(*buf,1,20);
+                    aMeshDS->GetNodesByElement(globalElementID,nodeIDs,NbNodes);
+                    for(int j=1; j<=NbNodes; j++) surroundingNodes.insert(nodeIDs(j));
+
+                    //! RETRIEVE THE NORMALS OF THE SURROUNDING ELEMENTS
+                    //! THEY WILL BE USED AFTER to do ...
+                }
+                std::set<int>::iterator itt = surroundingNodes.find(globalNodeID);
+                if(itt!=surroundingNodes.end()) surroundingNodes.erase(itt);
+
+                //! ---------------------------------------------------------
+                //! sum of all the distances from the current advancing node
+                //! ---------------------------------------------------------
+                double Sdij = 0;
+                for(std::set<int>::iterator it = surroundingNodes.begin(); it!=surroundingNodes.end(); it++)
+                {
+                    int globalNodeID_surrounding = *it;
+                    int localNodeID_surrounding = aMeshDS->myNodesMap.FindIndex(globalNodeID_surrounding);
+                    const std::vector<double> &S = aMeshDS->getNodeCoordinates(localNodeID_surrounding);
+                    double d = sqrt(pow(S[0]-P[0],2)+pow(S[1]-P[1],2)+pow(S[2]-P[2],2));
+                    Sdij += d;
+                }
+
+                double Swij = 0;
+                size_t n = surroundingNodes.size();
+                for(std::set<int>::iterator it = surroundingNodes.begin(); it!=surroundingNodes.end(); it++)
+                {
+                    int globalNodeID_surrounding = *it;
+                    int localNodeID_surrounding = aMeshDS->myNodesMap.FindIndex(globalNodeID_surrounding);
+                    const std::vector<double> &S = aMeshDS->getNodeCoordinates(localNodeID_surrounding);
+                    Swij += wij(betaAve,P,S,Sdij,n);
+                }
+
+                double a0 = 0.0;
+                for(std::set<int>::iterator it = surroundingNodes.begin(); it!=surroundingNodes.end(); it++)
+                {
+                    int globalNodeID_surrounding = *it;
+                    int localNodeID_surrounding = aMeshDS->myNodesMap.FindIndex(globalNodeID_surrounding);
+                    const std::vector<double> &S = aMeshDS->getNodeCoordinates(localNodeID_surrounding);
+                    double localValue_surrounding = field.value(globalNodeID_surrounding);
+                    a0 += localValue_surrounding*wij(betaAve,P,S,Sdij,n);
+                }
+
+                //! ------------------
+                //! relaxation factor
+                //! ------------------
+                double omega = fomega(betaAve);
+                snx = (1-omega)*localValue+(omega/Swij)*a0;
+                smoothedField.insert(globalNodeID,snx);
+            }
+                break;
+            }
         }
 
         //! --------------------------------
@@ -151,22 +267,23 @@ void smoothingTools::scalarFieldSmoother(QMap<int,double> &field,
 void smoothingTools::fieldSmoother(QMap<int,QList<double>> &field,
                                    const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS,
                                    const std::map<int,double> &betaAveField,
+                                   const std::map<int,double> &betaVisibilityField,
+                                   const std::map<int,int> &mapOfNodeTypes,
                                    int NbSteps,
                                    bool normalize)
 {
     cout<<"prismaticLayer::fieldSmoother()->____function called____"<<endl;
 
-    //! ---------------------------------------------------------------------
-    //! check if the mesh has curvature data inside - use gaussian curvature
-    //! ---------------------------------------------------------------------
-    if(aMeshDS->myCurvature.isEmpty()) aMeshDS->computeDiscreteCurvature(1);
+    const double PI = 3.14159236534;
+    const double dmax = 0.8;
 
     //! ----------------
     //! smoothing steps
     //! ----------------
+    QMap<int,QList<double>> smoothedField;
     for(int n = 1; n<=NbSteps; n++)
     {
-        QMap<int,QList<double>> smoothedField;
+        //QMap<int,QList<double>> smoothedField;
         for(QMap<int,QList<double>>::iterator it = field.begin(); it!= field.end(); ++it)
         {
             double snx, sny, snz;
@@ -244,10 +361,11 @@ void smoothingTools::fieldSmoother(QMap<int,QList<double>> &field,
             //! overrelaxation factor
             //! ----------------------
             double omega = fomega(betaAve);
+            double oneminusomega = 1-omega;
 
-            snx = (1-omega)*localValue[0] + (omega/Swij)*a0;
-            sny = (1-omega)*localValue[1] + (omega/Swij)*a1;
-            snz = (1-omega)*localValue[2] + (omega/Swij)*a2;
+            snx = oneminusomega*localValue[0] + (omega/Swij)*a0;
+            sny = oneminusomega*localValue[1] + (omega/Swij)*a1;
+            snz = oneminusomega*localValue[2] + (omega/Swij)*a2;
 
             if(normalize == true)
             {
@@ -257,18 +375,52 @@ void smoothingTools::fieldSmoother(QMap<int,QList<double>> &field,
                 snz /= l;
             }
 
-            QList<double> localFieldValueSmoothed;
+            QList<double> localFieldValueSmoothed;            
             localFieldValueSmoothed<<snx<<sny<<snz;
             smoothedField.insert(globalNodeID,localFieldValueSmoothed);
         }
-
-        //! -------------------------
-        //! replace the field values
-        //! -------------------------
-        for(QMap<int,QList<double>>::iterator it = field.begin(); it!= field.end(); ++it)
-        {
-            int globalNodeID = it.key();
-            it.value() = smoothedField.value(globalNodeID);
-        }
     }
+
+    //! -------------------------
+    //! replace the field values
+    //! -------------------------
+    int NbNotSmoothed = 0;
+    for(QMap<int,QList<double>>::iterator it = field.begin(); it!= field.end(); ++it)
+    {
+        int globalNodeID = it.key();
+        int localNodeID = aMeshDS->myNodesMap.FindIndex(globalNodeID);
+
+        const QList<double> &localFieldValue = smoothedField.value(globalNodeID);
+        double snx = localFieldValue[0];
+        double sny = localFieldValue[1];
+        double snz = localFieldValue[2];
+
+        //! ------------------------------------------------------
+        //! check if the smoothed vectors stand within visibility
+        //! ------------------------------------------------------
+        const QList<double> &aNodeNormal = aMeshDS->myNodeNormals.value(globalNodeID);          // best normal
+        const QList<int> &localElementIDs_surr = aMeshDS->myNodeToElements.value(localNodeID);
+        bool isSmoothedDirectionOK = true;
+        for(int n=0; n<localElementIDs_surr.length(); n++)
+        {
+            int localElementID_surr = localElementIDs_surr[n];
+            int globalElementID_surr = aMeshDS->myElementsMap.FindKey(localElementID_surr);
+            double nx,ny,nz;
+            aMeshDS->GetNodeNormal(globalElementID_surr,10,nx,ny,nz);
+            double dot = aNodeNormal[0]*snx+aNodeNormal[1]*sny+aNodeNormal[2]*snz;      // no need to normalize here
+            if(dot<-1) dot = -1;
+            if(dot>1) dot = 1;
+            double dpmin = cos(PI/2-(1-dmax)*betaVisibilityField.at(globalNodeID));
+            if(dot<dpmin)
+            {
+                isSmoothedDirectionOK = false;
+                break;
+            }
+        }
+        if(isSmoothedDirectionOK==true) it.value() = smoothedField.value(globalNodeID);
+    }
+
+    cout<<"**************************************************"<<endl;
+    cout<<" fraction of guiding vectors not smoothed: "<<double(NbNotSmoothed/aMeshDS->GetAllNodes().Extent())<<endl;
+    cout<<"**************************************************"<<endl;
 }

@@ -1721,7 +1721,7 @@ void MeshTools::computeAngleDefectMap(const occHandle(Ng_MeshVS_DataSourceFace) 
 
         double lP0P = sqrt(pow((xP0-xP),2)+pow((yP0-yP),2)+pow((zP0-zP),2));
         size_t Nb = vecOfSurroundingNodes.size();
-        for(int i = 1; i<Nb; i++)
+        for(int i = 0; i<Nb; i++)
         {
             aMeshDS->GetGeom(vecOfSurroundingNodes[i],false,coords,NbNodes_,aType);
             double xPi = coords(1);

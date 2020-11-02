@@ -1864,10 +1864,11 @@ userMessage MesherClass::Tetgen_generateVolumeMesh(int bodyIndex, int preserveSu
             mr.message = QString("Error in merging the prismatic and interionr mesh for body %1").arg(bodyIndex);
             return mr;
         }
-        //myMeshDB->ArrayOfMeshDS.insert(bodyIndex,mainMesh3D);
+        myMeshDB->ArrayOfMeshDS.insert(bodyIndex,mainMesh3D);
 
-        //! for testing purposes - show the interior mesh
-        myMeshDB->ArrayOfMeshDS.insert(bodyIndex,tetgenVolumeMeshDS);
+        //! for testing purposes - record into the database the volume mesh
+        //! instead of the total mesh
+        //myMeshDB->ArrayOfMeshDS.insert(bodyIndex,tetgenVolumeMeshDS);
 
         mr.isDone = true;
         mr.message = QString("Prismatic 3D mesh and interior mesh for body %1 successfully merged").arg(bodyIndex);
