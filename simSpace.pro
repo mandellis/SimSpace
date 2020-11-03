@@ -653,6 +653,5 @@ DEPENDPATH += $$PWD/QCustomPlot/qcp
 # embree
 # -------
 win32: LIBS += -L$$PWD/Embree/embree-3.11.0.x64.vc14.windows/lib/ -lembree3
-
 INCLUDEPATH += $$PWD/Embree/embree-3.11.0.x64.vc14.windows/include/embree3
 DEPENDPATH += $$PWD/Embree/embree-3.11.0.x64.vc14.windows/include/embree3

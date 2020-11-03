@@ -996,11 +996,11 @@ bool MeshTools::arrayOfFaceDataSourcesToExtendedStlFile(const NCollection_Array1
                 double n3 = s21x*s31y-s21y*s31x;
 
                 sprintf(line,
-                        " facet normal %.12e %.12e %.12e\n"
+                        " facet normal %.9e %.9e %.9e\n"
                         "   outer loop\n"
-                        "     vertex %.12e %.12e %.12e\n"
-                        "     vertex %.12e %.12e %.12e\n"
-                        "     vertex %.12e %.12e %.12e\n"
+                        "     vertex %.9e %.12e %.9e\n"
+                        "     vertex %.9e %.12e %.9e\n"
+                        "     vertex %.9e %.12e %.9e\n"
                         "   endloop\n"
                         "   %d\n"
                         " endfacet\n",
@@ -1202,7 +1202,7 @@ bool MeshTools::buildPLC(const NCollection_Array1<occHandle(Ng_MeshVS_DataSource
     //for(int i=0; i<pointList_.length(); i++)  new
     {
         const QVector<double> &P = pointList.at(i);
-        fprintf(nodeFile,"%d\t%.12e\t%.12e\t%.12e\t%d\n",i+1,P.at(0),P.at(1),P.at(2),1);
+        fprintf(nodeFile,"%d\t%.9e\t%.9e\t%.9e\t%d\n",i+1,P.at(0),P.at(1),P.at(2),1);
 
         //const mesh::meshPoint &aP_ = pointList_[i];
         //fprintf(nodeFile,"%d\t%.12e\t%.12e\t%.12e\t%d\n",i+1,aP_.x,aP_.y,aP_.z,1);
@@ -1236,47 +1236,44 @@ bool MeshTools::buildPLC(const NCollection_Array1<occHandle(Ng_MeshVS_DataSource
     for(int faceDSNr = arrayOfFaceDS.Lower(); faceDSNr<=arrayOfFaceDS.Upper(); faceDSNr++)
     {
         const occHandle(Ng_MeshVS_DataSourceFace) &curFaceMeshDS = arrayOfFaceDS.Value(faceDSNr);
-        if(!curFaceMeshDS.IsNull())
-        {
-            int localElementID = 0;
-            int NbNodes;
-            MeshVS_EntityType type;
-            double buf[24];
-            TColStd_Array1OfReal coords(*buf,1,24);
-
-            for(TColStd_MapIteratorOfPackedMapOfInteger eIt(curFaceMeshDS->GetAllElements());eIt.More();eIt.Next())
-            {
-                //! ---------------------------------------------------------
-                //! One line: <# of polygons> [# of holes] [boundary marker]
-                //! ---------------------------------------------------------
-                fprintf(polyFile,"%d\t%d\t%d\n",1,0,faceDSNr);
-
-                //! ----------------------------------------------------------------------------------------
-                //! Following lines list # of polygons: <# of corners> <corner 1> <corner 2> ... <corner #>
-                //! ----------------------------------------------------------------------------------------
-                fprintf(polyFile,"%d\t",3);
-
-                localElementID++;
-                int globalElementID = eIt.Key();
-                curFaceMeshDS->GetGeom(globalElementID,true,coords,NbNodes,type);
-
-                //!cout<<"____local element ID: "<<localElementID<<"____global element ID: "<<globalElementID<<"____"<<endl;
-
-                for(int k=0; k<NbNodes-1; k++)
-                {
-                    int s = 3*k;
-                    QVector<double> P { coords(s+1), coords(s+2), coords(s+3) };
-                    fprintf(polyFile,"%d\t",pointList.indexOf(P)+1);
-                }
-
-                int n = 3*(NbNodes-1);
-                QVector<double> P { coords(n+1), coords(n+2), coords(n+3) };
-                fprintf(polyFile,"%d\n",pointList.indexOf(P)+1);
-            }
-        }
-        else
+        if(curFaceMeshDS.IsNull())
         {
             cout<<"MeshTools::buildPLC()->____poly file: the face data source "<<faceDSNr<<" is null____"<<endl;
+            continue;
+        }
+
+        int localElementID = 0;
+        int NbNodes;
+        MeshVS_EntityType type;
+        double buf[24];
+        TColStd_Array1OfReal coords(*buf,1,24);
+
+        for(TColStd_MapIteratorOfPackedMapOfInteger eIt(curFaceMeshDS->GetAllElements());eIt.More();eIt.Next())
+        {
+            //! ---------------------------------------------------------
+            //! One line: <# of polygons> [# of holes] [boundary marker]
+            //! ---------------------------------------------------------
+            fprintf(polyFile,"%d\t%d\t%d\n",1,0,faceDSNr);
+
+            //! ----------------------------------------------------------------------------------------
+            //! Following lines list # of polygons: <# of corners> <corner 1> <corner 2> ... <corner #>
+            //! ----------------------------------------------------------------------------------------
+            fprintf(polyFile,"%d\t",3);
+
+            localElementID++;
+            int globalElementID = eIt.Key();
+            curFaceMeshDS->GetGeom(globalElementID,true,coords,NbNodes,type);
+
+            for(int k=0; k<NbNodes-1; k++)
+            {
+                int s = 3*k;
+                QVector<double> P { coords(s+1), coords(s+2), coords(s+3) };
+                fprintf(polyFile,"%d\t",pointList.indexOf(P)+1);
+            }
+
+            int n = 3*(NbNodes-1);
+            QVector<double> P { coords(n+1), coords(n+2), coords(n+3) };
+            fprintf(polyFile,"%d\n",pointList.indexOf(P)+1);
         }
     }
 

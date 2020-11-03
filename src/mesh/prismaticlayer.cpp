@@ -15,6 +15,7 @@
 #include <meshselectnlayers.h>
 #include <igtools.h>
 #include <smoothingtools.h>
+#include <pointtomeshdistance.h>
 
 //! ------
 //! Eigen
@@ -1567,6 +1568,12 @@ void prismaticLayer::generateOneTetLayer(occHandle(Ng_MeshVS_DataSourceFace) &th
 {
     cout<<"prismaticLayer::generateOneTetLayer()->____function called____"<<endl;
 
+    //! ----------------------------
+    //! clear the map at first call
+    //! ----------------------------
+    //static QMap<int,double> oldMarchingDistances;
+    //if(layerNumber == 0) oldMarchingDistances.clear();
+
     int NbInvalidTets = 0;
 
     //! -----------------------
@@ -1581,9 +1588,9 @@ void prismaticLayer::generateOneTetLayer(occHandle(Ng_MeshVS_DataSourceFace) &th
     theMeshToInflate->computeNormalAtNodes();
     theMeshToInflate->computeFreeMeshSegments();
 
-    //! ----------------
-    //! guiding vectors
-    //! ----------------
+    //! ---------------------------------
+    //! guiding vectors - "best normals"
+    //! ---------------------------------
     QMap<int,QList<double>> normals = theMeshToInflate->myNodeNormals;
 
     //! ---------------
@@ -1591,13 +1598,12 @@ void prismaticLayer::generateOneTetLayer(occHandle(Ng_MeshVS_DataSourceFace) &th
     //! ---------------
     std::map<int,int> mapNodeTypes;
     this->classifyNodes(theMeshToInflate,mapNodeTypes);
-    //cout<<"____map of node type size: "<<mapNodeTypes.size()<<"____"<<endl;
 
     //! -----------------------------------------------------------------------------------------------
     //! smooth the guiding vectors directions - use 5/10 smoothing steps
     //! flag normalize == true since the "rotation" of the vector is of interest (change in direction)
     //! -----------------------------------------------------------------------------------------------
-    smoothingTools::fieldSmoother(normals,theMeshToInflate,betaAverageField,betaVisibilityField,mapNodeTypes,10,true);
+    smoothingTools::fieldSmoother(normals,theMeshToInflate,betaAverageField,betaVisibilityField,mapNodeTypes,20,true);
 
     //! ------------------------------------
     //! map of the local marching distances
@@ -1615,12 +1621,31 @@ void prismaticLayer::generateOneTetLayer(occHandle(Ng_MeshVS_DataSourceFace) &th
     //! -------------------------
     //! check marching distances
     //! -------------------------
-    // to do ...
+
 
     //! ------------------------------
     //! smooth the marching distances
     //! ------------------------------
-    smoothingTools::scalarFieldSmoother(marchingDistanceMap,theMeshToInflate,betaAverageField,mapNodeTypes,10);
+    smoothingTools::scalarFieldSmoother(marchingDistanceMap,theMeshToInflate,betaAverageField,mapNodeTypes,20);
+
+    //! ---------------------------------------------------
+    //! check marching distances against self intersection
+    //! ---------------------------------------------------
+    pointToMeshDistance aDistanceMeter;
+    aDistanceMeter.init(theMeshToInflate);
+    for(TColStd_MapIteratorOfPackedMapOfInteger it = theMeshToInflate->GetAllNodes(); it.More(); it.Next())
+    {
+        int globalNodeID = it.Key();
+        double nx,ny,nz;
+        theMeshToInflate->GetNodeNormal(globalNodeID,10,nx,ny,nz);
+        int NbNodes;
+        MeshVS_EntityType aType;
+        double P[3], distance;
+        TColStd_Array1OfReal coords(*P,1,3);
+        double dir[3] {-nx,-ny,-nz};
+        theMeshToInflate->GetGeom(globalNodeID,false,coords,NbNodes,aType);
+        aDistanceMeter.distance(P,dir,&distance);
+    }
 
     QMap<int,QList<double>> displacementsField;
     for(QMap<int,QList<double>>::const_iterator it = normals.cbegin(); it!= normals.cend(); ++it)
