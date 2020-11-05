@@ -417,9 +417,9 @@ bool writeSolverFileClass::perform()
                 double a2 = dirData.at(5);
 
                 myInputFile<<"*BOUNDARY"<<endl;
-                if(a0 == 0.0) myInputFile<<(QString("CM_")+SetName).toStdString()<<"1,1"<<endl;
-                if(a1 == 0.0) myInputFile<<(QString("CM_")+SetName).toStdString()<<"2,2"<<endl;
-                if(a2 == 0.0) myInputFile<<(QString("CM_")+SetName).toStdString()<<"3,3"<<endl;
+                if(a0 == 0.0) myInputFile<<(QString("CM_")+SetName).toStdString()<<",1,1"<<endl;
+                if(a1 == 0.0) myInputFile<<(QString("CM_")+SetName).toStdString()<<",2,2"<<endl;
+                if(a2 == 0.0) myInputFile<<(QString("CM_")+SetName).toStdString()<<",3,3"<<endl;
                 myInputFile<<(QString("CM_")+SetName).toStdString()<<",4,6"<<endl;
 #endif
             }
