@@ -298,6 +298,23 @@ private:
     //! enable/disable the progress indicator stop button
     //! --------------------------------------------------
     void setStopButtonEnabled(bool isEnabled);
+
+    //! -------
+    //! helper
+    //! -------
+    bool getPointCoordinates(const occHandle(MeshVS_DataSource)& aMeshDS, int globalNodeID, double *P)
+    {
+        int NbNodes;
+        MeshVS_EntityType aType;
+        double buf[3];
+        TColStd_Array1OfReal coords(*buf,1,3);
+        bool isDone = aMeshDS->GetGeom(globalNodeID,false,coords,NbNodes,aType);
+        P[0] = coords(1);
+        P[1] = coords(2);
+        P[2] = coords(3);
+        if(isDone == false) return false;
+        return isDone;
+    }
 };
 
 #endif // PRISMATICLAYER_H

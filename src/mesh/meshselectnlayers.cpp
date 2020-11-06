@@ -82,9 +82,9 @@ bool meshSelectNLayers::getElements(occHandle(Ng_MeshVS_DataSource3D) &theElemen
         return false;
     }
 
-    //! ----------------------------------------------
-    //! the volume elements building the n-step layer
-    //! ----------------------------------------------
+    //! --------------------------------------------------
+    //! the volume elements for building the n-step layer
+    //! --------------------------------------------------
     std::vector<int> vecGlobalElementIDs;
 
     //! ---------------------------------------------------------------
@@ -114,7 +114,7 @@ bool meshSelectNLayers::getElements(occHandle(Ng_MeshVS_DataSource3D) &theElemen
         //! search the meshElement2D into the face to element connectivity map
         //! at this first iteration only one volume element corresponds to a
         //! face mesh element (because they have been taken on the surface by
-        //! definition).
+        //! definition)
         //! -------------------------------------------------------------------
         QList<int> volumeElementsAttachedToSurfaceElement = myVolumeMeshDS->myFaceToElements.value(aMeshElement2D);
         for(int i=0; i<volumeElementsAttachedToSurfaceElement.length(); i++)

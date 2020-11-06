@@ -21,6 +21,7 @@
 //! ----------------------
 pointToMeshDistance::pointToMeshDistance(const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS)
 {
+    //cout<<"pointToMeshDistance::pointToMeshDistance()->____contructor called____"<<endl;
     this->init(aMeshDS);
 }
 
@@ -31,6 +32,8 @@ pointToMeshDistance::pointToMeshDistance(const occHandle(Ng_MeshVS_DataSourceFac
 void pointToMeshDistance::init(const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS)
 {
     if(aMeshDS.IsNull()) return;
+
+    //cout<<"pointToMeshDistance::init()->____function called____"<<endl;
     Eigen::MatrixXd V;
     Eigen::MatrixXi F;
 
@@ -38,6 +41,7 @@ void pointToMeshDistance::init(const occHandle(Ng_MeshVS_DataSourceFace) &aMeshD
     //! adding points to Eigen mesh data structure
     //! -------------------------------------------
     int NN = aMeshDS->GetAllNodes().Extent();
+    //cout<<"____"<<NN<<"____"<<endl;
     V.resize(NN,3);
     TColStd_MapIteratorOfPackedMapOfInteger it(aMeshDS->GetAllNodes());
     int NbNodes;
@@ -58,12 +62,13 @@ void pointToMeshDistance::init(const occHandle(Ng_MeshVS_DataSourceFace) &aMeshD
     //! adding elements to Eigen mesh data structure
     //! ---------------------------------------------
     int NE = aMeshDS->GetAllElements().Extent();
+    cout<<"____"<<NE<<"____"<<endl;
     F.resize(NE,3);
 
     int bufn[3];
     TColStd_Array1OfInteger nodeIDs(*bufn,1,3);
     int NbElements = aMeshDS->GetAllElements().Extent();
-    TColStd_MapIteratorOfPackedMapOfInteger itt(aMeshDS->GetAllElements().Extent());
+    TColStd_MapIteratorOfPackedMapOfInteger itt(aMeshDS->GetAllElements());
     for(int localElementID = 1; localElementID<=NbElements; localElementID++, itt.Next())
     {
         int globalElementID = itt.Key();
@@ -80,7 +85,9 @@ void pointToMeshDistance::init(const occHandle(Ng_MeshVS_DataSourceFace) &aMeshD
     //! ------------
     //! init embree
     //! ------------
+    //cout<<"pointToMeshDistance::init()->____initializing embree____"<<endl;
     myEmbree.init(V.cast<float>(),F.cast<int>());
+    //cout<<"pointToMeshDistance::init()->____embree initialized____"<<endl;
 }
 
 //! -------------------------

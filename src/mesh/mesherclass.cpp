@@ -229,7 +229,7 @@ void MesherClass::generateMesh()
 
             //! --------------------------------------------------------------
             //! generate the surface mesh. In case of prismatic mesh generate
-            //! the prismatic 3D elements
+            //! the prismatic volume elements
             //! --------------------------------------------------------------
             if(myIsVolume==false)
             {
@@ -330,8 +330,8 @@ void MesherClass::generateMesh()
                     QList<occHandle(Ng_MeshVS_DataSourceFace)> listOfInflatedMeshes;
                     userMessage mr = this->PrismaticLayers_generatePrismaticMesh(bodyIndex,theLastInflatedMesh,listOfInflatedMeshes);
 
-                    // for diagnostic
-                    myMeshDB->ArrayOfMeshDS2D.insert(bodyIndex,theLastInflatedMesh);
+                    // diagnostic
+                    //myMeshDB->ArrayOfMeshDS2D.insert(bodyIndex,theLastInflatedMesh);
 
                     Global::status().myMessages->appendMessage(mr);
                 }
@@ -1254,7 +1254,7 @@ userMessage MesherClass::PrismaticLayers_generateTetBoundaryMesh(int bodyIndex)
 
 //! ------------------------------------------------
 //! function: PrismaticLayers_generatePrismaticMesh
-//! details:
+//! details:  internally calls prismaticLayer::
 //! ------------------------------------------------
 userMessage MesherClass::PrismaticLayers_generatePrismaticMesh(int bodyIndex,
                                                                occHandle(Ng_MeshVS_DataSourceFace) &theLastInflatedMesh,
@@ -1272,16 +1272,16 @@ userMessage MesherClass::PrismaticLayers_generatePrismaticMesh(int bodyIndex,
     //! ------------------------
     if(myProgressIndicator!=Q_NULLPTR) emit requestDisableStop();
 
-    //! ---------------------------------------
-    //! initialize the prismatic layer builder
-    //! ---------------------------------------
+    //! ------------------------------------------------------------
+    //! initialize the prismatic layer builder::generateMeshAtWalls
+    //! ------------------------------------------------------------
     prismaticLayer prismaticLayerBuilder(myMeshDB);
     if(myProgressIndicator!=Q_NULLPTR) prismaticLayerBuilder.setProgressIndicator(myProgressIndicator);
     prismaticLayerBuilder.setBody(bodyIndex);
 
-    //! --------------------------------------------------------------------------
-    //!  retrieve the list of the prismatic faces for the body (list of face IDs)
-    //! --------------------------------------------------------------------------
+    //! ------------------------------------------------------------------------------
+    //!  retrieve the list of the prismatic faces for the body (list of face numbers)
+    //! ------------------------------------------------------------------------------
     const QList<int> &prismaticFacesOnBody = myMeshDB->prismaticFaces.value(bodyIndex);
     std::vector<int> prismaticFaces = prismaticFacesOnBody.toVector().toStdVector();
     prismaticLayerBuilder.setPrismaticFaces(prismaticFaces);
@@ -1305,23 +1305,28 @@ userMessage MesherClass::PrismaticLayers_generatePrismaticMesh(int bodyIndex,
     const prismaticLayerParameters &parameters = myMeshDB->prismaticMeshParameters.value(bodyIndex);
     prismaticLayerBuilder.setParameters(parameters);
 
-    occHandle(Ng_MeshVS_DataSource3D) prismaticMeshDS;
+    occHandle(Ng_MeshVS_DataSource3D) prismaticMeshDS;  //ceserot
     isDone = prismaticLayerBuilder.generateMeshAtWalls(prismaticMeshDS,theLastInflatedMesh,listOfInflatedMeshes);
 
     //! -----------------------------------------------------
     //! the "prismaticMeshDS" is inserted in "ArrayOfMeshDS"
-    //! as a volume mesh
     //! -----------------------------------------------------
-    if(isDone) myMeshDB->ArrayOfMeshDS.insert(bodyIndex,prismaticMeshDS);
-    else myMeshDB->ArrayOfMeshDS.insert(bodyIndex,occHandle(MeshVS_DataSource)());
+    mr.isDone = isDone;
+    if(isDone)
+    {
+        mr.message = QString("The prismatic mesh has been generated");
+        myMeshDB->ArrayOfMeshDS.insert(bodyIndex,prismaticMeshDS);
+    }
+    else
+    {
+        mr.message = QString("Error in generating the prismatic mesh");
+        myMeshDB->ArrayOfMeshDS.insert(bodyIndex,occHandle(MeshVS_DataSource)());
+    }
 
     //! -----------------------
     //! enable the Stop button
     //! -----------------------
     if(myProgressIndicator!=Q_NULLPTR) emit requestEnableStop();
-
-    mr.isDone = true;
-    mr.message = QString("The prismatic mesh has been generated");
     return mr;
 }
 
@@ -1335,7 +1340,7 @@ userMessage MesherClass::Netgen_generateVolumeMesh(int bodyIndex,
 {
     userMessage mr;
     bool isInflationDefinedOnBody = myMeshDB->HasPrismaticFaces.value(bodyIndex);
-    if(!isInflationDefinedOnBody)
+    if(isInflationDefinedOnBody==false)
     {
         //! ------------------------
         //! Netgen as volume mesher
@@ -1362,12 +1367,8 @@ userMessage MesherClass::Netgen_generateVolumeMesh(int bodyIndex,
         const prismaticLayerParameters &parameters = myMeshDB->prismaticMeshParameters.value(bodyIndex);
         int algo = parameters.generationAlgorithm;
 
-        if(algo ==0)
+        if(algo ==0)    //! algo pre-inflation
         {
-            //! --------------------------
-            //! pre-inflation algorithm
-            //! generate the surface mesh
-            //! --------------------------
             mr = this->Netgen_generateSurfaceMesh(bodyIndex,mainMesh2D);
             if(!mr.isDone)
             {
@@ -1407,11 +1408,6 @@ userMessage MesherClass::Netgen_generateVolumeMesh(int bodyIndex,
                 return mr;
             }
 
-            //! ---------------------------------------------------------
-            //! record the post inflation mesh - for diagnostic purposes
-            //! ---------------------------------------------------------
-            //myMeshDB->ArrayOfMeshDS.insert(bodyIndex,postInflationVolumeMesh);
-
             //! -------------------------------------------------------------
             //! sum the prismatic mesh and the volume mesh
             //! it uses the 3D mesh constructor from a list of meshElementByCoords
@@ -1422,7 +1418,7 @@ userMessage MesherClass::Netgen_generateVolumeMesh(int bodyIndex,
             MeshTools::toListOf3DElements(postInflationVolumeMesh,elementList2);
             elementList1.reserve(elementList1.size()+elementList2.size());
             elementList1.insert(elementList1.end(),elementList2.begin(),elementList2.end());
-            mainMesh3D = new Ng_MeshVS_DataSource3D(elementList1);
+            mainMesh3D = new Ng_MeshVS_DataSource3D(elementList1,true,true);
 
             //! -----------------------------------------
             //! use the surface mesh built topologically
@@ -1441,7 +1437,6 @@ userMessage MesherClass::Netgen_generateVolumeMesh(int bodyIndex,
             myMeshDB->ArrayOfMeshDS.insert(bodyIndex, mainMesh3D);
 
             //! ----------------------------------------------------------------
-            //! add the face mesh datasources
             //! The nodes of the face mesh data source nodes must be renumbered
             //! using the new globalNodeIDs. To this aim:
             //! - generate a map (pointHash, globalNodeID) using the surface or
@@ -1511,19 +1506,12 @@ userMessage MesherClass::Netgen_generateVolumeMesh(int bodyIndex,
                 myMeshDB->ArrayOfMeshDS.insert(bodyIndex,mainMesh3D);
             }
 
-            //! ----------------------------------------------------
-            //! build the prismatic mesh elements. The function
-            //! PrismaticLayers_generatePrismaticMesh_post puts the
-            //! boundary mesh data source into the database
-            //! ----------------------------------------------------
+            //! ----------------------------------
+            //! build the prismatic mesh elements
+            //! ----------------------------------
             occHandle(Ng_MeshVS_DataSource3D) prismaticMeshDS;
             mr = this->PrismaticLayers_generatePrismaticMesh_post(bodyIndex,prismaticMeshDS);
-            if(mr.isDone==false)
-            {
-                mr.isDone = false;
-                mr.message = QString("Error in generating the prismatic mesh");
-                return mr;
-            }
+            if(mr.isDone==false) return mr;
 
             //! -------------------------------------------------------------------
             //! sum the prismatic mesh and the volume mesh
@@ -1535,8 +1523,7 @@ userMessage MesherClass::Netgen_generateVolumeMesh(int bodyIndex,
             MeshTools::toListOf3DElements(occHandle(Ng_MeshVS_DataSource3D)::DownCast(mainMesh3D),elementList2);
             elementList1.reserve(elementList1.size()+elementList2.size());
             elementList1.insert(elementList1.end(),elementList2.begin(),elementList2.end());
-
-            occHandle(Ng_MeshVS_DataSource3D) summedMeshDS = new Ng_MeshVS_DataSource3D(elementList1);
+            occHandle(Ng_MeshVS_DataSource3D) summedMeshDS = new Ng_MeshVS_DataSource3D(elementList1,true,true);
             summedMeshDS->buildFaceToElementConnectivity();
 
             mainMesh3D = summedMeshDS;
@@ -1866,20 +1853,16 @@ userMessage MesherClass::Tetgen_generateVolumeMesh(int bodyIndex, int preserveSu
         }
         myMeshDB->ArrayOfMeshDS.insert(bodyIndex,mainMesh3D);
 
-        //! for testing purposes - record into the database the volume mesh
-        //! instead of the total mesh
-        //myMeshDB->ArrayOfMeshDS.insert(bodyIndex,tetgenVolumeMeshDS);
-
         mr.isDone = true;
         mr.message = QString("Prismatic 3D mesh and interior mesh for body %1 successfully merged").arg(bodyIndex);
         return mr;
     }
 }
 
-//! ----------------------------------------
+//! ------------------------------------------------------------
 //! function: Netgen_STL_generateVolumeMesh
-//! details:
-//! ----------------------------------------
+//! details:  the post BL layer generation here is not complete
+//! ------------------------------------------------------------
 userMessage MesherClass::Netgen_STL_generateVolumeMesh(int bodyIndex,
                                                        occHandle(MeshVS_DataSource) &mainMesh2D,
                                                        occHandle(MeshVS_DataSource) &mainMesh3D)
@@ -1992,12 +1975,18 @@ userMessage MesherClass::Netgen_STL_generateVolumeMesh(int bodyIndex,
                 return mr;
             }
             QList<occHandle(Ng_MeshVS_DataSourceFace)> listOfInflatedMeshes;
+
+            //! -----------------------------------------------------------
+            //! this calls puts the prismatic mesh into the mesh data base
+            //! and return the last inflated mesh
+            //! -----------------------------------------------------------
             mr = this->PrismaticLayers_generatePrismaticMesh(bodyIndex,theLastInflatedMesh,listOfInflatedMeshes);
             if(mr.isDone==false) return mr;
 
-            occHandle(Ng_MeshVS_DataSource3D) prismatic3DMesh = occHandle(Ng_MeshVS_DataSource3D)::DownCast(myMeshDB->ArrayOfMeshDS.value(bodyIndex));
+            //! ----------------------------------------------------------------
+            //! generate the inner tetrahedral mesh from the last inflated mesh
+            //! ----------------------------------------------------------------
             occHandle(Ng_MeshVS_DataSource3D) postInflationVolumeMesh;
-
             mr = myNetgenMesher->meshVolumeFromSurfaceMesh(bodyIndex,theLastInflatedMesh,postInflationVolumeMesh);
             if(mr.isDone == false)
             {
@@ -2006,10 +1995,10 @@ userMessage MesherClass::Netgen_STL_generateVolumeMesh(int bodyIndex,
                 return mr;
             }
 
-            //! ---------------------------------------------------------
-            //! record the post inflation mesh - for diagnostic purposes
-            //! ---------------------------------------------------------
-            //myMeshDB->ArrayOfMeshDS.insert(bodyIndex,postInflationVolumeMesh);
+            //! ----------------------------
+            //! retrieve the prismatic mesh
+            //! ----------------------------
+            occHandle(Ng_MeshVS_DataSource3D) prismatic3DMesh = occHandle(Ng_MeshVS_DataSource3D)::DownCast(myMeshDB->ArrayOfMeshDS.value(bodyIndex));
 
             //! -------------------------------------------------------------
             //! sum the prismatic mesh and the volume mesh
@@ -2021,7 +2010,7 @@ userMessage MesherClass::Netgen_STL_generateVolumeMesh(int bodyIndex,
             MeshTools::toListOf3DElements(postInflationVolumeMesh,elementList2);
             elementList1.reserve(elementList1.size()+elementList2.size());
             elementList1.insert(elementList1.end(),elementList2.begin(),elementList2.end());
-            mainMesh3D = new Ng_MeshVS_DataSource3D(elementList1);
+            mainMesh3D = new Ng_MeshVS_DataSource3D(elementList1,true,true);
 
             //! -----------------------------------------
             //! use the surface mesh built topologically
@@ -2039,13 +2028,7 @@ userMessage MesherClass::Netgen_STL_generateVolumeMesh(int bodyIndex,
             myMeshDB->ArrayOfMeshDS2D.insert(bodyIndex, mainMesh2D);
             myMeshDB->ArrayOfMeshDS.insert(bodyIndex, mainMesh3D);
 
-            cout<<"\\-------------------------------------------\\"<<endl;
-            cout<<"\\- preparing the map of new global node IDs \\"<<endl;
-            cout<<"\\-------------------------------------------\\"<<endl;
-
             //! ----------------------------------------------------------------
-            //! put the face mesh data sources into the data base
-            //! OK - done: the data sources are set directly by the tool
             //! The nodes of the face mesh data source nodes must be renumbered
             //! using the new globalNodeIDs. To this aim:
             //! - generate a map (pointHash, globalNodeID) using the surface or
@@ -2067,15 +2050,8 @@ userMessage MesherClass::Netgen_STL_generateVolumeMesh(int bodyIndex,
 
                 size_t seed = 0;
                 for(int j=0; j<3; j++) hash_c<double>(seed, aPoint[j]);
-                //std::pair<size_t,int> aPair;
-                //aPair.first = seed;
-                //aPair.second = globalNodeID;
                 mapNodeCoords_globalNodeID.insert(std::make_pair(seed,globalNodeID));
             }
-
-            cout<<"\\-----------------------------------------------------\\"<<endl;
-            cout<<"\\- start nodal renumbering the face mesh data sources \\"<<endl;
-            cout<<"\\-----------------------------------------------------\\"<<endl;
 
             //! ----------------------------------------
             //! iterate over the face mesh data sources
@@ -2100,9 +2076,6 @@ userMessage MesherClass::Netgen_STL_generateVolumeMesh(int bodyIndex,
                 //! -------------------------------------------------
                 myMeshDB->ArrayOfMeshDSOnFaces.setValue(bodyIndex,faceNr,curFaceMeshDS);
             }
-            cout<<"\\-----------------------------------------------------\\"<<endl;
-            cout<<"\\-         renumbering successfully done              \\"<<endl;
-            cout<<"\\-----------------------------------------------------\\"<<endl;
 
             this->removeSupportFiles();
             return mr;
@@ -2114,7 +2087,7 @@ userMessage MesherClass::Netgen_STL_generateVolumeMesh(int bodyIndex,
             //! --------------------------------------------
             myNetgenMesher->setMeshDataBase(myMeshDB);
             bool isVolume = true;
-            mr = myNetgenMesher->perform(bodyIndex,isVolume,mainMesh2D,mainMesh3D);
+            mr = myNetgenMesher->perform(bodyIndex,isVolume,mainMesh2D,mainMesh3D); // perform on an STL input
 
             //! ----------------------------------------------------------
             //! put the surface and volume mesh into the mesh data source
@@ -2136,10 +2109,28 @@ userMessage MesherClass::Netgen_STL_generateVolumeMesh(int bodyIndex,
                 return mr;
             }
 
-            //! ---------------------------------------------------------
-            //! put the face mesh data sources into the data base
-            //! OK - done: the data sources are set directly by the tool
-            //! ---------------------------------------------------------
+            //! ----------------------------------
+            //! build the prismatic mesh elements
+            //! ----------------------------------
+            occHandle(Ng_MeshVS_DataSource3D) prismaticMeshDS;
+            mr = this->PrismaticLayers_generatePrismaticMesh_post(bodyIndex,prismaticMeshDS);
+            if(mr.isDone==false) return mr;
+
+            //! -------------------------------------------------------------------
+            //! sum the prismatic mesh and the volume mesh
+            //! it uses the 3D mesh constructor from a list of meshElementByCoords
+            //! which perform an automatic node renumbering
+            //! -------------------------------------------------------------------
+            std::vector<meshElementByCoords> elementList1, elementList2;
+            MeshTools::toListOf3DElements(prismaticMeshDS,elementList1);
+            MeshTools::toListOf3DElements(occHandle(Ng_MeshVS_DataSource3D)::DownCast(mainMesh3D),elementList2);
+            elementList1.reserve(elementList1.size()+elementList2.size());
+            elementList1.insert(elementList1.end(),elementList2.begin(),elementList2.end());
+            occHandle(Ng_MeshVS_DataSource3D) summedMeshDS = new Ng_MeshVS_DataSource3D(elementList1,true,true);
+            summedMeshDS->buildFaceToElementConnectivity();
+
+            mainMesh3D = summedMeshDS;
+            myMeshDB->ArrayOfMeshDS.insert(bodyIndex,mainMesh3D);
 
             //! ----------------------
             //! remove supports files
@@ -2626,12 +2617,12 @@ void MesherClass::handleRequestStoppingNetgenEnquireTimer()
     emit requestStoppingNetgenEnquireTimer();
 }
 
-//! -------------------------------------------------------
+//! -----------------------------------------------------------------
 //! function: PrismaticLayers_generatePrismaticMesh_post
 //! details:  the volume mesh must be generated in advance
-//! -------------------------------------------------------
-userMessage MesherClass::PrismaticLayers_generatePrismaticMesh_post(int bodyIndex,
-                                                                    occHandle(Ng_MeshVS_DataSource3D) &prismaticMeshDS)
+//!           internally uses prismaticLayer::inflateMeshAndCompress
+//! -----------------------------------------------------------------
+userMessage MesherClass::PrismaticLayers_generatePrismaticMesh_post(int bodyIndex, occHandle(Ng_MeshVS_DataSource3D) &prismaticMeshDS)
 {
     cout<<"MesherClass::PrismaticLayers_generatePrismaticMesh_post()->____function called____"<<endl;
 
@@ -2651,9 +2642,9 @@ userMessage MesherClass::PrismaticLayers_generatePrismaticMesh_post(int bodyInde
     prismaticLayer prismaticLayerBuilder(myMeshDB);
     prismaticLayerBuilder.setBody(bodyIndex);
 
-    //! ---------------------------
+    //! -------------------------------------------------------------------
     //! initialize the prismatic layer builder: set the progress indicator
-    //! ---------------------------
+    //! -------------------------------------------------------------------
     if(myProgressIndicator!=Q_NULLPTR) prismaticLayerBuilder.setProgressIndicator(myProgressIndicator);
 
     //! ------------------------------------------------------
@@ -2673,11 +2664,11 @@ userMessage MesherClass::PrismaticLayers_generatePrismaticMesh_post(int bodyInde
 
     //! -----------------------------------------------------------------------
     //! displace the surface mesh and "compress" the pre-inflation volume mesh
-    //! which should have be present into the mesh database
+    //! The pre-inflation volume mesh must be present into the mesh database
     //! -----------------------------------------------------------------------
     QList<occHandle(Ng_MeshVS_DataSourceFace)> theInflatedMeshes;
     occHandle(Ng_MeshVS_DataSource3D) preInflationVolumeMeshDS = occHandle(Ng_MeshVS_DataSource3D)::DownCast(myMeshDB->ArrayOfMeshDS.value(bodyIndex));
-    bool isDone = prismaticLayerBuilder.inflateMeshAndCompress(theInflatedMeshes,preInflationVolumeMeshDS);
+    bool isDone = prismaticLayerBuilder.inflateMeshAndCompress(theInflatedMeshes,preInflationVolumeMeshDS);     //!cesere2
     if(isDone==false)
     {
         mr.isDone = false;
@@ -2685,56 +2676,28 @@ userMessage MesherClass::PrismaticLayers_generatePrismaticMesh_post(int bodyInde
         return mr;
     }
 
-    //! -----------
-    //! diagnostic
-    //! -----------
-    cout<<"MesherClass::PrismaticLayers_generatePrismaticMesh()->____number of inflated meshes: "<<theInflatedMeshes.size()<<"____"<<endl;
-    cout<<"@----------------------------------------------------------@"<<endl;
-    for(int i=0; i<theInflatedMeshes.length(); i++)
-    {
-        int NN = theInflatedMeshes.at(i)->GetAllNodes().Extent();
-        int NE = theInflatedMeshes.at(i)->GetAllElements().Extent();
-        cout<<"@____surface layer nr "<<i<<". Nb Nodes: "<<NN<<"; Nb Elements: "<<NE<<"____"<<endl;
-    }
-    cout<<"@----------------------------------------------------------@"<<endl;
-
-    //! ---------------------------------------------
-    //! generate the prismatic 3D mesh from the list
-    //! of the displaced meshes
-    //! ---------------------------------------------
-    cout<<"MesherClass::PrismaticLayers_generatePrismaticMesh()->____start generating prismatic 3D elements____"<<endl;
+    //! ---------------------------------------------------------------------
+    //! generate the prismatic 3D mesh from the list of the displaced meshes
+    //! the prismatic mesh is returned, while the deformed (compressed) pre-
+    //! inflation mesh is inserted into the mesh data base
+    //! ---------------------------------------------------------------------
     isDone = prismaticLayerBuilder.buildPrismaticElements(theInflatedMeshes,prismaticMeshDS);
-
-    /* disabilito per un momento
-    //! -----------------------------------------------------
-    //! the "prismaticMeshDS" is inserted in "ArrayOfMeshDS"
-    //! as a volume mesh
-    //! -----------------------------------------------------
+    mr.isDone = isDone;
     if(isDone)
     {
-        myMeshDB->ArrayOfMeshDS.insert(bodyIndex,prismaticMeshDS);
+        myMeshDB->ArrayOfMeshDS.insert(bodyIndex,preInflationVolumeMeshDS);
+        mr.message = QString("Inflated volume mesh generated");
     }
     else
     {
         myMeshDB->ArrayOfMeshDS.insert(bodyIndex,occHandle(MeshVS_DataSource)());
+        mr.message = QString("Error in generating the inflated volume mesh");
     }
-    */
 
     //! -----------------------
     //! enable the Stop button
     //! -----------------------
     if(myProgressIndicator!=Q_NULLPTR) emit requestEnableStop();
 
-    //! ---------------------------------------------------------------------------------
-    //! check the result: return "true" if at least the first displaced mesh is not null
-    //! ---------------------------------------------------------------------------------
-    if(theInflatedMeshes.at(1).IsNull())
-    {
-        mr.isDone = false;
-        mr.message = QString("Error in generaring the prismatic mesh");
-        return mr;
-    }
-    mr.isDone = true;
-    mr.message = QString("The prismatic mesh has been generated");
     return mr;
 }

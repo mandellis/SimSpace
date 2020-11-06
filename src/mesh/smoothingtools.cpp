@@ -35,10 +35,11 @@ double kij(double n, const std::vector<double> &P, const std::vector<double> &S,
 double wij(double betaAve, const std::vector<double> &P, const std::vector<double> &S, double Sdij, double n)
 {
     const double PI = 3.1415926538;
-    const double eps = 5.0*PI/180.0;
-    double val = 1.0;
-    if(betaAve<PI-eps) val = 1/pow(kij(n,P,S,Sdij),2);        // "concave" point
-    if(betaAve>PI+eps) val = pow(kij(n,P,S,Sdij),2);          // "convex" point
+    //const double eps = 5.0*PI/180.0;
+    //double val = 1.0;
+    double val = 0.0;
+    if(betaAve<PI) val = 1/pow(kij(n,P,S,Sdij),2);        // "concave" point
+    if(betaAve>=PI) val = pow(kij(n,P,S,Sdij),2);          // "convex" point
     return val;
 }
 
@@ -79,7 +80,6 @@ void smoothingTools::scalarFieldSmoother(QMap<int,double> &field,
             {
                 double localValue = it.value();
                 smoothedField.insert(globalNodeID,localValue);
-                //continue;
             }
                 break;
 
@@ -160,7 +160,6 @@ void smoothingTools::scalarFieldSmoother(QMap<int,double> &field,
             {
                 double localValue = it.value();
                 smoothedField.insert(globalNodeID,localValue);
-                //continue;
             }
                 break;
 

@@ -147,7 +147,6 @@ SOURCES += main.cpp\
     compatibility/StlMesh/StlMesh_MeshTriangle.cxx \
     src/mesh/tetwildmesher.cpp \
     src/mesh/mshconvert.cpp \
-    src/mesh/backgroundmeshbuilder.cpp \
     src/mesh/meshuvprojection.cpp \
     src/mesh/customMesher/custommesher.cpp \
     src/mesh/surfacemeshcutter.cpp \
@@ -363,7 +362,6 @@ HEADERS  += mainwindow.h \
     src/mesh/tetwildmesher.h \
     src/mesh/mshconvert.h \
     src/mesh/mshconvert.h \
-    src/mesh/backgroundmeshbuilder.h \
     libigl/include/igl/copyleft/cgal/test.h \
     src/mesh/meshuvprojection.h \
     src/mesh/indexedmapofmeshdatasources.h \

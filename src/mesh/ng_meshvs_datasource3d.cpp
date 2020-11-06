@@ -69,7 +69,7 @@ Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(const std::vector<meshElementByCo
                                                bool autoNumberElements,
                                                bool autoNumberNodes)
 {
-    cout<<"Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D()->____constructor from a QList meshElementByCoords called____"<<endl;
+    //cout<<"Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D()->____constructor from a QList meshElementByCoords called____"<<endl;
     myNumberOfElements = (int)meshElements.size();
     if(myNumberOfElements<1)
     {
@@ -95,10 +95,9 @@ Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(const std::vector<meshElementByCo
         myElementsMap.Add(globalElementID);
 
         int NbNodes = curMeshElement.pointList.length();
-
         for(int j=0; j<NbNodes; j++)
         {
-            const mesh::meshPoint &curMeshPoint = curMeshElement.pointList.at(j);
+            const mesh::meshPoint &curMeshPoint = curMeshElement.pointList[j];
             if(meshPointMap.count(curMeshPoint)==false)
             {
                 //! ----------------------------------------------------------
@@ -173,13 +172,10 @@ Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(const std::vector<meshElementByCo
             myElemNodes->SetValue(i,j+1,indexOfPoint);
         }
     }
-
     //! ------------------
     //! elements topology
     //! ------------------
     this->buildElementsTopology();
-
-    cout<<"Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D()->____constructor from a QList of meshElementByCoords: OK____"<<endl;
 }
 
 //! ----------------------
@@ -1947,7 +1943,7 @@ void Ng_MeshVS_DataSource3D::writeIntoStream(ofstream &os)
 
 //! -----------------------------------------
 //! function: buildFaceToElementConnectivity
-//! details:  optimization => use QHash
+//! details:
 //! -----------------------------------------
 void Ng_MeshVS_DataSource3D::buildFaceToElementConnectivity()
 {
@@ -1982,6 +1978,7 @@ void Ng_MeshVS_DataSource3D::buildFaceToElementConnectivity()
         for(int f=1; f<=NbFaces; f++)
         {
             TColStd_SequenceOfInteger indices = topology->Value(f);
+
             //! -------------------------
             //! create the meshElement2D
             //! -------------------------
@@ -2594,7 +2591,7 @@ void Ng_MeshVS_DataSource3D::displaceMySelf_asRigidAsPossible(const QMap<int, QL
     //! ----------------
     //! the fixed nodes
     //! ----------------
-    cout<<"Ng_MeshVS_DataSource3D::displaceMySelf_asRigidAsPossible()->____setting up nodes for deformation____"<<endl;
+    //cout<<"Ng_MeshVS_DataSource3D::displaceMySelf_asRigidAsPossible()->____setting up nodes for deformation____"<<endl;
     int i;
     for(i = 0; i<nodeGroup.size(); i++)
     {
@@ -2629,7 +2626,7 @@ void Ng_MeshVS_DataSource3D::displaceMySelf_asRigidAsPossible(const QMap<int, QL
 
         i++;
     }
-    cout<<"Ng_MeshVS_DataSource3D::displaceMySelf_asRigidAsPossible()->____setting up nodes for deformation: done____"<<endl;
+    //cout<<"Ng_MeshVS_DataSource3D::displaceMySelf_asRigidAsPossible()->____setting up nodes for deformation: done____"<<endl;
 
     // -------------------------------------------------------------------
     // Compute k-harmonic weight functions "coordinates".
@@ -2643,17 +2640,17 @@ void Ng_MeshVS_DataSource3D::displaceMySelf_asRigidAsPossible(const QMap<int, QL
     // Outputs:
     //   W  #V by #W list of weights
     // -------------------------------------------------------------------
-    cout<<"Ng_MeshVS_DataSource3D::displaceMySelf_asRigidAsPossible()->____harmonic displacement____"<<endl;
+    //cout<<"Ng_MeshVS_DataSource3D::displaceMySelf_asRigidAsPossible()->____harmonic displacement____"<<endl;
     Eigen::MatrixXd U(myNumberOfNodes,3);
     Eigen::MatrixXd D(myNumberOfNodes,3);              //! displacements
     bool isHarmonicDone = igl::harmonic(V,T,b,bc,1,D);
     if(isHarmonicDone) U = V+D;
     else U = V;
-    cout<<"Ng_MeshVS_DataSource3D::displaceMySelf_asRigidAsPossible()->____harmonic displacement done____"<<endl;
+    //cout<<"Ng_MeshVS_DataSource3D::displaceMySelf_asRigidAsPossible()->____harmonic displacement done____"<<endl;
 
     if(mode == 1)
     {
-        cout<<"Ng_MeshVS_DataSource3D::displaceMySelf_asRigidAsPossible()->____ARAP deformation____"<<endl;
+        //cout<<"Ng_MeshVS_DataSource3D::displaceMySelf_asRigidAsPossible()->____ARAP deformation____"<<endl;
         //! --------------------------------------------------------
         //! https://libigl.github.io/tutorial/#as-rigid-as-possible
         //! "as rigid as possible"
@@ -2683,10 +2680,10 @@ void Ng_MeshVS_DataSource3D::displaceMySelf_asRigidAsPossible(const QMap<int, QL
         bool isDone = igl::arap_precomputation(V,T,3,b,arap_data);
         if(!isDone)
         {
-            cout<<"Ng_MeshVS_DataSource3D::displaceMySelf_asRigidAsPossible()->____pre-computation not done____"<<endl;
+            //cout<<"Ng_MeshVS_DataSource3D::displaceMySelf_asRigidAsPossible()->____pre-computation not done____"<<endl;
             return;
         }
-        cout<<"Ng_MeshVS_DataSource3D::displaceMySelf_asRigidAsPossible()->____ARAP pre-computation done____"<<endl;
+        //cout<<"Ng_MeshVS_DataSource3D::displaceMySelf_asRigidAsPossible()->____ARAP pre-computation done____"<<endl;
 
         // ------------------------------------------------------------------
         // Inputs:
@@ -2694,15 +2691,15 @@ void Ng_MeshVS_DataSource3D::displaceMySelf_asRigidAsPossible(const QMap<int, QL
         //   data  struct containing necessary precomputation and parameters
         //   U  #V by dim initial guess
         // ------------------------------------------------------------------
-        cout<<"Ng_MeshVS_DataSource3D::displaceMySelf_asRigidAsPossible()->____ARAP solving____"<<endl;
+        //cout<<"Ng_MeshVS_DataSource3D::displaceMySelf_asRigidAsPossible()->____ARAP solving____"<<endl;
         igl::arap_solve(bc_arap,arap_data,U);
-        cout<<"Ng_MeshVS_DataSource3D::displaceMySelf_asRigidAsPossible()->____ARAP solving done____"<<endl;
+        //cout<<"Ng_MeshVS_DataSource3D::displaceMySelf_asRigidAsPossible()->____ARAP solving done____"<<endl;
     }
 
     //! ----------------------------
     //! update the mesh coordinates
     //! ----------------------------
-    cout<<"Ng_MeshVS_DataSource3D::displaceMySelf_asRigidAsPossible()->____updatig mesh points____"<<endl;
+    //cout<<"Ng_MeshVS_DataSource3D::displaceMySelf_asRigidAsPossible()->____updatig mesh points____"<<endl;
     int N = U.rows();
     for(int row=0; row<N; row++)
     {
