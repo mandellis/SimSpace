@@ -879,8 +879,8 @@ void prismaticLayer::computeBeta(const occHandle(Ng_MeshVS_DataSourceFace) &aMes
 void prismaticLayer::computeShrinkFactor(const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS,
                                          QMap<int,double> &shrinkFactors)
 {
-    FILE *fp = fopen("D:/shrink.txt","w");
-    fprintf(fp,"#NodeID\tx\t\ty\t\tz\t\tbetaAve\t\tbetaVisibility\tshrink\n");
+    //FILE *fp = fopen("D:/shrink.txt","w");
+    //fprintf(fp,"#NodeID\tx\t\ty\t\tz\t\tbetaAve\t\tbetaVisibility\tshrink\n");
 
     const double PI = 3.1415926534;
     const double eps = 0.01745329;           // 1 degree
@@ -897,9 +897,9 @@ void prismaticLayer::computeShrinkFactor(const occHandle(Ng_MeshVS_DataSourceFac
 
         double P[3];
         this->getPointCoordinates(aMeshDS,globalNodeID,P);
-        fprintf(fp,"%d\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n",globalNodeID,P[0],P[1],P[2],betaAve*180/PI,betaVisibility*180/PI,shrink);
+        //fprintf(fp,"%d\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n",globalNodeID,P[0],P[1],P[2],betaAve*180/PI,betaVisibility*180/PI,shrink);
     }
-    fclose(fp);
+    //fclose(fp);
 }
 
 //! ---------------------------------
@@ -1350,26 +1350,6 @@ void prismaticLayer::generateTetLayers(occHandle(Ng_MeshVS_DataSource3D) &meshAt
 {
     cout<<"prismaticLayers::generateTetLayers()->____function called____"<<endl;
 
-    //! -----------------------------
-    //! the volume elements at walls
-    //! -----------------------------
-    std::vector<meshElementByCoords> volumeElementsAtWalls;
-
-    //! --------------------------------------
-    //! decide which node should be displaced
-    //! --------------------------------------
-    this->computeVecFieldCutOff(myLockBoundary);
-
-    //! ---------------------------
-    //! make a copy the outer mesh
-    //! ---------------------------
-    occHandle(Ng_MeshVS_DataSourceFace) theMeshToInflate = new Ng_MeshVS_DataSourceFace(myOverallSumMeshDS);
-    /*
-    occHandle(Ng_MeshVS_DataSourceFace) theMeshToInflate = new Ng_MeshVS_DataSourceFace(myPrismaticFacesSumMeshDS);
-    //occHandle(Ng_MeshVS_DataSourceFace) theMeshToInflate = new Ng_MeshVS_DataSourceFace(myOverallSumMeshDS);
-    */
-    if(myPrismaticFacesSumMeshDS->myBoundarySegments.isEmpty()) myPrismaticFacesSumMeshDS->computeFreeMeshSegments();
-
     //! --------------------------------
     //! init the secondary progress bar
     //! --------------------------------
@@ -1381,6 +1361,66 @@ void prismaticLayer::generateTetLayers(occHandle(Ng_MeshVS_DataSource3D) &meshAt
         QApplication::postEvent(myProgressIndicator,progressEvent);
         QApplication::processEvents();
     }
+
+    //! -----------------------------
+    //! the volume elements at walls
+    //! -----------------------------
+    std::vector<meshElementByCoords> volumeElementsAtWalls;
+//cesere
+
+
+    //! --------------------------------------
+    //! decide which node should be displaced
+    //! --------------------------------------
+    this->computeVecFieldCutOff(myLockBoundary);
+
+    //! ---------------------------
+    //! make a copy the outer mesh
+    //! ---------------------------
+    occHandle(Ng_MeshVS_DataSourceFace) theMeshToInflate = new Ng_MeshVS_DataSourceFace(myOverallSumMeshDS);
+    if(myPrismaticFacesSumMeshDS->myBoundarySegments.isEmpty()) myPrismaticFacesSumMeshDS->computeFreeMeshSegments();
+
+    //! ------------------------------
+    //! analyze gaps at the beginning:
+    //! scan all the mesh nodes.
+    //! compute the distance from closest point on the mesh => "distance"
+    //! apply reduction if
+    //! ------------------------------
+    double Sigma = 0;                                           // a parameter for reduction factor calculation
+    for(int n=0; n<myNbLayers; n++) Sigma += pow(myExpRatio,n);
+    pointToMeshDistance aDistanceMeter;                         // distance meter tool
+    aDistanceMeter.init(theMeshToInflate);                      // init with mesh
+    double firstLayerThickness = myLayerThickness.at(0);        // first layer thickness
+    std::map<int,double> mapOfFirstLayerReductionFactor;        // fill a map (nodeID, reduction factor)
+
+    if(theMeshToInflate->myNodeNormals.isEmpty()) theMeshToInflate->computeNormalAtNodes();
+    const QMap<int,QList<double>> &normals = theMeshToInflate->myNodeNormals;
+
+    FILE *fp = fopen("D:/reductionFactor.txt","w");
+    for(QMap<int,QList<double>>::const_iterator itn = normals.cbegin(); itn!=normals.cend(); itn++)
+    {
+        int globalNodeID = itn.key();
+        const QList<double> &normal = itn.value();
+
+        double P[3], distance;
+        this->getPointCoordinates(theMeshToInflate,globalNodeID,P);
+
+        double nx = -normal[0];
+        double ny = -normal[1];
+        double nz = -normal[2];
+        double dir[3] {nx,ny,nz};
+
+        aDistanceMeter.distance(P,dir,&distance);   // compute distance
+        if(distance>2*myTotalThickness) mapOfFirstLayerReductionFactor.insert(std::make_pair(globalNodeID,1.0));
+        else
+        {
+            double firstLayerThicknessNew = 0.25*distance/Sigma;
+            double reductionFactor = firstLayerThicknessNew/firstLayerThickness;
+            mapOfFirstLayerReductionFactor.insert(std::make_pair(globalNodeID,reductionFactor));
+        }
+        fprintf(fp,"%d\t%lf\n",globalNodeID,mapOfFirstLayerReductionFactor.at(globalNodeID));
+    }
+    fclose(fp);
 
     //! --------------------
     //! generate the layers
@@ -1412,7 +1452,7 @@ void prismaticLayer::generateTetLayers(occHandle(Ng_MeshVS_DataSource3D) &meshAt
         //! ------------------------------------------------------------
         //! collapsed into a method the generation of one layer of tets
         //! ------------------------------------------------------------
-        this->generateOneTetLayer(theMeshToInflate,displacement,volumeElementsAtWalls);
+        this->generateOneTetLayer(theMeshToInflate,displacement,volumeElementsAtWalls,mapOfFirstLayerReductionFactor);
     }
 
     //! -------------------------------
@@ -1568,7 +1608,8 @@ bool prismaticLayer::checkMutualIntersection(const occHandle(Ng_MeshVS_DataSourc
 //! ------------------------------
 void prismaticLayer::generateOneTetLayer(occHandle(Ng_MeshVS_DataSourceFace) &theMeshToInflate,
                                          double displacement,
-                                         std::vector<meshElementByCoords> &volumeElementsAtWalls)
+                                         std::vector<meshElementByCoords> &volumeElementsAtWalls,
+                                         const std::map<int,double> &mapOfFirstLayerReductionFactor)
 {
     cout<<"prismaticLayer::generateOneTetLayer()->____function called____"<<endl;
     const double PI = 3.1415926534;
@@ -1621,7 +1662,7 @@ void prismaticLayer::generateOneTetLayer(occHandle(Ng_MeshVS_DataSourceFace) &th
         int globalNodeID = it.key();
         double shrinkFactor = shrinkFactors.value(globalNodeID);
         double cutOff = myLayerHCutOff.value(globalNodeID);
-        double marchingDistance = displacement*(1+shrinkFactor)*cutOff;
+        double marchingDistance = displacement*(1+shrinkFactor)*cutOff*mapOfFirstLayerReductionFactor.at(globalNodeID);
         marchingDistanceMap.insert(globalNodeID,marchingDistance);
     }
 
@@ -1714,7 +1755,7 @@ void prismaticLayer::generateOneTetLayer(occHandle(Ng_MeshVS_DataSourceFace) &th
     //! check marching distances against self intersection
     //! ---------------------------------------------------
     cout<<" start analyzing marching distances "<<endl;
-    FILE *fp = fopen("D:/meshDistances.txt","w");
+    //FILE *fp = fopen("D:/meshDistances.txt","w");
     std::map<int,double> mapOfPointMeshDistances;
     pointToMeshDistance aDistanceMeter;
     aDistanceMeter.init(theMeshToInflate);
@@ -1728,20 +1769,18 @@ void prismaticLayer::generateOneTetLayer(occHandle(Ng_MeshVS_DataSourceFace) &th
         double P[3], distance;
         TColStd_Array1OfReal coords(*P,1,3);
         theMeshToInflate->GetGeom(globalNodeID,false,coords,NbNodes,aType);
-        //double P[3] { coords(1), coords(2), coords(3) };
 
-        double nx = normal[0];
-        double ny = normal[1];
-        double nz = normal[2];
-        double dir[3] {-nx,-ny,-nz};
-        cout<<"____("<<nx<<", "<<ny<<", "<<nz<<")____"<<endl;
+        double nx = -normal[0];
+        double ny = -normal[1];
+        double nz = -normal[2];
+        double dir[3] {nx,ny,nz};
+
         aDistanceMeter.distance(P,dir,&distance);
-
         mapOfPointMeshDistances.insert(std::make_pair(globalNodeID,distance));
         //cout<<"____global node ID: "<<globalNodeID<<" distance: "<<distance<<"____"<<endl;
-        fprintf(fp,"%d\t%lf\t%lf\t%lf\t%lf\n",globalNodeID,-nx,-ny,-nz,distance);
+        //fprintf(fp,"%d\t%lf\t%lf\t%lf\t%lf\n",globalNodeID,-nx,-ny,-nz,distance);
     }
-    fclose(fp);
+    //fclose(fp);
     cout<<" marching distances analyzed"<<endl;
 
     QMap<int,QList<double>> displacementsField;

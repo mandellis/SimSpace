@@ -29,10 +29,6 @@ public:
 
 private:
 
-    Eigen::MatrixXd line_mesh_intersection(const Eigen::MatrixXd & V_source, const Eigen::MatrixXd  & N_source);
-
-private:
-
     igl::embree::EmbreeIntersector myEmbree;
 };
 
