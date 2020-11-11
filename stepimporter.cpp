@@ -1,4 +1,4 @@
-#define STEP_IMPORTER_CODE 1
+#define STEP_IMPORTER_CODE 0
 
 //! custom includes
 #include "stepimporter.h"

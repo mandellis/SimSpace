@@ -69,7 +69,7 @@ void pointToMeshDistance::init(const occHandle(Ng_MeshVS_DataSourceFace) &aMeshD
     TColStd_Array1OfInteger nodeIDs(*bufn,1,3);
     int NbElements = aMeshDS->GetAllElements().Extent();
     TColStd_MapIteratorOfPackedMapOfInteger itt(aMeshDS->GetAllElements());
-    int mask[3] {1,2,3};
+    //int mask[3] {1,2,3};
     for(int localElementID = 1; localElementID<=NbElements; localElementID++, itt.Next())
     {
         int globalElementID = itt.Key();
@@ -84,12 +84,13 @@ void pointToMeshDistance::init(const occHandle(Ng_MeshVS_DataSourceFace) &aMeshD
         }
     }
 
+    myV = V;
+    myF = F;
+
     //! ------------
     //! init embree
     //! ------------
-    //cout<<"pointToMeshDistance::init()->____initializing embree____"<<endl;
     myEmbree.init(V.cast<float>(),F.cast<int>());
-    //cout<<"pointToMeshDistance::init()->____embree initialized____"<<endl;
 }
 
 //! -------------------------
@@ -98,30 +99,73 @@ void pointToMeshDistance::init(const occHandle(Ng_MeshVS_DataSourceFace) &aMeshD
 //! -------------------------
 bool pointToMeshDistance::distance(double *P, double *dir, double *d)
 {
+    //FILE *fp = fopen("D:/box.txt","a");
     //cout<<"pointToMeshDistance::distance()->____function called____"<<endl;
-    Eigen::MatrixXd V_source;
-    V_source.resize(1,3);
-    V_source(0,0) = P[0]; V_source(0,1) = P[1]; V_source(0,2) = P[2];
+    Eigen::RowVector3f origin (P[0],P[1],P[2]);
+    Eigen::RowVector3f direction(dir[0],dir[1],dir[2]);
 
-    Eigen::MatrixXd N_source;
-    N_source.resize(1,3);
-    N_source(0,0) = dir[0]; N_source(0,1) = dir[1]; N_source(0,2) = dir[2];
-
-    Eigen::MatrixXd ray_pos = V_source;
-    Eigen::MatrixXd ray_dir = N_source;
     std::vector<igl::Hit> hits;
-    int num_rays;
-    bool isEmpty = myEmbree.intersectRay(ray_pos.cast<float>(),ray_dir.cast<float>(),hits,num_rays);
-    //cout<<"____intersect? "<<(isEmpty==true? "N":"Y")<<"____"<<endl;
-    //cout<<"____num rays: "<<num_rays<<"____"<<endl;
-    //cout<<"____hits nb:  "<<hits.size()<<"____"<<endl;
-
-    if(isEmpty==false && hits.size()>=2)
+    int numRays;
+    bool isEmpty = myEmbree.intersectRay((origin+0.001*direction).cast<float>(),direction.cast<float>(),hits,numRays);
+    if(isEmpty==true)
     {
-        std::sort(hits.begin(),hits.end(),[](igl::Hit a, igl::Hit b) {return a.t > b.t;});
-        //const igl::Hit &theHit = hits[1];
-        //cout<<"____"<<theHit.t<<"____"<<endl;
-        *d = hits[1].t;
+        *d = 0.0;
+        return false;
+    }
+
+    bool isHitValid = false;
+    float distance = 0.0;
+    for(int i=0; i<hits.size(); i++)
+    {
+        const igl::Hit &curHit = hits[i];
+        int id = curHit.id;    // triangle id
+        float u = curHit.u;    // displacement from the first vertex
+        float v = curHit.v;    // displacement from the second vertex
+        //cout<<"____triangle ID: "<<id<<"____"<<endl;
+        //cout<<"____("<<u<<", "<<v<<")____"<<endl;
+        if(u>1.0 || v>1.0) exit(9999);
+        int A = myF(id,0);
+        int B = myF(id,1);
+        int C = myF(id,2);
+        double xA = myV(A,0); double yA = myV(A,1); double zA = myV(A,2);
+        double xB = myV(B,0); double yB = myV(B,1); double zB = myV(B,2);
+        double xC = myV(C,0); double yC = myV(C,1); double zC = myV(C,2);
+
+        //! -----------------------------------
+        //! barycentric coordinates
+        //! P=u∗A+v∗B+(1-u-v)∗C
+        //! translation is added (+xA,+yA,+zA)  ??????
+        //! -----------------------------------
+        double xP = u*xA+v*xB+(1-u-v)*xC;//+xA;
+        double yP = u*yA+v*yB+(1-u-v)*yC;//+yA;
+        double zP = u*zA+v*zB+(1-u-v)*zC;//+zA;
+        //fprintf(fp,"%lf\t%lf\t%lf\n",xP,yP,zP);
+
+        //cout<<"____("<<xP<<", "<<yP<<", "<<zP<<")____"<<endl;
+
+        float dot = (xP-P[0])*dir[0]+(yP-P[1])*dir[1]+(zP-P[2])*dir[2];
+        dot /= sqrt(pow(xP-P[0],2)+pow(yP-P[1],2)+pow(zP-P[2],2))*1.0;  // 1.0 is the modulus of n
+        if(dot<-1) dot = -1;
+        if(dot>1) dot = 1;
+        float angle = std::acos(dot);
+        //cout<<"____angle: "<<angle*180.0/3.1415926534<<"____"<<endl;
+        if(angle<=5.0*3.1415926534/180.0)
+        {
+            distance = sqrt(pow(xP-P[0],2)+pow(yP-P[1],2)+pow(zP-P[2],2));
+            isHitValid = true;
+            break;
+        }
+        else
+        {
+            distance = 0.0;
+        }
+    }
+    //fclose(fp);
+
+    if(isHitValid==true)
+    {
+        *d = distance;
+        cout<<"____Distance: "<<distance<<"____"<<endl;
         return true;
     }
     return false;

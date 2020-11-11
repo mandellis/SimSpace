@@ -7,7 +7,9 @@
 // obtain one at http://mozilla.org/MPL/2.0/.
 #ifndef IGL_BARYCENTRIC2GLOBAL_H
 #define IGL_BARYCENTRIC2GLOBAL_H
-#include <igl/igl_inline.h>
+
+//#include <igl/igl_inline.h>
+#include <libigl/include/igl/igl_inline.h>  //! GB
 
 #include <Eigen/Dense>
 #include <Eigen/Sparse>

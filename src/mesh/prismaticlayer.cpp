@@ -51,22 +51,6 @@
 #include <TopoDS_Face.hxx>
 #include <TopoDS.hxx>
 
-//! ------------------------------
-//! function: plotAverageNormals
-//! details:  diagnostic function
-//! ------------------------------
-void plotAverageNormals(const occHandle(Ng_MeshVS_DataSourceFace) &aFaceMeshDS)
-{
-    for(QMap<int,QList<double>>::const_iterator it=aFaceMeshDS->myNodeNormals.cbegin(); it!=aFaceMeshDS->myNodeNormals.cend(); ++it)
-    {
-        int nodeID = it.key();
-        double nx = it.value().at(0);
-        double ny = it.value().at(1);
-        double nz = it.value().at(2);
-        cout<<"____nodeID: "<<nodeID<<"("<<nx<<", "<<ny<<", "<<nz<<")____"<<endl;
-    }
-}
-
 //! --------------------------------------------------------
 //! function: constructor
 //! details:  constructor with default inflation parameters
@@ -86,18 +70,6 @@ prismaticLayer::prismaticLayer(meshDataBase *mDB, QProgressIndicator *aProgressI
     myNbLayers = 1;
     myTotalThickness = 1;
     myFirstLayerThickness = 1;
-
-    //! ---------------
-    //! new parameters
-    //! ---------------
-    myCurvatureSensitivityForShrink=100;
-    myNbGuidingVectorSmoothingSteps=50;
-    myNbLayerThicknessSmoothingSteps=50;
-    myCurvatureSensitivityForGuidingVectorsSmoothing =5;
-    myCurvatureSensitivityForThicknessSmoothing=50;
-    //! ----------------------
-    //! end of new parameters
-    //! ----------------------
 
     myLockBoundary = true;
     myAlgorithm = 0;            //! generation algorithm
@@ -228,12 +200,6 @@ void prismaticLayer::setParameters(prismaticLayerParameters parameters)
     cout<<"@____Total thickness: "<<myTotalThickness<<"____"<<endl;
     cout<<"@____Boundary behavior "<<(myLockBoundary==true? "Locked":"Free")<<"____"<<endl;
     cout<<"@____Algorithm: "<<myAlgorithm<<"____@"<<endl;
-
-    myCurvatureSensitivityForShrink = parameters.curvatureSensitivityForShrink;
-    myCurvatureSensitivityForGuidingVectorsSmoothing = parameters.curvatureSensitivityForGuidingVectorsSmoothing;
-    myNbGuidingVectorSmoothingSteps = parameters.NbGuidingVectorSmoothingSteps;
-    myCurvatureSensitivityForThicknessSmoothing = parameters.curvatureSensitivityForThicknessSmoothing;
-    myNbLayerThicknessSmoothingSteps = parameters.NbLayerThicknessSmoothingSteps;
 }
 
 //! -----------------------------------------------------------
@@ -1366,8 +1332,6 @@ void prismaticLayer::generateTetLayers(occHandle(Ng_MeshVS_DataSource3D) &meshAt
     //! the volume elements at walls
     //! -----------------------------
     std::vector<meshElementByCoords> volumeElementsAtWalls;
-//cesere
-
 
     //! --------------------------------------
     //! decide which node should be displaced
@@ -1388,13 +1352,20 @@ void prismaticLayer::generateTetLayers(occHandle(Ng_MeshVS_DataSource3D) &meshAt
     //! ------------------------------
     double Sigma = 0;                                           // a parameter for reduction factor calculation
     for(int n=0; n<myNbLayers; n++) Sigma += pow(myExpRatio,n);
+
+    //! -------------------
+    //! switch the normals
+    //! -------------------
+    occHandle(Ng_MeshVS_DataSourceFace) theMeshToInflate_inverted = new Ng_MeshVS_DataSourceFace(theMeshToInflate,true);
+    theMeshToInflate_inverted->computeNormalAtNodes();
+
     pointToMeshDistance aDistanceMeter;                         // distance meter tool
-    aDistanceMeter.init(theMeshToInflate);                      // init with mesh
+    aDistanceMeter.init(theMeshToInflate_inverted);                      // init with mesh
     double firstLayerThickness = myLayerThickness.at(0);        // first layer thickness
     std::map<int,double> mapOfFirstLayerReductionFactor;        // fill a map (nodeID, reduction factor)
 
     if(theMeshToInflate->myNodeNormals.isEmpty()) theMeshToInflate->computeNormalAtNodes();
-    const QMap<int,QList<double>> &normals = theMeshToInflate->myNodeNormals;
+    const QMap<int,QList<double>> &normals = theMeshToInflate_inverted->myNodeNormals;
 
     FILE *fp = fopen("D:/reductionFactor.txt","w");
     for(QMap<int,QList<double>>::const_iterator itn = normals.cbegin(); itn!=normals.cend(); itn++)
@@ -1405,20 +1376,21 @@ void prismaticLayer::generateTetLayers(occHandle(Ng_MeshVS_DataSource3D) &meshAt
         double P[3], distance;
         this->getPointCoordinates(theMeshToInflate,globalNodeID,P);
 
-        double nx = -normal[0];
-        double ny = -normal[1];
-        double nz = -normal[2];
+        double nx = normal[0];
+        double ny = normal[1];
+        double nz = normal[2];
+
         double dir[3] {nx,ny,nz};
 
-        aDistanceMeter.distance(P,dir,&distance);   // compute distance
-        if(distance>2*myTotalThickness) mapOfFirstLayerReductionFactor.insert(std::make_pair(globalNodeID,1.0));
+        aDistanceMeter.distance(P,dir,&distance);   // compute the distance
+        if(distance>2.0*myTotalThickness) mapOfFirstLayerReductionFactor.insert(std::make_pair(globalNodeID,1.0));
         else
         {
-            double firstLayerThicknessNew = 0.25*distance/Sigma;
+            double firstLayerThicknessNew = 0.2*distance/Sigma;
             double reductionFactor = firstLayerThicknessNew/firstLayerThickness;
             mapOfFirstLayerReductionFactor.insert(std::make_pair(globalNodeID,reductionFactor));
         }
-        fprintf(fp,"%d\t%lf\n",globalNodeID,mapOfFirstLayerReductionFactor.at(globalNodeID));
+        fprintf(fp,"%d\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n",globalNodeID,mapOfFirstLayerReductionFactor.at(globalNodeID),nx,ny,nz,distance,myTotalThickness);
     }
     fclose(fp);
 
@@ -1751,6 +1723,7 @@ void prismaticLayer::generateOneTetLayer(occHandle(Ng_MeshVS_DataSourceFace) &th
         }
     }
 
+    /*
     //! ---------------------------------------------------
     //! check marching distances against self intersection
     //! ---------------------------------------------------
@@ -1782,6 +1755,7 @@ void prismaticLayer::generateOneTetLayer(occHandle(Ng_MeshVS_DataSourceFace) &th
     }
     //fclose(fp);
     cout<<" marching distances analyzed"<<endl;
+    */
 
     QMap<int,QList<double>> displacementsField;
     for(QMap<int,QList<double>>::const_iterator it = normals.cbegin(); it!= normals.cend(); ++it)

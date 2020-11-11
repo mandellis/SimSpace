@@ -30,6 +30,8 @@ public:
 private:
 
     igl::embree::EmbreeIntersector myEmbree;
+    Eigen::MatrixXd myV;
+    Eigen::MatrixXi myF;
 };
 
 #endif // POINTTOMESHDISTANCE_H

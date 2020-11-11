@@ -66,11 +66,9 @@ public:
     //! ---------
     void setBody(int bodyIndex) { myBodyIndex = bodyIndex; }
 
-    //! ---------------------------------------------
+    //! --------------------
     //! set prismatic faces
-    //! (bodyIndex, list of prismatic faces on body)
-    //! ---------------------------------------------
-    //void setPrismaticFaces(const QList<int> &prismaticFaces);
+    //! --------------------
     void setPrismaticFaces(const std::vector<int> &prismaticFaces);
 
 
@@ -146,7 +144,6 @@ private:
     //! prismatic faces: list of prismatic faces on a body
     //! key: body index; value: list of prismatic faces
     //! ---------------------------------------------------
-    //QList<int> myPrismaticFaces;
     std::vector<int> myPrismaticFaces;
 
     //! -----------
@@ -158,42 +155,9 @@ private:
     double myFirstLayerThickness;
     double myExpRatio;
 
-    //! --------------
-    //! to be removed
-    //! --------------
-    //int myNumberOfModulationDiffusionSteps;             //1
-    //double myModulationDiffusionCutoff;                 //2
-    //double myModulationCoefficientTransferPercentage;   //3
-    //! ---------------------
-    //! end of to be removed
-    //! ---------------------
-
-    //! ---------------
-    //! new parameters
-    //! ---------------
-    double myCurvatureSensitivityForShrink;
-    int myNbGuidingVectorSmoothingSteps;
-    int myNbLayerThicknessSmoothingSteps;
-    double myCurvatureSensitivityForGuidingVectorsSmoothing;
-    double myCurvatureSensitivityForThicknessSmoothing;
-    //! ----------------------
-    //! end of new parameters
-    //! ----------------------
-
     bool myLockBoundary;
     bool myCheckSelfIntersections;
     bool myCheckMutualIntersections;
-
-    //! --------------
-    //! to be removed
-    //! --------------
-    //int myShrinkFunction;               //4
-    //double myMinimumShrink;             //5
-    //double myTransition;                //6
-    //double myAmplitude;                 //7
-    //! ---------------------
-    //! end of to be removed
-    //! ---------------------
 
     int myAlgorithm;
     int myBoundaryMeshType;

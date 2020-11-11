@@ -100,9 +100,9 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()
 //! function: constructor
 //! details:  clone a mesh data source - copy constructor
 //! ------------------------------------------------------
-Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const occHandle(Ng_MeshVS_DataSourceFace) &aFaceMesh)
+Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const occHandle(Ng_MeshVS_DataSourceFace) &aFaceMesh, bool invertNormals)
 {
-    //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____cloning constructor called____"<<endl;
+    cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____cloning constructor called____"<<endl;
 
     //! -------------
     //! sanity check
@@ -129,6 +129,11 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const occHandle(Ng_MeshVS_Dat
     myElemType = new TColStd_HArray1OfInteger(1,myNumberOfElements);
     myElemNormals = new TColStd_HArray2OfReal(1,myNumberOfElements,1,3);
 
+    //int maskTrig[3];
+    //if(invertNormals==true) { maskTrig[0] = 1; maskTrig[1] = 3; maskTrig[2] = 2; }
+    //else { maskTrig[0] = 1; maskTrig[1] = 2; maskTrig[2] = 3; }
+
+    int maskTrig[3] {1,2,3};
     TColStd_MapIteratorOfPackedMapOfInteger it;
     for(it.Initialize(myElements);it.More();it.Next())
     {
@@ -141,7 +146,8 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const occHandle(Ng_MeshVS_Dat
 
         for(int n=1; n<=NbNodes; n++)
         {
-            myElemNodes->SetValue(localElementID,n,nodeIDs.Value(n));
+            int k = maskTrig[n-1];
+            myElemNodes->SetValue(localElementID,n,nodeIDs.Value(k));
         }
 
         switch(NbNodes)
@@ -173,6 +179,16 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const occHandle(Ng_MeshVS_Dat
     //! compute the normal at elements
     //! -------------------------------
     this->computeNormalAtElements();
+
+    if(invertNormals==true)
+    {
+        for(int localNodeID = 1; localNodeID<=myNumberOfNodes; localNodeID++)
+        {
+            myElemNormals->ChangeValue(localNodeID,1) = -myElemNormals->Value(localNodeID,1);
+            myElemNormals->ChangeValue(localNodeID,2) = -myElemNormals->Value(localNodeID,2);
+            myElemNormals->ChangeValue(localNodeID,3) = -myElemNormals->Value(localNodeID,3);
+        }
+    }
 
     //! ------------------------
     //! build elements topology
@@ -5102,7 +5118,7 @@ void Ng_MeshVS_DataSourceFace::computeNormalAtNodes()
     //! parameters of the algorithm
     //! ----------------------------
     const double PI = 3.14159236538;
-    const double limit = 0.001*PI/180;
+    const double limit = 0.0001*PI/180;
     const int NMaxSteps = 2000;
     const double b = 0.5;               // relaxation
     const double oneminusb = 1-b;       // 1-relaxation
