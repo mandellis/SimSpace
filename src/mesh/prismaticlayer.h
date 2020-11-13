@@ -223,6 +223,11 @@ private:
     std::map<int,double> betaAverageField;
     std::map<int,double> betaVisibilityField;
 
+    //! ------------------------------
+    //! map of layer reduction factor
+    //! ------------------------------
+    std::map<int,double> mapOfReductionFactor;
+
     //! --------------------
     //! generateOneTetLayer
     //! --------------------
@@ -258,6 +263,9 @@ private:
     //! ---------------
     void classifyNodes(const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS,
                        std::map<int,int> &mapCat1);
+
+    void correctClassificationForBoundaryCompression(const std::map<int,double> &firstLayerReductionMap,
+                                                     std::map<int,int> &mapCat);
 
     //! --------------------------------------------------
     //! enable/disable the progress indicator stop button

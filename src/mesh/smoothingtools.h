@@ -31,6 +31,9 @@ public:
                               const std::map<int,int> &mapOfNodeTypes,
                               int NbSteps,
                               bool normalize);
+
+    //! helper
+    static void surroundingNodes(const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS, int nodeID, bool isLocal, std::set<int> &setOfSurroundingNodes);
 };
 
 #endif // SMOOTHINGTOOLS_H

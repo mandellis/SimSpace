@@ -25,7 +25,7 @@ public:
 
     void init(const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS);
 
-    bool distance(double *P, double *dir, double *d);
+    bool distance(double *P, double *dir, float *d);
 
 private:
 

@@ -133,7 +133,7 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const occHandle(Ng_MeshVS_Dat
     //if(invertNormals==true) { maskTrig[0] = 1; maskTrig[1] = 3; maskTrig[2] = 2; }
     //else { maskTrig[0] = 1; maskTrig[1] = 2; maskTrig[2] = 3; }
 
-    int maskTrig[3] {1,2,3};
+    //int maskTrig[3] {1,2,3};
     TColStd_MapIteratorOfPackedMapOfInteger it;
     for(it.Initialize(myElements);it.More();it.Next())
     {
@@ -146,8 +146,9 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const occHandle(Ng_MeshVS_Dat
 
         for(int n=1; n<=NbNodes; n++)
         {
-            int k = maskTrig[n-1];
-            myElemNodes->SetValue(localElementID,n,nodeIDs.Value(k));
+            //int k = maskTrig[n-1];
+            //myElemNodes->SetValue(localElementID,n,nodeIDs.Value(k));
+            myElemNodes->SetValue(localElementID,n,nodeIDs.Value(n));
         }
 
         switch(NbNodes)
@@ -5118,8 +5119,8 @@ void Ng_MeshVS_DataSourceFace::computeNormalAtNodes()
     //! parameters of the algorithm
     //! ----------------------------
     const double PI = 3.14159236538;
-    const double limit = 0.0001*PI/180;
-    const int NMaxSteps = 2000;
+    const double limit = 0.005*PI/180;
+    const int NMaxSteps = 1000;
     const double b = 0.5;               // relaxation
     const double oneminusb = 1-b;       // 1-relaxation
     for(TColStd_MapIteratorOfPackedMapOfInteger it(myNodes); it.More(); it.Next())

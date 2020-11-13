@@ -1323,10 +1323,15 @@ void prismaticLayer::generateTetLayers(occHandle(Ng_MeshVS_DataSource3D) &meshAt
     if(myProgressIndicator!=Q_NULLPTR)
     {
         progressEvent = new QProgressEvent(QProgressEvent_None,0,9999,0,"Generating boundary mesh",
-                                           QProgressEvent_Init,0,myNbLayers-1,0,"Building prismatic mesh");
+                                           QProgressEvent_Init,0,myNbLayers,0,"Building prismatic mesh");
         QApplication::postEvent(myProgressIndicator,progressEvent);
         QApplication::processEvents();
     }
+
+    //! ----------------------------
+    //! clear reduction factors map
+    //! ----------------------------
+    mapOfReductionFactor.clear();
 
     //! -----------------------------
     //! the volume elements at walls
@@ -1344,55 +1349,74 @@ void prismaticLayer::generateTetLayers(occHandle(Ng_MeshVS_DataSource3D) &meshAt
     occHandle(Ng_MeshVS_DataSourceFace) theMeshToInflate = new Ng_MeshVS_DataSourceFace(myOverallSumMeshDS);
     if(myPrismaticFacesSumMeshDS->myBoundarySegments.isEmpty()) myPrismaticFacesSumMeshDS->computeFreeMeshSegments();
 
-    //! ------------------------------
-    //! analyze gaps at the beginning:
-    //! scan all the mesh nodes.
+    //! ------------------------------------------------------------------
+    //! analyze gaps at the beginning: scan all the mesh nodes.
     //! compute the distance from closest point on the mesh => "distance"
-    //! apply reduction if
-    //! ------------------------------
+    //! apply reduction of first layer thickness if applicable
+    //! ------------------------------------------------------------------
     double Sigma = 0;                                           // a parameter for reduction factor calculation
     for(int n=0; n<myNbLayers; n++) Sigma += pow(myExpRatio,n);
 
-    //! -------------------
-    //! switch the normals
-    //! -------------------
-    occHandle(Ng_MeshVS_DataSourceFace) theMeshToInflate_inverted = new Ng_MeshVS_DataSourceFace(theMeshToInflate,true);
-    theMeshToInflate_inverted->computeNormalAtNodes();
-
     pointToMeshDistance aDistanceMeter;                         // distance meter tool
-    aDistanceMeter.init(theMeshToInflate_inverted);                      // init with mesh
+    aDistanceMeter.init(theMeshToInflate);                      // init with mesh
     double firstLayerThickness = myLayerThickness.at(0);        // first layer thickness
     std::map<int,double> mapOfFirstLayerReductionFactor;        // fill a map (nodeID, reduction factor)
 
     if(theMeshToInflate->myNodeNormals.isEmpty()) theMeshToInflate->computeNormalAtNodes();
-    const QMap<int,QList<double>> &normals = theMeshToInflate_inverted->myNodeNormals;
+    const QMap<int,QList<double>> &normals = theMeshToInflate->myNodeNormals;
 
-    FILE *fp = fopen("D:/reductionFactor.txt","w");
+    //FILE *fp = fopen("D:/reductionFactor.txt","w");
     for(QMap<int,QList<double>>::const_iterator itn = normals.cbegin(); itn!=normals.cend(); itn++)
     {
         int globalNodeID = itn.key();
         const QList<double> &normal = itn.value();
 
-        double P[3], distance;
+        double P[3];
+        float distance;
         this->getPointCoordinates(theMeshToInflate,globalNodeID,P);
 
-        double nx = normal[0];
-        double ny = normal[1];
-        double nz = normal[2];
-
+        //! --------------------------------------------------
+        //! invert the normal: it points towards the material
+        //! for gap calculation
+        //! --------------------------------------------------
+        double nx = -normal[0];
+        double ny = -normal[1];
+        double nz = -normal[2];
         double dir[3] {nx,ny,nz};
-
         aDistanceMeter.distance(P,dir,&distance);   // compute the distance
-        if(distance>2.0*myTotalThickness) mapOfFirstLayerReductionFactor.insert(std::make_pair(globalNodeID,1.0));
+
+        bool compress = true;
+        if(compress==true)
+        {
+            //! ---------------------------------------------
+            //! compress layers in order to avoid collisions
+            //! ---------------------------------------------
+            const double compressionFactor = 0.10;
+            if(myTotalThickness<distance/4.0) mapOfFirstLayerReductionFactor.insert(std::make_pair(globalNodeID,1.0));
+            else
+            {
+                double firstLayerThicknessNew = compressionFactor*distance/Sigma;
+                double reductionFactor = firstLayerThicknessNew/firstLayerThickness;
+                mapOfFirstLayerReductionFactor.insert(std::make_pair(globalNodeID,reductionFactor));
+                mapOfReductionFactor.insert(std::make_pair(globalNodeID,reductionFactor));
+            }
+        }
         else
         {
-            double firstLayerThicknessNew = 0.2*distance/Sigma;
-            double reductionFactor = firstLayerThicknessNew/firstLayerThickness;
-            mapOfFirstLayerReductionFactor.insert(std::make_pair(globalNodeID,reductionFactor));
+            if(myTotalThickness<distance/3.0) mapOfFirstLayerReductionFactor.insert(std::make_pair(globalNodeID,1.0));
+            else
+            {
+                //! ------------
+                //! lock points
+                //! ------------
+                myLayerHCutOff.insert(globalNodeID,0);
+                mapOfFirstLayerReductionFactor.insert(std::make_pair(globalNodeID,1.0));
+                mapOfReductionFactor.insert(std::make_pair(globalNodeID,1.0));
+            }
         }
-        fprintf(fp,"%d\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n",globalNodeID,mapOfFirstLayerReductionFactor.at(globalNodeID),nx,ny,nz,distance,myTotalThickness);
+        //fprintf(fp,"%d\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n",globalNodeID,mapOfFirstLayerReductionFactor.at(globalNodeID),nx,ny,nz,distance,myTotalThickness);
     }
-    fclose(fp);
+    //fclose(fp);
 
     //! --------------------
     //! generate the layers
@@ -1613,6 +1637,74 @@ void prismaticLayer::generateOneTetLayer(occHandle(Ng_MeshVS_DataSourceFace) &th
     //! ---------------------------------
     QMap<int,QList<double>> normals = theMeshToInflate->myNodeNormals;
 
+    //! --------------------------------------------
+    //! check gaps along slightly different normals
+    //! --------------------------------------------
+    pointToMeshDistance aDistanceMeter;
+    aDistanceMeter.init(theMeshToInflate);
+    for(TColStd_MapIteratorOfPackedMapOfInteger it(theMeshToInflate->GetAllNodes()); it.More(); it.Next())
+    {
+        int globalNodeID = it.Key();
+        double P[3];
+        std::vector<float> gaps;
+        float gap;
+        const QList<double> &normal = theMeshToInflate->myNodeNormals.value(globalNodeID);
+        double dir[3] { -normal[0], -normal[1], -normal[2] };
+        this->getPointCoordinates(theMeshToInflate,globalNodeID,P);
+
+        //! --------------------------
+        //! gap along the node normal
+        //! --------------------------
+        aDistanceMeter.distance(P,dir,&gap);
+        gaps.push_back(gap);
+
+        //! -------------------------------------------------------------------
+        //! create an start vector which will be rotated along the node normal
+        //! -------------------------------------------------------------------
+        double start_dir[3] { -normal[0]+0.05, -normal[1]+0.05, -normal[2]+0.05};
+        double l = sqrt(pow(start_dir[0],2)+pow(start_dir[1],2)+pow(start_dir[2],2));
+        start_dir[0] /= l;
+        start_dir[1] /= l;
+        start_dir[2] /= l;
+
+        //! ----------------------------------------------------------
+        //! Rodrigues' rotation formula
+        //! https://en.wikipedia.org/wiki/Rodrigues'_rotation_formula
+        //! ----------------------------------------------------------
+        int N = 10;
+        double angle = 0;
+        for(int i = 0; i<N; i++)
+        {
+            angle += 3.1415926538/N;
+            double curDir[3];
+
+            //! ---------------------------------------
+            //! i            j            k
+            //! dir[0]       dir[1]       dir[2]
+            //! start_dir[0] start_dir[1] start_dir[2]
+            //! ---------------------------------------
+            double kvx = dir[1]*start_dir[2]-dir[2]*start_dir[1];
+            double kvy = dir[2]*start_dir[0]-dir[0]*start_dir[2];
+            double kvz = dir[0]*start_dir[1]-dir[1]*start_dir[0];
+
+            double dot = dir[0]*start_dir[0]+dir[1]*start_dir[1]+dir[2]*start_dir[2];
+            curDir[0] = curDir[0]*cos(angle)+kvx*sin(angle)+dot*dir[0]*(1-cos(angle));
+            curDir[1] = curDir[1]*cos(angle)+kvy*sin(angle)+dot*dir[1]*(1-cos(angle));
+            curDir[2] = curDir[2]*cos(angle)+kvz*sin(angle)+dot*dir[2]*(1-cos(angle));
+
+            aDistanceMeter.distance(P,curDir,&gap);
+            gaps.push_back(gap);
+        }
+
+
+        gap = *std::min(gaps.begin(),gaps.end());
+        if(displacement>gap/3)
+        {
+            myLayerHCutOff.insert(globalNodeID,0);
+            cout<<"blocked node ID: "<<globalNodeID<<"____displacement: "<<displacement<<"\t gap: "<<gap<<"____"<<endl;
+        }
+    }
+
     //! ---------------
     //! classify nodes
     //! ---------------
@@ -1632,6 +1724,10 @@ void prismaticLayer::generateOneTetLayer(occHandle(Ng_MeshVS_DataSourceFace) &th
     for(QMap<int,QList<double>>::const_iterator it = normals.cbegin(); it!= normals.cend(); ++it)
     {
         int globalNodeID = it.key();
+
+
+
+
         double shrinkFactor = shrinkFactors.value(globalNodeID);
         double cutOff = myLayerHCutOff.value(globalNodeID);
         double marchingDistance = displacement*(1+shrinkFactor)*cutOff*mapOfFirstLayerReductionFactor.at(globalNodeID);
@@ -1643,11 +1739,11 @@ void prismaticLayer::generateOneTetLayer(occHandle(Ng_MeshVS_DataSourceFace) &th
     //! ------------------------------
     smoothingTools::scalarFieldSmoother(marchingDistanceMap,theMeshToInflate,betaAverageField,mapNodeTypes,10);
 
-    //! -------------------------
+    //! ---------------------------------------------------------------------------------------------------------------------
     //! check marching distances
     //! 1. Its marching distance is less than a fraction, say 0.60, of the average length of edges sharing p in its manifold
     //! 2. The prismatic element created by marching p has an acceptable quality
-    //! -------------------------
+    //! ---------------------------------------------------------------------------------------------------------------------
     for(TColStd_MapIteratorOfPackedMapOfInteger it(theMeshToInflate->GetAllNodes()); it.More(); it.Next())
     {
         int globalNodeID = it.Key();
@@ -1667,9 +1763,9 @@ void prismaticLayer::generateOneTetLayer(occHandle(Ng_MeshVS_DataSourceFace) &th
         std::set<int>::iterator it_ = setOfSurroundingNodesIDs_global.find(globalNodeID);
         setOfSurroundingNodesIDs_global.erase(it_);
 
-        //! -------------------------
-        //! compute average distance
-        //! -------------------------
+        //! -----------------------------------------------
+        //! perform first check - compute average distance
+        //! -----------------------------------------------
         double P[3], averageDistance = 0;
         this->getPointCoordinates(theMeshToInflate,globalNodeID,P);
         for(std::set<int>::iterator it__ = setOfSurroundingNodesIDs_global.begin(); it__!=setOfSurroundingNodesIDs_global.end(); it__++)
@@ -1693,9 +1789,10 @@ void prismaticLayer::generateOneTetLayer(occHandle(Ng_MeshVS_DataSourceFace) &th
             continue;   // jump over the subsequent check, if any
         }
 
-        //! ---------------------------------------------------------------------
-        //! compute angles between the guiding vector and the faces at the basis
-        //! ---------------------------------------------------------------------
+        //! ------------------------------------------------------------------------------------
+        //! second check - compute angles between the guiding vector and the faces at the basis
+        //! if the maximum among these angles is greater than 80° block the advancing node
+        //! ------------------------------------------------------------------------------------
         const QList<double> &aNodeNormal = normals.value(globalNodeID);
         double maxAngle = -1e10;
         for(int n=0; n<NbSurroundingElements; n++)
@@ -1721,42 +1818,13 @@ void prismaticLayer::generateOneTetLayer(occHandle(Ng_MeshVS_DataSourceFace) &th
             blockedByAngle++;
             continue;   // jump over the subsequent check, if any
         }
+
+        // another check, if any ...
     }
 
-    /*
-    //! ---------------------------------------------------
-    //! check marching distances against self intersection
-    //! ---------------------------------------------------
-    cout<<" start analyzing marching distances "<<endl;
-    //FILE *fp = fopen("D:/meshDistances.txt","w");
-    std::map<int,double> mapOfPointMeshDistances;
-    pointToMeshDistance aDistanceMeter;
-    aDistanceMeter.init(theMeshToInflate);
-    for(TColStd_MapIteratorOfPackedMapOfInteger it = theMeshToInflate->GetAllNodes(); it.More(); it.Next())
-    {
-        int globalNodeID = it.Key();
-        const QList<double> &normal = normals.value(globalNodeID);
-
-        int NbNodes;
-        MeshVS_EntityType aType;
-        double P[3], distance;
-        TColStd_Array1OfReal coords(*P,1,3);
-        theMeshToInflate->GetGeom(globalNodeID,false,coords,NbNodes,aType);
-
-        double nx = -normal[0];
-        double ny = -normal[1];
-        double nz = -normal[2];
-        double dir[3] {nx,ny,nz};
-
-        aDistanceMeter.distance(P,dir,&distance);
-        mapOfPointMeshDistances.insert(std::make_pair(globalNodeID,distance));
-        //cout<<"____global node ID: "<<globalNodeID<<" distance: "<<distance<<"____"<<endl;
-        //fprintf(fp,"%d\t%lf\t%lf\t%lf\t%lf\n",globalNodeID,-nx,-ny,-nz,distance);
-    }
-    //fclose(fp);
-    cout<<" marching distances analyzed"<<endl;
-    */
-
+    //! -----------------------------------
+    //! build the final displacement field
+    //! -----------------------------------
     QMap<int,QList<double>> displacementsField;
     for(QMap<int,QList<double>>::const_iterator it = normals.cbegin(); it!= normals.cend(); ++it)
     {
@@ -1942,6 +2010,9 @@ void prismaticLayer::classifyNodes(const occHandle(Ng_MeshVS_DataSourceFace) &aM
     const double PI = 3.145926534;
     const double angleLimit_cat1 = PI/3.0;
 
+    //! --------------
+    //! vector of int
+    //! --------------
     std::vector<int> temp;
 
     if(aMeshDS->myNodeToElements.isEmpty()) aMeshDS->computeNodeToElementsConnectivity();
@@ -1985,18 +2056,20 @@ void prismaticLayer::classifyNodes(const occHandle(Ng_MeshVS_DataSourceFace) &aM
         {
             //cout<<"____node ID: "<<globalNodeID<<" is of type 1____"<<endl;
             mapCat.insert(std::make_pair(globalNodeID,1));
+            mapOfReductionFactor.insert(std::make_pair(globalNodeID,1));
             NbNodesOfType1++;
         }
         else
         {
             mapCat.insert(std::make_pair(globalNodeID,4));
+            mapOfReductionFactor.insert(std::make_pair(globalNodeID,4));
             temp.push_back(globalNodeID);
         }
     }
     //cout<<"prismaticLayer::classifyNodes()->____number of nodes of type 1: "<<NbNodesOfType1<<"____"<<endl;
 
     //! ----------------------------------------------------------------
-    //! iterate all over the points not belonging to category 1
+    //! iterate all over the points =>not<= belonging to category 1
     //! one of this points, if on the prismatic/non prismatic boundary,
     //! belongs to category 2
     //! ----------------------------------------------------------------
@@ -2015,6 +2088,7 @@ void prismaticLayer::classifyNodes(const occHandle(Ng_MeshVS_DataSourceFace) &aM
         }
         else it++;
     }
+
     //cout<<"prismaticLayer::classifyNodes()->____number of nodes of type 2: "<<NbNodesOfType2<<"____"<<endl;
 
     //! -----------------------------------------------------------------------
@@ -2027,6 +2101,10 @@ void prismaticLayer::classifyNodes(const occHandle(Ng_MeshVS_DataSourceFace) &aM
     for(std::vector<int>::iterator it = temp.begin(); it!=temp.end();)
     {
         int globalNodeID = *it;
+
+        //! ------------------
+        //! surrounding nodes
+        //! ------------------
         int localNodeID = aMeshDS->myNodesMap.FindIndex(globalNodeID);
         const QList<int> &surroundingElements_local = aMeshDS->myNodeToElements.value(localNodeID);
         int NbSurroundingElements = surroundingElements_local.length();
@@ -2037,7 +2115,6 @@ void prismaticLayer::classifyNodes(const occHandle(Ng_MeshVS_DataSourceFace) &aM
             int globalElementID_surr = aMeshDS->myElementsMap.FindKey(localElementID_surr);
             int buf[12], NbNodes_;
             TColStd_Array1OfInteger nodeIDs(*buf,1,12);
-            //cout<<"____"<<globalElementID_surr<<"____"<<endl;
             aMeshDS->GetNodesByElement(globalElementID_surr,nodeIDs,NbNodes_);
             for(int n=1; n<=NbNodes_; n++) setSurroundingNodes_globalIDs.insert(nodeIDs(n));
         }
@@ -2058,12 +2135,85 @@ void prismaticLayer::classifyNodes(const occHandle(Ng_MeshVS_DataSourceFace) &aM
         if(aFixedNodeHasBeeFound == true)
         {
             mapCat.find(globalNodeID)->second = 3;
+            mapOfReductionFactor.find(globalNodeID)->second = 3;
             it = temp.erase(it);
             NbNodesOfType3++;
         }
         else it++;
     }
 
-    //cout<<"prismaticLayer::classifyNodes()->____number of nodes of type 3: "<<NbNodesOfType3<<"____"<<endl;
-    //cout<<"prismaticLayer::classifyNodes()->____number of nodes of type 4: "<<temp.size()<<"____"<<endl;
+    cout<<"prismaticLayer::classifyNodes()->____number of nodes of type 3: "<<NbNodesOfType3<<"____"<<endl;
+    cout<<"prismaticLayer::classifyNodes()->____number of nodes of type 4: "<<temp.size()<<"____"<<endl;
+
+    //! -----------------------------------------------------------------------------
+    //! this section modifies the map of node types: mesh nodes having at least one
+    //! neighbor which has "compression" due to wall gap check are put into cat "5":
+    //! their marching distance is a weighted average of the marching distance of
+    //! the surrounding nodes. Note: a point of category "2" cannot be a point of
+    //! category "5"
+    //! -----------------------------------------------------------------------------
+    for(std::map<int,int>::iterator it = mapCat.begin(); it!= mapCat.end(); it++)
+    {
+        int globalNodeID = it->first;
+        if(mapOfReductionFactor.at(globalNodeID) == 2) continue;    // jump over nodes of category "2"
+
+        //! ----------------------
+        //! get surrounding nodes
+        //! ----------------------
+        int localNodeID = aMeshDS->myNodesMap.FindIndex(globalNodeID);
+        const QList<int> &surroundingElements_local = aMeshDS->myNodeToElements.value(localNodeID);
+
+        int NbSurroundingElements = surroundingElements_local.length();
+        std::set<int> setSurroundingNodes_globalIDs;
+        for(int i=0; i<NbSurroundingElements; i++)
+        {
+            int localElementID_surr = surroundingElements_local[i];
+            int globalElementID_surr = aMeshDS->myElementsMap.FindKey(localElementID_surr);
+            int buf[12], NbNodes_;
+            TColStd_Array1OfInteger nodeIDs(*buf,1,12);
+            aMeshDS->GetNodesByElement(globalElementID_surr,nodeIDs,NbNodes_);
+            for(int n=1; n<=NbNodes_; n++) setSurroundingNodes_globalIDs.insert(nodeIDs(n));
+        }
+
+        std::set<int>::iterator it__ = setSurroundingNodes_globalIDs.find(globalNodeID);
+        setSurroundingNodes_globalIDs.erase(it__);
+
+        //! ------------------------------------------------------------------
+        //! check the surrounding nodes: it at least one of the surrounding
+        //! nodes has a correction due to wall proximity put the current node
+        //! in category 5
+        //! ------------------------------------------------------------------
+        bool hasCompression = false;
+        for(std::set<int>::iterator it = setSurroundingNodes_globalIDs.begin(); it != setSurroundingNodes_globalIDs.end(); it++)
+        {
+            int globalNodeID_surr = *it;
+            if(mapOfReductionFactor.at(globalNodeID_surr)<=0.80)
+            {
+                hasCompression = true;
+                break;
+            }
+        }
+        if(hasCompression == true)
+        {
+            mapOfReductionFactor.find(globalNodeID)->second = 5;
+            mapCat.find(globalNodeID)->second = 5;
+        }
+    }
+}
+
+//! ----------------------------------------------------------------------
+//! function: correctClassificationForBoundaryCompression
+//! details:  put a node in cat 3 if among its surrounding
+//!           at least one node has modification of the marching distance
+//!           due to wall proximity check
+//! ----------------------------------------------------------------------
+void prismaticLayer::correctClassificationForBoundaryCompression(const std::map<int,double> &firstLayerReductionMap, std::map<int,int> &mapCat)
+{
+    cout<<"prismaticLayer::correctClassificationForBoundaryCompression()->____function called____"<<endl;
+    for(std::map<int,int>::iterator it = mapCat.begin(); it!=mapCat.end(); it++)
+    {
+        int globalNodeID = it->first;
+        int cat = it->second;           // the classification of the current point
+
+    }
 }
