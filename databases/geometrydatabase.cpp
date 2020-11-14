@@ -574,22 +574,6 @@ void geometryDataBase::getBoundingBox(const TopoDS_Shape &shape, double &L1, dou
     L3 = fabs(Zmax-Zmin);
 }
 
-//! --------------------------
-//! function: boundingBox
-//! details:  return the diag
-//! --------------------------
-double geometryDataBase::boundingBox(const TopoDS_Shape &shape)
-{
-    Bnd_Box boundingBox;
-    BRepBndLib::Add(shape, boundingBox);
-    Standard_Real Xmin,Ymin,Zmin,Xmax,Ymax,Zmax;
-    boundingBox.Get(Xmin,Ymin,Zmin,Xmax,Ymax,Zmax);
-    double L1 = fabs(Xmax-Xmin);
-    double L2 = fabs(Ymax-Ymin);
-    double L3 = fabs(Zmax-Zmin);
-    double diag = sqrt(pow(L1,2)+pow(L2,2)+pow(L3,2));
-    return diag;
-}
 
 //!-------------------------------------------
 //! function: create "Coordinate system root"
@@ -906,10 +890,11 @@ void geometryDataBase::buildMaps(const TopoDS_Shape &shape)
         }
     }
 
-    //! ----------------------------------------------
+    //! --------------------------------------------------------------------------
     //! activate the bodies
     //! at the begininning, all the shapes are active
-    //! ----------------------------------------------
+    //! 28/09/2020 - please change it. The activation status is driven by the GUI
+    //! --------------------------------------------------------------------------
     cout<<endl;
     for(QMap<int,TopoDS_Shape>::iterator it = bodyMap.begin(); it!=bodyMap.end(); ++it)
     {
@@ -918,13 +903,13 @@ void geometryDataBase::buildMaps(const TopoDS_Shape &shape)
     }
     cout<<endl;
 
-    for(QMap<int,TopologyMap>::iterator it = MapOfBodyTopologyMap.begin(); it!=MapOfBodyTopologyMap.end(); it++)
-    {
-        TopologyMap aTopologyMap = it.value();
-        cout<<"____body index "<<it.key()<<"____"<<endl;
-        int NbFaces = aTopologyMap.faceMap.Extent();
-        for(int n=1; n<=NbFaces; n++) cout<<"____the face nr: "<<n<<(aTopologyMap.faceMap.FindKey(n).IsNull()? " is not valid":" is valid")<<endl;
-    }
+    //for(QMap<int,TopologyMap>::iterator it = MapOfBodyTopologyMap.begin(); it!=MapOfBodyTopologyMap.end(); it++)
+    //{
+    //    TopologyMap aTopologyMap = it.value();
+    //    cout<<"____body index "<<it.key()<<"____"<<endl;
+    //    int NbFaces = aTopologyMap.faceMap.Extent();
+    //    for(int n=1; n<=NbFaces; n++) cout<<"____the face nr: "<<n<<(aTopologyMap.faceMap.FindKey(n).IsNull()? " is not valid":" is valid")<<endl;
+    //}
 }
 
 //! ------------------------------

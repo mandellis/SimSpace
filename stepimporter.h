@@ -37,6 +37,7 @@ public:
 
     //! import a STEP file
     bool import(const QString &fileName, TopoDS_Compound &Comp, QList<QString> &listOfNames);
+    bool import1(const QString &fileName, TopoDS_Compound &Comp, QList<QString> &listOfNames);  // experimental
 
     //! return the list of the names
     void STEP_GetEntityName(const TopoDS_Shape & theShape, STEPCAFControl_Reader* aReader, std::string &acName);

@@ -2,6 +2,11 @@
 #define MESHTOOLS_H
 
 //! ----
+//! C++
+//! ----
+#include <map>
+
+//! ----
 //! OCC
 //! ----
 #include <MeshVS_Mesh.hxx>
@@ -97,16 +102,6 @@ public:
                                  bool showEdges = false,
                                  bool autoscale = true);
 
-    static bool buildDeformedColoredMesh(const occHandle(MeshVS_DataSource) &theMeshVS_DataSource,
-                                         const std::map<int,double> &res,
-                                         const std::map<int,gp_Vec> &displacementMap,
-                                         double scale,
-                                         double min,
-                                         double max,
-                                         int numberOfLevels,
-                                         occHandle(MeshVS_Mesh) &aColoredMesh,
-                                         bool showEdges = false);
-
     static bool buildIsoStrip(const occHandle(MeshVS_DataSource) &theMeshVS_DataSource,
                               const std::map<int,double> &res,
                               const std::map<int,gp_Vec> &displacementMap,
@@ -157,7 +152,10 @@ public:
                                            ElemType aType,
                                            occHandle(MeshVS_DataSource) &outputMesh);
 
-    static void toListOf3DElements(const occHandle(Ng_MeshVS_DataSource3D) &inputMesh, QList<meshElementByCoords> &elements);
+    static void toListOf3DElements(const occHandle(Ng_MeshVS_DataSource3D) &inputMesh, std::vector<meshElementByCoords> &elements);
+    static std::map<GeometryTag,std::vector<occHandle(MeshVS_Mesh)>> groupMeshes(const std::map<GeometryTag,occHandle(MeshVS_Mesh)> &mapOfMeshes);
+    static occHandle(MeshVS_DataSource) mergeMesh(const occHandle(MeshVS_DataSource) &mesh1, const occHandle(MeshVS_DataSource) &mesh2);
+    static void computeAngleDefectMap(const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS, std::map<int,double> &mapOfAngleDefect);
 
 };
 

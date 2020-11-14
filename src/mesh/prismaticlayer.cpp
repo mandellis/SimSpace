@@ -14,6 +14,8 @@
 #include <OCCface.h>
 #include <meshselectnlayers.h>
 #include <igtools.h>
+#include <smoothingtools.h>
+#include <pointtomeshdistance.h>
 
 //! ------
 //! Eigen
@@ -41,29 +43,13 @@
 //! ----
 #include <iostream>
 #include <memory>
+#include <algorithm>
 
 //! ----
 //! OCC
 //! ----
 #include <TopoDS_Face.hxx>
 #include <TopoDS.hxx>
-
-//! ------------------------------
-//! function: plotAverageNormals
-//! details:  diagnostic function
-//! ------------------------------
-void plotAverageNormals(const occHandle(Ng_MeshVS_DataSourceFace) &aFaceMeshDS)
-{
-    cout<<"____MAP OF NORMALS FOR THE FACE____"<<endl;
-    for(QMap<int,QList<double>>::const_iterator it=aFaceMeshDS->myNodeNormals.cbegin(); it!=aFaceMeshDS->myNodeNormals.cend(); ++it)
-    {
-        int nodeID = it.key();
-        double nx = it.value().at(0);
-        double ny = it.value().at(1);
-        double nz = it.value().at(2);
-        cout<<"____nodeID: "<<nodeID<<"("<<nx<<", "<<ny<<", "<<nz<<")____"<<endl;
-    }
-}
 
 //! --------------------------------------------------------
 //! function: constructor
@@ -85,18 +71,6 @@ prismaticLayer::prismaticLayer(meshDataBase *mDB, QProgressIndicator *aProgressI
     myTotalThickness = 1;
     myFirstLayerThickness = 1;
 
-    //! -------------------
-    //! new parameters (5)
-    //! -------------------
-    myCurvatureSensitivityForShrink=100;
-    myNbGuidingVectorSmoothingSteps=50;
-    myNbLayerThicknessSmoothingSteps=50;
-    myCurvatureSensitivityForGuidingVectorsSmoothing =5;
-    myCurvatureSensitivityForThicknessSmoothing=50;
-    //! ----------------------
-    //! end of new parameters
-    //! ----------------------
-
     myLockBoundary = true;
     myAlgorithm = 0;            //! generation algorithm
 
@@ -111,7 +85,6 @@ prismaticLayer::prismaticLayer(meshDataBase *mDB, QProgressIndicator *aProgressI
 void prismaticLayer::setPrismaticFaces(const std::vector<int> &prismaticFaces)
 {
     for(size_t i=0; i<prismaticFaces.size(); i++) myPrismaticFaces.push_back(prismaticFaces.at(i));
-    //this->mergeFaceMeshes();
 }
 
 //! -----------------------------------------------------------------------------------
@@ -227,13 +200,6 @@ void prismaticLayer::setParameters(prismaticLayerParameters parameters)
     cout<<"@____Total thickness: "<<myTotalThickness<<"____"<<endl;
     cout<<"@____Boundary behavior "<<(myLockBoundary==true? "Locked":"Free")<<"____"<<endl;
     cout<<"@____Algorithm: "<<myAlgorithm<<"____@"<<endl;
-
-    myCurvatureSensitivityForShrink = parameters.curvatureSensitivityForShrink;
-    myCurvatureSensitivityForGuidingVectorsSmoothing = parameters.curvatureSensitivityForGuidingVectorsSmoothing;
-    myNbGuidingVectorSmoothingSteps = parameters.NbGuidingVectorSmoothingSteps;
-    myCurvatureSensitivityForThicknessSmoothing = parameters.curvatureSensitivityForThicknessSmoothing;
-    myNbLayerThicknessSmoothingSteps = parameters.NbLayerThicknessSmoothingSteps;
-
 }
 
 //! -----------------------------------------------------------
@@ -289,43 +255,6 @@ void prismaticLayer::computeVecFieldCutOff(bool lockBoundary)
     }
 }
 
-//! ----------------------
-//! function: displayMesh
-//! details:
-//! ----------------------
-void prismaticLayer::displayMesh(const occHandle(MeshVS_DataSource) &aMeshDS)
-{
-    static int i;
-    i++;
-    occPreGLWidget *mainViewport = static_cast<occPreGLWidget*>(tools::getWidgetByName("maingwindow"));
-    if(mainViewport!=NULL)
-    {
-        ArrayOfColors colors;
-        if(i<1) mainViewport->hideAllMeshes(true);
-        const occHandle(AIS_InteractiveContext) &theCTX = mainViewport->getMeshContext();
-
-        //! ----------------------------
-        //! the mesh interactive object
-        //! ----------------------------
-        occHandle(MeshVS_Mesh) aFaceMesh = new MeshVS_Mesh();
-        aFaceMesh->SetDataSource(aMeshDS);
-
-        occHandle(MeshVS_MeshPrsBuilder) aBuilder = new MeshVS_MeshPrsBuilder(aFaceMesh);
-        aFaceMesh->AddBuilder(aBuilder,Standard_False);
-
-        Graphic3d_MaterialAspect myAspect(Graphic3d_NOM_GOLD);
-        myAspect.SetColor(Quantity_Color(Quantity_NOC_GREEN));
-
-        aFaceMesh->GetDrawer()->SetMaterial(MeshVS_DA_FrontMaterial, myAspect);
-        aFaceMesh->GetDrawer()->SetBoolean(MeshVS_DA_DisplayNodes, Standard_False);
-        aFaceMesh->GetDrawer()->SetBoolean(MeshVS_DA_ShowEdges, Standard_True);
-        aFaceMesh->GetDrawer()->SetColor(MeshVS_DA_EdgeColor,Quantity_NOC_BLACK);
-        aFaceMesh->SetDisplayMode(MeshVS_DMF_Shading);
-
-        theCTX->Display(aFaceMesh,Standard_True);
-    }
-}
-
 //! ---------------------------------------------------
 //! function: inflateMesh
 //! details:  returns the list of the displaced meshes
@@ -359,10 +288,7 @@ bool prismaticLayer::inflateMesh(QList<occHandle(Ng_MeshVS_DataSourceFace)> &inf
     //! ------------------------
     //! disable the Stop button
     //! ------------------------
-    if(myProgressIndicator!=Q_NULLPTR)
-    {
-        this->setStopButtonEnabled(false);
-    }
+    if(myProgressIndicator!=Q_NULLPTR) this->setStopButtonEnabled(false);
 
     //! --------------------------------------
     //! decide which node should be displaced
@@ -373,9 +299,7 @@ bool prismaticLayer::inflateMesh(QList<occHandle(Ng_MeshVS_DataSourceFace)> &inf
     //! make a copy the outer mesh
     //! ---------------------------
     occHandle(Ng_MeshVS_DataSourceFace) theMeshToInflate_old = new Ng_MeshVS_DataSourceFace(myOverallSumMeshDS);
-    theMeshToInflate_old->computeNormalAtElements();
     theMeshToInflate_old->computeNormalAtNodes();
-    theMeshToInflate_old->computeAnglesAtNode();
 
     //! -----------------------
     //! enable the Stop button
@@ -408,68 +332,71 @@ bool prismaticLayer::inflateMesh(QList<occHandle(Ng_MeshVS_DataSourceFace)> &inf
         //! console message
         //! ----------------
         cout<<"@____generating layer: "<<(n-1)<<" - current thickness: "<<displacement<<"____@"<<endl;
-
         occHandle(Ng_MeshVS_DataSourceFace) theMeshToInflate_new = new Ng_MeshVS_DataSourceFace(theMeshToInflate_old);
-
-        //! -------------------------
-        //! inflation needs
-        //! 1) normal at nodes
-        //! 2) curvature information
-        //! -------------------------
-        //theMeshToInflate_new->computeNormalAtElements();
         theMeshToInflate_new->computeNormalAtNodes();
-        theMeshToInflate_new->computeAnglesAtNode();
+        this->computeBeta(theMeshToInflate_new);
 
-        //! ---------------------------------------------------
-        //! curvature before displacing: "0" mean "1" gaussian
-        //! ---------------------------------------------------
-        int mode = 1; //! Gaussian curvature
-        theMeshToInflate_new->computeDiscreteCurvature(mode);
+        //! ---------------
+        //! shrink factors
+        //! ---------------
         QMap<int,double> shrinkFactors;
         this->computeShrinkFactor(theMeshToInflate_new,shrinkFactors);
 
-        //! --------------------------------------------------------------------
-        //! create the displacements vectorial field
-        //! Important note:
-        //! - "myNodeNormals" is internally built using the global node IDs
-        //! - "displacementsField" is also built using the global node IDs
-        //! - Ng_MeshVS_DataSourceFace::displaceMySelf uses the global node IDs
-        //! --------------------------------------------------------------------
+        //! ---------------------------------
+        //! guiding vectors - "best normals"
+        //! ---------------------------------
         QMap<int,QList<double>> normals = theMeshToInflate_new->myNodeNormals;
 
         //! ---------------
-        //! a sanity check
+        //! classify nodes
         //! ---------------
-        if(normals.isEmpty()) return false;
+        std::map<int,int> mapNodeTypes;
+        this->classifyNodes(theMeshToInflate_new,mapNodeTypes);
 
-        //! ----------------------------------
-        //! smooth guiding vectors directions
-        //! ----------------------------------
-        int NbSmoothingSteps = myNbGuidingVectorSmoothingSteps;
-        double cs= myCurvatureSensitivityForGuidingVectorsSmoothing;
-        this->fieldSmoother(normals,theMeshToInflate_new,cs,NbSmoothingSteps);
+        //! -----------------------------------------------------------------------------------------------
+        //! smooth the guiding vectors directions - use 5/10 smoothing steps
+        //! flag normalize == true since the "rotation" of the vector is of interest (change in direction)
+        //! -----------------------------------------------------------------------------------------------
+        smoothingTools::fieldSmoother(normals,theMeshToInflate_new,betaAverageField,betaVisibilityField,mapNodeTypes,10,true);
 
-        QMap<int,gp_Vec> displacementsField;
+        //! ------------------------------------
+        //! map of the local marching distances
+        //! ------------------------------------
+        QMap<int,double> marchingDistanceMap;
+        for(QMap<int,QList<double>>::const_iterator it = normals.cbegin(); it!= normals.cend(); ++it)
+        {
+            int globalNodeID = it.key();
+            double shrinkFactor = shrinkFactors.value(globalNodeID);
+            double cutOff = myLayerHCutOff.value(globalNodeID);
+            double marchingDistance = displacement*(1+shrinkFactor)*cutOff;
+            marchingDistanceMap.insert(globalNodeID,marchingDistance);
+            //cout<<"____("<<globalNodeID<<" => "<<marchingDistance<<")____"<<endl;
+        }
+
+        //! ------------------------------
+        //! smooth the marching distances
+        //! ------------------------------
+        smoothingTools::scalarFieldSmoother(marchingDistanceMap,theMeshToInflate_new,betaAverageField,mapNodeTypes,10);
+
+        QMap<int,QList<double>> displacementsField;
         for(QMap<int,QList<double>>::const_iterator it = normals.cbegin(); it!= normals.cend(); ++it)
         {
             int globalNodeID = it.key();
             const QList<double> &curNormal = it.value();
 
-            double cutoff = myLayerHCutOff.value(globalNodeID);
-            double shrinkFactor = shrinkFactors.value(globalNodeID);
-            double C = cutoff*shrinkFactor;
-            double vx = -curNormal[0]*C;
-            double vy = -curNormal[1]*C;
-            double vz = -curNormal[2]*C;
+            //! --------------------
+            //! nodal displacements
+            //! --------------------
+            double marchingDistance = marchingDistanceMap.value(globalNodeID);
+            double vx = -curNormal[0]*marchingDistance;
+            double vy = -curNormal[1]*marchingDistance;
+            double vz = -curNormal[2]*marchingDistance;
 
-            gp_Vec normVec(vx,vy,vz);
-            displacementsField.insert(globalNodeID,normVec);
+            QList<double> localFieldValue;
+            localFieldValue<<vx<<vy<<vz;
+            displacementsField.insert(globalNodeID,localFieldValue);
+            //cout<<"____ID: "<<globalNodeID<<" ("<<vx<<", "<<vy<<", "<<vz<<")____"<<endl;
         }
-
-        //! -------------------------------
-        //! smooth the displacements field
-        //! -------------------------------
-        this->smoothDisplacementField(displacementsField,normals,theMeshToInflate_new);
 
         //! ------------------
         //! displace the mesh
@@ -518,6 +445,7 @@ bool prismaticLayer::inflateMesh(QList<occHandle(Ng_MeshVS_DataSourceFace)> &inf
         QApplication::postEvent(myProgressIndicator,progressEvent);
         QApplication::processEvents();
     }
+    cout<<"_____NUMBER OF INFLATED MESHES: "<<inflatedMeshes.length()<<"____"<<endl;
     return true;
 }
 
@@ -546,9 +474,6 @@ bool prismaticLayer::mergeFaceMeshes()
         faceList0<<aFaceMeshDS;
         if(std::find(myPrismaticFaces.begin(), myPrismaticFaces.end(), faceNr)!=myPrismaticFaces.end()) faceList1<<aFaceMeshDS;
         if(std::find(myPrismaticFaces.begin(), myPrismaticFaces.end(), faceNr)==myPrismaticFaces.end()) faceList2<<aFaceMeshDS;
-
-        //if(myPrismaticFaces.contains(faceNr)) faceList1<<aFaceMeshDS;
-        //if(!myPrismaticFaces.contains(faceNr)) faceList2<<aFaceMeshDS;
     }
 
     cout<<"____faceList0: "<<faceList0.length()<<"____"<<endl;
@@ -559,14 +484,358 @@ bool prismaticLayer::mergeFaceMeshes()
     myPrismaticFacesSumMeshDS = new Ng_MeshVS_DataSourceFace(faceList1);
 
     myNonPrismaticFacesSumMeshDS = new Ng_MeshVS_DataSourceFace(faceList2);
-    myOverallSumMeshDS->computeNormalAtElements();
+    //myOverallSumMeshDS->computeNormalAtElements();
     myOverallSumMeshDS->computeNormalAtNodes();
-    myPrismaticFacesSumMeshDS->computeNormalAtElements();
+    //myPrismaticFacesSumMeshDS->computeNormalAtElements();
     myPrismaticFacesSumMeshDS->computeNormalAtNodes();
-    myNonPrismaticFacesSumMeshDS->computeNormalAtElements();
+    //myNonPrismaticFacesSumMeshDS->computeNormalAtElements();
     myNonPrismaticFacesSumMeshDS->computeNormalAtNodes();
 
     return true;
+}
+
+//! -----------------------------
+//! function: angleBetweenVector
+//! details:
+//! -----------------------------
+double angleBetweenVector(const std::vector<double> &n1, const std::vector<double> &n2, const std::vector<double> &refdir)
+{
+    double l1 = sqrt(pow(n1[0],2)+pow(n1[1],2)+pow(n1[2],2));
+    double l2 = sqrt(pow(n2[0],2)+pow(n2[1],2)+pow(n2[2],2));
+
+    if(l1 * l2 == 0) exit(9999);    // questo non dovrebbe mai succedere
+
+    double dot = (n1[0]*n2[0]+n1[1]*n2[1]+n1[2]*n2[2])/(l1*l2);
+    if(dot > 1) dot = 1;        // avoids domain error
+    if(dot < -1) dot = -1;      // avoids domain error
+    double angle = std::acos(dot);
+    double cx = (n1[1]*n2[2]-n1[2]*n2[1]);      //  n1[0]   n1[1]   n1[2]
+    double cy = (n1[2]*n2[0]-n1[0]*n2[2]);      //  n2[0]   n2[1]   n2[2]
+    double cz = (n1[0]*n2[1]-n1[1]*n2[0]);
+
+    double l_cross = sqrt(cx*cx+cy*cy+cz*cz);
+    cx /= l_cross;
+    cy /= l_cross;
+    cz /= l_cross;
+
+    double v = refdir[0]*cx+refdir[1]*cy+refdir[2]*cz;
+    if(v<0.0) return -angle;
+    else return angle;
+}
+
+//! ------------------------------------
+//! check if two elements share an edge
+//! ------------------------------------
+bool areAdjacent(const std::vector<int> &aFaceElement1, const std::vector<int> &aFaceElement2)
+{
+    std::set<int> aSet;
+    for(std::vector<int>::const_iterator it = aFaceElement1.cbegin(); it!=aFaceElement1.cend(); it++) aSet.insert(*it);
+    for(std::vector<int>::const_iterator it = aFaceElement2.cbegin(); it!=aFaceElement2.cend(); it++) aSet.insert(*it);
+    if(aFaceElement1.size()+aFaceElement2.size()-aSet.size()==2) return true;
+    return false;
+}
+
+//! ---------------------------
+//! function: getLocalFanNodes
+//! details:
+//! ---------------------------
+bool prismaticLayer::getLocalFanNodes(const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS, int vertexGlobalNodeID,
+                                      int t1, int t2,
+                                      mesh::meshPoint &A,
+                                      mesh::meshPoint &B,
+                                      mesh::meshPoint &C,
+                                      mesh::meshPoint &P)
+{
+    //cout<<"prismaticLayer::getLocalFanNodes()->____function called____"<<endl;
+
+    std::vector<int> supportVector;
+    std::vector<int> commonEdge;
+
+    int buf[3], NbNodes;
+    TColStd_Array1OfInteger nodeIDs1(*buf,1,3);         // first triangle
+    aMeshDS->GetNodesByElement(t1,nodeIDs1,NbNodes);
+    for(int i=1; i<=NbNodes; i++)
+    {
+        int currentNodeID = nodeIDs1(i);
+        supportVector.push_back(currentNodeID); // contains A,P,C
+        //cout<<"____first wedge triangle: "<<currentNodeID<<"____"<<endl;
+    }
+    TColStd_Array1OfInteger nodeIDs2(*buf,1,3);         // second triangle
+    aMeshDS->GetNodesByElement(t2,nodeIDs2,NbNodes);
+    for(int i=1; i<=NbNodes; i++)
+    {
+        int currentNodeID = nodeIDs2(i);
+        //cout<<"____second wedge triangle: "<<currentNodeID<<"____"<<endl;
+        std::vector<int>::iterator it = std::find(supportVector.begin(), supportVector.end(), currentNodeID);
+        if(it == supportVector.end()) supportVector.push_back(currentNodeID);
+        else commonEdge.push_back(currentNodeID);
+    }
+
+    //cout<<"____common edge ("<<commonEdge[0]<<", "<<commonEdge[1]<<")____"<<endl;
+    std::vector<int>::iterator it_ = std::find(supportVector.begin(), supportVector.end(), commonEdge[0]);
+    supportVector.erase(it_);
+    it_ = std::find(supportVector.begin(), supportVector.end(), commonEdge[1]);
+    supportVector.erase(it_);
+
+    // now the support vector contains A and B
+    // here we are not sure if A and B are correct
+    // they could be swapped - see at the end
+    int globalNodeID_A = supportVector[0];
+    int globalNodeID_B = supportVector[1];
+
+    //cout<<"____A: "<<globalNodeID_A<<", B: "<<globalNodeID_B<<"____"<<endl;
+
+    MeshVS_EntityType aType;
+    int NbNodes_;
+    double bufd[3];
+    TColStd_Array1OfReal coordsNodeA(*bufd,1,3);
+    TColStd_Array1OfReal coordsNodeB(*bufd,1,3);
+    TColStd_Array1OfReal coordsNodeP(*bufd,1,3);
+
+    //! --------------------------
+    //! point A, point B, point P
+    //! --------------------------
+    aMeshDS->GetGeom(globalNodeID_A,false,coordsNodeA,NbNodes_,aType);
+    A.ID = globalNodeID_A;
+    A.x = coordsNodeA(1);
+    A.y = coordsNodeA(2);
+    A.z = coordsNodeA(3);
+    //cout<<"____A("<<A.x<<", "<<A.y<<", "<<A.z<<")____"<<endl;
+
+    aMeshDS->GetGeom(globalNodeID_B,false,coordsNodeB,NbNodes_,aType);
+    B.ID = globalNodeID_B;
+    B.x = coordsNodeB(1);
+    B.y = coordsNodeB(2);
+    B.z = coordsNodeB(3);
+    //cout<<"____B("<<B.x<<", "<<B.y<<", "<<B.z<<")____"<<endl;
+
+    aMeshDS->GetGeom(vertexGlobalNodeID,false,coordsNodeP,NbNodes_,aType);
+    P.ID = vertexGlobalNodeID;
+    P.x = coordsNodeP(1);
+    P.y = coordsNodeP(2);
+    P.z = coordsNodeP(3);
+    //cout<<"____P("<<P.x<<", "<<P.y<<", "<<P.z<<")____"<<endl;
+
+    //! -----------------------
+    //! also point C is needed
+    //! -----------------------
+    int globalNodeID_C;
+    if(commonEdge[0] == vertexGlobalNodeID) globalNodeID_C = commonEdge[1];
+    else globalNodeID_C = commonEdge[0];
+    TColStd_Array1OfReal coordsNodeC(*bufd,1,3);
+    aMeshDS->GetGeom(globalNodeID_C,false,coordsNodeC,NbNodes_,aType);
+    C.ID = globalNodeID_C;
+    C.x = coordsNodeC(1);
+    C.y = coordsNodeC(2);
+    C.z = coordsNodeC(3);
+    //cout<<"____C("<<C.x<<", "<<C.y<<", "<<C.z<<")____"<<endl;
+
+    //! --------------
+    //! (A-P) x (C-P)
+    //! --------------
+    double xAP = A.x-P.x;
+    double yAP = A.y-P.y;
+    double zAP = A.z-P.z;
+
+    double xCP = C.x-P.x;
+    double yCP = C.y-P.y;
+    double zCP = C.z-P.z;
+
+    //! --------------
+    //! i    j    k
+    //! xAP  yAP  zAP
+    //! xCP  yCP  zCP
+    //! --------------
+    double vx = yAP*zCP-zAP*yCP;
+    double vy = zAP*xCP-xAP*zCP;
+    double vz = xAP*yCP-yAP*xCP;
+
+    //! -----------------------------------------
+    //! the normal of the element containing "A"
+    //! -----------------------------------------
+    double nx, ny, nz;
+    aMeshDS->GetNormal(t1,10,nx,ny,nz);
+
+    double scalarP = vx*nx+vy*ny+vz*nz;
+    if(scalarP<0)   // swap A and B
+    {
+        mesh::meshPoint S = B;
+        B = mesh::meshPoint(A);
+        A = S;
+        return true;
+    }
+    return false;
+}
+
+//! ----------------------
+//! function: computeBeta
+//! details:
+//! ----------------------
+void prismaticLayer::computeBeta(const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS)
+{
+    cout<<"prismaticLayer::computeBeta()->____function called____"<<endl;
+
+    const double PI = 3.1415926538;
+
+    //! ----------------------------------------
+    //! check if node normals have been defined
+    //! ----------------------------------------
+    if(aMeshDS->myNodeNormals.isEmpty()) aMeshDS->computeNormalAtNodes();
+
+    //! --------------------------
+    //! clear the private members
+    //! --------------------------
+    betaAverageField.clear();
+    betaVisibilityField.clear();
+
+    //! -----------------------------------
+    //! face elements attached to the node
+    //! -----------------------------------
+    if(aMeshDS->myNodeToElements.isEmpty()) aMeshDS->computeNodeToElementsConnectivity();
+    const QMap<int,QList<int>> &nodeToElementsMap = aMeshDS->myNodeToElements;
+
+    //! ------------------------------
+    //! do the work on all the points
+    //! ------------------------------
+    for(TColStd_MapIteratorOfPackedMapOfInteger it(aMeshDS->GetAllNodes()); it.More(); it.Next())
+    {
+        int globalNodeID = it.Key();
+        int localNodeID = aMeshDS->myNodesMap.FindIndex(globalNodeID);
+
+        const QList<int> &attachedElements_localIDs = nodeToElementsMap.value(localNodeID);
+        int NbAttachedElements = attachedElements_localIDs.length();
+
+        double bnk_max = -1e10;
+        //std::vector<double> bnks;
+        std::set<int> surroundingNodes;                             // nodes surrounding the current node
+        std::map<int,int> indexedMapOfElements;                     // index, element ID
+        std::map<int,std::vector<double>> indexedMapOfNormals;      // index, normal of the element ID
+        for(int i=0; i<NbAttachedElements; i++)
+        {
+            int localElementID = attachedElements_localIDs[i];
+            int globalElementID = aMeshDS->myElementsMap.FindKey(localElementID);
+
+            double nx,ny,nz;
+            nx = ny = nz = 0;
+            aMeshDS->GetNormal(globalElementID,10,nx,ny,nz);
+
+            std::vector<double> aNormal {nx, ny, nz};
+            indexedMapOfElements.insert(std::make_pair(i,globalElementID));
+            indexedMapOfNormals.insert(std::make_pair(i,aNormal));
+
+            int NbNodes, buf[10];
+            TColStd_Array1OfInteger nodeIDs(*buf,1,10);
+            aMeshDS->GetNodesByElement(globalElementID,nodeIDs,NbNodes);
+            for(int j=1; j<=NbNodes; j++) surroundingNodes.insert(nodeIDs(j));
+
+            //! ---------------------------------------------------------------------------
+            //! angle between the current element normal and the best visibility direction
+            //! ---------------------------------------------------------------------------
+            const QList<double> &nodeNormal = aMeshDS->myNodeNormals.value(globalNodeID);
+            //cout<<"____node ID: "<<globalNodeID<<" ("<<nodeNormal[0]<<", "<<nodeNormal[1]<<", "<<nodeNormal[2]<<")____"<<endl;
+            double dot = nx*nodeNormal[0]+ny*nodeNormal[1]+nz*nodeNormal[2];
+            dot /= sqrt(nx*nx+ny*ny+nz*nz)*sqrt(pow(nodeNormal[0],2)+pow(nodeNormal[1],2)+pow(nodeNormal[2],2));
+            if(dot<-1) dot = -1;
+            if(dot>1) dot = 1;
+            double bnk = std::acos(dot);
+            if(bnk>bnk_max) bnk_max = bnk;
+        }
+
+        //! -----------------------------------------------------
+        //! compute the visibility angle and insert into the map
+        //! -----------------------------------------------------
+        double betaVisibility = PI/2 - bnk_max;
+        betaVisibilityField.insert(std::make_pair(globalNodeID,betaVisibility));
+
+        //cout<<"____betaVisibility (rad,deg) = "<<betaVisibility<<"\t"<<betaVisibility*180/PI<<"____"<<endl;
+
+        std::set<int>::iterator it_ = surroundingNodes.find(globalNodeID);
+        surroundingNodes.erase(it_);
+
+        /*
+        //! -------------------------------------------------------
+        //! given an advancing node P compute the average distance
+        //! between the points and its surrounding nodes
+        //! -------------------------------------------------------
+        double averageDistance = 0;
+        MeshVS_EntityType eType;
+        int NbNodes;
+        double bufd[3];
+        TColStd_Array1OfReal coords(*bufd,1,3);
+        aMeshDS->GetGeom(globalNodeID,false,coords,NbNodes,eType);
+        double xP = coords(1); double yP = coords(2); double zP = coords(3);
+        for(std::set<int>::iterator it = surroundingNodes.begin(); it!=surroundingNodes.end(); it++)
+        {
+            int globalNodeID_surr = *it;
+            aMeshDS->GetGeom(globalNodeID_surr,false,coords,NbNodes,eType);
+            averageDistance += sqrt(pow(xP-coords(1),2)+pow(yP-coords(2),2)+pow(zP-coords(3),2));
+        }
+        averageDistance /= surroundingNodes.size();
+        */
+
+        //! --------------------------
+        //! generate pairs of normals
+        //! --------------------------
+        std::vector<std::pair<int,int>> vecPairs;
+        size_t NbNormals = indexedMapOfNormals.size();
+
+        for(size_t i=0; i<NbNormals-1; i++)
+            for(size_t j=i+1; j<NbNormals; j++)
+                vecPairs.push_back(std::make_pair(i,j));
+
+        double sumBeta = 0.0;
+        double betaAve = 0.0;
+        int NbAdjacentPairs = 0;
+        for(std::vector<std::pair<int,int>>::iterator it = vecPairs.begin(); it!=vecPairs.end(); it++)
+        {
+            int fn = it->first;
+            int sn = it->second;
+
+            //! ------------------------------
+            //! check triangle pair adjacency
+            //! ------------------------------
+            int buf[3], NbNodes;
+            TColStd_Array1OfInteger nodeIDs1(*buf,1,3);
+            aMeshDS->GetNodesByElement(indexedMapOfElements.at(fn),nodeIDs1,NbNodes);
+            std::vector<int> aFaceElement1;
+            for(int i=1; i<=NbNodes; i++) aFaceElement1.push_back(nodeIDs1(i));
+            TColStd_Array1OfInteger nodeIDs2(*buf,1,3);
+            aMeshDS->GetNodesByElement(indexedMapOfElements.at(sn),nodeIDs2,NbNodes);
+            std::vector<int> aFaceElement2;
+            for(int i=1; i<=NbNodes; i++) aFaceElement2.push_back(nodeIDs2(i));
+
+            bool shareAnEdge = areAdjacent(aFaceElement1,aFaceElement2);
+            if(shareAnEdge==false) continue;
+
+            NbAdjacentPairs++;
+            const std::vector<double> &n1 = indexedMapOfNormals.at(fn);
+            const std::vector<double> &n2 = indexedMapOfNormals.at(sn);
+            //if(sqrt(n1[0]*n1[0]+n1[1]*n1[1]+n1[2]*n1[2])==0) exit(11);   // should never occur
+            //if(sqrt(n2[0]*n2[0]+n2[1]*n2[1]+n2[2]*n2[2])==0) exit(12);   // should never occur
+
+            //! ---------------------------------------------------------
+            //! get ABCD and define as reference direction for the angle
+            //! calculation the common edge (C-P)
+            //! ---------------------------------------------------------
+            mesh::meshPoint A,B,C,P;
+            int element1 = indexedMapOfElements.at(fn);
+            int element2 = indexedMapOfElements.at(sn);
+
+            bool swappedAB = this->getLocalFanNodes(aMeshDS,globalNodeID,element1,element2,A,B,C,P);
+            double l_CP = sqrt(pow(P.x-C.x,2)+pow(P.y-C.y,2)+pow(P.z-C.z,2));
+            std::vector<double> refDir { -(C.x-P.x)/l_CP, -(C.y-P.y)/l_CP, -(C.z-P.z)/l_CP };
+            double angle;
+            if(swappedAB == false) angle = angleBetweenVector(n1,n2,refDir);
+            else angle = angleBetweenVector(n2,n1,refDir);
+            sumBeta += angle;
+        }
+        betaAve = sumBeta/NbAdjacentPairs;          // average angle
+
+        //! ------------------------------------------------
+        //! record the manifold characteristic into the map
+        //! ------------------------------------------------
+        betaAverageField.insert(std::make_pair(globalNodeID,PI-betaAve));
+    }
 }
 
 //! ------------------------------
@@ -576,30 +845,27 @@ bool prismaticLayer::mergeFaceMeshes()
 void prismaticLayer::computeShrinkFactor(const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS,
                                          QMap<int,double> &shrinkFactors)
 {
-    //! ----------------
-    //! diagnostic file
-    //! ----------------
-    FILE *f = fopen("D:/shrink field.txt","w");
+    //FILE *fp = fopen("D:/shrink.txt","w");
+    //fprintf(fp,"#NodeID\tx\t\ty\t\tz\t\tbetaAve\t\tbetaVisibility\tshrink\n");
 
-    int mode = 1; // Gaussian curvature
-    if(aMeshDS->myCurvatureGradient.isEmpty()) aMeshDS->computeDiscreteCurvature(mode);
+    const double PI = 3.1415926534;
+    const double eps = 0.01745329;           // 1 degree
+
     for(TColStd_MapIteratorOfPackedMapOfInteger it(aMeshDS->GetAllNodes()); it.More(); it.Next())
     {
         int globalNodeID = it.Key();
-        double curvature = aMeshDS->myCurvature.value(globalNodeID);
-
-        //! ---------------------------
-        //! use the gaussian curvature
-        //! ---------------------------
-        const double maxShrink = 2.0;
-        double k = myCurvatureSensitivityForShrink;
-        double shrink = maxShrink*(1./(1.+exp(-k*sqrt(fabs(curvature)))));
-        if(curvature<0) shrink = maxShrink - shrink;
+        double betaAve = betaAverageField.at(globalNodeID);
+        double betaVisibility = betaVisibilityField.at(globalNodeID);
+        double shrink = 0;
+        if(betaAve<PI-eps) shrink = fabs(cos(betaVisibility));      // expansion in concave points
+        if(betaAve>PI+eps) shrink =  -fabs(cos(betaVisibility));    // retraction in not concave points
         shrinkFactors.insert(globalNodeID,shrink);
 
-        fprintf(f,"%d\t%lf\t%lf\n",globalNodeID,curvature,shrink);
+        double P[3];
+        this->getPointCoordinates(aMeshDS,globalNodeID,P);
+        //fprintf(fp,"%d\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n",globalNodeID,P[0],P[1],P[2],betaAve*180/PI,betaVisibility*180/PI,shrink);
     }
-    fclose(f);
+    //fclose(fp);
 }
 
 //! ---------------------------------
@@ -611,10 +877,12 @@ bool prismaticLayer::buildPrismaticElements(const QList<occHandle(Ng_MeshVS_Data
 {
     cout<<"prismaticLayer::buildPrismaticElements()->____function called____"<<endl;
 
+    if(theInflatedMeshes.length()==0) exit(44444);
+
     int NbTet, NbPyram, NbPrism, NbNullElement;
     NbTet = NbPyram = NbPrism = NbNullElement = 0;
 
-    QList<meshElementByCoords> listOfMeshElements3D;
+    std::vector<meshElementByCoords> listOfMeshElements3D;
 
     //! -----------------------------------
     //! forward: from external to internal
@@ -625,10 +893,10 @@ bool prismaticLayer::buildPrismaticElements(const QList<occHandle(Ng_MeshVS_Data
         cout<<"@  working on mesh pair ("<<i<<","<<i+1<<")"<<endl;
         cout<<"@-----------------------------------@"<<endl;
 
-        const occHandle(Ng_MeshVS_DataSourceFace) &baseMesh=theInflatedMeshes.at(i);
+        const occHandle(Ng_MeshVS_DataSourceFace) &baseMesh = theInflatedMeshes.at(i);
         TColStd_PackedMapOfInteger eMapBase = baseMesh->GetAllElements();
 
-        const occHandle(Ng_MeshVS_DataSourceFace) &topMesh=theInflatedMeshes.at(i+1);
+        const occHandle(Ng_MeshVS_DataSourceFace) &topMesh = theInflatedMeshes.at(i+1);
         TColStd_PackedMapOfInteger eMapTop = topMesh->GetAllElements();
 
         TColStd_MapIteratorOfPackedMapOfInteger eItBase, eItTop;
@@ -654,7 +922,8 @@ bool prismaticLayer::buildPrismaticElements(const QList<occHandle(Ng_MeshVS_Data
             QList<mesh::meshPoint> bottomFace;
             for(int n=0; n<NbNodes; n++)
             {
-                mesh::meshPoint aMeshPoint(coords(3*n+1),coords(3*n+2),coords(3*n+3));
+                int s = 3*n;
+                mesh::meshPoint aMeshPoint(coords(s+1),coords(s+2),coords(s+3));
                 bottomFace<<aMeshPoint;
             }
 
@@ -667,7 +936,8 @@ bool prismaticLayer::buildPrismaticElements(const QList<occHandle(Ng_MeshVS_Data
             QList<mesh::meshPoint> topFace;
             for(int n=0; n<NbNodes; n++)
             {
-                mesh::meshPoint aMeshPoint1(coords1(3*n+1),coords1(3*n+2),coords1(3*n+3));
+                int s = 3*n;
+                mesh::meshPoint aMeshPoint1(coords1(s+1),coords1(s+2),coords1(s+3));
                 topFace<<aMeshPoint1;
             }
 
@@ -675,7 +945,7 @@ bool prismaticLayer::buildPrismaticElements(const QList<occHandle(Ng_MeshVS_Data
             //! create the prismatic element
             //! -----------------------------
             meshElementByCoords ameshElementByCoords(bottomFace,topFace);
-            if(ameshElementByCoords.type!=NULL_ELEMENT) listOfMeshElements3D<<ameshElementByCoords;
+            if(ameshElementByCoords.type!=NULL_ELEMENT) listOfMeshElements3D.push_back(ameshElementByCoords);
 
             //! ----------------------------
             //! diagnostic - elements count
@@ -687,9 +957,6 @@ bool prismaticLayer::buildPrismaticElements(const QList<occHandle(Ng_MeshVS_Data
             case PRISM: NbPrism++; /*cout<<"_PRISM_"*/; break;
             case NULL_ELEMENT: NbNullElement++; /*cout<<"_NULL ELEMENT_"*/; break;
             }
-            //! ---------------
-            //! end diagnostic
-            //! ---------------
         }
 
         cout<<endl;
@@ -738,15 +1005,16 @@ bool prismaticLayer::areIntersecting(const occHandle(Ng_MeshVS_DataSourceFace) &
 bool prismaticLayer::inflateMeshAndCompress(QList<occHandle(Ng_MeshVS_DataSourceFace)> &theInflatedMeshes,
                                             occHandle(Ng_MeshVS_DataSource3D) &preInflationVolumeMeshDS)
 {
+    cout<<"****************************************"<<endl;
+    cout<<" prismaticLayer::inflateMeshAndCompress "<<endl;
+    cout<<"****************************************"<<endl;
     this->mergeFaceMeshes();
 
     occHandle(Ng_MeshVS_DataSourceFace) prismaticMeshDS = new Ng_MeshVS_DataSourceFace(myPrismaticFacesSumMeshDS);
     occHandle(Ng_MeshVS_DataSourceFace) surfaceMeshDS = new Ng_MeshVS_DataSourceFace(myOverallSumMeshDS);
     occHandle(Ng_MeshVS_DataSourceFace) nonPrismaticMeshDS = new Ng_MeshVS_DataSourceFace(myNonPrismaticFacesSumMeshDS);
 
-    surfaceMeshDS->computeNodeToElementsConnectivity();
     surfaceMeshDS->computeNormalAtNodes();
-
     prismaticMeshDS->computeNormalAtNodes();
     prismaticMeshDS->computeFreeMeshSegments();
 
@@ -755,7 +1023,6 @@ bool prismaticLayer::inflateMeshAndCompress(QList<occHandle(Ng_MeshVS_DataSource
     //! -------------------------------------
     occHandle(Ng_MeshVS_DataSourceFace) theMeshToInflate_old = new Ng_MeshVS_DataSourceFace(prismaticMeshDS);
     theMeshToInflate_old->computeNormalAtNodes();
-    theMeshToInflate_old->computeAnglesAtNode();
 
     //! ------------------------------------
     //! store the first mesh (the exterior)
@@ -801,59 +1068,85 @@ bool prismaticLayer::inflateMeshAndCompress(QList<occHandle(Ng_MeshVS_DataSource
     for(int n=1; n<=myNbLayers; n++)
     {
         double displacement = myLayerThickness.at(n-1);
-        cout<<"@____generating layer: "<<n<<" with current thickness: "<<displacement<<"____@"<<endl;
+        cout<<"prismaticLayer::inflateMeshAndCompress->____generating layer: "<<n<<" with current thickness: "<<displacement<<"____@"<<endl;
 
         occHandle(Ng_MeshVS_DataSourceFace) theMeshToInflate_new = new Ng_MeshVS_DataSourceFace(theMeshToInflate_old);
-
-        //! -------------------------------------------
-        //! inflation needs: normal at nodes, gradient
-        //! of the normal at nodes, shrink factor
-        //! -------------------------------------------
         theMeshToInflate_new->computeNormalAtNodes();
-        theMeshToInflate_new->computeAnglesAtNode();
+        this->computeBeta(theMeshToInflate_new);
 
-        //! ------------------
-        //! compute curvature
-        //! ------------------
-        int curvatureType = 1;      //! gaussian
-        theMeshToInflate_new->computeDiscreteCurvature(curvatureType);
-
-        //! -----------------------
-        //! compute shrink factors
-        //! -----------------------
+        //! ---------------
+        //! shrink factors
+        //! ---------------
         QMap<int,double> shrinkFactors;
         this->computeShrinkFactor(theMeshToInflate_new,shrinkFactors);
 
-        //! -----------------------------------------
-        //! create the displacements vectorial field
-        //! -----------------------------------------
+        //! ---------------------------------
+        //! guiding vectors - "best normals"
+        //! ---------------------------------
         QMap<int,QList<double>> normals = theMeshToInflate_new->myNodeNormals;
-        if(normals.isEmpty()) return false;
 
-        //! -------------------
-        //! smooth the normals
-        //! -------------------
-        const int NbSmoothingSteps = 50;
-        this->fieldSmoother(normals,theMeshToInflate_new,5,NbSmoothingSteps);
+        //! ---------------
+        //! classify nodes
+        //! ---------------
+        std::map<int,int> mapNodeTypes;
+        this->classifyNodes(theMeshToInflate_new,mapNodeTypes);
 
-        QMap<int,gp_Vec> displacementsField;
+        //! -----------------------------------------------------------------------------------------------
+        //! smooth the guiding vectors directions - use 5/10 smoothing steps
+        //! flag normalize == true since the "rotation" of the vector is of interest (change in direction)
+        //! -----------------------------------------------------------------------------------------------
+        smoothingTools::fieldSmoother(normals,theMeshToInflate_new,betaAverageField,betaVisibilityField,mapNodeTypes,10,true);
+
+        //! ------------------------------------
+        //! map of the local marching distances
+        //! ------------------------------------
+        QMap<int,double> marchingDistanceMap;
         for(QMap<int,QList<double>>::const_iterator it = normals.cbegin(); it!= normals.cend(); ++it)
         {
             int globalNodeID = it.key();
-            const QList<double> &curNormal = it.value();
+            double shrinkFactor = shrinkFactors.value(globalNodeID);
+            //double cutOff = myLayerHCutOff.value(globalNodeID);
 
             //! -----------------------------------------------------
             //! cutoff is 1.0 since all the points will be displaced
             //! component of the displacement field
             //! -----------------------------------------------------
             double cutoff = 1.0;
+            double marchingDistance = displacement*(1+shrinkFactor)*cutoff;
+            marchingDistanceMap.insert(globalNodeID,marchingDistance);
+        }
 
-            double shrinkFactor = shrinkFactors.value(globalNodeID);
-            double vx = -curNormal.at(0)*displacement*cutoff*shrinkFactor;
-            double vy = -curNormal.at(1)*displacement*cutoff*shrinkFactor;
-            double vz = -curNormal.at(2)*displacement*cutoff*shrinkFactor;            
+        //! ------------------------------
+        //! smooth the marching distances
+        //! ------------------------------
+        smoothingTools::scalarFieldSmoother(marchingDistanceMap,theMeshToInflate_new,betaAverageField,mapNodeTypes,10);
 
-            bool correctBoundary = true;
+        //! -------------------------
+        //! check marching distances
+        //! 1. Its marching distance is less than a fraction, say 0.60, of the average length of edges sharing p in its manifold
+        //! 2.
+        //! -------------------------
+        //! ...
+
+
+        //! -------------------
+        //! displacement field
+        //! -------------------
+        QMap<int,QList<double>> displacementsField;
+        for(QMap<int,QList<double>>::const_iterator it = normals.cbegin(); it!= normals.cend(); ++it)
+        {
+            int globalNodeID = it.key();
+            const QList<double> &curNormal = it.value();
+
+            //! --------------------
+            //! nodal displacements
+            //! --------------------
+            double marchingDistance = marchingDistanceMap.value(globalNodeID);
+            double vx = -curNormal[0]*marchingDistance;
+            double vy = -curNormal[1]*marchingDistance;
+            double vz = -curNormal[2]*marchingDistance;
+
+            bool correctBoundary = false;
             if(correctBoundary)
             {
                 //! -----------------------------------------------------------------
@@ -905,14 +1198,10 @@ bool prismaticLayer::inflateMeshAndCompress(QList<occHandle(Ng_MeshVS_DataSource
                     }
                 }
             }
-            gp_Vec displacementVector(vx,vy,vz);
-            displacementsField.insert(globalNodeID,displacementVector);
+            QList<double> localFieldValue;
+            localFieldValue<<vx<<vy<<vz;
+            displacementsField.insert(globalNodeID,localFieldValue);
         }
-
-        //! ------------------------------
-        //! smooth the displacement field
-        //! ------------------------------
-        this->smoothDisplacementField(displacementsField,normals,theMeshToInflate_new);
 
         //! -------------------------------------------
         //! displace the prismatic and the volume mesh
@@ -920,15 +1209,18 @@ bool prismaticLayer::inflateMeshAndCompress(QList<occHandle(Ng_MeshVS_DataSource
         theMeshToInflate_new->displaceMySelf(displacementsField);
         theInflatedMeshes<<theMeshToInflate_new;
 
-        //! ----------------------------------------------
-        //! translation of nodes without mesh compression
-        //! ----------------------------------------------
+        //! --------------------------------------------------------
+        //! translation of nodes without mesh compression: this was
+        //! the initial attempt to compress, obviously leading to
+        //! mesh elementd folding for large displacements or small
+        //! element size - left here for documentation
+        //! --------------------------------------------------------
         //preInflationVolumeMeshDS->displaceMySelf(displacementsField);
 
-        //! ------------------------------------------------------------
-        //! experimental - for testing as rigid as possible deformation
+        //! -------------------------------------------------
+        //! "as rigid as possible" volume mesh deformation
         //! this substitutes for the "displaceMySelf" method
-        //! ------------------------------------------------------------
+        //! -------------------------------------------------
         shared_ptr<meshSelectNLayers> meshSelector(new meshSelectNLayers);
         meshSelector->setVolumeMesh(preInflationVolumeMeshDS);
 
@@ -941,75 +1233,63 @@ bool prismaticLayer::inflateMeshAndCompress(QList<occHandle(Ng_MeshVS_DataSource
         //! ------------------------------------------------
         std::vector<int> constrainedGlobalNodeIDs;
         std::vector<int> groupOfMovingNodes;
-        bool canApplyDeformation = false;   // dummy initialization;
 
-        for(int P = myNbLayers; P>0; P--)
+        constrainedGlobalNodeIDs.clear();
+        groupOfMovingNodes.clear();
+
+        //! -------------------------
+        //! 3 steps seems reasonable
+        //! -------------------------
+        meshSelector->setSteps(3);
+        bool isDone = meshSelector->getElements(selectedVolumeMeshDS);
+        if(!isDone)
         {
-            canApplyDeformation = false;
-            constrainedGlobalNodeIDs.clear();
-            groupOfMovingNodes.clear();
+            cout<<"prismaticLayer::inflateMeshAndCompress->____cannot compress mesh____"<<endl;
+            return false;
+        }
+        TColStd_PackedMapOfInteger mapOfGlobalNodeIDs = selectedVolumeMeshDS->GetAllNodes();
 
-            meshSelector->setSteps(P);
-            bool isDone = meshSelector->getElements(selectedVolumeMeshDS);
+        //! --------------------------------------------
+        //! nodes affected by the deformation algorithm
+        //! --------------------------------------------
+        for(TColStd_MapIteratorOfPackedMapOfInteger it(mapOfGlobalNodeIDs);it.More();it.Next())
+        {
+            int globalNodeID = it.Key();
+            groupOfMovingNodes.push_back(globalNodeID);
+        }
+        //! ------------------------------------------------
+        //! nodes not affected by the deformation algorithm
+        //! ------------------------------------------------
+        for(TColStd_MapIteratorOfPackedMapOfInteger it(preInflationVolumeMeshDS->GetAllNodes()); it.More(); it.Next())
+        {
+            int globalNodeID = it.Key();
 
-            //! ---------------------------------------------------------------
-            //! for some reason cannot retrieve a volume submesh using P steps
-            //! ---------------------------------------------------------------
-            if(!isDone) continue;
-
-            TColStd_PackedMapOfInteger mapOfGlobalNodeIDs = selectedVolumeMeshDS->GetAllNodes();
-
-            //! --------------------------------------------
-            //! nodes affected by the deformation algorithm
-            //! --------------------------------------------
-            for(TColStd_MapIteratorOfPackedMapOfInteger it(mapOfGlobalNodeIDs);it.More();it.Next())
-            {
-                int globalNodeID = it.Key();
-                groupOfMovingNodes.push_back(globalNodeID);
-            }
-            //! ------------------------------------------------
-            //! nodes not affected by the deformation algorithm
-            //! ------------------------------------------------
-            for(TColStd_MapIteratorOfPackedMapOfInteger it(preInflationVolumeMeshDS->GetAllNodes()); it.More(); it.Next())
-            {
-                int globalNodeID = it.Key();
-                //! ------------------------------------------------------------------------------
-                //! the current node is not contained on the vector of node that are free to move
-                //! ------------------------------------------------------------------------------
-                if(!mapOfGlobalNodeIDs.Contains(globalNodeID)) constrainedGlobalNodeIDs.push_back(globalNodeID);
-            }
-            //! ---------------------------------------------
-            //! define a minimum number of constrained nodes
-            //! ---------------------------------------------
-            if(constrainedGlobalNodeIDs.size()>3)
-            {
-                canApplyDeformation = true;
-                break;
-            }
+            //! ------------------------------------------------------------------------------
+            //! the current node is not contained on the vector of node that are free to move
+            //! ------------------------------------------------------------------------------
+            if(!mapOfGlobalNodeIDs.Contains(globalNodeID)) constrainedGlobalNodeIDs.push_back(globalNodeID);
+        }
+        //! ---------------------------------------------
+        //! define a minimum number of constrained nodes
+        //! ---------------------------------------------
+        if(constrainedGlobalNodeIDs.size()<3)
+        {
+            cout<<"prismaticLayer::inflateMeshAndCompress->____cannot compress mesh____"<<endl;
+            return false;
         }
 
-        if(!canApplyDeformation) return false;
-
         //! -------------------------------------------------------
-        //! mode: "0" harmonic/biharmonic "1" as rigig as possible
+        //! mode: "0" harmonic/biharmonic "1" as rigid as possible
         //! -------------------------------------------------------
         int mode = 1;
         preInflationVolumeMeshDS->displaceMySelf_asRigidAsPossible(displacementsField,constrainedGlobalNodeIDs,mode);
         //preInflationVolumeMeshDS->displaceMySelf_asRigidAsPossible(displacementsField,groupOfMovingNodes,mode);
-        //! ------------
-        //! end testing
-        //! ------------
 
         //! ------------------------------------
         //! update the "old" displacement field
         //! ------------------------------------
         theMeshToInflate_old = theMeshToInflate_new;
     }
-
-    //! ---------------------------------------------------------------
-    //! insert the deformed (compressed) volume mesh into the database
-    //! ---------------------------------------------------------------
-    myMeshDB->ArrayOfMeshDS.insert(myBodyIndex,preInflationVolumeMeshDS);                   // to be commented
     return true;
 }
 
@@ -1026,25 +1306,37 @@ void prismaticLayer::setStopButtonEnabled(bool isEnabled)
     QApplication::postEvent(myProgressIndicator,pe);
 }
 
-//! -------------------------------------------------------
+//! ------------------------------------------------------
 //! function: generateTetLayers
-//! details:  return the boundary mesh made of tetrahedral
-//!           and the deformed surface mesh
-//! -------------------------------------------------------
+//! details:  return the boundary mesh made of tetrahedra
+//!           and the internal deformed surface mesh
+//! ------------------------------------------------------
 void prismaticLayer::generateTetLayers(occHandle(Ng_MeshVS_DataSource3D) &meshAtWalls,
                                        occHandle(Ng_MeshVS_DataSourceFace) &lastInflatedMesh)
 {
     cout<<"prismaticLayers::generateTetLayers()->____function called____"<<endl;
 
-    //! -----------------------
-    //! number of inverted tet
-    //! -----------------------
-    int NumberOfInvertedTet = 0;
+    //! --------------------------------
+    //! init the secondary progress bar
+    //! --------------------------------
+    QProgressEvent *progressEvent;
+    if(myProgressIndicator!=Q_NULLPTR)
+    {
+        progressEvent = new QProgressEvent(QProgressEvent_None,0,9999,0,"Generating boundary mesh",
+                                           QProgressEvent_Init,0,myNbLayers,0,"Building prismatic mesh");
+        QApplication::postEvent(myProgressIndicator,progressEvent);
+        QApplication::processEvents();
+    }
+
+    //! ----------------------------
+    //! clear reduction factors map
+    //! ----------------------------
+    mapOfReductionFactor.clear();
 
     //! -----------------------------
     //! the volume elements at walls
     //! -----------------------------
-    QList<meshElementByCoords> volumeElementsAtWalls;
+    std::vector<meshElementByCoords> volumeElementsAtWalls;
 
     //! --------------------------------------
     //! decide which node should be displaced
@@ -1054,34 +1346,119 @@ void prismaticLayer::generateTetLayers(occHandle(Ng_MeshVS_DataSource3D) &meshAt
     //! ---------------------------
     //! make a copy the outer mesh
     //! ---------------------------
-    occHandle(Ng_MeshVS_DataSourceFace) theMeshToInflate = new Ng_MeshVS_DataSourceFace(myPrismaticFacesSumMeshDS);
-    //occHandle(Ng_MeshVS_DataSourceFace) theMeshToInflate = new Ng_MeshVS_DataSourceFace(myOverallSumMeshDS);
-
+    occHandle(Ng_MeshVS_DataSourceFace) theMeshToInflate = new Ng_MeshVS_DataSourceFace(myOverallSumMeshDS);
     if(myPrismaticFacesSumMeshDS->myBoundarySegments.isEmpty()) myPrismaticFacesSumMeshDS->computeFreeMeshSegments();
+
+    //! ------------------------------------------------------------------
+    //! analyze gaps at the beginning: scan all the mesh nodes.
+    //! compute the distance from closest point on the mesh => "distance"
+    //! apply reduction of first layer thickness if applicable
+    //! ------------------------------------------------------------------
+    double Sigma = 0;                                           // a parameter for reduction factor calculation
+    for(int n=0; n<myNbLayers; n++) Sigma += pow(myExpRatio,n);
+
+    pointToMeshDistance aDistanceMeter;                         // distance meter tool
+    aDistanceMeter.init(theMeshToInflate);                      // init with mesh
+    double firstLayerThickness = myLayerThickness.at(0);        // first layer thickness
+    std::map<int,double> mapOfFirstLayerReductionFactor;        // fill a map (nodeID, reduction factor)
+
+    if(theMeshToInflate->myNodeNormals.isEmpty()) theMeshToInflate->computeNormalAtNodes();
+    const QMap<int,QList<double>> &normals = theMeshToInflate->myNodeNormals;
+
+    //FILE *fp = fopen("D:/reductionFactor.txt","w");
+    for(QMap<int,QList<double>>::const_iterator itn = normals.cbegin(); itn!=normals.cend(); itn++)
+    {
+        int globalNodeID = itn.key();
+        const QList<double> &normal = itn.value();
+
+        double P[3];
+        float distance;
+        this->getPointCoordinates(theMeshToInflate,globalNodeID,P);
+
+        //! --------------------------------------------------
+        //! invert the normal: it points towards the material
+        //! for gap calculation
+        //! --------------------------------------------------
+        double nx = -normal[0];
+        double ny = -normal[1];
+        double nz = -normal[2];
+        double dir[3] {nx,ny,nz};
+        aDistanceMeter.distance(P,dir,&distance);   // compute the distance
+
+        bool compress = true;
+        if(compress==true)
+        {
+            //! ---------------------------------------------
+            //! compress layers in order to avoid collisions
+            //! ---------------------------------------------
+            const double compressionFactor = 0.10;
+            if(myTotalThickness<distance/4.0) mapOfFirstLayerReductionFactor.insert(std::make_pair(globalNodeID,1.0));
+            else
+            {
+                double firstLayerThicknessNew = compressionFactor*distance/Sigma;
+                double reductionFactor = firstLayerThicknessNew/firstLayerThickness;
+                mapOfFirstLayerReductionFactor.insert(std::make_pair(globalNodeID,reductionFactor));
+                mapOfReductionFactor.insert(std::make_pair(globalNodeID,reductionFactor));
+            }
+        }
+        else
+        {
+            if(myTotalThickness<distance/3.0) mapOfFirstLayerReductionFactor.insert(std::make_pair(globalNodeID,1.0));
+            else
+            {
+                //! ------------
+                //! lock points
+                //! ------------
+                myLayerHCutOff.insert(globalNodeID,0);
+                mapOfFirstLayerReductionFactor.insert(std::make_pair(globalNodeID,1.0));
+                mapOfReductionFactor.insert(std::make_pair(globalNodeID,1.0));
+            }
+        }
+        //fprintf(fp,"%d\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n",globalNodeID,mapOfFirstLayerReductionFactor.at(globalNodeID),nx,ny,nz,distance,myTotalThickness);
+    }
+    //fclose(fp);
 
     //! --------------------
     //! generate the layers
     //! --------------------
     for(int n=1; n<=myNbLayers; n++)
     {
+        //! --------------
+        //! send progress
+        //! --------------
+        if(myProgressIndicator!=Q_NULLPTR)
+        {
+            progressEvent = new QProgressEvent(QProgressEvent_None,0,9999,0,QString("Generating boundary mesh layer: %1").arg(n),
+                                               QProgressEvent_Update,-1,-1,n,"Building prismatic mesh");
+            QApplication::postEvent(myProgressIndicator,progressEvent);
+            QApplication::processEvents();
+        }
+
         //! ----------------------------
         //! the current layer thickness
         //! ----------------------------
         double displacement = myLayerThickness.at(n-1);
 
+        //! -----------------------------------------------------------
+        //! manifold characteristic for each point of the current mesh
+        //! visibility angle for each point of the current mesh
+        //! -----------------------------------------------------------
+        this->computeBeta(theMeshToInflate);
+
         //! ------------------------------------------------------------
         //! collapsed into a method the generation of one layer of tets
         //! ------------------------------------------------------------
-        this->generateOneTetLayer(theMeshToInflate,displacement,volumeElementsAtWalls);
+        this->generateOneTetLayer(theMeshToInflate,displacement,volumeElementsAtWalls,mapOfFirstLayerReductionFactor);
     }
-
-    cout<<"Number of inverted tet: "<<NumberOfInvertedTet<<endl;
 
     //! -------------------------------
     //! the last modified surface mesh
     //! -------------------------------
+    lastInflatedMesh = theMeshToInflate;
+    /*
     //lastInflatedMesh = theMeshToInflate;
     lastInflatedMesh = myOverallSumMeshDS;
+    */
 
     //! ----------------------------------------------
     //! construction of the tetrahedral boundary mesh
@@ -1121,14 +1498,18 @@ bool prismaticLayer::generateMeshAtWalls(occHandle(Ng_MeshVS_DataSource3D) &mesh
         //! ---------------------------------------------------------------------
         //! generate the prismatic 3D mesh from the list of the displaced meshes
         //! ---------------------------------------------------------------------
-        cout<<"prismaticLayer::generateMeshAtWalls()->____start generating prismatic 3D elements____"<<endl;
-        isDone = this->buildPrismaticElements(listOfInflatedMeshes,meshAtWalls);
+        //cout<<"prismaticLayer::generateMeshAtWalls()->____start generating prismatic 3D elements____"<<endl;
+        //cout<<"prismaticLayer::generateMeshAtWalls()->____number of inflated meshes: "<<theInflatedMeshes.length()<<"____"<<endl;
+        isDone = this->buildPrismaticElements(theInflatedMeshes,meshAtWalls);
+
+        //cout<<"prismaticLayer::generateMeshAtWalls()->____prismatic mesh: number of elements generated: "<<meshAtWalls->GetAllElements().Extent()<<"____"<<endl;
+
         if(!isDone) return false;
 
         //! -----------------------
         //! the last inflated mesh
         //! -----------------------
-        lastInflatedMesh = listOfInflatedMeshes.last();
+        lastInflatedMesh = theInflatedMeshes.last();
     }
         break;
 
@@ -1223,34 +1604,228 @@ bool prismaticLayer::checkMutualIntersection(const occHandle(Ng_MeshVS_DataSourc
 //! ------------------------------
 void prismaticLayer::generateOneTetLayer(occHandle(Ng_MeshVS_DataSourceFace) &theMeshToInflate,
                                          double displacement,
-                                         QList<meshElementByCoords> &volumeElementsAtWalls)
+                                         std::vector<meshElementByCoords> &volumeElementsAtWalls,
+                                         const std::map<int,double> &mapOfFirstLayerReductionFactor)
 {
-    //! ----------------------------------------------------------------------
-    //! calculate the discrete curvature and the curvature gradient amplitude
-    //! compute the shrink factor
-    //! ----------------------------------------------------------------------
-    int curvatureType = 1;  //! gaussian curvature
-    theMeshToInflate->computeDiscreteCurvature(curvatureType);
+    cout<<"prismaticLayer::generateOneTetLayer()->____function called____"<<endl;
+    const double PI = 3.1415926534;
+
+    //! ----------------------------
+    //! clear the map at first call
+    //! ----------------------------
+    //static QMap<int,double> oldMarchingDistances;
+    //if(layerNumber == 0) oldMarchingDistances.clear();
+
+    int NbInvalidTets = 0;
+    int blockedByLenght = 0;
+    int blockedByAngle = 0;
+
+    //! -----------------------
+    //! compute shrink factors
+    //! -----------------------
     QMap<int,double> shrinkFactors;
     this->computeShrinkFactor(theMeshToInflate,shrinkFactors);
 
     //! ---------------------------------------
-    //! calculate nodal the displacement field
+    //! calculate the nodal displacement field
     //! ---------------------------------------
-    theMeshToInflate->computeNormalAtElements();
     theMeshToInflate->computeNormalAtNodes();
     theMeshToInflate->computeFreeMeshSegments();
 
+    //! ---------------------------------
+    //! guiding vectors - "best normals"
+    //! ---------------------------------
     QMap<int,QList<double>> normals = theMeshToInflate->myNodeNormals;
 
-    //! --------------------------------------
-    //! smooth the guiding vectors directions
-    //! --------------------------------------
-    int NbSmoothingSteps = myNbGuidingVectorSmoothingSteps;
-    double cs = myCurvatureSensitivityForGuidingVectorsSmoothing;
-    this->fieldSmoother(normals,theMeshToInflate,cs,NbSmoothingSteps);
+    //! --------------------------------------------
+    //! check gaps along slightly different normals
+    //! --------------------------------------------
+    pointToMeshDistance aDistanceMeter;
+    aDistanceMeter.init(theMeshToInflate);
+    for(TColStd_MapIteratorOfPackedMapOfInteger it(theMeshToInflate->GetAllNodes()); it.More(); it.Next())
+    {
+        int globalNodeID = it.Key();
+        double P[3];
+        std::vector<float> gaps;
+        float gap;
+        const QList<double> &normal = theMeshToInflate->myNodeNormals.value(globalNodeID);
+        double dir[3] { -normal[0], -normal[1], -normal[2] };
+        this->getPointCoordinates(theMeshToInflate,globalNodeID,P);
 
-    QMap<int,gp_Vec> displacementsField;
+        //! --------------------------
+        //! gap along the node normal
+        //! --------------------------
+        aDistanceMeter.distance(P,dir,&gap);
+        gaps.push_back(gap);
+
+        //! -------------------------------------------------------------------
+        //! create an start vector which will be rotated along the node normal
+        //! -------------------------------------------------------------------
+        double start_dir[3] { -normal[0]+0.05, -normal[1]+0.05, -normal[2]+0.05};
+        double l = sqrt(pow(start_dir[0],2)+pow(start_dir[1],2)+pow(start_dir[2],2));
+        start_dir[0] /= l;
+        start_dir[1] /= l;
+        start_dir[2] /= l;
+
+        //! ----------------------------------------------------------
+        //! Rodrigues' rotation formula
+        //! https://en.wikipedia.org/wiki/Rodrigues'_rotation_formula
+        //! ----------------------------------------------------------
+        int N = 10;
+        double angle = 0;
+        for(int i = 0; i<N; i++)
+        {
+            angle += 3.1415926538/N;
+            double curDir[3];
+
+            //! ---------------------------------------
+            //! i            j            k
+            //! dir[0]       dir[1]       dir[2]
+            //! start_dir[0] start_dir[1] start_dir[2]
+            //! ---------------------------------------
+            double kvx = dir[1]*start_dir[2]-dir[2]*start_dir[1];
+            double kvy = dir[2]*start_dir[0]-dir[0]*start_dir[2];
+            double kvz = dir[0]*start_dir[1]-dir[1]*start_dir[0];
+
+            double dot = dir[0]*start_dir[0]+dir[1]*start_dir[1]+dir[2]*start_dir[2];
+            curDir[0] = curDir[0]*cos(angle)+kvx*sin(angle)+dot*dir[0]*(1-cos(angle));
+            curDir[1] = curDir[1]*cos(angle)+kvy*sin(angle)+dot*dir[1]*(1-cos(angle));
+            curDir[2] = curDir[2]*cos(angle)+kvz*sin(angle)+dot*dir[2]*(1-cos(angle));
+
+            aDistanceMeter.distance(P,curDir,&gap);
+            gaps.push_back(gap);
+        }
+
+
+        gap = *std::min(gaps.begin(),gaps.end());
+        if(displacement>gap/3)
+        {
+            myLayerHCutOff.insert(globalNodeID,0);
+            cout<<"blocked node ID: "<<globalNodeID<<"____displacement: "<<displacement<<"\t gap: "<<gap<<"____"<<endl;
+        }
+    }
+
+    //! ---------------
+    //! classify nodes
+    //! ---------------
+    std::map<int,int> mapNodeTypes;
+    this->classifyNodes(theMeshToInflate,mapNodeTypes);
+
+    //! -----------------------------------------------------------------------------------------------
+    //! smooth the guiding vectors directions - use 5/10 smoothing steps
+    //! flag normalize == true since the "rotation" of the vector is of interest (change in direction)
+    //! -----------------------------------------------------------------------------------------------
+    smoothingTools::fieldSmoother(normals,theMeshToInflate,betaAverageField,betaVisibilityField,mapNodeTypes,10,true);
+
+    //! ------------------------------------
+    //! map of the local marching distances
+    //! ------------------------------------
+    QMap<int,double> marchingDistanceMap;
+    for(QMap<int,QList<double>>::const_iterator it = normals.cbegin(); it!= normals.cend(); ++it)
+    {
+        int globalNodeID = it.key();
+
+
+
+
+        double shrinkFactor = shrinkFactors.value(globalNodeID);
+        double cutOff = myLayerHCutOff.value(globalNodeID);
+        double marchingDistance = displacement*(1+shrinkFactor)*cutOff*mapOfFirstLayerReductionFactor.at(globalNodeID);
+        marchingDistanceMap.insert(globalNodeID,marchingDistance);
+    }
+
+    //! ------------------------------
+    //! smooth the marching distances
+    //! ------------------------------
+    smoothingTools::scalarFieldSmoother(marchingDistanceMap,theMeshToInflate,betaAverageField,mapNodeTypes,10);
+
+    //! ---------------------------------------------------------------------------------------------------------------------
+    //! check marching distances
+    //! 1. Its marching distance is less than a fraction, say 0.60, of the average length of edges sharing p in its manifold
+    //! 2. The prismatic element created by marching p has an acceptable quality
+    //! ---------------------------------------------------------------------------------------------------------------------
+    for(TColStd_MapIteratorOfPackedMapOfInteger it(theMeshToInflate->GetAllNodes()); it.More(); it.Next())
+    {
+        int globalNodeID = it.Key();
+        int localNodeID = theMeshToInflate->myNodesMap.FindIndex(globalNodeID);
+        const QList<int> &surroundingElementsIDs_local = theMeshToInflate->myNodeToElements.value(localNodeID);
+        int NbSurroundingElements = surroundingElementsIDs_local.length();
+        std::set<int> setOfSurroundingNodesIDs_global;
+        for(int n=0; n<NbSurroundingElements; n++)
+        {
+            int curLocalElementID = surroundingElementsIDs_local[n];
+            int curGlobalElementID = theMeshToInflate->myElementsMap.FindKey(curLocalElementID);
+            int NbNodes, buf[12];
+            TColStd_Array1OfInteger nodeIDs(*buf,1,12);
+            theMeshToInflate->GetNodesByElement(curGlobalElementID,nodeIDs,NbNodes);
+            for(int k=1; k<=NbNodes; k++) setOfSurroundingNodesIDs_global.insert(nodeIDs(k));
+        }
+        std::set<int>::iterator it_ = setOfSurroundingNodesIDs_global.find(globalNodeID);
+        setOfSurroundingNodesIDs_global.erase(it_);
+
+        //! -----------------------------------------------
+        //! perform first check - compute average distance
+        //! -----------------------------------------------
+        double P[3], averageDistance = 0;
+        this->getPointCoordinates(theMeshToInflate,globalNodeID,P);
+        for(std::set<int>::iterator it__ = setOfSurroundingNodesIDs_global.begin(); it__!=setOfSurroundingNodesIDs_global.end(); it__++)
+        {
+            int curGlobalNodeID = *it__;
+            double Pcurr[3];
+            this->getPointCoordinates(theMeshToInflate,curGlobalNodeID,Pcurr);
+            double distance = sqrt(pow(P[0]-Pcurr[0],2)+pow(P[1]-Pcurr[1],2)+pow(P[2]-Pcurr[2],2));
+            averageDistance += distance;
+        }
+        averageDistance /= NbSurroundingElements;
+
+        //! -------------------------------------------------------------------
+        //! perform first check - stop propagating node if the check is not ok
+        //! -------------------------------------------------------------------
+        if(marchingDistanceMap.value(globalNodeID)>0.50 * averageDistance)
+        {
+            //cout<<"----> blocking node ID: "<<globalNodeID<<" - cause: length criterion"<<endl;
+            myLayerHCutOff.insert(globalNodeID,0);
+            blockedByLenght++;
+            continue;   // jump over the subsequent check, if any
+        }
+
+        //! ------------------------------------------------------------------------------------
+        //! second check - compute angles between the guiding vector and the faces at the basis
+        //! if the maximum among these angles is greater than 80° block the advancing node
+        //! ------------------------------------------------------------------------------------
+        const QList<double> &aNodeNormal = normals.value(globalNodeID);
+        double maxAngle = -1e10;
+        for(int n=0; n<NbSurroundingElements; n++)
+        {
+            int curLocalElementID = surroundingElementsIDs_local[n];
+            int curGlobalElementID = theMeshToInflate->myElementsMap.FindKey(curLocalElementID);
+            double nx_ = aNodeNormal[0];
+            double ny_ = aNodeNormal[1];
+            double nz_ = aNodeNormal[2];
+            double nx__,ny__,nz__;
+            theMeshToInflate->GetNormal(curGlobalElementID,10,nx__,ny__,nz__);
+            double curDot = nx__*nx_+ny__*ny_+nz__*nz_;
+            curDot /= sqrt(nx__*nx__+ny__*ny__+nz__*nz__)*sqrt(nx_*nx_+ny_*ny_+nz_*nz_);
+            if(curDot<-1) curDot = -1;
+            if(curDot>1) curDot = 1;
+            double curAngle = std::acos(curDot);
+            if(curAngle>maxAngle) maxAngle=curAngle;
+        }
+        if(maxAngle>=80.0*PI/180.0)
+        {
+            //cout<<"----> blocking node ID: "<<globalNodeID<<" - cause: quality angular criterion"<<endl;
+            myLayerHCutOff.insert(globalNodeID,0);
+            blockedByAngle++;
+            continue;   // jump over the subsequent check, if any
+        }
+
+        // another check, if any ...
+    }
+
+    //! -----------------------------------
+    //! build the final displacement field
+    //! -----------------------------------
+    QMap<int,QList<double>> displacementsField;
     for(QMap<int,QList<double>>::const_iterator it = normals.cbegin(); it!= normals.cend(); ++it)
     {
         int globalNodeID = it.key();
@@ -1261,27 +1836,20 @@ void prismaticLayer::generateOneTetLayer(occHandle(Ng_MeshVS_DataSourceFace) &th
         //! -------------------------
         if(theMeshToInflate->myBoundaryPoints.contains(globalNodeID)) continue;
 
-        //! --------------
-        //! shrink factor
-        //! --------------
-        double shrinkFactor = shrinkFactors.value(globalNodeID);
-        double cutOff = myLayerHCutOff.value(globalNodeID);
-        double C = displacement*shrinkFactor*cutOff;
-        double vx = -curNormal.at(0)*C;
-        double vy = -curNormal.at(1)*C;
-        double vz = -curNormal.at(2)*C;
+        //! --------------------
+        //! nodal displacements
+        //! --------------------
+        double marchingDistance = marchingDistanceMap.value(globalNodeID);
+        double vx = -curNormal[0]*marchingDistance;
+        double vy = -curNormal[1]*marchingDistance;
+        double vz = -curNormal[2]*marchingDistance;
 
         //! -------------------
         //! displacement field
         //! -------------------
-        gp_Vec normVec(vx,vy,vz);
-        displacementsField.insert(globalNodeID,normVec);
+        QList<double> localFieldValue; localFieldValue<<vx<<vy<<vz;
+        displacementsField.insert(globalNodeID,localFieldValue);
     }
-
-    //! ------------------------------
-    //! smooth the displacement field
-    //! ------------------------------
-    this->smoothDisplacementField(displacementsField,normals,theMeshToInflate);
 
     //! -------------------------
     //! scan the advancing nodes
@@ -1296,11 +1864,11 @@ void prismaticLayer::generateOneTetLayer(occHandle(Ng_MeshVS_DataSourceFace) &th
         //! ------------------------------
         int localNodeID = theMeshToInflate->myNodesMap.FindIndex(globalNodeID);
         const std::vector<double> &pc = theMeshToInflate->getNodeCoordinates(localNodeID);
-        const gp_Vec &vecDispl = displacementsField.value(globalNodeID);
+        const QList<double> &vecDispl = displacementsField.value(globalNodeID);
 
-        double x_displ = pc[0]+vecDispl.X();
-        double y_displ = pc[1]+vecDispl.Y();
-        double z_displ = pc[2]+vecDispl.Z();
+        double x_displ = pc[0]+vecDispl[0];
+        double y_displ = pc[1]+vecDispl[1];
+        double z_displ = pc[2]+vecDispl[2];
 
         mesh::meshPoint mp_shifted(x_displ,y_displ,z_displ,globalNodeID);
 
@@ -1338,7 +1906,6 @@ void prismaticLayer::generateOneTetLayer(occHandle(Ng_MeshVS_DataSourceFace) &th
                 int localNodeID_ = theMeshToInflate->myNodesMap.FindIndex(globalNodeID_);
                 std::vector<double> &pc_ = theMeshToInflate->getNodeCoordinates(localNodeID_);
                 mesh::meshPoint mp_(pc_[0],pc_[1],pc_[2],globalNodeID_);
-
                 aVolElement.pointList<<mp_;
             }
 
@@ -1354,37 +1921,35 @@ void prismaticLayer::generateOneTetLayer(occHandle(Ng_MeshVS_DataSourceFace) &th
             aTetQuality.setPoints(aVolElement.getPoints());
 
             double V = aTetQuality.Volume();
-            if(V<0.0)
+            if(V<=0.0)
             {
-                //NumberOfInvertedTet++;
-                cout<<"____INVERTED ELEMENT: CANNOT MOVE____"<<endl;
+                NbInvalidTets++;
                 canMove = false;
                 break;
-
-                //this->invertTet(aVolElement);
             }
 
             //! -------------------------------------------------------
             //! check if the volume element is valid, and can be added
+            //! - bypass a full element quality check -
             //! -------------------------------------------------------
-            double q0, q1, q2;
-            aTetQuality.setPoints(aVolElement.getPoints());
-            aTetQuality.getQualityMeasure(q0,q1,q2,V);
+            //double q0, q1, q2;
+            //aTetQuality.setPoints(aVolElement.getPoints());
+            //aTetQuality.getQualityMeasure(q0,q1,q2,V);
 
-            const double QUALITY_LIMIT = 0.01;
-            if(q2<QUALITY_LIMIT)
-            {
-                cout<<"____CANNOT MOVE____"<<endl;
-                canMove = false;
-                break;
-            }
+            //const double QUALITY_LIMIT = 0.01;
+            //if(q2<QUALITY_LIMIT)
+            //{
+            //    cout<<"____CANNOT MOVE____"<<endl;
+            //    NbInvalidTets++;
+            //    canMove = false;
+            //    break;
+            //}
             vecElementsToAdd.push_back(aVolElement);
         }
         if(canMove)
         {
             std::vector<double> P {x_displ,y_displ,z_displ};
             theMeshToInflate->changeNodeCoords(localNodeID,P);
-
             int localNodeID_surfaceMesh = myOverallSumMeshDS->myNodesMap.FindIndex(globalNodeID);
 
             //! ------------------------------------------------------------------------------------
@@ -1397,211 +1962,258 @@ void prismaticLayer::generateOneTetLayer(occHandle(Ng_MeshVS_DataSourceFace) &th
             //! ----------------------------------
             myOverallSumMeshDS->changeNodeCoords(localNodeID_surfaceMesh,P);
 
-            //! ------------------------
-            //! check self intersection
-            //! ------------------------
-            //bool selfIntersection = this->checkSelfIntersection(myOverallSumMeshDS,myOverallSumMeshDS_old,true);
-            //if(selfIntersection == false)
-            //{
-            //    for(int i=0; i<vecElementsToAdd.size(); i++)
-            //    {
-            //        volumeElementsAtWalls<<vecElementsToAdd[i];
-            //    }
-            //}
-            //! ---------------------------
-            //! check mutual intersections
-            //! ---------------------------
-            //bool mutualIntersection = this->checkMutualIntersection(myOverallSumMeshDS,myOverallSumMeshDS_old,true);
-            //if(mutualIntersection==false)
-            //{
-            //    for(int i=0; i<vecElementsToAdd.size(); i++)
-            //    {
-            //        volumeElementsAtWalls<<vecElementsToAdd[i];
-            //    }
-            //}
-
             //! -------------------
             //! standard treatment
             //! -------------------
             for(int i=0; i<vecElementsToAdd.size(); i++)
             {
-                volumeElementsAtWalls<<vecElementsToAdd[i];
+                volumeElementsAtWalls.push_back(vecElementsToAdd[i]);
             }
         }
     }
+    cout<<"Number of inverted tet: "<<NbInvalidTets<<endl;
+    cout<<"Number of shift blocked by lenght criterion: "<<blockedByLenght<<endl;
+    cout<<"Number of shift blocked by angle criterion: "<<blockedByAngle<<endl;
 }
 
-//! ------------------------
-//! function: fieldSmoother
-//! details:
-//! ------------------------
-void prismaticLayer::fieldSmoother(QMap<int,QList<double>> &field,
-                                   const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS,
-                                   double k,
-                                   int NbSteps)
+//! ---------------------------------------------------
+//! function: checkLateralDistributionMarchingDistance
+//! details:  to be finised
+//! ---------------------------------------------------
+void prismaticLayer::checkLateralDistributionMarchingDistance(const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS,
+                                                              const std::map<int,double> displacementMapOld,
+                                                              std::vector<int,double> &displacementMap)
 {
-    cout<<"prismaticLayer::fieldSmoother()->____function called____"<<endl;
-
-    if(aMeshDS->myCurvature.isEmpty())
+    if(aMeshDS->myNodeToElements.isEmpty()) aMeshDS->computeNodeToElementsConnectivity();
+/*
+    for(TColStd_MapIteratorOfPackedMapOfInteger it(myNodes); it.More(); it.Next())
     {
-        int mode = 1; //! Gaussian curvature
-        aMeshDS->computeDiscreteCurvature(mode);
+        int globalNodeID = it.Key();
+        int localNodeID = myNodesMap.FindIndex(globalNodeID);
+
+        const QList<int> &surroundingElementsLocalIDs = myNodeToElements.value(localNodeID);
+        int N = attachedElementsLocalIDs.length();
+        std::vector<int> surroundingElementsGlobalIDs;  // same information using global numbering
     }
+*/
+}
 
-    //! ----------------
-    //! smoothing steps
-    //! ----------------
-    for(int q = 1; q<=NbSteps; q++)
+//! ------------------------------------------------------------------------------
+//! function: classifyNodes
+//! details:  1 - fixed  2 - direction only 3 - marching distance only - 4 - both
+//! ------------------------------------------------------------------------------
+void prismaticLayer::classifyNodes(const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS,
+                                   std::map<int,int> &mapCat)
+{
+    cout<<"prismaticLayer::classifyNodes()->____function called____"<<endl;
+
+    const double PI = 3.145926534;
+    const double angleLimit_cat1 = PI/3.0;
+
+    //! --------------
+    //! vector of int
+    //! --------------
+    std::vector<int> temp;
+
+    if(aMeshDS->myNodeToElements.isEmpty()) aMeshDS->computeNodeToElementsConnectivity();
+
+    //cout<<"prismaticLayer::classifyNodes()->____searching for nodes of type 1____"<<endl;
+    int NbNodesOfType1 = 0;
+    for(TColStd_MapIteratorOfPackedMapOfInteger it(aMeshDS->GetAllNodes()); it.More(); it.Next())
     {
-        QMap<int,QList<double>> smoothedField;
-        for(QMap<int,QList<double>>::iterator it = field.begin(); it!= field.end(); ++it)
+        int globalNodeID = it.Key();
+        int localNodeID = aMeshDS->myNodesMap.FindIndex(globalNodeID);
+        const QList<int> &surroundingElements_local = aMeshDS->myNodeToElements.value(localNodeID);
+        int NbSurroundingElements = surroundingElements_local.length();
+
+        bool isOneAngleGreaterThanLimit = false;
+        for(int i=0; i<NbSurroundingElements-1; i++)
         {
-            int globalNodeID = it.key();
-            int localNodeID = aMeshDS->myNodesMap.FindIndex(globalNodeID);
+            int localElementID_surr_i = surroundingElements_local[i];
+            int globalElementID_surr_i = aMeshDS->myElementsMap.FindKey(localElementID_surr_i);
+            double nxi,nyi,nzi;
+            aMeshDS->GetNormal(globalElementID_surr_i,10,nxi,nyi,nzi);
 
-            const std::vector<double> &P = aMeshDS->getNodeCoordinates(localNodeID);
-
-            //! -------------------------------------------
-            //! value of the field at the current position
-            //! -------------------------------------------
-            const QList<double> &localValue = it.value();
-
-            //! --------------------------
-            //! get the surrounding nodes
-            //! --------------------------
-            std::vector<int> surroundingNodes;
-            QList<int> elements = aMeshDS->myNodeToElements.value(localNodeID);
-            for(int i=0; i<elements.length(); i++)
+            for(int j=i+1; j<NbSurroundingElements; j++)
             {
-                int localElementID = elements[i];
-                int globalElementID = aMeshDS->myElementsMap.FindKey(localElementID);
-                int NbNodes, buf[20];
-                TColStd_Array1OfInteger nodeIDs(*buf,1,20);
-                aMeshDS->GetNodesByElement(globalElementID,nodeIDs,NbNodes);
-                for(int n=1; n<=NbNodes; n++)
+                int localElementID_surr_j = surroundingElements_local[j];
+                int globalElementID_surr_j = aMeshDS->myElementsMap.FindKey(localElementID_surr_j);
+                double nxj,nyj,nzj;
+                aMeshDS->GetNormal(globalElementID_surr_j,10,nxj,nyj,nzj);
+                double dot = nxi*nxj+nyi*nyj+nzi*nzj;
+                if(dot<-1) dot = -1;
+                if(dot>1) dot = 1;
+                double angle = std::acos(dot);
+                if(fabs(angle)>=angleLimit_cat1)
                 {
-                    int globalNodeID_ = nodeIDs(n);
-
-                    if(globalNodeID_==globalNodeID) continue;
-                    if(std::find(surroundingNodes.begin(),surroundingNodes.end(),globalNodeID_)==surroundingNodes.end())
-                        surroundingNodes.push_back(globalNodeID_);
+                    isOneAngleGreaterThanLimit = true;
+                    break;
                 }
+                if(isOneAngleGreaterThanLimit == true) break;
             }
-            //bool isDone = aMeshDS->getSurroundingNodes(localNodeID,surroundingNodes);
-            //if(!isDone) exit(22);
+        }
+        if(isOneAngleGreaterThanLimit == true)
+        {
+            //cout<<"____node ID: "<<globalNodeID<<" is of type 1____"<<endl;
+            mapCat.insert(std::make_pair(globalNodeID,1));
+            mapOfReductionFactor.insert(std::make_pair(globalNodeID,1));
+            NbNodesOfType1++;
+        }
+        else
+        {
+            mapCat.insert(std::make_pair(globalNodeID,4));
+            mapOfReductionFactor.insert(std::make_pair(globalNodeID,4));
+            temp.push_back(globalNodeID);
+        }
+    }
+    //cout<<"prismaticLayer::classifyNodes()->____number of nodes of type 1: "<<NbNodesOfType1<<"____"<<endl;
 
-            int NbSurrounding = int(surroundingNodes.size());
+    //! ----------------------------------------------------------------
+    //! iterate all over the points =>not<= belonging to category 1
+    //! one of this points, if on the prismatic/non prismatic boundary,
+    //! belongs to category 2
+    //! ----------------------------------------------------------------
+    //cout<<"prismaticLayer::classifyNodes()->____residual nodes: "<<temp.size()<<"____"<<endl;
+    //cout<<"prismaticLayer::classifyNodes()->____searching for nodes of type 2____"<<endl;
+    int NbNodesOfType2 = 0;
+    for(std::vector<int>::iterator it = temp.begin(); it!=temp.end();)
+    {
+        int globalNodeID = *it;
+        if(aMeshDS->myBoundaryPoints.contains(globalNodeID))
+        {
+            std::map<int,int>::iterator itt = mapCat.find(globalNodeID);
+            itt->second = 2;
+            it = temp.erase(it);
+            NbNodesOfType2++;
+        }
+        else it++;
+    }
 
-            //cout<<"@____begin smoothing at node____@"<<endl;
-            //cout<<"@____nodeID: "<<globalNodeID<<" number of surrounding: "<<NbSurrounding<<"____@"<<endl;
+    //cout<<"prismaticLayer::classifyNodes()->____number of nodes of type 2: "<<NbNodesOfType2<<"____"<<endl;
 
-            double denom = 0;
-            double num_x, num_y, num_z;
-            num_x = num_y = num_z = 0;
+    //! -----------------------------------------------------------------------
+    //! for a given mesh point, check if at least one of the surrounding nodes
+    //! is in category 1 (fixed)
+    //! -----------------------------------------------------------------------
+    //cout<<"prismaticLayer::classifyNodes()->____residual nodes: "<<temp.size()<<"____"<<endl;
+    //cout<<"prismaticLayer::classifyNodes()->____searching for nodes of type 3____"<<endl;
+    int NbNodesOfType3 = 0;
+    for(std::vector<int>::iterator it = temp.begin(); it!=temp.end();)
+    {
+        int globalNodeID = *it;
 
-            for(int n=0; n<NbSurrounding; n++)
+        //! ------------------
+        //! surrounding nodes
+        //! ------------------
+        int localNodeID = aMeshDS->myNodesMap.FindIndex(globalNodeID);
+        const QList<int> &surroundingElements_local = aMeshDS->myNodeToElements.value(localNodeID);
+        int NbSurroundingElements = surroundingElements_local.length();
+        std::set<int> setSurroundingNodes_globalIDs;
+        for(int i=0; i<NbSurroundingElements; i++)
+        {
+            int localElementID_surr = surroundingElements_local[i];
+            int globalElementID_surr = aMeshDS->myElementsMap.FindKey(localElementID_surr);
+            int buf[12], NbNodes_;
+            TColStd_Array1OfInteger nodeIDs(*buf,1,12);
+            aMeshDS->GetNodesByElement(globalElementID_surr,nodeIDs,NbNodes_);
+            for(int n=1; n<=NbNodes_; n++) setSurroundingNodes_globalIDs.insert(nodeIDs(n));
+        }
+        std::set<int>::iterator it__ = setSurroundingNodes_globalIDs.find(globalNodeID);
+        setSurroundingNodes_globalIDs.erase(it__);
+
+        bool aFixedNodeHasBeeFound = false;
+        for(std::set<int>::iterator it___ = setSurroundingNodes_globalIDs.begin(); it___ != setSurroundingNodes_globalIDs.end(); it___++)
+        {
+            int curGlobalNodeID = *it___;
+            std::map<int,int>::iterator it____ = mapCat.find(curGlobalNodeID);
+            if(it____->second == 1)
             {
-                //cout<<"____n-th surrounding: "<<n+1<<"____"<<endl;
-                int globalNodeID_surrounding = surroundingNodes[n];
-                int localNodeID_surrounding = aMeshDS->myNodesMap.FindIndex(globalNodeID_surrounding);
-                const std::vector<double> &S = aMeshDS->getNodeCoordinates(localNodeID_surrounding);
-                double d = sqrt(pow(S[0]-P[0],2)+pow(S[1]-P[1],2)+pow(S[2]-P[2],2));
-                //cout<<"____distance ("<<globalNodeID<<", "<<globalNodeID_surrounding<<") ="<<d<<"____"<<endl;
-                denom += 1.0/d;
-                const QList<double> &localValue_surrounding = field.value(globalNodeID_surrounding);
-                num_x += (1.0/d)*localValue_surrounding[0];
-                num_y += (1.0/d)*localValue_surrounding[1];
-                num_z += (1.0/d)*localValue_surrounding[2];
-                //cout<<"____"<<num_x<<", "<<num_y<<", "<<num_z<<"____"<<endl;
+                aFixedNodeHasBeeFound = true;
+                break;
             }
-            if(denom == 0)
-            {
-                cerr<<"____zero denominator during laplacian smoothing____"<<endl;
-                exit(20);
-            }
+        }
+        if(aFixedNodeHasBeeFound == true)
+        {
+            mapCat.find(globalNodeID)->second = 3;
+            mapOfReductionFactor.find(globalNodeID)->second = 3;
+            it = temp.erase(it);
+            NbNodesOfType3++;
+        }
+        else it++;
+    }
 
-            double curvature = aMeshDS->myCurvature.value(globalNodeID);
-            const double maxOmega = 1.0;
-            double omega = maxOmega*(1-1/(1+exp(-k*sqrt(fabs(curvature)))));
-            if(curvature<0) omega = maxOmega-omega;
+    cout<<"prismaticLayer::classifyNodes()->____number of nodes of type 3: "<<NbNodesOfType3<<"____"<<endl;
+    cout<<"prismaticLayer::classifyNodes()->____number of nodes of type 4: "<<temp.size()<<"____"<<endl;
 
-            double snx = omega*localValue[0]+(1-omega)*(num_x/denom);
-            double sny = omega*localValue[1]+(1-omega)*(num_y/denom);
-            double snz = omega*localValue[2]+(1-omega)*(num_z/denom);
+    //! -----------------------------------------------------------------------------
+    //! this section modifies the map of node types: mesh nodes having at least one
+    //! neighbor which has "compression" due to wall gap check are put into cat "5":
+    //! their marching distance is a weighted average of the marching distance of
+    //! the surrounding nodes. Note: a point of category "2" cannot be a point of
+    //! category "5"
+    //! -----------------------------------------------------------------------------
+    for(std::map<int,int>::iterator it = mapCat.begin(); it!= mapCat.end(); it++)
+    {
+        int globalNodeID = it->first;
+        if(mapOfReductionFactor.at(globalNodeID) == 2) continue;    // jump over nodes of category "2"
 
-            double l = sqrt(snx*snx+sny*sny+snz*snz);
-            snx /= l;
-            sny /= l;
-            snz /= l;
+        //! ----------------------
+        //! get surrounding nodes
+        //! ----------------------
+        int localNodeID = aMeshDS->myNodesMap.FindIndex(globalNodeID);
+        const QList<int> &surroundingElements_local = aMeshDS->myNodeToElements.value(localNodeID);
 
-            //cout<<"____old field value ("<<field.value(globalNodeID).at(0)<<", "<<field.value(globalNodeID).at(1)<<", "<<field.value(globalNodeID).at(2)<<")____"<<endl;
-            //cout<<"____new field value ("<<snx<<", "<<sny<<", "<<snz<<")____"<<endl;
-            //cout<<"@____end smoothing at node____@"<<endl<<endl;
-
-            QList<double> localFieldValueSmoothed;
-            localFieldValueSmoothed<<snx<<sny<<snz;
-            smoothedField.insert(globalNodeID,localFieldValueSmoothed);
+        int NbSurroundingElements = surroundingElements_local.length();
+        std::set<int> setSurroundingNodes_globalIDs;
+        for(int i=0; i<NbSurroundingElements; i++)
+        {
+            int localElementID_surr = surroundingElements_local[i];
+            int globalElementID_surr = aMeshDS->myElementsMap.FindKey(localElementID_surr);
+            int buf[12], NbNodes_;
+            TColStd_Array1OfInteger nodeIDs(*buf,1,12);
+            aMeshDS->GetNodesByElement(globalElementID_surr,nodeIDs,NbNodes_);
+            for(int n=1; n<=NbNodes_; n++) setSurroundingNodes_globalIDs.insert(nodeIDs(n));
         }
 
-        //! -------------------------
-        //! replace the field values
-        //! -------------------------
-        for(QMap<int,QList<double>>::iterator it = field.begin(); it!= field.end(); ++it)
+        std::set<int>::iterator it__ = setSurroundingNodes_globalIDs.find(globalNodeID);
+        setSurroundingNodes_globalIDs.erase(it__);
+
+        //! ------------------------------------------------------------------
+        //! check the surrounding nodes: it at least one of the surrounding
+        //! nodes has a correction due to wall proximity put the current node
+        //! in category 5
+        //! ------------------------------------------------------------------
+        bool hasCompression = false;
+        for(std::set<int>::iterator it = setSurroundingNodes_globalIDs.begin(); it != setSurroundingNodes_globalIDs.end(); it++)
         {
-            int globalNodeID = it.key();
-            it.value() = smoothedField.value(globalNodeID);
+            int globalNodeID_surr = *it;
+            if(mapOfReductionFactor.at(globalNodeID_surr)<=0.80)
+            {
+                hasCompression = true;
+                break;
+            }
+        }
+        if(hasCompression == true)
+        {
+            mapOfReductionFactor.find(globalNodeID)->second = 5;
+            mapCat.find(globalNodeID)->second = 5;
         }
     }
 }
 
-//! ----------------------------------
-//! function: smoothDisplacementField
-//! details:  helper
-//! ----------------------------------
-void prismaticLayer::smoothDisplacementField(QMap<int,gp_Vec> &displacementsField,
-                                             const QMap<int,QList<double>> &normals,
-                                             const occHandle(Ng_MeshVS_DataSourceFace) &theMeshToInflate)
+//! ----------------------------------------------------------------------
+//! function: correctClassificationForBoundaryCompression
+//! details:  put a node in cat 3 if among its surrounding
+//!           at least one node has modification of the marching distance
+//!           due to wall proximity check
+//! ----------------------------------------------------------------------
+void prismaticLayer::correctClassificationForBoundaryCompression(const std::map<int,double> &firstLayerReductionMap, std::map<int,int> &mapCat)
 {
-    cout<<"smoothDisplacementField()->____function called____"<<endl;
-
-    //! ---------------------
-    //! smoothing parameters
-    //! ---------------------
-    int NbSmoothingSteps = myNbLayerThicknessSmoothingSteps;
-    double cs = myCurvatureSensitivityForThicknessSmoothing;
-
-    //! ----------------------------------
-    //! copy into QMap<int,QList<double>>
-    //! ----------------------------------
-    QMap<int,QList<double>> field;
-    for(QMap<int,gp_Vec>::iterator it = displacementsField.begin(); it!=displacementsField.end(); it++)
+    cout<<"prismaticLayer::correctClassificationForBoundaryCompression()->____function called____"<<endl;
+    for(std::map<int,int>::iterator it = mapCat.begin(); it!=mapCat.end(); it++)
     {
-        int globalNodeID = it.key();
-        gp_Vec v = it.value();
+        int globalNodeID = it->first;
+        int cat = it->second;           // the classification of the current point
 
-        QList<double> fieldValue;
-        double d = sqrt(v.X()*v.X()+v.Y()*v.Y()+v.Z()*v.Z());
-        fieldValue<<d<<0.01<<0.01;
-        field.insert(globalNodeID,fieldValue);
-    }
-
-    //! -------
-    //! smooth
-    //! -------
-    this->fieldSmoother(field,theMeshToInflate,cs,NbSmoothingSteps);
-
-    //! -------------------------------
-    //! converto into QMap<int,gp_Vec>
-    //! -------------------------------
-    for(QMap<int,QList<double>>::iterator it = field.begin(); it!=field.end(); it++)
-    {
-        int globalNodeID = it.key();
-        double smoothedValue = it.value().at(0);
-        QList<double> curNormal = normals.value(globalNodeID);
-        double vx = -smoothedValue*curNormal.at(0);
-        double vy = -smoothedValue*curNormal.at(1);
-        double vz = -smoothedValue*curNormal.at(2);
-        gp_Vec vec(vx,vy,vz);
-        displacementsField.insert(globalNodeID,vec);
     }
 }

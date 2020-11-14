@@ -209,8 +209,9 @@ public:
     //! build mesh IO
     bool buildMeshIO(double min=-1e20, double max=1e20, int Nlevels=10, bool autoscale=true, int component=0, double deformationScale = 1.0);
 
-    //! init
+    //! init - OBSOLETE
     void init(meshDataBase *mDB);
+    void setMeshDataSources(const std::map<GeometryTag,occHandle(MeshVS_DataSource)> &aMapOfMeshDS);
 
     //! get colored meshes
     std::map<GeometryTag,occHandle(MeshVS_Mesh>) getColoredMeshes() const { return theMeshes; }

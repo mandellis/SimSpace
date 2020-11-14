@@ -100,7 +100,7 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()
 //! function: constructor
 //! details:  clone a mesh data source - copy constructor
 //! ------------------------------------------------------
-Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const occHandle(Ng_MeshVS_DataSourceFace) &aFaceMesh)
+Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const occHandle(Ng_MeshVS_DataSourceFace) &aFaceMesh, bool invertNormals)
 {
     cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____cloning constructor called____"<<endl;
 
@@ -129,6 +129,11 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const occHandle(Ng_MeshVS_Dat
     myElemType = new TColStd_HArray1OfInteger(1,myNumberOfElements);
     myElemNormals = new TColStd_HArray2OfReal(1,myNumberOfElements,1,3);
 
+    //int maskTrig[3];
+    //if(invertNormals==true) { maskTrig[0] = 1; maskTrig[1] = 3; maskTrig[2] = 2; }
+    //else { maskTrig[0] = 1; maskTrig[1] = 2; maskTrig[2] = 3; }
+
+    //int maskTrig[3] {1,2,3};
     TColStd_MapIteratorOfPackedMapOfInteger it;
     for(it.Initialize(myElements);it.More();it.Next())
     {
@@ -141,6 +146,8 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const occHandle(Ng_MeshVS_Dat
 
         for(int n=1; n<=NbNodes; n++)
         {
+            //int k = maskTrig[n-1];
+            //myElemNodes->SetValue(localElementID,n,nodeIDs.Value(k));
             myElemNodes->SetValue(localElementID,n,nodeIDs.Value(n));
         }
 
@@ -173,6 +180,16 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const occHandle(Ng_MeshVS_Dat
     //! compute the normal at elements
     //! -------------------------------
     this->computeNormalAtElements();
+
+    if(invertNormals==true)
+    {
+        for(int localNodeID = 1; localNodeID<=myNumberOfNodes; localNodeID++)
+        {
+            myElemNormals->ChangeValue(localNodeID,1) = -myElemNormals->Value(localNodeID,1);
+            myElemNormals->ChangeValue(localNodeID,2) = -myElemNormals->Value(localNodeID,2);
+            myElemNormals->ChangeValue(localNodeID,3) = -myElemNormals->Value(localNodeID,3);
+        }
+    }
 
     //! ------------------------
     //! build elements topology
@@ -612,20 +629,20 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(Ng_Mesh *aMesh, int faceNr)
 //! function: constructor
 //! details:  from Tetgen i/o and face number
 //! ------------------------------------------
-Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(tetgenio *aMesh,int faceNr)
+Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(tetgenio *aMesh, int faceNr)
 {
     if(aMesh==NULL)
     {
         cerr<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____Tetgen i/o for face Nr. "<<faceNr<<" is null____"<<endl;
         return;
     }
-    cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____Tetgen constructor called for face Nr. "<<faceNr<<"____"<<endl;
+    //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____Tetgen constructor called for face Nr. "<<faceNr<<"____"<<endl;
 
     //! ---------------------------------------
     //! number of triangles of the Tetgen mesh
     //! ---------------------------------------
     int N_TriFaces = aMesh->numberoftrifaces;
-    std::vector<int> nodeVector;
+    std::set<int> nodeVector_;
 
     //! -----------------------
     //! "i" global element ID
@@ -633,10 +650,8 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(tetgenio *aMesh,int faceNr)
     for(int i=0; i<N_TriFaces; i++)
     {
         int faceMarker = aMesh->trifacemarkerlist[i];
-        //! ---------------------------------
-        //! the triangle belongs to the face
-        //! ---------------------------------
-        if(faceMarker==faceNr)
+
+        if(faceMarker==faceNr)      // the triangle belong to the face
         {
             myElements.Add(i+1);      //! "i" global element ID
             myElementsMap.Add(i+1);   //! "i" global element ID
@@ -646,22 +661,11 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(tetgenio *aMesh,int faceNr)
                 //! "nodeID" is the Tetgen node ID
                 //! -------------------------------
                 int nodeID = aMesh->trifacelist[i*3+j];
-                nodeVector.push_back(nodeID);
+                nodeVector_.insert(nodeID);
             }
         }
     }
     myNumberOfElements = int(myElements.Extent());
-
-    //! ------------------------------------------------
-    //! eliminate the duplicates from the list of nodes
-    //! ------------------------------------------------
-    std::set<int> B(nodeVector.begin(), nodeVector.end());
-    std::vector<int> nodeVector_;
-    for(int n=0;n<B.size();n++)
-    {
-        int x = *std::next(B.begin(), n);
-        nodeVector_.push_back(x);
-    }
 
     if(nodeVector_.size()<3)
     {
@@ -680,9 +684,10 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(tetgenio *aMesh,int faceNr)
     //! nodeVector_ is clean from the duplicated values
     //! nodeID is the Tetgen nodeID
     //! ------------------------------------------------
-    for(int k=0; k<nodeVector_.size(); k++)
+    int k=0;
+    for(std::set<int>::iterator it = nodeVector_.begin(); it!=nodeVector_.end(); it++, k++)
     {
-        int globalNodeID = nodeVector_.at(k);
+        int globalNodeID = *it;
 
         //! ----------------------------------------
         //! as for constructor from Ng_Mesh pointer
@@ -705,18 +710,17 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(tetgenio *aMesh,int faceNr)
     //! the face elements are defined through global mesh numbering
     //! "i" here is a local numbering
     //! ------------------------------------------------------------
-    for(int i=1; i<=myNumberOfElements; i++)
+    int localElementID = 0;
+    for(TColStd_MapIteratorOfPackedMapOfInteger it(myElements); it.More(); it.Next())
     {
-        myElemType->SetValue(i,TRIG);
+        localElementID++;
+        myElemType->SetValue(localElementID,TRIG);
 
-        //! -------------------------------------------------
-        //! element definition through global mesh numbering
-        //! -------------------------------------------------
-        int elementID = myElementsMap.FindKey(i);
+        int globalElementID = it.Key();
         for(int k=0; k<3; k++)
         {
-            int globalNodeID = aMesh->trifacelist[3*(elementID-1)+k];
-            myElemNodes->SetValue(i,k+1,globalNodeID);
+            int globalNodeID = aMesh->trifacelist[3*(globalElementID-1)+k];
+            myElemNodes->SetValue(localElementID,k+1,globalNodeID);
         }
     }
 
@@ -724,6 +728,11 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(tetgenio *aMesh,int faceNr)
     //! compute normals at elements
     //! ----------------------------
     this->computeNormalAtElements();
+
+    //! ------------------------
+    //! build elements topology
+    //! ------------------------
+    this->buildElementsTopology();
 }
 
 //! ----------------------------
@@ -1095,11 +1104,8 @@ Standard_Boolean Ng_MeshVS_DataSourceFace::GetNormal(const Standard_Integer Id,
         nz = myElemNormals->Value(localElementID,3);
         return Standard_True;
     }
-    else
-    {
-        cerr<<"Ng_MeshVS_DataSourceFace::GetNormal()->____error element ID: "<<Id<<" out of range____"<<endl;
-        return Standard_False;
-    }
+    cerr<<"Ng_MeshVS_DataSourceFace::GetNormal()->____error element ID: "<<Id<<" out of range____"<<endl;
+    return Standard_False;
 }
 
 //! -------------------
@@ -1332,209 +1338,6 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const QList<mesh::meshPoint> 
     this->buildElementsTopology();
 }
 
-//! ---------------------------------------------
-//! function: compute normal at nodes
-//! details:  compute an average normal at nodes
-//! ---------------------------------------------
-#ifndef LIBIGLNORMAL
-
-void Ng_MeshVS_DataSourceFace::computeNormalAtNodes()
-{
-    //cout<<"Ng_MeshVS_DataSourceFace::computeNormalAtNodes()->____function called____"<<endl;
-
-    //! ---------------------------------------------
-    //! tolerance for normal comparisons: <n> degrees
-    //! ---------------------------------------------
-    const double tolerance = (10.0/180.0)*3.141592654;
-
-    //! ---------------------------------------
-    //! key: node number
-    //! value: normal of the attached elements
-    //! ---------------------------------------
-    QMap<int,QList<mesh::elementNormal>> nodeNormals;
-    for(TColStd_MapIteratorOfPackedMapOfInteger eIt(myElements);eIt.More();eIt.Next())
-    {
-        int globalElementID = eIt.Key();
-        int localElementID = myElementsMap.FindIndex(globalElementID);
-
-        //! -------------------
-        //! the element normal
-        //! -------------------
-        double ne_x = myElemNormals->Value(localElementID,1);
-        double ne_y = myElemNormals->Value(localElementID,2);
-        double ne_z = myElemNormals->Value(localElementID,3);
-
-        mesh::elementNormal anElementNormal(ne_x,ne_y,ne_z,tolerance);
-        switch(myElemType->Value(localElementID))
-        {
-        case TRIG:
-        {
-            for(int col=1; col<=3; col++)
-            {
-                int globalNodeID = myElemNodes->Value(localElementID,col);
-                //int localNodeID = myNodesMap.FindIndex(globalNodeID);
-
-                //! ---------------------------------------------------------
-                //! build the map "nodeNormals" using the global node number
-                //! ---------------------------------------------------------
-                if(!nodeNormals.contains(globalNodeID))
-                {
-                    QList<mesh::elementNormal> normalList;
-                    normalList<<anElementNormal;
-                    nodeNormals.insert(globalNodeID,normalList);
-                }
-                else
-                {
-                    QList<mesh::elementNormal> normalList = nodeNormals[globalNodeID];
-                    normalList<<anElementNormal;
-                    nodeNormals.insert(globalNodeID,normalList);
-                }
-            }
-        }
-            break;
-        }
-    }
-
-    //! -----------------------------
-    //! average the normals at nodes
-    //! -----------------------------
-    for(QMap<int,QList<mesh::elementNormal>>::iterator it = nodeNormals.begin(); it!=nodeNormals.end(); it++)
-    {
-        int globalNodeID = it.key();
-        QList<mesh::elementNormal> nodalNormals = it.value();
-        std::set<mesh::elementNormal> setOfNodeNormals;
-
-        //! -----------------------------------------------------------------------------
-        //! use the insertion into a set for eliminating almost equally directed normals
-        //! -----------------------------------------------------------------------------
-        for(int j=0; j<nodalNormals.length(); j++)
-        {
-            setOfNodeNormals.insert(nodalNormals.at(j));
-        }
-        double ntotx = 0; double ntoty = 0; double ntotz = 0;
-        for(std::set<mesh::elementNormal>::iterator it = setOfNodeNormals.begin(); it!=setOfNodeNormals.end(); it++)
-        {
-            ntotx += (*it).nx;
-            ntoty += (*it).ny;
-            ntotz += (*it).nz;
-            //cout<<"____("<<ntotx<<", "<<ntoty<<", "<<ntotz<<")____"<<endl;
-        }
-        //! -------------------
-        //! average the normal
-        //! -------------------
-        int NbNormals = int(setOfNodeNormals.size());
-        ntotx /= NbNormals;
-        ntoty /= NbNormals;
-        ntotz /= NbNormals;
-        double l = sqrt(ntotx*ntotx+ntoty*ntoty+ntotz*ntotz);
-        if(l>1e-9)
-        {
-            ntotx /= l;
-            ntoty /= l;
-            ntotz /= l;
-        }
-        else { ntotx = ntoty = ntotz = 0.0; }
-        QList<double> aveNormal {ntotx, ntoty, ntotz};
-        myNodeNormals.insert(globalNodeID, aveNormal);
-    }
-
-    //! -----------------------------------------------------------------------------------
-    //! the old version included the calculation of the node to elements connectivity
-    //! for compatibility the new function computeNodeToElementsConnectivity is called here
-    //! -----------------------------------------------------------------------------------
-    this->computeNodeToElementsConnectivity();
-}
-#endif
-
-#ifdef LIBIGLNORMAL
-void Ng_MeshVS_DataSourceFace::computeNormalAtNodes()
-{
-    cout<<"Ng_MeshVS_DataSourceFace::computeNormalAtNodes()->____function called with igl library____"<<endl;
-
-    //! -----------------------------
-    //! node to element connectivity
-    //! -----------------------------
-    QMultiMap<int,int> nodeToElements;
-    TColStd_MapIteratorOfPackedMapOfInteger eIt;
-    for(eIt.Initialize(myElements);eIt.More();eIt.Next())
-    {
-        int localElementID = myElementsMap.FindIndex(eIt.Key());
-        //cout<<"____local el id: "<<localElementID<<endl;
-        switch(myElemType->Value(localElementID))
-        {
-        case TRIG:
-        {
-            for(int col=1; col<=3; col++)
-            {
-                int globalNodeID = myElemNodes->Value(localElementID,col);
-                int localNodeID = myNodesMap.FindIndex(globalNodeID);
-                //! ---------------------------------------------------
-                //! a choice for defining node to element connectivity
-                //! using local numbering or global numbering
-                //! ---------------------------------------------------
-                nodeToElements.insert(localNodeID,localElementID);
-           }
-        }
-            break;
-
-        default:
-        {
-            //! other elements
-        }
-            break;
-        }
-    }
-
-    //! -----------------------------------------------
-    //! re-organize node to element connectivity info
-    //! the "nodeNumber" can be local or global
-    //! according to the previous choice
-    //! Here the key is the local node ID and the
-    //! value is a list of local element IDs
-    //! ----------------------------------------------
-    QList<int> keys = nodeToElements.keys();
-    int curKey_old = -1;
-    for(int i=0; i<keys.length(); i++)
-    {
-        int curKey = keys.at(i);
-        if(curKey==curKey_old) continue;
-        curKey_old = curKey;
-
-        //! ---------------------------------------------------------
-        //! retrieve from the QMultiMap the list of surface elements
-        //! associated to the current key (current node)
-        //! ---------------------------------------------------------
-        QList<int> elementNumbers = nodeToElements.values(curKey);
-        myNodeToElements.insert(curKey,elementNumbers);
-    }
-
-    //! -----------------------------
-    //! compute the normals at nodes
-    //! -----------------------------
-    Eigen::MatrixXd V, N;
-    Eigen::MatrixXi F;
-
-    //! -----------------------------------------
-    //! convert the current mesh into Eigen form
-    //! -----------------------------------------
-    iglTools::OCCMeshToIglMesh(this,V,F);
-    igl::per_vertex_normals(V,F,N);
-
-    for(int i=0; i<N.rows(); i++)
-    {
-        double nx = N(i,0);
-        double ny = N(i,1);
-        double nz = N(i,2);
-
-        QList<double> normal;
-        normal<<nx<<ny<<nz;
-        int localNodeID = i+1;
-        int globalNodeID = this->myNodesMap.FindKey(localNodeID);
-        myNodeNormals.insert(globalNodeID,normal);
-    }
-}
-#endif
-
 //! ------------------------------------------------------------------------
 //! function: computeFreeMeshSegments
 //! details:  retrieve the mesh points on the 1D boundary of the face mesh
@@ -1586,8 +1389,8 @@ void Ng_MeshVS_DataSourceFace::computeFreeMeshSegments()
                 int firstIndex = (i-1)%NbNodes;
                 int secondIndex = i%NbNodes;
 
-                aMeshSegment.nodeIDs<<nodeIDs.at(firstIndex);
-                aMeshSegment.nodeIDs<<nodeIDs.at(secondIndex);
+                aMeshSegment.nodeIDs<<nodeIDs[firstIndex];
+                aMeshSegment.nodeIDs<<nodeIDs[secondIndex];
 
                 //! - panacea -
                 aMeshSegment.sort();
@@ -1613,9 +1416,9 @@ void Ng_MeshVS_DataSourceFace::computeFreeMeshSegments()
                 int secondIndex = (2*i-1)%NbNodes;
                 int thirdIndex = (2*i)%NbNodes;
 
-                aMeshSegment.nodeIDs<<nodeIDs.at(firstIndex);
-                aMeshSegment.nodeIDs<<nodeIDs.at(secondIndex);
-                aMeshSegment.nodeIDs<<nodeIDs.at(thirdIndex);
+                aMeshSegment.nodeIDs<<nodeIDs[firstIndex];
+                aMeshSegment.nodeIDs<<nodeIDs[secondIndex];
+                aMeshSegment.nodeIDs<<nodeIDs[thirdIndex];
 
                 //! - panacea -
                 aMeshSegment.sort();
@@ -1638,7 +1441,7 @@ void Ng_MeshVS_DataSourceFace::computeFreeMeshSegments()
 
     for(int i=0; i<listOfKeys.length(); i++)
     {
-        mesh::meshSegment aMeshSegment = listOfKeys.at(i);
+        mesh::meshSegment aMeshSegment = listOfKeys[i];
         if(aMeshSegment == aMeshSegment_old) continue;
         aMeshSegment_old = aMeshSegment;
 
@@ -1655,11 +1458,7 @@ void Ng_MeshVS_DataSourceFace::computeFreeMeshSegments()
         //! --------------------------------------------------------
         if(adjacentElements.length()==1)
         {
-            if(!myBoundarySegments.contains(aMeshSegment))
-            {
-                //cout<<"BS____"<<aMeshSegment.nodeIDs.at(0)<<", "<<aMeshSegment.nodeIDs.at(1)<<"____"<<endl;
-                myBoundarySegments<<aMeshSegment;
-            }
+            if(!myBoundarySegments.contains(aMeshSegment)) myBoundarySegments<<aMeshSegment;
         }
     }
 
@@ -1670,17 +1469,14 @@ void Ng_MeshVS_DataSourceFace::computeFreeMeshSegments()
     //! -----------------------------------------------
     for(int i=0; i<myBoundarySegments.length(); i++)
     {
-        const mesh::meshSegment &aSegment = myBoundarySegments.at(i);
+        const mesh::meshSegment &aSegment = myBoundarySegments[i];
         for(int k=0; k<aSegment.nodeIDs.length(); k++)
         {
-            int curNodeID = aSegment.nodeIDs.at(k);
+            int curNodeID = aSegment.nodeIDs[k];
             if(!myBoundaryPoints.contains(curNodeID)) myBoundaryPoints<<curNodeID;
         }
     }
 
-    //! -----------------
-    //! testing purposes
-    //! -----------------
     //cout<<"____Number of boundary segments: "<<myBoundarySegments.length()<<"____"<<endl;
     //cout<<"____Number of boundary points: "<<myBoundaryPoints.length()<<"____"<<endl;
 }
@@ -1691,7 +1487,7 @@ void Ng_MeshVS_DataSourceFace::computeFreeMeshSegments()
 //! ----------------------------------
 void Ng_MeshVS_DataSourceFace::computeNormalAtElements()
 {
-    cout<<"Ng_MeshVS_DataSourceFace::computeNormalAtElements()->____function called____"<<endl;
+    //cout<<"Ng_MeshVS_DataSourceFace::computeNormalAtElements()->____function called____"<<endl;
     for(TColStd_MapIteratorOfPackedMapOfInteger it(myElements); it.More(); it.Next())
     {
         std::vector<polygon::Point> aPolygon;
@@ -1724,7 +1520,7 @@ void Ng_MeshVS_DataSourceFace::computeNormalAtElements()
         myElemNormals->SetValue(localElementID,2,n[1]);
         myElemNormals->SetValue(localElementID,3,n[2]);
     }
-    cout<<"Ng_MeshVS_DataSourceFace::computeNormalAtElements()->____exiting function____"<<endl;
+    //cout<<"Ng_MeshVS_DataSourceFace::computeNormalAtElements()->____exiting function____"<<endl;
 }
 
 //! -------------------------------------------------------------------
@@ -1733,20 +1529,17 @@ void Ng_MeshVS_DataSourceFace::computeNormalAtElements()
 //!           the key of the input map should be the global element ID
 //!           update normals at elements, at nodes, and 1D boundary
 //! -------------------------------------------------------------------
-void Ng_MeshVS_DataSourceFace::displaceMySelf(const QMap<int, gp_Vec> &displacementField)
+void Ng_MeshVS_DataSourceFace::displaceMySelf(const QMap<int, QList<double>> &displacementField)
 {
-    for(QMap<int, gp_Vec>::const_iterator it = displacementField.cbegin(); it!= displacementField.cend(); ++it)
+    for(QMap<int, QList<double>>::const_iterator it = displacementField.cbegin(); it!= displacementField.cend(); ++it)
     {
         int globalNodeID = it.key();
         int localNodeID = this->myNodesMap.FindIndex(globalNodeID);
         if(localNodeID<1 || localNodeID>myNumberOfNodes) continue;
-        const gp_Vec &curVec = it.value();
-        double dX = curVec.X();
-        double dY = curVec.Y();
-        double dZ = curVec.Z();
-        myNodeCoords->ChangeValue(localNodeID,1) = myNodeCoords->Value(localNodeID,1)+dX;
-        myNodeCoords->ChangeValue(localNodeID,2) = myNodeCoords->Value(localNodeID,2)+dY;
-        myNodeCoords->ChangeValue(localNodeID,3) = myNodeCoords->Value(localNodeID,3)+dZ;
+        const QList<double> &curVec = it.value();
+        myNodeCoords->ChangeValue(localNodeID,1) = myNodeCoords->Value(localNodeID,1)+curVec[0];
+        myNodeCoords->ChangeValue(localNodeID,2) = myNodeCoords->Value(localNodeID,2)+curVec[1];
+        myNodeCoords->ChangeValue(localNodeID,3) = myNodeCoords->Value(localNodeID,3)+curVec[2];
     }
 
     //! -----------------------------
@@ -2317,7 +2110,7 @@ Standard_EXPORT Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const QList<Q
 //! ---------------------------------------------------------------
 Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const QList<occHandle(Ng_MeshVS_DataSourceFace)> &faceDSList)
 {
-    cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list of "<<faceDSList.length()<<" face mesh data sources____"<<endl;
+    //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list of "<<faceDSList.length()<<" face mesh data sources____"<<endl;
 
     //! ------------------
     //! fill the node map
@@ -2386,14 +2179,14 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const QList<occHandle(Ng_Mesh
     myElemNormals = new TColStd_HArray2OfReal(1,myNumberOfElements,1,3);
     myElemNodes = new TColStd_HArray2OfInteger(1,myNumberOfElements,1,8);
 
-    cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list. Number of shared nodes: "<<NbSharedNodes<<"____"<<endl;
-    cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list. Number of nodes: "<<myNumberOfNodes<<"____"<<endl;
-    cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list. Number of elements: "<<myNumberOfElements<<"____"<<endl;
+    //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list. Number of shared nodes: "<<NbSharedNodes<<"____"<<endl;
+    //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list. Number of nodes: "<<myNumberOfNodes<<"____"<<endl;
+    //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list. Number of elements: "<<myNumberOfElements<<"____"<<endl;
 
     //! --------------------
     //! define the elements
     //! --------------------
-    cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list. Start defining the elements____"<<endl;
+    //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list. Start defining the elements____"<<endl;
 
     //! ----------------------------------------------------------------
     //! note: I can not use QList for defining "alreadyVisitedElements"
@@ -2427,14 +2220,11 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const QList<occHandle(Ng_Mesh
             //! an element from been inserted more than one time
             //! ----------------------------------------------------------
             mesh::meshElement aMeshElement;
-            for(int n=1; n<=NbNodes; n++)
-            {
-                aMeshElement.theNodeIDs.push_back(nodeIDs(n));
-            }
+            for(int n=1; n<=NbNodes; n++) aMeshElement.theNodeIDs.push_back(nodeIDs(n));
 
             if(alreadyVisitedElements.contains(aMeshElement))
             {
-                cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list. A shared element has been found____"<<endl;
+                //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list. A shared element has been found____"<<endl;
                 NbSharedElements++;
                 continue;
             }
@@ -2445,7 +2235,7 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const QList<occHandle(Ng_Mesh
             for(int k=1; k<=NbNodes; k++)
             {
                 int globalNodeID = nodeIDs.Value(k);
-                //!cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list: globalNodeID: "<<globalNodeID<<"____"<<endl;
+                //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list: globalNodeID: "<<globalNodeID<<"____"<<endl;
                 myElemNodes->SetValue(localElementID,k,globalNodeID);
             }
 
@@ -2461,13 +2251,13 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const QList<occHandle(Ng_Mesh
             }
         }
     }
-    cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____number of shared elements: "<<NbSharedElements<<"____"<<endl;
-    cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list. Elements defined____"<<endl;
+    //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____number of shared elements: "<<NbSharedElements<<"____"<<endl;
+    //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list. Elements defined____"<<endl;
 
     //! -----------------------------------------
     //! insert the coordinates of each mesh node
     //! -----------------------------------------
-    cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list. Start defining nodes____"<<endl;
+    //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list. Start defining nodes____"<<endl;
     int localNodeID = 0;
     TColStd_PackedMapOfInteger alreadyVisitedNodes;
     for(int i=0; i<faceDSList.length(); i++)
@@ -2495,7 +2285,7 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const QList<occHandle(Ng_Mesh
             myNodeCoords->SetValue(localNodeID,3,coords(3));
         }
     }
-    cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list. Nodes defined____"<<endl;
+    //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list. Nodes defined____"<<endl;
 
     //! --------------------------------
     //! compute the normals at elements
@@ -2507,7 +2297,7 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const QList<occHandle(Ng_Mesh
     //! ------------------------
     this->buildElementsTopology();
 
-    cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____exiting____"<<endl;
+    //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____exiting____"<<endl;
 }
 
 //! ------------------------------
@@ -3924,7 +3714,7 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const std::vector<meshElement
                     //! ----------------------
                     //! point already present
                     //! ----------------------
-                    int foundLocalNodeID = (*nnit).second;
+                    int foundLocalNodeID = nnit->second;
                     myElemNodes->SetValue(localElementID,i+1,foundLocalNodeID);
                 }
             }
@@ -4018,7 +3808,6 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const std::vector<meshElement
                     myElemNodes->SetValue(localElementID,i+1,foundLocalNodeID);
                 }
             }
-
         }
     }
     //! -------------------------------------------------
@@ -4030,12 +3819,7 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const std::vector<meshElement
         {
             const meshElementByCoords &aMeshElement = *it;
             localElementID++;
-
-            cout<<"____"<<localElementID<<" ";
-
             int globalElementID = aMeshElement.ID;
-
-            cout<<globalElementID<<"____"<<endl;
 
             myElements.Add(globalElementID);
             myElementsMap.Add(globalElementID);
@@ -4069,99 +3853,7 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const std::vector<meshElement
             }
         }
     }
-    /* -----------------------------------------------------------------------------------
-     * this is a working - not optimized version - please do not remove even if connected
-     * -----------------------------------------------------------------------------------
-    //! ---------------------------------
-    //! if autorenumber element elements
-    //! ---------------------------------
-    for(std::vector<meshElementByCoords>::const_iterator it = meshElements.cbegin(); it!= meshElements.cend(); it++)
-    {
-        const meshElementByCoords &aMeshElement = *it;
 
-        localElementID++;
-
-        if(autoRenumberElements==true)
-        {
-            myElements.Add(localElementID);
-            myElementsMap.Add(localElementID);
-        }
-        else
-        {
-            int globalElementID = aMeshElement.ID;
-            myElements.Add(globalElementID);
-            myElementsMap.Add(globalElementID);
-        }
-
-        int NbPoints = aMeshElement.pointList.length();
-
-        switch(NbPoints)
-        {
-        case 3: myElemType->SetValue(localElementID,TRIG); break;
-        case 6: myElemType->SetValue(localElementID,TRIG6); break;
-        case 5: myElemType->SetValue(localElementID,PENTA); break;
-        case 4: myElemType->SetValue(localElementID,QUAD); break;
-        case 7: myElemType->SetValue(localElementID,EPTA); break;
-        case 8: myElemType->SetValue(localElementID,QUAD8); break;
-        }
-
-        //! ---------------------------------------------------------------
-        //! this is the mechanism for the automatic numbering of the nodes
-        //! ---------------------------------------------------------------
-        if(autoRenumberNodes)
-        {
-            for(int i = 0; i<NbPoints; i++)
-            {
-                mesh::meshPoint aPoint = aMeshElement.pointList[i];
-                std::map<mesh::meshPoint,int>::iterator nnit = indexedMapOfMeshPoints.find(aPoint);
-
-                if(nnit == indexedMapOfMeshPoints.end())
-                {
-                    //! ----------------
-                    //! point not found
-                    //! ---------------
-                    localNodeID++;
-                    myNodes.Add(localNodeID);
-                    myNodesMap.Add(localNodeID);
-
-                    indexedMapOfMeshPoints.insert(std::make_pair(aPoint,localNodeID));
-                    myElemNodes->SetValue(localElementID,i+1,localNodeID);
-                }
-                else
-                {
-                    //! ----------------------
-                    //! point already present
-                    //! ----------------------
-                    int foundLocalNodeID = (*nnit).second;
-                    myElemNodes->SetValue(localElementID,i+1,foundLocalNodeID);
-                }
-            }
-        }
-        else
-        {
-            //! ---------------------------------------
-            //! label the nodes using their own labels
-            //! ---------------------------------------
-            for(int i=0; i<NbPoints; i++)
-            {
-                mesh::meshPoint aPoint = aMeshElement.pointList[i];
-                std::map<mesh::meshPoint,int>::iterator nnit = indexedMapOfMeshPoints.find(aPoint);
-
-                if(nnit==indexedMapOfMeshPoints.end())
-                {
-                    indexedMapOfMeshPoints.insert(std::make_pair(aPoint,aPoint.ID));
-                }
-
-                if(!myNodes.Contains(aPoint.ID))
-                {
-                    myNodes.Add(aPoint.ID);
-                    myNodesMap.Add(aPoint.ID);
-                }
-                myElemNodes->SetValue(localElementID,i+1,aPoint.ID);
-            }
-        }
-    }
-    */
     //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____elements and nodes added____"<<endl;
 
     myNumberOfNodes = myNodes.Extent();
@@ -4186,6 +3878,142 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const std::vector<meshElement
     this->buildElementsTopology();
 }
 
+/*
+//! --------------------------------------------------------------
+//! non optimized but woking constructor
+//! not sure about the previous (which has been optimized)
+//! WARNING: this is not working properly with options true,true!
+//! --------------------------------------------------------------
+Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const std::vector<meshElementByCoords> &meshElements, bool autoRenumberElements, bool autoRenumberNodes)
+{
+    cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor called____"<<endl;
+
+    //! -------------
+    //! sanity check
+    //! -------------
+    if(meshElements.size()==0) return;
+
+    myNumberOfElements = int(meshElements.size());
+
+    myElemType = new TColStd_HArray1OfInteger(1,myNumberOfElements);
+    myElemNodes = new TColStd_HArray2OfInteger(1,myNumberOfElements,1,8);
+    myElemNormals = new TColStd_HArray2OfReal(1,myNumberOfElements,1,3);
+
+    std::vector<mesh::meshPoint> vecMeshPoints;
+    std::vector<int> vecNodeIDs;
+
+    int localElementID = 0;
+    int localNodeID = 0;
+    for(std::vector<meshElementByCoords>::const_iterator it = meshElements.cbegin(); it!= meshElements.cend(); it++)
+    {
+        const meshElementByCoords &aMeshElement = *it;
+
+        localElementID++;
+
+        if(autoRenumberElements==true)
+        {
+            myElements.Add(localElementID);
+            myElementsMap.Add(localElementID);
+        }
+        else
+        {
+            int globalElementID = aMeshElement.ID;
+            myElements.Add(globalElementID);
+            myElementsMap.Add(globalElementID);
+        }
+
+        int NbPoints = aMeshElement.pointList.length();
+
+        switch(NbPoints)
+        {
+        case 3: myElemType->SetValue(localElementID,TRIG); break;
+        case 6: myElemType->SetValue(localElementID,TRIG6); break;
+        case 4: myElemType->SetValue(localElementID,QUAD); break;
+        case 8: myElemType->SetValue(localElementID,QUAD8); break;
+        }
+
+        //! ---------------------------------------------------------------
+        //! this is the mechanism for the automatic numbering of the nodes
+        //! ---------------------------------------------------------------
+        if(autoRenumberNodes)
+        {
+            for(int i = 0; i<NbPoints; i++)
+            {
+                mesh::meshPoint aPoint = aMeshElement.pointList[i];
+                std::vector<mesh::meshPoint>::iterator nit = std::find(vecMeshPoints.begin(),vecMeshPoints.end(),aPoint);
+
+                if(nit==vecMeshPoints.end())
+                {
+                    //! ----------------
+                    //! point not found
+                    //! ---------------
+                    localNodeID++;
+                    myNodes.Add(localNodeID);
+                    myNodesMap.Add(localNodeID);
+
+                    vecMeshPoints.push_back(aPoint);
+                    vecNodeIDs.push_back(localNodeID);
+
+                    myElemNodes->SetValue(localElementID,i+1,localNodeID);
+                }
+                else
+                {
+                    //! ----------------------
+                    //! point already present
+                    //! ----------------------
+                    int indexOf = std::distance(vecMeshPoints.begin(),nit);
+                    int foundLocalNodeID = vecNodeIDs[indexOf];
+                    myElemNodes->SetValue(localElementID,i+1,foundLocalNodeID);
+                }
+            }
+        }
+        else
+        {
+            //! ---------------------------------------
+            //! label the nodes using their own labels
+            //! ---------------------------------------
+            for(int i=0; i<NbPoints; i++)
+            {
+                mesh::meshPoint aPoint = aMeshElement.pointList[i];
+                std::vector<mesh::meshPoint>::iterator nit = std::find(vecMeshPoints.begin(),vecMeshPoints.end(),aPoint);
+                if(nit==vecMeshPoints.end())
+                {
+                    vecMeshPoints.push_back(aPoint);
+                }
+
+                if(!myNodes.Contains(aPoint.ID))
+                {
+                    myNodes.Add(aPoint.ID);
+                    myNodesMap.Add(aPoint.ID);
+                }
+                myElemNodes->SetValue(localElementID,i+1,aPoint.ID);
+            }
+        }
+    }
+
+    myNumberOfNodes = myNodes.Extent();
+    myNodeCoords = new TColStd_HArray2OfReal(1,myNumberOfNodes,1,3);
+
+    for(int i=1; i<=myNumberOfNodes; i++)
+    {
+        mesh::meshPoint aMeshPoint = vecMeshPoints[i-1];
+        myNodeCoords->SetValue(i,1,aMeshPoint.x);
+        myNodeCoords->SetValue(i,2,aMeshPoint.y);
+        myNodeCoords->SetValue(i,3,aMeshPoint.z);
+    }
+    //cout<<"____vector of mesh points size: "<<vecMeshPoints.size()<<"____"<<endl;
+
+    //! ---------------------------
+    //! compute normal at elements
+    //! ---------------------------
+    this->computeNormalAtElements();
+
+    //! -----------------------
+    //! build element topology
+    //! -----------------------
+    this->buildElementsTopology();
+}
+*/
 
 //! ----------------------------------
 //! function: getSurroundingNodes
@@ -5196,7 +5024,6 @@ void Ng_MeshVS_DataSourceFace::buildElementsTopology()
     }
 }
 
-
 //! ----------------------
 //! function: constructor
 //! details:
@@ -5271,3 +5098,392 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const occHandle(Ng_MeshVS_Dat
     //! ------------------
     this->buildElementsTopology();
 }
+
+//! -------------------------------
+//! function: computeNormalAtNodes
+//! details:
+//! -------------------------------
+#define ITERATIVE_NORMAL
+#ifdef ITERATIVE_NORMAL
+void Ng_MeshVS_DataSourceFace::computeNormalAtNodes()
+{
+    cout<<"Ng_MeshVS_DataSourceFace::computeNormalAtNodes()->____function called____"<<endl;
+    //FILE *fp = fopen("D:/nodeNormals_iterative.txt","w");
+
+    //! -----------------------------
+    //! node to element connectivity
+    //! -----------------------------
+    if(myNodeToElements.isEmpty()) this->computeNodeToElementsConnectivity();
+
+    //! ----------------------------
+    //! parameters of the algorithm
+    //! ----------------------------
+    const double PI = 3.14159236538;
+    const double limit = 0.005*PI/180;
+    const int NMaxSteps = 1000;
+    const double b = 0.5;               // relaxation
+    const double oneminusb = 1-b;       // 1-relaxation
+    for(TColStd_MapIteratorOfPackedMapOfInteger it(myNodes); it.More(); it.Next())
+    {
+        int globalNodeID = it.Key();
+        int localNodeID = myNodesMap.FindIndex(globalNodeID);
+
+        const QList<int> &attachedElementsLocalIDs = myNodeToElements.value(localNodeID);
+        int N = attachedElementsLocalIDs.length();
+        std::vector<int> surroundingElementsGlobalIDs;  // same information using global numbering
+
+        //! -----------------------
+        //! initialize the weights
+        //! -----------------------
+        std::vector<double> wg;
+        for(int n=0; n<N; n++)
+        {
+            wg.push_back(1.0/N);
+            int curLocalElementID = attachedElementsLocalIDs[n];   
+            int curGlobalElementID = this->myElementsMap.FindKey(curLocalElementID);
+            surroundingElementsGlobalIDs.push_back(curGlobalElementID);
+        }
+
+        //! -----------------------------
+        //! initial guess for the normal
+        //! -----------------------------
+        double NP[3] {0,0,0};
+        double NPnew[3] {0,0,0};
+        double NPcorrection[3] {0,0,0};
+        for(int n=0; n<N; n++)
+        {
+            int curLocalElementID = attachedElementsLocalIDs[n];
+            double cnx = myElemNormals->Value(curLocalElementID,1);
+            double cny = myElemNormals->Value(curLocalElementID,2);
+            double cnz = myElemNormals->Value(curLocalElementID,3);
+            double w = wg[n];
+            NP[0] += w*cnx;
+            NP[1] += w*cny;
+            NP[2] += w*cnz;
+        }
+        double norm = sqrt(pow(NP[0],2)+pow(NP[1],2)+pow(NP[2],2));
+        NP[0] /= norm;
+        NP[1] /= norm;
+        NP[2] /= norm;
+
+        //cout<<"***************************************************"<<endl;
+        //cout<<" Initial normal ("<<NP[0]<<", "<<NP[1]<<", "<<NP[2]<<")"<<endl;
+
+        //fprintf(fp,"*************************************\n");
+        //fprintf(fp,"%d\n",globalNodeID);
+        //fprintf(fp,"guess %lf\t%lf\t%lf\n",NP[0],NP[1],NP[2]);
+
+        //! ----------------
+        //! start iterating
+        //! ----------------
+        double dotErr = 1e10;
+        double angleErr = 1e10;
+        int step = 0;
+        for(step=1; step<=NMaxSteps; step++)
+        {
+            std::vector<double> alpha;
+            double alphaSum = 0;
+            for(int i=0; i<N; i++)
+            {
+                int curLocalElementID = attachedElementsLocalIDs[i];
+                double nx_i = myElemNormals->Value(curLocalElementID,1);
+                double ny_i = myElemNormals->Value(curLocalElementID,2);
+                double nz_i = myElemNormals->Value(curLocalElementID,3);
+
+                double dot = nx_i*NP[0]+ny_i*NP[1]+nz_i*NP[2];
+                dot /= sqrt(nx_i*nx_i+ny_i*ny_i+nz_i*nz_i)*sqrt(pow(NP[0],2)+pow(NP[1],2)+pow(NP[2],2));
+                if(dot<-1) dot = -1;
+                if(dot>1) dot = 1;
+                double curAlpha = std::acos(dot);
+                alpha.push_back(curAlpha);
+                alphaSum += curAlpha;
+            }
+
+            if(fabs(alphaSum/N)<=0.01745329)    // 1 degree
+            {
+                //cout<<" => this is a flat node <="<<endl;
+                break;
+            }
+
+            //! ------------------------
+            //! compute the new weights
+            //! ------------------------
+            double sumOfWeights = 0;
+            for(int i=0; i<N; i++)
+            {
+                wg[i] *= alpha[i]/alphaSum;
+                sumOfWeights += wg[i];
+            }
+
+            if(sumOfWeights==0) exit(2);        // should never occur
+
+            //! ----------------------
+            //! normalize the weights
+            //! ----------------------
+            for(int i=0; i<N; i++) wg[i] /= sumOfWeights;
+
+            //! -----------------------------------
+            //! compute a new normal approximation
+            //! -----------------------------------
+            double Sx, Sy, Sz;
+            Sx = Sy = Sz = 0;
+            for(int i=0; i<N; i++)
+            {
+                int curLocalElementID = attachedElementsLocalIDs[i];
+                double nx_i = myElemNormals->Value(curLocalElementID,1);
+                double ny_i = myElemNormals->Value(curLocalElementID,2);
+                double nz_i = myElemNormals->Value(curLocalElementID,3);
+
+                double w_i = wg[i];
+                Sx += w_i*nx_i;
+                Sy += w_i*ny_i;
+                Sz += w_i*nz_i;
+            }
+            double normS = sqrt(Sx*Sx+Sy*Sy+Sz*Sz);
+
+            if(normS==0) exit(3);               // should never occur
+
+            NPcorrection[0] = Sx/normS;
+            NPcorrection[1] = Sy/normS;
+            NPcorrection[2] = Sz/normS;
+
+            //! -------------
+            //! relax normal
+            //! -------------
+            NPnew[0] = b*NPcorrection[0] + oneminusb*NP[0];
+            NPnew[1] = b*NPcorrection[1] + oneminusb*NP[1];
+            NPnew[2] = b*NPcorrection[2] + oneminusb*NP[2];
+
+            double lNpNew = sqrt(pow(NPnew[0],2)+pow(NPnew[1],2)+pow(NPnew[2],2));
+            NPnew[0] /= lNpNew;
+            NPnew[1] /= lNpNew;
+            NPnew[2] /= lNpNew;
+
+            dotErr = NPnew[0]*NP[0]+NPnew[1]*NP[1]+NPnew[2]*NP[2];
+            dotErr /= sqrt(pow(NPnew[0],2)+pow(NPnew[1],2)+pow(NPnew[2],2))*sqrt(pow(NP[0],2)+pow(NP[1],2)+pow(NP[2],2));
+
+            NP[0] = NPnew[0];
+            NP[1] = NPnew[1];
+            NP[2] = NPnew[2];
+
+            if(dotErr<-1) dotErr = -1;
+            if(dotErr> 1) dotErr = 1;
+            angleErr = std::acos(dotErr);
+            if(angleErr<=limit) break;
+        }
+
+        //! --------------------------------------
+        //! record the normal at the current node
+        //! --------------------------------------
+        QList<double> aNormal { NP[0],NP[1],NP[2] };
+        myNodeNormals.insert(globalNodeID,aNormal);
+
+        //fprintf(fp,"%d\t%lf\t%lf\t%lf\n",globalNodeID,NP[0],NP[1],NP[2]);
+    }
+    //fclose(fp);
+}
+#endif
+
+#ifndef ITERATIVE_NORMAL
+#ifndef LIBIGLNORMAL
+void Ng_MeshVS_DataSourceFace::computeNormalAtNodes()
+{
+    //cout<<"Ng_MeshVS_DataSourceFace::computeNormalAtNodes()->____function called____"<<endl;
+
+    FILE *fp = fopen("D:/nodeNormals_average.txt","w");
+
+    //! ---------------------------------------------
+    //! tolerance for normal comparisons: <n> degrees
+    //! ---------------------------------------------
+    const double tolerance = (10.0/180.0)*3.141592654;
+
+    //! ---------------------------------------
+    //! key: node number
+    //! value: normal of the attached elements
+    //! ---------------------------------------
+    QMap<int,QList<mesh::elementNormal>> nodeNormals;
+    for(TColStd_MapIteratorOfPackedMapOfInteger eIt(myElements);eIt.More();eIt.Next())
+    {
+        int globalElementID = eIt.Key();
+        int localElementID = myElementsMap.FindIndex(globalElementID);
+
+        //! -------------------
+        //! the element normal
+        //! -------------------
+        double ne_x = myElemNormals->Value(localElementID,1);
+        double ne_y = myElemNormals->Value(localElementID,2);
+        double ne_z = myElemNormals->Value(localElementID,3);
+
+        mesh::elementNormal anElementNormal(ne_x,ne_y,ne_z,tolerance);
+        switch(myElemType->Value(localElementID))
+        {
+        case TRIG:
+        {
+            for(int col=1; col<=3; col++)
+            {
+                int globalNodeID = myElemNodes->Value(localElementID,col);
+                //int localNodeID = myNodesMap.FindIndex(globalNodeID);
+
+                //! ---------------------------------------------------------
+                //! build the map "nodeNormals" using the global node number
+                //! ---------------------------------------------------------
+                if(!nodeNormals.contains(globalNodeID))
+                {
+                    QList<mesh::elementNormal> normalList;
+                    normalList<<anElementNormal;
+                    nodeNormals.insert(globalNodeID,normalList);
+                }
+                else
+                {
+                    QList<mesh::elementNormal> normalList = nodeNormals[globalNodeID];
+                    normalList<<anElementNormal;
+                    nodeNormals.insert(globalNodeID,normalList);
+                }
+            }
+        }
+            break;
+        }
+    }
+
+    //! -----------------------------
+    //! average the normals at nodes
+    //! -----------------------------
+    for(QMap<int,QList<mesh::elementNormal>>::iterator it = nodeNormals.begin(); it!=nodeNormals.end(); it++)
+    {
+        int globalNodeID = it.key();
+        QList<mesh::elementNormal> nodalNormals = it.value();
+        std::set<mesh::elementNormal> setOfNodeNormals;
+
+        //! -----------------------------------------------------------------------------
+        //! use the insertion into a set for eliminating almost equally directed normals
+        //! -----------------------------------------------------------------------------
+        for(int j=0; j<nodalNormals.length(); j++)
+        {
+            setOfNodeNormals.insert(nodalNormals.at(j));
+        }
+        double ntotx = 0; double ntoty = 0; double ntotz = 0;
+        for(std::set<mesh::elementNormal>::iterator it = setOfNodeNormals.begin(); it!=setOfNodeNormals.end(); it++)
+        {
+            ntotx += (*it).nx;
+            ntoty += (*it).ny;
+            ntotz += (*it).nz;
+            //cout<<"____("<<ntotx<<", "<<ntoty<<", "<<ntotz<<")____"<<endl;
+        }
+        //! -------------------
+        //! average the normal
+        //! -------------------
+        int NbNormals = int(setOfNodeNormals.size());
+        ntotx /= NbNormals;
+        ntoty /= NbNormals;
+        ntotz /= NbNormals;
+        double l = sqrt(ntotx*ntotx+ntoty*ntoty+ntotz*ntotz);
+        if(l>1e-9)
+        {
+            ntotx /= l;
+            ntoty /= l;
+            ntotz /= l;
+        }
+        else { ntotx = ntoty = ntotz = 0.0; }
+        QList<double> aveNormal {ntotx, ntoty, ntotz};
+        myNodeNormals.insert(globalNodeID, aveNormal);
+
+        fprintf(fp,"%d\t%lf\t%lf\t%lf\n",globalNodeID,ntotx,ntoty,ntotz);
+    }
+    fclose(fp);
+    //! -----------------------------------------------------------------------------------
+    //! the old version included the calculation of the node to elements connectivity
+    //! for compatibility the new function computeNodeToElementsConnectivity is called here
+    //! -----------------------------------------------------------------------------------
+    this->computeNodeToElementsConnectivity();
+}
+#endif
+
+#ifdef LIBIGLNORMAL
+void Ng_MeshVS_DataSourceFace::computeNormalAtNodes()
+{
+    cout<<"Ng_MeshVS_DataSourceFace::computeNormalAtNodes()->____function called with igl library____"<<endl;
+
+    //! -----------------------------
+    //! node to element connectivity
+    //! -----------------------------
+    QMultiMap<int,int> nodeToElements;
+    TColStd_MapIteratorOfPackedMapOfInteger eIt;
+    for(eIt.Initialize(myElements);eIt.More();eIt.Next())
+    {
+        int localElementID = myElementsMap.FindIndex(eIt.Key());
+        //cout<<"____local el id: "<<localElementID<<endl;
+        switch(myElemType->Value(localElementID))
+        {
+        case TRIG:
+        {
+            for(int col=1; col<=3; col++)
+            {
+                int globalNodeID = myElemNodes->Value(localElementID,col);
+                int localNodeID = myNodesMap.FindIndex(globalNodeID);
+                //! ---------------------------------------------------
+                //! a choice for defining node to element connectivity
+                //! using local numbering or global numbering
+                //! ---------------------------------------------------
+                nodeToElements.insert(localNodeID,localElementID);
+           }
+        }
+            break;
+
+        default:
+        {
+            //! other elements
+        }
+            break;
+        }
+    }
+
+    //! -----------------------------------------------
+    //! re-organize node to element connectivity info
+    //! the "nodeNumber" can be local or global
+    //! according to the previous choice
+    //! Here the key is the local node ID and the
+    //! value is a list of local element IDs
+    //! ----------------------------------------------
+    QList<int> keys = nodeToElements.keys();
+    int curKey_old = -1;
+    for(int i=0; i<keys.length(); i++)
+    {
+        int curKey = keys.at(i);
+        if(curKey==curKey_old) continue;
+        curKey_old = curKey;
+
+        //! ---------------------------------------------------------
+        //! retrieve from the QMultiMap the list of surface elements
+        //! associated to the current key (current node)
+        //! ---------------------------------------------------------
+        QList<int> elementNumbers = nodeToElements.values(curKey);
+        myNodeToElements.insert(curKey,elementNumbers);
+    }
+
+    //! -----------------------------
+    //! compute the normals at nodes
+    //! -----------------------------
+    Eigen::MatrixXd V, N;
+    Eigen::MatrixXi F;
+
+    //! -----------------------------------------
+    //! convert the current mesh into Eigen form
+    //! -----------------------------------------
+    iglTools::OCCMeshToIglMesh(this,V,F);
+    igl::per_vertex_normals(V,F,N);
+
+    for(int i=0; i<N.rows(); i++)
+    {
+        double nx = N(i,0);
+        double ny = N(i,1);
+        double nz = N(i,2);
+
+        QList<double> normal;
+        normal<<nx<<ny<<nz;
+        int localNodeID = i+1;
+        int globalNodeID = this->myNodesMap.FindKey(localNodeID);
+        myNodeNormals.insert(globalNodeID,normal);
+    }
+}
+#endif
+#endif

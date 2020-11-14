@@ -98,6 +98,15 @@ clipTool::clipTool(QWidget *parent):QTableView(parent),
     connect(theDelegate,SIGNAL(currentCSTranslationApplied(int)),this,SLOT(updateCSTranslation(int)));
 }
 
+//! ------------------------------
+//! function: setCurrentClipPlane
+//! details:
+//! ------------------------------
+void clipTool::setCurrentClipPlane(int curClipPlaneID)
+{
+    myOCCViewer->setCurrentClipPlane(curClipPlaneID);
+}
+
 //! --------------------------
 //! function: setMeshDataBase
 //! details:
@@ -142,16 +151,8 @@ void clipTool::setWorkingMode(int workingMode)
 
     switch(myWorkingMode)
     {
-    case 0: // on mesh
-    {
-        myOCCViewer->clipMesh();
-    }
-        break;
-
-    case 3: // on solution
-    {
-        myOCCViewer->clipResult();
-    }
+    case 0: myOCCViewer->clipMesh(); break;     // on mesh
+    case 3: myOCCViewer->clipResult(); break;   // on solution
     default:    // other working modes
     {
         if(!myOCCViewer->getMeshContext().IsNull()) myOCCViewer->getMeshContext()->RemoveAll(true);

@@ -1,5 +1,3 @@
-//#define USE_FACE_DS_BUILDER
-
 //! ----------------
 //! custom includes
 //! ----------------
@@ -111,6 +109,7 @@
 #include <polygon.h>
 #include <MeshVS_DisplayModeFlags.hxx>
 #include <MeshVS_SelectionModeFlags.hxx>
+#include <StdSelect_BRepOwner.hxx>
 
 using namespace std;
 
@@ -310,7 +309,7 @@ void occPreGLWidget::displayCAD(bool onlyLoad)
     for(int i=0;i<listOfActions.size();i++) listOfActions.value(i)->setChecked(false);
 
     //! Set the number of the context - now "0", NEUTRAL POINT
-    myLocalCtxNumber = occContext->IndexOfCurrentLocal();
+    //myLocalCtxNumber = occContext->IndexOfCurrentLocal();
 
     //! Set the view mode
     this->setShadedExteriorAndEdgesView();
@@ -358,8 +357,8 @@ void occPreGLWidget::displayCAD(bool onlyLoad)
         else
         {
             //! call context Display()
-            occContext->Display(anAISShape,false);
-
+            //occContext->Display(anAISShape,false);
+            occContext->Display(anAISShape,AIS_Shaded,AIS_Shape::SelectionMode(TopAbs_SHAPE),true,AIS_DS_Displayed);
             double angle = anAISShape->Attributes()->DeviationAngle();
             double deviation = anAISShape->Attributes()->DeviationCoefficient();
 
@@ -547,7 +546,6 @@ void occPreGLWidget::reset()
 //! function: printTopologyNumber
 //! details:
 //! ------------------------------
-#include <StdSelect_BRepOwner.hxx>
 void occPreGLWidget::printTopologyNumber()
 {
     for(occContext->InitSelected();occContext->MoreSelected();occContext->NextSelected())
@@ -991,15 +989,16 @@ void occPreGLWidget::hideAllMeshes(bool updateViewer)
 void occPreGLWidget::hideSelectedBodies()
 {
     cout<<"occPreGLWidget::hideSelectedBodies()->____function called____"<<endl;
+
     //! ------------------------------------
     //! put the selected shapes into a list
     //! ------------------------------------
     AIS_ListOfInteractive listOfAISShapes;
     for(occContext->InitSelected();occContext->MoreSelected();occContext->NextSelected())
     {
-        listOfAISShapes.Append(occContext->SelectedInteractive());
         const occHandle(AIS_ExtendedShape) &curAISShape = occHandle(AIS_ExtendedShape)::DownCast(occContext->SelectedInteractive());
-        curAISShape->setShapeVisibility(false);
+        if(curAISShape.IsNull()) continue;
+        listOfAISShapes.Append(curAISShape);
     }
     //! --------------------------------------------
     //! erase the shapes and the corresponding mesh
@@ -1009,9 +1008,10 @@ void occPreGLWidget::hideSelectedBodies()
         const occHandle(AIS_ExtendedShape) &curAISShape = occHandle(AIS_ExtendedShape)::DownCast(it.Value());
         curAISShape->setShapeVisibility(false);
         int index = curAISShape->index();
-        occContext->Erase(curAISShape,false);
+        occContext->Unhilight(curAISShape,false);    // unhighlight before erasing
+        occContext->Erase(curAISShape,false);        // erase the shape from the view
         if(myMapOfInteractiveMeshes.value(index,occHandle(MeshVS_Mesh)()).IsNull()) continue;
-        occMeshContext->Erase(myMapOfInteractiveMeshes.value(index),false);
+        occMeshContext->Erase(myMapOfInteractiveMeshes.value(index),false);     //! erase the mesh from the view
     }
     this->clearGeometrySelection();
     occContext->UpdateCurrentViewer();
@@ -1187,10 +1187,10 @@ void occPreGLWidget::buildPrismaticMeshIO()
     }
 }
 
-//!-------------------------------
-//! function: show all the bodies
+//!-------------------------
+//! function: showAllBodies
 //! details:
-//!-------------------------------
+//!-------------------------
 void occPreGLWidget::showAllBodies()
 {
     cout<<"occPreGLWidget::showAllBodies()->____function called____"<<endl;
@@ -1201,28 +1201,32 @@ void occPreGLWidget::showAllBodies()
     //! ------------------------------------
     if(myCurWorkingMode == curWorkingMode_onSolution) occContext->SetDisplayMode(AIS_WireFrame,true);
     AIS_ListOfInteractive listOfHidden;
-    occContext->ObjectsByDisplayStatus(AIS_KOI_Shape,0,AIS_DS_Erased,listOfHidden);
+    occContext->ObjectsByDisplayStatus(AIS_KOI_Shape,-1,AIS_DS_Erased,listOfHidden);
     for(AIS_ListIteratorOfListOfInteractive it(listOfHidden); it.More(); it.Next())
     {
-        const occHandle(AIS_ExtendedShape) &curShape = occHandle(AIS_ExtendedShape)::DownCast(it.Value());
-        int shapeIndex = curShape->index();
+        const occHandle(AIS_ExtendedShape) &curAISShape = occHandle(AIS_ExtendedShape)::DownCast(it.Value());
+        if(curAISShape.IsNull()) continue; // the current object is not an AIS_ExtendedShape
+        int shapeIndex = curAISShape->index();
         bool isShapeActive = myDS2->MapOfIsActive.value(shapeIndex);
         if(isShapeActive==false) continue;
-        curShape->setShapeVisibility(true);
+        curAISShape->setShapeVisibility(true);
 
         //! ----------------------
         //! handling transparency
         //! ----------------------
         switch(myCurWorkingMode)
         {
-        case curWorkingMode_onContact:occContext->SetTransparency(curShape,TRANSPARENCY_IN_WORKING_MODE_CONTACT,Standard_False); break;
-        case curWorkingMode_onModel: occContext->SetTransparency(curShape,TRANSPARENCY_IN_WORKING_MODE_MODEL,Standard_False); break;
-        case curWorkingMode_onMesh: occContext->SetTransparency(curShape,TRANSPARENCY_IN_WORKING_MODE_MESH,Standard_False); break;
-        case curWorkingMode_onSolution: occContext->SetTransparency(curShape,TRANSPARENCY_IN_WORKING_MODE_MODEL,Standard_False); break;
-        default: occContext->SetTransparency(curShape,TRANSPARENCY_IN_WORKING_MODE_MODEL,Standard_False); break;
+        case curWorkingMode_onContact:occContext->SetTransparency(curAISShape,TRANSPARENCY_IN_WORKING_MODE_CONTACT,false); break;
+        case curWorkingMode_onModel: occContext->SetTransparency(curAISShape,TRANSPARENCY_IN_WORKING_MODE_MODEL,false); break;
+        case curWorkingMode_onMesh: occContext->SetTransparency(curAISShape,TRANSPARENCY_IN_WORKING_MODE_MESH,false); break;
+        case curWorkingMode_onSolution: occContext->SetTransparency(curAISShape,TRANSPARENCY_IN_WORKING_MODE_MODEL,false); break;
+        default: occContext->SetTransparency(curAISShape,TRANSPARENCY_IN_WORKING_MODE_MODEL,false); break;
         }
-        occContext->Display(curShape,false);
+        int displayMode = occContext->DisplayMode();
+        occContext->Display(curAISShape,displayMode,0,false,true,AIS_DS_Displayed);
     }
+
+    this->reactivateSelectionMode();
 
     switch(myCurWorkingMode)
     {
@@ -1238,68 +1242,11 @@ void occPreGLWidget::showAllBodies()
     this->clearGeometrySelection();
 
     if(curAction3D()!=CurAction3D_Nothing) occContext->SetAutomaticHilight(Standard_False);
-
-    /*
-    for(QMap<int,occHandle(AIS_InteractiveObject)>::iterator it = myMapOfInteractiveShapes.begin(); it!=myMapOfInteractiveShapes.end(); ++it)
-    {
-        const occHandle(AIS_ExtendedShape) &AIS = occHandle(AIS_ExtendedShape)::DownCast(it.value());
-        int bodyIndex = myDS2->bodyMap.key(AIS->Shape());
-        if(myDS2->MapOfIsActive.value(bodyIndex)==true)
-        {
-            occContext->Display(AIS,false);
-            AIS->setShapeVisibility(Standard_True);
-        }
-    }
-
-    AIS_ListOfInteractive thelistOfDIsplayed;
-    occContext->DisplayedObjects(AIS_KOI_Shape,0,thelistOfDIsplayed, false);
-    AIS_ListIteratorOfListOfInteractive it;
-    for(it.Initialize(thelistOfDIsplayed);it.More();it.Next())
-    {
-        const occHandle(AIS_ExtendedShape) &curAISShape = occHandle(AIS_ExtendedShape)::DownCast(it.Value());
-        curAISShape->setShapeVisibility(Standard_True);
-        switch(myCurWorkingMode)
-        {
-        case curWorkingMode_onContact:
-            occContext->SetTransparency(curAISShape,TRANSPARENCY_IN_WORKING_MODE_CONTACT,Standard_False);
-            break;
-        case curWorkingMode_onModel:
-            occContext->SetTransparency(curAISShape,TRANSPARENCY_IN_WORKING_MODE_MODEL,Standard_False);
-            break;
-        case curWorkingMode_onMesh:
-            occContext->SetTransparency(curAISShape,TRANSPARENCY_IN_WORKING_MODE_MESH,Standard_False);
-            break;
-        case curWorkingMode_onSolution:
-            occContext->SetTransparency(curAISShape,TRANSPARENCY_IN_WORKING_MODE_MODEL,Standard_False);
-            break;
-        default:
-            occContext->SetTransparency(curAISShape,TRANSPARENCY_IN_WORKING_MODE_MODEL,Standard_False);
-            break;
-        }
-    }
-    occView->ZFitAll();
-    occContext->UpdateCurrentViewer();
-    occMeshContext->UpdateCurrentViewer();
-
-    if(curAction3D()!=CurAction3D_Nothing) occContext->SetAutomaticHilight(Standard_False);
-
-    //! ----------------------------------------------------------------
-    //! this is a temporary solution to use hide/show context services
-    //! on the mesh, showing them together with the underlying geometry
-    //! ----------------------------------------------------------------
-    Graphic3d_NameOfMaterial theMat = Graphic3d_NOM_GOLD;
-    switch(myCurWorkingMode)
-    {
-    case curWorkingMode_onMesh: this->displayAllMeshes(false,theMat); break;
-    case curWorkingMode_onSolution: this->hideAllMeshes(); break;
-    }
-    */
 }
 
 //! ---------------------------------------------------------
 //! function: refreshMeshView
 //! details:  recompute the presentation of the mesh objects
-//!           and immediately refresh the presentation
 //! ---------------------------------------------------------
 void occPreGLWidget::refreshMeshView(bool onlyExterior)
 {
@@ -1331,7 +1278,7 @@ void occPreGLWidget::hideAllTheOtherBodies()
     //! the shapes visible in context
     //! ------------------------------
     AIS_ListOfInteractive listOfVisible;
-    occContext->ObjectsByDisplayStatus(AIS_KOI_Shape,0,AIS_DS_Displayed,listOfVisible);
+    occContext->ObjectsByDisplayStatus(AIS_KOI_Shape,-1,AIS_DS_Displayed,listOfVisible);
 
     //! ------------------------------------
     //! the list of the shapes in selection
@@ -1339,8 +1286,9 @@ void occPreGLWidget::hideAllTheOtherBodies()
     AIS_ListOfInteractive listOfSelected;
     for(occContext->InitSelected();occContext->MoreSelected();occContext->NextSelected())
     {
-        const occHandle(AIS_ExtendedShape) &aShape = occHandle(AIS_ExtendedShape)::DownCast(occContext->SelectedInteractive());
-        listOfSelected.Append(aShape);
+        const occHandle(AIS_ExtendedShape) &anAISShape = occHandle(AIS_ExtendedShape)::DownCast(occContext->SelectedInteractive());
+        if(anAISShape.IsNull()) continue;
+        listOfSelected.Append(anAISShape);
     }
 
     //! -------------------------------------------
@@ -1348,12 +1296,14 @@ void occPreGLWidget::hideAllTheOtherBodies()
     //! -------------------------------------------
     for(AIS_ListIteratorOfListOfInteractive it(listOfVisible); it.More(); it.Next())
     {
-        const occHandle(AIS_ExtendedShape) &curShape = occHandle(AIS_ExtendedShape)::DownCast(it.Value());
-        if(listOfSelected.Contains(curShape)==false)
+        const occHandle(AIS_ExtendedShape) &curAISShape = occHandle(AIS_ExtendedShape)::DownCast(it.Value());
+        if(curAISShape.IsNull()) continue;
+        if(listOfSelected.Contains(curAISShape)==false)
         {
-            curShape->setShapeVisibility(false);
-            occContext->Erase(curShape,false);
-            occMeshContext->Erase(myMapOfInteractiveMeshes.value(curShape->index()),false);
+            curAISShape->setShapeVisibility(false);
+            int index = curAISShape->index();
+            occContext->Erase(curAISShape,false);
+            occMeshContext->Erase(myMapOfInteractiveMeshes.value(index),false);
         }
     }
     occContext->UpdateCurrentViewer();
@@ -1439,7 +1389,7 @@ void occPreGLWidget::showFaceMesh()
 #endif
 
 #ifdef USE_FACE_DS_BUILDER
-#include <facedatasourcebuilder.h>
+#include <datasourcebuilder.h>
 #include <indexedmapofmeshdatasources.h>
 void occPreGLWidget::showFaceMesh()
 {
@@ -1459,7 +1409,7 @@ void occPreGLWidget::showFaceMesh()
 
     cout<<"occPreGLWidget::showFaceMesh()->____number of selected faces: "<<listOfFaces.length()<<"____"<<endl;
 
-    faceDataSourceBuilder aFaceDSBuilder;
+    dataSourceBuilder aFaceDSBuilder;
     aFaceDSBuilder.setFaces(listOfFaces);
     aFaceDSBuilder.setDataBase(myDS2);
 
@@ -2594,11 +2544,8 @@ void occPreGLWidget::displayColoredSubshapes(const TopTools_ListOfShape &listOfS
     //! ---------------------------
     //! recompute the presentation
     //! ---------------------------
-    //for(std::map<int,occHandle(AIS_InteractiveObject)>::iterator it = myMapOfInteractiveShapes.begin(); it!=myMapOfInteractiveShapes.end(); ++it)
     for(QMap<int,occHandle(AIS_InteractiveObject)>::iterator it = myMapOfInteractiveShapes.begin(); it!=myMapOfInteractiveShapes.end(); ++it)
     {
-        //std::pair<int,occHandle(AIS_InteractiveObject)> apair = *it;
-        //const occHandle(AIS_ColoredShape) &AISShape = occHandle(AIS_ColoredShape)::DownCast(apair.second);
         const occHandle(AIS_ColoredShape) &AISShape = occHandle(AIS_ColoredShape)::DownCast(it.value());
         occContext->RecomputePrsOnly(AISShape,Standard_False);
     }
@@ -2608,46 +2555,51 @@ void occPreGLWidget::displayColoredSubshapes(const TopTools_ListOfShape &listOfS
     if(updateViewer) occContext->UpdateCurrentViewer();
 }
 
-//! --------------------------------
+//! -------------------
 //! function: hideBody
-//! details:  hide a list of bodies
-//! --------------------------------
+//! details:
+//! -------------------
 void occPreGLWidget::hideBody(const TColStd_ListOfInteger &listOfBodyNumbers)
 {
     cout<<"occPreGLWidget::hideBody()->____function called____"<<endl;
-    cout<<"occPreGLWidget::hideBody()->____number of bodies to hide: "<<listOfBodyNumbers.Extent()<<"____"<<endl;
-    TColStd_ListIteratorOfListOfInteger anIter;
-    for(anIter.Initialize(listOfBodyNumbers); anIter.More(); anIter.Next())
+    for(TColStd_ListIteratorOfListOfInteger anIter(listOfBodyNumbers); anIter.More(); anIter.Next())
     {
         int bodyIndex = anIter.Value();
-        const occHandle(AIS_ExtendedShape) &IO = occHandle(AIS_ExtendedShape)::DownCast(myMapOfInteractiveShapes.value(bodyIndex));
-        IO->setShapeVisibility(Standard_False);
-        //occContext->Remove(IO,false);
-        occContext->Erase(IO, false);
+        const occHandle(AIS_ExtendedShape) &anAISShape = occHandle(AIS_ExtendedShape)::DownCast(myMapOfInteractiveShapes.value(bodyIndex));
+        if(anAISShape.IsNull()) continue;
+        anAISShape->setShapeVisibility(Standard_False);
+
+        occContext->Unhilight(anAISShape,false);    // remove highlight before erasing
+        occContext->Erase(anAISShape, false);
     }
 
     //! -------------------------------------------------------------------------
     //! now the selection modes must be reactivated, because when the
     //! context is closed, the selection modes (and the selection list) are lost
     //! -------------------------------------------------------------------------
-    this->reactivateSelectionMode();
+    //this->reactivateSelectionMode(); //cesere
+
     occContext->UpdateCurrentViewer();
 }
 
-//! ----------------------------------------------
-//! function - slot: show body
-//! details: show a list of bodies only if active
-//! ----------------------------------------------
+//! -------------------
+//! function: showBody
+//! details:
+//! -------------------
 void occPreGLWidget::showBody(const TColStd_ListOfInteger &listOfBodies)
 {
-    cout<<"occPreGLWidget::showBody()->____function called____"<<endl;
-    TColStd_ListIteratorOfListOfInteger anIter;
-    for(anIter.Initialize(listOfBodies); anIter.More(); anIter.Next())
+    cout<<"occPreGLWidget::showBody()->____function called for n: "<<listOfBodies.Extent()<<" shapes____"<<endl;
+
+    //! the selection mode is the same for all the shapes
+    TopAbs_ShapeEnum shapeSelectionMode = this->curSelectionMode();
+    int displayMode = occContext->DisplayMode();
+    for(TColStd_ListIteratorOfListOfInteger it(listOfBodies); it.More(); it.Next())
     {
-        int bodyIndex = anIter.Value();
-        const occHandle(AIS_ExtendedShape) &IO = occHandle(AIS_ExtendedShape)::DownCast(myMapOfInteractiveShapes.value(bodyIndex));
-        occContext->Display(IO,false);
-        IO->setShapeVisibility(Standard_True);
+        int bodyIndex = it.Value();
+        const occHandle(AIS_ExtendedShape) &curAISShape = occHandle(AIS_ExtendedShape)::DownCast(myMapOfInteractiveShapes.value(bodyIndex));
+        if(curAISShape.IsNull()) continue;
+        occContext->Display(curAISShape,displayMode,AIS_Shape::SelectionMode(shapeSelectionMode),true,AIS_DS_Displayed);
+        curAISShape->setShapeVisibility(Standard_True);
     }
 
     //! -------------------------------------------------------------------------
@@ -2655,6 +2607,7 @@ void occPreGLWidget::showBody(const TColStd_ListOfInteger &listOfBodies)
     //! context is closed, the selection modes (and the selection list) are lost
     //! -------------------------------------------------------------------------
     this->reactivateSelectionMode();
+
     occContext->UpdateCurrentViewer();
 }
 
@@ -2685,10 +2638,10 @@ void occPreGLWidget::highlightBody(const std::vector<int> &listOfBodyNumbers)
     occContext->UpdateCurrentViewer();
 }
 
-//! ------------------------------------------------------
+//! --------------------------
 //! function: unhighlightBody
-//! details:  slot - remove the highlight from the bodies
-//! ------------------------------------------------------
+//! details:
+//! --------------------------
 void occPreGLWidget::unhighlightBody(bool updateViewer)
 {
     AIS_ListOfInteractive AISList;
@@ -2698,10 +2651,10 @@ void occPreGLWidget::unhighlightBody(bool updateViewer)
     if(updateViewer==true) occContext->UpdateCurrentViewer();
 }
 
-//! --------------------------------------------------------------------
+//! ---------------------------
 //! function: displayShapeCopy
-//! details:  aim: showing a boundary condition on a geometry selection
-//! --------------------------------------------------------------------
+//! details:
+//! ---------------------------
 void occPreGLWidget::displayShapeCopy(const TopTools_ListOfShape &list1,
                                       const TopTools_ListOfShape &list2,
                                       Quantity_NameOfColor color1,
@@ -2709,7 +2662,6 @@ void occPreGLWidget::displayShapeCopy(const TopTools_ListOfShape &list1,
                                       QVariant options)
 {
     //cout<<"occPreGLWidget::displayShapeCopy()->____function called____"<<endl;
-
     const double tol = 1e-2;
 
     //! ------------------------------
@@ -2748,26 +2700,26 @@ void occPreGLWidget::displayShapeCopy(const TopTools_ListOfShape &list1,
                 myBuilder1.Add(myCompound1,s);
             }
             anOldShape1 = new AIS_ColoredShape(myCompound1);
-            //anOldShape1->SetZLayer(Graphic3d_ZLayerId_Top);
+            //anOldShape1->SetZLayer(Graphic3d_ZLayerId_Top);     // z-layer on top
 
             //! -----------------------
             //! needed for shaded view
             //! -----------------------
             if(!occContext->DefaultDrawer()->IsAutoTriangulation()) occContext->DefaultDrawer()->SetAutoTriangulation(Standard_True);
-            anOldShape1->SetTransparency(0.5);
+            anOldShape1->SetTransparency(0.0);
 
             //! ----------------------
             //! hide sphere wireframe
             //! ----------------------
             anOldShape1->Attributes()->SetFaceBoundaryDraw(false);
             occContext->SetColor(anOldShape1,Quantity_Color(Quantity_NOC_RED),false);
-            occContext->Display(anOldShape1,1,-1,false);
+            //occContext->Display(anOldShape1,AIS_Shaded,-1,false,false,AIS_DS_Temporary);
+            occContext->Display(anOldShape1,false);
         }
         break;
 
         case TopAbs_EDGE:
         {
-            cout<<"____handling edge____"<<endl;
             myBuilder1.MakeCompound(myCompound1);
 
             //! -----------------------------------------------------------------------
@@ -2778,11 +2730,10 @@ void occPreGLWidget::displayShapeCopy(const TopTools_ListOfShape &list1,
             //! -----------------------------------------------------------------------
             if(options.toBool())
             {
-                cout<<"____handling edge: a mesh control___"<<endl;
+                //cout<<"____handling edge: a mesh control___"<<endl;
                 TopTools_ListIteratorOfListOfShape itEdges;
                 for(itEdges.Initialize(list1);itEdges.More();itEdges.Next())
                 {
-                    cout<<"____accessing the edge BRep____"<<endl;
                     //! -------------------------------------------
                     //! access the BRep representation of the edge
                     //! -------------------------------------------
@@ -2790,16 +2741,16 @@ void occPreGLWidget::displayShapeCopy(const TopTools_ListOfShape &list1,
                     if(BRep_Tool::Degenerated(edge)) continue;
                     BRepAdaptor_Curve BRepAdaptor(edge);
                     GeomAdaptor_Curve curve = BRepAdaptor.Curve();
-                    //! -------------------------------------------
+                    //! ----------------------------
                     //! calculate the actual length
-                    //! -------------------------------------------
+                    //! ----------------------------
                     CPnts_AbscissaPoint CP;
                     CP.Init(curve);
 
-                    double L = CP.Length(curve,tol);
+                    double L = CP.Length(curve,tol);        // length of the selected edge
                     double newDeltaL;
                     int NbDivisions = 1;
-                    //cout<<"____curve length: " <<L<<"____"<<endl;
+
                     //! ----------------------------------------------
                     //! retrieve the element size/number of divisions
                     //! from the GUI
@@ -2875,20 +2826,19 @@ void occPreGLWidget::displayShapeCopy(const TopTools_ListOfShape &list1,
                 //! ----------------------------------------
                 anOldShape1->Attributes()->SetFaceBoundaryDraw(false);
             }
-            else
+            else    // not a mesh control
             {
                 //! ----------------------------------------------
                 //! build a thick cylinder to overlap to the edge
                 //! not working... to do
                 //! ----------------------------------------------
-                cout<<"____handling edge: not a mesh control___"<<endl;
                 for(TopTools_ListIteratorOfListOfShape itEdges(list1); itEdges.More(); itEdges.Next())
                 {
                     myBuilder1.Add(myCompound1,itEdges.Value());
                 }
-            }
-
-            occContext->Display(anOldShape1,1,-1,false);
+            }            
+            //occContext->Display(anOldShape1,AIS_Shaded,-1,false,false,AIS_DS_Temporary);
+            occContext->Display(anOldShape1,false);
         }
             break;
 
@@ -2905,18 +2855,16 @@ void occPreGLWidget::displayShapeCopy(const TopTools_ListOfShape &list1,
             }
             anOldShape1 = new AIS_Shape(myCompound1);
 
-            //! ----------------------
-            //! use the model z-layer
-            //! ----------------------
-            //anOldShape1->SetZLayer(Graphic3d_ZLayerId_Top);
+            //anOldShape1->SetZLayer(Graphic3d_ZLayerId_Top);     // z-layer on top
             anOldShape1->SetColor(color1);
             anOldShape1->Attributes()->ShadingAspect()->SetTransparency(0.5,Aspect_TOFM_FRONT_SIDE);
             anOldShape1->Attributes()->ShadingAspect()->SetTransparency(1.0,Aspect_TOFM_BACK_SIDE);
             //! ----------------------------------------------------------------------------
-            //! display: second argument: Shaded mode: third argument: no selection allowed
+            //! display: second argument: shaded mode: third argument: no selection allowed
             //! does not update the viewer (done at the end)
             //! ----------------------------------------------------------------------------
-            occContext->Display(anOldShape1,1,-1,false);
+            //occContext->Display(anOldShape1,AIS_Shaded,-1,false,false,AIS_DS_Temporary);
+            occContext->Display(anOldShape1,false);
         }
             break;
         }
@@ -2939,6 +2887,7 @@ void occPreGLWidget::displayShapeCopy(const TopTools_ListOfShape &list1,
                 myBuilder2.Add(myCompound2,anIter.Value());
             }
             anOldShape2 = new AIS_ColoredShape(myCompound2);
+            //anOldShape2->SetZLayer(Graphic3d_ZLayerId_Top);
             anOldShape2->SetColor(color2);
             anOldShape2->Attributes()->ShadingAspect()->SetTransparency(0.0,Aspect_TOFM_FRONT_SIDE);
             anOldShape2->Attributes()->ShadingAspect()->SetTransparency(1.0,Aspect_TOFM_BACK_SIDE);
@@ -2946,7 +2895,8 @@ void occPreGLWidget::displayShapeCopy(const TopTools_ListOfShape &list1,
             //! display: second argument: Shaded mode: third argument: no selection allowed
             //! does not update the viewer (done at the end)
             //! ----------------------------------------------------------------------------
-            occContext->Display(anOldShape2,1,-1,false);
+            //occContext->Display(anOldShape2,AIS_Shaded,-1,false,false,AIS_DS_Temporary);
+            occContext->Display(anOldShape2,false);
         }
         else
         {
@@ -2960,7 +2910,6 @@ void occPreGLWidget::displayShapeCopy(const TopTools_ListOfShape &list1,
 void occPreGLWidget::displayShapeCopy1(const TopTools_ListOfShape &listShapes, Quantity_NameOfColor color)
 {
     cout<<"occPreGLWidget::displayShapeCopy1()->____function called____"<<endl;
-
     TopoDS_Compound myCompound1;
     static occHandle(AIS_Shape) anOldShape1;
 
@@ -3005,7 +2954,7 @@ void occPreGLWidget::displayShapeCopy1(const TopTools_ListOfShape &listShapes, Q
             //! display: second argument: Shaded mode: third argument: no selection allowed
             //! does not update the viewer (done at the end)
             //! ----------------------------------------------------------------------------
-            occContext->Display(anOldShape1,1,-1,false);
+            occContext->Display(anOldShape1,AIS_Shaded,-1,false,false,AIS_DS_Temporary);
         }
             break;
         }
@@ -3062,7 +3011,7 @@ void occPreGLWidget::displayShapeCopy2(const TopTools_ListOfShape &listShapes, Q
             //! display: second argument: Shaded mode: third argument: no selection allowed
             //! does not update the viewer (done at the end)
             //! ----------------------------------------------------------------------------
-            occContext->Display(anOldShape1,1,-1,false);
+            occContext->Display(anOldShape1,AIS_Shaded,-1,false,false,AIS_DS_Temporary);
         }
             break;
         }
@@ -3270,8 +3219,8 @@ void occPreGLWidget::displayTriangulation(const TopoDS_Shape &aShape)
             }
         }
     }
-    occHandle(AIS_Shape) c = new AIS_Shape(Comp);
-    occContext->Display(c,Standard_True);
+    occHandle(AIS_Shape) shapeTriangulation = new AIS_Shape(Comp);
+    occContext->Display(shapeTriangulation,AIS_WireFrame,-1,false,false,AIS_DS_Temporary);
     occContext->UpdateCurrentViewer();
 }
 
@@ -3345,7 +3294,6 @@ void occPreGLWidget::displayCurvatureMap()
 {
     cout<<"occPreGLWidget::displayCurvatureMap()->____function called____"<<endl;
     this->hideAllMeshes();
-
     occContext->InitSelected();
     if(occContext->MoreSelected())
     {
@@ -3390,17 +3338,26 @@ void occPreGLWidget::displayCurvatureMap()
         occHandle(Ng_MeshVS_DataSourceFace) summedDS = new Ng_MeshVS_DataSourceFace(faceMeshDSlist);
 
         occHandle(MeshVS_Mesh) coloredMesh;
-        int mode = 1;   //! Gaussian curvature
-        summedDS->computeDiscreteCurvature(mode);
+        //int mode = 1;   //! Gaussian curvature
+        //summedDS->computeDiscreteCurvature(mode);
+        //std::map<int,double> curvatureData; //! patch: convert QMap<int,int> into std::map<int,int>
+        //for(QMap<int,double>::iterator it = summedDS->myCurvature.begin(); it != summedDS->myCurvature.end(); it++)
+        //    curvatureData.insert(std::make_pair(it.key(),it.value()));
+        //MeshTools::buildColoredMesh(summedDS,curvatureData,coloredMesh,0,6.28,10,true);
 
-        //! patch: convert QMap<int,int> into std::map<int,int>
-        std::map<int,double> curvatureData;
-        for(QMap<int,double>::iterator it = summedDS->myCurvature.begin(); it != summedDS->myCurvature.end(); it++)
+        std::map<int,double> mapOfAngleDeficit;
+        MeshTools::computeAngleDefectMap(summedDS,mapOfAngleDeficit);
+        MeshTools::buildColoredMesh(summedDS,mapOfAngleDeficit,coloredMesh,0,6.28,10,true);
+
+        //FILE *fp = fopen("D:/curvature.txt","w");
+        FILE *fp = fopen("D:/angleDeficit.txt","w");
+
+        for(std::map<int,double>::iterator it = mapOfAngleDeficit.begin(); it!=mapOfAngleDeficit.end(); it++)
+        //for(std::map<int,double>::iterator it = curvatureData.begin(); it!=curvatureData.end(); it++)
         {
-            curvatureData.insert(std::make_pair(it.key(),it.value()));
+            fprintf(fp,"%d\t%lf\n",it->first,180*(1/3.1415926538)*it->second);
         }
-        MeshTools::buildColoredMesh(summedDS,curvatureData,coloredMesh,0,6.28,10,true);
-        //MeshTools::buildColoredMesh(summedDS,summedDS->myCurvatureGradient,coloredMesh,0,6.28,10,true);
+        fclose(fp);
 
         occMeshContext->Display(coloredMesh,false);
         occMeshContext->UpdateCurrentViewer();
@@ -3648,43 +3605,6 @@ void occPreGLWidget::updateClipPlaneCoefficients(int ID, const QVector<double> &
 }
 
 //! ----------------------------
-//! function: buildSlicedMeshIO
-//! details:  probably unused
-//! ----------------------------
-void occPreGLWidget::buildSlicedMeshIO(const QMap<int,occHandle(MeshVS_DataSource)> &slicedMeshDS)
-{
-    cout<<"occPreGLWidget::buildSlicedMeshIO()->____function called____"<<endl;
-    for(QMap<int,occHandle(MeshVS_DataSource)>::const_iterator it= slicedMeshDS.cbegin(); it!=slicedMeshDS.cend(); it++)
-    {
-        occHandle(Ng_MeshVS_DataSource3D) aSlicedMeshDS = occHandle(Ng_MeshVS_DataSource3D)::DownCast(it.value());
-        if(aSlicedMeshDS.IsNull()) continue;
-
-        //! ----------------------------------------
-        //! retrieve the color of the current shape
-        //! ----------------------------------------
-        int bodyIndex = it.key();
-        Quantity_NameOfColor colorName = this->shapeColor(bodyIndex).Name();
-
-        occHandle(MeshVS_Mesh) meshIO = new MeshVS_Mesh();
-        meshIO->SetDataSource(aSlicedMeshDS);
-        occHandle(MeshVS_MeshPrsBuilder) aBuilder = new MeshVS_MeshPrsBuilder(meshIO);
-        meshIO->AddBuilder(aBuilder,false);
-
-        Graphic3d_MaterialAspect aspect(Graphic3d_NOM_GOLD);
-        aspect.SetColor(colorName);
-
-        meshIO->GetDrawer()->SetMaterial(MeshVS_DA_FrontMaterial,aspect);
-        meshIO->GetDrawer()->SetBoolean(MeshVS_DA_DisplayNodes,false);
-        meshIO->GetDrawer()->SetBoolean(MeshVS_DA_ShowEdges,true);
-        meshIO->GetDrawer()->SetColor(MeshVS_DA_EdgeColor,Quantity_NOC_BLACK);
-        meshIO->SetDisplayMode(MeshVS_DMF_Shading);
-        occContext->Display(meshIO,false);
-    }
-    occContext->UpdateCurrentViewer();
-    cout<<"occPreGLWidget::buildSlicedMeshIO()->____exiting function____"<<endl;
-}
-
-//! ----------------------------
 //! function: setHiddenElements
 //! details:
 //! ----------------------------
@@ -3706,45 +3626,19 @@ void occPreGLWidget::setHiddenElements(const std::map<int,occHandle(TColStd_HPac
 //! function: applyCustomColors
 //! details:
 //! ----------------------------
-#include <StdSelect_BRepOwner.hxx>
 void occPreGLWidget::applyCustomColors(const QMap<GeometryTag,TopoDS_Shape> &subShapeMaps, Quantity_NameOfColor aColor, bool updateViewer)
 {
     if(subShapeMaps.isEmpty()) return;
-    //if(AIS_DisplayMode(occContext->DisplayMode())==AIS_Shaded)
-    //{
-        for(QMap<GeometryTag,TopoDS_Shape>::const_iterator it = subShapeMaps.cbegin(); it!=subShapeMaps.cend(); it++)
-        {
-            const GeometryTag &aTag = it.key();
-            const TopoDS_Shape &curSubShape = it.value();
-            int index = aTag.parentShapeNr;
-            const occHandle(AIS_ColoredShape) &aColored = occHandle(AIS_ColoredShape)::DownCast(myMapOfInteractiveShapes.value(index));
-            aColored->SetCustomColor(curSubShape,aColor);
-            occContext->RecomputePrsOnly(aColored,true,true);
-        }
-    //}
-
-    /*
-    static occHandle(AIS_Shape) tempShape;
-    if(AIS_DisplayMode(occContext->DisplayMode())==AIS_WireFrame)
+    for(QMap<GeometryTag,TopoDS_Shape>::const_iterator it = subShapeMaps.cbegin(); it!=subShapeMaps.cend(); it++)
     {
-        TopoDS_Compound aComp;
-        TopoDS_Builder aBuilder;
-        aBuilder.MakeCompound(aComp);
-        for(QMap<GeometryTag,TopoDS_Shape>::const_iterator it = subShapeMaps.cbegin(); it!=subShapeMaps.cend(); it++)
-        {
-            const TopoDS_Shape &curSubShape = it.value();
-            aBuilder.Add(aComp,curSubShape);
-        }
-        tempShape = new AIS_Shape(aComp);
-        occContext->SetColor(tempShape,aColor,false);
-        occContext->Display(tempShape,AIS_Shaded,-1,false,false);
+        const GeometryTag &aTag = it.key();
+        const TopoDS_Shape &curSubShape = it.value();
+        int index = aTag.parentShapeNr;
+        const occHandle(AIS_ColoredShape) &aColored = occHandle(AIS_ColoredShape)::DownCast(myMapOfInteractiveShapes.value(index));
+        aColored->SetCustomColor(curSubShape,aColor);
+        occContext->RecomputePrsOnly(aColored,true,true);
     }
-    AIS_ListOfInteractive l;
-    occContext->ObjectsInside(l,AIS_KOI_Shape,0);
-    cout<<"@ ----------------------"<<endl;
-    cout<<"@ objects inside: "<<l.Size()<<endl;
-    cout<<"@ ----------------------"<<endl;
-    */
+
     if(updateViewer==true) occContext->UpdateCurrentViewer();
 }
 
@@ -3766,6 +3660,7 @@ void occPreGLWidget::clipMesh()
     //! ------------------------------
     AIS_ListOfInteractive listOfIO;
     occMeshContext->ObjectsInside(listOfIO);
+
     for(AIS_ListIteratorOfListOfInteractive it(listOfIO); it.More(); it.Next())
     {
         const occHandle(MeshVS_Mesh) &aMesh = occHandle(MeshVS_Mesh)::DownCast(it.Value());
@@ -3775,7 +3670,6 @@ void occPreGLWidget::clipMesh()
         //! reset the hidden elements of the current mesh object
         //! -----------------------------------------------------
         aMesh->SetHiddenElems(new TColStd_HPackedMapOfInteger());
-
         const occHandle(MeshVS_DataSource) &aMeshDS = aMesh->GetDataSource();
         aSlicer.setMeshDataSource(aMeshDS);
 
@@ -3795,12 +3689,57 @@ void occPreGLWidget::clipMesh()
             if(isDone == false) return;
             hiddenElementIDs.Union(hiddenElementIDs,HHiddenElementIDs->Map());
         }
+
         occHandle(TColStd_HPackedMapOfInteger) mapOfHiddenElements = new TColStd_HPackedMapOfInteger;
+
         mapOfHiddenElements->ChangeMap() = hiddenElementIDs;
         aMesh->SetHiddenElems(mapOfHiddenElements);
+
         occMeshContext->RecomputePrsOnly(aMesh,false,false);
     }
     occMeshContext->UpdateCurrentViewer();
+    cout<<"occPreGLWidget::clipMesh()->____exiting function____"<<endl;
+
+    /*
+    //! ----------------------------------------------
+    //! slice by creating a slice mesh - experimental
+    //! ----------------------------------------------
+    for(AIS_ListIteratorOfListOfInteractive it(listOfIO); it.More(); it.Next())
+    {
+        const occHandle(MeshVS_Mesh) &aMesh = occHandle(MeshVS_Mesh)::DownCast(it.Value());
+        if(aMesh.IsNull()) continue;
+
+        const occHandle(MeshVS_DataSource) &aMeshDS = aMesh->GetDataSource();
+        if(aMeshDS.IsNull()) continue;
+
+        aSlicer.setMeshDataSource(aMeshDS);
+
+        for(QMap<int,occHandle(Graphic3d_ClipPlane)>::const_iterator itplane = myMapOfClipPlanes.cbegin(); itplane != myMapOfClipPlanes.cend(); itplane++)
+        {
+            const occHandle(Graphic3d_ClipPlane) &aClipPlane = itplane.value();
+            if(aClipPlane->IsOn()==false) continue;
+            Graphic3d_ClipPlane::Equation eq = aClipPlane->GetEquation();
+            double a = eq.GetData()[0];
+            double b = eq.GetData()[1];
+            double c = eq.GetData()[2];
+            double d = eq.GetData()[3];
+
+            occHandle(Ng_MeshVS_DataSourceFace) aSliceMesh;
+            bool isDone = aSlicer.planeMeshIntersection(aSliceMesh,a,b,c,d);
+            if(isDone == false)
+            {
+                cerr<<"____slicer failure____"<<endl;
+                continue;
+            }
+            this->displayMesh(aSliceMesh);
+        }
+    }
+    occMeshContext->UpdateCurrentViewer();
+    //! -----------------
+    //! end experimental
+    //! -----------------
+    */
+    //cout<<"occPreGLWidget::clipMesh()->____exiting function____"<<endl;
 }
 
 //! ---------------

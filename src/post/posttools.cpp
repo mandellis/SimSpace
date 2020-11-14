@@ -76,11 +76,11 @@ void postTools::principalComponents(double *sik, double *values)
 //! function: getStepSubStepByTimeDTM
 //! details:
 //! -----------------------------------
-bool postTools::getStepSubStepByTimeDTM(QMap<double,QVector<int>> discreteTimeMap,double analysisTime,
+bool postTools::getStepSubStepByTimeDTM(QMap<double,QVector<int>> discreteTimeMap,
+                                        double analysisTime,
                                         int &foundStep,
                                         int &foundSubStep)
 {
-    QMap<double,QVector<int>>::const_iterator mapIt;
     QVector<int> t;
     double curAnalysisTime;
     if(analysisTime == 0.0)
@@ -89,7 +89,7 @@ bool postTools::getStepSubStepByTimeDTM(QMap<double,QVector<int>> discreteTimeMa
         foundSubStep = discreteTimeMap.last().at(2);
         return true;
     }
-    for(mapIt = discreteTimeMap.cbegin(); mapIt!= discreteTimeMap.cend(); ++mapIt)
+    for(QMap<double,QVector<int>>::const_iterator mapIt = discreteTimeMap.cbegin(); mapIt!= discreteTimeMap.cend(); ++mapIt)
     {
         curAnalysisTime = mapIt.key();
         //cout<<"postTools::getStepSubStepbyTimeDTM->____curAnalysisTime"<<curAnalysisTime<<", analysisTime "<<analysisTime<<endl;
@@ -99,22 +99,21 @@ bool postTools::getStepSubStepByTimeDTM(QMap<double,QVector<int>> discreteTimeMa
             foundStep = t.at(1);
             foundSubStep = t.at(2);
             cout<<"postTools::getStepSubStepbyTimeDTM->____step"<<foundStep<<", substep "<<foundSubStep<<endl;
-
             return true;
         }
     }
     return false;
 }
 
-//! ---------------------------------------------
+//! ---------------------------------
 //! function: getStepSubStepBySetDTM
 //! details:
-//! ---------------------------------------------
+//! ---------------------------------
 bool postTools::getStepSubStepBySetDTM(QMap<double, QVector<int>> discreteTimeMap,
-                                        int setNumber,
-                                        double &analysisTime,
-                                        int &foundStep,
-                                        int &foundSubStep)
+                                       int setNumber,
+                                       double &analysisTime,
+                                       int &foundStep,
+                                       int &foundSubStep)
 {
     QMap<double,QVector<int>>::const_iterator mapIt;
     int curSetNumber;

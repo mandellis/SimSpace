@@ -216,9 +216,6 @@ public slots:
     //! build the mesh interactive object
     void buildMeshIOs();
 
-    //! build the sliced mesh interactive object
-    void buildSlicedMeshIO(const QMap<int, opencascade::handle<MeshVS_DataSource> > &slicedMeshDS);
-
     //! set hidden elements
     void setHiddenElements(const std::map<int,occHandle(TColStd_HPackedMapOfInteger)> &hiddenElements);
 

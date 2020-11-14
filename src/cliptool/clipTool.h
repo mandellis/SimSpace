@@ -106,15 +106,7 @@ private:
     int myCurNumberOfClipPlanes;
 
     meshDataBase *myMDB;
-    //QMap<int,occHandle(MeshVS_DataSource)> mySlicedMeshedDS;
-    //QMap<int,occHandle(MeshVS_Mesh)> mySlicedMeshIO;
     std::map<int,occHandle(TColStd_HPackedMapOfInteger)> myHiddenElements;
-
-    //! --------------------------------------------------
-    //! key => plane ID
-    //! value => pair(body index,sliced mesh data source)
-    //! --------------------------------------------------
-    //QMap<int,std::vector<std::pair<int,occHandle(MeshVS_DataSource)>>> myPlaneToSlicedMeshes;
 
 public:
 
@@ -177,22 +169,13 @@ signals:
     void clipPlaneChanged();
     void clipPlaneEnabled(int,bool);
 
-protected:
-
-    virtual void resizeEvent(QResizeEvent *event) override
-    {
-        ;
-    }
-
 private:
 
     //! retrieve the map of clip planes (ID, {coefficients}
     int retrieveActiveClipPlanes(std::map<int, std::vector<double> > &mapOfClipPlanes);
 
-    void setCurrentClipPlane(int curClipPlaneID)
-    {
-        myOCCViewer->setCurrentClipPlane(curClipPlaneID);
-    }
+    //! set current clip plane
+    void setCurrentClipPlane(int curClipPlaneID);
 
     //! translate plane
     void translatePlane(double &a, double &b, double &c, double &d, const double &t);

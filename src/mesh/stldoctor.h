@@ -30,6 +30,7 @@
 //! ----------------
 #include <mesh.h>
 
+class QProgressIndicator;
 class QProcess;
 
 class STLdoctor: public QObject
@@ -47,6 +48,9 @@ private:
 
     //! MeshFix QProcess
     QProcess *MeshFix;
+
+    //! progress indicator
+    QProgressIndicator *myProgressIndicator;
 
 public:
 
@@ -67,8 +71,8 @@ public:
                       double pairDistance=0.01,
                       const std::vector<mesh::tolerantPoint> &fixedPoints = std::vector<mesh::tolerantPoint>());
 
-    //! list small triangles
-    //static std::list<occHandle(StlMesh_MeshTriangle)> getSmallTriangles(const occHandle(StlMesh_Mesh) &aSTLMesh_Mesh, double AreaThreshold);
+    //! set progress indicator
+    void setProgressIndicator(QProgressIndicator *aProgressIndicator);
 
 private slots:
 

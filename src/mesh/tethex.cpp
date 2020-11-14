@@ -291,7 +291,7 @@ userMessage TetHex::makeHexa(const occHandle(Ng_MeshVS_DataSource3D) &aTetMesh, 
     //! -----------------------------------------
     //! all the hexa element after tet splitting
     //! -----------------------------------------
-    QList<meshElementByCoords> allHexaElements;
+    std::vector<meshElementByCoords> allHexaElements;
 
     //! -------------------------------
     //! iterate over the mesh elements
@@ -331,7 +331,7 @@ userMessage TetHex::makeHexa(const occHandle(Ng_MeshVS_DataSource3D) &aTetMesh, 
         meshElementByCoords curMeshElement;
         curMeshElement.pointList<<pointList;
         std::vector<meshElementByCoords> hexaElements = tetSplitter::splitTet(curMeshElement);
-        for(int i=0; i<4; i++) allHexaElements<<hexaElements[i];
+        for(int i=0; i<4; i++) allHexaElements.push_back(hexaElements[i]);
 
         //! --------------------
         //! send progress event
@@ -349,8 +349,7 @@ userMessage TetHex::makeHexa(const occHandle(Ng_MeshVS_DataSource3D) &aTetMesh, 
         }
     }
 
-
-    if(allHexaElements.length()<4)
+    if(allHexaElements.size()<4)
     {
         um.isDone = false;
         um.message = QString("Invalid mesh");

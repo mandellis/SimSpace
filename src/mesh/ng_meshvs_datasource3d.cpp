@@ -65,12 +65,12 @@ QTime Ng_MeshVS_DataSource3D::clock()
 //! function: constructor
 //! details:  from a list of 3D elements
 //! -------------------------------------
-Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(const QList<meshElementByCoords> &meshElements,
+Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(const std::vector<meshElementByCoords> &meshElements,
                                                bool autoNumberElements,
                                                bool autoNumberNodes)
 {
-    cout<<"Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D()->____constructor from a QList meshElementByCoords called____"<<endl;
-    myNumberOfElements = meshElements.length();
+    //cout<<"Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D()->____constructor from a QList meshElementByCoords called____"<<endl;
+    myNumberOfElements = (int)meshElements.size();
     if(myNumberOfElements<1)
     {
         cerr<<"Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D()->____the mesh has no element____"<<endl;
@@ -80,7 +80,7 @@ Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(const QList<meshElementByCoords> 
     myElemType = new TColStd_HArray1OfInteger(1,myNumberOfElements);
     myElemNodes = new TColStd_HArray2OfInteger(1,myNumberOfElements,1,20);
 
-    QMap<mesh::meshPoint,int> meshPointMap;
+    std::map<mesh::meshPoint,int> meshPointMap;
 
     int n = 0;
     for(int i=1; i<=myNumberOfElements; i++)
@@ -95,11 +95,10 @@ Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(const QList<meshElementByCoords> 
         myElementsMap.Add(globalElementID);
 
         int NbNodes = curMeshElement.pointList.length();
-
         for(int j=0; j<NbNodes; j++)
         {
-            const mesh::meshPoint &curMeshPoint = curMeshElement.pointList.at(j);
-            if(!meshPointMap.contains(curMeshPoint))
+            const mesh::meshPoint &curMeshPoint = curMeshElement.pointList[j];
+            if(meshPointMap.count(curMeshPoint)==false)
             {
                 //! ----------------------------------------------------------
                 //! if autoNumberNodes == true the ID of the node is the ID
@@ -109,12 +108,12 @@ Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(const QList<meshElementByCoords> 
                 if(autoNumberNodes)
                 {
                     n++;
-                    meshPointMap.insert(curMeshPoint,n);
+                    meshPointMap.insert(std::make_pair(curMeshPoint,n));
                 }
                 else
                 {
                     int globalNodeID = curMeshPoint.ID;
-                    meshPointMap.insert(curMeshPoint,globalNodeID);
+                    meshPointMap.insert(std::make_pair(curMeshPoint,globalNodeID));
                 }
             }
         }
@@ -137,10 +136,10 @@ Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(const QList<meshElementByCoords> 
 
     int i=0;
     int localNodeID = 0;
-    for(QMap<mesh::meshPoint,int>::iterator it = meshPointMap.begin(); it!=meshPointMap.end(); ++it)
+    for(std::map<mesh::meshPoint,int>::iterator it = meshPointMap.begin(); it!=meshPointMap.end(); ++it)
     {
         localNodeID++;
-        i = it.value();
+        i = it->second;
 
         //! --------------------
         //! fill the nodes maps
@@ -151,7 +150,7 @@ Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(const QList<meshElementByCoords> 
         //! ------------------
         //! nodes coordinates
         //! ------------------
-        const mesh::meshPoint &aP = it.key();
+        const mesh::meshPoint &aP = it->first;
         myNodeCoords->SetValue(localNodeID,1,aP.x);
         myNodeCoords->SetValue(localNodeID,2,aP.y);
         myNodeCoords->SetValue(localNodeID,3,aP.z);
@@ -169,17 +168,14 @@ Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(const QList<meshElementByCoords> 
         for(int j=0; j<NbNodes; j++)
         {
             const mesh::meshPoint &curMeshPoint = curmeshElementByCoords.pointList.at(j);
-            int indexOfPoint = meshPointMap.value(curMeshPoint);
+            int indexOfPoint = meshPointMap.at(curMeshPoint);
             myElemNodes->SetValue(i,j+1,indexOfPoint);
         }
     }
-
     //! ------------------
     //! elements topology
     //! ------------------
     this->buildElementsTopology();
-
-    cout<<"Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D()->____constructor from a QList of meshElementByCoords: OK____"<<endl;
 }
 
 //! ----------------------
@@ -520,7 +516,7 @@ Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(const QString &tetgenEleFileName,
     //! read the nodes
     //! First line: <# of points> <dimension (3)> <# of attributes> <boundary markers (0 or 1)>
     //! ----------------------------------------------------------------------------------------
-    cout<<"____Start reading: "<<tetgenNodeFileName.toStdString()<<"____"<<endl;
+    //cout<<"____Start reading: "<<tetgenNodeFileName.toStdString()<<"____"<<endl;
     unsigned int NbPoints, dimension, NbAttributes, boundaryMarkerFlag;
     fscanf(tetgenNodeFile,"%d%d%d%d",&NbPoints,&dimension,&NbAttributes,&boundaryMarkerFlag);
 
@@ -544,148 +540,84 @@ Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(const QString &tetgenEleFileName,
         else
         {
             isNodeReading = false;
-            cout<<"____error in reading nodes____"<<endl;
+            cout<<"Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D()->____error in reading nodes____"<<endl;
             break;
         }
     }
 
-    if(isNodeReading==true)
+    if(isNodeReading==false)
     {
-        cout<<"____Nodes reading OK____"<<endl;
+        cout<<"Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D()->____error in nodes file____"<<endl;
+        return;
     }
 
-    if(isNodeReading==true)
+    //cout<<"____Start reading elements file: "<<tetgenEleFileName.toStdString()<<"____"<<endl;
+
+    //! ----------------------------------------------------------------------------------------
+    //! read the elements
+    //! First line: <# of points> <dimension (3)> <# of attributes> <boundary markers (0 or 1)>
+    //! ----------------------------------------------------------------------------------------
+    unsigned int NbElements;
+    //unsigned int NbPoints;
+    unsigned int region;
+    unsigned int eNumber;
+    unsigned int n1,n2,n3,n4,n5,n6,n7,n8,n9,n10;
+    fscanf(tetgenEleFile,"%d%d%d",&NbElements,&NbPoints,&region);
+
+    myNumberOfElements = NbElements;
+    myElemType = new TColStd_HArray1OfInteger(1,NbElements);
+    myElemNodes = new TColStd_HArray2OfInteger(1,NbElements,1,10);
+
+    //cout<<"____Number of volume elements: "<<NbElements<<"____"<<endl;
+
+    bool isElementReadingOk = true;
+    for(unsigned int line = 1; line<=NbElements; line++)
     {
-        cout<<"____Start reading: "<<tetgenEleFileName.toStdString()<<"____"<<endl;
-        //!ccout("____Start reading: "+tetgenEleFileName+"____");
-
-        //! ----------------------------------------------------------------------------------------
-        //! read the elements
-        //! First line: <# of points> <dimension (3)> <# of attributes> <boundary markers (0 or 1)>
-        //! ----------------------------------------------------------------------------------------
-        unsigned int NbElements;
-        unsigned int NbPoints;
-        unsigned int region;
-        unsigned int eNumber;
-        unsigned int n1,n2,n3,n4,n5,n6,n7,n8,n9,n10;
-        fscanf(tetgenEleFile,"%d%d%d",&NbElements,&NbPoints,&region);
-
-        myNumberOfElements = NbElements;
-        myElemType = new TColStd_HArray1OfInteger(1,NbElements);
-        myElemNodes = new TColStd_HArray2OfInteger(1,NbElements,1,10);
-
-        cout<<"____Number of volume elements: "<<NbElements<<"____"<<endl;
-
-        bool isElementReadingOk = true;
-        for(unsigned int line = 1; line<=NbElements; line++)
+        if(5==fscanf(tetgenEleFile,"%d%d%d%d%d",&eNumber,&n1,&n2,&n3,&n4))
         {
-            if(5==fscanf(tetgenEleFile,"%d%d%d%d%d",&eNumber,&n1,&n2,&n3,&n4))
-            {
-                //! --------------------------
-                //! use Tetgen nodal ordering
-                //! --------------------------
-                myElemType->SetValue(eNumber,TET);
-                myElemNodes->SetValue(eNumber,1,n1);
-                myElemNodes->SetValue(eNumber,2,n2);
-                myElemNodes->SetValue(eNumber,4,n3);
-                myElemNodes->SetValue(eNumber,3,n4);
+            //! --------------------------
+            //! use Tetgen nodal ordering
+            //! --------------------------
+            myElemType->SetValue(eNumber,TET);
+            myElemNodes->SetValue(eNumber,1,n1);
+            myElemNodes->SetValue(eNumber,2,n2);
+            myElemNodes->SetValue(eNumber,4,n3);
+            myElemNodes->SetValue(eNumber,3,n4);
 
-                myElements.Add(eNumber);
-                myElementsMap.Add(eNumber);
-            }
-            else if(11==fscanf(tetgenEleFile,"%d%d%d%d%d%d%d%d%d%d%d",&eNumber,&n1,&n2,&n3,&n4,&n5,&n6,&n7,&n8,&n9,&n10))
-            {
-                //! --------------------------
-                //! use Tetgen nodal ordering
-                //! --------------------------
-                myElemType->SetValue(eNumber,TET10);
-                myElemNodes->SetValue(eNumber,1,n1);
-                myElemNodes->SetValue(eNumber,2,n2);
-                myElemNodes->SetValue(eNumber,3,n3);
-                myElemNodes->SetValue(eNumber,4,n4);
-                myElemNodes->SetValue(eNumber,5,n5);
-                myElemNodes->SetValue(eNumber,6,n6);
-                myElemNodes->SetValue(eNumber,7,n7);
-                myElemNodes->SetValue(eNumber,8,n8);
-                myElemNodes->SetValue(eNumber,9,n9);
-                myElemNodes->SetValue(eNumber,10,n10);
-            }
-            else
-            {
-                isElementReadingOk = false;
-                cout<<"____error in reading elements____"<<endl;
-                break;
-            }
+            myElements.Add(eNumber);
+            myElementsMap.Add(eNumber);
         }
-
-        if(isElementReadingOk==true)
+        else if(11==fscanf(tetgenEleFile,"%d%d%d%d%d%d%d%d%d%d%d",&eNumber,&n1,&n2,&n3,&n4,&n5,&n6,&n7,&n8,&n9,&n10))
         {
-            cout<<"____Elements reading OK____"<<endl;
-        }
-
-        //! --------------------------------
-        //! set the topological information
-        //! --------------------------------
-        if(isElementReadingOk==true)
-        {
-            cout<<"____Setting the topological information____"<<endl;
-            //! -------------------------------------------
-            //! topological information section
-            //! sequence of nodes for the 3D visualization
-            //! 1st order tet: definition of the faces
-            //! Face 1: 1-2-3
-            //! Face 2: 1-4-2
-            //! Face 3: 2-4-3
-            //! Face 4: 3-4-1
-            //! -------------------------------------------
-            TET4MeshData = new MeshVS_HArray1OfSequenceOfInteger(1,4);
-            TColStd_SequenceOfInteger face1, face2, face3, face4;
-
-            face1.Append(0); face1.Append(1); face1.Append(3);
-            face2.Append(0); face2.Append(2); face2.Append(1);
-            face3.Append(1); face3.Append(2); face3.Append(3);
-            face4.Append(3); face4.Append(2); face4.Append(0);
-
-            TET4MeshData->SetValue(1,face1);
-            TET4MeshData->SetValue(2,face2);
-            TET4MeshData->SetValue(3,face3);
-            TET4MeshData->SetValue(4,face4);
-
-            //! -------------------------------------------
-            //! sequence of nodes for the 3D visualization
-            //! 2nd order tet: definition of the faces
-            //! Face 1: 0-6-1-8-3-5
-            //! Face 2: 0-9-2-7-4-6
-            //! Face 3: 1-7-2-4-3-8
-            //! Face 4: 3-4-2-9-0-5
-            //! --------------------------------------------
-            TET10MeshData = new MeshVS_HArray1OfSequenceOfInteger(1,4);
-
-            face1.Clear(); face2.Clear(); face3.Clear(); face4.Clear();
-            face1.Append(0); face1.Append(6); face1.Append(1); face1.Append(8); face1.Append(3); face1.Append(5);
-            face2.Append(0); face2.Append(9); face2.Append(2); face2.Append(7); face2.Append(4); face2.Append(6);
-            face3.Append(1); face3.Append(7); face3.Append(2); face3.Append(4); face3.Append(3); face3.Append(8);
-            face4.Append(3); face4.Append(4); face4.Append(2); face4.Append(9); face4.Append(0); face4.Append(5);
-
-            TET10MeshData->SetValue(1,face1);
-            TET10MeshData->SetValue(2,face2);
-            TET10MeshData->SetValue(3,face3);
-            TET10MeshData->SetValue(4,face4);
+            //! --------------------------
+            //! use Tetgen nodal ordering
+            //! --------------------------
+            myElemType->SetValue(eNumber,TET10);
+            myElemNodes->SetValue(eNumber,1,n1);
+            myElemNodes->SetValue(eNumber,2,n2);
+            myElemNodes->SetValue(eNumber,3,n3);
+            myElemNodes->SetValue(eNumber,4,n4);
+            myElemNodes->SetValue(eNumber,5,n5);
+            myElemNodes->SetValue(eNumber,6,n6);
+            myElemNodes->SetValue(eNumber,7,n7);
+            myElemNodes->SetValue(eNumber,8,n8);
+            myElemNodes->SetValue(eNumber,9,n9);
+            myElemNodes->SetValue(eNumber,10,n10);
         }
         else
         {
-            //! ---------------------------------------------
-            //! reset the node maps and the node coordinates
-            //! ---------------------------------------------
-            myNodes.Clear();
-            myNodesMap.Clear();
-            myNodeCoords.Nullify();
-            myElements.Clear();
-            myElementsMap.Clear();
-            myElemNodes.Nullify();
+            isElementReadingOk = false;
+            cout<<"Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D()->____error in reading elements____"<<endl;
+            return;
         }
     }
-    cout<<"Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D()->____constructor from Tetgen files OK____"<<endl;
+
+    //! -------------------------
+    //! build elements toipology
+    //! -------------------------
+    this->buildElementsTopology();
+
+    //cout<<"Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D()->____constructor from Tetgen files OK____"<<endl;
 }
 
 //! -----------------------------------------------------------------------------
@@ -2011,7 +1943,7 @@ void Ng_MeshVS_DataSource3D::writeIntoStream(ofstream &os)
 
 //! -----------------------------------------
 //! function: buildFaceToElementConnectivity
-//! details:  optimization => use QHash
+//! details:
 //! -----------------------------------------
 void Ng_MeshVS_DataSource3D::buildFaceToElementConnectivity()
 {
@@ -2046,6 +1978,7 @@ void Ng_MeshVS_DataSource3D::buildFaceToElementConnectivity()
         for(int f=1; f<=NbFaces; f++)
         {
             TColStd_SequenceOfInteger indices = topology->Value(f);
+
             //! -------------------------
             //! create the meshElement2D
             //! -------------------------
@@ -2608,20 +2541,17 @@ void Ng_MeshVS_DataSource3D::buildCCXFaceToElementConnectivity(std::map<meshElem
 //!           the key of the input map should be the global element ID
 //!           update normals at elements, at nodes, and 1D boundary
 //! -------------------------------------------------------------------
-void Ng_MeshVS_DataSource3D::displaceMySelf(const QMap<int, gp_Vec> &displacementField)
+void Ng_MeshVS_DataSource3D::displaceMySelf(const QMap<int, QList<double>> &displacementField)
 {
-    for(QMap<int, gp_Vec>::const_iterator it = displacementField.cbegin(); it!= displacementField.cend(); ++it)
+    for(QMap<int, QList<double>>::const_iterator it = displacementField.cbegin(); it!= displacementField.cend(); ++it)
     {
         int globalNodeID = it.key();
         int localNodeID = this->myNodesMap.FindIndex(globalNodeID);
         if(localNodeID<0 || localNodeID>myNumberOfNodes) return;
-        const gp_Vec &curVec = it.value();
-        double dX = curVec.X();
-        double dY = curVec.Y();
-        double dZ = curVec.Z();
-        myNodeCoords->ChangeValue(localNodeID,1) = myNodeCoords->Value(localNodeID,1)+dX;
-        myNodeCoords->ChangeValue(localNodeID,2) = myNodeCoords->Value(localNodeID,2)+dY;
-        myNodeCoords->ChangeValue(localNodeID,3) = myNodeCoords->Value(localNodeID,3)+dZ;
+        const QList<double> &curVec = it.value();
+        myNodeCoords->ChangeValue(localNodeID,1) = myNodeCoords->Value(localNodeID,1)+curVec[0];
+        myNodeCoords->ChangeValue(localNodeID,2) = myNodeCoords->Value(localNodeID,2)+curVec[1];
+        myNodeCoords->ChangeValue(localNodeID,3) = myNodeCoords->Value(localNodeID,3)+curVec[2];
     }
 }
 
@@ -2629,7 +2559,7 @@ void Ng_MeshVS_DataSource3D::displaceMySelf(const QMap<int, gp_Vec> &displacemen
 //! function: displaceMySelf_asRigidAsPossible
 //! details:
 //! -------------------------------------------
-void Ng_MeshVS_DataSource3D::displaceMySelf_asRigidAsPossible(const QMap<int, gp_Vec> &displacementField,
+void Ng_MeshVS_DataSource3D::displaceMySelf_asRigidAsPossible(const QMap<int, QList<double>> &displacementField,
                                                               const std::vector<int> &nodeGroup,
                                                               int mode)
 {
@@ -2661,7 +2591,7 @@ void Ng_MeshVS_DataSource3D::displaceMySelf_asRigidAsPossible(const QMap<int, gp
     //! ----------------
     //! the fixed nodes
     //! ----------------
-    cout<<"Ng_MeshVS_DataSource3D::displaceMySelf_asRigidAsPossible()->____setting up nodes for deformation____"<<endl;
+    //cout<<"Ng_MeshVS_DataSource3D::displaceMySelf_asRigidAsPossible()->____setting up nodes for deformation____"<<endl;
     int i;
     for(i = 0; i<nodeGroup.size(); i++)
     {
@@ -2678,25 +2608,25 @@ void Ng_MeshVS_DataSource3D::displaceMySelf_asRigidAsPossible(const QMap<int, gp
     //! --------------------
     //! the displaced nodes
     //! --------------------
-    for(QMap<int,gp_Vec>::const_iterator it = displacementField.cbegin(); it != displacementField.cend(); it++)
+    for(QMap<int,QList<double>>::const_iterator it = displacementField.cbegin(); it != displacementField.cend(); it++)
     {
         int globalNodeID = it.key();
         int localNodeID = myNodesMap.FindIndex(globalNodeID);
-        gp_Vec displ = it.value();
+        const QList<double> &displ = it.value();
 
         b(i) = localNodeID-1;
 
-        bc(i,0)= displ.X();
-        bc(i,1)= displ.Y();
-        bc(i,2)= displ.Z();
+        bc(i,0)= displ[0];
+        bc(i,1)= displ[1];
+        bc(i,2)= displ[2];
 
-        bc_arap(i,0)= myNodeCoords->Value(localNodeID,1)+displ.X();
-        bc_arap(i,1)= myNodeCoords->Value(localNodeID,2)+displ.Y();
-        bc_arap(i,2)= myNodeCoords->Value(localNodeID,3)+displ.Z();
+        bc_arap(i,0)= myNodeCoords->Value(localNodeID,1)+displ[0];
+        bc_arap(i,1)= myNodeCoords->Value(localNodeID,2)+displ[1];
+        bc_arap(i,2)= myNodeCoords->Value(localNodeID,3)+displ[2];
 
         i++;
     }
-    cout<<"Ng_MeshVS_DataSource3D::displaceMySelf_asRigidAsPossible()->____setting up nodes for deformation: done____"<<endl;
+    //cout<<"Ng_MeshVS_DataSource3D::displaceMySelf_asRigidAsPossible()->____setting up nodes for deformation: done____"<<endl;
 
     // -------------------------------------------------------------------
     // Compute k-harmonic weight functions "coordinates".
@@ -2710,17 +2640,17 @@ void Ng_MeshVS_DataSource3D::displaceMySelf_asRigidAsPossible(const QMap<int, gp
     // Outputs:
     //   W  #V by #W list of weights
     // -------------------------------------------------------------------
-    cout<<"Ng_MeshVS_DataSource3D::displaceMySelf_asRigidAsPossible()->____harmonic displacement____"<<endl;
+    //cout<<"Ng_MeshVS_DataSource3D::displaceMySelf_asRigidAsPossible()->____harmonic displacement____"<<endl;
     Eigen::MatrixXd U(myNumberOfNodes,3);
     Eigen::MatrixXd D(myNumberOfNodes,3);              //! displacements
     bool isHarmonicDone = igl::harmonic(V,T,b,bc,1,D);
     if(isHarmonicDone) U = V+D;
     else U = V;
-    cout<<"Ng_MeshVS_DataSource3D::displaceMySelf_asRigidAsPossible()->____harmonic displacement done____"<<endl;
+    //cout<<"Ng_MeshVS_DataSource3D::displaceMySelf_asRigidAsPossible()->____harmonic displacement done____"<<endl;
 
     if(mode == 1)
     {
-        cout<<"Ng_MeshVS_DataSource3D::displaceMySelf_asRigidAsPossible()->____ARAP deformation____"<<endl;
+        //cout<<"Ng_MeshVS_DataSource3D::displaceMySelf_asRigidAsPossible()->____ARAP deformation____"<<endl;
         //! --------------------------------------------------------
         //! https://libigl.github.io/tutorial/#as-rigid-as-possible
         //! "as rigid as possible"
@@ -2750,10 +2680,10 @@ void Ng_MeshVS_DataSource3D::displaceMySelf_asRigidAsPossible(const QMap<int, gp
         bool isDone = igl::arap_precomputation(V,T,3,b,arap_data);
         if(!isDone)
         {
-            cout<<"Ng_MeshVS_DataSource3D::displaceMySelf_asRigidAsPossible()->____pre-computation not done____"<<endl;
+            //cout<<"Ng_MeshVS_DataSource3D::displaceMySelf_asRigidAsPossible()->____pre-computation not done____"<<endl;
             return;
         }
-        cout<<"Ng_MeshVS_DataSource3D::displaceMySelf_asRigidAsPossible()->____ARAP pre-computation done____"<<endl;
+        //cout<<"Ng_MeshVS_DataSource3D::displaceMySelf_asRigidAsPossible()->____ARAP pre-computation done____"<<endl;
 
         // ------------------------------------------------------------------
         // Inputs:
@@ -2761,15 +2691,15 @@ void Ng_MeshVS_DataSource3D::displaceMySelf_asRigidAsPossible(const QMap<int, gp
         //   data  struct containing necessary precomputation and parameters
         //   U  #V by dim initial guess
         // ------------------------------------------------------------------
-        cout<<"Ng_MeshVS_DataSource3D::displaceMySelf_asRigidAsPossible()->____ARAP solving____"<<endl;
+        //cout<<"Ng_MeshVS_DataSource3D::displaceMySelf_asRigidAsPossible()->____ARAP solving____"<<endl;
         igl::arap_solve(bc_arap,arap_data,U);
-        cout<<"Ng_MeshVS_DataSource3D::displaceMySelf_asRigidAsPossible()->____ARAP solving done____"<<endl;
+        //cout<<"Ng_MeshVS_DataSource3D::displaceMySelf_asRigidAsPossible()->____ARAP solving done____"<<endl;
     }
 
     //! ----------------------------
     //! update the mesh coordinates
     //! ----------------------------
-    cout<<"Ng_MeshVS_DataSource3D::displaceMySelf_asRigidAsPossible()->____updatig mesh points____"<<endl;
+    //cout<<"Ng_MeshVS_DataSource3D::displaceMySelf_asRigidAsPossible()->____updatig mesh points____"<<endl;
     int N = U.rows();
     for(int row=0; row<N; row++)
     {

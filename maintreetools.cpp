@@ -13,6 +13,9 @@
 //! ---
 #include <QStandardItemModel>
 
+//! ----
+//! C++
+//! ----
 #include <memory>
 
 //! ---------------------------
@@ -341,13 +344,64 @@ void mainTreeTools::getTreeItemsRecursively(QStandardItemModel* model, QList<QSt
     for(int r = 0; r<model->rowCount(parent); ++r)
     {
         QModelIndex index = model->index(r, 0, parent);
-        // here is your applicable code
         QExtendedStandardItem *item = static_cast<QExtendedStandardItem*>(model->itemFromIndex(index));
         items.push_back(item);
         if(model->hasChildren(index))
         {
             getTreeItemsRecursively(model, items, index);
         }
+    }
+}
+
+//! --------------------------------------------------------------------------------
+//! function: getTreeItemRecursively
+//! details:  return the first occurrence of item containing a node of type "aType"
+//! --------------------------------------------------------------------------------
+QStandardItem* mainTreeTools::getFirstTreeItemOfType(SimulationNodeClass::nodeType aType, QStandardItemModel* model)
+{
+    QStandardItem *curItem = Q_NULLPTR;
+    QList<QStandardItem*> items;
+    mainTreeTools::getTreeItemsRecursively(model,items);
+    for(QList<QStandardItem*>::iterator it = items.begin(); it!= items.end(); it++)
+    {
+        curItem = *it;
+        SimulationNodeClass *curNode = curItem->data(Qt::UserRole).value<SimulationNodeClass*>();
+        if(curNode->getType()==aType) break;
+    }
+    return curItem;
+}
+
+//! ---------------------------------
+//! function: getTreeItemsFromShapes
+//! details:
+//! ---------------------------------
+bool mainTreeTools::getTreeItemsFromShapes(QTreeView *tree, const std::vector<TopoDS_Shape> &vecShapes, std::vector<QStandardItem*> &vecItems)
+{
+    QStandardItemModel *model = (QStandardItemModel*)tree->model();
+    QStandardItem *item = mainTreeTools::getFirstTreeItemOfType(SimulationNodeClass::nodeType_geometry,model);
+    if(item==Q_NULLPTR)
+    {
+        cout<<"mainTreeTools::getTreeItemsFromShapes()->____item geometry not found____"<<endl;
+        return false;
+    }
+    for(int i=0; i<item->rowCount(); i++)               // scan the children, jumping over point mass items
+    {
+        QStandardItem *childItem = item->child(i,0);
+        SimulationNodeClass *node = childItem->data(Qt::UserRole).value<SimulationNodeClass*>();
+        if(node->getType()==SimulationNodeClass::nodeType_pointMass) continue;
+        TopoDS_Shape shapeInItem = node->getPropertyValue<TopoDS_Shape>("Shape");
+        if(std::find(vecShapes.begin(), vecShapes.end(), shapeInItem) == vecShapes.end()) continue;
+        vecItems.push_back(childItem);
+    }
+    if(vecItems.size()==0)
+    {
+        cout<<"mainTreeTools::getTreeItemsFromShapes()->____no items found in tree____"<<endl;
+        return false;
+    }
+    else
+    {
+        cout<<"mainTreeTools::getTreeItemsFromShapes()->____nr. "<<vecItems.size()<<" items found____"<<endl;
+        return true;
     }
 }
 
@@ -588,7 +642,6 @@ void mainTreeTools::getAllBoundaryConditionsTags(QTreeView *tree, int type, std:
     {
         QStandardItem *item = RootItem->child(i,0);
         SimulationNodeClass *node = item->data(Qt::UserRole).value<SimulationNodeClass*>();
-
         //! -----------------------
         //! connections root found
         //! -----------------------
@@ -625,11 +678,12 @@ void mainTreeTools::getAllBoundaryConditionsTags(QTreeView *tree, int type, std:
         //! --------------------
         if(node->isAnalysisRoot())
         {
-            for(int j=0; j<item->rowCount();j++)
+            for(int j=1; j<item->rowCount();j++)
             {
                 QStandardItem *itemBC = item->child(j,0);
                 SimulationNodeClass *nodeBC = itemBC->data(Qt::UserRole).value<SimulationNodeClass*>();
                 if(nodeBC->isSimulationSetUpNode()==false || nodeBC->isChildSimulationSetUpNode() || nodeBC->isNephewSimulationSetUpNode()) continue;
+                if(nodeBC->getPropertyItem("Tags")==Q_NULLPTR) continue;
                 std::vector<GeometryTag> BCTags = nodeBC->getPropertyValue<std::vector<GeometryTag>>("Tags");
                 for(int m=0; m<BCTags.size(); m++)
                 {
@@ -643,6 +697,8 @@ void mainTreeTools::getAllBoundaryConditionsTags(QTreeView *tree, int type, std:
             }
         }
 
+        if(!node->isAnalysisRoot() || node->getType()==SimulationNodeClass::nodeType_connection) continue;
+    /* NO need to keep mesh control boundary
         if(node->getType()==SimulationNodeClass::nodeType_meshControl)
         {
             cout<<"____MESH CONTROL____"<<endl;
@@ -650,8 +706,9 @@ void mainTreeTools::getAllBoundaryConditionsTags(QTreeView *tree, int type, std:
             {
                 QStandardItem *itemMeshControl = item->child(j,0);
                 SimulationNodeClass *nodeMeshControl = itemMeshControl->data(Qt::UserRole).value<SimulationNodeClass*>();
-                if(nodeMeshControl->getType()!=SimulationNodeClass::nodeType_meshFaceSize) continue;
-                cout<<"____tag00____"<<endl;
+
+                if(nodeMeshControl->getType()!=SimulationNodeClass::nodeType_meshFaceSize)
+                    continue;
                 std::vector<GeometryTag> faceSizingTags = nodeMeshControl->getPropertyValue<std::vector<GeometryTag>>("Tags");
                 for(int m=0; m<faceSizingTags.size(); m++)
                 {
@@ -664,6 +721,7 @@ void mainTreeTools::getAllBoundaryConditionsTags(QTreeView *tree, int type, std:
                 }
             }
         }
+    */
     }
     cout<<"mainTreeTools::getAllBoundaryConditionsTags()->____function exiting____"<<endl;
 }

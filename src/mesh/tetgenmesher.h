@@ -1,7 +1,7 @@
 #ifndef TETGENMESHER_H
 #define TETGENMESHER_H
 
-#define TOLERANCE 1.0E-10
+#define TOLERANCE 1.0E-8
 
 //#define PLCNEW
 
@@ -70,12 +70,14 @@ public:
     //! build the PLC running in memory
     //! --------------------------------
 #ifdef PLCNEW
-    bool buildPLC(int bodyIndex, QList<int> &invalidFaceTags, bool saveTetgenFiles = true);
+    bool buildPLC(int bodyIndex, QList<int> &invalidFaceTags, bool saveTetgenFiles = false);
 #endif
 
 #ifndef PLCNEW
-    bool buildPLC(int bodyIndex, QList<int> &invalidFaceTags, bool saveTetgenFiles = true);
+    bool buildPLC(int bodyIndex, QList<int> &invalidFaceTags, bool saveTetgenFiles = false);
 #endif
+
+    bool buildPLC(const occHandle(MeshVS_DataSource) &aSurfaceMesh);
 
     //! --------------------
     //! set Tetgen switches
@@ -164,6 +166,9 @@ private:
 
     //! get the tetgen support files dir location
     QString getTetgenSupportFilesDir() const { return myTetgenSupportFilesDir; }
+
+    //! enable/disable stop button
+    void setStopButtonEnabled(bool isEnabled);
 
 private slots:
 

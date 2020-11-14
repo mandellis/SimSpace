@@ -13,12 +13,15 @@
 #include <meshdatabase.h>
 #include "postobject.h"
 #include "global.h"
+#include "qprogressindicator.h"
+#include "qprogressevent.h"
 
 //! ----
 //! C++
 //! ----
 #include <iostream>
 #include <fstream>
+#include <map>
 #include <memory>
 
 class OCCMeshToCCXmesh;
@@ -67,13 +70,6 @@ private:
     QString myResultsFilePath;
     QMap<QString,TypeOfResult> m;
 
-    //! ---------------------------------------------------
-    //! from CCX node to OCC mesh node
-    //! location (m,n) <=> QMap<CCXnodeID, OCCnodeID>
-    //! ---------------------------------------------------
-    OCCMeshToCCXmesh *OCCtoCCXinterface;
-
-
     void buildMap();
 
 signals:
@@ -99,9 +95,17 @@ public slots:
                                                                             int requiredMode,
                                                                             const std::vector<GeometryTag> &vecLoc,
                                                                             double &requiredTime);
+    //! evaluate results
+    std::vector<std::map<int, double> > evaluateResultOnBody(const QString &resultKeyName,
+                                                             int requiredSubStepNb,
+                                                             int requiredStepNb,
+                                                             int requiredMode,
+                                                             const occHandle(MeshVS_DataSource) &aMeshDS,
+                                                             const GeometryTag &bodyTag,
+                                                             double &requiredTime);
 
     //! evaluate fatigue results
-    bool evaluateFatigueResults(int type, std::vector<GeometryTag> locs, const QList<double> &times, QMap<int,int> materialBodyMap, int nCycle, sharedPostObject &aPostObject);
+    bool buildFatiguePostObject(int type, const std::vector<GeometryTag> &locs, std::vector<double> times, QMap<int,int> materialBodyMap, int nCycle, sharedPostObject &aPostObject);
 
     //! build a post object
     bool buildPostObject(const QString &keyName,
@@ -120,15 +124,16 @@ private:
     //! time stamp
     QString timeStamp();
 
+    //! read fatigue results - THIS METHOD IS UNUSED -
+    std::map<GeometryTag, std::map<int, std::vector<double>>> readFatigueResults(int type,
+                                                                                 const std::vector<GeometryTag> &vecLoc,
+                                                                                 std::vector<double> times);
+
     //! read fatigue results
-    //QMap<GeometryTag,QMap<int,QList<double>>> readFatigueResults(int type,
-    //                                                             const std::vector<GeometryTag> &vecLoc,
-    //                                                             const QList<double> &times);
-
-    std::map<GeometryTag, std::map<int, std::vector<double> > > readFatigueResults(int type,
-                                                                 const std::vector<GeometryTag> &vecLoc,
-                                                                 const QList<double> &times);
-
+    std::map<int,std::vector<double>> readFatigueResultsOnBody(int type,
+                                                               const occHandle(MeshVS_DataSource) &aMeshDS,
+                                                               const GeometryTag &bodyTag,
+                                                               std::vector<double> times);
 
     //! fatigue model
     fatigueModel myFatigueModel;
@@ -141,6 +146,22 @@ public:
     void setDiscreteTimeMap(const QMap<double,QVector<int>> &dtm);
     void updateResultsPresentation(QList<sharedPostObject> &postObjectList);
     void updateIsostrips(sharedPostObject &aPostObject, int scaleType, double minValue, double maxValue, int NbIntervals);
+
+private:
+
+    //! THIS METHOD IS UNUSED - DO NOT DELETE
+    void groupDeformationFieldByBodies(const std::map<GeometryTag,std::map<int,gp_Vec>> &mapDisplMap,
+                                       std::map<GeometryTag,std::map<int,gp_Vec>> &mapDisplMap_byBodies);
+
+    void groupTagsByBodies(const std::vector<GeometryTag> &vecLoc, std::vector<GeometryTag> &vecLoc_byBodies);
+
+    //! THIS METHOD IS UNUSED - NO NOT DELETE
+    void groupResultsByBodies(const std::map<GeometryTag,std::vector<std::map<int,double>>> &resMap,
+                              std::map<GeometryTag,std::vector<std::map<int,double>>> &resMap_byBody);
+
+    void groupAndMergeMeshDataSourcesByBodies(const std::vector<GeometryTag> &vecLoc,
+                                              std::map<GeometryTag, opencascade::handle<MeshVS_DataSource> > &meshDSforResults);
+
 };
 
 #endif // POSTENGINE_H

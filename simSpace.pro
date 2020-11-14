@@ -137,7 +137,6 @@ SOURCES += main.cpp\
     meshtools.cpp \
     src/mesh/netgentools.cpp \
     src/gui/qfileselect.cpp \
-    src/post/rainflow.cpp \
     src/memory/memoryprofiler.cpp \
     src/geometry/geometryhealing.cpp \
     src/mesh/igtools.cpp \
@@ -148,9 +147,7 @@ SOURCES += main.cpp\
     compatibility/StlMesh/StlMesh_MeshTriangle.cxx \
     src/mesh/tetwildmesher.cpp \
     src/mesh/mshconvert.cpp \
-    src/mesh/backgroundmeshbuilder.cpp \
     src/mesh/meshuvprojection.cpp \
-    src/mesh/facedatasourcebuilder.cpp \
     src/mesh/customMesher/custommesher.cpp \
     src/mesh/surfacemeshcutter.cpp \
     openfoamcontroller.cpp \
@@ -184,7 +181,11 @@ SOURCES += main.cpp\
     ccxsolvermanager1.cpp \
     src/mesh/isostripbuilder.cpp \
     src/mesh/rayintersectmesh.cpp \
-    meshselector.cpp
+    meshselector.cpp \
+    src/post/rainflow.cpp \
+    src/mesh/datasourcebuilder.cpp \
+    src/mesh/smoothingtools.cpp \
+    src/mesh/pointtomeshdistance.cpp
 
 HEADERS  += mainwindow.h \
     actions3d.h \
@@ -337,7 +338,6 @@ HEADERS  += mainwindow.h \
     src/gui/itemselector.h \
     src/mesh/netgentools.h \
     src/gui/qfileselect.h \
-    src/post/rainflow.h \
     src/memory/memoryprofiler.h \
     src/geometry/geometryhealing.h \
     src/mesh/igtools.h \
@@ -362,10 +362,8 @@ HEADERS  += mainwindow.h \
     src/mesh/tetwildmesher.h \
     src/mesh/mshconvert.h \
     src/mesh/mshconvert.h \
-    src/mesh/backgroundmeshbuilder.h \
     libigl/include/igl/copyleft/cgal/test.h \
     src/mesh/meshuvprojection.h \
-    src/mesh/facedatasourcebuilder.h \
     src/mesh/indexedmapofmeshdatasources.h \
     src/mesh/customMesher/custommesher.h \
     connectionpairgenerationoptions.h \
@@ -419,7 +417,11 @@ HEADERS  += mainwindow.h \
     ccxsolvermanager1.h \
     src/mesh/isostripbuilder.h \
     src/mesh/rayintersectmesh.h \
-    meshselector.h
+    meshselector.h \
+    src/post/rainflow.h \
+    src/mesh/datasourcebuilder.h \
+    src/mesh/smoothingtools.h \
+    src/mesh/pointtomeshdistance.h
 
 FORMS    += mainwindow.ui
 
@@ -458,7 +460,7 @@ INCLUDEPATH = D:/Work/Qt/SimSpace/src/geometry \
               C:/local/boost_1_69_0   \                 # needed by cgal
               C:/CGAL-4.14/auxiliary/gmp/include    \   # needed by cgal
               D:/Work/Qt/SimSpace/libigl   \
-              D:/Work/Qt/SimSpace/src/pymesh
+              D:/Work/Qt/SimSpace/src/pymesh    \
 
 LIBS += \
 -lC:\OpenCASCADE7.3.0-vc14-64\opencascade-7.3.0\win64\vc14\lib\TKBin   \
@@ -546,7 +548,7 @@ RESOURCES += \
     icons.qrc \
     cursors.qrc \
     stylesheets.qrc \
-    src/TimeStepBuilder/resources.qrc
+    #src/TimeStepBuilder/resources.qrc
 
 #----------------------
 # unhandled exceptions
@@ -645,10 +647,9 @@ LIBS += -L$$PWD/QCustomPlot/qcp/ -lqcustomplot2
 INCLUDEPATH += $$PWD/QCustomPlot/qcp
 DEPENDPATH += $$PWD/QCustomPlot/qcp
 
-# --------------
-# manifest file
-# --------------
-#win32:
-#{
-#QMAKE_POST_LINK += mt -nologo -manifest $$PWD/manifest.xml -outputresource:$$OUT_PWD/$$TARGET”.exe” $$escape_expand(\n\t)
-#}
+# -------
+# embree
+# -------
+win32: LIBS += -L$$PWD/Embree/embree-3.12.1.x64.vc14.windows/lib/ -lembree3
+INCLUDEPATH += $$PWD/Embree/embree-3.12.1.x64.vc14.windows/include/embree3
+DEPENDPATH += $$PWD/Embree/embree-3.12.1.x64.vc14.windows/include/embree3

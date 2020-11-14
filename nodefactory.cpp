@@ -1143,7 +1143,7 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
         //! -----------------------------------------------------------------------
         //! the contact formualation: contact pair initially treated with lagrangian
         //! -----------------------------------------------------------------------
-        Property::contactFormulation theContactFormulation = Property::contactFormulation_lagrange;
+        Property::contactFormulation theContactFormulation = Property::contactFormulation_MPC;
         data.setValue(theContactFormulation);
         Property prop_connectionFormulation("Formulation",data,Property::PropertyGroup_Definition);
         vecProp.push_back(prop_connectionFormulation);
@@ -1151,7 +1151,7 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
         //! ---------------------------------------------------------------
         //! the contact type: contact pair initially created as frictional
         //! ---------------------------------------------------------------
-        Property::contactType theContactType = Property::contactType_frictional;
+        Property::contactType theContactType = Property::contactType_bonded;
         data.setValue(theContactType);
         Property prop_connectionType("Type",data,Property::PropertyGroup_Definition);
         vecProp.push_back(prop_connectionType);
@@ -1584,7 +1584,13 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
             data.setValue(prop_loadMagnitude);
             vecProp.push_back(prop_loadMagnitude);
         }
-
+        else if(type == SimulationNodeClass::nodeType_structuralAnalysisThermalCondition)
+        {
+            data.setValue(Property::loadDefinition_constant);
+            Property prop_loadMagnitude("Magnitude",data,Property::PropertyGroup_Definition);
+            data.setValue(prop_loadMagnitude);
+            vecProp.push_back(prop_loadMagnitude);
+        }
         //! -----------------------------------
         //! advanced properties for "Coupling"
         //! -----------------------------------

@@ -10,6 +10,10 @@
 #include <MeshVS_DataSource.hxx>
 #include <TColStd_MapIteratorOfPackedMapOfInteger.hxx>
 
+//! --------------------------
+//! function: performCCXtoOCC
+//! details:
+//! --------------------------
 std::map<int,int> OCCMeshToCCXmesh::performCCXtoOCC(GeometryTag loc, meshDataBase *mDB)
 {
     int bodyIndex = loc.parentShapeNr;
@@ -20,7 +24,6 @@ std::map<int,int> OCCMeshToCCXmesh::performCCXtoOCC(GeometryTag loc, meshDataBas
 
     if(type==TopAbs_SOLID)
     {
-        //cout<<"creating map for solids"<<endl;
         int offset = 0;
         for(int k=1; k<bodyIndex; k++)
         {
@@ -29,9 +32,9 @@ std::map<int,int> OCCMeshToCCXmesh::performCCXtoOCC(GeometryTag loc, meshDataBas
                 offset = offset+mDB->ArrayOfMeshDS.value(k)->GetAllNodes().Extent();
         }
 
-        //occHandle(MeshVS_DataSource) theCurMeshDS = mDB->ArrayOfMeshDS.value(bodyIndex);
-        occHandle(Ng_MeshVS_DataSource3D) theCurMeshDS = occHandle(Ng_MeshVS_DataSource3D)::DownCast(mDB->ArrayOfMeshDS.value(bodyIndex));
-        if(theCurMeshDS.IsNull()) cout<<"____INVALID MESH____"<<endl;
+        occHandle(MeshVS_DataSource) theCurMeshDS = mDB->ArrayOfMeshDS.value(bodyIndex);
+        //occHandle(Ng_MeshVS_DataSource3D) theCurMeshDS = occHandle(Ng_MeshVS_DataSource3D)::DownCast(mDB->ArrayOfMeshDS.value(bodyIndex));
+        if(theCurMeshDS.IsNull()) return map;
         for(TColStd_MapIteratorOfPackedMapOfInteger anIter(theCurMeshDS->GetAllNodes()); anIter.More(); anIter.Next())
         {
             int nodeID = anIter.Key()+offset;
@@ -47,6 +50,7 @@ std::map<int,int> OCCMeshToCCXmesh::performCCXtoOCC(GeometryTag loc, meshDataBas
         }
 
         occHandle(MeshVS_DataSource) theCurMeshDS = mDB->ArrayOfMeshDSOnFaces.getValue(bodyIndex,subTopologyIndex);
+        if(theCurMeshDS.IsNull()) return map;
         for(TColStd_MapIteratorOfPackedMapOfInteger anIter(theCurMeshDS->GetAllNodes()); anIter.More(); anIter.Next())
         {
             int nodeID = anIter.Key()+offset;
@@ -64,6 +68,10 @@ std::map<int,int> OCCMeshToCCXmesh::performCCXtoOCC(GeometryTag loc, meshDataBas
     return map;
 }
 
+//! --------------------------
+//! function: performOCCtoCCX
+//! details:
+//! --------------------------
 std::map<int,int> OCCMeshToCCXmesh::performOCCtoCCX(GeometryTag loc, meshDataBase *mDB)
 {
     int bodyIndex = loc.parentShapeNr;
@@ -74,7 +82,6 @@ std::map<int,int> OCCMeshToCCXmesh::performOCCtoCCX(GeometryTag loc, meshDataBas
 
     if(type==TopAbs_SOLID)
     {
-        //cout<<"creating map for solids"<<endl;
         int offset = 0;
         for(int k=1; k<bodyIndex; k++)
         {
@@ -83,9 +90,9 @@ std::map<int,int> OCCMeshToCCXmesh::performOCCtoCCX(GeometryTag loc, meshDataBas
                 offset = offset+mDB->ArrayOfMeshDS.value(k)->GetAllNodes().Extent();
         }
 
-        //occHandle(MeshVS_DataSource) theCurMeshDS = mDB->ArrayOfMeshDS.value(bodyIndex);
-        occHandle(Ng_MeshVS_DataSource3D) theCurMeshDS = occHandle(Ng_MeshVS_DataSource3D)::DownCast(mDB->ArrayOfMeshDS.value(bodyIndex));
-        if(theCurMeshDS.IsNull()) cout<<"____INVALID MESH____"<<endl;
+        occHandle(MeshVS_DataSource) theCurMeshDS = mDB->ArrayOfMeshDS.value(bodyIndex);
+        //occHandle(Ng_MeshVS_DataSource3D) theCurMeshDS = occHandle(Ng_MeshVS_DataSource3D)::DownCast(mDB->ArrayOfMeshDS.value(bodyIndex));
+        if(theCurMeshDS.IsNull()) return map;
         for(TColStd_MapIteratorOfPackedMapOfInteger anIter(theCurMeshDS->GetAllNodes()); anIter.More(); anIter.Next())
         {
             int nodeID = anIter.Key()+offset;
@@ -101,6 +108,7 @@ std::map<int,int> OCCMeshToCCXmesh::performOCCtoCCX(GeometryTag loc, meshDataBas
         }
 
         occHandle(MeshVS_DataSource) theCurMeshDS = mDB->ArrayOfMeshDSOnFaces.getValue(bodyIndex,subTopologyIndex);
+        if(theCurMeshDS.IsNull()) return map;
         for(TColStd_MapIteratorOfPackedMapOfInteger anIter(theCurMeshDS->GetAllNodes()); anIter.More(); anIter.Next())
         {
             int nodeID = anIter.Key()+offset;

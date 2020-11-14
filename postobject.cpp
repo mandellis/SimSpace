@@ -578,32 +578,25 @@ bool postObject::buildMeshIO(double min, double max, int Nlevels, bool autoscale
     //! the data content
     //! -----------------
     std::map<GeometryTag,std::vector<std::map<int,double>>>::const_iterator it = theData.cbegin();
-
-    /* only for diag purposes
-    for(std::map<GeometryTag,std::vector<std::map<int,double>>>::const_iterator it = theData.cbegin(); it!=theData.cend(); it++)
-    {
-        std::map<int,double> d = it->second.at(0);
-        for(std::map<int,double>::iterator itt = d.begin(); itt!=d.end(); itt++)
-        {
-            cout<<"data____("<<itt->first<<", "<<itt->second<<")____"<<endl;
-        }
-    }
-    */
-
     for(std::map<GeometryTag,occHandle(MeshVS_DeformedDataSource)>::const_iterator anIt = theMeshDataSources.cbegin(); anIt!= theMeshDataSources.cend() && it!= theData.cend(); ++anIt, ++it)
     {
         const GeometryTag &loc = anIt->first;
         occHandle(MeshVS_DataSource) curMeshDS;
-        if(loc.subShapeType == TopAbs_SOLID && myUseSurfaceMeshForVolumeResults == true)
+        if(myUseSurfaceMeshForVolumeResults == true)
         {
-            cout<<"____USING THE EXTERIOR MESH____"<<endl;
-            occHandle(Ng_MeshVS_DataSource3D) volumeMeshDS = new Ng_MeshVS_DataSource3D(anIt->second->GetNonDeformedDataSource());
-
-            //! ----------------------------------------
-            //! generate the surface mesh topologically
-            //! ----------------------------------------
-            if(volumeMeshDS->myFaceToElements.isEmpty()) volumeMeshDS->buildFaceToElementConnectivity();
-            curMeshDS = new Ng_MeshVS_DataSource2D(volumeMeshDS);
+            cout<<"____IN CASE OF VOLUME MESH USE SURFACE MESH FOR SHOWING RESULTS____"<<endl;
+            occHandle(Ng_MeshVS_DataSource3D) volumeMeshDS = occHandle(Ng_MeshVS_DataSource3D)::DownCast(anIt->second->GetNonDeformedDataSource());
+            if(volumeMeshDS.IsNull())
+            {
+                cout<<"____HANDLING SURFACE MESH____"<<endl;
+                curMeshDS = anIt->second->GetNonDeformedDataSource();
+            }
+            else
+            {
+                cout<<"____HANDLING VOLUME MESH____"<<endl;
+                if(volumeMeshDS->myFaceToElements.isEmpty()) volumeMeshDS->buildFaceToElementConnectivity();
+                curMeshDS = new Ng_MeshVS_DataSource2D(volumeMeshDS);   // extend the constructor to Ng_MeshVS_DataSourceFace and replace ...2D
+            }
         }
         else
         {
@@ -629,8 +622,8 @@ bool postObject::buildMeshIO(double min, double max, int Nlevels, bool autoscale
                 displacementMap.insert(std::make_pair(it.Key(),gp_Vec(0,0,0)));
             myMapOfNodalDisplacements.insert(std::make_pair(loc,displacementMap));
         }
-
         theDeformedDS->SetNonDeformedDataSource(curMeshDS);
+
         for(TColStd_MapIteratorOfPackedMapOfInteger it(curMeshDS->GetAllNodes()); it.More(); it.Next())
         {
             int globalNodeID = it.Key();
@@ -641,12 +634,14 @@ bool postObject::buildMeshIO(double min, double max, int Nlevels, bool autoscale
         theMeshDataSourcesForView[loc]=theDeformedDS;   //! abruptly replace - do not use "insert"
 
         const std::vector<std::map<int, double>> &listOfRes = theData.at(loc);
-        const std::map<int, double> &res = listOfRes.at(component);
+        const std::map<int,double> &res = listOfRes.at(component);
+
         if(res.size()==0)
         {
             cout<<"postObject::buildMeshIO()->____you are giving me no data____"<<endl;
             return false;
         }
+
         //! -------------------------------------------
         //! min and max for the colorbox and isostrips
         //! -------------------------------------------
@@ -680,6 +675,7 @@ bool postObject::buildMeshIO(double min, double max, int Nlevels, bool autoscale
         // MeshTools::buildIsoStrip(theDeformedDS,res,myMin,myMax,myNbLevels,aColoredMesh,true);
         // MeshTools::buildDeformedColoredMesh(curMeshDS,res,displacementMap,1.0,myMin,myMax,Nlevels,aColoredMesh,true);
         if(isDone == true) theMeshes.insert(std::make_pair(loc,aColoredMesh));
+        else return false;
     }
 
     //! ---------------------------------
@@ -688,6 +684,7 @@ bool postObject::buildMeshIO(double min, double max, int Nlevels, bool autoscale
     graphicsTools::createColorBox(myMin, myMax, myNbLevels, AISColorScale);
     TCollection_ExtendedString title(name.toStdString().c_str());
     AISColorScale->SetTitle(title);
+    cout<<"postObject::buildMeshIO()->____function exiting____"<<endl;
     return true;
 }
 
@@ -697,7 +694,7 @@ bool postObject::buildMeshIO(double min, double max, int Nlevels, bool autoscale
 //! -------------------------------------------
 std::pair<double,double> postObject::getMinMax(int component)
 {
-    //cout<<"postObject::getMinMax()->____function called____"<<endl;
+    cout<<"postObject::getMinMax()->____function called____"<<endl;
 
     //! ---------------------------------------------
     //! first element => min; second element => max;
@@ -729,14 +726,14 @@ std::pair<double,double> postObject::getMinMax(int component)
             if(aVal>=minmax.second) minmax.second = aVal;
         }
     }
-    //cout<<"postObject::getMinMax()->____min: "<<minmax.first<<", max: "<<minmax.second<<"____"<<endl;
+    cout<<"postObject::getMinMax()->____min: "<<minmax.first<<", max: "<<minmax.second<<"____"<<endl;
     return minmax;
 }
 
-//! ---------------
+//! ---------------------------------------
 //! function: init
-//! details:
-//! ---------------
+//! details:  SHOULD BE MARKED AS OBSOLETE
+//! ---------------------------------------
 void postObject::init(meshDataBase *mDB)
 {
     cout<<"postObject::init()->____function called____"<<endl;
@@ -790,6 +787,22 @@ void postObject::init(meshDataBase *mDB)
         }
     }
     //cout<<"postObject::init()->____exiting function____"<<endl;
+}
+
+//! -----------------------------
+//! function: setMeshDataSources
+//! details:
+//! -----------------------------
+void postObject::setMeshDataSources(const std::map<GeometryTag,occHandle(MeshVS_DataSource)> &aMapOfMeshDS)
+{
+    for(std::map<GeometryTag,occHandle(MeshVS_DataSource)>::const_iterator it = aMapOfMeshDS.cbegin(); it != aMapOfMeshDS.cend(); it++)
+    {
+        const GeometryTag &aTag = it->first;
+        const occHandle(MeshVS_DataSource) &aMeshDS = it->second;
+        const occHandle(MeshVS_DeformedDataSource) &aDeformedMeshDS = new MeshVS_DeformedDataSource(aMeshDS,1.0);
+        aDeformedMeshDS->SetMagnify(1.0);
+        theMeshDataSources.insert(std::make_pair(aTag, aDeformedMeshDS));
+    }
 }
 
 //! ------------------------

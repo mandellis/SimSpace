@@ -188,8 +188,6 @@ bool iglTools::iglIntersectMeshes(const occHandle(Ng_MeshVS_DataSourceFace) &aFa
 //!   J  #FF list of indices into F denoting birth triangle
 //!   IM  #VV list of indices into VV of unique vertices.
 //! ------------------------------------------------------------------------------
-//#include <libigl/include/igl/writeOBJ.h>
-//#include <libigl/include/igl/writeSTL.h>
 bool iglTools::iglCheckSelfIntersection(const occHandle(Ng_MeshVS_DataSourceFace) &aFaceMesh, std::vector<int> &badNodes)
 {
     cout<<"iglTools::iglCheckSelfIntersection()->____function called____"<<endl;

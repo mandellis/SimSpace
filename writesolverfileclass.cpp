@@ -18,7 +18,7 @@
 #include "contactparameters.h"
 #include "geomtoolsclass.h"
 #include "maintreetools.h"
-#include <facedatasourcebuilder.h>
+#include <datasourcebuilder.h>
 #include <bolttool.h>
 
 //! -------
@@ -167,7 +167,7 @@ bool writeSolverFileClass::perform()
                                                QProgressEvent_None,-1,-1,-1,"Writing CCX solver input file");
         QApplication::postEvent(myProgressIndicator,e);
         QApplication::processEvents();
-        QThread::msleep(500);
+        QThread::msleep(250);
 
         if(Global::status().code==0)
         {
@@ -208,7 +208,7 @@ bool writeSolverFileClass::perform()
                                                QProgressEvent_None,-1,-1,-1,"Writing CCX solver input file");
         QApplication::postEvent(myProgressIndicator,e);
         QApplication::processEvents();
-        QThread::msleep(500);
+        QThread::msleep(250);
 
         if(Global::status().code==0)
         {
@@ -409,6 +409,19 @@ bool writeSolverFileClass::perform()
                 }
                     break;
                 }
+
+#ifdef COSTAMP_VERSION
+                QVector<double> dirData = theItemNode->getPropertyValue<QVector<double>>("Direction");
+                double a0 = dirData.at(3);
+                double a1 = dirData.at(4);
+                double a2 = dirData.at(5);
+
+                myInputFile<<"*BOUNDARY"<<endl;
+                if(a0 == 0.0) myInputFile<<(QString("CM_")+SetName).toStdString()<<",1,1"<<endl;
+                if(a1 == 0.0) myInputFile<<(QString("CM_")+SetName).toStdString()<<",2,2"<<endl;
+                if(a2 == 0.0) myInputFile<<(QString("CM_")+SetName).toStdString()<<",3,3"<<endl;
+                myInputFile<<(QString("CM_")+SetName).toStdString()<<",4,6"<<endl;
+#endif
             }
                 break;
             case SimulationNodeClass::nodeType_structuralAnalysisBoundaryContidion_FixedSupport:
@@ -598,7 +611,7 @@ bool writeSolverFileClass::perform()
                                                QProgressEvent_None,-1,-1,-1,"Writing CCX solver input file");
         QApplication::postEvent(myProgressIndicator,e);
         QApplication::processEvents();
-        QThread::msleep(500);
+        QThread::msleep(250);
 
         if(Global::status().code==0)
         {
@@ -984,7 +997,7 @@ bool writeSolverFileClass::perform()
                                                QProgressEvent_None,-1,-1,-1,"Writing CCX solver input file");
         QApplication::postEvent(myProgressIndicator,e);
         QApplication::processEvents();
-        QThread::msleep(500);
+        QThread::msleep(250);
 
         if(Global::status().code==0)
         {
@@ -1220,7 +1233,7 @@ bool writeSolverFileClass::perform()
                                                QProgressEvent_None,-1,-1,-1,"Writing CCX solver input file");
         QApplication::postEvent(myProgressIndicator,e);
         QApplication::processEvents();
-        QThread::msleep(500);
+        QThread::msleep(250);
 
         if(Global::status().code==0)
         {
@@ -1297,7 +1310,7 @@ bool writeSolverFileClass::perform()
                                                QProgressEvent_None,-1,-1,-1,"Writing CCX solver input file");
         QApplication::postEvent(myProgressIndicator,e);
         QApplication::processEvents();
-        QThread::msleep(500);
+        QThread::msleep(250);
 
         if(Global::status().code==0)
         {
@@ -1450,7 +1463,7 @@ bool writeSolverFileClass::perform()
                                                QProgressEvent_None,-1,-1,-1,"Writing CCX solver input file");
         QApplication::postEvent(myProgressIndicator,e);
         QApplication::processEvents();
-        QThread::msleep(500);
+        QThread::msleep(250);
 
         if(Global::status().code==0)
         {
@@ -1577,7 +1590,6 @@ bool writeSolverFileClass::perform()
             myInputFile<<endl;
             //! Number of eigenFrequency to compute
             myInputFile<<"2"<<endl;
-            //myInputFile<<"1"<<endl;
         }
             break;
         case Property::analysisType_frequencyResponse:
@@ -2411,7 +2423,7 @@ bool writeSolverFileClass::perform()
                                                QProgressEvent_Reset,-1,-1,-1,"");
         QApplication::postEvent(myProgressIndicator,e);
         QApplication::processEvents();
-        QThread::msleep(500);
+        QThread::msleep(250);
     }
 
     myInputFile.close();

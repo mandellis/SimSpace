@@ -1,5 +1,6 @@
 #ifndef PRISMATICLAYER_H
 #define PRISMATICLAYER_H
+
 //! ------------------------------------------------------------
 //! Definition:
 //! "prismatic face" is a face that will undergo mesh inflation
@@ -31,6 +32,7 @@
 //! C++
 //! ----
 #include <vector>
+#include <map>
 #include <iostream>
 using namespace std;
 
@@ -64,11 +66,9 @@ public:
     //! ---------
     void setBody(int bodyIndex) { myBodyIndex = bodyIndex; }
 
-    //! ---------------------------------------------
+    //! --------------------
     //! set prismatic faces
-    //! (bodyIndex, list of prismatic faces on body)
-    //! ---------------------------------------------
-    //void setPrismaticFaces(const QList<int> &prismaticFaces);
+    //! --------------------
     void setPrismaticFaces(const std::vector<int> &prismaticFaces);
 
 
@@ -83,11 +83,6 @@ public:
     bool inflateMesh(QList<occHandle(Ng_MeshVS_DataSourceFace)> &theInflatedMeshes);
     bool inflateMeshAndCompress(QList<occHandle(Ng_MeshVS_DataSourceFace)> &theInflatedMeshes,
                                 occHandle(Ng_MeshVS_DataSource3D) &preInflationVolumeMeshDS);
-
-    //! ---------------------------------------------
-    //! display merged meshes - for testing purposes
-    //! ---------------------------------------------
-    void displayMesh(const occHandle(MeshVS_DataSource) &aMeshDS);
 
     //! -----------------------------
     //! build the prismatic elements
@@ -149,7 +144,6 @@ private:
     //! prismatic faces: list of prismatic faces on a body
     //! key: body index; value: list of prismatic faces
     //! ---------------------------------------------------
-    //QList<int> myPrismaticFaces;
     std::vector<int> myPrismaticFaces;
 
     //! -----------
@@ -161,42 +155,9 @@ private:
     double myFirstLayerThickness;
     double myExpRatio;
 
-    //! --------------
-    //! to be removed
-    //! --------------
-    //int myNumberOfModulationDiffusionSteps;             //1
-    //double myModulationDiffusionCutoff;                 //2
-    //double myModulationCoefficientTransferPercentage;   //3
-    //! ---------------------
-    //! end of to be removed
-    //! ---------------------
-
-    //! ---------------
-    //! new parameters
-    //! ---------------
-    double myCurvatureSensitivityForShrink;
-    int myNbGuidingVectorSmoothingSteps;
-    int myNbLayerThicknessSmoothingSteps;
-    double myCurvatureSensitivityForGuidingVectorsSmoothing;
-    double myCurvatureSensitivityForThicknessSmoothing;
-    //! ----------------------
-    //! end of new parameters
-    //! ----------------------
-
     bool myLockBoundary;
     bool myCheckSelfIntersections;
     bool myCheckMutualIntersections;
-
-    //! --------------
-    //! to be removed
-    //! --------------
-    //int myShrinkFunction;               //4
-    //double myMinimumShrink;             //5
-    //double myTransition;                //6
-    //double myAmplitude;                 //7
-    //! ---------------------
-    //! end of to be removed
-    //! ---------------------
 
     int myAlgorithm;
     int myBoundaryMeshType;
@@ -256,37 +217,77 @@ private:
 
 private:
 
+    //! -----------------------------------------------------
+    //! map of manifold characteristic and visibility angles
+    //! -----------------------------------------------------
+    std::map<int,double> betaAverageField;
+    std::map<int,double> betaVisibilityField;
+
+    //! ------------------------------
+    //! map of layer reduction factor
+    //! ------------------------------
+    std::map<int,double> mapOfReductionFactor;
+
     //! --------------------
     //! generateOneTetLayer
     //! --------------------
     void generateOneTetLayer(occHandle(Ng_MeshVS_DataSourceFace) &theMeshToInflate,
                              double displacement,
-                             QList<meshElementByCoords> &volumeElementsAtWalls);
+                             std::vector<meshElementByCoords> &volumeElementsAtWalls,
+                             const std::map<int,double> &mapOfFirstLayerReductionFactor);
 
+    //! -------------
+    //! compute beta
+    //! -------------
+    void computeBeta(const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS);
 
-    //! ---------------------------------
-    //! field smoother - curvature based
-    //! ---------------------------------
-    void fieldSmoother(QMap<int,QList<double>> &field,
-                       const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS,
-                       double k,
-                       int NbSteps);
+    //! ---------------------------------------------
+    //! check lateral distribution marhing distances
+    //! ---------------------------------------------
+    void checkLateralDistributionMarchingDistance(const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS,
+                                                  const std::map<int,double> displacementMapOld,
+                                                  std::vector<int,double> &displacementMap);
 
-    //! ---------------------------------------
-    //! smooth the displacement field - helper
-    //! ---------------------------------------
-    void smoothDisplacementField(QMap<int,gp_Vec> &displacementsField,
-                                 const QMap<int,QList<double>> &normals,
-                                 const occHandle(Ng_MeshVS_DataSourceFace) &theMeshToInflate);
+    //! ---------------
+    //! local manifold
+    //! ---------------
+    bool getLocalFanNodes(const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS, int vertexGlobalNodeID,
+                          int t1, int t2,
+                          mesh::meshPoint &A,
+                          mesh::meshPoint &B,
+                          mesh::meshPoint &C,
+                          mesh::meshPoint &P);
 
+    //! ---------------
+    //! classify nodes
+    //! ---------------
+    void classifyNodes(const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS,
+                       std::map<int,int> &mapCat1);
+
+    void correctClassificationForBoundaryCompression(const std::map<int,double> &firstLayerReductionMap,
+                                                     std::map<int,int> &mapCat);
 
     //! --------------------------------------------------
     //! enable/disable the progress indicator stop button
     //! --------------------------------------------------
     void setStopButtonEnabled(bool isEnabled);
 
-
-
+    //! -------
+    //! helper
+    //! -------
+    bool getPointCoordinates(const occHandle(MeshVS_DataSource)& aMeshDS, int globalNodeID, double *P)
+    {
+        int NbNodes;
+        MeshVS_EntityType aType;
+        double buf[3];
+        TColStd_Array1OfReal coords(*buf,1,3);
+        bool isDone = aMeshDS->GetGeom(globalNodeID,false,coords,NbNodes,aType);
+        P[0] = coords(1);
+        P[1] = coords(2);
+        P[2] = coords(3);
+        if(isDone == false) return false;
+        return isDone;
+    }
 };
 
 #endif // PRISMATICLAYER_H

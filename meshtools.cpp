@@ -9,16 +9,16 @@
 #include "ais_colorscaleextended.h"
 #include "tools.h"
 #include "exportingtools.h"
-#include "stldoctor.h"
 #include "extendedrwstl.h"
 #include "ccout.h"
-#include <ng_meshvs_deformeddatasource2d.h>
 #include <ng_meshvs_datasource1d.h>
 #include "qprogressindicator.h"
 #include "qprogressevent.h"
 #include <elementtypes.h>
 #include <isostrip.h>
 #include <isostripbuilder.h>
+#include <ng_meshvs_datasourceface.h>
+#include <ng_meshvs_datasource3d.h>
 
 //! ---
 //! Qt
@@ -489,13 +489,14 @@ extern int hueFromValue(int,int,int);
 //! details:
 //! ------------------------
 bool MeshTools::buildIsoStrip(const occHandle(MeshVS_DataSource) &theMeshDS,        //! input mesh data source
-                              const std::map<int,double> &res,                          //! nodal results
+                              const std::map<int,double> &res,                      //! nodal results
                               double min,                                           //! used for isostrips generation
                               double max,                                           //! used for isostrips generation
                               int NbLevels,                                         //! user for isostrip generation
                               occHandle(MeshVS_Mesh) &aColoredMesh,                 //! result
                               bool showEdges)
 {
+    Q_UNUSED(showEdges)
     if(theMeshDS.IsNull()) return false;
 
     //! ---------------------
@@ -529,9 +530,17 @@ bool MeshTools::buildIsoStrip(const occHandle(MeshVS_DataSource) &theMeshDS,    
     std::vector<meshElementByCoords> allElements;
     //bool isDone = anIsoStripBuilder.perform(allElements);
     bool isDone = anIsoStripBuilder.perform1(allElements);
-
+    if(isDone == false)
+    {
+        cout<<"MeshTools::buildIsoStrip()->____cannot build isostrips____"<<endl;
+        return false;
+    }
     occHandle(Ng_MeshVS_DataSourceFace) finalMesh = new Ng_MeshVS_DataSourceFace(allElements,true,true);
-
+    if(finalMesh.IsNull())
+    {
+        cout<<"MeshTools::buildIsoStrip()->____cannot build isostrips____"<<endl;
+        return false;
+    }
     cout<<"@ --------------------------"<<endl;
     cout<<"@ - overall strip mesh"<<endl;
     cout<<"@ - elements: "<<finalMesh->GetAllElements().Extent()<<endl;
@@ -560,6 +569,7 @@ bool MeshTools::buildIsoStrip(const occHandle(MeshVS_DataSource) &theMeshDS,    
     aColoredMesh->GetDrawer()->SetColor(MeshVS_DA_EdgeColor,Quantity_NOC_BLACK);
     aColoredMesh->GetDrawer()->SetBoolean(MeshVS_DA_ShowEdges, false);
 
+    cout<<"MeshTools::buildIsoStrip()->____exiting function____"<<endl;
     return true;
 }
 
@@ -751,112 +761,6 @@ bool MeshTools::buildIsoStrip(const occHandle(MeshVS_DataSource) &theMeshDS,    
     aColoredMesh->GetDrawer()->SetColor(MeshVS_DA_EdgeColor,Quantity_NOC_BLACK);
     aColoredMesh->GetDrawer()->SetBoolean(MeshVS_DA_ShowEdges, false);
 
-    return true;
-}
-
-//! -----------------------------------
-//! function: buildDeformedColoredMesh
-//! details:
-//! -----------------------------------
-bool MeshTools::buildDeformedColoredMesh(const occHandle(MeshVS_DataSource) &theMeshVS_DataSource,
-                                         const std::map<int,double> &res,
-                                         const std::map<int,gp_Vec> &displacementMap,
-                                         double scale,
-                                         double min,
-                                         double max,
-                                         int numberOfLevels,
-                                         occHandle(MeshVS_Mesh) &aColoredMesh,
-                                         bool showEdges)
-{
-
-    if(theMeshVS_DataSource.IsNull()) return false;
-
-    cout<<"MeshTools::buildDeformedColoredMesh()->____function called: generating a deformed mesh using scale: "<<scale<<"____"<<endl;
-
-    //! -----------------------------------------
-    //! build the MeshVS_Mesh interactive object
-    //! -----------------------------------------
-    aColoredMesh = new MeshVS_Mesh();
-
-    if(scale<0.0) scale = 1.0;
-
-    occHandle(Ng_MeshVS_DeformedDataSource2D) deformedDS = new Ng_MeshVS_DeformedDataSource2D(theMeshVS_DataSource,scale);
-    for(TColStd_MapIteratorOfPackedMapOfInteger nodeIt(deformedDS->GetAllNodes());nodeIt.More();nodeIt.Next())
-    {
-        int nodeID = nodeIt.Key();
-        deformedDS->SetVector(nodeID,displacementMap.at(nodeID));
-    }
-    deformedDS->SetMagnify(scale);
-    aColoredMesh->SetDataSource(deformedDS);
-
-    //! ----------------
-    //! colored builder
-    //! ----------------
-    occHandle(MeshVS_NodalColorPrsBuilder) nodalColorBuilder = new MeshVS_NodalColorPrsBuilder(aColoredMesh, MeshVS_DMF_NodalColorDataPrs | MeshVS_DMF_OCCMask);
-    nodalColorBuilder->UseTexture(true);
-
-    //! ----------------------
-    //! prepare the color map
-    //! ----------------------
-    Aspect_SequenceOfColor aColorMap;
-
-    double Delta = max-min;
-    double delta = Delta/numberOfLevels;
-
-    //! ---------------------------------------------------------------
-    //! Ex: numberOfLevels = 3
-    //! => delta = Delta/3
-    //! => i = {0, 1, 2, 3}
-    //! => val = 0
-    //! => val = int(1*(delta/Delta)*360)
-    //! => val = int(2*(delta/Delta)*360)
-    //! => val = int(3*(delta/Delta)*360) = int(3*(Delta/3/Delta)*360)
-    //! ---------------------------------------------------------------
-    if(Delta<=DELTA_TOL)
-    {
-        Delta = 100.0;
-        delta = 10.0;
-    }
-    for(int i=0; i<=numberOfLevels; i++)
-    {
-        int val = int((i*delta)*(360.0/Delta));
-        int hue = hueFromValue(val,0,360);
-        Quantity_Color aColor(hue,1.0,1.0,Quantity_TOC_HLS);
-        aColorMap.Append(aColor);
-    }
-
-    //! -----------------------------------------------------
-    //! assign color scale map  values (0.0 <-> 1.0) to nodes
-    //! -----------------------------------------------------
-    //! iterate through the nodes and add a node id and an appropriate value to the map
-    //! scan the result of type (nodeID, scalarValue)
-    TColStd_DataMapOfIntegerReal aScaleMap;
-
-    for(std::map<int, double>::const_iterator itNodes = res.cbegin(); itNodes!= res.cend(); ++itNodes)
-    {
-        int nodeID = itNodes->first;
-        double aValue;
-        if(Delta!=0.0) aValue = (itNodes->first-min)/Delta;
-        else aValue = 0.0;
-        aScaleMap.Bind(nodeID, aValue);
-    }
-
-    //! -----------------------------------------------------
-    //! pass color map and color scale values to the builder
-    //! -----------------------------------------------------
-    nodalColorBuilder->SetColorMap(aColorMap);
-    nodalColorBuilder->SetInvalidColor (Quantity_NOC_VIOLET);
-    nodalColorBuilder->SetTextureCoords(aScaleMap);
-
-    aColoredMesh->AddBuilder(nodalColorBuilder,Standard_False);
-
-    //! ---------------------------------------
-    //! configure the drawer: other properties
-    //! ---------------------------------------
-    aColoredMesh->GetDrawer()->SetBoolean(MeshVS_DMF_Shading, Standard_True);   // delete?
-    aColoredMesh->GetDrawer()->SetBoolean(MeshVS_DA_DisplayNodes, Standard_False);
-    aColoredMesh->GetDrawer()->SetColor(MeshVS_DA_EdgeColor,Quantity_NOC_BLACK);
-    aColoredMesh->GetDrawer()->SetBoolean(MeshVS_DA_ShowEdges, showEdges);
     return true;
 }
 
@@ -1092,11 +996,11 @@ bool MeshTools::arrayOfFaceDataSourcesToExtendedStlFile(const NCollection_Array1
                 double n3 = s21x*s31y-s21y*s31x;
 
                 sprintf(line,
-                        " facet normal %.12e %.12e %.12e\n"
+                        " facet normal %.9e %.9e %.9e\n"
                         "   outer loop\n"
-                        "     vertex %.12e %.12e %.12e\n"
-                        "     vertex %.12e %.12e %.12e\n"
-                        "     vertex %.12e %.12e %.12e\n"
+                        "     vertex %.9e %.12e %.9e\n"
+                        "     vertex %.9e %.12e %.9e\n"
+                        "     vertex %.9e %.12e %.9e\n"
                         "   endloop\n"
                         "   %d\n"
                         " endfacet\n",
@@ -1185,6 +1089,7 @@ bool MeshTools::buildPLC(const NCollection_Array1<occHandle(Ng_MeshVS_DataSource
         cout<<"MeshTools::buildPLC->____warning: the progress indicator is NULL. No progress will be shown____"<<endl;
     }
 
+    QList<mesh::meshPoint> pointList_;
     QList<QVector<double>> pointList;
     int NbFacets = 0;
     int globalNodeNumber = 0;
@@ -1193,7 +1098,7 @@ bool MeshTools::buildPLC(const NCollection_Array1<occHandle(Ng_MeshVS_DataSource
     int NbFaces = arrayOfFaceDS.Upper();
 
     //! -------------------
-    //! send an Init event
+    //! send an init event
     //! -------------------
     if(progressIndicator!=Q_NULLPTR)
     {
@@ -1206,16 +1111,15 @@ bool MeshTools::buildPLC(const NCollection_Array1<occHandle(Ng_MeshVS_DataSource
     //! ----------------------------------------
     //! iterate over the face mesh data sources
     //! ----------------------------------------
-    for(int faceDSNr = startFaceNr; faceDSNr<=NbFaces; faceDSNr++)
+    for(int faceDSNr = startFaceNr; faceDSNr<=arrayOfFaceDS.Upper(); faceDSNr++)
     {
-        cout<<"MeshTools::buildPLC()->____node file: working on face data source nr: "<<faceDSNr<<"____"<<endl;
+        //cout<<"MeshTools::buildPLC()->____node file: working on face data source nr: "<<faceDSNr<<"____"<<endl;
 
         //! -------------------
         //! check interruption
         //! -------------------
         if(Global::status().code==0)
         {
-            //Global::status().code = 1;
             cout<<"MeshTools::buildPLC()->____process interrupted by the user____"<<endl;
             return false;
         }
@@ -1225,14 +1129,12 @@ bool MeshTools::buildPLC(const NCollection_Array1<occHandle(Ng_MeshVS_DataSource
 
         if(curFaceMeshDS->GetAllElements().Extent()>0)
         {
-            TColStd_PackedMapOfInteger eMap = curFaceMeshDS->GetAllElements();
-            TColStd_MapIteratorOfPackedMapOfInteger eIt;
             int localElementID = 0;
             MeshVS_EntityType type;
             int NbNodes;
             double buf[24];
             TColStd_Array1OfReal coords(*buf,1,24);
-            for(eIt.Initialize(eMap); eIt.More(); eIt.Next())
+            for(TColStd_MapIteratorOfPackedMapOfInteger eIt(curFaceMeshDS->GetAllElements()); eIt.More(); eIt.Next())
             {
                 localElementID++;
                 int globalElementID = eIt.Key();
@@ -1240,19 +1142,22 @@ bool MeshTools::buildPLC(const NCollection_Array1<occHandle(Ng_MeshVS_DataSource
                 curFaceMeshDS->GetGeom(globalElementID,true,coords,NbNodes,type);
                 for(int k=0; k<NbNodes; k++)
                 {
-                    QVector<double> P;
-                    P.push_back(coords(3*k+1));
-                    P.push_back(coords(3*k+2));
-                    P.push_back(coords(3*k+3));
+                    int s = 3*k;
+                    QVector<double> P {coords(s+1),coords(s+2),coords(s+3)};
+                    //mesh::meshPoint aP {coords(s+1),coords(s+2),coords(s+3)}; new
+                    //if(!pointList_.contains(aP))
+                    //{
+                    //    globalNodeNumber++;
+                    //    pointList_<<aP;
+                    //}
                     if(!pointList.contains(P))
                     {
                         globalNodeNumber++;
                         pointList<<P;
-                        //cout<<"____"<<globalNodeNumber<<"("<<P.at(0)<<", "<<P.at(1)<<", "<<P.at(2)<<")____"<<endl;
                     }
                 }
             }
-            NbFacets = NbFacets + curFaceMeshDS->GetAllElements().Extent();
+            NbFacets += curFaceMeshDS->GetAllElements().Extent();
         }
 
         //! ----------------------
@@ -1265,6 +1170,17 @@ bool MeshTools::buildPLC(const NCollection_Array1<occHandle(Ng_MeshVS_DataSource
             QApplication::postEvent(progressIndicator,progressEvent);
             QApplication::processEvents();
         }
+    }
+
+    //! ------------------------------------------------
+    //! reset the progress bar after generating the PLC
+    //! ------------------------------------------------
+    if(progressIndicator!=Q_NULLPTR)
+    {
+        QProgressEvent *progressEvent = new QProgressEvent(QProgressEvent_None,0,9999,0,"Building the PLC - done",
+                                                           QProgressEvent_Update,0,9999,0,"MeshTools building PLC on disk");
+        QApplication::postEvent(progressIndicator,progressEvent);
+        QApplication::processEvents();
     }
 
     //! ---------------------
@@ -1281,10 +1197,15 @@ bool MeshTools::buildPLC(const NCollection_Array1<occHandle(Ng_MeshVS_DataSource
     //! First line: <# of points> <dimension (3)> <# of attributes> <boundary markers (0 or 1)>
     //! ----------------------------------------------------------------------------------------
     fprintf(nodeFile,"%d\t3\t0\t1\n",pointList.length());
+
     for(int i=0; i<pointList.length(); i++)
+    //for(int i=0; i<pointList_.length(); i++)  new
     {
         const QVector<double> &P = pointList.at(i);
-        fprintf(nodeFile,"%d\t%.12e\t%.12e\t%.12e\t%d\n",i+1,P.at(0),P.at(1),P.at(2),1);
+        fprintf(nodeFile,"%d\t%.9e\t%.9e\t%.9e\t%d\n",i+1,P.at(0),P.at(1),P.at(2),1);
+
+        //const mesh::meshPoint &aP_ = pointList_[i];
+        //fprintf(nodeFile,"%d\t%.12e\t%.12e\t%.12e\t%d\n",i+1,aP_.x,aP_.y,aP_.z,1);
     }
     fclose(nodeFile);
 
@@ -1314,56 +1235,45 @@ bool MeshTools::buildPLC(const NCollection_Array1<occHandle(Ng_MeshVS_DataSource
     fprintf(polyFile,"%d\t%d\n",NbFacets,1);
     for(int faceDSNr = arrayOfFaceDS.Lower(); faceDSNr<=arrayOfFaceDS.Upper(); faceDSNr++)
     {
-        //!cout<<"MeshTools::buildPLC()->____poly file: working of face data source "<<faceDSNr<<"____"<<endl;
-        ccout(QString("MeshTools::buildPLC()->____poly file: working on face data source %1____").arg(faceDSNr));
-
         const occHandle(Ng_MeshVS_DataSourceFace) &curFaceMeshDS = arrayOfFaceDS.Value(faceDSNr);
-        if(!curFaceMeshDS.IsNull())
-        {
-            TColStd_PackedMapOfInteger eMap = curFaceMeshDS->GetAllElements();
-            TColStd_MapIteratorOfPackedMapOfInteger eIt;
-            int localElementID = 0;
-            int NbNodes;
-            MeshVS_EntityType type;
-            double buf[24];
-            TColStd_Array1OfReal coords(*buf,1,24);
-
-            for(eIt.Initialize(eMap);eIt.More();eIt.Next())
-            {
-                //! ---------------------------------------------------------
-                //! One line: <# of polygons> [# of holes] [boundary marker]
-                //! ---------------------------------------------------------
-                fprintf(polyFile,"%d\t%d\t%d\n",1,0,faceDSNr);
-
-                //! ----------------------------------------------------------------------------------------
-                //! Following lines list # of polygons: <# of corners> <corner 1> <corner 2> ... <corner #>
-                //! ----------------------------------------------------------------------------------------
-                fprintf(polyFile,"%d\t",3);
-
-                localElementID++;
-                int globalElementID = eIt.Key();
-                curFaceMeshDS->GetGeom(globalElementID,true,coords,NbNodes,type);
-
-                //!cout<<"____local element ID: "<<localElementID<<"____global element ID: "<<globalElementID<<"____"<<endl;
-
-                for(int k=0; k<NbNodes-1; k++)
-                {
-                    QVector<double> P;
-                    P.push_back(coords(3*k+1));
-                    P.push_back(coords(3*k+2));
-                    P.push_back(coords(3*k+3));
-                    fprintf(polyFile,"%d\t",pointList.indexOf(P)+1);
-                }
-                QVector<double> P;
-                P.push_back(coords(3*(NbNodes-1)+1));
-                P.push_back(coords(3*(NbNodes-1)+2));
-                P.push_back(coords(3*(NbNodes-1)+3));
-                fprintf(polyFile,"%d\n",pointList.indexOf(P)+1);
-            }
-        }
-        else
+        if(curFaceMeshDS.IsNull())
         {
             cout<<"MeshTools::buildPLC()->____poly file: the face data source "<<faceDSNr<<" is null____"<<endl;
+            continue;
+        }
+
+        int localElementID = 0;
+        int NbNodes;
+        MeshVS_EntityType type;
+        double buf[24];
+        TColStd_Array1OfReal coords(*buf,1,24);
+
+        for(TColStd_MapIteratorOfPackedMapOfInteger eIt(curFaceMeshDS->GetAllElements());eIt.More();eIt.Next())
+        {
+            //! ---------------------------------------------------------
+            //! One line: <# of polygons> [# of holes] [boundary marker]
+            //! ---------------------------------------------------------
+            fprintf(polyFile,"%d\t%d\t%d\n",1,0,faceDSNr);
+
+            //! ----------------------------------------------------------------------------------------
+            //! Following lines list # of polygons: <# of corners> <corner 1> <corner 2> ... <corner #>
+            //! ----------------------------------------------------------------------------------------
+            fprintf(polyFile,"%d\t",3);
+
+            localElementID++;
+            int globalElementID = eIt.Key();
+            curFaceMeshDS->GetGeom(globalElementID,true,coords,NbNodes,type);
+
+            for(int k=0; k<NbNodes-1; k++)
+            {
+                int s = 3*k;
+                QVector<double> P { coords(s+1), coords(s+2), coords(s+3) };
+                fprintf(polyFile,"%d\t",pointList.indexOf(P)+1);
+            }
+
+            int n = 3*(NbNodes-1);
+            QVector<double> P { coords(n+1), coords(n+2), coords(n+3) };
+            fprintf(polyFile,"%d\n",pointList.indexOf(P)+1);
         }
     }
 
@@ -1467,7 +1377,7 @@ void MeshTools::filterVolumeElementsByType(const occHandle(MeshVS_DataSource) &i
     if(inputMesh->GetAllElements().Extent()<1) return;
     if(inputMesh->GetAllNodes().Extent()<1) return;
 
-    QList<meshElementByCoords> listOfElements;
+    std::vector<meshElementByCoords> listOfElements;
     for(TColStd_MapIteratorOfPackedMapOfInteger it(inputMesh->GetAllElements()); it.More(); it.Next())
     {
         int globalElementID = it.Key();
@@ -1503,7 +1413,8 @@ void MeshTools::filterVolumeElementsByType(const occHandle(MeshVS_DataSource) &i
             ameshElementByCoords.pointList<<aP;
         }
         //cout<<"____point list size: "<<pointList.size()<<"____"<<endl;
-        listOfElements<<ameshElementByCoords;
+        //listOfElements<<ameshElementByCoords;
+        listOfElements.push_back(ameshElementByCoords);
     }
 
     //! ------------------
@@ -1516,7 +1427,7 @@ void MeshTools::filterVolumeElementsByType(const occHandle(MeshVS_DataSource) &i
 //! function: toListOf3DElements
 //! details:
 //! -----------------------------
-void MeshTools::toListOf3DElements(const occHandle(Ng_MeshVS_DataSource3D) &inputMesh, QList<meshElementByCoords> &elements)
+void MeshTools::toListOf3DElements(const occHandle(Ng_MeshVS_DataSource3D) &inputMesh, std::vector<meshElementByCoords> &elements)
 {
     if(inputMesh.IsNull()) return;
     if(inputMesh->GetAllElements().Extent()<1) return;
@@ -1553,6 +1464,334 @@ void MeshTools::toListOf3DElements(const occHandle(Ng_MeshVS_DataSource3D) &inpu
             aP.ID = n;
             ameshElementByCoords.pointList<<aP;
         }
-        elements<<ameshElementByCoords;
+        elements.push_back(ameshElementByCoords);
+        //elements<<ameshElementByCoords;
+    }
+}
+
+
+//! ----------------------
+//! function: groupMeshes
+//! details:
+//! ----------------------
+std::map<GeometryTag, std::vector<occHandle(MeshVS_Mesh)>> MeshTools::groupMeshes(const std::map<GeometryTag, occHandle(MeshVS_Mesh)> &mapOfMeshes)
+{
+    cout<<"MeshTools::groupMeshes()->____grouping meshes____"<<endl;
+
+    std::map<GeometryTag,std::vector<occHandle(MeshVS_Mesh)>> body2MeshVector;
+    for(std::map<GeometryTag,occHandle(MeshVS_Mesh)>::const_iterator it = mapOfMeshes.cbegin(); it!=mapOfMeshes.cend(); it++)
+    {
+        const GeometryTag &aTag = it->first;
+        //const occHandle(MeshVS_Mesh) &aMeshDS = it->second;
+
+        //! ----------------------------------------
+        //! a tag representing a main shape (SOLID)
+        //! ----------------------------------------
+        int bodyIndex = aTag.parentShapeNr;
+        GeometryTag bodyTag(bodyIndex,bodyIndex,true,TopAbs_SOLID);
+        std::map<GeometryTag,std::vector<occHandle(MeshVS_Mesh)>>::iterator it_ = body2MeshVector.find(bodyTag);
+        if(it_==body2MeshVector.end())
+        {
+            std::vector<occHandle(MeshVS_Mesh)> vecMeshes { it->second };
+            body2MeshVector.insert(std::make_pair(bodyTag,vecMeshes));
+        }
+        else it_->second.push_back(it->second);
+    }
+    return body2MeshVector;
+}
+
+//! --------------------
+//! function: addMeshes
+//! details:
+//! --------------------
+occHandle(MeshVS_DataSource) MeshTools::mergeMesh(const occHandle(MeshVS_DataSource) &mesh1, const occHandle(MeshVS_DataSource) &mesh2)
+{
+    //cout<<"MeshTools::mergeMesh()->____function called____"<<endl;
+
+    occHandle(MeshVS_DataSource) retMeshDS;
+
+    if(mesh1.IsNull()) return mesh2;
+    if(mesh2.IsNull()) return mesh1;
+    if(mesh2.IsNull() && mesh1.IsNull()) return retMeshDS;
+
+    int meshDim = 0;    //! 0,1,2,3 D
+
+    std::vector<meshElementByCoords> vecElements;
+    std::vector<occHandle(MeshVS_DataSource)> vecMeshes {mesh1, mesh2};
+    for(int i=0; i<=1; i++)
+    {
+        const occHandle(MeshVS_DataSource) &curMeshDS = vecMeshes[i];
+        for(TColStd_MapIteratorOfPackedMapOfInteger it = curMeshDS->GetAllElements(); it.More(); it.Next())
+        {
+            int globalElementID = it.Key();
+
+            meshElementByCoords aMeshElement;
+            aMeshElement.ID = globalElementID;
+
+            int NbNodes, buf[20];
+            TColStd_Array1OfInteger nodeIDs(*buf,1,20);
+            curMeshDS->GetNodesByElement(globalElementID,nodeIDs,NbNodes);
+
+            MeshVS_EntityType aType;
+            curMeshDS->GetGeomType(globalElementID,true,aType);
+
+            ElemType anElementType;
+            switch(aType)
+            {
+            case MeshVS_ET_Volume:
+            {
+                meshDim = 3;
+                switch(NbNodes)
+                {
+                case 4: anElementType = TET; break;
+                case 5: anElementType = PYRAM ; break;
+                case 6: anElementType = PRISM; break;
+                case 8: anElementType = HEXA; break;
+                case 10: anElementType = TET10; break;
+                case 13: anElementType = PYRAM13 ; break;
+                case 15: anElementType = PRISM15; break;
+                case 20: anElementType = HEXA20; break;
+                }
+            }
+                break;
+
+            case MeshVS_ET_Face:
+            {
+                meshDim = 2;
+                switch(NbNodes)
+                {
+                case 3: anElementType = TRIG; break;
+                case 4: anElementType = QUAD; break;
+                case 6: anElementType = TRIG6; break;
+                case 8: anElementType = QUAD8; break;
+                }
+            }
+                break;
+
+            case MeshVS_ET_Link:
+            {
+                meshDim = 1;
+                // to do
+            }
+                break;
+            }
+
+            aMeshElement.type = anElementType;
+
+            for(int i=1; i<=NbNodes; i++)
+            {
+                int globalNodeID = nodeIDs(i);
+                double dbuf[3];
+                TColStd_Array1OfReal coords(*dbuf,1,3);
+                int NbNodes1;
+                curMeshDS->GetGeom(globalNodeID,false,coords,NbNodes1,aType);
+                mesh::meshPoint aP(coords(1),coords(2),coords(3),globalNodeID);
+                aMeshElement.pointList<<aP;
+            }
+
+            //! pile up the elements
+            vecElements.push_back(aMeshElement);
+        }
+    }
+
+    switch(meshDim)
+    {
+    case 0: break;
+    case 1: break;
+    case 2: retMeshDS = new Ng_MeshVS_DataSourceFace(vecElements,false,false); break;
+    case 3: retMeshDS = new Ng_MeshVS_DataSource3D(vecElements,false,false); break;
+    }
+
+    //cout<<"MeshTools::mergeMesh()->____number of nodes: "<<retMeshDS->GetAllNodes().Extent()<<"____"<<endl;
+    //cout<<"MeshTools::mergeMesh()->____number of elements: "<<retMeshDS->GetAllElements().Extent()<<"____"<<endl;
+    //cout<<"MeshTools::mergeMesh()->____function exiting____"<<endl;
+
+    return retMeshDS;
+}
+
+
+//! --------------------------------
+//! function: computeAngleDefectMap
+//! details:
+//! --------------------------------
+void MeshTools::computeAngleDefectMap(const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS, std::map<int,double> &mapOfAngleDefect)
+{
+    cout<<"MeshTools::computeAngleDefectMap()->____function called____"<<endl;
+
+    const double PI = 3.1415926538;
+
+    if(aMeshDS.IsNull()) return;
+    if(aMeshDS->myNodeToElements.isEmpty()) aMeshDS->computeNodeToElementsConnectivity();   // nodes and elements local numbering
+    if(aMeshDS->myNodeNormals.isEmpty()) aMeshDS->computeNormalAtNodes();
+    if(aMeshDS->myBoundaryPoints.isEmpty()) aMeshDS->computeFreeMeshSegments();
+    cout<<"____number of boundary points: "<<aMeshDS->myBoundaryPoints.length()<<"____"<<endl;
+
+    //! --------------------
+    //! scan the mesh nodes
+    //! --------------------
+    TColStd_MapIteratorOfPackedMapOfInteger it(aMeshDS->GetAllNodes());
+    int NbMeshNodes = aMeshDS->GetAllNodes().Extent();
+    for(int localNodeID = 1; localNodeID<=NbMeshNodes; localNodeID++, it.Next())
+    {
+        int globalNodeID = it.Key();
+
+        cout<<" ***************************************"<<endl;
+        cout<<"  computing angle deficit @ nodeID: "<<globalNodeID<<endl;
+
+        const QList<int> &attachedElements_local = aMeshDS->myNodeToElements.value(localNodeID);
+        int NbAttachedElements = attachedElements_local.length();
+
+        cout<<"  attached elements: "<<NbAttachedElements<<endl;
+        cout<<" ***************************************"<<endl;
+
+        std::set<int> surroundingNodes_global;
+        for(int n = 0; n<NbAttachedElements; n++)
+        {
+            int localElementID_attached = attachedElements_local[n];
+            int globalElementID_attached = aMeshDS->myElementsMap.FindKey(localElementID_attached);
+            int buf[20], NbElementNodes;
+            TColStd_Array1OfInteger nodeIDs(*buf,1,20);
+            aMeshDS->GetNodesByElement(globalElementID_attached,nodeIDs,NbElementNodes);
+            for(int i=1; i<=NbElementNodes; i++)
+                surroundingNodes_global.insert(nodeIDs(i));
+        }
+        for(std::set<int>::iterator it = surroundingNodes_global.begin(); it !=surroundingNodes_global.end(); it++)
+            cout<<"*____node ID: "<<*it<<"____"<<endl;
+
+        //! -----------------------------------------------
+        //! discard the "globalNodeID" - center of the fan
+        //! -----------------------------------------------
+        std::set<int>::iterator it__ = surroundingNodes_global.find(globalNodeID);
+        if(it__==surroundingNodes_global.end()) exit(20);       // questo non deve mai capitare
+        surroundingNodes_global.erase(it__);
+
+
+        for(std::set<int>::iterator it = surroundingNodes_global.begin(); it !=surroundingNodes_global.end(); it++)
+            cout<<"*____node ID: "<<*it<<"____"<<endl;
+
+
+        //! ---------------------------
+        //! center of the triangle fan
+        //! ---------------------------
+        int NbNodes_;
+        double bufd[3];
+        TColStd_Array1OfReal coords(*bufd,1,3);
+        MeshVS_EntityType aType;
+        aMeshDS->GetGeom(globalNodeID,false,coords,NbNodes_,aType);     // center of the triangle fan
+        double xP = coords(1);
+        double yP = coords(2);
+        double zP = coords(3);
+
+        //! ------------------------------
+        //! convert the set into a vector
+        //! ------------------------------
+        std::vector<int> vecOfSurroundingNodes;
+        for(std::set<int>::iterator it_ = surroundingNodes_global.begin(); it_ != surroundingNodes_global.end(); it_++)
+        {
+            cout<<"____surrounding nodes: "<<*it_<<"____"<<endl;
+            vecOfSurroundingNodes.push_back(*it_);
+        }
+
+        //! ---------------------------------------------------
+        //! first point of the vector (first surrounding node)
+        //! ---------------------------------------------------
+        aMeshDS->GetGeom(vecOfSurroundingNodes[0],false,coords,NbNodes_,aType);
+        double xP0 = coords(1);
+        double yP0 = coords(2);
+        double zP0 = coords(3);
+
+        double vecstartx = xP0-xP;
+        double vecstarty = yP0-yP;
+        double vecstartz = zP0-zP;
+
+        //! -----------------------------------------------------------
+        //! vector for the orientation: the normal at the current node
+        //! -----------------------------------------------------------
+        QList<double> nodeNormal;
+        aMeshDS->myNodeNormals.value(globalNodeID,nodeNormal);
+        double nx = nodeNormal[0];
+        double ny = nodeNormal[1];
+        double nz = nodeNormal[2];
+
+        std::map<double,int> angleMap;
+        angleMap.insert(std::make_pair(0.0,vecOfSurroundingNodes[0]));
+
+        double lP0P = sqrt(pow((xP0-xP),2)+pow((yP0-yP),2)+pow((zP0-zP),2));
+        size_t Nb = vecOfSurroundingNodes.size();
+        for(int i = 0; i<Nb; i++)
+        {
+            aMeshDS->GetGeom(vecOfSurroundingNodes[i],false,coords,NbNodes_,aType);
+            double xPi = coords(1);
+            double yPi = coords(2);
+            double zPi = coords(3);
+
+            double lP1P = sqrt(pow((xPi-xP),2)+pow((yPi-yP),2)+pow((zPi-zP),2));
+            double dot = (xP0-xP)*(xPi-xP)+(yP0-yP)*(yPi-yP)+(zP0-zP)*(zPi-zP);
+            dot /= lP0P*lP1P;
+
+            if(dot<-1) dot = -1;
+            if(dot>1) dot = 1;
+            double angle = std::acos(dot);
+
+            //! ----------------------------------
+            //! i           j           k
+            //! vecstartx   vecstarty   vecstartz
+            //! vecx        vecy        vecz
+            //! ----------------------------------
+            double vecx = xPi-xP;
+            double vecy = yPi-yP;
+            double vecz = zPi-zP;
+
+            double crossx = vecstarty*vecz-vecstartz*vecy;
+            double crossy = vecstartz*vecx-vecstartx*vecz;
+            double crossz = vecstartx*vecy-vecstarty*vecx;
+
+            double flag = crossx*nx+crossy*ny+crossz*nz;
+            if(flag < 0) angle = 2*PI - angle;
+            angleMap.insert(std::make_pair(angle,vecOfSurroundingNodes[i]));
+        }
+
+        //std::vector<int> reordererArray { globalNodeID };
+        std::vector<int> reordererArray;
+        for(std::map<double,int>::iterator it = angleMap.begin(); it!=angleMap.end(); it++)
+        {
+            int globalNodeID_ = it->second;
+            double angle = it->first;
+            reordererArray.push_back(globalNodeID_);
+            cout<<"____inserting nodes: "<<globalNodeID_<<" angle: "<<angle*180/PI<<" into the support map____"<<endl;
+        }
+
+        size_t N = reordererArray.size();
+
+        for(int i=0; i<N; i++) cout<<"____reordered array: "<<reordererArray[i]<<"____"<<endl;
+
+        double angleDefect = 0;
+        for(int i=0; i<N; i++)
+        {
+            int i1 = i%N;
+            aMeshDS->GetGeom(vecOfSurroundingNodes[i1],false,coords,NbNodes_,aType);
+            double xi = coords(1);
+            double yi = coords(2);
+            double zi = coords(3);
+
+            int i2 = (i+1)%N;
+            aMeshDS->GetGeom(vecOfSurroundingNodes[i2],false,coords,NbNodes_,aType);
+            double xii = coords(1);
+            double yii = coords(2);
+            double zii = coords(3);
+
+            double dot = (xii-xP)*(xi-xP)+(yii-yP)*(yi-yP)+(zii-zP)*(zi-zP);
+            double li = sqrt(pow((xi-xP),2)+pow((yi-yP),2)+pow((zi-zP),2));
+            double lii = sqrt(pow((xii-xP),2)+pow((yii-yP),2)+pow((zii-zP),2));
+            dot /= li*lii;
+            if(dot<-1) dot = -1;
+            if(dot>1) dot = 1;
+
+            angleDefect += std::acos(dot);
+        }
+        angleDefect = 2*PI-angleDefect;
+        if(aMeshDS->myBoundaryPoints.contains(globalNodeID)) angleDefect = PI-angleDefect;
+        cout<<"____(nodeID, angleDeficit) = ("<<globalNodeID<<", "<<angleDefect*180/PI<<")____"<<endl;
+        mapOfAngleDefect.insert(std::make_pair(globalNodeID,angleDefect));
     }
 }

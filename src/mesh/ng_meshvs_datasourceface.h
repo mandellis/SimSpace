@@ -162,14 +162,12 @@ public:
     //! ---------------------------------------
     //! constructor - clone a mesh data source
     //! ---------------------------------------
-    Standard_EXPORT Ng_MeshVS_DataSourceFace(const occHandle(Ng_MeshVS_DataSourceFace) &aFaceMesh);
-
+    Standard_EXPORT Ng_MeshVS_DataSourceFace(const occHandle(Ng_MeshVS_DataSourceFace) &aFaceMesh, bool invertNormals = false);
 
     //! --------------------------------------------------
     //! constructor - from a vector of elements and nodes
     //! --------------------------------------------------
     Standard_EXPORT Ng_MeshVS_DataSourceFace(const std::vector<mesh::meshElement> &elements, std::vector<mesh::meshPoint> &nodes);
-
 
     //! -------------------------------------------------------------------
     //! constructor - retrieve the STL mesh from a TopoDS_Shape and faceNr
@@ -318,7 +316,7 @@ public:
     //! --------------------------------------------------
     //! deform the mesh using a vector displacement field
     //! --------------------------------------------------
-    void displaceMySelf(const QMap<int, gp_Vec> &displacementField);
+    void displaceMySelf(const QMap<int, QList<double> > &displacementField);
 
     //! ------------------------------------------------
     //! compute the gradient of the normal at each node
