@@ -25,15 +25,13 @@ public:
 
     void init(const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS);
 
-    bool distance(double *P, double *dir, double *d);
-
-private:
-
-    Eigen::MatrixXd line_mesh_intersection(const Eigen::MatrixXd & V_source, const Eigen::MatrixXd  & N_source);
+    bool distance(double *P, double *dir, float *d);
 
 private:
 
     igl::embree::EmbreeIntersector myEmbree;
+    Eigen::MatrixXd myV;
+    Eigen::MatrixXi myF;
 };
 
 #endif // POINTTOMESHDISTANCE_H

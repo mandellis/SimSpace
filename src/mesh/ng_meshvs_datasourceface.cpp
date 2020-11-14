@@ -100,7 +100,7 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()
 //! function: constructor
 //! details:  clone a mesh data source - copy constructor
 //! ------------------------------------------------------
-Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const occHandle(Ng_MeshVS_DataSourceFace) &aFaceMesh)
+Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const occHandle(Ng_MeshVS_DataSourceFace) &aFaceMesh, bool invertNormals)
 {
     cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____cloning constructor called____"<<endl;
 
@@ -129,6 +129,11 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const occHandle(Ng_MeshVS_Dat
     myElemType = new TColStd_HArray1OfInteger(1,myNumberOfElements);
     myElemNormals = new TColStd_HArray2OfReal(1,myNumberOfElements,1,3);
 
+    //int maskTrig[3];
+    //if(invertNormals==true) { maskTrig[0] = 1; maskTrig[1] = 3; maskTrig[2] = 2; }
+    //else { maskTrig[0] = 1; maskTrig[1] = 2; maskTrig[2] = 3; }
+
+    //int maskTrig[3] {1,2,3};
     TColStd_MapIteratorOfPackedMapOfInteger it;
     for(it.Initialize(myElements);it.More();it.Next())
     {
@@ -141,6 +146,8 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const occHandle(Ng_MeshVS_Dat
 
         for(int n=1; n<=NbNodes; n++)
         {
+            //int k = maskTrig[n-1];
+            //myElemNodes->SetValue(localElementID,n,nodeIDs.Value(k));
             myElemNodes->SetValue(localElementID,n,nodeIDs.Value(n));
         }
 
@@ -173,6 +180,16 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const occHandle(Ng_MeshVS_Dat
     //! compute the normal at elements
     //! -------------------------------
     this->computeNormalAtElements();
+
+    if(invertNormals==true)
+    {
+        for(int localNodeID = 1; localNodeID<=myNumberOfNodes; localNodeID++)
+        {
+            myElemNormals->ChangeValue(localNodeID,1) = -myElemNormals->Value(localNodeID,1);
+            myElemNormals->ChangeValue(localNodeID,2) = -myElemNormals->Value(localNodeID,2);
+            myElemNormals->ChangeValue(localNodeID,3) = -myElemNormals->Value(localNodeID,3);
+        }
+    }
 
     //! ------------------------
     //! build elements topology
@@ -1372,8 +1389,8 @@ void Ng_MeshVS_DataSourceFace::computeFreeMeshSegments()
                 int firstIndex = (i-1)%NbNodes;
                 int secondIndex = i%NbNodes;
 
-                aMeshSegment.nodeIDs<<nodeIDs.at(firstIndex);
-                aMeshSegment.nodeIDs<<nodeIDs.at(secondIndex);
+                aMeshSegment.nodeIDs<<nodeIDs[firstIndex];
+                aMeshSegment.nodeIDs<<nodeIDs[secondIndex];
 
                 //! - panacea -
                 aMeshSegment.sort();
@@ -1399,9 +1416,9 @@ void Ng_MeshVS_DataSourceFace::computeFreeMeshSegments()
                 int secondIndex = (2*i-1)%NbNodes;
                 int thirdIndex = (2*i)%NbNodes;
 
-                aMeshSegment.nodeIDs<<nodeIDs.at(firstIndex);
-                aMeshSegment.nodeIDs<<nodeIDs.at(secondIndex);
-                aMeshSegment.nodeIDs<<nodeIDs.at(thirdIndex);
+                aMeshSegment.nodeIDs<<nodeIDs[firstIndex];
+                aMeshSegment.nodeIDs<<nodeIDs[secondIndex];
+                aMeshSegment.nodeIDs<<nodeIDs[thirdIndex];
 
                 //! - panacea -
                 aMeshSegment.sort();
@@ -1424,7 +1441,7 @@ void Ng_MeshVS_DataSourceFace::computeFreeMeshSegments()
 
     for(int i=0; i<listOfKeys.length(); i++)
     {
-        mesh::meshSegment aMeshSegment = listOfKeys.at(i);
+        mesh::meshSegment aMeshSegment = listOfKeys[i];
         if(aMeshSegment == aMeshSegment_old) continue;
         aMeshSegment_old = aMeshSegment;
 
@@ -1441,11 +1458,7 @@ void Ng_MeshVS_DataSourceFace::computeFreeMeshSegments()
         //! --------------------------------------------------------
         if(adjacentElements.length()==1)
         {
-            if(!myBoundarySegments.contains(aMeshSegment))
-            {
-                //cout<<"BS____"<<aMeshSegment.nodeIDs.at(0)<<", "<<aMeshSegment.nodeIDs.at(1)<<"____"<<endl;
-                myBoundarySegments<<aMeshSegment;
-            }
+            if(!myBoundarySegments.contains(aMeshSegment)) myBoundarySegments<<aMeshSegment;
         }
     }
 
@@ -1456,17 +1469,14 @@ void Ng_MeshVS_DataSourceFace::computeFreeMeshSegments()
     //! -----------------------------------------------
     for(int i=0; i<myBoundarySegments.length(); i++)
     {
-        const mesh::meshSegment &aSegment = myBoundarySegments.at(i);
+        const mesh::meshSegment &aSegment = myBoundarySegments[i];
         for(int k=0; k<aSegment.nodeIDs.length(); k++)
         {
-            int curNodeID = aSegment.nodeIDs.at(k);
+            int curNodeID = aSegment.nodeIDs[k];
             if(!myBoundaryPoints.contains(curNodeID)) myBoundaryPoints<<curNodeID;
         }
     }
 
-    //! -----------------
-    //! testing purposes
-    //! -----------------
     //cout<<"____Number of boundary segments: "<<myBoundarySegments.length()<<"____"<<endl;
     //cout<<"____Number of boundary points: "<<myBoundaryPoints.length()<<"____"<<endl;
 }
@@ -2100,7 +2110,7 @@ Standard_EXPORT Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const QList<Q
 //! ---------------------------------------------------------------
 Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const QList<occHandle(Ng_MeshVS_DataSourceFace)> &faceDSList)
 {
-    cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list of "<<faceDSList.length()<<" face mesh data sources____"<<endl;
+    //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list of "<<faceDSList.length()<<" face mesh data sources____"<<endl;
 
     //! ------------------
     //! fill the node map
@@ -2169,14 +2179,14 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const QList<occHandle(Ng_Mesh
     myElemNormals = new TColStd_HArray2OfReal(1,myNumberOfElements,1,3);
     myElemNodes = new TColStd_HArray2OfInteger(1,myNumberOfElements,1,8);
 
-    cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list. Number of shared nodes: "<<NbSharedNodes<<"____"<<endl;
-    cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list. Number of nodes: "<<myNumberOfNodes<<"____"<<endl;
-    cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list. Number of elements: "<<myNumberOfElements<<"____"<<endl;
+    //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list. Number of shared nodes: "<<NbSharedNodes<<"____"<<endl;
+    //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list. Number of nodes: "<<myNumberOfNodes<<"____"<<endl;
+    //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list. Number of elements: "<<myNumberOfElements<<"____"<<endl;
 
     //! --------------------
     //! define the elements
     //! --------------------
-    cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list. Start defining the elements____"<<endl;
+    //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list. Start defining the elements____"<<endl;
 
     //! ----------------------------------------------------------------
     //! note: I can not use QList for defining "alreadyVisitedElements"
@@ -2210,14 +2220,11 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const QList<occHandle(Ng_Mesh
             //! an element from been inserted more than one time
             //! ----------------------------------------------------------
             mesh::meshElement aMeshElement;
-            for(int n=1; n<=NbNodes; n++)
-            {
-                aMeshElement.theNodeIDs.push_back(nodeIDs(n));
-            }
+            for(int n=1; n<=NbNodes; n++) aMeshElement.theNodeIDs.push_back(nodeIDs(n));
 
             if(alreadyVisitedElements.contains(aMeshElement))
             {
-                cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list. A shared element has been found____"<<endl;
+                //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list. A shared element has been found____"<<endl;
                 NbSharedElements++;
                 continue;
             }
@@ -2228,7 +2235,7 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const QList<occHandle(Ng_Mesh
             for(int k=1; k<=NbNodes; k++)
             {
                 int globalNodeID = nodeIDs.Value(k);
-                //!cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list: globalNodeID: "<<globalNodeID<<"____"<<endl;
+                //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list: globalNodeID: "<<globalNodeID<<"____"<<endl;
                 myElemNodes->SetValue(localElementID,k,globalNodeID);
             }
 
@@ -2244,13 +2251,13 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const QList<occHandle(Ng_Mesh
             }
         }
     }
-    cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____number of shared elements: "<<NbSharedElements<<"____"<<endl;
-    cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list. Elements defined____"<<endl;
+    //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____number of shared elements: "<<NbSharedElements<<"____"<<endl;
+    //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list. Elements defined____"<<endl;
 
     //! -----------------------------------------
     //! insert the coordinates of each mesh node
     //! -----------------------------------------
-    cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list. Start defining nodes____"<<endl;
+    //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list. Start defining nodes____"<<endl;
     int localNodeID = 0;
     TColStd_PackedMapOfInteger alreadyVisitedNodes;
     for(int i=0; i<faceDSList.length(); i++)
@@ -2278,7 +2285,7 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const QList<occHandle(Ng_Mesh
             myNodeCoords->SetValue(localNodeID,3,coords(3));
         }
     }
-    cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list. Nodes defined____"<<endl;
+    //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list. Nodes defined____"<<endl;
 
     //! --------------------------------
     //! compute the normals at elements
@@ -2290,7 +2297,7 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const QList<occHandle(Ng_Mesh
     //! ------------------------
     this->buildElementsTopology();
 
-    cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____exiting____"<<endl;
+    //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____exiting____"<<endl;
 }
 
 //! ------------------------------
@@ -5017,7 +5024,6 @@ void Ng_MeshVS_DataSourceFace::buildElementsTopology()
     }
 }
 
-
 //! ----------------------
 //! function: constructor
 //! details:
@@ -5093,28 +5099,34 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const occHandle(Ng_MeshVS_Dat
     this->buildElementsTopology();
 }
 
-//! ---------------------------------------------
-//! function: compute normal at nodes
-//! details:  compute an average normal at nodes
-//! ---------------------------------------------
+//! -------------------------------
+//! function: computeNormalAtNodes
+//! details:
+//! -------------------------------
+#define ITERATIVE_NORMAL
+#ifdef ITERATIVE_NORMAL
 void Ng_MeshVS_DataSourceFace::computeNormalAtNodes()
 {
     cout<<"Ng_MeshVS_DataSourceFace::computeNormalAtNodes()->____function called____"<<endl;
+    //FILE *fp = fopen("D:/nodeNormals_iterative.txt","w");
 
     //! -----------------------------
     //! node to element connectivity
     //! -----------------------------
-    this->computeNodeToElementsConnectivity();
+    if(myNodeToElements.isEmpty()) this->computeNodeToElementsConnectivity();
 
+    //! ----------------------------
+    //! parameters of the algorithm
+    //! ----------------------------
     const double PI = 3.14159236538;
-    const double limit = 1.0*PI/180;
-    const double b = 0.5;   // relaxation
-    int localNodeID = 0;
+    const double limit = 0.005*PI/180;
+    const int NMaxSteps = 1000;
+    const double b = 0.5;               // relaxation
+    const double oneminusb = 1-b;       // 1-relaxation
     for(TColStd_MapIteratorOfPackedMapOfInteger it(myNodes); it.More(); it.Next())
     {
-        localNodeID++;
         int globalNodeID = it.Key();
-        cout<<"____nodeID("<<localNodeID<<", "<<globalNodeID<<")____"<<endl;
+        int localNodeID = myNodesMap.FindIndex(globalNodeID);
 
         const QList<int> &attachedElementsLocalIDs = myNodeToElements.value(localNodeID);
         int N = attachedElementsLocalIDs.length();
@@ -5127,62 +5139,69 @@ void Ng_MeshVS_DataSourceFace::computeNormalAtNodes()
         for(int n=0; n<N; n++)
         {
             wg.push_back(1.0/N);
-
-            int curLocalElementID = attachedElementsLocalIDs[n];
+            int curLocalElementID = attachedElementsLocalIDs[n];   
             int curGlobalElementID = this->myElementsMap.FindKey(curLocalElementID);
             surroundingElementsGlobalIDs.push_back(curGlobalElementID);
-            //cout<<"____surrounding element: "<<curGlobalElementID<<"____"<<endl;
         }
 
         //! -----------------------------
         //! initial guess for the normal
         //! -----------------------------
-        double NP[3] {0,0,0}, NPnew[3] {0,0,0}, NPcorrection[3] {0,0,0};
+        double NP[3] {0,0,0};
+        double NPnew[3] {0,0,0};
+        double NPcorrection[3] {0,0,0};
         for(int n=0; n<N; n++)
         {
-            int curGlobalElementID = surroundingElementsGlobalIDs[n];
-            double cnx, cny, cnz;
-            this->GetNormal(curGlobalElementID,10,cnx,cny,cnz);
+            int curLocalElementID = attachedElementsLocalIDs[n];
+            double cnx = myElemNormals->Value(curLocalElementID,1);
+            double cny = myElemNormals->Value(curLocalElementID,2);
+            double cnz = myElemNormals->Value(curLocalElementID,3);
             double w = wg[n];
             NP[0] += w*cnx;
             NP[1] += w*cny;
             NP[2] += w*cnz;
         }
-        double norm = sqrt(NP[0]*NP[0]+NP[1]*NP[1]+NP[2]*NP[2]);
+        double norm = sqrt(pow(NP[0],2)+pow(NP[1],2)+pow(NP[2],2));
         NP[0] /= norm;
         NP[1] /= norm;
         NP[2] /= norm;
 
-        cout<<"***************************************************"<<endl;
-        cout<<" Initial normal ("<<NP[0]<<", "<<NP[1]<<", "<<NP[2]<<")"<<endl;
+        //cout<<"***************************************************"<<endl;
+        //cout<<" Initial normal ("<<NP[0]<<", "<<NP[1]<<", "<<NP[2]<<")"<<endl;
 
-        const int NMaxSteps = 1000;
+        //fprintf(fp,"*************************************\n");
+        //fprintf(fp,"%d\n",globalNodeID);
+        //fprintf(fp,"guess %lf\t%lf\t%lf\n",NP[0],NP[1],NP[2]);
+
+        //! ----------------
+        //! start iterating
+        //! ----------------
         double dotErr = 1e10;
         double angleErr = 1e10;
         int step = 0;
-        for(step =1; step<=NMaxSteps; step++)
+        for(step=1; step<=NMaxSteps; step++)
         {
             std::vector<double> alpha;
             double alphaSum = 0;
             for(int i=0; i<N; i++)
             {
-                int curGlobalElementID = surroundingElementsGlobalIDs[i];
-                double nx_i, ny_i, nz_i;
-                this->GetNormal(curGlobalElementID,10,nx_i,ny_i,nz_i);
+                int curLocalElementID = attachedElementsLocalIDs[i];
+                double nx_i = myElemNormals->Value(curLocalElementID,1);
+                double ny_i = myElemNormals->Value(curLocalElementID,2);
+                double nz_i = myElemNormals->Value(curLocalElementID,3);
+
                 double dot = nx_i*NP[0]+ny_i*NP[1]+nz_i*NP[2];
                 dot /= sqrt(nx_i*nx_i+ny_i*ny_i+nz_i*nz_i)*sqrt(pow(NP[0],2)+pow(NP[1],2)+pow(NP[2],2));
-                //cout<<"____dot: "<<dot<<"____"<<endl;
                 if(dot<-1) dot = -1;
                 if(dot>1) dot = 1;
                 double curAlpha = std::acos(dot);
-                //cout<<"____curAlpha: "<<curAlpha<<"____"<<endl;
                 alpha.push_back(curAlpha);
                 alphaSum += curAlpha;
             }
 
             if(fabs(alphaSum/N)<=0.01745329)    // 1 degree
             {
-                cout<<" => this is a flat node <="<<endl;
+                //cout<<" => this is a flat node <="<<endl;
                 break;
             }
 
@@ -5192,11 +5211,11 @@ void Ng_MeshVS_DataSourceFace::computeNormalAtNodes()
             double sumOfWeights = 0;
             for(int i=0; i<N; i++)
             {
-                wg[i] += alpha[i]/alphaSum;
+                wg[i] *= alpha[i]/alphaSum;
                 sumOfWeights += wg[i];
             }
 
-            //if(sumOfWeights==0) exit(2);        // should never occur
+            if(sumOfWeights==0) exit(2);        // should never occur
 
             //! ----------------------
             //! normalize the weights
@@ -5210,9 +5229,11 @@ void Ng_MeshVS_DataSourceFace::computeNormalAtNodes()
             Sx = Sy = Sz = 0;
             for(int i=0; i<N; i++)
             {
-                int curGlobalElementID = surroundingElementsGlobalIDs[i];
-                double nx_i, ny_i, nz_i;
-                this->GetNormal(curGlobalElementID,10,nx_i,ny_i,nz_i);
+                int curLocalElementID = attachedElementsLocalIDs[i];
+                double nx_i = myElemNormals->Value(curLocalElementID,1);
+                double ny_i = myElemNormals->Value(curLocalElementID,2);
+                double nz_i = myElemNormals->Value(curLocalElementID,3);
+
                 double w_i = wg[i];
                 Sx += w_i*nx_i;
                 Sy += w_i*ny_i;
@@ -5220,15 +5241,18 @@ void Ng_MeshVS_DataSourceFace::computeNormalAtNodes()
             }
             double normS = sqrt(Sx*Sx+Sy*Sy+Sz*Sz);
 
-            if(normS==0) exit(2);               // should never occur
+            if(normS==0) exit(3);               // should never occur
 
             NPcorrection[0] = Sx/normS;
             NPcorrection[1] = Sy/normS;
             NPcorrection[2] = Sz/normS;
 
-            NPnew[0] = b*NPcorrection[0] + (1-b)*NP[0];
-            NPnew[1] = b*NPcorrection[1] + (1-b)*NP[1];
-            NPnew[2] = b*NPcorrection[2] + (1-b)*NP[2];
+            //! -------------
+            //! relax normal
+            //! -------------
+            NPnew[0] = b*NPcorrection[0] + oneminusb*NP[0];
+            NPnew[1] = b*NPcorrection[1] + oneminusb*NP[1];
+            NPnew[2] = b*NPcorrection[2] + oneminusb*NP[2];
 
             double lNpNew = sqrt(pow(NPnew[0],2)+pow(NPnew[1],2)+pow(NPnew[2],2));
             NPnew[0] /= lNpNew;
@@ -5246,23 +5270,27 @@ void Ng_MeshVS_DataSourceFace::computeNormalAtNodes()
             if(dotErr> 1) dotErr = 1;
             angleErr = std::acos(dotErr);
             if(angleErr<=limit) break;
-            //if(fabs(angleErr)>=0.99984769) break;
         }
+
+        //! --------------------------------------
+        //! record the normal at the current node
+        //! --------------------------------------
         QList<double> aNormal { NP[0],NP[1],NP[2] };
         myNodeNormals.insert(globalNodeID,aNormal);
 
-        cout<<" Final normal   ("<<NP[0]<<", "<<NP[1]<<", "<<NP[2]<<")"<<endl;
-        cout<<" angle: "<<angleErr*180.0/PI<<endl;
-        cout<<" number of steps: "<<step<<endl;
-        cout<<"***************************************************"<<endl;
+        //fprintf(fp,"%d\t%lf\t%lf\t%lf\n",globalNodeID,NP[0],NP[1],NP[2]);
     }
+    //fclose(fp);
 }
+#endif
 
-/*
+#ifndef ITERATIVE_NORMAL
 #ifndef LIBIGLNORMAL
 void Ng_MeshVS_DataSourceFace::computeNormalAtNodes()
 {
     //cout<<"Ng_MeshVS_DataSourceFace::computeNormalAtNodes()->____function called____"<<endl;
+
+    FILE *fp = fopen("D:/nodeNormals_average.txt","w");
 
     //! ---------------------------------------------
     //! tolerance for normal comparisons: <n> degrees
@@ -5358,8 +5386,10 @@ void Ng_MeshVS_DataSourceFace::computeNormalAtNodes()
         else { ntotx = ntoty = ntotz = 0.0; }
         QList<double> aveNormal {ntotx, ntoty, ntotz};
         myNodeNormals.insert(globalNodeID, aveNormal);
-    }
 
+        fprintf(fp,"%d\t%lf\t%lf\t%lf\n",globalNodeID,ntotx,ntoty,ntotz);
+    }
+    fclose(fp);
     //! -----------------------------------------------------------------------------------
     //! the old version included the calculation of the node to elements connectivity
     //! for compatibility the new function computeNodeToElementsConnectivity is called here
@@ -5456,4 +5486,4 @@ void Ng_MeshVS_DataSourceFace::computeNormalAtNodes()
     }
 }
 #endif
-*/
+#endif

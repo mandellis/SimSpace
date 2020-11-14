@@ -426,7 +426,7 @@ void TetgenMesher::setSwitches(int preserveSurfaceMesh, int bodyIndex)
     double tolerance = TOLERANCE;
     double L = myMeshDB->ArrayOfMaxBodyElementSize.value(bodyIndex);
     double maxVolSize = (4.0/3.0)*3.14159*pow(L,3);
-    maxVolSize = pow(maxVolSize,0.3333);
+    //maxVolSize = pow(maxVolSize,0.3333);
 
     switch(preserveSurfaceMesh)
     {
@@ -967,10 +967,13 @@ int TetgenMesher::performOnDisk1(const NCollection_Array1<occHandle(Ng_MeshVS_Da
     //! ----------------------------
     //! send an Init progress event
     //! ----------------------------
-    QProgressEvent *progressEvent = new QProgressEvent(QProgressEvent_None,0,9999,0,"",
-                                                       QProgressEvent_Init,0,13,0,"Tetgen meshing running on disk",this);
-    QApplication::postEvent(myProgressIndicator,progressEvent);
-    QApplication::processEvents();
+    if(myProgressIndicator!=Q_NULLPTR)
+    {
+        QProgressEvent *progressEvent = new QProgressEvent(QProgressEvent_None,0,9999,0,"",
+                                                           QProgressEvent_Init,0,13,0,"Tetgen meshing running on disk",this);
+        QApplication::postEvent(myProgressIndicator,progressEvent);
+        QApplication::processEvents();
+    }
 
     //! ----------------------------------------------------------------
     //! the PLC is written using the two separate files <bodyName>.node

@@ -32,6 +32,9 @@ TetQualityClass::TetQualityClass(double ax0, double ay0, double az0,
 //! --------------------
 void TetQualityClass::setPoints(const std::vector<mesh::meshPoint> &aTet)
 {
+    //! ----------------------------------
+    //! Jacobian matrix of the affine map
+    //! ----------------------------------
     x0 = aTet[0].x; y0 = aTet[0].y; z0 = aTet[0].z;
     x1 = aTet[1].x; y1 = aTet[1].y; z1 = aTet[1].z;
     x2 = aTet[2].x; y2 = aTet[2].y; z2 = aTet[2].z;
