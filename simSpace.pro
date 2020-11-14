@@ -548,7 +548,7 @@ RESOURCES += \
     icons.qrc \
     cursors.qrc \
     stylesheets.qrc \
-    src/TimeStepBuilder/resources.qrc
+    #src/TimeStepBuilder/resources.qrc
 
 #----------------------
 # unhandled exceptions

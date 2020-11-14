@@ -26,7 +26,6 @@ std::vector<GeometryTag> TopologyTools::generateLocationPairs(geometryDataBase *
     {
         const TopoDS_Shape &curShape = it.Value();
         curShape.ShapeType();
-
         GeometryTag loc;
         if(it.Value().ShapeType()==TopAbs_SOLID)
         {

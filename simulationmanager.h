@@ -589,6 +589,9 @@ private:
     //! create automatic connections
     void createAutomaticConnections();
 
+    //! findContactFaces
+    std::vector<std::pair<std::vector<GeometryTag>,std::vector<GeometryTag>>> findContactFaces(std::vector<GeometryTag> masterVecLoc,std::vector<GeometryTag> slaveVecLoc,double tolerance,int grouping,double angularCriterion);
+
 private slots:
 
     //! retrieve solver info

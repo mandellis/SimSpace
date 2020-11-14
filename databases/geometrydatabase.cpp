@@ -574,22 +574,6 @@ void geometryDataBase::getBoundingBox(const TopoDS_Shape &shape, double &L1, dou
     L3 = fabs(Zmax-Zmin);
 }
 
-//! --------------------------
-//! function: boundingBox
-//! details:  return the diag
-//! --------------------------
-double geometryDataBase::boundingBox(const TopoDS_Shape &shape)
-{
-    Bnd_Box boundingBox;
-    BRepBndLib::Add(shape, boundingBox);
-    Standard_Real Xmin,Ymin,Zmin,Xmax,Ymax,Zmax;
-    boundingBox.Get(Xmin,Ymin,Zmin,Xmax,Ymax,Zmax);
-    double L1 = fabs(Xmax-Xmin);
-    double L2 = fabs(Ymax-Ymin);
-    double L3 = fabs(Zmax-Zmin);
-    double diag = sqrt(pow(L1,2)+pow(L2,2)+pow(L3,2));
-    return diag;
-}
 
 //!-------------------------------------------
 //! function: create "Coordinate system root"

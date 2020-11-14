@@ -1,7 +1,3 @@
-#ifdef COSTAMP_VERSION
-#include "src/TimeStepBuilder/timestepbuilder.h"
-#endif
-
 //! ----------------
 //! custom includes
 //! ----------------
@@ -360,7 +356,6 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
     {
         DetailViewer *detailViewer = static_cast<DetailViewer*>(tools::getWidgetByName("detailViewer"));
         detailViewer->setCurrentMultipleSelectionNode(Q_NULLPTR);
-
         //! ----------------------------------------------
         //! for the moment the detail viewer is activated
         //! only for the last element of the selection
@@ -4674,18 +4669,9 @@ void SimulationManager::handleItemChange(QStandardItem *item)
     //! simulation item and node
     //! -------------------------
     QExtendedStandardItem *curItem = static_cast<QExtendedStandardItem*>(myModel->itemFromIndex(myTreeView->currentIndex()));
-
-    cout<<"____tag00____"<<endl;
-
     SimulationNodeClass *curNode = curItem->data(Qt::UserRole).value<SimulationNodeClass*>();
-
-    cout<<"____tag01____"<<endl;
-
     SimulationNodeClass::nodeType family = curNode->getFamily();
-    cout<<"____tag02____"<<endl;
-
     SimulationNodeClass::nodeType type = curNode->getType();
-    cout<<"____tag03____"<<endl;
 
     //! ------------------------------------------------
     //! parse the item after the change
@@ -7819,7 +7805,7 @@ int SimulationManager::getInsertionRow() const
         SimulationNodeClass *parentNode = theCurItem->parent()->data(Qt::UserRole).value<SimulationNodeClass*>();
         if(parentNode->isAnalysisRoot()) insertionRow--;
     }
-    cout<<"____insertion row: "<<insertionRow<<"____"<<endl;
+    //cout<<"____insertion row: "<<insertionRow<<"____"<<endl;
     return insertionRow;
 }
 
@@ -9946,7 +9932,7 @@ void SimulationManager::interpolatePrivate(int mode)
     //! -----------------------------
     //! results of the interpolation
     //! -----------------------------
-    QList<QMap<int,std::pair<double,double>>> listMapMinMax;
+    std::vector<std::map<int,std::pair<double,double>>> listMapMinMax;
     std::vector<std::map<GeometryTag,std::vector<std::map<int,double>>>> listMapOfRes;
 
     //! --------------------------
@@ -10019,10 +10005,9 @@ void SimulationManager::interpolatePrivate(int mode)
             cout<<"SimulationManager::interpolatePrivate()->____mapping finished____"<<endl;
             for(int pos=0;pos<NbStep;pos++)
             {
-                QMap<int,std::pair<double,double>> mapMinMax;
+                std::map<int,std::pair<double,double>> mapMinMax;
                 std::vector<std::map<int,double>> listOfRes;
                 std::map<GeometryTag,std::vector<std::map<int,double>>> mapOfRes;
-
                 cout<<"SimulationManager::interpolatePrivate()->____retrieve list of map of result at step "<<pos<<"____"<<endl;
 
                 //! retrieve the mapper interpolation result at time "pos"
@@ -10035,25 +10020,25 @@ void SimulationManager::interpolatePrivate(int mode)
                 if(it==vecLocs.begin())
                 {
                     cout<<"SimulationManager::interpolatePrivate()->inserting results on first body number = "<<bodyIndex<<endl;
-                    mapMinMax.insert(bodyIndex,aPair);
+                    mapMinMax.insert(std::make_pair(bodyIndex,aPair));
                     mapOfRes.insert(std::make_pair(loc,listOfRes));
 
                     //! insert all results type into the "time" list of results
-                    listMapMinMax<<mapMinMax;
+                    listMapMinMax.push_back(mapMinMax);
                     listMapOfRes.push_back(mapOfRes);
                 }
                 else
                 {
                     cout<<"SimulationManager::interpolatePrivate()->inserting results on next body number =  "<<bodyIndex<<endl;
-                    mapMinMax=listMapMinMax[pos];
-                    mapOfRes=listMapOfRes[pos];
-                    mapMinMax.insert(bodyIndex,aPair);
+                    mapMinMax = listMapMinMax[pos];
+                    mapOfRes = listMapOfRes[pos];
+                    mapMinMax.insert(std::make_pair(bodyIndex,aPair));
                     mapOfRes.insert(std::make_pair(loc,listOfRes));
 
                     //! --------------------------------------------
                     //! insert all results into the list of results
                     //! --------------------------------------------
-                    listMapMinMax.replace(pos,mapMinMax);
+                    listMapMinMax[pos]= mapMinMax;
                     listMapOfRes[pos] = mapOfRes;
                     //std::replace(listMapOfRes.begin(),listMapOfRes.end(),listMapOfRes.at(pos),mapOfRes);
                 }
@@ -10149,16 +10134,28 @@ void SimulationManager::interpolatePrivate(int mode)
         //! QMap<GeometryTag,QList<QMap<int,double>>> => std::map<GeometryTag,std::vector<std::map<int,double>>>
         //! -----------------------------------------------------------------------------------------------------
         std::map<GeometryTag,std::vector<std::map<int,double>>> mapOfRes = listMapOfRes.at(t);
-
+        std::map<int,std::pair<double,double>> mapMinMax = listMapMinMax.at(t);
+        double min,max;
+        std::vector<double> listOfMin,listOfMax;
+        for(std::map<int,std::pair<double,double>>::iterator it=mapMinMax.begin();it!=mapMinMax.end();++it)
+        {
+            std::pair<double,double> &aPair = it->second;
+            listOfMax.push_back(aPair.second);
+            listOfMin.push_back(aPair.first);
+        }
+        std::sort(listOfMax.begin(),listOfMax.end());
+        std::sort(listOfMax.begin(),listOfMax.end());
+        max = listOfMax.back();
+        min = listOfMax.front();
         //! ---------------------------------------------------------------------
         //! create the post object: 1-st column of data, 10 levels, autoscale ON
         //! ---------------------------------------------------------------------
         sharedPostObject aPostObject = std::make_shared<postObject>(mapOfRes,vecLocs,postObjectName);
         int component = 0;
         int NbLevels = 10;
-        bool isAutoscale = true;
+        bool isAutoscale = false;
         aPostObject->init(static_cast<meshDataBase*>(this->getDataBase()));
-        aPostObject->buildMeshIO(-1,-1,NbLevels,isAutoscale,component);
+        aPostObject->buildMeshIO(min,max,NbLevels,isAutoscale,component);
 
         QVariant data;
         data.setValue(aPostObject);
@@ -11712,8 +11709,9 @@ bool SimulationManager::COSTAMP_addProcessParameters()
             //!  2: OpenAssembly,
             std::vector<int> timeStepNr,type;
             std::vector<double>  prevTime,curTime;
-            double closureForceValue, innerPressureValue;
-            int closureForceDir;
+            double closureForceValue=0;
+            double innerPressureValue=0;
+            int closureForceDir=0;
             int n=0;
             if(is.is_open())
                 while(!is.eof())
@@ -11736,12 +11734,15 @@ bool SimulationManager::COSTAMP_addProcessParameters()
                         int c;
                         //std::getline(is,val);
                         //std::getline(is,val);
+
                         if(2 == sscanf(val.c_str(),"%d%lf",&c,&a))
                         {
                             closureForceDir = c;
                             closureForceValue = a;
+                            std::getline(is,val);
                         }
-                        if(1 ==sscanf(val.c_str(),"%lf",&b)) innerPressureValue = b;
+                        if(1 ==sscanf(val.c_str(),"%lf",&b))
+                            innerPressureValue = b;
                     }
                 }
             is.close();
@@ -11752,14 +11753,12 @@ bool SimulationManager::COSTAMP_addProcessParameters()
             prexIndex = -1;
             modelChangeIndex = -1;
 
-            //QStandardItem *theStaticRoot = myTreeView->currentIndex().parent().data(Qt::UserRole).value<QStandardItem*>();
             //! ------------------------------------------------------------
             //! for "createSimulationNode()" which needs the "current" item
             //! ------------------------------------------------------------
             myTreeView->setCurrentIndex(itemSimulationRoot->index().child(0,0));
             int curRow = 1;
             tSbIndex = curRow;
-            cout<<"curRow= "<<tSbIndex<<endl;
             SimulationNodeClass *nodeAnalysisSettings = itemSimulationRoot->child(0,0)->data(Qt::UserRole).value<SimulationNodeClass*>();
             CustomTableModel *tabData = nodeAnalysisSettings->getTabularDataModel();
 
@@ -11777,11 +11776,31 @@ bool SimulationManager::COSTAMP_addProcessParameters()
 
             for(int i=0; i<NbTstep;i++)
             {
+                //! change step end time
                 tabData->setDataRC(curTime.at(i),i+1,1,Qt::EditRole);
+                //! change time stepping policy
+                QVector<int> timeStepPolicy;
+                if(i==0) timeStepPolicy<<40<<10<<120<<1;
+                else timeStepPolicy<<10<<5<<100<<1;
+                data.setValue(timeStepPolicy);
+                tabData->setDataRC(data,i+1,3,Qt::EditRole);
+                //! change field parameters
+                QVector<double> fieldParam;
+                fieldParam<<0.005<<1e10<<0<<0<<0.02<<1e-5<<1e10<<1e-8;
+                data.setValue(fieldParam);
+                tabData->setDataRC(data,i+1,4,Qt::EditRole);
+                //! change output variables
+                QVector<int> output;
+                output<<1<<1<<0<<0;
+                data.setValue(output);
+                tabData->setDataRC(data,i+1,14,Qt::EditRole);
+                //! change store results
+                QVector<int> store;
+                store<<1<<999999;
+                data.setValue(store);
+                tabData->setDataRC(data,i+1,14,Qt::EditRole);
             }
             curRow++;
-            cout<<"curRow= "<<curRow<<endl;
-
             //! -----------------------
             //! create a fixed support
             //! -----------------------
@@ -11793,7 +11812,6 @@ bool SimulationManager::COSTAMP_addProcessParameters()
             //! -------------------------------
             this->createSimulationNode(SimulationNodeClass::nodeType_mapper);
             mapperIndex = curRow;
-            cout<<"curRow of mapper Index= "<<mapperIndex<<endl;
             curRow++;
             myTreeView->setCurrentIndex(itemSimulationRoot->index().child(mapperIndex,0));
             SimulationNodeClass *mapperNode = myTreeView->currentIndex().data(Qt::UserRole).value<SimulationNodeClass*>();
@@ -11849,6 +11867,56 @@ bool SimulationManager::COSTAMP_addProcessParameters()
             importedBSNode->replaceProperty("Pinball",property_pin);
             importedBSNode->getModel()->blockSignals(false);
 
+            //! --------------------
+            //! find casting area
+            //! --------------------
+            std::vector<GeometryTag> masterLoc;
+            std::vector<GeometryTag> slaveLoc;
+            //! 12 portastampo mobile
+            //! 11 portastampo fissa
+            //! 22 matrice mobile/controcolata
+            //! 21 matrice fissa/colata
+            //! 24 tassello mobile
+            //! 23 tassello fissa
+            //! 13 piastra
+            //! 14 lardoni
+            QStringList bodyList;
+            bodyList<<"12"<<"11"<<"22"<<"21"<<"23"<<"13"<<"14";
+            ListOfShape slaveScope,masterScope;
+
+            //! create master and slave scope and assign material
+            for(int i=1; i<=Geometry_RootItem->rowCount();i++)
+            {
+                QStandardItem *curBody = Geometry_RootItem->child(i-1,0);
+                SimulationNodeClass *curBodyNode = curBody->data(Qt::UserRole).value<SimulationNodeClass*>();
+                QString bodyName = curBodyNode->getName();
+                TopoDS_Solid aSolid = TopoDS::Solid(mySimulationDataBase->bodyMap.value(i));
+
+                int matNumber = 2; //H11 only available
+                data.setValue(matNumber);
+                Property prop_material("Assignment",data,Property::PropertyGroup_Material);
+                curBodyNode->replaceProperty("Assignment",prop_material);
+
+                if(bodyName == "CASTING")
+                {
+                    masterScope.Append(aSolid);
+                    masterLoc = TopologyTools::generateLocationPairs(mySimulationDataBase, masterScope);
+                }
+                if(bodyName.startsWith(bodyList.at(2)) || bodyName.startsWith(bodyList.at(3)) || bodyName.startsWith(bodyList.at(4)))
+                    slaveScope.Append(aSolid);
+            }
+            std::vector<GeometryTag> casting;
+            if(!masterLoc.empty())
+            {
+                slaveLoc = TopologyTools::generateLocationPairs(mySimulationDataBase, slaveScope);
+                double tolerance = 2;
+                double angularCriterion=30;
+                int grouping = 3;
+                std::vector<std::pair<std::vector<GeometryTag>,std::vector<GeometryTag>>> allPairs =
+                        findContactFaces(masterLoc,slaveLoc,tolerance,grouping,angularCriterion);
+                std::pair<std::vector<GeometryTag>,std::vector<GeometryTag>> aPair = allPairs.at(0);
+                casting = aPair.second;
+            }
             //! -------------------------------
             //! create load boundary condition
             //! -------------------------------
@@ -11878,12 +11946,13 @@ bool SimulationManager::COSTAMP_addProcessParameters()
                     Property prop_loadMagnitude("Magnitude",data,Property::PropertyGroup_Definition);
                     curNode->replaceProperty("Magnitude",prop_loadMagnitude);
                     QVector<double> vec;
+                    vec<<0.0<<0.0<<0.0;
                     if(closureForceDir==1)
-                    {vec.push_back(1.0);vec.push_back(0.0);vec.push_back(0.0);}
+                        vec.push_back(1.0);vec.push_back(0.0);vec.push_back(0.0);
                     if(closureForceDir==2)
-                    {vec.push_back(0.0);vec.push_back(1.0);vec.push_back(0.0);}
+                        vec.push_back(0.0);vec.push_back(1.0);vec.push_back(0.0);
                     if(closureForceDir==3)
-                    {vec.push_back(0.0);vec.push_back(0.0);vec.push_back(1.0);}
+                        vec.push_back(0.0);vec.push_back(0.0);vec.push_back(1.0);
                     data.setValue(vec);
                     Property prop_loadDirection("Direction",data,Property::PropertyGroup_Definition);
                     curNode->replaceProperty("Direction",prop_loadDirection);
@@ -11910,6 +11979,15 @@ bool SimulationManager::COSTAMP_addProcessParameters()
                     data.setValue(Property::loadDefinition_tabularData);
                     Property prop_loadMagnitude("Magnitude",data,Property::PropertyGroup_Definition);
                     curNode->replaceProperty("Magnitude",prop_loadMagnitude);
+
+                    if(!casting.empty())
+                    {
+                        data.setValue(casting);
+                        Property prop_prexScope("Geometry",data,Property::PropertyGroup_Scope);
+                        Property prop_prexTags("Tags",data,Property::PropertyGroup_Scope);
+                        curNode->replaceProperty("Geometry",prop_prexScope);
+                        curNode->replaceProperty("Tags",prop_prexTags);
+                    }
                     nBpressure++;
                     curNode->getModel()->blockSignals(false);
                 }
@@ -11987,6 +12065,264 @@ bool SimulationManager::COSTAMP_addProcessParameters()
                     }
                 }
             }
+            myTreeView->setCurrentIndex(itemSimulationRoot->index().child(0,0));
+
+            //! -----------------------
+            //! check body status
+            //! -----------------------
+            for(int i=0; i<Geometry_RootItem->rowCount();i++)
+            {
+                QStandardItem *curBody = Geometry_RootItem->child(i,0);
+                SimulationNodeClass *curBodyNode = curBody->data(Qt::UserRole).value<SimulationNodeClass*>();
+                QString bodyName = curBodyNode->getName();
+                curBodyNode->getModel()->blockSignals(true);
+                if(bodyName == "CASTING")
+                {
+                    //data.setValue(Property::SuppressionStatus_Suppressed);
+                    //Property property_isSuppressed("Suppressed",data,Property::PropertyGroup_Definition);
+                    //curBodyNode->replaceProperty("Suppressed",property_isSuppressed);
+                    myTreeView->setCurrentIndex(curBody->index());
+                    this->changeNodeSuppressionStatus(Property::SuppressionStatus_Suppressed);
+                }
+                curBodyNode->getModel()->blockSignals(false);
+            }
+            //! --------------------
+            //! set mesh parameters
+            //! --------------------
+            myTreeView->setCurrentIndex(Mesh_RootItem->index());
+            int NbBodies = mySimulationDataBase->bodyMap.size();
+
+            //! set mesh parameters
+            QList<ListOfShape> groupShapeList;
+            ListOfShape scopeDie,scopeHoldings,scopePlate;
+
+            //! group bodies according to theri function and assing material
+            QList<std::vector<double>>groupBB;
+            std::vector<double> vecBB_Die,vecBB_Holdings,vecBB_Plate; // vector of bounding box max for each group
+            for(int i=1; i<=NbBodies; i++)
+            {
+                TopoDS_Solid aSolid = TopoDS::Solid(mySimulationDataBase->bodyMap.value(i));
+                int bodyIndex = mySimulationDataBase->bodyMap.key(aSolid);
+                QString bName = mySimulationDataBase->MapOfBodyNames.value(bodyIndex);
+
+                if(bName=="CASTING")
+                    continue;
+                double curBB =mySimulationDataBase->boundingBox(aSolid);
+
+                //! is matrice/tassello/colata/controcolata
+                if(bName.startsWith(bodyList.at(2)) || bName.startsWith(bodyList.at(3)) || bName.startsWith(bodyList.at(4))
+                        || bName.startsWith(bodyList.at(5)))
+                {
+                    scopeDie.Append(aSolid);
+                    vecBB_Die.push_back(curBB);
+                }
+                //! is portastampo
+                else if(bName.startsWith(bodyList.at(0)) || bName.startsWith(bodyList.at(1)))
+                {
+                    scopeHoldings.Append(aSolid);
+                    vecBB_Holdings.push_back(curBB);
+                }
+                //! is Plate/lardoni
+                else if(bName.startsWith(bodyList.at(6)) || bName.startsWith(bodyList.at(7)))
+                {
+                    scopePlate.Append(aSolid);
+                    vecBB_Plate.push_back(curBB);
+                }
+                else if(!bName.startsWith(bodyList.at(0)) || !bName.startsWith(bodyList.at(1)) ||
+                        !bName.startsWith(bodyList.at(2)) || !bName.startsWith(bodyList.at(3)) ||
+                        !bName.startsWith(bodyList.at(4)) || !bName.startsWith(bodyList.at(5)) ||
+                        !bName.startsWith(bodyList.at(6)) || !bName.startsWith(bodyList.at(7)))
+                    continue;
+            }
+            groupBB<<vecBB_Die<<vecBB_Holdings<<vecBB_Plate;
+            groupShapeList<<scopeDie<<scopeHoldings<<scopePlate;
+            DetailViewer *detailViewer = static_cast<DetailViewer*>(tools::getWidgetByName("detailViewer"));
+            int index=0;
+            for(int i=0;i<groupShapeList.length();i++)
+            {
+                ListOfShape scope = groupShapeList.at(i);
+                if(scope.IsEmpty()) continue;
+                this->createSimulationNode(SimulationNodeClass::nodeType_meshMethod);
+                SimulationNodeClass *curMeshControl = myTreeView->currentIndex().data(Qt::UserRole).value<SimulationNodeClass*>();
+                curMeshControl->getModel()->blockSignals(true);
+                //! scope
+                std::vector<GeometryTag> bodyLoc = TopologyTools::generateLocationPairs(mySimulationDataBase, scope);
+                data.setValue(bodyLoc);
+                Property prop_scopeAllBodies("Geometry",data,Property::PropertyGroup_Scope);
+                Property prop_tagsAllBodies("Tags",data,Property::PropertyGroup_Scope);
+
+                curMeshControl->replaceProperty("Geometry",prop_scopeAllBodies);
+                curMeshControl->replaceProperty("Tags",prop_tagsAllBodies);
+
+                //! method
+                bool on;
+                if(i==2) on = true;
+                else on = false;
+                data.setValue(on);
+                Property prop_mMethod("Patch conforming",data,Property::PropertyGroup_Method);
+                curMeshControl->replaceProperty("Patch conforming",prop_mMethod);
+
+                detailViewer->handleBRepFlagChanged();
+                if(on == false)
+                {
+                    //! angular linear deflection
+                    double lDeflection = 0.01;
+                    data.setValue(lDeflection);
+                    Property prop_lDef("Linear deflection",data,Property::PropertyGroup_Method);
+                    curMeshControl->replaceProperty("Linear deflection",prop_lDef);
+                    double aDeflection = 0.05;
+                    data.setValue(aDeflection);
+                    Property prop_aDef("Angular deflection",data,Property::PropertyGroup_Method);
+                    curMeshControl->replaceProperty("Angular deflection",prop_aDef);
+
+                    //! defeaturing
+                    bool defeaturing = true;
+                    data.setValue(defeaturing);
+                    Property prop_defeaturing("Defeaturing",data,Property::PropertyGroup_Defeaturing);
+                    curMeshControl->replaceProperty("Defeaturing",prop_defeaturing);
+
+                    detailViewer->handleDefeaturingFlagChanged();
+                    //! pair distance
+                    int by = 1;
+                    data.setValue(by);
+                    Property prop_by("By",data,Property::PropertyGroup_Defeaturing);
+                    curMeshControl->replaceProperty("By",prop_by);
+
+                    detailViewer->handleMeshSimplificationByChanged();
+                    double pairDistance = 1;
+                    data.setValue(pairDistance);
+                    Property prop_pDistance("Pair distance",data,Property::PropertyGroup_Defeaturing);
+                    curMeshControl->replaceProperty("Pair distance",prop_pDistance);
+                }
+                curMeshControl->getModel()->blockSignals(false);
+
+                //! body sizing
+                std::vector<double> vecBB = groupBB.at(i);
+                std::sort(vecBB.begin(),vecBB.end());
+                double maxBB = vecBB.back();
+                this->createSimulationNode(SimulationNodeClass::nodeType_meshBodyMeshControl);
+                SimulationNodeClass *curSizingControl = myTreeView->currentIndex().data(Qt::UserRole).value<SimulationNodeClass*>();
+                curSizingControl->getModel()->blockSignals(true);
+
+                //! scope
+                curSizingControl->replaceProperty("Geometry",prop_scopeAllBodies);
+                curSizingControl->replaceProperty("Tags",prop_tagsAllBodies);
+
+                //! sizing
+                double max = maxBB/20;
+                data.setValue(max);
+                Property prop_maxSize("Max element size",data,Property::PropertyGroup_Definition);
+                curSizingControl->replaceProperty("Max element size",prop_maxSize);
+                curSizingControl->getModel()->blockSignals(true);
+                index++;
+            }
+
+            //! vecAllBodies scope on every body
+            ListOfShape scopes;
+            for(int i=1; i<= NbBodies; i++)
+            {
+                TopoDS_Solid aSolid = TopoDS::Solid(mySimulationDataBase->bodyMap.value(i));
+                int bodyIndex = mySimulationDataBase->bodyMap.key(aSolid);
+                QString bodyName = mySimulationDataBase->MapOfBodyNames.value(bodyIndex);
+                if(mySimulationDataBase->MapOfIsActive.value(bodyIndex)==true || bodyName!="CASTING")
+                scopes.Append(aSolid);
+            }
+            std::vector<GeometryTag> vecLocAllBodies = TopologyTools::generateLocationPairs(mySimulationDataBase, scopes);
+
+            if(!casting.empty())
+            {
+                //! casting refinement
+                this->createSimulationNode(SimulationNodeClass::nodeType_meshFaceSize);
+                SimulationNodeClass *curSizingControl = myTreeView->currentIndex().data(Qt::UserRole).value<SimulationNodeClass*>();
+                curSizingControl->getModel()->blockSignals(true);
+
+                //! scope
+                data.setValue(casting);
+                Property prop_scopeCasting("Geometry",data,Property::PropertyGroup_Scope);
+                Property prop_tagsCasting("Tags",data,Property::PropertyGroup_Scope);
+                curSizingControl->replaceProperty("Geometry",prop_scopeCasting);
+                curSizingControl->replaceProperty("Tags",prop_tagsCasting);
+
+                //! sizing
+                double max = 3;
+                data.setValue(max);
+                Property prop_size("Face sizing",data,Property::PropertyGroup_Definition);
+                curSizingControl->replaceProperty("Face sizing",prop_size);
+                curSizingControl->getModel()->blockSignals(true);
+
+                //! Prism layer
+                this->createSimulationNode(SimulationNodeClass::nodeType_meshPrismaticLayer);
+                SimulationNodeClass *curPrismControl = myTreeView->currentIndex().data(Qt::UserRole).value<SimulationNodeClass*>();
+                curPrismControl->getModel()->blockSignals(true);
+
+                ListOfShape prismShape;
+                //! scope
+                for(std::vector<GeometryTag>::iterator tagIt=casting.begin();tagIt!=casting.end();++tagIt)
+                {
+                    GeometryTag curLoc = *tagIt;
+                    TopoDS_Solid aSolid = TopoDS::Solid(mySimulationDataBase->bodyMap.value(curLoc.parentShapeNr));
+                            if(prismShape.Contains(aSolid)) continue;
+                    else prismShape.Append(aSolid);
+                }
+                std::vector<GeometryTag> prismScope = TopologyTools::generateLocationPairs(mySimulationDataBase,prismShape);
+
+                data.setValue(prismScope);
+                Property prop_geometry("Geometry",data,Property::PropertyGroup_Scope);
+                curPrismControl->replaceProperty("Geometry",prop_geometry);
+                data.setValue(casting);
+                Property prop_boundaryCasting("Geometry",data,Property::PropertyGroup_Definition);
+                curPrismControl->replaceProperty("Boundary",prop_boundaryCasting);
+
+                //! boundary mesh
+                int bmesh = 1;
+                data.setValue(bmesh);
+                Property prop_boundaryMesh("Boundary mesh type",data,Property::PropertyGroup_Definition);
+                curPrismControl->replaceProperty("Boundary mesh type",prop_boundaryMesh);
+
+                //! Nb layers
+                double nBlayer = 5;
+                data.setValue(nBlayer);
+                Property prop_nBlayer("Number of layers",data,Property::PropertyGroup_Definition);
+                curPrismControl->replaceProperty("Number of layers",prop_nBlayer);
+
+                //! layer thickness
+                double thick = 0.4;
+                data.setValue(thick);
+                Property prop_thick("First layer thickness",data,Property::PropertyGroup_Definition);
+                curPrismControl->replaceProperty("First layer thickness",prop_thick);
+
+                //! expansion
+                double exp = 1.1;
+                data.setValue(exp);
+                Property prop_exp("Expansion ratio",data,Property::PropertyGroup_Definition);
+                curPrismControl->replaceProperty("Expansion ratio",prop_exp);
+                curPrismControl->getModel()->blockSignals(true);
+            }
+            //! -----------------------
+            //! set contact properties
+            //! -----------------------
+            myTreeView->setCurrentIndex(Connections_RootItem->index());
+            this->createSimulationNode(SimulationNodeClass::nodeType_connectionGroup);
+            SimulationNodeClass *cGnode = myTreeView->currentIndex().data(Qt::UserRole).value<SimulationNodeClass*>();
+            cGnode->getModel()->blockSignals(true);
+
+            data.setValue(vecLocAllBodies);
+            Property prop_scopeAllBodies("Geometry",data,Property::PropertyGroup_Scope);
+            Property prop_tagsAllBodies("Tags",data,Property::PropertyGroup_Scope);
+            cGnode->replaceProperty("Geometry",prop_scopeAllBodies);
+            cGnode->replaceProperty("Tags",prop_tagsAllBodies);
+            cGnode->getModel()->blockSignals(false);
+            //! starts automatic contact creation
+            this->createAutomaticConnections();
+
+            //! TO DO MAYBE__now all contacts are MPC, set frictional contact
+
+            //! change scope to importedBS item
+            importedBSNode->getModel()->blockSignals(true);
+            importedBSNode->replaceProperty("Geometry",prop_scopeAllBodies);
+            importedBSNode->replaceProperty("Tags",prop_tagsAllBodies);
+            importedBSNode->getModel()->blockSignals(false);
+
             myTreeView->setCurrentIndex(itemSimulationRoot->index().child(0,0));
             return true;
         }
@@ -12135,9 +12471,9 @@ void SimulationManager::createAutomaticConnections()
 
     //! ---------------------------------------------------
     //! grouping options - compatibility with old versions
-    //! default "By master body"
+    //! default "By bodies"
     //! ---------------------------------------------------
-    int grouping = 1;
+    int grouping = 0;
     if(curNode->getPropertyItem("Grouping")!=Q_NULLPTR) grouping = curNode->getPropertyValue<int>("Grouping");
 
     //! ----------------------------------------------------
@@ -12222,6 +12558,36 @@ void SimulationManager::createAutomaticConnections()
         const std::pair<std::vector<GeometryTag>,std::vector<GeometryTag>> &curPair = *it;
         int masterBodyIndex = curPair.first[0].parentShapeNr;
         int slaveBodyIndex = curPair.second[0].parentShapeNr;
+#ifdef COSTAMP_VERSION
+    //! filter the geomety tag, erase all non planar faces
+        std::vector<GeometryTag> master,slave;
+        for(std::vector<GeometryTag>::const_iterator mIt=curPair.first.cbegin() ;mIt!=curPair.first.cend();++mIt)
+        {
+            GeometryTag mLoc = *mIt;
+            int curMasterBodyIndex = mLoc.parentShapeNr;
+            int curMasterFaceIndex = mLoc.subTopNr ;
+
+            TopoDS_Shape masterFace = mySimulationDataBase->MapOfBodyTopologyMap.value(curMasterBodyIndex).faceMap.FindKey(curMasterFaceIndex);
+            GeomAbs_SurfaceType theMasterSurfaceType;
+            GeomToolsClass::getFaceType(TopoDS::Face(masterFace),theMasterSurfaceType);
+            if(theMasterSurfaceType!=GeomAbs_Plane) continue;
+            master.push_back(mLoc);
+        }
+        for(std::vector<GeometryTag>::const_iterator sIt=curPair.second.cbegin() ;sIt!=curPair.second.cend();++sIt)
+        {
+            GeometryTag sLoc = *sIt;
+            int curSlaveBodyIndex = sLoc.parentShapeNr;
+            int curSlaveFaceIndex = sLoc.subTopNr ;
+
+            TopoDS_Shape slaveFace = mySimulationDataBase->MapOfBodyTopologyMap.value(curSlaveBodyIndex).faceMap.FindKey(curSlaveFaceIndex);
+            GeomAbs_SurfaceType theSlaveSurfaceType;
+            GeomToolsClass::getFaceType(TopoDS::Face(slaveFace),theSlaveSurfaceType);
+
+            if(theSlaveSurfaceType!=GeomAbs_Plane) continue;
+            slave.push_back(sLoc);
+        }
+        if(master.empty() || slave.empty()) continue;
+#endif
 
         //! -------------------------------
         //! a name for the connection item
@@ -12243,12 +12609,22 @@ void SimulationManager::createAutomaticConnections()
         SimulationNodeClass *aContactNode = nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType_connectionPair,0,0,data);
 
         aContactNode->getModel()->blockSignals(true);
+#ifdef COSTAMP_VERSION
+        data.setValue(master);
+#endif
+#ifndef COSTAMP_VERSION
         data.setValue(curPair.first);
+#endif
         Property prop_master("Master",data,Property::PropertyGroup_Scope);
         Property prop_tagsMaster("Tags master",data,Property::PropertyGroup_Scope);
         aContactNode->replaceProperty("Master",prop_master);
         aContactNode->replaceProperty("Tags master",prop_tagsMaster);
+#ifdef COSTAMP_VERSION
+        data.setValue(slave);
+#endif
+#ifndef COSTAMP_VERSION
         data.setValue(curPair.second);
+#endif
         Property prop_slave("Slave",data,Property::PropertyGroup_Scope);
         Property prop_tagsSlave("Tags slave",data,Property::PropertyGroup_Scope);
         aContactNode->replaceProperty("Slave",prop_slave);
@@ -12275,6 +12651,86 @@ void SimulationManager::createAutomaticConnections()
     }
 }
 
+//! -------------------------------------
+//! function: findContactFaces
+//! details:
+//! -------------------------------------
+std::vector<std::pair<std::vector<GeometryTag>,std::vector<GeometryTag>>> SimulationManager::findContactFaces(std::vector<GeometryTag> masterVecLoc,std::vector<GeometryTag> slaveVecLoc,double tolerance,int grouping,double angularCriterion)
+{
+    cout<<"SimulationManager::findContactFaces()->____function called____"<<endl;
+    //! ---------------------------------------------
+    //! define the result: a vector of mesh pairs
+    //! indexed as the input vector of geometry tags
+    //! ---------------------------------------------
+    std::vector<std::pair<std::vector<GeometryTag>,std::vector<GeometryTag>>> allContactPairs;
+    if(slaveVecLoc.size()==0) return allContactPairs;
+    if(masterVecLoc.size()==0) return allContactPairs;
+
+    //! -----------
+    //! make pairs
+    //! -----------
+    std::vector<std::pair<GeometryTag,GeometryTag>> vectorOfTagPairs;
+    size_t NbBodies = masterVecLoc.size();
+    for(int i=1; i<=NbBodies; i++)
+    {
+        const GeometryTag &firstTag = masterVecLoc.at(i-1);
+        for(int j=1; j<=slaveVecLoc.size(); j++)
+        {
+            const GeometryTag &secondTag = slaveVecLoc.at(j-1);
+            cout<<"____(i,j) = ("<<firstTag.parentShapeNr<<", "<<secondTag.parentShapeNr<<")____"<<endl;
+
+            std::pair<GeometryTag,GeometryTag> aTagPair;
+            aTagPair.first = firstTag; aTagPair.second = secondTag;
+            vectorOfTagPairs.push_back(aTagPair);
+        }
+    }
+
+    //! --------------------------------------------------------------------
+    //! sanity check - this could be removed when extending to self-contact
+    //! detection, indeed for that case a single body is enough
+    //! --------------------------------------------------------------------
+    size_t NbBodies2 = slaveVecLoc.size();
+
+    if(NbBodies+NbBodies2<=1)
+    {
+        QMessageBox::information(this,"Contact finder","Insert at least two bodies in selector",QMessageBox::Ok);
+        return allContactPairs;
+    }
+
+    //! -------------------------------------------------------------
+    //! create an instance of contactFinder
+    //! Note: using the default constructor the angular criterion is
+    //! inizialied as angle = 20.0
+    //! -------------------------------------------------------------
+    contactFinder aContactFinder;
+    aContactFinder.setBodyPairs(vectorOfTagPairs);
+    aContactFinder.setDataBase(this->getDataBase());
+    aContactFinder.setAngularCriterion(angularCriterion);
+
+    //! -------------------------------------------------------
+    //! set the progress indicator for the contactFinder tool
+    //! -------------------------------------------------------
+    QProgressIndicator *myProgressIndicator = static_cast<QProgressIndicator*>(tools::getWidgetByName("progressIndicator"));
+    if(myProgressIndicator!=Q_NULLPTR)
+    {
+        myProgressIndicator->setSecondaryBarVisible(true);
+        aContactFinder.setProgressIndicator(myProgressIndicator);
+    }
+
+    //! --------------------------------------------------------------------------
+    //! perform: if the process has been intentionally stopped by the user return
+    //! grouping:
+    //! "0" => by bodies
+    //! "1" => by master face
+    //! "2" => by slave face
+    //! "3" => by master body
+    //! "4" => by slave body
+    //! "5" => none - ungrouped
+    //! --------------------------------------------------------------------------
+    bool stopped = aContactFinder.perform(vectorOfTagPairs,allContactPairs,tolerance,grouping);
+    if(!stopped) return allContactPairs;
+    else return allContactPairs;
+}
 //! -------------------------------------
 //! function: setTheActiveAnalysisBranch
 //! details:

@@ -409,6 +409,19 @@ bool writeSolverFileClass::perform()
                 }
                     break;
                 }
+
+#ifdef COSTAMP_VERSION
+                QVector<double> dirData = theItemNode->getPropertyValue<QVector<double>>("Direction");
+                double a0 = dirData.at(3);
+                double a1 = dirData.at(4);
+                double a2 = dirData.at(5);
+
+                myInputFile<<"*BOUNDARY"<<endl;
+                if(a0 == 0.0) myInputFile<<(QString("CM_")+SetName).toStdString()<<",1,1"<<endl;
+                if(a1 == 0.0) myInputFile<<(QString("CM_")+SetName).toStdString()<<",2,2"<<endl;
+                if(a2 == 0.0) myInputFile<<(QString("CM_")+SetName).toStdString()<<",3,3"<<endl;
+                myInputFile<<(QString("CM_")+SetName).toStdString()<<",4,6"<<endl;
+#endif
             }
                 break;
             case SimulationNodeClass::nodeType_structuralAnalysisBoundaryContidion_FixedSupport:
@@ -1577,7 +1590,6 @@ bool writeSolverFileClass::perform()
             myInputFile<<endl;
             //! Number of eigenFrequency to compute
             myInputFile<<"2"<<endl;
-            //myInputFile<<"1"<<endl;
         }
             break;
         case Property::analysisType_frequencyResponse:
