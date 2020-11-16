@@ -174,6 +174,11 @@ private:
     QMap<int,double> myLayerHCutOff;
 
     //! ----------------------
+    //! surrounding nodes map
+    //! ----------------------
+    std::map<int,std::vector<int>> mySurroudingNodesMap;
+
+    //! ----------------------
     //! the mesh data sources
     //! ----------------------
     occHandle(Ng_MeshVS_DataSourceFace) myOverallSumMeshDS;
@@ -245,8 +250,7 @@ private:
     //! check lateral distribution marhing distances
     //! ---------------------------------------------
     void checkLateralDistributionMarchingDistance(const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS,
-                                                  const std::map<int,double> displacementMapOld,
-                                                  std::vector<int,double> &displacementMap);
+                                                  QMap<int,double> &marchingDistanceMap);
 
     //! ---------------
     //! local manifold
@@ -264,8 +268,15 @@ private:
     void classifyNodes(const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS,
                        std::map<int,int> &mapCat1);
 
-    void correctClassificationForBoundaryCompression(const std::map<int,double> &firstLayerReductionMap,
-                                                     std::map<int,int> &mapCat);
+    //! -------------------------
+    //! buildSurroundingNodesMap
+    //! -------------------------
+    void buildSurroundingNodesMap(const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS, std::map<int,std::vector<int>> &surroundingNodesMap);
+
+    //! ---------------------------
+    //! check incomplete manifolds
+    //! ---------------------------
+    void checkIncompleteManifold(const occHandle(Ng_MeshVS_DataSourceFace) &theMeshToInflate);
 
     //! --------------------------------------------------
     //! enable/disable the progress indicator stop button
@@ -287,6 +298,28 @@ private:
         P[2] = coords(3);
         if(isDone == false) return false;
         return isDone;
+    }
+
+    //! ------------------------------------------------------
+    //! rotate vector v about direction k by an angle "angle"
+    //! ------------------------------------------------------
+    void rotateVector(double *v, double *k, double angle, double *r)
+    {
+        //! ---------------------
+        //! i       j       k
+        //! k[0]    k[1]    k[2]
+        //! v[0]    v[1]    v[2]
+        //! ---------------------
+        double sx = k[1]*v[2]-k[2]*v[1];
+        double sy = k[2]*v[0]-k[0]*v[2];
+        double sz = k[0]*v[1]-k[1]*v[0];
+
+        double dot = v[0]*k[0]+v[1]*k[1]+v[2]*k[2];
+        if(dot>1) dot = 1;
+        if(dot<-1) dot = -1;
+        r[0] = v[0]*cos(angle)+ sx*sin(angle) + k[0]*dot*(1-cos(angle));
+        r[1] = v[1]*cos(angle)+ sy*sin(angle) + k[1]*dot*(1-cos(angle));
+        r[2] = v[2]*cos(angle)+ sz*sin(angle) + k[2]*dot*(1-cos(angle));
     }
 };
 

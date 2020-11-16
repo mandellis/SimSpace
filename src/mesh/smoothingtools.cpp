@@ -38,7 +38,7 @@ double wij(double betaAve, const std::vector<double> &P, const std::vector<doubl
     //const double eps = 5.0*PI/180.0;
     //double val = 1.0;
     double val = 0.0;
-    if(betaAve<PI) val = 1/pow(kij(n,P,S,Sdij),2);        // "concave" point
+    if(betaAve<PI) val = 1/pow(kij(n,P,S,Sdij),2);         // "concave" point
     if(betaAve>=PI) val = pow(kij(n,P,S,Sdij),2);          // "convex" point
     return val;
 }
@@ -192,6 +192,9 @@ void smoothingTools::scalarFieldSmoother(QMap<int,double> &field,
                 //! get the surrounding nodes
                 //! --------------------------
                 std::set<int> surroundingNodes;
+                smoothingTools::surroundingNodes(aMeshDS,localNodeID,true,surroundingNodes);
+                /*
+                std::set<int> surroundingNodes;
                 const QList<int> &elements = aMeshDS->myNodeToElements.value(localNodeID);
                 for(int i=0; i<elements.length(); i++)
                 {
@@ -204,6 +207,7 @@ void smoothingTools::scalarFieldSmoother(QMap<int,double> &field,
                 }
                 std::set<int>::iterator itt = surroundingNodes.find(globalNodeID);
                 if(itt!=surroundingNodes.end()) surroundingNodes.erase(itt);
+                */
 
                 //! ---------------------------------------------------------
                 //! sum of all the distances from the current advancing node
@@ -254,8 +258,6 @@ void smoothingTools::scalarFieldSmoother(QMap<int,double> &field,
                 //! ---------------------------------------------------------------
             case 5:
             {
-                //cout<<"____case 5____"<<endl;
-
                 //! ------------------------------
                 //! get current point coordinates
                 //! ------------------------------
@@ -265,11 +267,12 @@ void smoothingTools::scalarFieldSmoother(QMap<int,double> &field,
                 MeshVS_EntityType aType;
                 aMeshDS->GetGeom(globalNodeID,false,coordsP,NbNodes,aType);
 
-               // cout<<"____case 5: point coordinates OK____"<<endl;
-
                 //! -----------------------------
                 //! search for surrounding nodes
                 //! -----------------------------
+                std::set<int> setOfSurroundingNodes;
+                smoothingTools::surroundingNodes(aMeshDS,globalNodeID,false,setOfSurroundingNodes);
+                /*
                 int localNodeID = aMeshDS->myNodesMap.FindIndex(globalNodeID);
                 const QList<int> &surroundingElements_local = aMeshDS->myNodeToElements.value(localNodeID);
                 int NbSurroundingElements = surroundingElements_local.length();
@@ -284,7 +287,7 @@ void smoothingTools::scalarFieldSmoother(QMap<int,double> &field,
                     for(int n=1; n<=NbNodes; n++) setOfSurroundingNodes.insert(nodeIDs(n));
                 }
                 setOfSurroundingNodes.erase(globalNodeID);
-                //cout<<"____case 5: surrounding nodes found____"<<endl;
+                */
 
                 //! -----------------------------------
                 //! iterate over the surrounding nodes
@@ -305,7 +308,6 @@ void smoothingTools::scalarFieldSmoother(QMap<int,double> &field,
                     double localValue = field.value(globalNodeID_surrounding);
                     partialSum += d_PS*localValue;
                 }
-                //cout<<"____case 5: sum of the distances: "<<sumOfWeigths<<"____"<<endl;
                 double localField_updated = partialSum/sumOfWeigths;
                 smoothedField.insert(globalNodeID,localField_updated);
             }
@@ -664,7 +666,7 @@ void smoothingTools::surroundingNodes(const occHandle(Ng_MeshVS_DataSourceFace) 
     {
         int localElementID_surr = surroundingElements_local[n];
         int globalElementID_surr = aMeshDS->myElementsMap.FindKey(localElementID_surr);
-        int NbNodes, buf[12];
+        int NbNodes, buf[10];
         TColStd_Array1OfInteger nodeIDs(*buf,1,10);
         aMeshDS->GetNodesByElement(globalElementID_surr,nodeIDs,NbNodes);
         for(int n=1; n<=NbNodes; n++) setOfSurroundingNodes.insert(nodeIDs(n));

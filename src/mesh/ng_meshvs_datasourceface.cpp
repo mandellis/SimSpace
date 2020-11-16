@@ -5119,8 +5119,8 @@ void Ng_MeshVS_DataSourceFace::computeNormalAtNodes()
     //! parameters of the algorithm
     //! ----------------------------
     const double PI = 3.14159236538;
-    const double limit = 0.005*PI/180;
-    const int NMaxSteps = 1000;
+    const double limit = 0.0001*PI/180;
+    const int NMaxSteps = 500;
     const double b = 0.5;               // relaxation
     const double oneminusb = 1-b;       // 1-relaxation
     for(TColStd_MapIteratorOfPackedMapOfInteger it(myNodes); it.More(); it.Next())
