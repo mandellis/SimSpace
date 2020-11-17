@@ -273,6 +273,11 @@ private:
     //! -------------------------
     void buildSurroundingNodesMap(const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS, std::map<int,std::vector<int>> &surroundingNodesMap);
 
+    //! --------------
+    //! analyze front
+    //! --------------
+    void analyzeFront(const occHandle(Ng_MeshVS_DataSourceFace) &theMeshToInflate, const QMap<int,double> &marchingDistancesMap);
+
     //! ---------------------------
     //! check incomplete manifolds
     //! ---------------------------

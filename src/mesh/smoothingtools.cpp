@@ -39,7 +39,9 @@ double wij(double betaAve, const std::vector<double> &P, const std::vector<doubl
     //double val = 1.0;
     double val = 0.0;
     if(betaAve<PI) val = 1/pow(kij(n,P,S,Sdij),2);         // "concave" point
-    if(betaAve>=PI) val = pow(kij(n,P,S,Sdij),2);          // "convex" point
+
+    if(betaAve>=PI) val = 1/pow(kij(n,P,S,Sdij),2);
+    //if(betaAve>=PI) val = pow(kij(n,P,S,Sdij),2);          // "convex" point
     return val;
 }
 
