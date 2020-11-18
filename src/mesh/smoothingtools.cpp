@@ -28,7 +28,8 @@ double fomega(double betaAve)
 double kij(double n, const std::vector<double> &P, const std::vector<double> &S, double Sdij)
 {
     double dij = sqrt(pow(P[0]-S[0],2)+pow(P[1]-S[1],2)+pow(P[2]-S[2],2));
-    double val = n*dij/Sdij;
+    //double val = n*dij/Sdij;
+    double val = dij/Sdij;
     return val;
 }
 
@@ -96,23 +97,6 @@ void smoothingTools::scalarFieldSmoother(QMap<int,double> &field,
                 //! ------------------
                 std::set<int> setOfSurroundingNodes;
                 smoothingTools::surroundingNodes(aMeshDS,globalNodeID,false,setOfSurroundingNodes);
-                /*
-                int localNodeID = aMeshDS->myNodesMap.FindIndex(globalNodeID);
-                const QList<int> &surroundingElements_local = aMeshDS->myNodeToElements.value(localNodeID);
-                int NbSurroundingElements = surroundingElements_local.length();
-                std::set<int> setOfSurroundingNodes;
-                for(int n=0; n<NbSurroundingElements; n++)
-                {
-                    int localElementID_surr = surroundingElements_local[n];
-                    int globalElementID_surr = aMeshDS->myElementsMap.FindKey(localElementID_surr);
-                    int NbNodes, buf[12];
-                    TColStd_Array1OfInteger nodeIDs(*buf,1,10);
-                    aMeshDS->GetNodesByElement(globalElementID_surr,nodeIDs,NbNodes);
-                    for(int n=1; n<=NbNodes; n++) setOfSurroundingNodes.insert(nodeIDs(n));
-                }
-                std::set<int>::iterator it_ = setOfSurroundingNodes.find(globalNodeID);
-                setOfSurroundingNodes.erase(it_);
-                */
                 std::vector<int> surroundingNodesOfType2;
                 for(std::set<int>::iterator it__ = setOfSurroundingNodes.begin(); it__!=setOfSurroundingNodes.end(); it__++)
                 {
@@ -195,21 +179,6 @@ void smoothingTools::scalarFieldSmoother(QMap<int,double> &field,
                 //! --------------------------
                 std::set<int> surroundingNodes;
                 smoothingTools::surroundingNodes(aMeshDS,localNodeID,true,surroundingNodes);
-                /*
-                std::set<int> surroundingNodes;
-                const QList<int> &elements = aMeshDS->myNodeToElements.value(localNodeID);
-                for(int i=0; i<elements.length(); i++)
-                {
-                    int localElementID = elements[i];
-                    int globalElementID = aMeshDS->myElementsMap.FindKey(localElementID);
-                    int NbNodes, buf[20];
-                    TColStd_Array1OfInteger nodeIDs(*buf,1,20);
-                    aMeshDS->GetNodesByElement(globalElementID,nodeIDs,NbNodes);
-                    for(int j=1; j<=NbNodes; j++) surroundingNodes.insert(nodeIDs(j));
-                }
-                std::set<int>::iterator itt = surroundingNodes.find(globalNodeID);
-                if(itt!=surroundingNodes.end()) surroundingNodes.erase(itt);
-                */
 
                 //! ---------------------------------------------------------
                 //! sum of all the distances from the current advancing node
@@ -274,22 +243,6 @@ void smoothingTools::scalarFieldSmoother(QMap<int,double> &field,
                 //! -----------------------------
                 std::set<int> setOfSurroundingNodes;
                 smoothingTools::surroundingNodes(aMeshDS,globalNodeID,false,setOfSurroundingNodes);
-                /*
-                int localNodeID = aMeshDS->myNodesMap.FindIndex(globalNodeID);
-                const QList<int> &surroundingElements_local = aMeshDS->myNodeToElements.value(localNodeID);
-                int NbSurroundingElements = surroundingElements_local.length();
-                std::set<int> setOfSurroundingNodes;
-                for(int n=0; n<NbSurroundingElements; n++)
-                {
-                    int localElementID_surr = surroundingElements_local[n];
-                    int globalElementID_surr = aMeshDS->myElementsMap.FindKey(localElementID_surr);
-                    int NbNodes, buf[10];
-                    TColStd_Array1OfInteger nodeIDs(*buf,1,10);
-                    aMeshDS->GetNodesByElement(globalElementID_surr,nodeIDs,NbNodes);
-                    for(int n=1; n<=NbNodes; n++) setOfSurroundingNodes.insert(nodeIDs(n));
-                }
-                setOfSurroundingNodes.erase(globalNodeID);
-                */
 
                 //! -----------------------------------
                 //! iterate over the surrounding nodes
