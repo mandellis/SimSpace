@@ -500,6 +500,7 @@ bool prismaticLayer::inflateMesh(QList<occHandle(Ng_MeshVS_DataSourceFace)> &inf
                 myLayerHCutOff.insert(globalNodeID,0);
                 cout<<"prismaticLayer::generateOneTetLayer()->____blocked node ID: "<<globalNodeID<<"____displacement: "<<displacement<<"\t gap: "<<gap<<"____"<<endl;
             }
+            gaps.clear();
         }
 
         //! ---------------
@@ -1179,7 +1180,7 @@ bool prismaticLayer::inflateMeshAndCompress(QList<occHandle(Ng_MeshVS_DataSource
     cout<<"****************************************"<<endl;
     cout<<" prismaticLayer::inflateMeshAndCompress "<<endl;
     cout<<"****************************************"<<endl;
-    exit(1);
+
     this->mergeFaceMeshes();
 
     occHandle(Ng_MeshVS_DataSourceFace) prismaticMeshDS = new Ng_MeshVS_DataSourceFace(myPrismaticFacesSumMeshDS);
@@ -1189,7 +1190,6 @@ bool prismaticLayer::inflateMeshAndCompress(QList<occHandle(Ng_MeshVS_DataSource
     surfaceMeshDS->computeNormalAtNodes();
     prismaticMeshDS->computeNormalAtNodes();
     prismaticMeshDS->computeFreeMeshSegments();
-
 
     //! -------------------------------------
     //! make a copy the initial (outer) mesh
@@ -1241,6 +1241,83 @@ bool prismaticLayer::inflateMeshAndCompress(QList<occHandle(Ng_MeshVS_DataSource
         static_cast<meshFace*>(sharedGeo.get())->setGeometry(nonPrismaticMeshDS);
     }
 
+    //! ------------------------------------------------------------------
+    //! analyze gaps at the beginning: scan all the mesh nodes.
+    //! compute the distance from closest point on the mesh => "distance"
+    //! apply reduction of first layer thickness if applicable
+    //! ------------------------------------------------------------------
+    double Sigma = 0;                                           // a parameter for reduction factor calculation
+    for(int n=0; n<myNbLayers; n++) Sigma += pow(myExpRatio,n);
+
+    pointToMeshDistance aDistanceMeter;                         // distance meter tool
+    aDistanceMeter.init(theMeshToInflate_old);                      // init with mesh
+    double firstLayerThickness = myLayerThickness.at(0);        // first layer thickness
+    std::map<int,double> mapOfFirstLayerReductionFactor;        // fill a map (nodeID, reduction factor)
+
+    if(theMeshToInflate_old->myNodeNormals.isEmpty()) theMeshToInflate_old->computeNormalAtNodes();
+    const QMap<int,QList<double>> &normals = theMeshToInflate_old->myNodeNormals;
+
+    //! ---------------------------------------------
+    //! preliminary analysis of gaps
+    //! start filling the map of compression factors
+    //! ---------------------------------------------
+    for(QMap<int,QList<double>>::const_iterator itn = normals.cbegin(); itn!=normals.cend(); itn++)
+    {
+        int globalNodeID = itn.key();
+        const QList<double> &normal = itn.value();
+
+        double P[3];
+        float distance;
+        this->getPointCoordinates(theMeshToInflate_old,globalNodeID,P);
+
+        //! --------------------------------------------------
+        //! invert the normal: it points towards the material
+        //! for gap calculation
+        //! --------------------------------------------------
+        double nx = -normal[0];
+        double ny = -normal[1];
+        double nz = -normal[2];
+        double dir[3] {nx,ny,nz};
+        aDistanceMeter.distance(P,dir,&distance);   // compute the distance
+
+        bool compress = true;
+        if(compress==true)
+        {
+            //! ---------------------------------------------
+            //! compress layers in order to avoid collisions
+            //! ---------------------------------------------
+            const double compressionFactor = 0.25;
+            if(myTotalThickness<distance/3.0)
+            {
+                //! the node can move with the nominal marching distance
+                mapOfFirstLayerReductionFactor.insert(std::make_pair(globalNodeID,1.0));
+            }
+            else
+            {
+                //! the node can move with smaller marching distance
+                double firstLayerThicknessNew = compressionFactor*distance/Sigma;
+                double reductionFactor = firstLayerThicknessNew/firstLayerThickness;
+                mapOfFirstLayerReductionFactor.insert(std::make_pair(globalNodeID,reductionFactor));
+                mapOfReductionFactor.insert(std::make_pair(globalNodeID,reductionFactor));
+            }
+        }
+        else
+        {
+            if(myTotalThickness<distance/3.0)
+            {
+                //! the node can move without compression
+                mapOfFirstLayerReductionFactor.insert(std::make_pair(globalNodeID,1.0));
+            }
+            else
+            {
+                //! lock point - the node cannot move
+                myLayerHCutOff.insert(globalNodeID,0);
+                mapOfFirstLayerReductionFactor.insert(std::make_pair(globalNodeID,0.0));
+                mapOfReductionFactor.insert(std::make_pair(globalNodeID,0.0));
+            }
+        }
+    }
+
     //! ---------------------------------------------------
     //! the work is done on the prismatic mesh data source
     //! ---------------------------------------------------
@@ -1266,6 +1343,7 @@ bool prismaticLayer::inflateMeshAndCompress(QList<occHandle(Ng_MeshVS_DataSource
 
         //! --------------------------------------------
         //! check gaps along slightly different normals
+        //! during inflation
         //! --------------------------------------------
         const double PI = 3.1415926538;
         pointToMeshDistance aDistanceMeter;
@@ -1312,25 +1390,36 @@ bool prismaticLayer::inflateMeshAndCompress(QList<occHandle(Ng_MeshVS_DataSource
                 v_0[1] = dir[1];
                 v_0[2] = dir[2];
             }
+
+            double l = sqrt(pow(v_0[0],2)+pow(v_0[1],2)+pow(v_0[2],2));
+            v_0[0] /= l;
+            v_0[1] /= l;
+            v_0[2] /= l;
+
+            //cout<<"____"<<dir[0]<<"\t"<<dir[1]<<"\t"<<dir[2]<<"____"<<endl;
+            //cout<<"____"<<v_0[0]<<"\t"<<v_0[1]<<"\t"<<v_0[2]<<"____"<<endl;
+
             int N = 16;                     // cast 16 rays from P
             double dangle = 2*PI/N;
             for(int i = 0; i<N; i++)
             {
                 double dir_rot[3];
-                this->rotateVector(v_0,dir,dangle*N,dir_rot);
+                this->rotateVector(v_0,dir,dangle,dir_rot);
                 aDistanceMeter.distance(P,dir_rot,&gap);
                 gaps.push_back(gap);
                 v_0[0] = dir_rot[0];
                 v_0[1] = dir_rot[1];
                 v_0[2] = dir_rot[2];
+                //cout<<"____globalNodeID: "<<globalNodeID<<" gap: "<<gap<<"____"<<endl;
             }
-
             gap = *std::min(gaps.begin(),gaps.end());
+
             if(displacement>0.30*gap)
             {
                 myLayerHCutOff.insert(globalNodeID,0);
                 cout<<"prismaticLayer::generateOneTetLayer()->____blocked node ID: "<<globalNodeID<<"____displacement: "<<displacement<<"\t gap: "<<gap<<"____"<<endl;
             }
+            gaps.clear();
         }
 
         //! ---------------
@@ -1360,7 +1449,7 @@ bool prismaticLayer::inflateMeshAndCompress(QList<occHandle(Ng_MeshVS_DataSource
             //! component of the displacement field
             //! -----------------------------------------------------
             double cutoff = 1.0;
-            double marchingDistance = displacement*(1+shrinkFactor)*cutoff;
+            double marchingDistance = displacement*(1+shrinkFactor)*cutoff*mapOfReductionFactor.at(globalNodeID);
             marchingDistanceMap.insert(globalNodeID,marchingDistance);
         }
 
@@ -1373,7 +1462,6 @@ bool prismaticLayer::inflateMeshAndCompress(QList<occHandle(Ng_MeshVS_DataSource
         //! analyze front
         //! --------------
         this->checkIncompleteManifold(theMeshToInflate_new);
-        //gildotta
 
         //! -------------------
         //! displacement field
@@ -1787,12 +1875,18 @@ void prismaticLayer::generateTetLayers(occHandle(Ng_MeshVS_DataSource3D) &meshAt
                 v_0[1] = dir[1];
                 v_0[2] = dir[2];
             }
+
+            double l = sqrt(pow(v_0[0],2)+pow(v_0[1],2)+pow(v_0[2],2));
+            v_0[0] /= l;
+            v_0[1] /= l;
+            v_0[2] /= l;
+
             int N = 16;                     // cast 16 rays from P
             double dangle = 2*PI/N;
             for(int i = 0; i<N; i++)
             {
                 double dir_rot[3];
-                this->rotateVector(v_0,dir,dangle*N,dir_rot);
+                this->rotateVector(v_0,dir,dangle,dir_rot);
                 aDistanceMeter.distance(P,dir_rot,&gap);
                 gaps.push_back(gap);
                 v_0[0] = dir_rot[0];
@@ -1806,6 +1900,7 @@ void prismaticLayer::generateTetLayers(occHandle(Ng_MeshVS_DataSource3D) &meshAt
                 myLayerHCutOff.insert(globalNodeID,0);
                 cout<<"prismaticLayer::generateOneTetLayer()->____blocked node ID: "<<globalNodeID<<"____displacement: "<<displacement<<"\t gap: "<<gap<<"____"<<endl;
             }
+            gaps.clear();
         }
 
         //! ---------------
@@ -2383,12 +2478,18 @@ void prismaticLayer::generateOneTetLayer(occHandle(Ng_MeshVS_DataSourceFace) &th
             v_0[1] = dir[1];
             v_0[2] = dir[2];
         }
+
+        double l = sqrt(pow(v_0[0],2)+pow(v_0[1],2)+pow(v_0[2],2));
+        v_0[0] /= l;
+        v_0[1] /= l;
+        v_0[2] /= l;
+
         int N = 16;                     // cast 16 rays from P
         double dangle = 2*PI/N;
         for(int i = 0; i<N; i++)
         {
             double dir_rot[3];
-            this->rotateVector(v_0,dir,dangle*N,dir_rot);
+            this->rotateVector(v_0,dir,dangle,dir_rot);
             aDistanceMeter.distance(P,dir_rot,&gap);
             gaps.push_back(gap);
             v_0[0] = dir_rot[0];
@@ -2402,6 +2503,7 @@ void prismaticLayer::generateOneTetLayer(occHandle(Ng_MeshVS_DataSourceFace) &th
             myLayerHCutOff.insert(globalNodeID,0);
             cout<<"prismaticLayer::generateOneTetLayer()->____blocked node ID: "<<globalNodeID<<"____displacement: "<<displacement<<"\t gap: "<<gap<<"____"<<endl;
         }
+        gaps.clear();
     }
 
     //! ---------------
