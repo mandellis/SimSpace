@@ -486,7 +486,7 @@ bool prismaticLayer::inflateMesh(QList<occHandle(Ng_MeshVS_DataSourceFace)> &inf
             for(int i = 0; i<N; i++)
             {
                 double dir_rot[3];
-                this->rotateVector(v_0,dir,dangle*N,dir_rot);
+                this->rotateVector(v_0,dir,dangle,dir_rot);
                 aDistanceMeter.distance(P,dir_rot,&gap);
                 gaps.push_back(gap);
                 v_0[0] = dir_rot[0];
