@@ -498,7 +498,7 @@ bool prismaticLayer::inflateMesh(QList<occHandle(Ng_MeshVS_DataSourceFace)> &inf
             if(displacement>0.30*gap)
             {
                 myLayerHCutOff.insert(globalNodeID,0);
-                cout<<"prismaticLayer::generateOneTetLayer()->____blocked node ID: "<<globalNodeID<<"____displacement: "<<displacement<<"\t gap: "<<gap<<"____"<<endl;
+                cout<<"prismaticLayer::inflateMesh()->____blocked node ID: "<<globalNodeID<<"____displacement: "<<displacement<<"\t gap: "<<gap<<"____"<<endl;
             }
             gaps.clear();
         }
@@ -648,19 +648,16 @@ bool prismaticLayer::mergeFaceMeshes()
         if(std::find(myPrismaticFaces.begin(), myPrismaticFaces.end(), faceNr)==myPrismaticFaces.end()) faceList2<<aFaceMeshDS;
     }
 
-    cout<<"____faceList0: "<<faceList0.length()<<"____"<<endl;
-    cout<<"____faceList1: "<<faceList1.length()<<"____"<<endl;
-    cout<<"____faceList2: "<<faceList2.length()<<"____"<<endl;
+    //cout<<"____faceList0: "<<faceList0.length()<<"____"<<endl;
+    //cout<<"____faceList1: "<<faceList1.length()<<"____"<<endl;
+    //cout<<"____faceList2: "<<faceList2.length()<<"____"<<endl;
 
-    myOverallSumMeshDS = new Ng_MeshVS_DataSourceFace(faceList0);
-    myPrismaticFacesSumMeshDS = new Ng_MeshVS_DataSourceFace(faceList1);
+    myOverallSumMeshDS = new Ng_MeshVS_DataSourceFace(faceList0);               //! surface mesh
+    myPrismaticFacesSumMeshDS = new Ng_MeshVS_DataSourceFace(faceList1);        //! prismatic/wall mesh
+    myNonPrismaticFacesSumMeshDS = new Ng_MeshVS_DataSourceFace(faceList2);     //! non prismatic/non wall mesh
 
-    myNonPrismaticFacesSumMeshDS = new Ng_MeshVS_DataSourceFace(faceList2);
-    //myOverallSumMeshDS->computeNormalAtElements();
     myOverallSumMeshDS->computeNormalAtNodes();
-    //myPrismaticFacesSumMeshDS->computeNormalAtElements();
     myPrismaticFacesSumMeshDS->computeNormalAtNodes();
-    //myNonPrismaticFacesSumMeshDS->computeNormalAtElements();
     myNonPrismaticFacesSumMeshDS->computeNormalAtNodes();
 
     return true;
@@ -1040,10 +1037,10 @@ void prismaticLayer::computeShrinkFactor(const occHandle(Ng_MeshVS_DataSourceFac
     //fclose(fp);
 }
 
-//! ---------------------------------
+//! ------------------------------------------------------------
 //! function: buildPrismaticElements
-//! details:
-//! ---------------------------------
+//! details:  build an hydrib volume mesh using inflated meshes
+//! ------------------------------------------------------------
 bool prismaticLayer::buildPrismaticElements(const QList<occHandle(Ng_MeshVS_DataSourceFace)> &theInflatedMeshes,
                                             occHandle(Ng_MeshVS_DataSource3D) &prismaticMeshDS3D)
 {
@@ -1170,7 +1167,7 @@ bool prismaticLayer::areIntersecting(const occHandle(Ng_MeshVS_DataSourceFace) &
 }
 
 //! ---------------------------------------------------------
-//! function: postBLBuilder
+//! function: inflateMeshAndCompress
 //! details:  build the displaced mesh list. Here the volume
 //!           mesh must have been generated in advance
 //! ---------------------------------------------------------
@@ -1417,7 +1414,7 @@ bool prismaticLayer::inflateMeshAndCompress(QList<occHandle(Ng_MeshVS_DataSource
             if(displacement>0.30*gap)
             {
                 myLayerHCutOff.insert(globalNodeID,0);
-                cout<<"prismaticLayer::generateOneTetLayer()->____blocked node ID: "<<globalNodeID<<"____displacement: "<<displacement<<"\t gap: "<<gap<<"____"<<endl;
+                cout<<"prismaticLayer::inflateMeshAndCompress()->____blocked node ID: "<<globalNodeID<<"____displacement: "<<displacement<<"\t gap: "<<gap<<"____"<<endl;
             }
             gaps.clear();
         }
@@ -1685,6 +1682,10 @@ void prismaticLayer::generateTetLayers(occHandle(Ng_MeshVS_DataSource3D) &meshAt
     //! make a copy the outer mesh
     //! ---------------------------
     occHandle(Ng_MeshVS_DataSourceFace) theMeshToInflate = new Ng_MeshVS_DataSourceFace(myOverallSumMeshDS);
+
+    //! --------------------------------------------------------------------
+    //! retrieve the points at the boundary (if any) of the prismatic faces
+    //! --------------------------------------------------------------------
     if(myPrismaticFacesSumMeshDS->myBoundarySegments.isEmpty()) myPrismaticFacesSumMeshDS->computeFreeMeshSegments();
 
     //! ------------------------------------------------------------------
@@ -1764,7 +1765,7 @@ void prismaticLayer::generateTetLayers(occHandle(Ng_MeshVS_DataSource3D) &meshAt
     }
 
     //! --------------------------------
-    //! build the surrounding nodes mapvc
+    //! build the surrounding nodes map
     //! --------------------------------
     mySurroudingNodesMap.clear();
     this->buildSurroundingNodesMap(theMeshToInflate,mySurroudingNodesMap);
@@ -1778,6 +1779,12 @@ void prismaticLayer::generateTetLayers(occHandle(Ng_MeshVS_DataSource3D) &meshAt
 
     for(int n=1; n<=myNbLayers; n++)
     {
+        //! -----------------------------------------------------------
+        //! we store a copy of the "previous" mesh since we can "undo"
+        //! some invalid nodal displacements
+        //! -----------------------------------------------------------
+        occHandle(Ng_MeshVS_DataSourceFace) theMeshToInflate_old = new Ng_MeshVS_DataSourceFace(theMeshToInflate);
+
         //! --------------
         //! send progress
         //! --------------
@@ -1821,12 +1828,12 @@ void prismaticLayer::generateTetLayers(occHandle(Ng_MeshVS_DataSource3D) &meshAt
         //! calculate the nodal displacement field
         //! ---------------------------------------
         theMeshToInflate->computeNormalAtNodes();
-        theMeshToInflate->computeFreeMeshSegments();
 
-        //! ---------------------------------
-        //! guiding vectors - "best normals"
-        //! ---------------------------------
-        QMap<int,QList<double>> &normals = theMeshToInflate->myNodeNormals;
+        //! ---------------------------------------------------------------------------
+        //! guiding vectors - "best normals" - we do not use a const reference
+        //! since "normals" are passed to the smoothingTools, which can change the map
+        //! ---------------------------------------------------------------------------
+        QMap<int,QList<double>> normals = theMeshToInflate->myNodeNormals;
 
         //! --------------------------------------------
         //! check gaps along slightly different normals
@@ -1856,6 +1863,7 @@ void prismaticLayer::generateTetLayers(occHandle(Ng_MeshVS_DataSource3D) &meshAt
             //! a cone of rays
             //! ----------------------------------------------------------------------
             double angleDeviation = betaVisibilityField.at(globalNodeID);
+
             double v_0[3];
             if(dir[2]!=0)
             {
@@ -1898,7 +1906,7 @@ void prismaticLayer::generateTetLayers(occHandle(Ng_MeshVS_DataSource3D) &meshAt
             if(displacement>0.30*gap)
             {
                 myLayerHCutOff.insert(globalNodeID,0);
-                cout<<"prismaticLayer::generateOneTetLayer()->____blocked node ID: "<<globalNodeID<<"____displacement: "<<displacement<<"\t gap: "<<gap<<"____"<<endl;
+                cout<<"prismaticLayer::generateTetLayers()->____blocked node ID: "<<globalNodeID<<"____displacement: "<<displacement<<"\t gap: "<<gap<<"____"<<endl;
             }
             gaps.clear();
         }
@@ -1907,7 +1915,7 @@ void prismaticLayer::generateTetLayers(occHandle(Ng_MeshVS_DataSource3D) &meshAt
         //! classify nodes
         //! ---------------
         std::map<int,int> mapNodeTypes;
-        this->classifyNodes(theMeshToInflate,mapNodeTypes);
+        this->classifyNodes(theMeshToInflate,mapNodeTypes);     //! ERR 1 - theMeshToInflate is watertight
 
         //! -----------------------------------------------------------------------------------------------
         //! smooth the guiding vectors directions - use 5/10 smoothing steps
@@ -1915,45 +1923,16 @@ void prismaticLayer::generateTetLayers(occHandle(Ng_MeshVS_DataSource3D) &meshAt
         //! -----------------------------------------------------------------------------------------------
         smoothingTools::fieldSmoother(normals,theMeshToInflate,betaAverageField,betaVisibilityField,mapNodeTypes,10,true);
 
-        /*
-        //! ------------------------------------------------------------------
-        //! check deviation of the guiding vector between two inflation steps
-        //! this will avoid "kinks". Possible options: lock/ajust
-        //! ------------------------------------------------------------------
-        if(n>1)
-        {
-            for(QMap<int,QList<double>>::iterator it = normals.begin(); it != normals.end(); it++)
-            {
-                int globalNodeID = it.key();
-                if(myLayerHCutOff.value(globalNodeID) == 0) continue;
-                const QList<double> &curNormal = it.value();
-                const QList<double> &oldNormal = normals_old.value(globalNodeID);
-                double dot = curNormal[0]*oldNormal[0]+curNormal[1]*oldNormal[1]+curNormal[2]*oldNormal[2];
-                double dotNorm = sqrt(pow(curNormal[0],2)+pow(curNormal[1],2)+pow(curNormal[2],2))*sqrt(pow(oldNormal[0],2)+pow(oldNormal[1],2)+pow(oldNormal[2],2));
-                dot /= dotNorm;
-                if(dot > 1) dot = 1;
-                if(dot < -1) dot = -1;
-                double angle = std::acos(dot);
-                if(angle>30.0*PI/180.0)
-                {
-                    myLayerHCutOff.insert(globalNodeID,0);
-                }
-                //! update the old normal field
-                normals_old.insert(globalNodeID,curNormal);
-            }
-        }
-        */
-
-        //! ------------------------------------
-        //! map of the local marching distances
-        //! ------------------------------------
+        //! -----------------------------------------
+        //! create the map of the marching distances
+        //! -----------------------------------------
         QMap<int,double> marchingDistanceMap;
         for(QMap<int,QList<double>>::const_iterator it = normals.cbegin(); it!= normals.cend(); ++it)
         {
             int globalNodeID = it.key();
             double shrinkFactor = shrinkFactors.value(globalNodeID);
             double cutOff = myLayerHCutOff.value(globalNodeID);
-            double marchingDistance = displacement*(1+shrinkFactor)*cutOff*mapOfFirstLayerReductionFactor.at(globalNodeID);
+            double marchingDistance = displacement*(1+shrinkFactor)*cutOff*mapOfFirstLayerReductionFactor[globalNodeID];
             marchingDistanceMap.insert(globalNodeID,marchingDistance);
         }
 
@@ -1962,7 +1941,6 @@ void prismaticLayer::generateTetLayers(occHandle(Ng_MeshVS_DataSource3D) &meshAt
         //! ------------------------------
         smoothingTools::scalarFieldSmoother(marchingDistanceMap,theMeshToInflate,betaAverageField,mapNodeTypes,10);
 
-        /*
         //! --------------------------------------------------------
         //! check the marching distance between two inflation steps
         //! options: lock/adjust
@@ -1975,8 +1953,7 @@ void prismaticLayer::generateTetLayers(occHandle(Ng_MeshVS_DataSource3D) &meshAt
                 if(myLayerHCutOff.value(globalNodeID)==0) continue;
                 double curMarchingDistance = it.value();
                 double previousMarchingDistance = marchingDistanceMapOld.value(globalNodeID);
-                //cout<<"____"<<curMarchingDistance/previousMarchingDistance<<"____"<<endl;
-                if((curMarchingDistance/previousMarchingDistance)>2.0*myExpRatio)   // 2.0 is the maximum of (1+shrinkFactor)
+                if((curMarchingDistance/previousMarchingDistance)>=2.0)   // 2.0 is the maximum of (1+shrinkFactor)
                 {
                     cout<<"____"<<curMarchingDistance/previousMarchingDistance<<"____"<<endl;
                     myLayerHCutOff.insert(globalNodeID,0);
@@ -1994,7 +1971,6 @@ void prismaticLayer::generateTetLayers(occHandle(Ng_MeshVS_DataSource3D) &meshAt
                 marchingDistanceMapOld.insert(globalNodeID,curMarchingDistance);
             }
         }
-        */
 
         //! ---------------------------------------------------------------------------------------------------------------------
         //! analyze front
@@ -2015,19 +1991,19 @@ void prismaticLayer::generateTetLayers(occHandle(Ng_MeshVS_DataSource3D) &meshAt
         //! -----------------------------------------------
         //this->checkIncompleteManifold(theMeshToInflate);  // put at the end
 
-        //! -----------------------------
-        //! build the displacement field
-        //! -----------------------------
+        //! -----------------------------------------------
+        //! build the components of the displacement field
+        //! -----------------------------------------------
         QMap<int,QList<double>> displacementsField;
         for(QMap<int,QList<double>>::const_iterator it = normals.cbegin(); it!= normals.cend(); ++it)
-        {
+        {            
             int globalNodeID = it.key();
             const QList<double> &curNormal = it.value();
 
             //! -------------------------
             //! jump over boundary nodes
             //! -------------------------
-            if(theMeshToInflate->myBoundaryPoints.contains(globalNodeID)) continue;
+            if(myPrismaticFacesSumMeshDS->myBoundaryPoints.contains(globalNodeID)) continue;
 
             //! --------------------
             //! nodal displacements
@@ -2050,7 +2026,7 @@ void prismaticLayer::generateTetLayers(occHandle(Ng_MeshVS_DataSource3D) &meshAt
         for(TColStd_MapIteratorOfPackedMapOfInteger it(theMeshToInflate->GetAllNodes()); it.More(); it.Next())
         {
             int globalNodeID = it.Key();
-            if(theMeshToInflate->myBoundaryPoints.contains(globalNodeID)) continue;
+            if(myPrismaticFacesSumMeshDS->myBoundaryPoints.contains(globalNodeID)) continue;
 
             //! ------------------------------
             //! prepare the "displaced point"
@@ -2079,8 +2055,8 @@ void prismaticLayer::generateTetLayers(occHandle(Ng_MeshVS_DataSource3D) &meshAt
             bool canMove = true;
             for(int i=0; i<NbAttachedElements; i++)
             {
-                int localElementID = attachedElements[i];
-                int globalElementID = theMeshToInflate->myElementsMap.FindKey(localElementID);
+                int localElementID_attached = attachedElements[i];
+                int globalElementID_attached = theMeshToInflate->myElementsMap.FindKey(localElementID_attached);
 
                 //! -------------------------------------------------------------------
                 //! a boundary volume element - the volume element ID is not specified
@@ -2091,7 +2067,7 @@ void prismaticLayer::generateTetLayers(occHandle(Ng_MeshVS_DataSource3D) &meshAt
 
                 int NbNodes, buf[3];
                 TColStd_Array1OfInteger nodeIDs(*buf,1,3);
-                theMeshToInflate->GetNodesByElement(globalElementID,nodeIDs,NbNodes);
+                theMeshToInflate->GetNodesByElement(globalElementID_attached,nodeIDs,NbNodes);
 
                 for(int k=1; k<=NbNodes; k++)
                 {
@@ -2110,50 +2086,65 @@ void prismaticLayer::generateTetLayers(occHandle(Ng_MeshVS_DataSource3D) &meshAt
                 //! ------------------------
                 //! check inverted elements
                 //! ------------------------
+                const mesh::meshPoint &P0 = aVolElement.pointList[0];
+                const mesh::meshPoint &P1 = aVolElement.pointList[1];
+                const mesh::meshPoint &P2 = aVolElement.pointList[2];
+                double P10_x = P1.x-P0.x;
+                double P10_y = P1.y-P0.y;
+                double P10_z = P1.z-P0.z;
+                double P20_x = P2.x-P0.x;
+                double P20_y = P2.y-P0.y;
+                double P20_z = P2.z-P0.z;
+
+                //! ----------------------
+                //! i       j       k
+                //! P10_x   P10_y   P10_z
+                //! P20_x   P20_y   P20_z
+                //! ----------------------
+                double nx = P10_y*P20_z-P10_z*P20_y;
+                double ny = P10_z*P20_x-P10_x*P20_z;
+                double nz = P10_x*P20_y-P10_y*P20_x;
+                double ln = sqrt(nx*nx+ny*ny+nz*nz);
+                nx /= ln; ny /= ln; nz /= ln;
+
+                //! ------
+                //! (O-P0)
+                //! ------
+                double nnx = mp_shifted.x-P0.x;
+                double nny = mp_shifted.y-P0.y;
+                double nnz = mp_shifted.z-P0.z;
+
+                double dot = nx*nnx+ny*nny+nz*nnz;
+
                 TetQualityClass aTetQuality;
                 aTetQuality.setPoints(aVolElement.getPoints());
-
-                double V = aTetQuality.Volume();
-                if(V<=0.0)
+                double volume = aTetQuality.Volume();
+                if(volume<0.0)
+                //if(dot>0)
                 {
+                    //! ---------------------------------------------------------
+                    //! remove all the elements generated from this triangle fan
+                    //! this avoids abrupt changes in the surface mesh
+                    //! ---------------------------------------------------------
+                    cerr<<"____found negative volume tet when moving node: "<<globalNodeID<<"\tVolume = "<<volume<<"____"<<endl;
+                    for(int j = 0; j<i; j++)
+                    {
+                        cerr<<"____popping back volume element____"<<endl;
+                        vecElementsToAdd.pop_back();
+                    }
                     NbInvalidTets++;
                     canMove = false;
                     break;
                 }
-
-                //! -------------------------------------------------------
-                //! check if the volume element is valid, and can be added
-                //! - bypass a full element quality check -
-                //! -------------------------------------------------------
-                //double q0, q1, q2;
-                //aTetQuality.setPoints(aVolElement.getPoints());
-                //aTetQuality.getQualityMeasure(q0,q1,q2,V);
-
-                //const double QUALITY_LIMIT = 0.01;
-                //if(q2<QUALITY_LIMIT)
-                //{
-                //    cout<<"____CANNOT MOVE____"<<endl;
-                //    NbInvalidTets++;
-                //    canMove = false;
-                //    break;
-                //}
                 vecElementsToAdd.push_back(aVolElement);
             }
             if(canMove)
             {
+                //! ---------------------------------
+                //! move the point - update the mesh
+                //! ---------------------------------
                 std::vector<double> P {x_displ,y_displ,z_displ};
                 theMeshToInflate->changeNodeCoords(localNodeID,P);
-                int localNodeID_surfaceMesh = myOverallSumMeshDS->myNodesMap.FindIndex(globalNodeID);
-
-                //! ------------------------------------------------------------------------------------
-                //! copy the current advancing mesh: needed by intersection and self intersection algos
-                //! ------------------------------------------------------------------------------------
-                occHandle(Ng_MeshVS_DataSourceFace) myOverallSumMeshDS_old(myOverallSumMeshDS);
-
-                //! ----------------------------------
-                //! move the node of the current mesh
-                //! ----------------------------------
-                myOverallSumMeshDS->changeNodeCoords(localNodeID_surfaceMesh,P);
 
                 //! -------------------
                 //! standard treatment
@@ -2173,7 +2164,6 @@ void prismaticLayer::generateTetLayers(occHandle(Ng_MeshVS_DataSource3D) &meshAt
                         //cout<<"____pile up: ("<<globalNodeID<<", "<<validTetrahedron<<")____"<<endl;
                         it->second.push_back(validTetrahedron);
                     }
-                    //volumeElementsAtWalls.push_back(vecElementsToAdd[i]);
                     volumeElementsAtWalls_.insert(std::make_pair(validTetrahedron,vecElementsToAdd[i]));
                 }
             }
@@ -2194,38 +2184,56 @@ void prismaticLayer::generateTetLayers(occHandle(Ng_MeshVS_DataSource3D) &meshAt
         if(myCheckSelfIntersections==true)
         {
             std::vector<int> badNodes;
-            bool selfIntersection = iglTools::iglCheckSelfIntersection(myOverallSumMeshDS, badNodes);
+            bool selfIntersection = iglTools::iglCheckSelfIntersection(theMeshToInflate, badNodes);
             if(selfIntersection)
             {
-                //cout<<"@--------------------------------------"<<endl;
-                //cout<<"@   a self intersection has been found "<<endl;
+                cout<<"@---------------------------------------"<<endl;
+                cout<<"@    a self intersection has been found "<<endl;
                 for(int k=0; k<badNodes.size(); k++)
                 {
+                    //! --------------------------------
+                    //! "rewind" the mesh in this point
+                    //! --------------------------------
                     int localNodeID = badNodes[k]+1;
-                    std::vector<double> old_coords = theMeshToInflate->getNodeCoordinates(localNodeID);
+                    std::vector<double> old_coords = theMeshToInflate_old->getNodeCoordinates(localNodeID);
                     theMeshToInflate->changeNodeCoords(localNodeID,old_coords);
                     int globalNodeID = theMeshToInflate->myNodesMap.FindKey(localNodeID);
+
+                    //! --------------
+                    //! lock the node
+                    //! --------------
                     myLayerHCutOff.insert(globalNodeID,0);
                 }
-                //cout<<"@   number of corrected nodes: "<<badNodes.size()<<endl;
-                //cout<<"@--------------------------------------"<<endl;
+                cout<<"@    number of corrected nodes: "<<badNodes.size()<<endl;
+                cout<<"@----------------------------------------"<<endl;
 
-                //! ----------------------------------
-                //! remove elements and lock the node
-                //! ----------------------------------
-                //cout<<"____begin removing elements____"<<endl;
+                //! ------------------------------------------------------
+                //! remove the tetrahedra generated when moving this node
+                //! ------------------------------------------------------
+                cout<<"@---------------------------------------"<<endl;
+                cout<<"@    begin removing elements"<<endl;
                 for(size_t k = 0; k<badNodes.size(); k++)
                 {
                     int localNodeID = badNodes[k]+1;
                     int globalNodeID = theMeshToInflate->myNodesMap.FindKey(localNodeID);
-                    const std::vector<int> &elementsToRemove = nodeToTetrahedra.at(globalNodeID);
+
+                    //! -----------------------------------------------
+                    //! do not use "nodeToTetrahedra.at(globalNodeID)"
+                    //! -----------------------------------------------
+                    std::map<int,std::vector<int>>::iterator it = nodeToTetrahedra.find(globalNodeID);
+                    if(it==nodeToTetrahedra.end()) continue;
+                    std::vector<int> elementsToRemove = it->second;
+                    if(elementsToRemove.empty()) continue;
+
                     for(std::vector<int>::const_iterator it__ = elementsToRemove.cbegin(); it__ != elementsToRemove.cend(); it__++)
                     {
                         int elementToRemove = *it__;
                         volumeElementsAtWalls_.erase(elementToRemove);
-                        //cout<<"____the element globalNodeID: "<<elementToRemove<<" has been removed____"<<endl;
+                        cout<<" "<<elementToRemove;
                     }
                 }
+                cout<<endl<<"@    end of element removal"<<endl;
+                cout<<"@---------------------------------------"<<endl;
             }
         }
 
@@ -2239,23 +2247,21 @@ void prismaticLayer::generateTetLayers(occHandle(Ng_MeshVS_DataSource3D) &meshAt
         //! **************************************************
     }
 
-    cout<<"____total number of tetrahedra (some of these will be removed by self intersection condition): "<<validTetrahedron<<"____"<<endl;
-
     //! -------------------------------
     //! the last modified surface mesh
     //! -------------------------------
     lastInflatedMesh = theMeshToInflate;
 
+    //MeshTools::surfaceMeshDSToNetgenMesh(lastInflatedMesh);
+
     //! ----------------------------------------------
     //! construction of the tetrahedral boundary mesh
     //! ----------------------------------------------
-    //cout<<"____vector: "<<volumeElementsAtWalls.size()<<"____"<<endl;
-    volumeElementsAtWalls.clear();
-    cout<<"____map:    "<<volumeElementsAtWalls_.size()<<"____"<<endl;
     for(std::map<int,meshElementByCoords>::iterator it = volumeElementsAtWalls_.begin(); it != volumeElementsAtWalls_.end(); it++)
     {
         volumeElementsAtWalls.push_back(it->second);
     }
+
     meshAtWalls = new Ng_MeshVS_DataSource3D(volumeElementsAtWalls,true,true);
     cout<<"____number of generated elements: "<<meshAtWalls->GetAllElements().Extent()<<"____"<<endl;
 }
@@ -2306,11 +2312,11 @@ bool prismaticLayer::generateMeshAtWalls(occHandle(Ng_MeshVS_DataSource3D) &mesh
     }
         break;
 
-    //! -----------------------------------------------------------------------
+    //! -------------------------------------------------------------------------
     //! Tetrahedral mesh at walls. Important note: when using generateTetLayer
-    //! the "lastInflatedMesh" is initial, outer surface mesh with advancing
+    //! the "lastInflatedMesh" is the initial, outer surface mesh with advancing
     //! node properly displaced. It can be used for generating a volume mesh
-    //! -----------------------------------------------------------------------
+    //! -------------------------------------------------------------------------
     case 1:
     {
         this->generateTetLayers(meshAtWalls,lastInflatedMesh);
@@ -2549,38 +2555,6 @@ void prismaticLayer::generateOneTetLayer(occHandle(Ng_MeshVS_DataSourceFace) &th
     //! ------------------------------------------------------------------------------------------
     //this->checkLateralDistributionMarchingDistance(theMeshToInflate,marchingDistanceMap);
     //smoothingTools::scalarFieldSmoother(marchingDistanceMap,theMeshToInflate,betaAverageField,mapNodeTypes,10);
-
-    /*
-    //! ----------------------------------------------------------------------
-    //! compare the direction of the guiding vector at step n wrt to step n-1
-    //! ----------------------------------------------------------------------
-    if(previousGuidingVectors.isEmpty()==false)
-    {
-        cout<<"**********************************"<<endl;
-        cout<<"* check guiding vectors deviation "<<endl;
-        cout<<"**********************************"<<endl;
-        for(QMap<int,QList<double>>::iterator it = previousGuidingVectors.begin(); it!=previousGuidingVectors.end(); it++)
-        {
-            int globalNodeID = it.key();
-            if(myLayerHCutOff.value(globalNodeID)==0) continue;
-            const QList<double> &previousNormal = it.value();
-            const QList<double> &curNormal = normals.value(globalNodeID);
-            double dot = previousNormal[0]*curNormal[0]+previousNormal[1]*curNormal[1]+previousNormal[2]*curNormal[2];
-            if(dot>1) dot = 1;
-            if(dot<-1) dot = -1;
-            double angle = std::acos(dot);
-            if(angle>30.0*PI/180.0)
-            {
-                cout<<"____node :"<<globalNodeID<<" blocked because of high guiding vector deviation____"<<endl;
-                myLayerHCutOff.insert(globalNodeID,0);
-            }
-            //! -------------------------------------------
-            //! update the map of previous guiding vectors
-            //! -------------------------------------------
-            previousGuidingVectors.insert(globalNodeID,curNormal);
-        }
-    }
-    */
 
     //! -----------------------------------------------
     //! 4. check "Cliff points" - incomplete manifolds

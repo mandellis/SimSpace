@@ -32,8 +32,9 @@ public:
                               int NbSteps,
                               bool normalize);
 
-    //! helper
+    //! helpers
     static void surroundingNodes(const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS, int nodeID, bool isLocal, std::set<int> &setOfSurroundingNodes);
+    static bool getPointCoordinate(const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS, int globalNodeID, double *P);
 };
 
 #endif // SMOOTHINGTOOLS_H
