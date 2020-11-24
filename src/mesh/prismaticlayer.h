@@ -250,6 +250,7 @@ private:
     //! check lateral distribution marhing distances
     //! ---------------------------------------------
     void checkLateralDistributionMarchingDistance(const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS,
+                                                  int inflationStep,
                                                   QMap<int,double> &marchingDistanceMap);
 
     //! ---------------

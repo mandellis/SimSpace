@@ -357,7 +357,7 @@ void trans_func_T(unsigned int u, EXCEPTION_POINTERS* pExp)
 //! function: perform
 //! details:
 //! ------------------
-bool TetgenMesher::perform(tetgenio *meshOut, int bodyIndex, bool saveMesh)
+bool TetgenMesher::perform(tetgenio *meshOut, int bodyIndex, QString &message)
 {
     cout<<"TetgenMesher::perform()->____perform called____"<<endl;
     try
@@ -369,28 +369,29 @@ bool TetgenMesher::perform(tetgenio *meshOut, int bodyIndex, bool saveMesh)
     catch(SE_Exception e)
     {
         Q_UNUSED(e)
+        message = "Tetgen library: unhandled error";
         cout<<"TetgenMesher::perform()->____caught a __try exception with SE_Exception"<<endl;
         return false;
     }
     catch(int tetgenError)
     {
-        QString errorMsg;
+
         switch(tetgenError)
         {
-        case 1: errorMsg = "Tetgen runs out of memory"; break;
-        case 2: errorMsg = "Please report this bug to Hang.Si@wias-berlin.de.\n"
+        case 1: message = "Tetgen runs out of memory"; break;
+        case 2: message = "Please report this bug to Hang.Si@wias-berlin.de.\n"
                            "Include the message above, your input data set, and the exact\n"
                            "command line you used to run this program"; break;
-        case 3: errorMsg = "A self-intersection was detected\n"
+        case 3: message = "A self-intersection was detected\n"
                            "Hint: use -d option to detect all self-intersections"; break;
-        case 4: errorMsg = "A very small input feature size was detected\n"
+        case 4: message = "A very small input feature size was detected\n"
                            "Hint: use -T option to set a smaller tolerance\n"
                            " If you want to ignore this possible error, set a smaller tolerance\n"
                            "by the -T switch, default is 1e−8"; break;
-        case 5: errorMsg = "Two very close input facets were detected. Program stopped.\n"
+        case 5: message = "Two very close input facets were detected. Program stopped.\n"
                            "Hint: use -Y option to avoid adding Steiner points in boundary"; break;
-        case 10: errorMsg = "An input error was detected. Program stopped"; break;
-        default: break;
+        case 10: message = "An input error was detected. Program stopped"; break;
+        default: message = "Tetgen error not included official list"; break;
         }
         return false;
     }
@@ -398,12 +399,16 @@ bool TetgenMesher::perform(tetgenio *meshOut, int bodyIndex, bool saveMesh)
     //! ---------------------------------------
     //! no tetgen error, but no mesh generated
     //! ---------------------------------------
-    if(meshOut->tetrahedronlist == NULL) return false;
+    if(meshOut->tetrahedronlist == NULL)
+    {
+        message = "Tetgen unknown error";
+        return false;
+    }
 
     //! --------------
     //! save the mesh
     //! --------------
-    if(saveMesh)
+    if(0==1)
     {
         QDir curDir(myPLCMesh);
         QString outFileName = myMeshDB->MapOfBodyNames.value(bodyIndex);
@@ -414,6 +419,7 @@ bool TetgenMesher::perform(tetgenio *meshOut, int bodyIndex, bool saveMesh)
         meshOut->save_elements(fpout);
         meshOut->save_faces(fpout);
     }
+    message = "Tetgen mesh OK";
     return true;
 }
 

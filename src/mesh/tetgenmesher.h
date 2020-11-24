@@ -87,7 +87,7 @@ public:
     //! --------
     //! perform
     //! --------
-    bool perform(tetgenio *meshOut, int bodyIndex, bool saveMesh=true);
+    bool perform(tetgenio *meshOut, int bodyIndex, QString &message);
 
     //! -----------------------
     //! set progress indicator

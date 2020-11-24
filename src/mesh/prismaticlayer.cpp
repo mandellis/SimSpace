@@ -408,17 +408,21 @@ bool prismaticLayer::inflateMesh(QList<occHandle(Ng_MeshVS_DataSourceFace)> &inf
         //! --------------------------------------------
         //! check "Cliff points" - incomplete manifolds
         //! --------------------------------------------
-        this->checkIncompleteManifold(theMeshToInflate_old);
+        //this->checkIncompleteManifold(theMeshToInflate_old);
 
         //! ----------------------------
         //! the current layer thickness
         //! ----------------------------
         displacement = myLayerThickness.at(n-1);
 
+        //! -------------------
+        //! clone the old mesh
+        //! -------------------
+        occHandle(Ng_MeshVS_DataSourceFace) theMeshToInflate_new = new Ng_MeshVS_DataSourceFace(theMeshToInflate_old);
+
         //! ---------------------
         //! "best" nodal normals
         //! ---------------------
-        occHandle(Ng_MeshVS_DataSourceFace) theMeshToInflate_new = new Ng_MeshVS_DataSourceFace(theMeshToInflate_old);
         theMeshToInflate_new->computeNormalAtNodes();
         this->computeBeta(theMeshToInflate_new);
 
@@ -513,7 +517,7 @@ bool prismaticLayer::inflateMesh(QList<occHandle(Ng_MeshVS_DataSourceFace)> &inf
         //! smooth the guiding vectors directions - use 5/10 smoothing steps
         //! flag normalize == true since the "rotation" of the vector is of interest (change in direction)
         //! -----------------------------------------------------------------------------------------------
-        smoothingTools::fieldSmoother(normals,theMeshToInflate_new,betaAverageField,betaVisibilityField,mapNodeTypes,10,true);
+        smoothingTools::fieldSmoother(normals,theMeshToInflate_new,betaAverageField,betaVisibilityField,mapNodeTypes,10,true,n);
 
         //! ------------------------------------
         //! map of the local marching distances
@@ -536,7 +540,7 @@ bool prismaticLayer::inflateMesh(QList<occHandle(Ng_MeshVS_DataSourceFace)> &inf
         //! ------------------------------
         //! smooth the marching distances
         //! ------------------------------
-        smoothingTools::scalarFieldSmoother(marchingDistanceMap,theMeshToInflate_new,betaAverageField,mapNodeTypes,10);
+        smoothingTools::scalarFieldSmoother(marchingDistanceMap,theMeshToInflate_new,betaAverageField,mapNodeTypes,10,n);
 
         //! --------------
         //! analyze front
@@ -672,7 +676,11 @@ double angleBetweenVector(const std::vector<double> &n1, const std::vector<doubl
     double l1 = sqrt(pow(n1[0],2)+pow(n1[1],2)+pow(n1[2],2));
     double l2 = sqrt(pow(n2[0],2)+pow(n2[1],2)+pow(n2[2],2));
 
-    if(l1 * l2 == 0) exit(9999);    // questo non dovrebbe mai succedere
+    if(l1 * l2 == 0)
+    {
+        cerr<<"angleBetweenVector()->____abnormal termination at line 681____"<<endl;
+        exit(9999);    // questo non dovrebbe mai succedere
+    }
 
     double dot = (n1[0]*n2[0]+n1[1]*n2[1]+n1[2]*n2[2])/(l1*l2);
     if(dot > 1) dot = 1;        // avoids domain error
@@ -875,7 +883,6 @@ void prismaticLayer::computeBeta(const occHandle(Ng_MeshVS_DataSourceFace) &aMes
         int NbAttachedElements = attachedElements_localIDs.length();
 
         double bnk_max = -1e10;
-        //std::vector<double> bnks;
         std::set<int> surroundingNodes;                             // nodes surrounding the current node
         std::map<int,int> indexedMapOfElements;                     // index, element ID
         std::map<int,std::vector<double>> indexedMapOfNormals;      // index, normal of the element ID
@@ -914,33 +921,23 @@ void prismaticLayer::computeBeta(const occHandle(Ng_MeshVS_DataSourceFace) &aMes
         //! compute the visibility angle and insert into the map
         //! -----------------------------------------------------
         double betaVisibility = PI/2 - bnk_max;
-        betaVisibilityField.insert(std::make_pair(globalNodeID,betaVisibility));
-
+        if(betaVisibility<=0)
+        {
+            cerr<<"prismaticLayer::computeBeta()->____node ID: "<<globalNodeID<<" negative or zero visibility angle ____"<<endl;
+            //! --------------
+            //! lock the node
+            //! --------------
+            myLayerHCutOff.insert(globalNodeID,0);
+            betaVisibilityField.insert(std::make_pair(globalNodeID,0.0));
+        }
+        else
+        {
+            betaVisibilityField.insert(std::make_pair(globalNodeID,betaVisibility));
+        }
         //cout<<"____betaVisibility (rad,deg) = "<<betaVisibility<<"\t"<<betaVisibility*180/PI<<"____"<<endl;
 
         std::set<int>::iterator it_ = surroundingNodes.find(globalNodeID);
         surroundingNodes.erase(it_);
-
-        /*
-        //! -------------------------------------------------------
-        //! given an advancing node P compute the average distance
-        //! between the points and its surrounding nodes
-        //! -------------------------------------------------------
-        double averageDistance = 0;
-        MeshVS_EntityType eType;
-        int NbNodes;
-        double bufd[3];
-        TColStd_Array1OfReal coords(*bufd,1,3);
-        aMeshDS->GetGeom(globalNodeID,false,coords,NbNodes,eType);
-        double xP = coords(1); double yP = coords(2); double zP = coords(3);
-        for(std::set<int>::iterator it = surroundingNodes.begin(); it!=surroundingNodes.end(); it++)
-        {
-            int globalNodeID_surr = *it;
-            aMeshDS->GetGeom(globalNodeID_surr,false,coords,NbNodes,eType);
-            averageDistance += sqrt(pow(xP-coords(1),2)+pow(yP-coords(2),2)+pow(zP-coords(3),2));
-        }
-        averageDistance /= surroundingNodes.size();
-        */
 
         //! --------------------------
         //! generate pairs of normals
@@ -979,8 +976,18 @@ void prismaticLayer::computeBeta(const occHandle(Ng_MeshVS_DataSourceFace) &aMes
             NbAdjacentPairs++;
             const std::vector<double> &n1 = indexedMapOfNormals.at(fn);
             const std::vector<double> &n2 = indexedMapOfNormals.at(sn);
-            //if(sqrt(n1[0]*n1[0]+n1[1]*n1[1]+n1[2]*n1[2])==0) exit(11);   // should never occur
-            //if(sqrt(n2[0]*n2[0]+n2[1]*n2[1]+n2[2]*n2[2])==0) exit(12);   // should never occur
+            if(sqrt(n1[0]*n1[0]+n1[1]*n1[1]+n1[2]*n1[2])==0)
+            {
+                //! lock the node
+                myLayerHCutOff.insert(globalNodeID,0);
+                continue;
+            }
+            if(sqrt(n2[0]*n2[0]+n2[1]*n2[1]+n2[2]*n2[2])==0)
+            {
+                //! lock the node
+                myLayerHCutOff.insert(globalNodeID,0);
+                continue;
+            }
 
             //! ---------------------------------------------------------
             //! get ABCD and define as reference direction for the angle
@@ -1045,8 +1052,6 @@ bool prismaticLayer::buildPrismaticElements(const QList<occHandle(Ng_MeshVS_Data
                                             occHandle(Ng_MeshVS_DataSource3D) &prismaticMeshDS3D)
 {
     cout<<"prismaticLayer::buildPrismaticElements()->____function called____"<<endl;
-
-    if(theInflatedMeshes.length()==0) exit(44444);
 
     int NbTet, NbPyram, NbPrism, NbNullElement;
     NbTet = NbPyram = NbPrism = NbNullElement = 0;
@@ -1429,7 +1434,7 @@ bool prismaticLayer::inflateMeshAndCompress(QList<occHandle(Ng_MeshVS_DataSource
         //! smooth the guiding vectors directions - use 5/10 smoothing steps
         //! flag normalize == true since the "rotation" of the vector is of interest (change in direction)
         //! -----------------------------------------------------------------------------------------------
-        smoothingTools::fieldSmoother(normals,theMeshToInflate_new,betaAverageField,betaVisibilityField,mapNodeTypes,10,true);
+        smoothingTools::fieldSmoother(normals,theMeshToInflate_new,betaAverageField,betaVisibilityField,mapNodeTypes,10,true,n);
 
         //! ------------------------------------
         //! map of the local marching distances
@@ -1453,7 +1458,7 @@ bool prismaticLayer::inflateMeshAndCompress(QList<occHandle(Ng_MeshVS_DataSource
         //! ------------------------------
         //! smooth the marching distances
         //! ------------------------------
-        smoothingTools::scalarFieldSmoother(marchingDistanceMap,theMeshToInflate_new,betaAverageField,mapNodeTypes,10);
+        smoothingTools::scalarFieldSmoother(marchingDistanceMap,theMeshToInflate_new,betaAverageField,mapNodeTypes,10,n);
 
         //! --------------
         //! analyze front
@@ -1838,6 +1843,7 @@ void prismaticLayer::generateTetLayers(occHandle(Ng_MeshVS_DataSource3D) &meshAt
         //! --------------------------------------------
         //! check gaps along slightly different normals
         //! --------------------------------------------
+        int NbGapNegativeChecks = 0;
         pointToMeshDistance aDistanceMeter;
         aDistanceMeter.init(theMeshToInflate);
         for(TColStd_MapIteratorOfPackedMapOfInteger it(theMeshToInflate->GetAllNodes()); it.More(); it.Next())
@@ -1863,65 +1869,71 @@ void prismaticLayer::generateTetLayers(occHandle(Ng_MeshVS_DataSource3D) &meshAt
             //! a cone of rays
             //! ----------------------------------------------------------------------
             double angleDeviation = betaVisibilityField.at(globalNodeID);
-
-            double v_0[3];
-            if(dir[2]!=0)
+            for(int pass = 1; pass<=8; pass++)
             {
-                v_0[0] = dir[0];
-                v_0[1] = dir[1];
-                v_0[2] = (cos(angleDeviation)-dir[0]*dir[0]-dir[1]*dir[1])/dir[2];
-            }
-            else if(dir[1]!=0)
-            {
-                v_0[0] = (cos(angleDeviation)-dir[0]*dir[0]-dir[2]*dir[2])/dir[1];
-                v_0[1] = dir[1];
-                v_0[2] = dir[2];
-            }
-            else if(dir[0]!=0)
-            {
-                v_0[0] = (cos(angleDeviation)-dir[1]*dir[1]-dir[2]*dir[2])/dir[0];
-                v_0[1] = dir[1];
-                v_0[2] = dir[2];
-            }
+                double v_0[3];
+                if(dir[2]!=0)
+                {
+                    v_0[0] = dir[0];
+                    v_0[1] = dir[1];
+                    v_0[2] = (cos(pass*angleDeviation)-dir[0]*dir[0]-dir[1]*dir[1])/dir[2];
+                }
+                else if(dir[1]!=0)
+                {
+                    v_0[0] = (cos(pass*angleDeviation)-dir[0]*dir[0]-dir[2]*dir[2])/dir[1];
+                    v_0[1] = dir[1];
+                    v_0[2] = dir[2];
+                }
+                else if(dir[0]!=0)
+                {
+                    v_0[0] = (cos(pass*angleDeviation)-dir[1]*dir[1]-dir[2]*dir[2])/dir[0];
+                    v_0[1] = dir[1];
+                    v_0[2] = dir[2];
+                }
 
-            double l = sqrt(pow(v_0[0],2)+pow(v_0[1],2)+pow(v_0[2],2));
-            v_0[0] /= l;
-            v_0[1] /= l;
-            v_0[2] /= l;
+                double l = sqrt(pow(v_0[0],2)+pow(v_0[1],2)+pow(v_0[2],2));
+                v_0[0] /= l;
+                v_0[1] /= l;
+                v_0[2] /= l;
 
-            int N = 16;                     // cast 16 rays from P
-            double dangle = 2*PI/N;
-            for(int i = 0; i<N; i++)
-            {
-                double dir_rot[3];
-                this->rotateVector(v_0,dir,dangle,dir_rot);
-                aDistanceMeter.distance(P,dir_rot,&gap);
-                gaps.push_back(gap);
-                v_0[0] = dir_rot[0];
-                v_0[1] = dir_rot[1];
-                v_0[2] = dir_rot[2];
+                int N = 16;                     // cast 16 rays from P
+                double dangle = 2*PI/N;
+                for(int i = 0; i<N; i++)
+                {
+                    double dir_rot[3];
+                    this->rotateVector(v_0,dir,dangle,dir_rot);
+                    aDistanceMeter.distance(P,dir_rot,&gap);
+                    gaps.push_back(gap);
+                    v_0[0] = dir_rot[0];
+                    v_0[1] = dir_rot[1];
+                    v_0[2] = dir_rot[2];
+                }
+                gap = *std::min(gaps.begin(),gaps.end());
             }
-
-            gap = *std::min(gaps.begin(),gaps.end());
             if(displacement>0.30*gap)
             {
+                NbGapNegativeChecks++;
+                //! --------------
+                //! lock the node
+                //! --------------
                 myLayerHCutOff.insert(globalNodeID,0);
-                cout<<"prismaticLayer::generateTetLayers()->____blocked node ID: "<<globalNodeID<<"____displacement: "<<displacement<<"\t gap: "<<gap<<"____"<<endl;
+                //cout<<"prismaticLayer::generateTetLayers()->____blocked node ID: "<<globalNodeID<<"____displacement: "<<displacement<<"\t gap: "<<gap<<"____"<<endl;
             }
             gaps.clear();
         }
+        cout<<"prismaticLayer::generateTetLayers()->____intersection check: blocked "<<NbGapNegativeChecks<<" nodes____"<<endl;
 
         //! ---------------
         //! classify nodes
         //! ---------------
         std::map<int,int> mapNodeTypes;
-        this->classifyNodes(theMeshToInflate,mapNodeTypes);     //! ERR 1 - theMeshToInflate is watertight
+        this->classifyNodes(theMeshToInflate,mapNodeTypes);     //! ERR 1 - theMeshToInflate is watertight: it has no 1D boundary
 
         //! -----------------------------------------------------------------------------------------------
         //! smooth the guiding vectors directions - use 5/10 smoothing steps
         //! flag normalize == true since the "rotation" of the vector is of interest (change in direction)
         //! -----------------------------------------------------------------------------------------------
-        smoothingTools::fieldSmoother(normals,theMeshToInflate,betaAverageField,betaVisibilityField,mapNodeTypes,10,true);
+        smoothingTools::fieldSmoother(normals,theMeshToInflate,betaAverageField,betaVisibilityField,mapNodeTypes,10,true,n);
 
         //! -----------------------------------------
         //! create the map of the marching distances
@@ -1936,10 +1948,13 @@ void prismaticLayer::generateTetLayers(occHandle(Ng_MeshVS_DataSource3D) &meshAt
             marchingDistanceMap.insert(globalNodeID,marchingDistance);
         }
 
+        // try - it seems able to solve many issues!
+        this->checkLateralDistributionMarchingDistance(theMeshToInflate,n,marchingDistanceMap);
+
         //! ------------------------------
         //! smooth the marching distances
         //! ------------------------------
-        smoothingTools::scalarFieldSmoother(marchingDistanceMap,theMeshToInflate,betaAverageField,mapNodeTypes,10);
+        smoothingTools::scalarFieldSmoother(marchingDistanceMap,theMeshToInflate,betaAverageField,mapNodeTypes,10,n);
 
         //! --------------------------------------------------------
         //! check the marching distance between two inflation steps
@@ -1953,12 +1968,28 @@ void prismaticLayer::generateTetLayers(occHandle(Ng_MeshVS_DataSource3D) &meshAt
                 if(myLayerHCutOff.value(globalNodeID)==0) continue;
                 double curMarchingDistance = it.value();
                 double previousMarchingDistance = marchingDistanceMapOld.value(globalNodeID);
-                if((curMarchingDistance/previousMarchingDistance)>=2.0)   // 2.0 is the maximum of (1+shrinkFactor)
+                if((curMarchingDistance/previousMarchingDistance)>=myExpRatio*1.5)   // 2.0 is the maximum of (1+shrinkFactor)
                 {
-                    cout<<"____"<<curMarchingDistance/previousMarchingDistance<<"____"<<endl;
-                    myLayerHCutOff.insert(globalNodeID,0);
+                    cout<<"prismaticLayers::generateTetLayers()->____increment of marching distance too large"<<curMarchingDistance/previousMarchingDistance<<"____"<<endl;
+
+                    //! ------------------------
+                    //! this is the option lock
+                    //! ------------------------
+                    //myLayerHCutOff.insert(globalNodeID,0);
+
+                    //! --------------------------------------------------------------
+                    //! this is the option "adjust" - smooth the displacement locally
+                    //! --------------------------------------------------------------
+                    double betaAve = betaAverageField.at(globalNodeID);
+                    double smoothedValue;
+                    smoothingTools::smoothScalarAtPoint(theMeshToInflate,marchingDistanceMap,globalNodeID,betaAve,n,smoothedValue);
+                    marchingDistanceMap.insert(globalNodeID,smoothedValue);
+                    marchingDistanceMapOld.insert(globalNodeID,smoothedValue);
                 }
-                marchingDistanceMapOld.insert(globalNodeID,curMarchingDistance);
+                else
+                {
+                    marchingDistanceMapOld.insert(globalNodeID,curMarchingDistance);
+                }
             }
         }
         else // this occurs @ first step
@@ -1983,8 +2014,7 @@ void prismaticLayer::generateTetLayers(occHandle(Ng_MeshVS_DataSource3D) &meshAt
         //! 3. check lateral displacements - lateral smoothing can result in additional Cliff points?
         //!    if yes this check should be placed before "checkIncompleteManifold"
         //! ------------------------------------------------------------------------------------------
-        //this->checkLateralDistributionMarchingDistance(theMeshToInflate,marchingDistanceMap);
-        //smoothingTools::scalarFieldSmoother(marchingDistanceMap,theMeshToInflate,betaAverageField,mapNodeTypes,10);
+        //this->checkLateralDistributionMarchingDistance(theMeshToInflate,n,marchingDistanceMap);
 
         //! -----------------------------------------------
         //! 4. check "Cliff points" - incomplete manifolds
@@ -2027,12 +2057,15 @@ void prismaticLayer::generateTetLayers(occHandle(Ng_MeshVS_DataSource3D) &meshAt
         {
             int globalNodeID = it.Key();
             if(myPrismaticFacesSumMeshDS->myBoundaryPoints.contains(globalNodeID)) continue;
+            //if(myLayerHCutOff.value(globalNodeID)==0) continue;
 
             //! ------------------------------
             //! prepare the "displaced point"
             //! ------------------------------
+            double pc[3];
+            this->getPointCoordinates(theMeshToInflate,globalNodeID,pc);
             int localNodeID = theMeshToInflate->myNodesMap.FindIndex(globalNodeID);
-            const std::vector<double> &pc = theMeshToInflate->getNodeCoordinates(localNodeID);
+            //const std::vector<double> &pc = theMeshToInflate->getNodeCoordinates(localNodeID);
             const QList<double> &vecDispl = displacementsField.value(globalNodeID);
 
             double x_displ = pc[0]+vecDispl[0];
@@ -2119,8 +2152,8 @@ void prismaticLayer::generateTetLayers(occHandle(Ng_MeshVS_DataSource3D) &meshAt
                 TetQualityClass aTetQuality;
                 aTetQuality.setPoints(aVolElement.getPoints());
                 double volume = aTetQuality.Volume();
-                if(volume<0.0)
-                //if(dot>0)
+                if(volume<=0.0)
+                //if(dot>=0)
                 {
                     //! ---------------------------------------------------------
                     //! remove all the elements generated from this triangle fan
@@ -2506,6 +2539,9 @@ void prismaticLayer::generateOneTetLayer(occHandle(Ng_MeshVS_DataSourceFace) &th
         gap = *std::min(gaps.begin(),gaps.end());
         if(displacement>0.30*gap)
         {
+            //! --------------
+            //! lock the node
+            //! --------------
             myLayerHCutOff.insert(globalNodeID,0);
             cout<<"prismaticLayer::generateOneTetLayer()->____blocked node ID: "<<globalNodeID<<"____displacement: "<<displacement<<"\t gap: "<<gap<<"____"<<endl;
         }
@@ -2522,7 +2558,7 @@ void prismaticLayer::generateOneTetLayer(occHandle(Ng_MeshVS_DataSourceFace) &th
     //! smooth the guiding vectors directions - use 5/10 smoothing steps
     //! flag normalize == true since the "rotation" of the vector is of interest (change in direction)
     //! -----------------------------------------------------------------------------------------------
-    smoothingTools::fieldSmoother(normals,theMeshToInflate,betaAverageField,betaVisibilityField,mapNodeTypes,10,true);
+    smoothingTools::fieldSmoother(normals,theMeshToInflate,betaAverageField,betaVisibilityField,mapNodeTypes,10,true,1);
 
     //! ------------------------------------
     //! map of the local marching distances
@@ -2540,7 +2576,7 @@ void prismaticLayer::generateOneTetLayer(occHandle(Ng_MeshVS_DataSourceFace) &th
     //! ------------------------------
     //! smooth the marching distances
     //! ------------------------------
-    smoothingTools::scalarFieldSmoother(marchingDistanceMap,theMeshToInflate,betaAverageField,mapNodeTypes,10);
+    smoothingTools::scalarFieldSmoother(marchingDistanceMap,theMeshToInflate,betaAverageField,mapNodeTypes,10,1);
 
     //! ---------------------------------------------------------------------------------------------------------------------
     //! front analysis: check the marching distances
@@ -2725,66 +2761,71 @@ void prismaticLayer::generateOneTetLayer(occHandle(Ng_MeshVS_DataSourceFace) &th
 //! details:
 //! ---------------------------------------------------
 void prismaticLayer::checkLateralDistributionMarchingDistance(const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS,
+                                                              int inflationStep,
                                                               QMap<int,double> &marchingDistanceMap)
 {
     cout<<"prismaticLayer::checkLateralDistributionMarchingDistance()->____function called____"<<endl;
 
-    std::map<int,double> marchingDistanceMapUpdated;
-    for(QMap<int,double>::iterator it = marchingDistanceMap.begin(); it!=marchingDistanceMap.end(); it++)
+    int NbAdjusted_old = 1e6;
+    for(int n=0; n<19; n++)
     {
-        int globalNodeID = it.key();
-        double distanceToCheck = it.value();
-
-        //! ----------------------------------------------------------------------
-        //! among the surrounding nodes, check the ones which do not satisfy
-        //! the inner inequality, and store them into the "referenceNodes" vector
-        //! ----------------------------------------------------------------------
-        bool foundNodesAround = false;
-        const std::vector<int> &surroundingNodes = mySurroudingNodesMap.at(globalNodeID);
-        std::vector<int> referenceNodes;
-        for(std::vector<int>::const_iterator it_ = surroundingNodes.cbegin(); it_!=surroundingNodes.cend(); it_++)
+        int NbAdjusted = 0;
+        std::map<int,double> marchingDistanceMapUpdated;
+        for(QMap<int,double>::iterator it = marchingDistanceMap.begin(); it!=marchingDistanceMap.end(); it++)
         {
-            int globalNodeID_surrounding = *it_;
-            double curMarchingDistance_surr = marchingDistanceMap.value(globalNodeID_surrounding);
-            if(distanceToCheck<0.5*curMarchingDistance_surr || distanceToCheck>2*curMarchingDistance_surr)
+            int globalNodeID = it.key();
+            if(myLayerHCutOff.value(globalNodeID)==0) continue;
+            double distanceToCheck = it.value();
+
+            //! ----------------------------------------------------------------------
+            //! among the surrounding nodes, check the ones which do not satisfy
+            //! the inner inequality, and store them into the "referenceNodes" vector
+            //! ----------------------------------------------------------------------
+            bool foundNodesAround = false;
+            const std::vector<int> &surroundingNodes = mySurroudingNodesMap.at(globalNodeID);
+            for(std::vector<int>::const_iterator it_ = surroundingNodes.cbegin(); it_!=surroundingNodes.cend(); it_++)
             {
-                referenceNodes.push_back(globalNodeID_surrounding);
-                foundNodesAround = true;
+                int globalNodeID_surrounding = *it_;
+                if(myLayerHCutOff.value(globalNodeID_surrounding)==0) continue;
+                double curMarchingDistance_surr = marchingDistanceMap.value(globalNodeID_surrounding);
+                if(distanceToCheck<0.50*curMarchingDistance_surr || distanceToCheck>2.0*curMarchingDistance_surr)
+                {
+                    NbAdjusted++;
+                    foundNodesAround = true;
+                    break;
+                }
+            }
+
+            //! ----------------------------
+            //! this is the option "adjust"
+            //! ----------------------------
+            if(foundNodesAround == true)
+            {
+                double curMarchingDistance = marchingDistanceMap.value(globalNodeID);   // the value to smooth
+                //double curMarchingDistanceOld = curMarchingDistance;
+                double betaAve = betaAverageField.at(globalNodeID);
+                smoothingTools::smoothScalarAtPoint(aMeshDS,marchingDistanceMap,globalNodeID,betaAve,inflationStep,curMarchingDistance);
+                marchingDistanceMapUpdated.insert(std::make_pair(globalNodeID,curMarchingDistance));
+                //cout<<"smoothingTools::smoothScalarAtPoint()->_____value to smooth: "<<curMarchingDistanceOld<<"\t"<<curMarchingDistance<<"____"<<endl;
+
+                //! lock node
+                //myLayerHCutOff.insert(globalNodeID,0);
             }
         }
-        //! ----------------------------
-        //! this is the option "adjust"
-        //! ----------------------------
-        if(foundNodesAround == true)
-        {
-            double P[3];
-            this->getPointCoordinates(aMeshDS,globalNodeID,P);
 
-            double dtot_inv = 0;
-            double Spartial = 0;
+        if(NbAdjusted>NbAdjusted_old) break;
+        if(NbAdjusted!=0)
+            cout<<"prismaticLayer::checkLateralDistributionMarchingDistance()->____lateral criterion: evaluated "<<NbAdjusted<<" nodes____"<<endl;
 
-            for(std::vector<int>::iterator it_ = referenceNodes.begin(); it_ != referenceNodes.end(); it_++)
-            {
-                int nodeID = *it_;
-                double B[3];
-                this->getPointCoordinates(aMeshDS,nodeID,B);
-
-                double d_inv = 1/(sqrt(pow(P[0]-B[0],2)+pow(P[1]-B[1],2)+pow(P[2]-B[2],2)));
-                Spartial += d_inv * marchingDistanceMap.value(nodeID);
-                dtot_inv += d_inv;
-            }
-            double smoothedMarchingDistance = Spartial/dtot_inv;
-            marchingDistanceMapUpdated.insert(std::make_pair(globalNodeID,smoothedMarchingDistance));
-        }
-
-        //! ----------------------------------------------------------------------------------------
-        //! update the marching distances - optimize possibile updating only the modified distances
-        //! ----------------------------------------------------------------------------------------
+        //! ------------------------------
+        //! update the marching distances
+        //! ------------------------------
         for(std::map<int,double>::iterator it = marchingDistanceMapUpdated.begin(); it != marchingDistanceMapUpdated.end(); it++)
         {
-            //cout<<"____"<<it.key()<<"\t"<<marchingDistanceMap.value(it.key())<<"\t"<<it.value()<<"____"<<endl;
             marchingDistanceMap.insert(it->first, it->second);
         }
+
+        NbAdjusted_old = NbAdjusted;
     }
 }
 
@@ -3082,6 +3123,8 @@ void prismaticLayer::buildSurroundingNodesMap(const occHandle(Ng_MeshVS_DataSour
 void prismaticLayer::analyzeFront(const occHandle(Ng_MeshVS_DataSourceFace) &theMeshToInflate,
                                   const QMap<int,double> &marchingDistanceMap)
 {
+    cout<<"prismaticLayer::analyzeFront()->____analyzing front____"<<endl;
+
     if(theMeshToInflate.IsNull()) return;
     const double PI = 3.1415926538;
 
@@ -3119,15 +3162,57 @@ void prismaticLayer::analyzeFront(const occHandle(Ng_MeshVS_DataSourceFace) &the
         //! -------------------------------------------------------------------
         if(marchingDistanceMap.value(globalNodeID)>0.50 * averageDistance)
         {
+
+
+            //! --------------
+            //! lock the node
+            //! --------------
             myLayerHCutOff.insert(globalNodeID,0);
             blockedByLenght++;
             continue;   // jump over the subsequent check, if any
         }
 
-        //! ------------------------------------------------------------------------------------
-        //! second check - compute angles between the guiding vector and the faces at the basis
-        //! if the maximum among these angles is greater than 80° block the advancing node
-        //! ------------------------------------------------------------------------------------
+        /*
+        //! -------------------------------------------------------------
+        //! perform first check - stop if the marching distance if it is
+        //! greater than 0.5-0.6 the the typical length of the fan area
+        //! -------------------------------------------------------------
+        int localNodeID = theMeshToInflate->myNodesMap.FindIndex(globalNodeID);
+        const QList<int> surroundingElements_local = theMeshToInflate->myNodeToElements.value(localNodeID);
+        double baseArea = 0;
+        for(int i = 0; i<surroundingElements_local.length(); i++)
+        {
+            int globalNodeID_surrounding = theMeshToInflate->myElementsMap.FindIndex(surroundingElements_local.at(i));
+            double buf[24];
+            TColStd_Array1OfReal coords(*buf,1,24);
+            int NbNodes;
+            MeshVS_EntityType aType;
+            theMeshToInflate->GetGeom(globalNodeID_surrounding,true,coords,NbNodes,aType);
+            std::vector<polygon::Point> aPolygon;
+            for(int k=0; k<NbNodes; k++)
+            {
+                int s = 3*k;
+                aPolygon.push_back(polygon::Point(coords(s+1),coords(s+2),coords(s+3)));
+            }
+            if(polygon::area3D_Polygon(aPolygon)<=0)
+            {
+                cerr<<"prismaticLayer::analyzeFront()->____abnormal termination at line 3156____"<<endl;
+            }
+            baseArea += fabs(polygon::area3D_Polygon(aPolygon));
+        }
+        double typicalLength = sqrt(baseArea);
+        if(marchingDistanceMap.value(globalNodeID)>0.4*typicalLength)
+        {
+            myLayerHCutOff.insert(globalNodeID,0);
+            blockedByLenght++;
+            continue;
+        }
+        */
+
+        //! -----------------------------------------------------------------------
+        //! second check - compute angles between the guiding vector
+        //! and all the edges generated by P* (P shifted along the guiding vector)
+        //! -----------------------------------------------------------------------
         double P_star[3];
         this->getPointCoordinates(theMeshToInflate,globalNodeID,P_star);
         const QList<double> &normal = normals.value(globalNodeID);
@@ -3144,9 +3229,10 @@ void prismaticLayer::analyzeFront(const occHandle(Ng_MeshVS_DataSourceFace) &the
             int globalNodeID_surr = *it;
             double V[3];
             this->getPointCoordinates(theMeshToInflate,globalNodeID_surr,V);
-            double lx = -P_star[0] + V[0];
-            double ly = -P_star[1] + V[1];
-            double lz = -P_star[2] + V[2];
+            double lx = V[0] - P_star[0];
+            double ly = V[1] - P_star[1];
+            double lz = V[2] - P_star[2];
+
             double dot = (lx*normal[0]+ly*normal[1]*lz*normal[2]);
             double dotNorm = sqrt(lx*lx+ly*ly+lz*lz)*sqrt(normal[0]*normal[0]+normal[1]*normal[1]+normal[2]*normal[2]);
             dot /= dotNorm;
@@ -3156,7 +3242,8 @@ void prismaticLayer::analyzeFront(const occHandle(Ng_MeshVS_DataSourceFace) &the
             if(angle>maxAngle) maxAngle = angle;
             if(angle<minAngle) minAngle = angle;
         }
-        if(maxAngle<70*PI/180.0)    // this tries to avoid problems at corners, but this is not the solution
+        if(maxAngle<=80*PI/180.0)    // this tries to avoid problems at corners, but this is not the solution
+        //if(maxAngle>=80*PI/180.0)
         {
             myLayerHCutOff.insert(globalNodeID,0);
             blockedByAngle++;
