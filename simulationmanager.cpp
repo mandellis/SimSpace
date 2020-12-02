@@ -11878,10 +11878,10 @@ bool SimulationManager::COSTAMP_addProcessParameters()
             //! 21 matrice fissa/colata
             //! 24 tassello mobile
             //! 23 tassello fissa
-            //! 13 piastra
+            //! 15 piastra
             //! 14 lardoni
             QStringList bodyList;
-            bodyList<<"12"<<"11"<<"22"<<"21"<<"23"<<"13"<<"14";
+            bodyList<<"12"<<"11"<<"22"<<"21"<<"23"<<"15"<<"14";
             ListOfShape slaveScope,masterScope;
 
             //! create master and slave scope and assign material
@@ -11889,8 +11889,9 @@ bool SimulationManager::COSTAMP_addProcessParameters()
             {
                 QStandardItem *curBody = Geometry_RootItem->child(i-1,0);
                 SimulationNodeClass *curBodyNode = curBody->data(Qt::UserRole).value<SimulationNodeClass*>();
+                int mapIndex = curBodyNode->getPropertyValue<int>("Map index");
                 QString bodyName = curBodyNode->getName();
-                TopoDS_Solid aSolid = TopoDS::Solid(mySimulationDataBase->bodyMap.value(i));
+                TopoDS_Solid aSolid = TopoDS::Solid(mySimulationDataBase->bodyMap.value(mapIndex));
 
                 int matNumber = 2; //H11 only available
                 data.setValue(matNumber);
@@ -11919,7 +11920,8 @@ bool SimulationManager::COSTAMP_addProcessParameters()
             }
             //! -------------------------------
             //! create load boundary condition
-            //! -------------------------------
+            //! -------------------------------            
+            DetailViewer *detailViewer = static_cast<DetailViewer*>(tools::getWidgetByName("detailViewer"));
             int nBclosure = 0;
             int nBpressure = 0;
             int nBopen = 0;
@@ -11998,7 +12000,6 @@ bool SimulationManager::COSTAMP_addProcessParameters()
                 {
                     this->createSimulationNode(SimulationNodeClass::nodeType_modelChange);
                     modelChangeIndex = curRow;
-                    cout<<"curRow Model Change= "<<modelChangeIndex<<endl;
                     curRow++;
                     QStandardItem *curItem =itemSimulationRoot->child(modelChangeIndex,0);
                     SimulationNodeClass *curNode = curItem->data(Qt::UserRole).value<SimulationNodeClass*>();
@@ -12006,13 +12007,9 @@ bool SimulationManager::COSTAMP_addProcessParameters()
                     data.setValue(1);   //! contact
                     Property prop_itemType("Item type",data,Property::PropertyGroup_Definition);
                     curNode->replaceProperty("Item type",prop_itemType);
-                    curNode->removeProperty("Scoping method");
-                    curNode->removeProperty("Tags");
-                    data.setValue(0);
-                    Property prop_contact("Contact",data,Property::PropertyGroup_Scope);
-                    curNode->replaceProperty("Geometry",prop_contact);
                     nBopen++;
                     curNode->getModel()->blockSignals(false);
+                    detailViewer->handleModelChangeScopingMethodChanged();
                 }
             }
             for(int i=0; i<NbTstep;i++)
@@ -12108,7 +12105,7 @@ bool SimulationManager::COSTAMP_addProcessParameters()
                 if(bName=="CASTING")
                     continue;
                 double curBB =mySimulationDataBase->boundingBox(aSolid);
-
+                //cout<<"Bounding box "<<curBB<<endl;
                 //! is matrice/tassello/colata/controcolata
                 if(bName.startsWith(bodyList.at(2)) || bName.startsWith(bodyList.at(3)) || bName.startsWith(bodyList.at(4))
                         || bName.startsWith(bodyList.at(5)))
@@ -12136,7 +12133,7 @@ bool SimulationManager::COSTAMP_addProcessParameters()
             }
             groupBB<<vecBB_Die<<vecBB_Holdings<<vecBB_Plate;
             groupShapeList<<scopeDie<<scopeHoldings<<scopePlate;
-            DetailViewer *detailViewer = static_cast<DetailViewer*>(tools::getWidgetByName("detailViewer"));
+            //DetailViewer *detailViewer = static_cast<DetailViewer*>(tools::getWidgetByName("detailViewer"));
             int index=0;
             for(int i=0;i<groupShapeList.length();i++)
             {
@@ -12216,6 +12213,7 @@ bool SimulationManager::COSTAMP_addProcessParameters()
                 curSizingControl->getModel()->blockSignals(true);
                 index++;
             }
+            //cout<<"tag00"<<endl;
 
             //! vecAllBodies scope on every body
             ListOfShape scopes;
@@ -12228,6 +12226,7 @@ bool SimulationManager::COSTAMP_addProcessParameters()
                 scopes.Append(aSolid);
             }
             std::vector<GeometryTag> vecLocAllBodies = TopologyTools::generateLocationPairs(mySimulationDataBase, scopes);
+            //cout<<"tag01"<<endl;
 
             if(!casting.empty())
             {
