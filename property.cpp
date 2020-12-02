@@ -617,7 +617,8 @@ void Property::readProperty(ifstream &in, Property &prop)
             propKeyName=="Remote point" ||
             propKeyName=="Boundary named selection" ||
             propKeyName=="Analysis" ||
-            propKeyName=="Imported body temperature")
+            propKeyName=="Imported body temperature" ||
+            propKeyName=="Contact pair")
     {
         //! -----------------------
         //! [A] read the node name
@@ -693,6 +694,10 @@ void Property::readProperty(ifstream &in, Property &prop)
             if(vecProp.size()==0) node->setType(SimulationNodeClass::nodeType_NULL);
             //node->setType(SimulationNodeClass::nodeType_solutionThermalTemperature);
             //if(vecProp.size()==0) node->setType(SimulationNodeClass::nodeType_NULL);
+        }
+        else if(propKeyName=="Contact pair")
+        {
+            node = new SimulationNodeClass(nodeName, SimulationNodeClass::nodeType_connectionPair, vecProp);
         }
 
         //! testing setType1()
@@ -975,7 +980,8 @@ void Property::writeVoid(ofstream& outFile, void *p)
             theNode==SimulationNodeClass::nodeType_importedBodyScalar ||
             theNode==SimulationNodeClass::nodeType_thermalAnalysis ||
             theNode==SimulationNodeClass::nodeType_solutionThermalTemperature ||
-            theNode==SimulationNodeClass::nodeType_meshPrismaticLayer)
+            theNode==SimulationNodeClass::nodeType_meshPrismaticLayer ||
+            theNode==SimulationNodeClass::nodeType_connectionPair)
     {
         //! ---------------------------
         //! write the name of the node

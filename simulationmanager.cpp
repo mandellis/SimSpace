@@ -11190,7 +11190,7 @@ void SimulationManager::updateResultsPresentation()
     QList<sharedPostObject> postObjectList= this->retrieveAllResults();
     myPostEngine->updateResultsPresentation(postObjectList);
     SimulationNodeClass *curNode = this->getCurrentNode();
-    if(curNode->isAnalysisResult())
+    if(curNode->isAnalysisResult() || curNode->getType() == SimulationNodeClass::nodeType_importedBodyScalar)
     {
         sharedPostObject aPostObject = curNode->getPropertyValue<sharedPostObject>("Post object");
         emit requestDisplayResult(aPostObject);
