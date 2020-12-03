@@ -9737,10 +9737,12 @@ void SimulationManager::interpolatePrivate(int mode)
     int NbStep = 1;
 
     //! --------------------------
-    //! list of times (by string)
+    //! list of times (by double)
     //! --------------------------
+    //std::vector<double> listTimeS;
+    //QList<QString> stringListTimeS;
+    //std::map<double,QString> mapFileTime;
     QList<QString> listTimeS;
-
     //! ---------------
     //! measuring time
     //! ---------------
@@ -9759,7 +9761,7 @@ void SimulationManager::interpolatePrivate(int mode)
         QDir curDir;
         curDir.cd(directoryDataPath);
         curDir.setFilter(QDir::Files | QDir::Hidden | QDir::NoSymLinks);
-
+        curDir.setSorting(QDir::Name);
         cout<<"SimulationManager::interpolatePrivate()->____working on directory "<<curDir.absolutePath().toStdString()<<"____"<<endl;
         QDirIterator dirIterator(curDir, QDirIterator::NoIteratorFlags);
 
@@ -9781,7 +9783,36 @@ void SimulationManager::interpolatePrivate(int mode)
             QApplication::processEvents();
             Sleep(500);
         }
+/*
+        //! create the list of time
+        while(dirIterator.hasNext())
+        {
+            dirIterator.next();
+            if(dirIterator.fileInfo().isFile())
+            {
+                QString filePath = dirIterator.filePath();
+                stringListTimeS<<filePath;
 
+                //! -------------------------------------------
+                //! check if the file name is valid
+                //! the file must end with "_<time value>.txt"
+                //! -------------------------------------------
+                bool isSuffixValid;
+                QString timeS = filePath.split("_").last();
+
+                //! -------------------------
+                //! remove the ".txt" suffix
+                //! -------------------------
+                timeS.chop(4);
+                timeS.toDouble(&isSuffixValid);
+                if(!isSuffixValid) continue;
+
+                listTimeS<<timeS.toDouble();
+                mapFileTime.insert(std::make_pair(timeS.toDouble(),filePath));
+            }
+        }
+        std::sort(listTimeS.begin(),listTimeS.end());
+        */
         int c=0;
         while(dirIterator.hasNext())
         {
@@ -11780,7 +11811,7 @@ bool SimulationManager::COSTAMP_addProcessParameters()
                 tabData->setDataRC(curTime.at(i),i+1,1,Qt::EditRole);
                 //! change time stepping policy
                 QVector<int> timeStepPolicy;
-                if(i==0) timeStepPolicy<<40<<10<<120<<1;
+                if(i==0 || i==1) timeStepPolicy<<40<<10<<120<<1;
                 else timeStepPolicy<<10<<5<<100<<1;
                 data.setValue(timeStepPolicy);
                 tabData->setDataRC(data,i+1,3,Qt::EditRole);
@@ -12216,8 +12247,6 @@ bool SimulationManager::COSTAMP_addProcessParameters()
                 curSizingControl->getModel()->blockSignals(true);
                 index++;
             }
-            //cout<<"tag00"<<endl;
-
             //! vecAllBodies scope on every body
             ListOfShape scopes;
             for(int i=1; i<= NbBodies; i++)
@@ -12282,7 +12311,7 @@ bool SimulationManager::COSTAMP_addProcessParameters()
                 curPrismControl->replaceProperty("Boundary mesh type",prop_boundaryMesh);
 
                 //! Nb layers
-                double nBlayer = 5;
+                double nBlayer = 4;
                 data.setValue(nBlayer);
                 Property prop_nBlayer("Number of layers",data,Property::PropertyGroup_Definition);
                 curPrismControl->replaceProperty("Number of layers",prop_nBlayer);
@@ -12290,11 +12319,11 @@ bool SimulationManager::COSTAMP_addProcessParameters()
                 //! layer thickness
                 double thick = 0.4;
                 data.setValue(thick);
-                Property prop_thick("First layer thickness",data,Property::PropertyGroup_Definition);
-                curPrismControl->replaceProperty("First layer thickness",prop_thick);
+                Property prop_thick("First layer height",data,Property::PropertyGroup_Definition);
+                curPrismControl->replaceProperty("First layer height",prop_thick);
 
                 //! expansion
-                double exp = 1.1;
+                double exp = 1.2;
                 data.setValue(exp);
                 Property prop_exp("Expansion ratio",data,Property::PropertyGroup_Definition);
                 curPrismControl->replaceProperty("Expansion ratio",prop_exp);
