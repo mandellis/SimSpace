@@ -9956,7 +9956,6 @@ void SimulationManager::interpolatePrivate(int mode)
         if(!theMeshVS_DataSource.IsNull())
         {
             cout<<"SimulationManager::interpolatePrivate()->____start mapper____"<<endl;
-
             //! ---------------------------
             //! mapping on the target mesh
             //! ---------------------------
@@ -9981,7 +9980,7 @@ void SimulationManager::interpolatePrivate(int mode)
                 mapper.performNearest(pinball);
             }
                 break;
-            case 1: // nearest point - another algo
+            case 1: // nearest neighbour
             {
                 mapper.setNbBuckets(NbBucketsX,NbBucketsY,NbBucketsZ);
                 mapper.splitSourceIntoBuckets();
@@ -10144,9 +10143,9 @@ void SimulationManager::interpolatePrivate(int mode)
             listOfMin.push_back(aPair.first);
         }
         std::sort(listOfMax.begin(),listOfMax.end());
-        std::sort(listOfMax.begin(),listOfMax.end());
+        std::sort(listOfMin.begin(),listOfMin.end());
         max = listOfMax.back();
-        min = listOfMax.front();
+        min = listOfMin.front();
         //! ---------------------------------------------------------------------
         //! create the post object: 1-st column of data, 10 levels, autoscale ON
         //! ---------------------------------------------------------------------
@@ -10272,7 +10271,8 @@ QList<sharedPostObject> SimulationManager::retrieveAllResults()
     QStandardItem *curItem = myModel->itemFromIndex(myTreeView->currentIndex());
     SimulationNodeClass *curNode = myTreeView->currentIndex().data(Qt::UserRole).value<SimulationNodeClass*>();
 
-    if(!curNode->isAnalysisResult()) return results;
+    if(!curNode->isAnalysisResult()/* ||
+            curNode->getType()!=SimulationNodeClass::nodeType_importedBodyScalar*/) return results;
 
     //! ----------------------------
     //! the current "Solution" item
@@ -11190,7 +11190,7 @@ void SimulationManager::updateResultsPresentation()
     QList<sharedPostObject> postObjectList= this->retrieveAllResults();
     myPostEngine->updateResultsPresentation(postObjectList);
     SimulationNodeClass *curNode = this->getCurrentNode();
-    if(curNode->isAnalysisResult() || curNode->getType() == SimulationNodeClass::nodeType_importedBodyScalar)
+    if(curNode->isAnalysisResult() || curNode->getType() == SimulationNodeClass::nodeType_postObject)
     {
         sharedPostObject aPostObject = curNode->getPropertyValue<sharedPostObject>("Post object");
         emit requestDisplayResult(aPostObject);
@@ -11958,8 +11958,12 @@ bool SimulationManager::COSTAMP_addProcessParameters()
                     data.setValue(vec);
                     Property prop_loadDirection("Direction",data,Property::PropertyGroup_Definition);
                     curNode->replaceProperty("Direction",prop_loadDirection);
-                    nBclosure++;
                     curNode->getModel()->blockSignals(false);
+                    int coupling = 0; //kinematic
+                    data.setValue(coupling);
+                    Property prop_coupling("Coupling",data,Property::PropertyGroup_Advanced);
+                    curNode->replaceProperty("Coupling",prop_coupling);
+                    nBclosure++;
                 }
                 //! -------------------------------
                 //! create the inner pressure node
@@ -12107,8 +12111,7 @@ bool SimulationManager::COSTAMP_addProcessParameters()
                 double curBB =mySimulationDataBase->boundingBox(aSolid);
                 //cout<<"Bounding box "<<curBB<<endl;
                 //! is matrice/tassello/colata/controcolata
-                if(bName.startsWith(bodyList.at(2)) || bName.startsWith(bodyList.at(3)) || bName.startsWith(bodyList.at(4))
-                        || bName.startsWith(bodyList.at(5)))
+                if(bName.startsWith(bodyList.at(2)) || bName.startsWith(bodyList.at(3)) || bName.startsWith(bodyList.at(4)))
                 {
                     scopeDie.Append(aSolid);
                     vecBB_Die.push_back(curBB);
@@ -12120,7 +12123,7 @@ bool SimulationManager::COSTAMP_addProcessParameters()
                     vecBB_Holdings.push_back(curBB);
                 }
                 //! is Plate/lardoni
-                else if(bName.startsWith(bodyList.at(6)) || bName.startsWith(bodyList.at(7)))
+                else if(bName.startsWith(bodyList.at(5)) || bName.startsWith(bodyList.at(6)))
                 {
                     scopePlate.Append(aSolid);
                     vecBB_Plate.push_back(curBB);
@@ -12128,7 +12131,7 @@ bool SimulationManager::COSTAMP_addProcessParameters()
                 else if(!bName.startsWith(bodyList.at(0)) || !bName.startsWith(bodyList.at(1)) ||
                         !bName.startsWith(bodyList.at(2)) || !bName.startsWith(bodyList.at(3)) ||
                         !bName.startsWith(bodyList.at(4)) || !bName.startsWith(bodyList.at(5)) ||
-                        !bName.startsWith(bodyList.at(6)) || !bName.startsWith(bodyList.at(7)))
+                        !bName.startsWith(bodyList.at(6)))
                     continue;
             }
             groupBB<<vecBB_Die<<vecBB_Holdings<<vecBB_Plate;

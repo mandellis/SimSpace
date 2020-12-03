@@ -70,7 +70,6 @@ Mapper3DClass::Mapper3DClass(const opencascade::handle<MeshVS_DataSource> &theTa
     myProgressIndicator = Q_NULLPTR;
 
     this->setTargetMesh(theTargetMeshDS);
-
     //cout<<"Mapper3DClass->____target mesh bounding box size: ("<<myXmax-myXmin<<", "<<myYmax-myYmin<<", "<<myZmax-myZmin<<")____"<<endl;
 }
 

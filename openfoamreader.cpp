@@ -243,7 +243,7 @@ bool OpenFoamReader::perform(SimulationNodeClass *OFnode)
                                        "\nOpenfoam data archive is not valid", QMessageBox::Ok);
         return false;
     }
-    cout<<"OpenFoamReader::OpenFoamReader()->____Entering directory \"0\": retrieving the body names____"<<endl;
+    //cout<<"OpenFoamReader::OpenFoamReader()->____Entering directory \"0\": retrieving the body names____"<<endl;
     QList<QFileInfo> entriesInfo = curDir.entryInfoList();
     QList<QString> directoryList = curDir.entryList();
     QList<QString> directoryListFiltered;

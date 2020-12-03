@@ -143,6 +143,7 @@ bool writeSolverFileClass::perform()
         }
 
         int bodyIndex = it.key();
+        if(myDB->ArrayOfMeshDS.value(bodyIndex).IsNull()) continue;
         occHandle(Ng_MeshVS_DataSource3D) curVolumeMesh = occHandle(Ng_MeshVS_DataSource3D)::DownCast(myDB->ArrayOfMeshDS.value(bodyIndex));
 
         std::map<meshElement2D,std::vector<std::pair<int,int>>> facesToElements;

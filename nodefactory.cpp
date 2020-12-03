@@ -2606,7 +2606,6 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
     case SimulationNodeClass::nodeType_modelChange:
     {
         name = "Model change";
-
         //! ------------------------------------
         //! "0" model change on body/ies
         //! "1" model change on contact pairs
@@ -2618,6 +2617,9 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
         vecProp.push_back(prop_scopingMethod);
         vecProp.push_back(prop_scope);
         vecProp.push_back(prop_tags);
+
+        //! under definition
+        vecProp.push_back(prop_suppressed);
     }
         break;
 
