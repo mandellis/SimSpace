@@ -254,12 +254,6 @@ private slots:
     //! ---------------------------
     void handleGeometryHealingChanged();
 
-    //! -------------
-    //! model change
-    //! -------------
-    void handleModelChangeScopingMethodChanged();
-    void handleModelChangeActivationStatusChanged();
-
     //! -----------------------
     //! mesh element selection
     //! -----------------------
@@ -321,6 +315,12 @@ public slots:
 
     void handleInterpolationAlgorithmChanged();
     void handleTransparencyChanged();
+
+    //! ------------
+    //! modelChange
+    //! ------------
+    void handleModelChangeScopingMethodChanged();
+    void handleModelChangeActivationStatusChanged();
 
 signals:
 

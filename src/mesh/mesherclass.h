@@ -142,6 +142,9 @@ private:
     //! -------------------------
     void removeSupportFiles(bool remove=true);
 
+    //! processMesh
+    bool processMesh(int bodyIndex);
+
     //! ----------------
     //! processSTL file
     //! ----------------

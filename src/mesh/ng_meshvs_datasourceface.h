@@ -353,22 +353,10 @@ public:
     //! ----------------------------------
     void setNodeNormal(int globalNodeID, double *n);
 
-    //! -------------
-    //! experimental
-    //! -------------
-    std::vector<mesh::tolerantPoint> buildTolerantPoints()
-    {
-        std::vector<mesh::tolerantPoint> points;
-        for(int i=1; i<myNumberOfNodes; i++)
-        {
-            double x = myNodeCoords->Value(i,1);
-            double y = myNodeCoords->Value(i,2);
-            double z = myNodeCoords->Value(i,3);
-            mesh::tolerantPoint aP(x,y,z);
-            points.push_back((aP));
-        }
-        return points;
-    }
+    //! ----------------------
+    //! build tolerant points
+    //! ----------------------
+    std::vector<mesh::tolerantPoint> buildTolerantPoints(double tolerance = 1e-6);
 
     //! ------------------------
     //! get surrounding point
@@ -403,6 +391,11 @@ public:
     occHandle(MeshVS_HArray1OfSequenceOfInteger) PYRAM5MeshData;
     occHandle(MeshVS_HArray1OfSequenceOfInteger) PYRAM13MeshData;
     void buildElementsTopology();
+
+    //! ---------------
+    //! add an element
+    //! ---------------
+    bool addElement(const meshElementByCoords &anElement);
 };
 
 DEFINE_STANDARD_HANDLE(Ng_MeshVS_DataSourceFace, MeshVS_DataSource)

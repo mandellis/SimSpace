@@ -9737,10 +9737,12 @@ void SimulationManager::interpolatePrivate(int mode)
     int NbStep = 1;
 
     //! --------------------------
-    //! list of times (by string)
+    //! list of times (by double)
     //! --------------------------
+    //std::vector<double> listTimeS;
+    //QList<QString> stringListTimeS;
+    //std::map<double,QString> mapFileTime;
     QList<QString> listTimeS;
-
     //! ---------------
     //! measuring time
     //! ---------------
@@ -9759,7 +9761,7 @@ void SimulationManager::interpolatePrivate(int mode)
         QDir curDir;
         curDir.cd(directoryDataPath);
         curDir.setFilter(QDir::Files | QDir::Hidden | QDir::NoSymLinks);
-
+        curDir.setSorting(QDir::Name);
         cout<<"SimulationManager::interpolatePrivate()->____working on directory "<<curDir.absolutePath().toStdString()<<"____"<<endl;
         QDirIterator dirIterator(curDir, QDirIterator::NoIteratorFlags);
 
@@ -9781,7 +9783,36 @@ void SimulationManager::interpolatePrivate(int mode)
             QApplication::processEvents();
             Sleep(500);
         }
+/*
+        //! create the list of time
+        while(dirIterator.hasNext())
+        {
+            dirIterator.next();
+            if(dirIterator.fileInfo().isFile())
+            {
+                QString filePath = dirIterator.filePath();
+                stringListTimeS<<filePath;
 
+                //! -------------------------------------------
+                //! check if the file name is valid
+                //! the file must end with "_<time value>.txt"
+                //! -------------------------------------------
+                bool isSuffixValid;
+                QString timeS = filePath.split("_").last();
+
+                //! -------------------------
+                //! remove the ".txt" suffix
+                //! -------------------------
+                timeS.chop(4);
+                timeS.toDouble(&isSuffixValid);
+                if(!isSuffixValid) continue;
+
+                listTimeS<<timeS.toDouble();
+                mapFileTime.insert(std::make_pair(timeS.toDouble(),filePath));
+            }
+        }
+        std::sort(listTimeS.begin(),listTimeS.end());
+        */
         int c=0;
         while(dirIterator.hasNext())
         {
@@ -9956,7 +9987,6 @@ void SimulationManager::interpolatePrivate(int mode)
         if(!theMeshVS_DataSource.IsNull())
         {
             cout<<"SimulationManager::interpolatePrivate()->____start mapper____"<<endl;
-
             //! ---------------------------
             //! mapping on the target mesh
             //! ---------------------------
@@ -9981,7 +10011,7 @@ void SimulationManager::interpolatePrivate(int mode)
                 mapper.performNearest(pinball);
             }
                 break;
-            case 1: // nearest point - another algo
+            case 1: // nearest neighbour
             {
                 mapper.setNbBuckets(NbBucketsX,NbBucketsY,NbBucketsZ);
                 mapper.splitSourceIntoBuckets();
@@ -10144,9 +10174,10 @@ void SimulationManager::interpolatePrivate(int mode)
             listOfMin.push_back(aPair.first);
         }
         std::sort(listOfMax.begin(),listOfMax.end());
-        std::sort(listOfMax.begin(),listOfMax.end());
+        std::sort(listOfMin.begin(),listOfMin.end());
         max = listOfMax.back();
-        min = listOfMax.front();
+        min = listOfMin.front();
+        cout<<"Min Max at time "<<timeS.toStdString()<<" Min and max = "<<min<<" "<<max<<endl;
         //! ---------------------------------------------------------------------
         //! create the post object: 1-st column of data, 10 levels, autoscale ON
         //! ---------------------------------------------------------------------
@@ -10272,7 +10303,8 @@ QList<sharedPostObject> SimulationManager::retrieveAllResults()
     QStandardItem *curItem = myModel->itemFromIndex(myTreeView->currentIndex());
     SimulationNodeClass *curNode = myTreeView->currentIndex().data(Qt::UserRole).value<SimulationNodeClass*>();
 
-    if(!curNode->isAnalysisResult()) return results;
+    if(!curNode->isAnalysisResult()/* ||
+            curNode->getType()!=SimulationNodeClass::nodeType_importedBodyScalar*/) return results;
 
     //! ----------------------------
     //! the current "Solution" item
@@ -11190,7 +11222,7 @@ void SimulationManager::updateResultsPresentation()
     QList<sharedPostObject> postObjectList= this->retrieveAllResults();
     myPostEngine->updateResultsPresentation(postObjectList);
     SimulationNodeClass *curNode = this->getCurrentNode();
-    if(curNode->isAnalysisResult())
+    if(curNode->isAnalysisResult() || curNode->getType() == SimulationNodeClass::nodeType_postObject)
     {
         sharedPostObject aPostObject = curNode->getPropertyValue<sharedPostObject>("Post object");
         emit requestDisplayResult(aPostObject);
@@ -11780,7 +11812,7 @@ bool SimulationManager::COSTAMP_addProcessParameters()
                 tabData->setDataRC(curTime.at(i),i+1,1,Qt::EditRole);
                 //! change time stepping policy
                 QVector<int> timeStepPolicy;
-                if(i==0) timeStepPolicy<<40<<10<<120<<1;
+                if(i==0 || i==1) timeStepPolicy<<40<<10<<120<<1;
                 else timeStepPolicy<<10<<5<<100<<1;
                 data.setValue(timeStepPolicy);
                 tabData->setDataRC(data,i+1,3,Qt::EditRole);
@@ -11878,10 +11910,10 @@ bool SimulationManager::COSTAMP_addProcessParameters()
             //! 21 matrice fissa/colata
             //! 24 tassello mobile
             //! 23 tassello fissa
-            //! 13 piastra
+            //! 15 piastra
             //! 14 lardoni
             QStringList bodyList;
-            bodyList<<"12"<<"11"<<"22"<<"21"<<"23"<<"13"<<"14";
+            bodyList<<"12"<<"11"<<"22"<<"21"<<"23"<<"15"<<"14";
             ListOfShape slaveScope,masterScope;
 
             //! create master and slave scope and assign material
@@ -11889,8 +11921,9 @@ bool SimulationManager::COSTAMP_addProcessParameters()
             {
                 QStandardItem *curBody = Geometry_RootItem->child(i-1,0);
                 SimulationNodeClass *curBodyNode = curBody->data(Qt::UserRole).value<SimulationNodeClass*>();
+                int mapIndex = curBodyNode->getPropertyValue<int>("Map index");
                 QString bodyName = curBodyNode->getName();
-                TopoDS_Solid aSolid = TopoDS::Solid(mySimulationDataBase->bodyMap.value(i));
+                TopoDS_Solid aSolid = TopoDS::Solid(mySimulationDataBase->bodyMap.value(mapIndex));
 
                 int matNumber = 2; //H11 only available
                 data.setValue(matNumber);
@@ -11919,7 +11952,8 @@ bool SimulationManager::COSTAMP_addProcessParameters()
             }
             //! -------------------------------
             //! create load boundary condition
-            //! -------------------------------
+            //! -------------------------------            
+            DetailViewer *detailViewer = static_cast<DetailViewer*>(tools::getWidgetByName("detailViewer"));
             int nBclosure = 0;
             int nBpressure = 0;
             int nBopen = 0;
@@ -11956,8 +11990,12 @@ bool SimulationManager::COSTAMP_addProcessParameters()
                     data.setValue(vec);
                     Property prop_loadDirection("Direction",data,Property::PropertyGroup_Definition);
                     curNode->replaceProperty("Direction",prop_loadDirection);
-                    nBclosure++;
                     curNode->getModel()->blockSignals(false);
+                    int coupling = 0; //kinematic
+                    data.setValue(coupling);
+                    Property prop_coupling("Coupling",data,Property::PropertyGroup_Advanced);
+                    curNode->replaceProperty("Coupling",prop_coupling);
+                    nBclosure++;
                 }
                 //! -------------------------------
                 //! create the inner pressure node
@@ -11998,7 +12036,6 @@ bool SimulationManager::COSTAMP_addProcessParameters()
                 {
                     this->createSimulationNode(SimulationNodeClass::nodeType_modelChange);
                     modelChangeIndex = curRow;
-                    cout<<"curRow Model Change= "<<modelChangeIndex<<endl;
                     curRow++;
                     QStandardItem *curItem =itemSimulationRoot->child(modelChangeIndex,0);
                     SimulationNodeClass *curNode = curItem->data(Qt::UserRole).value<SimulationNodeClass*>();
@@ -12006,13 +12043,9 @@ bool SimulationManager::COSTAMP_addProcessParameters()
                     data.setValue(1);   //! contact
                     Property prop_itemType("Item type",data,Property::PropertyGroup_Definition);
                     curNode->replaceProperty("Item type",prop_itemType);
-                    curNode->removeProperty("Scoping method");
-                    curNode->removeProperty("Tags");
-                    data.setValue(0);
-                    Property prop_contact("Contact",data,Property::PropertyGroup_Scope);
-                    curNode->replaceProperty("Geometry",prop_contact);
                     nBopen++;
                     curNode->getModel()->blockSignals(false);
+                    detailViewer->handleModelChangeScopingMethodChanged();
                 }
             }
             for(int i=0; i<NbTstep;i++)
@@ -12108,10 +12141,9 @@ bool SimulationManager::COSTAMP_addProcessParameters()
                 if(bName=="CASTING")
                     continue;
                 double curBB =mySimulationDataBase->boundingBox(aSolid);
-
+                //cout<<"Bounding box "<<curBB<<endl;
                 //! is matrice/tassello/colata/controcolata
-                if(bName.startsWith(bodyList.at(2)) || bName.startsWith(bodyList.at(3)) || bName.startsWith(bodyList.at(4))
-                        || bName.startsWith(bodyList.at(5)))
+                if(bName.startsWith(bodyList.at(2)) || bName.startsWith(bodyList.at(3)) || bName.startsWith(bodyList.at(4)))
                 {
                     scopeDie.Append(aSolid);
                     vecBB_Die.push_back(curBB);
@@ -12123,7 +12155,7 @@ bool SimulationManager::COSTAMP_addProcessParameters()
                     vecBB_Holdings.push_back(curBB);
                 }
                 //! is Plate/lardoni
-                else if(bName.startsWith(bodyList.at(6)) || bName.startsWith(bodyList.at(7)))
+                else if(bName.startsWith(bodyList.at(5)) || bName.startsWith(bodyList.at(6)))
                 {
                     scopePlate.Append(aSolid);
                     vecBB_Plate.push_back(curBB);
@@ -12131,12 +12163,12 @@ bool SimulationManager::COSTAMP_addProcessParameters()
                 else if(!bName.startsWith(bodyList.at(0)) || !bName.startsWith(bodyList.at(1)) ||
                         !bName.startsWith(bodyList.at(2)) || !bName.startsWith(bodyList.at(3)) ||
                         !bName.startsWith(bodyList.at(4)) || !bName.startsWith(bodyList.at(5)) ||
-                        !bName.startsWith(bodyList.at(6)) || !bName.startsWith(bodyList.at(7)))
+                        !bName.startsWith(bodyList.at(6)))
                     continue;
             }
             groupBB<<vecBB_Die<<vecBB_Holdings<<vecBB_Plate;
             groupShapeList<<scopeDie<<scopeHoldings<<scopePlate;
-            DetailViewer *detailViewer = static_cast<DetailViewer*>(tools::getWidgetByName("detailViewer"));
+            //DetailViewer *detailViewer = static_cast<DetailViewer*>(tools::getWidgetByName("detailViewer"));
             int index=0;
             for(int i=0;i<groupShapeList.length();i++)
             {
@@ -12216,7 +12248,6 @@ bool SimulationManager::COSTAMP_addProcessParameters()
                 curSizingControl->getModel()->blockSignals(true);
                 index++;
             }
-
             //! vecAllBodies scope on every body
             ListOfShape scopes;
             for(int i=1; i<= NbBodies; i++)
@@ -12228,6 +12259,7 @@ bool SimulationManager::COSTAMP_addProcessParameters()
                 scopes.Append(aSolid);
             }
             std::vector<GeometryTag> vecLocAllBodies = TopologyTools::generateLocationPairs(mySimulationDataBase, scopes);
+            //cout<<"tag01"<<endl;
 
             if(!casting.empty())
             {
@@ -12280,7 +12312,7 @@ bool SimulationManager::COSTAMP_addProcessParameters()
                 curPrismControl->replaceProperty("Boundary mesh type",prop_boundaryMesh);
 
                 //! Nb layers
-                double nBlayer = 5;
+                double nBlayer = 4;
                 data.setValue(nBlayer);
                 Property prop_nBlayer("Number of layers",data,Property::PropertyGroup_Definition);
                 curPrismControl->replaceProperty("Number of layers",prop_nBlayer);
@@ -12288,11 +12320,11 @@ bool SimulationManager::COSTAMP_addProcessParameters()
                 //! layer thickness
                 double thick = 0.4;
                 data.setValue(thick);
-                Property prop_thick("First layer thickness",data,Property::PropertyGroup_Definition);
-                curPrismControl->replaceProperty("First layer thickness",prop_thick);
+                Property prop_thick("First layer height",data,Property::PropertyGroup_Definition);
+                curPrismControl->replaceProperty("First layer height",prop_thick);
 
                 //! expansion
-                double exp = 1.1;
+                double exp = 1.2;
                 data.setValue(exp);
                 Property prop_exp("Expansion ratio",data,Property::PropertyGroup_Definition);
                 curPrismControl->replaceProperty("Expansion ratio",prop_exp);

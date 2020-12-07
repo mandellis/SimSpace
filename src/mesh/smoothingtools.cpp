@@ -5,6 +5,22 @@
 //! ----
 #include <vector>
 
+//! ------------------------------
+//! function: getPointCoordinates
+//! details:
+//! ------------------------------
+bool smoothingTools::getPointCoordinate(const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS, int globalNodeID, double *P)
+{
+    if(aMeshDS.IsNull()) return false;
+    int NbNodes;
+    MeshVS_EntityType aType;
+    double buf[3];
+    TColStd_Array1OfReal coords(*buf,1,3);
+    bool isDone = aMeshDS->GetGeom(globalNodeID,false,coords,NbNodes,aType);
+    P[0] = coords(1); P[1] = coords(2); P[2] = coords(3);
+    return isDone;
+}
+
 //! -------------------------------------------------------------------------------------------------------
 //! function: scalarFieldSmoother
 //! details:  laplacian smoother of a scalar field as found in:
@@ -19,27 +35,24 @@
 //! ----------------------------------
 double fomega(double betaAve)
 {
-    double val = 0.5*(1+cos(betaAve/2));
-    //const double PI = 3.1415926538;
-    //double val = (PI-betaAve/2)*(1/(PI));
+    double val = 0.5*(1+cos(betaAve/2));    // (PI-betaAve/2)*(1/(PI))
     return val;
 }
 
-double kij(double n, const std::vector<double> &P, const std::vector<double> &S, double Sdij)
+double kij(int n, const std::vector<double> &P, const std::vector<double> &S, double Sdij)
 {
     double dij = sqrt(pow(P[0]-S[0],2)+pow(P[1]-S[1],2)+pow(P[2]-S[2],2));
     double val = n*dij/Sdij;
     return val;
 }
 
-double wij(double betaAve, const std::vector<double> &P, const std::vector<double> &S, double Sdij, double n)
+double wij(double betaAve, const std::vector<double> &P, const std::vector<double> &S, double Sdij, int n)
 {
     const double PI = 3.1415926538;
-    //const double eps = 5.0*PI/180.0;
-    //double val = 1.0;
+    const double power = 2.0;
     double val = 0.0;
-    if(betaAve<PI) val = 1/pow(kij(n,P,S,Sdij),2);         // "concave" point
-    if(betaAve>=PI) val = pow(kij(n,P,S,Sdij),2);          // "convex" point
+    if(betaAve<PI) val = 1/pow(kij(n,P,S,Sdij),power);         // "concave" point
+    if(betaAve>=PI) val = pow(kij(n,P,S,Sdij),-power);          // "convex" point
     return val;
 }
 
@@ -51,23 +64,29 @@ void smoothingTools::scalarFieldSmoother(QMap<int,double> &field,
                                          const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS,
                                          const std::map<int,double> &betaAveField,
                                          const std::map<int,int> &mapOfNodeTypes,
-                                         int NbSteps)
+                                         int NbSteps,
+                                         int inflationStep)
 {
-    cout<<"prismaticLayer::scalarFieldSmoother()->____function called____"<<endl;
+    cout<<"smoothingTools::scalarFieldSmoother()->____function called____"<<endl;
+
+    //! --------------------------------------------------------
+    //! record the initial field: these "best" normals are used
+    //! for checking the visibility constraint after smoothing
+    //! --------------------------------------------------------
+    QMap<int,double> initialField(field);
 
     QMap<int,double> smoothedField;
     for(int n = 1; n<=NbSteps; n++)
     {
         for(QMap<int,double>::iterator it = field.begin(); it!= field.end(); ++it)
         {
-            double snx = 0;
             int globalNodeID = it.key();
 
             //! -----------------------
             //! check the type of node
             //! -----------------------
-            int nodeType = mapOfNodeTypes.find(globalNodeID)->second;
-            switch(nodeType)
+            int nodeCategory = mapOfNodeTypes.find(globalNodeID)->second;
+            switch(nodeCategory)
             {
                 //! ---------------------------------------------------------------------------
                 //! node fixed - nor the guiding vector nor the marching distance are smoothed
@@ -94,23 +113,6 @@ void smoothingTools::scalarFieldSmoother(QMap<int,double> &field,
                 //! ------------------
                 std::set<int> setOfSurroundingNodes;
                 smoothingTools::surroundingNodes(aMeshDS,globalNodeID,false,setOfSurroundingNodes);
-                /*
-                int localNodeID = aMeshDS->myNodesMap.FindIndex(globalNodeID);
-                const QList<int> &surroundingElements_local = aMeshDS->myNodeToElements.value(localNodeID);
-                int NbSurroundingElements = surroundingElements_local.length();
-                std::set<int> setOfSurroundingNodes;
-                for(int n=0; n<NbSurroundingElements; n++)
-                {
-                    int localElementID_surr = surroundingElements_local[n];
-                    int globalElementID_surr = aMeshDS->myElementsMap.FindKey(localElementID_surr);
-                    int NbNodes, buf[12];
-                    TColStd_Array1OfInteger nodeIDs(*buf,1,10);
-                    aMeshDS->GetNodesByElement(globalElementID_surr,nodeIDs,NbNodes);
-                    for(int n=1; n<=NbNodes; n++) setOfSurroundingNodes.insert(nodeIDs(n));
-                }
-                std::set<int>::iterator it_ = setOfSurroundingNodes.find(globalNodeID);
-                setOfSurroundingNodes.erase(it_);
-                */
                 std::vector<int> surroundingNodesOfType2;
                 for(std::set<int>::iterator it__ = setOfSurroundingNodes.begin(); it__!=setOfSurroundingNodes.end(); it__++)
                 {
@@ -120,8 +122,10 @@ void smoothingTools::scalarFieldSmoother(QMap<int,double> &field,
                     surroundingNodesOfType2.push_back(curGlobalNodeID_surr);
                 }
 
+                //! --------------------------------------------------------------
                 //! in case no surrounding node of type 2 exists, use the current
                 //! value of the field as smoothed value
+                //! --------------------------------------------------------------
                 if(surroundingNodesOfType2.size()==0)
                 {
                     double localValue = it.value();
@@ -129,31 +133,30 @@ void smoothingTools::scalarFieldSmoother(QMap<int,double> &field,
                     break;
                 }
 
+                //! --------------------------------------------------------------------
                 //! perform weighted average of displacements - use distances as weight
                 //! this could be changed according to the answer of emailed question
-                double bufd[3];
-                int NbNodes_;
-                TColStd_Array1OfReal coords(*bufd,1,3);
-                MeshVS_EntityType aType;
-                aMeshDS->GetGeom(globalNodeID,false,coords,NbNodes_,aType);
-                double xP = coords(1);
-                double yP = coords(2);
-                double zP = coords(3);
+                //! --------------------------------------------------------------------
+                double P[3];
+                smoothingTools::getPointCoordinate(aMeshDS,globalNodeID,P);
+                double xP = P[0];
+                double yP = P[1];
+                double zP = P[2];
                 double Scurr = 0, S = 0;
                 for(std::vector<int>::iterator it = surroundingNodesOfType2.begin(); it!=surroundingNodesOfType2.end(); it++)
                 {
                     int curGlobalNodeID_surr_type2 = *it;
-                    aMeshDS->GetGeom(curGlobalNodeID_surr_type2,false,coords,NbNodes_,aType);
-                    double xn = coords(1);
-                    double yn = coords(2);
-                    double zn = coords(3);
+                    double N[3];
+                    smoothingTools::getPointCoordinate(aMeshDS,curGlobalNodeID_surr_type2,N);
+                    double xn = N[0];
+                    double yn = N[1];
+                    double zn = N[2];
                     double curDist = sqrt(pow(xP-xn,2)+pow(yP-yn,2)+pow(zP-zn,2));
-                    S += sqrt(pow(xP-xn,2)+pow(yP-yn,2)+pow(zP-zn,2));
-                    Scurr += curDist*field.value(curGlobalNodeID_surr_type2);
+                    S+= 1/curDist;
+                    Scurr += (1/curDist)*field.value(curGlobalNodeID_surr_type2);
                 }
                 Scurr /= S;
                 smoothedField.insert(globalNodeID,Scurr);
-
             }
                 break;
 
@@ -193,21 +196,6 @@ void smoothingTools::scalarFieldSmoother(QMap<int,double> &field,
                 //! --------------------------
                 std::set<int> surroundingNodes;
                 smoothingTools::surroundingNodes(aMeshDS,localNodeID,true,surroundingNodes);
-                /*
-                std::set<int> surroundingNodes;
-                const QList<int> &elements = aMeshDS->myNodeToElements.value(localNodeID);
-                for(int i=0; i<elements.length(); i++)
-                {
-                    int localElementID = elements[i];
-                    int globalElementID = aMeshDS->myElementsMap.FindKey(localElementID);
-                    int NbNodes, buf[20];
-                    TColStd_Array1OfInteger nodeIDs(*buf,1,20);
-                    aMeshDS->GetNodesByElement(globalElementID,nodeIDs,NbNodes);
-                    for(int j=1; j<=NbNodes; j++) surroundingNodes.insert(nodeIDs(j));
-                }
-                std::set<int>::iterator itt = surroundingNodes.find(globalNodeID);
-                if(itt!=surroundingNodes.end()) surroundingNodes.erase(itt);
-                */
 
                 //! ---------------------------------------------------------
                 //! sum of all the distances from the current advancing node
@@ -223,13 +211,13 @@ void smoothingTools::scalarFieldSmoother(QMap<int,double> &field,
                 }
 
                 double Swij = 0;
-                size_t n = surroundingNodes.size();
+
                 for(std::set<int>::iterator it = surroundingNodes.begin(); it!=surroundingNodes.end(); it++)
                 {
                     int globalNodeID_surrounding = *it;
                     int localNodeID_surrounding = aMeshDS->myNodesMap.FindIndex(globalNodeID_surrounding);
                     const std::vector<double> &S = aMeshDS->getNodeCoordinates(localNodeID_surrounding);
-                    Swij += wij(betaAve,P,S,Sdij,n);
+                    Swij += wij(betaAve,P,S,Sdij,inflationStep);
                 }
 
                 double a0 = 0.0;
@@ -239,15 +227,15 @@ void smoothingTools::scalarFieldSmoother(QMap<int,double> &field,
                     int localNodeID_surrounding = aMeshDS->myNodesMap.FindIndex(globalNodeID_surrounding);
                     const std::vector<double> &S = aMeshDS->getNodeCoordinates(localNodeID_surrounding);
                     double localValue_surrounding = field.value(globalNodeID_surrounding);
-                    a0 += localValue_surrounding*wij(betaAve,P,S,Sdij,n);
+                    a0 += localValue_surrounding*wij(betaAve,P,S,Sdij,inflationStep);
                 }
 
-                //! ------------------
-                //! relaxation factor
-                //! ------------------
+                //! -----------
+                //! relaxation
+                //! -----------
                 double omega = fomega(betaAve);
-                snx = (1-omega)*localValue+(omega/Swij)*a0;
-                smoothedField.insert(globalNodeID,snx);
+                double smoothedValue = (1-omega)*localValue+(omega/Swij)*a0;
+                smoothedField.insert(globalNodeID,smoothedValue);
             }
                 break;
 
@@ -261,55 +249,42 @@ void smoothingTools::scalarFieldSmoother(QMap<int,double> &field,
                 //! ------------------------------
                 //! get current point coordinates
                 //! ------------------------------
-                double buff[3];
-                int NbNodes;
-                TColStd_Array1OfReal coordsP(*buff,1,3);
-                MeshVS_EntityType aType;
-                aMeshDS->GetGeom(globalNodeID,false,coordsP,NbNodes,aType);
+                //double P[3];
+                //smoothingTools::getPointCoordinate(aMeshDS,globalNodeID,P);
 
+                double smoothedValue;
+                double betaAve = betaAveField.at(globalNodeID);
+                smoothingTools::smoothScalarAtPoint(aMeshDS,field,globalNodeID,betaAve,inflationStep,smoothedValue);
+                field.insert(globalNodeID,smoothedValue);
+
+                /*
                 //! -----------------------------
                 //! search for surrounding nodes
                 //! -----------------------------
                 std::set<int> setOfSurroundingNodes;
                 smoothingTools::surroundingNodes(aMeshDS,globalNodeID,false,setOfSurroundingNodes);
-                /*
-                int localNodeID = aMeshDS->myNodesMap.FindIndex(globalNodeID);
-                const QList<int> &surroundingElements_local = aMeshDS->myNodeToElements.value(localNodeID);
-                int NbSurroundingElements = surroundingElements_local.length();
-                std::set<int> setOfSurroundingNodes;
-                for(int n=0; n<NbSurroundingElements; n++)
-                {
-                    int localElementID_surr = surroundingElements_local[n];
-                    int globalElementID_surr = aMeshDS->myElementsMap.FindKey(localElementID_surr);
-                    int NbNodes, buf[10];
-                    TColStd_Array1OfInteger nodeIDs(*buf,1,10);
-                    aMeshDS->GetNodesByElement(globalElementID_surr,nodeIDs,NbNodes);
-                    for(int n=1; n<=NbNodes; n++) setOfSurroundingNodes.insert(nodeIDs(n));
-                }
-                setOfSurroundingNodes.erase(globalNodeID);
-                */
 
                 //! -----------------------------------
                 //! iterate over the surrounding nodes
                 //! -----------------------------------
-                double buff_[3];
-                TColStd_Array1OfReal coordsS(*buff_,1,3);
                 double sumOfWeigths = 0;
+                double weight = 0;
                 double partialSum = 0;
                 for(std::set<int>::iterator it = setOfSurroundingNodes.begin(); it!=setOfSurroundingNodes.end(); it++)
                 {
                     int globalNodeID_surrounding = *it;
-                    aMeshDS->GetGeom(globalNodeID_surrounding,false,coordsS,NbNodes,aType);
-                    double d_PS = sqrt(pow(coordsP(1)-coordsS(1),2)+pow(coordsP(2)-coordsS(2),2)+pow(coordsP(3)-coordsS(3),2));
-                    //cout<<"____case5: P("<<coordsP(1)<<", "<<coordsP(2)<<", "<<coordsP(3)<<")____"<<endl;
-                    //cout<<"____case5: S("<<coordsS(1)<<", "<<coordsS(2)<<", "<<coordsS(3)<<")____"<<endl;
-                    //cout<<"____case 5: "<<d_PS<<"____"<<endl;
-                    sumOfWeigths += d_PS;
+                    double S[3];
+                    smoothingTools::getPointCoordinate(aMeshDS,globalNodeID_surrounding,S);
+                    double d_PS = sqrt(pow(P[0]-S[0],2)+pow(P[1]-S[1],2)+pow(P[2]-S[2],2));
+                    weight = pow(d_PS,-2);
+                    sumOfWeigths += weight;
                     double localValue = field.value(globalNodeID_surrounding);
-                    partialSum += d_PS*localValue;
-                }
+                    partialSum += weight*localValue;
+                }                
+
                 double localField_updated = partialSum/sumOfWeigths;
                 smoothedField.insert(globalNodeID,localField_updated);
+                */
             }
                 break;
             }
@@ -324,6 +299,7 @@ void smoothingTools::scalarFieldSmoother(QMap<int,double> &field,
             it.value() = smoothedField.value(globalNodeID);
         }
     }
+    cout<<"smoothingTools::scalarFieldSmoother()->____smoothing done____"<<endl;
 }
 
 //! ------------------------------------------------------------------------------
@@ -337,40 +313,46 @@ void smoothingTools::fieldSmoother(QMap<int,QList<double>> &field,
                                    const std::map<int,double> &betaVisibilityField,
                                    const std::map<int,int> &mapOfNodeTypes,
                                    int NbSteps,
-                                   bool normalize)
+                                   bool normalize,
+                                   int inflationStep)
 {
-    cout<<"prismaticLayer::fieldSmoother()->____function called____"<<endl;
+    cout<<"smoothingTools::fieldSmoother()->____function called____"<<endl;
 
     const double PI = 3.14159236534;
     const double dmax = 0.8;
 
+    //! -------------------------
+    //! record the initial field
+    //! -------------------------
+    QMap<int,QList<double>> initialField(field);
+
+    //! ---------------
+    //! smoothed field
+    //! ---------------
+    QMap<int,QList<double>> smoothedField;
+
     //! ----------------
     //! smoothing steps
     //! ----------------
-    QMap<int,QList<double>> smoothedField;
     for(int n = 1; n<=NbSteps; n++)
     {
         for(QMap<int,QList<double>>::iterator it = field.begin(); it!= field.end(); ++it)
         {
-            double snx, sny, snz;
-            snx = sny = snz = 0;
-
             int globalNodeID = it.key();
 
             //! -----------------------
             //! check the type of node
             //! -----------------------
-            int nodeType = mapOfNodeTypes.find(globalNodeID)->second;
-            //cout<<"prismaticLayer::fieldSmoother()->____node category: "<<nodeType<<"____"<<endl;
-
-            switch(nodeType)
+            int nodeCategory = mapOfNodeTypes.find(globalNodeID)->second;
+            switch(nodeCategory)
             {
                 //! ------------------------
                 //! category 1: fixed nodes
                 //! ------------------------
             case 1:
             {
-                const QList<double> &localFieldValue = smoothedField.value(globalNodeID);
+                //const QList<double> &localFieldValue = smoothedField.value(globalNodeID);     // ERR - left here for documentation
+                const QList<double> &localFieldValue = initialField.value(globalNodeID);
                 smoothedField.insert(globalNodeID,localFieldValue);
             }
                 break;
@@ -380,31 +362,17 @@ void smoothingTools::fieldSmoother(QMap<int,QList<double>> &field,
                 //! --------------------------------------------------
             case 2:
             {
-                std::vector<int> surroundingNodesOfType2;
-
                 //! ------------------
                 //! surrounding nodes
                 //! ------------------
                 int localNodeID = aMeshDS->myNodesMap.FindIndex(globalNodeID);
                 std::set<int> setOfSurroundingNodes;
                 smoothingTools::surroundingNodes(aMeshDS,localNodeID,true,setOfSurroundingNodes);
-                /*
-                const QList<int> &surroundingElements_local = aMeshDS->myNodeToElements.value(localNodeID);
-                int NbSurroundingElements = surroundingElements_local.length();
-                std::set<int> setOfSurroundingNodes;
-                for(int n=0; n<NbSurroundingElements; n++)
-                {
-                    int localElementID_surr = surroundingElements_local[n];
-                    int globalElementID_surr = aMeshDS->myElementsMap.FindKey(localElementID_surr);
-                    int NbNodes, buf[10];
-                    TColStd_Array1OfInteger nodeIDs(*buf,1,10);
-                    aMeshDS->GetNodesByElement(globalElementID_surr,nodeIDs,NbNodes);
-                    for(int n=1; n<=NbNodes; n++) setOfSurroundingNodes.insert(nodeIDs(n));
-                }
-                std::set<int>::iterator it_ = setOfSurroundingNodes.find(globalNodeID);
-                setOfSurroundingNodes.erase(it_);
-                */
 
+                //! -------------------------------------------------------
+                //! nodes surrounding the current, belonging to category 2
+                //! -------------------------------------------------------
+                std::vector<int> surroundingNodesOfType2;
                 for(std::set<int>::iterator it_ = setOfSurroundingNodes.begin(); it_!=setOfSurroundingNodes.end(); it_++)
                 {
                     int curGlobalNodeID_surr = *it_;
@@ -415,13 +383,13 @@ void smoothingTools::fieldSmoother(QMap<int,QList<double>> &field,
 
                 //! --------------------------------------------------------------
                 //! in case no surrounding node of type 2 exists, use the current
-                //! value of the field as smoothed value and break
+                //! value of the field as smoothed value and immediately break
                 //! --------------------------------------------------------------
                 if(surroundingNodesOfType2.size()==0)
                 {
                     const QList<double> &localFieldValue = smoothedField.value(globalNodeID);
                     smoothedField.insert(globalNodeID,localFieldValue);
-                    break;  // immediately exit from this case
+                    break;
                 }
 
                 //! ------------------------------------------------------------------------
@@ -445,11 +413,11 @@ void smoothingTools::fieldSmoother(QMap<int,QList<double>> &field,
                     double yn = coords(2);
                     double zn = coords(3);
                     double curDist = sqrt(pow(xP-xn,2)+pow(yP-yn,2)+pow(zP-zn,2));
-                    S += sqrt(pow(xP-xn,2)+pow(yP-yn,2)+pow(zP-zn,2));
+                    S += 1/sqrt(pow(xP-xn,2)+pow(yP-yn,2)+pow(zP-zn,2));
 
-                    Scurrx += curDist*field.value(curGlobalNodeID_surr_type2)[0];
-                    Scurry += curDist*field.value(curGlobalNodeID_surr_type2)[1];
-                    Scurrz += curDist*field.value(curGlobalNodeID_surr_type2)[2];
+                    Scurrx += (1/curDist)*field.value(curGlobalNodeID_surr_type2)[0];
+                    Scurry += (1/curDist)*field.value(curGlobalNodeID_surr_type2)[1];
+                    Scurrz += (1/curDist)*field.value(curGlobalNodeID_surr_type2)[2];
                 }
                 Scurrx /= S;
                 Scurry /= S;
@@ -476,7 +444,9 @@ void smoothingTools::fieldSmoother(QMap<int,QList<double>> &field,
             case 4:
             {
                 int localNodeID = aMeshDS->myNodesMap.FindIndex(globalNodeID);
-                const std::vector<double> &P = aMeshDS->getNodeCoordinates(localNodeID);
+                //double P[3];
+                //smoothingTools::getPointCoordinate(aMeshDS,globalNodeID,P);
+                std::vector<double> &P = aMeshDS->getNodeCoordinates(localNodeID);
 
                 //! ---------------------------------------------
                 //! manifold characteristic at the current point
@@ -493,21 +463,6 @@ void smoothingTools::fieldSmoother(QMap<int,QList<double>> &field,
                 //! --------------------------
                 std::set<int> surroundingNodes;
                 smoothingTools::surroundingNodes(aMeshDS,localNodeID,true,surroundingNodes);
-                /*
-                QList<int> elements = aMeshDS->myNodeToElements.value(localNodeID);
-                for(int i=0; i<elements.length(); i++)
-                {
-                    int localElementID = elements[i];
-                    int globalElementID = aMeshDS->myElementsMap.FindKey(localElementID);
-                    int NbNodes, buf[20];
-                    TColStd_Array1OfInteger nodeIDs(*buf,1,20);
-                    aMeshDS->GetNodesByElement(globalElementID,nodeIDs,NbNodes);
-                    for(int j=1; j<=NbNodes; j++) surroundingNodes.insert(nodeIDs(j));
-
-                }
-                std::set<int>::iterator itt = surroundingNodes.find(globalNodeID);
-                if(itt!=surroundingNodes.end()) surroundingNodes.erase(itt);
-                */
 
                 //! ---------------------------------------------------------
                 //! sum of all the distances from the current advancing node
@@ -516,20 +471,19 @@ void smoothingTools::fieldSmoother(QMap<int,QList<double>> &field,
                 for(std::set<int>::iterator it = surroundingNodes.begin(); it!=surroundingNodes.end(); it++)
                 {
                     int globalNodeID_surrounding = *it;
-                    int localNodeID_surrounding = aMeshDS->myNodesMap.FindIndex(globalNodeID_surrounding);
-                    const std::vector<double> &S = aMeshDS->getNodeCoordinates(localNodeID_surrounding);
+                    double S[3];
+                    smoothingTools::getPointCoordinate(aMeshDS,globalNodeID_surrounding,S);
                     double d = sqrt(pow(S[0]-P[0],2)+pow(S[1]-P[1],2)+pow(S[2]-P[2],2));
                     Sdij += d;
                 }
 
                 double Swij = 0;
-                size_t n = surroundingNodes.size();
                 for(std::set<int>::iterator it = surroundingNodes.begin(); it!=surroundingNodes.end(); it++)
                 {
                     int globalNodeID_surrounding = *it;
                     int localNodeID_surrounding = aMeshDS->myNodesMap.FindIndex(globalNodeID_surrounding);
                     const std::vector<double> &S = aMeshDS->getNodeCoordinates(localNodeID_surrounding);
-                    Swij += wij(betaAve,P,S,Sdij,n);
+                    Swij += wij(betaAve,P,S,Sdij,inflationStep);
                 }
 
                 double a0,a1,a2;
@@ -540,9 +494,9 @@ void smoothingTools::fieldSmoother(QMap<int,QList<double>> &field,
                     int localNodeID_surrounding = aMeshDS->myNodesMap.FindIndex(globalNodeID_surrounding);
                     const std::vector<double> &S = aMeshDS->getNodeCoordinates(localNodeID_surrounding);
                     const QList<double> &localValue_surrounding = field.value(globalNodeID_surrounding);
-                    a0 += localValue_surrounding[0]*wij(betaAve,P,S,Sdij,n);
-                    a1 += localValue_surrounding[1]*wij(betaAve,P,S,Sdij,n);
-                    a2 += localValue_surrounding[2]*wij(betaAve,P,S,Sdij,n);
+                    a0 += localValue_surrounding[0]*wij(betaAve,P,S,Sdij,inflationStep);
+                    a1 += localValue_surrounding[1]*wij(betaAve,P,S,Sdij,inflationStep);
+                    a2 += localValue_surrounding[2]*wij(betaAve,P,S,Sdij,inflationStep);
                 }
 
                 //! ----------------------
@@ -551,9 +505,9 @@ void smoothingTools::fieldSmoother(QMap<int,QList<double>> &field,
                 double omega = fomega(betaAve);
                 double oneminusomega = 1-omega;
 
-                snx = oneminusomega*localValue[0] + (omega/Swij)*a0;
-                sny = oneminusomega*localValue[1] + (omega/Swij)*a1;
-                snz = oneminusomega*localValue[2] + (omega/Swij)*a2;
+                double snx = oneminusomega*localValue[0] + (omega/Swij)*a0;
+                double sny = oneminusomega*localValue[1] + (omega/Swij)*a1;
+                double snz = oneminusomega*localValue[2] + (omega/Swij)*a2;
 
                 if(normalize == true)
                 {
@@ -569,77 +523,153 @@ void smoothingTools::fieldSmoother(QMap<int,QList<double>> &field,
                 break;
             }
         }
+
+        //! -------------------------
+        //! replace the field values
+        //! -------------------------
+        for(QMap<int,QList<double>>::iterator it = field.begin(); it!= field.end(); ++it)
+        {
+            int globalNodeID = it.key();
+            field.insert(globalNodeID,smoothedField.value(globalNodeID));
+        }
+        /*
+        const double maxDeviationFromPreviousGuiding = PI/6.0;
+        for(QMap<int,QList<double>>::iterator it = field.begin(); it!= field.end(); ++it)
+        {
+            int globalNodeID = it.key();
+            int localNodeID = aMeshDS->myNodesMap.FindIndex(globalNodeID);
+
+            const QList<double> &localFieldValue = smoothedField.value(globalNodeID);
+            double snx = localFieldValue[0];
+            double sny = localFieldValue[1];
+            double snz = localFieldValue[2];
+
+            //! ------------------------------------------------------
+            //! check deviation from the not smoothed marching vector
+            //! ------------------------------------------------------
+            //const QList<double> &localFieldValueNotSmoothed = field.value(globalNodeID);
+            //double nsnx = localFieldValueNotSmoothed[0];
+            //double nsny = localFieldValueNotSmoothed[1];
+            //double nsnz = localFieldValueNotSmoothed[2];
+
+            //double dot = snx*nsnx+sny*nsny+snz*nsnz;
+            //if(dot<-1) dot = -1;
+            //if(dot>1) dot = 1;
+            //double deviationFromPrevious = std::acos(dot);
+
+            //! ------------------------------------------------------------------
+            //! if the smoothed vector deviates from the non smoothed vector more
+            //! than the limit (typically 30°) an average value is considered
+            //! ------------------------------------------------------------------
+            //if(deviationFromPrevious>maxDeviationFromPreviousGuiding)
+            //{
+            //    snx = (snx+nsnx)/2.0; sny = (sny+nsny)/2.0; snz = (snz+nsnz)/2.0;
+            //    double l = sqrt(snx*snx+sny*sny+snz*snz);
+            //    snx /= l; sny /= l; snz /= l;
+            //    localFieldValue.clear();
+            //    localFieldValue<<snx<<sny<<snz;
+            //}
+
+            //! ------------------------------------------------------
+            //! check if the smoothed vectors stand within visibility
+            //! ------------------------------------------------------
+            const QList<double> &aNodeNormal = aMeshDS->myNodeNormals.value(globalNodeID);          // best normal
+            const QList<int> &localElementIDs_surr = aMeshDS->myNodeToElements.value(localNodeID);
+            bool isSmoothedDirectionOK = true;
+            for(int n=0; n<localElementIDs_surr.length(); n++)
+            {
+                int localElementID_surr = localElementIDs_surr[n];
+                int globalElementID_surr = aMeshDS->myElementsMap.FindKey(localElementID_surr);
+                double nx,ny,nz;
+                aMeshDS->GetNodeNormal(globalElementID_surr,10,nx,ny,nz);
+                double dot = aNodeNormal[0]*snx+aNodeNormal[1]*sny+aNodeNormal[2]*snz;      // no need to normalize here
+                if(dot<-1) dot = -1;
+                if(dot>1) dot = 1;
+                double dpmin = cos(PI/2-(1-dmax)*betaVisibilityField.at(globalNodeID));
+                if(dot<dpmin)
+                {
+                    isSmoothedDirectionOK = false;
+                    break;
+                }
+            }
+            if(isSmoothedDirectionOK==true) it.value() = smoothedField.value(globalNodeID);
+            //it.value() = smoothedField.value(globalNodeID);
+        }
+        */
     }
 
-    //! -------------------------
-    //! replace the field values
-    //! -------------------------
-    const double maxDeviationFromPreviousGuiding = PI/6.0;
+    //! -------------------------------------------------------------------------------------
+    //! final checks
+    //! 1. the smoothed guiding direction cannot deviate from the previous more than a limit
+    //! -------------------------------------------------------------------------------------
+    int NbTooDeviated = 0;
+    for(QMap<int,QList<double>>::iterator it = field.begin(); it!= field.end(); ++it)
+    {
+        int globalNodeID = it.key();
+        const QList<double> &previousDir = initialField.value(globalNodeID);
+        const QList<double> &smoothedDir = it.value();
+
+        double nx_old = previousDir[0];
+        double ny_old = previousDir[1];
+        double nz_old = previousDir[2];
+        double nx = smoothedDir[0];
+        double ny = smoothedDir[1];
+        double nz = smoothedDir[2];
+
+        double l = sqrt(nx_old*nx_old+ny_old*ny_old+nz_old*nz_old)*sqrt(nx*nx+ny*ny+nz*nz);
+        double dot = nx*nx_old+ny*ny_old+nz*nz_old;
+        dot /= l;
+        if(dot>1) dot = 1;
+        if(dot<-1) dot = -1;
+        double curDeviation = std::acos(dot);
+        if(curDeviation>30*PI/180)
+        {
+            //cout<<"____deviation: "<<curDeviation*180/PI<<"____"<<endl;
+            NbTooDeviated++;
+            nx = (nx+nx_old)*0.5;
+            ny = (ny+ny_old)*0.5;
+            nz = (nz+nz_old)*0.5;
+            double l = sqrt(nx*nx+ny*ny+nz*nz);
+            nx /= l;
+            ny /= l;
+            nz /= l;
+            QList<double> averaged; averaged<<nx<<ny<<nz;
+            field.insert(globalNodeID,averaged);
+        }
+    }
+    cout<<"smoothingTools::fieldSmoother()->____guiding vectors too deviated: "<<double(NbTooDeviated)/aMeshDS->GetAllNodes().Extent()<<" %____"<<endl;
+
+    //! --------------------
+    //! final checks
+    //! 2. visibility check
+    //! --------------------
     int NbNotSmoothed = 0;
     for(QMap<int,QList<double>>::iterator it = field.begin(); it!= field.end(); ++it)
     {
         int globalNodeID = it.key();
-        int localNodeID = aMeshDS->myNodesMap.FindIndex(globalNodeID);
+        const QList<double> &previousDir = initialField.value(globalNodeID);
+        const QList<double> &smoothedDir = it.value();
+        double nx_old = previousDir[0];
+        double ny_old = previousDir[1];
+        double nz_old = previousDir[2];
+        double nx = smoothedDir[0];
+        double ny = smoothedDir[1];
+        double nz = smoothedDir[2];
 
-        const QList<double> &localFieldValue = smoothedField.value(globalNodeID);
-        double snx = localFieldValue[0];
-        double sny = localFieldValue[1];
-        double snz = localFieldValue[2];
-
-        //! ------------------------------------------------------
-        //! check deviation from the not smoothed marching vector
-        //! ------------------------------------------------------
-        //const QList<double> &localFieldValueNotSmoothed = field.value(globalNodeID);
-        //double nsnx = localFieldValueNotSmoothed[0];
-        //double nsny = localFieldValueNotSmoothed[1];
-        //double nsnz = localFieldValueNotSmoothed[2];
-
-        //double dot = snx*nsnx+sny*nsny+snz*nsnz;
-        //if(dot<-1) dot = -1;
-        //if(dot>1) dot = 1;
-        //double deviationFromPrevious = std::acos(dot);
-
-        //! ------------------------------------------------------------------
-        //! if the smoothed vector deviates from the non smoothed vector more
-        //! than the limit (typically 30°) an average value is considered
-        //! ------------------------------------------------------------------
-        //if(deviationFromPrevious>maxDeviationFromPreviousGuiding)
-        //{
-        //    snx = (snx+nsnx)/2.0; sny = (sny+nsny)/2.0; snz = (snz+nsnz)/2.0;
-        //    double l = sqrt(snx*snx+sny*sny+snz*snz);
-        //    snx /= l; sny /= l; snz /= l;
-        //    localFieldValue.clear();
-        //    localFieldValue<<snx<<sny<<snz;
-        //}
-
-        //! ------------------------------------------------------
-        //! check if the smoothed vectors stand within visibility
-        //! ------------------------------------------------------
-        const QList<double> &aNodeNormal = aMeshDS->myNodeNormals.value(globalNodeID);          // best normal
-        const QList<int> &localElementIDs_surr = aMeshDS->myNodeToElements.value(localNodeID);
-        bool isSmoothedDirectionOK = true;
-        for(int n=0; n<localElementIDs_surr.length(); n++)
+        double l = sqrt(nx_old*nx_old+ny_old*ny_old+nz_old*nz_old)*sqrt(nx*nx+ny*ny+nz*nz);
+        double dot = nx*nx_old+ny*ny_old+nz*nz_old;
+        dot /= l;
+        if(dot>1) dot = 1;
+        if(dot<-1) dot = -1;
+        double curDeviation = std::acos(dot);
+        if(curDeviation>betaVisibilityField.at(globalNodeID))
         {
-            int localElementID_surr = localElementIDs_surr[n];
-            int globalElementID_surr = aMeshDS->myElementsMap.FindKey(localElementID_surr);
-            double nx,ny,nz;
-            aMeshDS->GetNodeNormal(globalElementID_surr,10,nx,ny,nz);
-            double dot = aNodeNormal[0]*snx+aNodeNormal[1]*sny+aNodeNormal[2]*snz;      // no need to normalize here
-            if(dot<-1) dot = -1;
-            if(dot>1) dot = 1;
-            double dpmin = cos(PI/2-(1-dmax)*betaVisibilityField.at(globalNodeID));
-            if(dot<dpmin)
-            {
-                isSmoothedDirectionOK = false;
-                break;
-            }
+            NbNotSmoothed++;
+            field.insert(globalNodeID,initialField.value(globalNodeID));
         }
-        if(isSmoothedDirectionOK==true) it.value() = smoothedField.value(globalNodeID);
     }
-
-    cout<<"**************************************************"<<endl;
-    cout<<" fraction of guiding vectors not smoothed: "<<double(NbNotSmoothed/aMeshDS->GetAllNodes().Extent())<<endl;
-    cout<<"**************************************************"<<endl;
+    cout<<"smoothingTools::fieldSmoother()->____guiding vectors not smoothed: "<<double(NbNotSmoothed)/aMeshDS->GetAllNodes().Extent()<<" %____"<<endl;
+    cout<<"smoothingTools::fieldSmoother()->____smoothing done____"<<endl;
 }
 
 //! ----------------------------
@@ -673,4 +703,68 @@ void smoothingTools::surroundingNodes(const occHandle(Ng_MeshVS_DataSourceFace) 
     }
     std::set<int>::iterator it_ = setOfSurroundingNodes.find(globalNodeID);
     setOfSurroundingNodes.erase(it_);
+}
+
+//! ------------------------------
+//! function: smoothScalarAtPoint
+//! details:
+//! ------------------------------
+void smoothingTools::smoothScalarAtPoint(const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS,
+                                         const QMap<int,double> &field,
+                                         int globalNodeID,
+                                         double betaAve,
+                                         int inflationStep,
+                                         double &fieldValue)
+{
+    //cout<<"smoothingTools::smoothScalarAtPoint()->_____smoothing the marching distance at node ID: "<<globalNodeID<<"____"<<endl;
+
+    //! ---------------------------------
+    //! coordinates of the current point
+    //! ---------------------------------
+    int localNodeID = aMeshDS->myNodesMap.FindIndex(globalNodeID);
+    const std::vector<double> &P = aMeshDS->getNodeCoordinates(localNodeID);
+
+    std::set<int> surroundingNodes;
+    smoothingTools::surroundingNodes(aMeshDS,globalNodeID,false,surroundingNodes);
+
+    //! ---------------------------------------------------------
+    //! sum of all the distances from the current advancing node
+    //! ---------------------------------------------------------
+    double Sdij = 0;
+    for(std::set<int>::iterator it = surroundingNodes.begin(); it!=surroundingNodes.end(); it++)
+    {
+        int globalNodeID_surrounding = *it;
+        double S[3];
+        smoothingTools::getPointCoordinate(aMeshDS,globalNodeID_surrounding,S);
+        double d = sqrt(pow(S[0]-P[0],2)+pow(S[1]-P[1],2)+pow(S[2]-P[2],2));
+        Sdij += d;
+    }
+
+    double Swij = 0;
+    for(std::set<int>::iterator it = surroundingNodes.begin(); it!=surroundingNodes.end(); it++)
+    {
+        int globalNodeID_surrounding = *it;
+        int localNodeID_surrounding = aMeshDS->myNodesMap.FindIndex(globalNodeID_surrounding);
+        const std::vector<double> &S = aMeshDS->getNodeCoordinates(localNodeID_surrounding);
+        Swij += wij(betaAve,P,S,Sdij,inflationStep);
+    }
+
+    //! -----------
+    //! relaxation
+    //! -----------
+    double omega = fomega(betaAve);
+    double oneminusomega = 1-omega;
+    for(int n=0; n<10; n++)
+    {
+        double a0=0.0;
+        for(std::set<int>::iterator it = surroundingNodes.begin(); it!=surroundingNodes.end(); it++)
+        {
+            int globalNodeID_surrounding = *it;
+            int localNodeID_surrounding = aMeshDS->myNodesMap.FindIndex(globalNodeID_surrounding);
+            const std::vector<double> &S = aMeshDS->getNodeCoordinates(localNodeID_surrounding);
+            double localValue_surrounding = field.value(globalNodeID_surrounding);
+            a0 += localValue_surrounding*wij(betaAve,P,S,Sdij,inflationStep);
+        }
+        fieldValue = oneminusomega*fieldValue+(omega/Swij)*a0;
+    }
 }

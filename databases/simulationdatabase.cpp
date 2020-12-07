@@ -375,10 +375,10 @@ simulationDataBase::simulationDataBase(const QList<SimulationNodeClass*> listOfN
                 continue;
             }
 
-            //QString nodeName = curNode->getName();
-            //cout<<"____NODE TO ATTACH FOUND____"<<nodeName.toStdString()<<endl;
-            //cout<<"____PARENT TIME TAG: "<<curParentTimeTag.toStdString()<<"____"<<endl;
-            //cout<<"____TIME TAG: "<<curTimeTag.toStdString()<<"____"<<endl;
+            QString nodeName = curNode->getName();
+            cout<<"____NODE TO ATTACH FOUND____"<<nodeName.toStdString()<<endl;
+            cout<<"____PARENT TIME TAG: "<<curParentTimeTag.toStdString()<<"____"<<endl;
+            cout<<"____TIME TAG: "<<curTimeTag.toStdString()<<"____"<<endl;
 
             //! ------------------------------
             //! remove the node from the list
@@ -394,7 +394,7 @@ simulationDataBase::simulationDataBase(const QList<SimulationNodeClass*> listOfN
 
             timeTagToNodeMap.insert(element);
             vecKeys.push_back(curTimeTag.toULongLong());
-            //cout<<"____a check =>"<<curTimeTag.toULongLong()<<"____"<<endl;
+            cout<<"____a check =>"<<curTimeTag.toULongLong()<<"____"<<endl;
         }
 
         //! ---------------------------
