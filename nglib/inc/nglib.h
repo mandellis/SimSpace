@@ -1024,7 +1024,8 @@ DLL_HEADER bool Ng_STL_buildMesh(bool isVolume,
 	void* surfaceMeshElements,
 	void* volumeMeshPoints,
 	void* volumeMeshElements,
-	void* faceSubMeshesData);
+	void* faceSubMeshesData,
+	void *unassociatedTriangles);
 
 // Get the face map of an already loaded OCC geometry
 DLL_HEADER Ng_Result Ng_OCC_GetFMap(Ng_OCC_Geometry * geom, 

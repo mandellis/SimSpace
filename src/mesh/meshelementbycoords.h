@@ -35,9 +35,9 @@ struct meshElementByCoords
         pointList = QList<mesh::meshPoint>();
     }
 
-    //! ----------------------------------
-    //! compute jacobian of a tetrahedron
-    //! ----------------------------------
+    //! -----------------
+    //! compute jacobian
+    //! -----------------
     double jacobianTet()
     {
         //! ---------------
@@ -261,7 +261,12 @@ struct meshElementByCoords
     {
         ID = rhs.ID;
         type = rhs.type;
-        for(int n=0; n<rhs.pointList.length(); n++) pointList<<rhs.pointList.at(n);
+        int NbPoints = rhs.pointList.length();
+        for(int i=0; i<NbPoints; i++)
+        {
+            const mesh::meshPoint &aMeshPoint = rhs.pointList[i];
+            pointList<<aMeshPoint;
+        }
         return *this;
     }
 
@@ -269,11 +274,23 @@ struct meshElementByCoords
     //! operator == identity
     //! "strong" identity
     //! ---------------------
-    bool operator == (const meshElementByCoords &rhs)
+    bool operator == (const meshElementByCoords &rhs) const
     {
         if(ID != rhs.ID) return false;
         if(type != rhs.type) return false;
-        //! to be implemented; to do...
+        if(pointList.length()!= rhs.pointList.length()) return false;
+        int NbPoints = pointList.length();
+
+        bool equal = true;
+        for(int n=0; n<NbPoints; n++)
+        {
+            if(pointList[n].x == rhs.pointList[n].x &&
+                    pointList[n].y == rhs.pointList[n].y &&
+                    pointList[n].z == rhs.pointList[n].z) continue;
+            equal = false;
+            break;
+        }
+        return equal;
     }
 
     //! --------------------

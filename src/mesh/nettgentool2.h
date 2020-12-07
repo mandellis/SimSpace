@@ -71,6 +71,7 @@ private:
         void *volumeMeshPointsP;
         void *volumeMeshElementsP;
         void *surfaceMeshDataP;
+        void *unassociatedSurfaceElements;
     };
 
     struct BRepMeshing_InOutParameters
@@ -135,7 +136,8 @@ public:
     userMessage perform(int bodyIndex,
                           bool isVolume,
                           opencascade::handle<MeshVS_DataSource> &outputSurfaceMeshDS,
-                          opencascade::handle<MeshVS_DataSource> &outputVolumeMeshDS);
+                          opencascade::handle<MeshVS_DataSource> &outputVolumeMeshDS,
+                          std::vector<vector<double>> &vecUnassociatedElements);
 
     //! --------------------------------------
     //! performBrep - works on a CAD geometry

@@ -195,6 +195,8 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const occHandle(Ng_MeshVS_Dat
     //! build elements topology
     //! ------------------------
     this->buildElementsTopology();
+
+    cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____clone built____"<<endl;
 }
 
 //! ----------------------------------------------
@@ -1346,6 +1348,7 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const QList<mesh::meshPoint> 
 void Ng_MeshVS_DataSourceFace::computeFreeMeshSegments()
 {
     //cout<<"Ng_MeshVS_DataSourceFace::computeFreeMeshSegments()->____function called____"<<endl;
+
     //! ------------------------------------
     //! key => segment; value => element ID
     //! ------------------------------------
@@ -1477,8 +1480,8 @@ void Ng_MeshVS_DataSourceFace::computeFreeMeshSegments()
         }
     }
 
-    //cout<<"____Number of boundary segments: "<<myBoundarySegments.length()<<"____"<<endl;
-    //cout<<"____Number of boundary points: "<<myBoundaryPoints.length()<<"____"<<endl;
+    //cout<<"Ng_MeshVS_DataSourceFace::computeFreeMeshSegments()->____Number of boundary segments: "<<myBoundarySegments.length()<<"____"<<endl;
+    //cout<<"Ng_MeshVS_DataSourceFace::computeFreeMeshSegments()->____Number of boundary points: "<<myBoundaryPoints.length()<<"____"<<endl;
 }
 
 //! ----------------------------------
@@ -3648,7 +3651,6 @@ void Ng_MeshVS_DataSourceFace::setNodeNormal(int globalNodeID, double *n)
     myNodeNormals.insert(globalNodeID,normal);
 }
 
-
 //! -------------------------------------------------------------
 //! function: constructor
 //! details:  build the data source from a list of mesh elements
@@ -5119,7 +5121,7 @@ void Ng_MeshVS_DataSourceFace::computeNormalAtNodes()
     //! parameters of the algorithm
     //! ----------------------------
     const double PI = 3.14159236538;
-    const double limit = 0.0001*PI/180;
+    const double limit = 0.0001;
     const int NMaxSteps = 500;
     const double b = 0.5;               // relaxation
     const double oneminusb = 1-b;       // 1-relaxation
@@ -5139,7 +5141,7 @@ void Ng_MeshVS_DataSourceFace::computeNormalAtNodes()
         for(int n=0; n<N; n++)
         {
             wg.push_back(1.0/N);
-            int curLocalElementID = attachedElementsLocalIDs[n];   
+            int curLocalElementID = attachedElementsLocalIDs[n];
             int curGlobalElementID = this->myElementsMap.FindKey(curLocalElementID);
             surroundingElementsGlobalIDs.push_back(curGlobalElementID);
         }
@@ -5201,7 +5203,8 @@ void Ng_MeshVS_DataSourceFace::computeNormalAtNodes()
 
             if(fabs(alphaSum/N)<=0.01745329)    // 1 degree
             {
-                //cout<<" => this is a flat node <="<<endl;
+                //! the sum of alpha coeffs should be greated than 0.0
+                //! otherwise we have NaN when dividing alpha_i by alphaSum
                 break;
             }
 
@@ -5215,7 +5218,11 @@ void Ng_MeshVS_DataSourceFace::computeNormalAtNodes()
                 sumOfWeights += wg[i];
             }
 
-            if(sumOfWeights==0) exit(2);        // should never occur
+            if(sumOfWeights==0)
+            {
+                cerr<<"Ng_MeshVS_DataSourceFace::computeNormalAtNodes()->____abnormal termination at line 5220____"<<endl;
+                exit(1);
+            }
 
             //! ----------------------
             //! normalize the weights
@@ -5241,7 +5248,11 @@ void Ng_MeshVS_DataSourceFace::computeNormalAtNodes()
             }
             double normS = sqrt(Sx*Sx+Sy*Sy+Sz*Sz);
 
-            if(normS==0) exit(3);               // should never occur
+            if(normS==0)
+            {
+                cerr<<"Ng_MeshVS_DataSourceFace::computeNormalAtNodes()->____abnormal termination at line 5250____"<<endl;
+                exit(3);               // should never occur
+            }
 
             NPcorrection[0] = Sx/normS;
             NPcorrection[1] = Sy/normS;
@@ -5487,3 +5498,159 @@ void Ng_MeshVS_DataSourceFace::computeNormalAtNodes()
 }
 #endif
 #endif
+
+//! ---------------------
+//! function: addElement
+//! details:
+//! ---------------------
+bool Ng_MeshVS_DataSourceFace::addElement(const meshElementByCoords &anElement)
+{
+    //cout<<"Ng_MeshVS_DataSourceFace::addElement()->____function called____"<<endl;
+
+    int globalElementID = anElement.ID;
+
+    //! -----------
+    //! diagnostic
+    //! -----------
+    //cout<<"____trying to add element: "<<globalElementID<<"____"<<endl;
+    for(int n=0; n<anElement.pointList.length(); n++)
+        cout<<"____"<<anElement.pointList[n].ID<<"("<<anElement.pointList[n].x<<", "<<anElement.pointList[n].y<<", "<<anElement.pointList[n].z<<")____"<<endl;
+    //! ---------------
+    //! end diagnostic
+    //! ---------------
+
+    if(myElements.Contains(globalElementID))
+    {
+        //cout<<"Ng_MeshVS_DataSourceFace::addElement()->____cannot add element: "<<globalElementID<<" => already contained"<<" ____"<<endl;
+        return false;
+    }
+
+    //! ----------------------------------------------------------------
+    //! add the element to the map and increment the number of elements
+    //! ----------------------------------------------------------------
+    myElements.Add(globalElementID);
+    myElementsMap.Add(globalElementID);
+    myNumberOfElements = myElements.Extent();               // increment the number of elements by 1
+
+    //cout<<"____number of elements: "<<myNumberOfElements<<"____"<<endl;
+
+    //! ---------------------
+    //! set the element type
+    //! resize and copy data
+    //! ---------------------
+    myElemType->Resize(1,myNumberOfElements,true);
+    myElemType->SetValue(myNumberOfElements,anElement.type);
+
+    //cout<<"____element type defined____"<<endl;
+
+    myElemNormals = new TColStd_HArray2OfReal(1,myNumberOfElements,1,3);
+
+    //cout<<"____element added____"<<endl;
+
+    //! ---------------------------------------
+    //! add the nodes and the node coordinates
+    //! ---------------------------------------
+    const QList<mesh::meshPoint> &pointList = anElement.pointList;
+    int NbPoints = pointList.length();
+
+    for(int i=0; i<NbPoints; i++)
+    {
+        const mesh::meshPoint &aMeshPoint = pointList[i];
+        int globalNodeID = aMeshPoint.ID;
+        if(myNodes.Contains(globalNodeID)) continue;
+
+        myNodes.Add(globalNodeID);
+        myNodesMap.Add(globalNodeID);
+    }
+
+    //! ---------------------------
+    //! update the number of nodes
+    //! ---------------------------
+    int oldNumberOfNodes = myNumberOfNodes;
+    myNumberOfNodes = myNodes.Extent();
+
+    //! -------------------------------------------------
+    //! modify the size of the arrays - node coordinates
+    //! and copy the previoys node coordinates
+    //! -------------------------------------------------
+    occHandle(TColStd_HArray2OfReal) newNodeCoords = new TColStd_HArray2OfReal(1,myNumberOfNodes,1,3);
+    for(int i=1; i<=oldNumberOfNodes; i++)
+        for(int j=1; j<=3; j++)
+            newNodeCoords->SetValue(i,j,myNodeCoords->Value(i,j));
+    myNodeCoords = newNodeCoords;
+
+    //cout<<"____old nodes copied____"<<endl;
+
+    //! ------------------------------------------------------
+    //! modify the size of the arrays - nodes of the elements
+    //! and copy the previous values in the same order
+    //! ------------------------------------------------------
+    occHandle(TColStd_HArray2OfInteger) newElemNodes = new TColStd_HArray2OfInteger(1,myNumberOfElements,1,8);
+    for(int localElementID = 1; localElementID <=myNumberOfElements-1; localElementID++)
+    {
+        int NbNodes = 0;
+        switch(myElemType->Value(localElementID))
+        {
+        case TRIG: NbNodes = 3; break;
+        case TRIG6: NbNodes = 6; break;
+        case QUAD: NbNodes = 4; break;
+        case QUAD8: NbNodes = 8; break;
+        }
+        for(int n=1; n<=NbNodes; n++)
+        {
+            int globalNodeID = myElemNodes->Value(localElementID,n);
+            newElemNodes->SetValue(localElementID,n,globalNodeID);
+        }
+    }
+
+    //cout<<"____old element nodes copied____"<<endl;
+
+    //! --------------------
+    //! add the new element
+    //! --------------------
+    for(int n = 0; n<NbPoints; n++)
+    {
+        int globalNodeID = anElement.pointList[n].ID;
+        newElemNodes->SetValue(myNumberOfElements,n+1,globalNodeID);
+    }
+    myElemNodes = newElemNodes;
+
+    //cout<<"____new element recorded____"<<endl;
+
+    //! -----------------
+    //! node coordinates
+    //! -----------------
+    for(int i=0; i<NbPoints; i++)
+    {
+        const mesh::meshPoint &aMeshPoint = anElement.pointList[i];
+        int globalNodeID = aMeshPoint.ID;
+        int localNodeID = myNodesMap.FindIndex(globalNodeID);
+        myNodeCoords->SetValue(localNodeID,1,aMeshPoint.x);
+        myNodeCoords->SetValue(localNodeID,2,aMeshPoint.y);
+        myNodeCoords->SetValue(localNodeID,3,aMeshPoint.z);
+    }
+
+    //cout<<"____compute normal at elements____"<<endl;
+    myElemNormals = new TColStd_HArray2OfReal(1,myNumberOfElements,1,3);
+    this->computeNormalAtElements();
+    //cout<<"____mesh modified____"<<endl;
+    return true;
+}
+
+//! ------------------------------
+//! function: buildTolerantPoints
+//! details:
+//! ------------------------------
+std::vector<mesh::tolerantPoint> Ng_MeshVS_DataSourceFace::buildTolerantPoints(double tolerance)
+{
+    std::vector<mesh::tolerantPoint> points;
+    for(int i=1; i<myNumberOfNodes; i++)
+    {
+        double x = myNodeCoords->Value(i,1);
+        double y = myNodeCoords->Value(i,2);
+        double z = myNodeCoords->Value(i,3);
+        mesh::tolerantPoint aP(x,y,z,tolerance);
+        points.push_back((aP));
+    }
+    return points;
+}

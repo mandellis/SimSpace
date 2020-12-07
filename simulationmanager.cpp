@@ -10177,6 +10177,7 @@ void SimulationManager::interpolatePrivate(int mode)
         std::sort(listOfMin.begin(),listOfMin.end());
         max = listOfMax.back();
         min = listOfMin.front();
+        cout<<"Min Max at time "<<timeS.toStdString()<<" Min and max = "<<min<<" "<<max<<endl;
         //! ---------------------------------------------------------------------
         //! create the post object: 1-st column of data, 10 levels, autoscale ON
         //! ---------------------------------------------------------------------

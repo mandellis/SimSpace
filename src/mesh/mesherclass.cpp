@@ -28,6 +28,7 @@
 #include <surfacemeshsmoother.h>
 //#include <renumberingtool.h>
 #include <meshnodesrenumberingtool.h>
+#include <surfacemeshtofacemeshes.h>
 
 //! -------------
 //! experimental
@@ -593,13 +594,13 @@ void MesherClass::generateMesh()
                         //! --------------------------------------
                         if(runInMemory==false)
                         {
-                            //! ---------------------------------------------------------------------------------------
+                            //! --------------------------------------------------------------------------------------------
                             //! TetWild run on disk
-                            //! The TetWild command line accects "relative" envelope sizg and "relative" initial ideal
+                            //! The TetWild command line takes the "relative" envelope size and the "relative" initial ideal
                             //! legnth, by consequence, if into the interface "absolute" values switch are active, the
                             //! absolute envelope sizing and absolute ideal length should be converted into relative
-                            //! values, according to their internal definition within the mesher
-                            //! ---------------------------------------------------------------------------------------
+                            //! values, according to their internal definition into the command line
+                            //! --------------------------------------------------------------------------------------------
                             BRepTools::Clean(myMeshDB->bodyMap.value(bodyIndex));
                             QString inputSoup = this->processTetWildSTL(bodyIndex);
                             tetWildMesher aTetWildMesher;
@@ -658,6 +659,25 @@ void MesherClass::generateMesh()
 
                                 if(isMeshReady) myMeshDB->ArrayOfMeshIsToBeUdpdated.insert(bodyIndex, false);
                                 else myMeshDB->ArrayOfMeshIsToBeUdpdated.insert(bodyIndex, true);
+
+                                //! ---------------------
+                                //! experimental 0722020
+                                //! ---------------------
+                                surfaceMeshToFaceMeshes aFaceMeshRebuilder;
+                                occHandle(Ng_MeshVS_DataSource2D) m = occHandle(Ng_MeshVS_DataSource2D)::DownCast(mainMesh2D);
+                                aFaceMeshRebuilder.setMesh(m);
+                                aFaceMeshRebuilder.setShape(myMeshDB->bodyMap.value(bodyIndex));
+                                std::map<int,occHandle(Ng_MeshVS_DataSourceFace)> theFaceMeshes;
+                                aFaceMeshRebuilder.perform(theFaceMeshes);
+                                for(std::map<int,occHandle(Ng_MeshVS_DataSourceFace)>::iterator it = theFaceMeshes.begin(); it!=theFaceMeshes.end(); it++)
+                                {
+                                    int faceNr = it->first;
+                                    myMeshDB->ArrayOfMeshDSOnFaces.setValue(bodyIndex,faceNr,it->second);
+                                }
+                                //! -----------------
+                                //! end experimental
+                                //! -----------------
+
                                 userMessage mr(true,QString("Tetwild has successfully generated the volume mesh"));
                                 Global::status().myMessages->appendMessage(mr);
                             }
@@ -1075,8 +1095,9 @@ userMessage MesherClass::Netgen_STL_generateSurfaceMesh(int bodyIndex,
     //! ----------------------------------------------
     myNetgenMesher->setMeshDataBase(myMeshDB);
     occHandle(Ng_MeshVS_DataSource3D) dummyDS;
+    std::vector<std::vector<double>> vecUnassociatedElements;
     bool isVolume = false;
-    userMessage mr = myNetgenMesher->perform(bodyIndex,isVolume,mainMesh2D,dummyDS);
+    userMessage mr = myNetgenMesher->perform(bodyIndex,isVolume,mainMesh2D,dummyDS,vecUnassociatedElements);
     if(mr.isDone)
     {
         myMeshDB->ArrayOfMeshDS2D.insert(bodyIndex,mainMesh2D);
@@ -1182,81 +1203,6 @@ bool MesherClass::STL_generateSurfaceMesh(const meshParam &mp, int bodyIndex, oc
     return true;
 }
 
-/*
-//! --------------------------------------------------
-//! function: PrismaticLayers_generateTetBoundaryMesh
-//! details:
-//! --------------------------------------------------
-userMessage MesherClass::PrismaticLayers_generateTetBoundaryMesh(int bodyIndex)
-{
-    cout<<"MesherClass::PrismaticLayers_generateTetBoundaryMesh()->____function called____"<<endl;
-
-    //! ---------------
-    //! meshing result
-    //! ---------------
-    userMessage mr;
-
-    //! ------------------------
-    //! disable the Stop button
-    //! ------------------------
-    if(myProgressIndicator!=Q_NULLPTR) emit requestDisableStop();
-
-    //! ---------------------------------------
-    //! initialize the prismatic layer builder
-    //! ---------------------------------------
-    prismaticLayer prismaticLayerBuilder(myMeshDB);
-    if(myProgressIndicator!=Q_NULLPTR) prismaticLayerBuilder.setProgressIndicator(myProgressIndicator);
-    prismaticLayerBuilder.setBody(bodyIndex);
-
-    //! ---------------------------
-    //! set the progress indicator
-    //! ---------------------------
-    if(myProgressIndicator!=Q_NULLPTR) prismaticLayerBuilder.setProgressIndicator(myProgressIndicator);
-
-    //! ------------------------------------------------------
-    //! retrieve the list of the prismatic faces for the body
-    //! ------------------------------------------------------
-    const QList<int> &prismaticFacesOnBody = myMeshDB->prismaticFaces.value(bodyIndex);
-    prismaticLayerBuilder.setPrismaticFaces(prismaticFacesOnBody);
-
-    //! ---------------------------------------------------------------
-    //! merge the prismatic face meshes into a unique mesh data source
-    //! ---------------------------------------------------------------
-    bool isDone = prismaticLayerBuilder.mergeFaceMeshes();
-    if(!isDone)
-    {
-        cout<<"MesherClass::PrismaticLayers_generatePrismaticMesh()->____error in merging the prismatic face mesh data sources____"<<endl;
-        mr.isDone = false;
-        mr.message = QString("Boundary mesh generation cannot be started: error in merging the face mesh data sources");
-        return mr;
-    }
-
-    //! ------------------------------------------------------------
-    //! retrieve and set the prismatic mesh parameters for the body
-    //! set the parameters for the prismatic layers generation
-    //! ------------------------------------------------------------
-    const prismaticLayerParameters &parameters = myMeshDB->prismaticMeshParameters.value(bodyIndex);
-    prismaticLayerBuilder.setParameters(parameters);
-
-    //! -----------------------------
-    //! tet boundary layer generator
-    //! -----------------------------
-    occHandle(Ng_MeshVS_DataSource3D) meshAtWalls;
-    occHandle(Ng_MeshVS_DataSourceFace) lastInflatedMeshDS;
-    prismaticLayerBuilder.generateTetLayers(meshAtWalls,lastInflatedMeshDS);
-    myMeshDB->ArrayOfMeshDS.insert(bodyIndex,meshAtWalls);
-
-    //! -----------------------
-    //! enable the Stop button
-    //! -----------------------
-    if(myProgressIndicator!=Q_NULLPTR) emit requestEnableStop();
-
-    mr.isDone = true;
-    mr.message = QString("The prismatic mesh has been generated");
-    return mr;
-}
-*/
-
 //! --------------------------------------------------------------
 //! function: PrismaticLayers_generatePrismaticMesh
 //! details:  internally calls prismaticLayer. The prismatic mesh
@@ -1313,6 +1259,8 @@ userMessage MesherClass::PrismaticLayers_generatePrismaticMesh(int bodyIndex,
 
     occHandle(Ng_MeshVS_DataSource3D) prismaticMeshDS;
     isDone = prismaticLayerBuilder.generateMeshAtWalls(prismaticMeshDS,theLastInflatedMesh,listOfInflatedMeshes);
+    //cout<<"____"<<prismaticMeshDS->GetAllElements().Extent()<<"____"<<endl;
+    //cout<<"____"<<prismaticMeshDS->GetAllNodes().Extent()<<"____"<<endl;
 
     //! -----------------------------------------------------
     //! the "prismaticMeshDS" is inserted in "ArrayOfMeshDS"
@@ -1384,6 +1332,7 @@ userMessage MesherClass::Netgen_generateVolumeMesh(int bodyIndex,
                 mr.message = QString("Error in generating the surface mesh");
                 return mr;
             }
+
             //! -----------------------------------------------
             //! generate the prismatic elements: the function
             //! PrismaticLayers_generatePrismaticMesh puts the
@@ -1417,11 +1366,11 @@ userMessage MesherClass::Netgen_generateVolumeMesh(int bodyIndex,
                 return mr;
             }
 
-            //! -------------------------------------------------------------
+            //! -------------------------------------------------------------------
             //! sum the prismatic mesh and the volume mesh
             //! it uses the 3D mesh constructor from a list of meshElementByCoords
             //! which perform the automatic node renumbering
-            //! -------------------------------------------------------------
+            //! -------------------------------------------------------------------
             std::vector<meshElementByCoords> elementList1, elementList2;
             MeshTools::toListOf3DElements(prismatic3DMesh,elementList1);
             MeshTools::toListOf3DElements(postInflationVolumeMesh,elementList2);
@@ -1481,6 +1430,7 @@ userMessage MesherClass::Netgen_generateVolumeMesh(int bodyIndex,
             int NbGeometryFaces = myMeshDB->MapOfBodyTopologyMap.value(bodyIndex).faceMap.Extent();
             for(int faceNr = 1; faceNr<=NbGeometryFaces; faceNr++)
             {
+                cout<<"____renumbering face #"<<faceNr<<"____"<<endl;
                 if(myMeshDB->ArrayOfMeshDSOnFaces.getValue(bodyIndex,faceNr).IsNull()) continue;
                 occHandle(Ng_MeshVS_DataSourceFace) curFaceMeshDS = occHandle(Ng_MeshVS_DataSourceFace)::DownCast(myMeshDB->ArrayOfMeshDSOnFaces.getValue(bodyIndex,faceNr));
                 curFaceMeshDS->renumberNodes(mapNodeCoords_globalNodeID,vecTolerantPoints,vecGlobalNodeIDs);
@@ -1974,8 +1924,9 @@ userMessage MesherClass::Netgen_STL_generateVolumeMesh(int bodyIndex,
         //! the main call for generating the volume mesh
         //! --------------------------------------------
         myNetgenMesher->setMeshDataBase(myMeshDB);
+        std::vector<std::vector<double>> vecUnassociatedElements;
         bool isVolume = true;
-        mr = myNetgenMesher->perform(bodyIndex,isVolume,mainMesh2D,mainMesh3D);
+        mr = myNetgenMesher->perform(bodyIndex,isVolume,mainMesh2D,mainMesh3D,vecUnassociatedElements);
 
         //! ----------------------------------------------------------
         //! put the surface and volume mesh into the mesh data source
@@ -2001,6 +1952,11 @@ userMessage MesherClass::Netgen_STL_generateVolumeMesh(int bodyIndex,
         //! put the face mesh data sources into the data base
         //! OK - done: the data sources are set directly by the tool
         //! ---------------------------------------------------------
+
+        //! -------------
+        //! experimental
+        //! -------------
+        //this->processMesh(bodyIndex);
 
         //! ----------------------
         //! remove supports files
@@ -2028,6 +1984,12 @@ userMessage MesherClass::Netgen_STL_generateVolumeMesh(int bodyIndex,
                 mr.message = QString("Error in generating the surface mesh before inflation");
                 return mr;
             }
+
+            //! -------------
+            //! experimental
+            //! -------------
+            //this->processMesh(bodyIndex);
+
             QList<occHandle(Ng_MeshVS_DataSourceFace)> listOfInflatedMeshes;
 
             //! -----------------------------------------------------------
@@ -2140,8 +2102,9 @@ userMessage MesherClass::Netgen_STL_generateVolumeMesh(int bodyIndex,
             //! the main call for generating the volume mesh
             //! --------------------------------------------
             myNetgenMesher->setMeshDataBase(myMeshDB);
+            std::vector<std::vector<double>> vecUnassociatedElements;
             bool isVolume = true;
-            mr = myNetgenMesher->perform(bodyIndex,isVolume,mainMesh2D,mainMesh3D); // perform on an STL input
+            mr = myNetgenMesher->perform(bodyIndex,isVolume,mainMesh2D,mainMesh3D,vecUnassociatedElements); // perform on an STL input
 
             //! ----------------------------------------------------------
             //! put the surface and volume mesh into the mesh data source
@@ -2722,7 +2685,7 @@ userMessage MesherClass::PrismaticLayers_generatePrismaticMesh_post(int bodyInde
     //! -----------------------------------------------------------------------
     QList<occHandle(Ng_MeshVS_DataSourceFace)> theInflatedMeshes;
     occHandle(Ng_MeshVS_DataSource3D) preInflationVolumeMeshDS = occHandle(Ng_MeshVS_DataSource3D)::DownCast(myMeshDB->ArrayOfMeshDS.value(bodyIndex));
-    bool isDone = prismaticLayerBuilder.inflateMeshAndCompress(theInflatedMeshes,preInflationVolumeMeshDS);     //!cesere2
+    bool isDone = prismaticLayerBuilder.inflateMeshAndCompress(theInflatedMeshes,preInflationVolumeMeshDS);
     if(isDone==false)
     {
         mr.isDone = false;
@@ -2754,4 +2717,78 @@ userMessage MesherClass::PrismaticLayers_generatePrismaticMesh_post(int bodyInde
     if(myProgressIndicator!=Q_NULLPTR) emit requestEnableStop();
 
     return mr;
+}
+
+//! ----------------------
+//! function: processMesh
+//! details:
+//! ----------------------
+bool MesherClass::processMesh(int bodyIndex)
+{
+    cout<<"MesherClass::processMesh()->____function called____"<<endl;
+    std::string fileName("D:/STL1.stl");
+    std::map<int,occHandle(Ng_MeshVS_DataSourceFace)> mapOfFaceDS;
+
+    int NbGeometryFaces = myMeshDB->MapOfBodyTopologyMap.value(bodyIndex).faceMap.Extent();
+    for(int faceNr = 1; faceNr<=NbGeometryFaces; faceNr++)
+    {
+        const occHandle(MeshVS_DataSource) &aMeshDS = myMeshDB->ArrayOfMeshDSOnFaces.getValue(bodyIndex,faceNr);
+        if(aMeshDS.IsNull())
+        {
+            cout<<"MesherClass::processMesh()->____face #"<<faceNr<<" is null____"<<endl;
+            continue;
+        }
+        occHandle(Ng_MeshVS_DataSourceFace) &aFaceMeshDS = occHandle(Ng_MeshVS_DataSourceFace)::DownCast(aMeshDS);
+        mapOfFaceDS.insert(std::make_pair(faceNr,aFaceMeshDS));
+    }
+    MeshTools::faceDataSourcesToExtendedStlFile(mapOfFaceDS,fileName);
+    STLdoctor aSTLDoctor;
+    //aSTLDoctor.simplifyMesh(QString("D:/STL1.stl"),QString("D:/STL2.stl"),1,-1,2);
+    aSTLDoctor.performMeshFix(QString("D:/STL1.stl"),QString("D:/STL3.stl"));
+
+    //! ------------------------------------------------
+    //! init a vector of (NbFaces+1) empty StlMesh_Mesh
+    //! ------------------------------------------------
+    std::vector<occHandle(StlMesh_Mesh)> vecFaceStlMesh;
+    for(int faceNr=0; faceNr<=NbGeometryFaces; faceNr++)
+    {
+        occHandle(StlMesh_Mesh) aStlMesh = new StlMesh_Mesh();
+        vecFaceStlMesh.push_back(aStlMesh);
+    }
+
+    QString surfaceMeshFilePath("D:/Stl3.stl");
+    QList<QMap<int,int>> maps_localToGlobal_nodeIDs;
+    QList<QMap<int,int>> maps_localToGlobal_elementIDs;
+    occHandle(StlMesh_Mesh) overallSTL = ExtendedRWStl::ReadExtendedSTLAscii(surfaceMeshFilePath,
+                                                                             vecFaceStlMesh,
+                                                                             maps_localToGlobal_nodeIDs,
+                                                                             maps_localToGlobal_elementIDs);
+    //! -------------
+    //! sanity check
+    //! -------------
+    if(overallSTL.IsNull()) return false;
+    if(overallSTL->NbTriangles()<1 || overallSTL->NbVertices()<3) return false;
+
+    //! -----------------------------------
+    //! build the surface mesh data source
+    //! -----------------------------------
+    occHandle(Ng_MeshVS_DataSource2D) surfaceMeshDS = new Ng_MeshVS_DataSource2D(overallSTL);
+    myMeshDB->ArrayOfMeshDS2D.insert(bodyIndex,surfaceMeshDS);
+
+    //! ---------------------------------------------
+    //! handle also an error in the mesh constructor
+    //! ---------------------------------------------
+    if(surfaceMeshDS.IsNull()) return false;
+
+    //! -----------------------------------------------------
+    //! generate face mesh data sources using the stl meshes
+    //! -----------------------------------------------------
+    for(int faceNr = 0; faceNr<=NbGeometryFaces; faceNr++)
+    {
+        occHandle(StlMesh_Mesh) curStlMesh = vecFaceStlMesh.at(faceNr);
+        if(curStlMesh.IsNull()) continue;
+        occHandle(Ng_MeshVS_DataSourceFace) faceMeshDS = new Ng_MeshVS_DataSourceFace(curStlMesh,maps_localToGlobal_nodeIDs,maps_localToGlobal_elementIDs,faceNr);
+        myMeshDB->ArrayOfMeshDSOnFaces.setValue(bodyIndex,faceNr,faceMeshDS);
+    }
+    return true;
 }

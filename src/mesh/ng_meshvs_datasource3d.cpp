@@ -79,7 +79,7 @@ Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(const std::vector<meshElementByCo
     {
         if(it->type == NULL_ELEMENT)
         {
-            cout<<"Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D()->____purging a NULL element____"<<endl;
+            //cout<<"Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D()->____purging a NULL element____"<<endl;
             continue;
         }
         meshElements.push_back(*it);

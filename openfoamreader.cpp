@@ -580,7 +580,7 @@ bool OpenFoamReader::perform(SimulationNodeClass *OFnode)
             //! "T" can be changed into another scalar
             //! -----------------------------------------------
             sprintf(fileName,"%s",curDir.absoluteFilePath("TCel").toStdString().c_str());
-            //cout<<"OpenFoamReader::perform()->____Opening file: \""<<fileName<<"\"____"<<endl;
+            cout<<"OpenFoamReader::perform()->____Opening file: \""<<fileName<<"\"____"<<endl;
             is.open(fileName);
 
             //! ----------------
