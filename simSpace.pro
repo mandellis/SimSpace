@@ -185,7 +185,8 @@ SOURCES += main.cpp\
     src/post/rainflow.cpp \
     src/mesh/datasourcebuilder.cpp \
     src/mesh/smoothingtools.cpp \
-    src/mesh/pointtomeshdistance.cpp
+    src/mesh/pointtomeshdistance.cpp \
+    src/mesh/surfacemeshtofacemeshes.cpp
 
 HEADERS  += mainwindow.h \
     actions3d.h \
@@ -421,7 +422,8 @@ HEADERS  += mainwindow.h \
     src/post/rainflow.h \
     src/mesh/datasourcebuilder.h \
     src/mesh/smoothingtools.h \
-    src/mesh/pointtomeshdistance.h
+    src/mesh/pointtomeshdistance.h \
+    src/mesh/surfacemeshtofacemeshes.h
 
 FORMS    += mainwindow.ui
 

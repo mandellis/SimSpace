@@ -6,7 +6,7 @@
 //! ----------------
 //! custom includes
 //! ----------------
-#include "ccout.h"
+//#include "ccout.h"
 #include <mshconvert.h>
 
 //! ---
