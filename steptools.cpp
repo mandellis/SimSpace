@@ -17,7 +17,6 @@ void STEPTools::dumpSTEPLabels(const STEPControl_Reader &reader, TColStd_ListOfA
         occHandle(StepRepr_Representation) ent = occHandle(StepRepr_Representation)::DownCast(theModel->Value(i));
         if (ent.IsNull()) continue;
         if (ent->Name().IsNull()) continue;
-
         //! --------------
         //! HAscii string
         //! --------------
@@ -26,7 +25,7 @@ void STEPTools::dumpSTEPLabels(const STEPControl_Reader &reader, TColStd_ListOfA
         //! -------------
         //! Ascii string
         //! -------------
-        const TCollection_AsciiString &theName = theHName->String();
+        const TCollection_AsciiString &theName = theHName->String();        
         listOfNames.Append(theName);
     }
 }
