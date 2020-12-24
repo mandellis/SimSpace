@@ -550,7 +550,7 @@ RESOURCES += \
     icons.qrc \
     cursors.qrc \
     stylesheets.qrc \
-    #src/TimeStepBuilder/resources.qrc
+    src/TimeStepBuilder/resources.qrc
 
 #----------------------
 # unhandled exceptions
@@ -652,6 +652,7 @@ DEPENDPATH += $$PWD/QCustomPlot/qcp
 # -------
 # embree
 # -------
-win32: LIBS += -L$$PWD/Embree/embree-3.11.0.x64.vc14.windows/lib/ -lembree3
-INCLUDEPATH += $$PWD/Embree/embree-3.11.0.x64.vc14.windows/include/embree3
-DEPENDPATH += $$PWD/Embree/embree-3.11.0.x64.vc14.windows/include/embree3
+win32: LIBS += -L$$PWD/Embree/embree-3.12.1.x64.vc14.windows/lib/ -lembree3
+INCLUDEPATH += $$PWD/Embree/embree-3.12.1.x64.vc14.windows/include/embree3
+DEPENDPATH += $$PWD/Embree/embree-3.12.1.x64.vc14.windows/include/embree3
+
