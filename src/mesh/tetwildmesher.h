@@ -63,6 +63,11 @@ public:
     bool extractSurface(const Eigen::MatrixXd &VI, const Eigen::MatrixXi &TI,
                         Eigen::MatrixXd &VS, Eigen::MatrixXi &FS);
 
+private:
+
+    //! get path of the executable - helper
+    std::string getPathOfExecutable();
+
 private slots:
 
     //! capture process output

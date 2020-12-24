@@ -1,13 +1,10 @@
-//#define TETWILD_PATH "D:/Work/Qt/pro_25.0_OCC7.3.0/ftetwild/bin/FloatTetwild_bin.exe"
-//#define TETWILD_PATH "D:/Work/Qt/pro_25.0_OCC7.3.0/tetwild/bin/TetWild.exe"
-#define TETWILD_PATH "C:/ExperimentalMesher/ExpMesher.exe"
-#include "tetwildmesher.h"
+#define TETWILD_PATH "D:/Work/Qt/build_simSpace/release/FloatTetwild_bin.exe"
 
 //! ----------------
 //! custom includes
 //! ----------------
-//#include "ccout.h"
 #include <mshconvert.h>
+#include <tetwildmesher.h>
 
 //! ---
 //! Qt
@@ -22,6 +19,12 @@
 #include <iostream>
 using namespace std;
 
+//! --------
+//! Windows
+//! --------
+#include <sys/stat.h>
+#include <windows.h>
+
 //! ----------------------
 //! function: constructor
 //! details:
@@ -33,14 +36,15 @@ tetWildMesher::tetWildMesher(QObject *parent):QObject(parent)
     //! -------------------------------------
     myWillRunOnDisk = true;
     myTetWildProcess = new QProcess(this);
+
     myTetWildProcess->setProgram(TETWILD_PATH);
     myAbsoluteOutputFilePath = "";
 }
 
-//! --------------------------
-//! function: setTriangleSoup
+//! -------------------
+//! function: setInput
 //! details:
-//! --------------------------
+//! -------------------
 void tetWildMesher::setInput(const Eigen::MatrixXd &VI, const Eigen::MatrixXi &FI)
 {
     myVertices = VI;
@@ -83,8 +87,10 @@ bool tetWildMesher::perform_onDisk(const QString &absoluteInputFilePath)
     //! ------------------
     //! preliminary check
     //! ------------------
-    QFile file; file.setFileName(absoluteInputFilePath);
-    if(!file.exists() || absoluteInputFilePath.isEmpty()) return false;
+    QFile file;
+    file.setFileName(absoluteInputFilePath);
+    if(!file.exists()) return false;
+    if(absoluteInputFilePath.isEmpty()) return false;
 
     QString tmp(absoluteInputFilePath);
     QString relativeInputFileName = tmp.split("/").last();
@@ -96,6 +102,20 @@ bool tetWildMesher::perform_onDisk(const QString &absoluteInputFilePath)
 
     myAbsoluteOutputFilePath = absoluteOuputFilePath;
 
+    //! -----------------------------------------------------------------------
+    //! search for fTetWild_bin.exe
+    //! as a general rule the file should placed into the executable directory
+    //! -----------------------------------------------------------------------
+    //std::string exePath = tools::getPathOfExecutable()+"\\FloatTetwild_bin.exe";
+    //cout<<"____"<<exePath<<"____"<<endl;
+    //struct stat buf;
+    //int fileExist = stat(exePath.c_str(),&buf);
+    //if(fileExist!=0) return false;
+    //myTetWildProcess->setProgram(QString::fromStdString(exePath));
+
+    //! --------------
+    //! set arguments
+    //! --------------
     QList<QString> arguments;
     arguments<<"-l"<<QString("%1").arg(myMeshParam.initial_edge_len_rel);
     arguments<<"-e"<<QString("%1").arg(myMeshParam.eps_rel);
@@ -105,7 +125,7 @@ bool tetWildMesher::perform_onDisk(const QString &absoluteInputFilePath)
     //! ------------------------------
     //! diagnostic - console messages
     //! ------------------------------
-    cout<<"@____running Experimental mesher with arguments: ";
+    cout<<"@____running fTetWild mesher with arguments: ";
     for(int i=0; i<arguments.length(); i++) cout<<arguments.at(i).toStdString()<<" ";
     cout<<endl;
 
@@ -125,7 +145,7 @@ bool tetWildMesher::perform_onDisk(const QString &absoluteInputFilePath)
     cout<<"@____\"Experimental mesher\" process exit code: "<<exitCode<<endl<<endl;
 
     if(exitCode==0) return true;
-    else return false;
+    return false;
 }
 
 //! -----------------------------------------
@@ -175,4 +195,20 @@ void tetWildMesher::readTetWildProcess()
 
     //! send to std output
     cout<<msg.toStdString()<<endl;
+}
+
+//! ------------------------------
+//! function: getPathOfExecutable
+//! details:  helper
+//! ------------------------------
+std::string tetWildMesher::getPathOfExecutable()
+{
+    LPWSTR buffer;
+    GetModuleFileName(NULL, buffer, MAX_PATH);
+    std::string aString;
+    aString.reserve(wcslen(buffer));
+    for (;*buffer; buffer++) aString += (char)*buffer;
+    std::string::size_type pos = aString.find_last_of("\\/");
+    if (pos == std::string::npos) return "";
+    return aString.substr(0, pos);
 }
