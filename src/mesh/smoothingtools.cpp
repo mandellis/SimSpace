@@ -46,13 +46,18 @@ double kij(int n, const std::vector<double> &P, const std::vector<double> &S, do
     return val;
 }
 
+//! ---------------------------------------------
+//! function: wj
+//! details:  weights of the smoothing functions
+//! ---------------------------------------------
 double wij(double betaAve, const std::vector<double> &P, const std::vector<double> &S, double Sdij, int n)
 {
     const double PI = 3.1415926538;
     const double power = 2.0;
-    double val = 0.0;
-    if(betaAve<PI) val = 1/pow(kij(n,P,S,Sdij),power);         // "concave" point
-    if(betaAve>=PI) val = pow(kij(n,P,S,Sdij),-power);          // "convex" point
+    const double eps = 2.5*PI/180.0;
+    double val = 1.0;
+    if(betaAve<PI-eps) val = 1/pow(kij(n,P,S,Sdij),power);              // "concave" point
+    if(betaAve>PI+eps) val = pow(kij(n,P,S,Sdij),-power);               // "convex" point
     return val;
 }
 
@@ -639,35 +644,54 @@ void smoothingTools::fieldSmoother(QMap<int,QList<double>> &field,
     }
     cout<<"smoothingTools::fieldSmoother()->____guiding vectors too deviated: "<<double(NbTooDeviated)/aMeshDS->GetAllNodes().Extent()<<" %____"<<endl;
 
-    //! --------------------
+    //! ------------------------------------------
+    //! 2. visibility check - directly from paper
     //! final checks
-    //! 2. visibility check
-    //! --------------------
+    //! ------------------------------------------
     int NbNotSmoothed = 0;
     for(QMap<int,QList<double>>::iterator it = field.begin(); it!= field.end(); ++it)
     {
         int globalNodeID = it.key();
-        const QList<double> &previousDir = initialField.value(globalNodeID);
-        const QList<double> &smoothedDir = it.value();
-        double nx_old = previousDir[0];
-        double ny_old = previousDir[1];
-        double nz_old = previousDir[2];
-        double nx = smoothedDir[0];
-        double ny = smoothedDir[1];
-        double nz = smoothedDir[2];
+        const QList<double> &smoothedGuidingVector = it.value();
+        double nx = smoothedGuidingVector[0];
+        double ny = smoothedGuidingVector[1];
+        double nz = smoothedGuidingVector[2];
 
-        double l = sqrt(nx_old*nx_old+ny_old*ny_old+nz_old*nz_old)*sqrt(nx*nx+ny*ny+nz*nz);
-        double dot = nx*nx_old+ny*ny_old+nz*nz_old;
-        dot /= l;
-        if(dot>1) dot = 1;
-        if(dot<-1) dot = -1;
-        double curDeviation = std::acos(dot);
-        if(curDeviation>betaVisibilityField.at(globalNodeID))
+        bool isOk = true;
+        int localNodeID = aMeshDS->myNodesMap.FindIndex(globalNodeID);
+        const QList<int> &surroundingElements_local = aMeshDS->myNodeToElements.value(localNodeID);
+        for(int n=0; n<surroundingElements_local.length(); n++)
+        {
+            int localElementID_surr = surroundingElements_local[n];
+            int globalElementID_surr = aMeshDS->myElementsMap.FindKey(localElementID_surr);
+            double nx_, ny_, nz_;
+            if(aMeshDS->GetNormal(globalElementID_surr,10,nx_,ny_,nz_)==false)
+            {
+                cerr<<"smoothingTools::fieldSmoother()->____abnormal termination at line 666____"<<endl;
+                exit(1);
+            }
+
+            double dot = nx*nx_+ny*ny_+nz*nz_;
+            double dotNorm = sqrt(nx*nx+ny*ny+nz*nz)*sqrt(nx_*nx_+ny_*ny_+nz_*nz_);
+            dot /= dotNorm;
+            if(dot > 1) dot = 1;
+            if(dot <-1) dot = -1;
+
+            const double dmax = 0.95;
+            double limitValue = cos(PI/2-(1-dmax)*betaVisibilityField.at(globalNodeID));
+            if(dot<=limitValue)
+            {
+                isOk = false;
+                break;
+            }
+        }
+        if(isOk==false)
         {
             NbNotSmoothed++;
             field.insert(globalNodeID,initialField.value(globalNodeID));
         }
     }
+
     cout<<"smoothingTools::fieldSmoother()->____guiding vectors not smoothed: "<<double(NbNotSmoothed)/aMeshDS->GetAllNodes().Extent()<<" %____"<<endl;
     cout<<"smoothingTools::fieldSmoother()->____smoothing done____"<<endl;
 }

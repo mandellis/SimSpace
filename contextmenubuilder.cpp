@@ -545,22 +545,35 @@ void contextMenuBuilder::buildGeometryContextMenu(QMenu *contextMenu, bool addCo
             //! add separator
             contextMenu->addSeparator();
 
-            QMenu *menuTools = contextMenu->addMenu("Export");
-            menuTools->setIcon(QIcon(":/icons/icon_exporting tools.png"));
+            //! --------------
+            //! menu "Export"
+            //! --------------
+            QMenu *menuExport = contextMenu->addMenu("Export");
+            menuExport->setIcon(QIcon(":/icons/icon_export.png"));
 
             //! ------------------------
             //! action export step file
             //! ------------------------
-            QAction *ActionExportStepFile = menuTools->addAction("Export STEP file");
+            QAction *ActionExportStepFile = menuExport->addAction("Export STEP file");
             ActionExportStepFile->setIcon(QIcon(":/icons/icon_export step.png"));
             ActionExportStepFile->setData(76);
 
             //! ------------------------
             //! action export BREP file
             //! ------------------------
-            QAction *ActionExportBREPFile = menuTools->addAction("Export BREP file");
+            QAction *ActionExportBREPFile = menuExport->addAction("Export BREP file");
             ActionExportBREPFile->setIcon(QIcon(":/icons/icon_export BREP.png"));
             ActionExportBREPFile->setData(77);
+
+            //! --------------
+            //! menu "Import"
+            //! --------------
+            QMenu *menuImport = contextMenu->addMenu("Import");
+            menuImport->setIcon(QIcon(":/icons/icon_import.png"));
+
+            QAction *ActionImportMesh = menuImport->addAction("Import mesh");
+            ActionImportMesh->setIcon(QIcon(":/icons/icon_volume mesh.png"));
+            ActionImportMesh->setData(52);
         }
 
         if(node->getType()==SimulationNodeClass::nodeType_pointMass) contextMenuBuilder::addActionDelete(contextMenu);
@@ -2158,6 +2171,7 @@ void contextMenuBuilder::addActionCreateMeshNamedSelection(QMenu *contextMenu)
 //! export BRep file                            77
 //! export (result)                            109
 //!
+//! import mesh                                 52
 //! display sliced volume mesh                  85
 //! replicate on twin geometries                86
 //!

@@ -145,6 +145,11 @@ private:
     //! processMesh
     bool processMesh(int bodyIndex);
 
+    //! -------------------------------
+    //! rebuild face mesh data sources
+    //! -------------------------------
+    bool rebuildFaceMeshDataSources(int bodyIndex);
+
     //! ----------------
     //! processSTL file
     //! ----------------

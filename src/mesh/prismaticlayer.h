@@ -210,6 +210,13 @@ private:
                                  const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS_old,
                                  bool correct=true);
 
+    //! -------------------------------------
+    //! check tetrahedral front intersection
+    //! -------------------------------------
+    void checkTetFrontIntersections(const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS,
+                                    const QMap<int,QList<double>> &guidingVectors,
+                                    QMap<int,QList<double>> &displacementMap);
+
     //! -------------------
     //! progress indicator
     //! -------------------
@@ -233,14 +240,6 @@ private:
     //! ------------------------------
     std::map<int,double> mapOfReductionFactor;
 
-    //! --------------------
-    //! generateOneTetLayer
-    //! --------------------
-    void generateOneTetLayer(occHandle(Ng_MeshVS_DataSourceFace) &theMeshToInflate,
-                             double displacement,
-                             std::vector<meshElementByCoords> &volumeElementsAtWalls,
-                             const std::map<int,double> &mapOfFirstLayerReductionFactor);
-
     //! -------------
     //! compute beta
     //! -------------
@@ -251,7 +250,8 @@ private:
     //! ---------------------------------------------
     void checkLateralDistributionMarchingDistance(const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS,
                                                   int inflationStep,
-                                                  QMap<int,double> &marchingDistanceMap);
+                                                  QMap<int,double> &marchingDistanceMap,
+                                                  const QMap<int,QList<double>> &guidingDirections);
 
     //! ---------------
     //! local manifold
@@ -277,12 +277,17 @@ private:
     //! --------------
     //! analyze front
     //! --------------
-    void analyzeFront(const occHandle(Ng_MeshVS_DataSourceFace) &theMeshToInflate, const QMap<int,double> &marchingDistancesMap);
+    void analyzeFront(const occHandle(Ng_MeshVS_DataSourceFace) &theMeshToInflate,
+                      const QMap<int,QList<double>> &normals,
+                      QMap<int,double> &marchingDistancesMap);
 
     //! ---------------------------
     //! check incomplete manifolds
     //! ---------------------------
     void checkIncompleteManifold(const occHandle(Ng_MeshVS_DataSourceFace) &theMeshToInflate);
+
+
+    void processMesh(occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS);
 
     //! --------------------------------------------------
     //! enable/disable the progress indicator stop button

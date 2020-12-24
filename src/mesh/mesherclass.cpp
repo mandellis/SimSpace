@@ -274,7 +274,9 @@ void MesherClass::generateMesh()
                                                                 "Meshing surface using Netgen",
                                                                 QProgressEvent_Init,0,100,0,"Netgen meshing");
                         this->postUpdateEvent(pe);
-                        userMessage mr = Netgen_generateSurfaceMesh(bodyIndex,mainMesh2D);
+                        userMessage mr = Netgen_generateSurfaceMesh(bodyIndex,mainMesh2D);                        
+                        this->rebuildFaceMeshDataSources(bodyIndex);    // a check
+
                         Global::status().myMessages->appendMessage(mr);
                     }
                         break;
@@ -284,6 +286,8 @@ void MesherClass::generateMesh()
                         QProgressEvent *pe = new QProgressEvent(QProgressEvent_Init,0,NbSteps-1,0,"Meshing surface using Express Mesh",QProgressEvent_Init,0,100,0);
                         postUpdateEvent(pe);
                         userMessage mr = this->ExMesh_generateSurfaceMesh(mp,bodyIndex,mainMesh2D);
+                        this->rebuildFaceMeshDataSources(bodyIndex);    // a check
+
                         Global::status().myMessages->appendMessage(mr);
                     }
                         break;
@@ -303,7 +307,9 @@ void MesherClass::generateMesh()
                                                                 QProgressEvent_Init,0,100,0,"Netgen meshing");
                         postUpdateEvent(pe);
 
-                        userMessage mr = Netgen_STL_generateSurfaceMesh(bodyIndex,mainMesh2D);
+                        userMessage mr = Netgen_STL_generateSurfaceMesh(bodyIndex,mainMesh2D);                        
+                        this->rebuildFaceMeshDataSources(bodyIndex);    // a check
+
                         Global::status().myMessages->appendMessage(mr);
 
                         //! ----------------------------------------------------------
@@ -330,15 +336,6 @@ void MesherClass::generateMesh()
                     occHandle(Ng_MeshVS_DataSourceFace) theLastInflatedMesh;
                     QList<occHandle(Ng_MeshVS_DataSourceFace)> listOfInflatedMeshes;
                     userMessage mr = this->PrismaticLayers_generatePrismaticMesh(bodyIndex,theLastInflatedMesh,listOfInflatedMeshes);
-
-                    // diagnostic
-                    /*
-                    occHandle(Ng_MeshVS_DataSource3D) v = occHandle(Ng_MeshVS_DataSource3D)::DownCast(myMeshDB->ArrayOfMeshDS.value(bodyIndex));
-                    v->buildFaceToElementConnectivity();
-                    occHandle(Ng_MeshVS_DataSource2D) aMesh = new Ng_MeshVS_DataSource2D(v);
-                    myMeshDB->ArrayOfMeshDS2D.insert(bodyIndex,aMesh);
-                    */
-
                     Global::status().myMessages->appendMessage(mr);
                 }
 
@@ -462,6 +459,7 @@ void MesherClass::generateMesh()
                     case Property::meshEngine3D_Netgen_STL:
                     {
                         userMessage mr = this->Netgen_STL_generateVolumeMesh(bodyIndex,mainMesh2D,mainMesh3D);
+
                         if(mr.isDone) myMeshDB->ArrayOfMeshIsToBeUdpdated.insert(bodyIndex,false);
                         Global::status().myMessages->appendMessage(mr);
 
@@ -597,17 +595,17 @@ void MesherClass::generateMesh()
                             //! --------------------------------------------------------------------------------------------
                             //! TetWild run on disk
                             //! The TetWild command line takes the "relative" envelope size and the "relative" initial ideal
-                            //! legnth, by consequence, if into the interface "absolute" values switch are active, the
-                            //! absolute envelope sizing and absolute ideal length should be converted into relative
-                            //! values, according to their internal definition into the command line
+                            //! length as input parameters, by consequence, if into the interface "absolute" values switch
+                            //! are used, the absolute envelope sizing and absolute ideal length should be converted into
+                            //! relative values, according to their internal definition into the command line
                             //! --------------------------------------------------------------------------------------------
                             BRepTools::Clean(myMeshDB->bodyMap.value(bodyIndex));
                             QString inputSoup = this->processTetWildSTL(bodyIndex);
                             tetWildMesher aTetWildMesher;
 
-                            //! ---------------------
-                            //! test some parameters
-                            //! ---------------------
+                            //! -------------------
+                            //! meshing parameters
+                            //! -------------------
                             double envelopeSize;    //! in TetWild command line this parameter is relative
                             double idealLength;     //! in TetWild command line this parameter is relative
 
@@ -636,56 +634,111 @@ void MesherClass::generateMesh()
                                 idealLength = absoluteLength/D;
                             }
                             aTetWildMesher.setParameters(idealLength,envelopeSize);
-
                             bool isDone = aTetWildMesher.perform_onDisk(inputSoup);
-                            if(isDone)
-                            {
-                                bool isMeshReady = aTetWildMesher.retrieveMeshDataSourceFromDisk(mainMesh3D);
 
-                                //! insert a valid or null 3D data source into the mesh data base
-                                myMeshDB->ArrayOfMeshDS.insert(bodyIndex,mainMesh3D);
-
-                                //! ------------------------------------------------------------------
-                                //! insert a valid or null 2D mesh data source into the data base
-                                //! using the following constructor: it builds the surface mesh using
-                                //! the connectivity info (they must be generated here [*])
-                                //! ------------------------------------------------------------------
-                                mainMesh3D->buildFaceToElementConnectivity();
-                                mainMesh2D = new Ng_MeshVS_DataSource2D(mainMesh3D);
-
-                                cout<<"@____surface mesh: "<<mainMesh2D->GetAllElements().Extent()<<" elements; "<<mainMesh2D->GetAllNodes().Extent()<<" nodes"<<endl;
-
-                                myMeshDB->ArrayOfMeshDS2D.insert(bodyIndex,mainMesh2D);
-
-                                if(isMeshReady) myMeshDB->ArrayOfMeshIsToBeUdpdated.insert(bodyIndex, false);
-                                else myMeshDB->ArrayOfMeshIsToBeUdpdated.insert(bodyIndex, true);
-
-                                //! ---------------------
-                                //! experimental 0722020
-                                //! ---------------------
-                                surfaceMeshToFaceMeshes aFaceMeshRebuilder;
-                                occHandle(Ng_MeshVS_DataSource2D) m = occHandle(Ng_MeshVS_DataSource2D)::DownCast(mainMesh2D);
-                                aFaceMeshRebuilder.setMesh(m);
-                                aFaceMeshRebuilder.setShape(myMeshDB->bodyMap.value(bodyIndex));
-                                std::map<int,occHandle(Ng_MeshVS_DataSourceFace)> theFaceMeshes;
-                                aFaceMeshRebuilder.perform(theFaceMeshes);
-                                for(std::map<int,occHandle(Ng_MeshVS_DataSourceFace)>::iterator it = theFaceMeshes.begin(); it!=theFaceMeshes.end(); it++)
-                                {
-                                    int faceNr = it->first;
-                                    myMeshDB->ArrayOfMeshDSOnFaces.setValue(bodyIndex,faceNr,it->second);
-                                }
-                                //! -----------------
-                                //! end experimental
-                                //! -----------------
-
-                                userMessage mr(true,QString("Tetwild has successfully generated the volume mesh"));
-                                Global::status().myMessages->appendMessage(mr);
-                            }
-                            else
+                            if(isDone == false)
                             {
                                 myMeshDB->ArrayOfMeshIsToBeUdpdated.insert(bodyIndex, true);
-                                userMessage mr(false,QString("Cannot generate the volume mesh with Tetwild"));
+                                userMessage mr(false,QString("Tetwild cannot generate the volume mesh"));
                                 Global::status().myMessages->appendMessage(mr);
+                            }
+                            bool isMeshReady = aTetWildMesher.retrieveMeshDataSourceFromDisk(mainMesh3D);
+
+                            //! ------------------------------------------------------
+                            //! insert the volume data source into the mesh data base
+                            //! ------------------------------------------------------
+                            myMeshDB->ArrayOfMeshDS.insert(bodyIndex,mainMesh3D);
+
+                            //! ------------------------------------------------------------------
+                            //! insert a valid or null 2D mesh data source into the data base
+                            //! using the following constructor: it builds the surface mesh using
+                            //! the connectivity info (they must be generated here [*])
+                            //! ------------------------------------------------------------------
+                            if(mainMesh3D->myFaceToElements.isEmpty()) mainMesh3D->buildFaceToElementConnectivity();
+                            mainMesh2D = new Ng_MeshVS_DataSource2D(mainMesh3D);
+                            myMeshDB->ArrayOfMeshDS2D.insert(bodyIndex,mainMesh2D);
+
+                            //! ----------------------------------------------------------------
+                            //! rebuild the face mesh data sources
+                            //! this mesher cannot build the face mesh data sources: do it here
+                            //! ----------------------------------------------------------------
+                            bool faceMeshDSRebuilt = this->rebuildFaceMeshDataSources(bodyIndex);
+                            Q_UNUSED(faceMeshDSRebuilt);
+
+                            if(isMeshReady) myMeshDB->ArrayOfMeshIsToBeUdpdated.insert(bodyIndex, false);
+                            else myMeshDB->ArrayOfMeshIsToBeUdpdated.insert(bodyIndex, true);
+
+                            userMessage mr(true,QString("TetWild has successfully generated the volume mesh"));
+                            Global::status().myMessages->appendMessage(mr);
+
+                            //! --------------------------------
+                            //! cesere - try building wall mesh
+                            //! --------------------------------
+                            bool isInflationDefinedOnBody = myMeshDB->HasPrismaticFaces.value(bodyIndex);
+                            if(isInflationDefinedOnBody)
+                            {
+                                occHandle(Ng_MeshVS_DataSourceFace) theLastInflatedMesh;
+                                QList<occHandle(Ng_MeshVS_DataSourceFace)> listOfInflatedMeshes;
+                                this->PrismaticLayers_generatePrismaticMesh(bodyIndex,theLastInflatedMesh,listOfInflatedMeshes);
+
+                                //! ----------------------------------------------------------------------
+                                //! at this stage the wall mesh has been inserted into the mesh data base
+                                //! so generate the volume mesh using netgen/tetgen
+                                //! ----------------------------------------------------------------------
+                                myNetgenMesher->setMeshDataBase(myMeshDB);
+
+                                occHandle(Ng_MeshVS_DataSource3D) prismatic3DMesh;
+                                myNetgenMesher->meshVolumeFromSurfaceMesh(bodyIndex,theLastInflatedMesh,prismatic3DMesh);
+
+                                //! for testing purposes
+                                //! myMeshDB->ArrayOfMeshDS.insert(bodyIndex,volumeMesh);
+
+                                //! --------------
+                                //! the wall mesh
+                                //! --------------
+                                occHandle(Ng_MeshVS_DataSource3D) postInflationVolumeMesh =
+                                        occHandle(Ng_MeshVS_DataSource3D)::DownCast(myMeshDB->ArrayOfMeshDS.value(bodyIndex));
+
+                                //! -------------------------------------------------------------------
+                                //! sum the prismatic mesh and the volume mesh
+                                //! it uses the 3D mesh constructor from a list of meshElementByCoords
+                                //! which perform the automatic node renumbering
+                                //! -------------------------------------------------------------------
+                                std::vector<meshElementByCoords> elementList1, elementList2;
+                                MeshTools::toListOf3DElements(prismatic3DMesh,elementList1);
+                                MeshTools::toListOf3DElements(postInflationVolumeMesh,elementList2);
+                                elementList1.reserve(elementList1.size()+elementList2.size());
+                                elementList1.insert(elementList1.end(),elementList2.begin(),elementList2.end());
+                                occHandle(Ng_MeshVS_DataSource3D) summedVolumeMeshDS = new Ng_MeshVS_DataSource3D(elementList1,true,true);
+
+                                //! -----------------------------------------
+                                //! use the surface mesh built topologically
+                                //! -----------------------------------------
+                                summedVolumeMeshDS->buildFaceToElementConnectivity();
+                                occHandle(Ng_MeshVS_DataSource2D) surfaceMeshDS = new Ng_MeshVS_DataSource2D(summedVolumeMeshDS);
+
+                                //! -----------------------------------------------------
+                                //! insert the main surface and volume mesh data sources
+                                //! -----------------------------------------------------
+                                myMeshDB->ArrayOfMeshDS2D.insert(bodyIndex, surfaceMeshDS);
+                                myMeshDB->ArrayOfMeshDS.insert(bodyIndex, summedVolumeMeshDS);
+
+                                //! ---------
+                                //! renumber
+                                //! ---------
+                                meshNodesRenumberingTool aTool;
+                                aTool.setSource(summedVolumeMeshDS);
+                                aTool.perform<Ng_MeshVS_DataSource2D>(surfaceMeshDS.get());
+
+                                int NbFaces = myMeshDB->MapOfBodyTopologyMap.value(bodyIndex).faceMap.Extent();
+                                for(int faceNr = 1; faceNr<=NbFaces; faceNr++)
+                                {
+                                    if(myMeshDB->ArrayOfMeshDSOnFaces.getValue(bodyIndex,faceNr).IsNull()) continue;
+                                    occHandle(Ng_MeshVS_DataSourceFace) aFaceMeshDS =
+                                            occHandle(Ng_MeshVS_DataSourceFace)::DownCast(myMeshDB->ArrayOfMeshDSOnFaces.getValue(bodyIndex,faceNr));
+                                    aTool.perform<Ng_MeshVS_DataSourceFace>(aFaceMeshDS.get());
+                                    myMeshDB->ArrayOfMeshDSOnFaces.setValue(bodyIndex,faceNr,aFaceMeshDS);
+                                }
                             }
                         }
                         else
@@ -693,7 +746,7 @@ void MesherClass::generateMesh()
                             //! --------------------------------------------
                             //! TetWild run in memory - not implemented yet
                             //! --------------------------------------------
-                            myMeshDB->ArrayOfMeshIsToBeUdpdated.insert(bodyIndex, false);
+                            myMeshDB->ArrayOfMeshIsToBeUdpdated.insert(bodyIndex, true);
                         }
                     }
                 }
@@ -798,7 +851,7 @@ void MesherClass::generateMesh()
                     occHandle(Ng_MeshVS_DataSource2D) firstOrderSurfaceMesh = occHandle(Ng_MeshVS_DataSource2D)::DownCast(myMeshDB->ArrayOfMeshDS2D.value(bodyIndex));
                     occHandle(Ng_MeshVS_DataSource2D) secondOrderSurfaceMeshDS = new Ng_MeshVS_DataSource2D(firstOrderSurfaceMesh,2);
                     aTool.setSource(secondOrderVolumeMeshDS);
-                    aTool.perform<Ng_MeshVS_DataSource2D>(secondOrderSurfaceMeshDS.get());
+                    aTool.perform<Ng_MeshVS_DataSource2D>(secondOrderSurfaceMeshDS.get());//gildotta
 
                     /*
                     //! ---------------
@@ -877,15 +930,13 @@ void MesherClass::generateMesh()
                                 new Ng_MeshVS_DataSourceFace(aFaceFirstOrderFaceMesh,2);
 
                         aTool.perform<Ng_MeshVS_DataSourceFace>(aSecondOrderFaceMesh.get());
-                        //aSecondOrderFaceMesh->renumberNodes(mapNodeCoords_globalNodeID,vecTolerantPoints,globalNodeIDs);
                         myMeshDB->ArrayOfMeshDSOnFaces.setValue(bodyIndex,faceNr,aSecondOrderFaceMesh);
                     }
-
                     //! ----------------
                     //! curved elements
                     //! ----------------
                     bool curvedElements = myMeshDB->mapOfIsElementStraight.value(bodyIndex);
-                    if(curvedElements)
+                    if(curvedElements==true)
                     {
                         ;
                     }
@@ -940,7 +991,6 @@ void MesherClass::generateMesh()
                         occHandle(Ng_MeshVS_DataSourceFace) aSecondOrderFaceMesh =
                                 new Ng_MeshVS_DataSourceFace(aFaceFirstOrderFaceMesh,2);
 
-                        //aSecondOrderFaceMesh->renumberNodes(mapNodeCoords_globalNodeID,vecTolerantPoints,globalNodeIDs);
                         aTool.perform<Ng_MeshVS_DataSourceFace>(aSecondOrderFaceMesh.get());
                         myMeshDB->ArrayOfMeshDSOnFaces.setValue(bodyIndex,faceNr,aSecondOrderFaceMesh);
                     }
@@ -1259,8 +1309,10 @@ userMessage MesherClass::PrismaticLayers_generatePrismaticMesh(int bodyIndex,
 
     occHandle(Ng_MeshVS_DataSource3D) prismaticMeshDS;
     isDone = prismaticLayerBuilder.generateMeshAtWalls(prismaticMeshDS,theLastInflatedMesh,listOfInflatedMeshes);
-    //cout<<"____"<<prismaticMeshDS->GetAllElements().Extent()<<"____"<<endl;
-    //cout<<"____"<<prismaticMeshDS->GetAllNodes().Extent()<<"____"<<endl;
+    cout<<"____wall mesh. Elements: "<<prismaticMeshDS->GetAllElements().Extent()<<"____"<<endl;
+    cout<<"____wall mesh. Nodes: "<<prismaticMeshDS->GetAllNodes().Extent()<<"____"<<endl;
+    cout<<"____the last inflated mesh. Elements: "<<theLastInflatedMesh->GetAllElements().Extent()<<"____"<<endl;
+    cout<<"____the last inflated mesh. Nodes: "<<theLastInflatedMesh->GetAllNodes().Extent()<<"____"<<endl;
 
     //! -----------------------------------------------------
     //! the "prismaticMeshDS" is inserted in "ArrayOfMeshDS"
@@ -1631,11 +1683,43 @@ userMessage MesherClass::Tetgen_generateVolumeMesh(int bodyIndex, int preserveSu
             occHandle(Ng_MeshVS_DataSource3D) aMeshDS = new Ng_MeshVS_DataSource3D(meshOut);
             myMeshDB->ArrayOfMeshDS.insert(bodyIndex,aMeshDS);
 
-            //! -------------------------
-            //! surface mesh data source
-            //! -------------------------
+            /*
+            //! ------
+            //! check
+            //! ------
+            for(TColStd_MapIteratorOfPackedMapOfInteger it(aMeshDS->GetAllElements()); it.More(); it.Next())
+            {
+                TetQualityClass aTet;
+                std::vector<mesh::meshPoint> tetPoints;
+
+                int globalNodeID = it.Key();
+                int NbNodes;
+                double buf[24];
+                TColStd_Array1OfReal coords(*buf,1,24);
+                MeshVS_EntityType aType;
+                aMeshDS->GetGeom(globalNodeID,true,coords,NbNodes,aType);
+                for(int n=0; n<NbNodes; n++)
+                {
+                    int s = 3*n;
+                    tetPoints.push_back(mesh::meshPoint(coords(s+1),coords(s+2),coords(s+3)));
+                }
+                aTet.setPoints(tetPoints);
+                cout<<"____volume: "<<aTet.Volume()<<"____"<<endl;
+            }
+            //! ----------
+            //! end check
+            //! ----------
+            */
+
+            //! -----------------------------------------
+            //! surface mesh data source - (topological)
+            //! -----------------------------------------
             aMeshDS->buildFaceToElementConnectivity();
             occHandle(Ng_MeshVS_DataSource2D) aMeshDS2D = new Ng_MeshVS_DataSource2D(aMeshDS);
+            myMeshDB->ArrayOfMeshDS2D.insert(bodyIndex,aMeshDS2D);
+
+            //occHandle(Ng_MeshVS_DataSource2D) aMeshDS2D = new Ng_MeshVS_DataSource2D(meshOut);
+            //myMeshDB->ArrayOfMeshDS2D.insert(bodyIndex,aMeshDS2D);
 
             //! -------------------------------
             //! generate the face data sources
@@ -1948,15 +2032,12 @@ userMessage MesherClass::Netgen_STL_generateVolumeMesh(int bodyIndex,
             return mr;
         }
 
-        //! ---------------------------------------------------------
-        //! put the face mesh data sources into the data base
-        //! OK - done: the data sources are set directly by the tool
-        //! ---------------------------------------------------------
-
-        //! -------------
-        //! experimental
-        //! -------------
-        //this->processMesh(bodyIndex);
+        //! -------------------------------------------------
+        //! the data sources are set directly by the tool
+        //! experimental: rebuild the face mesh data sources
+        //! -------------------------------------------------
+        bool faceMeshDSRebuilt = this->rebuildFaceMeshDataSources(bodyIndex);
+        Q_UNUSED(faceMeshDSRebuilt);
 
         //! ----------------------
         //! remove supports files
@@ -1988,14 +2069,14 @@ userMessage MesherClass::Netgen_STL_generateVolumeMesh(int bodyIndex,
             //! -------------
             //! experimental
             //! -------------
-            //this->processMesh(bodyIndex);
-
-            QList<occHandle(Ng_MeshVS_DataSourceFace)> listOfInflatedMeshes;
+            bool faceMeshDSRebuilt = this->rebuildFaceMeshDataSources(bodyIndex);
+            Q_UNUSED(faceMeshDSRebuilt);
 
             //! -----------------------------------------------------------
             //! this calls puts the prismatic mesh into the mesh data base
             //! and return the last inflated mesh
             //! -----------------------------------------------------------
+            QList<occHandle(Ng_MeshVS_DataSourceFace)> listOfInflatedMeshes;
             mr = this->PrismaticLayers_generatePrismaticMesh(bodyIndex,theLastInflatedMesh,listOfInflatedMeshes);
             if(mr.isDone==false) return mr;
 
@@ -2069,16 +2150,12 @@ userMessage MesherClass::Netgen_STL_generateVolumeMesh(int bodyIndex,
                 mapNodeCoords_globalNodeID.insert(std::make_pair(seed,globalNodeID));
             }
 
-            //! ----------------------------------------
-            //! iterate over the face mesh data sources
-            //! ----------------------------------------
+            //! ---------------------------------------------------------------
+            //! iterate over the face mesh data sources and remunber the nodes
+            //! ---------------------------------------------------------------
             for(int faceNr = 1; faceNr<=NbGeometryFaces; faceNr++)
             {
                 cout<<"- renumbering face data source nr: "<<faceNr<<endl;
-
-                //! -------------------
-                //! renumber the nodes
-                //! -------------------
                 if(myMeshDB->ArrayOfMeshDSOnFaces.getValue(bodyIndex,faceNr).IsNull())
                 {
                     cout<<"- the face mesh data source nr: "<<faceNr<<" is null. Jumping over it"<<endl;
@@ -2790,5 +2867,33 @@ bool MesherClass::processMesh(int bodyIndex)
         occHandle(Ng_MeshVS_DataSourceFace) faceMeshDS = new Ng_MeshVS_DataSourceFace(curStlMesh,maps_localToGlobal_nodeIDs,maps_localToGlobal_elementIDs,faceNr);
         myMeshDB->ArrayOfMeshDSOnFaces.setValue(bodyIndex,faceNr,faceMeshDS);
     }
+    return true;
+}
+
+//! -------------------------------------
+//! function: rebuildFaceMeshDataSources
+//! details:
+//! -------------------------------------
+bool MesherClass::rebuildFaceMeshDataSources(int bodyIndex)
+{
+    cout<<"MesherClass::generateFaceMeshDataSources()->____function called____"<<endl;
+
+    surfaceMeshToFaceMeshes aFaceMeshRebuilder;
+    const occHandle(MeshVS_DataSource) &mainMesh2D = myMeshDB->ArrayOfMeshDS2D.value(bodyIndex);
+    if(mainMesh2D.IsNull()) return false;
+
+    occHandle(Ng_MeshVS_DataSource2D) m = occHandle(Ng_MeshVS_DataSource2D)::DownCast(mainMesh2D);
+    aFaceMeshRebuilder.setMesh(m);
+
+    aFaceMeshRebuilder.setShape(myMeshDB->bodyMap.value(bodyIndex));
+
+    std::map<int,occHandle(Ng_MeshVS_DataSourceFace)> theFaceMeshes;
+    aFaceMeshRebuilder.perform(theFaceMeshes);
+    for(std::map<int,occHandle(Ng_MeshVS_DataSourceFace)>::iterator it = theFaceMeshes.begin(); it!=theFaceMeshes.end(); it++)
+    {
+        int faceNr = it->first;
+        myMeshDB->ArrayOfMeshDSOnFaces.setValue(bodyIndex,faceNr,it->second);
+    }
+    cout<<"MesherClass::generateFaceMeshDataSources()->____exiting function____"<<endl;
     return true;
 }

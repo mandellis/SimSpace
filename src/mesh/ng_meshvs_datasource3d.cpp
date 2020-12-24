@@ -2150,18 +2150,77 @@ void Ng_MeshVS_DataSource3D::buildFaceToElementConnectivity()
             //! ::contains() uses "<" in the "weak" form
             //! not aware of nodal ordering
             //! -----------------------------------------
+            QList<int> elements;
             if(myFaceToElements.contains(aMeshElement2D))
             {
-                QList<int> elements = myFaceToElements.value(aMeshElement2D);
+                //QList<int> elements = myFaceToElements.value(aMeshElement2D);
+                elements = myFaceToElements.value(aMeshElement2D);
                 elements<<localElementID;
-                myFaceToElements.insert(aMeshElement2D,elements);
+                //myFaceToElements.insert(aMeshElement2D,elements);
             }
             else
             {
-                QList<int> elements;
+                //QList<int> elements;
                 elements<<localElementID;
-                myFaceToElements.insert(aMeshElement2D,elements);
+                //myFaceToElements.insert(aMeshElement2D,elements);
             }
+
+            //! ---------------------
+            //! check - experimental
+            //! ---------------------
+            std::vector<polygon::Point> points;
+            std::map<int,int> mapPoints;
+            for(int n=0; n<aMeshElement2D.nodeIDs.size(); n++)
+            {
+                int globalNodeID = aMeshElement2D.nodeIDs[n];
+                int localNodeID = myNodesMap.FindIndex(globalNodeID);
+                mapPoints.insert(std::make_pair(globalNodeID,localNodeID));
+                double x = myNodeCoords->Value(localNodeID,1);
+                double y = myNodeCoords->Value(localNodeID,2);
+                double z = myNodeCoords->Value(localNodeID,3);
+                points.push_back(polygon::Point(x,y,z));
+            }
+
+            double a,b,c,d;
+            polygon::planeCoefficients(points,a,b,c,d);
+
+            int NbNodes_, bufn[20];
+            TColStd_Array1OfInteger nodeIDs(*bufn,1,20);
+            int globalElementID = myElementsMap.FindIndex(localElementID);
+            this->GetNodesByElement(globalElementID,nodeIDs,NbNodes_);
+
+            int thePoint = -1;
+            for(int j=1; j<=NbNodes_; j++)
+            {
+                int currentPoint_global = nodeIDs(j);
+                if(mapPoints.count(currentPoint_global)>0) continue;
+                thePoint = nodeIDs(j);
+                break;
+            }
+            int thePoint_local = myNodesMap.FindIndex(thePoint);
+            double x = myNodeCoords->Value(thePoint_local,1);
+            double y = myNodeCoords->Value(thePoint_local,2);
+            double z = myNodeCoords->Value(thePoint_local,3);
+            polygon::Point P(x,y,z);
+            double distance = polygon::pointPlaneDistance(P,a,b,c,d);
+            if(distance>0)
+            {
+                //cout<<"____distance: "<<distance<<"____"<<endl;
+                meshElement2D invertedElement2D;
+                int NbPoints = aMeshElement2D.nodeIDs.length();
+                //cout<<"____NbPoints: "<<NbPoints<<"____"<<endl;
+                for(int i=NbPoints-1; i>=0; i--)
+                {
+                    //cout<<"____i: "<<i<<"____"<<endl;
+                    invertedElement2D.ID = aMeshElement2D.ID;
+                    invertedElement2D.nodeIDs<<aMeshElement2D.nodeIDs[i];
+                }
+                aMeshElement2D = invertedElement2D;
+            }
+            //! -------------------------
+            //! end check - experimental
+            //! -------------------------
+            myFaceToElements.insert(aMeshElement2D,elements);
         }
     }
 
@@ -3523,3 +3582,4 @@ Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(const occHandle(MeshVS_DataSource
 
     this->buildElementsTopology();
 }
+

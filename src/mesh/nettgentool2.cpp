@@ -916,6 +916,9 @@ userMessage NettgenTool2::perform(int bodyIndex,
             bool canbereassigned = false;
             int faceNr = -1;
             int NbNodes = curElement.pointList.length();
+
+            std::vector<mesh::meshSegment> vecSegmentsOfElement;    // segments of the unassigned element
+
             for(int i=1; i<=NbNodes; i++)
             {
                 mesh::meshSegment aMeshSegment;
@@ -924,6 +927,9 @@ userMessage NettgenTool2::perform(int bodyIndex,
                 aMeshSegment.nodeIDs<<curElement.pointList[firstIndex].ID;
                 aMeshSegment.nodeIDs<<curElement.pointList[secondIndex].ID;
                 aMeshSegment.sort();
+
+                //! store the segments of the unassigned element
+                vecSegmentsOfElement.push_back(aMeshSegment);
 
                 if(segmentFaceNrMap.count(aMeshSegment)!=0)
                 {
@@ -935,9 +941,28 @@ userMessage NettgenTool2::perform(int bodyIndex,
                     cout<<curElement.pointList[NbNodes-1].ID<<") "<<" can be assigned to face "<<faceNr<<"____"<<endl;
                     if(segmentFaceNrMap.at(aMeshSegment).size()>1) cout<<" (actually more than one face) "<<endl;
 
-                    missingTrianglesToFaceNr.push_back(std::make_pair(faceNr,curElement));   // alternative
+                    missingTrianglesToFaceNr.push_back(std::make_pair(faceNr,curElement));   // alternative                    
+                    canbereassigned = true;                    
 
-                    canbereassigned = true;
+                    //! ---------------------------------------------------------------
+                    //! the element has been recognized belonging to the face "faceNr"
+                    //! thankgs to the current segment. Remove if from the vector of
+                    //! segments
+                    //! ---------------------------------------------------------------
+                    vecSegmentsOfElement.pop_back();
+
+                    //! -------------------------------------------------------------------
+                    //! since this triangle can be reassigned to the current face "faceNr"
+                    //! thanks to a segment link, then the other two segments should be
+                    //! added to the map "segmentFaceNrMap" used for the search
+                    //! -------------------------------------------------------------------
+                    for(int n=0; n<vecSegmentsOfElement.size(); n++)
+                    {
+                        const mesh::meshSegment &as = vecSegmentsOfElement[n];
+                        std::map<mesh::meshSegment,std::vector<int>>::iterator its = segmentFaceNrMap.find(as);
+                        if(its == segmentFaceNrMap.end()) segmentFaceNrMap.insert(std::make_pair(as,std::vector<int> {faceNr} ));
+                        else its->second.push_back(faceNr);
+                    }
                     break;
                 }
             }
@@ -958,8 +983,7 @@ userMessage NettgenTool2::perform(int bodyIndex,
             }
         }
 
-        //cout<<" # "<<NbReassigned<<" triangles reassigned "<<endl;
-        cout<<" # "<<vecUnassignedMeshElementByCoords.size()<<" triangles not assigned"<<endl;
+        cout<<" # "<<NbReassigned<<" triangles reassigned "<<endl;
         cout<<"********************************************************************"<<endl;
 
         cout<<"********************************************************************"<<endl;
@@ -1082,7 +1106,7 @@ Ng_Meshing_Parameters NettgenTool2::initNetgenMeshingParameters()
 {
     Ng_Meshing_Parameters mp;
     mp.uselocalh = 1;                   // Enable/Disable usage of local mesh size modifiers
-    mp.maxh = 20;                       // Maximum allowed mesh size
+    mp.maxh = 100;                       // Maximum allowed mesh size
     mp.minh= 0.1;                       // Minimum allowed ->global<- mesh size allowed
     mp.fineness = 0.5;                  // Mesh density: 0...1 (0 => coarse; 1 => fine)
     mp.grading = 0.3;                   // Mesh grading: 0...1 (0 => uniform mesh; 1 => aggressive local grading)
@@ -1991,7 +2015,7 @@ userMessage NettgenTool2::meshVolumeFromSurfaceMesh(int bodyIndex,
                                                     const occHandle(MeshVS_DataSource) &aSurfaceMeshDS,
                                                     occHandle(MeshVS_DataSource) &outputVolumeMeshDS)
 {
-    cout<<"NettgenTool2::meshVolumeFromSurfaceMesh()->____function called____"<<endl;
+    cout<<"NettgenTool2::meshVolumeFromSurfaceMesh()->____function called on body index: "<<bodyIndex<<"____"<<endl;
 
     //! ---------------------------------
     //! disable stop during sanity check
@@ -2007,11 +2031,13 @@ userMessage NettgenTool2::meshVolumeFromSurfaceMesh(int bodyIndex,
         userMessage mr(false,QString("Cannot generate the volume mesh from the post inflation mesh. The input surface mesh is null"));
         return mr;
     }
+
     if(aSurfaceMeshDS->GetAllNodes().Extent()<3)
     {
         userMessage mr(false,QString("Cannot generate the volume mesh from the post inflation mesh. The input surface mesh is not valid"));
         return mr;
     }
+
     if(aSurfaceMeshDS->GetAllElements().Extent()<4)
     {
         userMessage mr(false,QString("Cannot generate the volume mesh from the post inflation mesh. The input surface mesh is open"));
@@ -2027,8 +2053,12 @@ userMessage NettgenTool2::meshVolumeFromSurfaceMesh(int bodyIndex,
     //! send a progress event
     //! ----------------------
     QString task = "Netgen meshing";
-    QProgressEvent *progressEvent = new QProgressEvent(QProgressEvent_None,0,9999,0,"",QProgressEvent_Init,0,100,0,task);
-    QApplication::postEvent(myProgressIndicator,progressEvent);
+    if(myProgressIndicator!=Q_NULLPTR)
+    {
+        QProgressEvent *progressEvent = new QProgressEvent(QProgressEvent_None,0,9999,0,"",QProgressEvent_Init,0,100,0,task);
+        QApplication::postEvent(myProgressIndicator,progressEvent);
+        cout<<"____tag03____"<<endl;
+    }
 
     //! ------------------------------------------------------------
     //! prepare the surface mesh input: add the surface mesh points
@@ -2074,11 +2104,9 @@ userMessage NettgenTool2::meshVolumeFromSurfaceMesh(int bodyIndex,
     //! the global meshing parameters read from the mesh data base
     //! -----------------------------------------------------------
     Ng_Meshing_Parameters mp = initNetgenMeshingParameters();
-
     mp.grading = myMDB->ArrayOfGradingValue.value(bodyIndex);
     mp.minh = myMDB->ArrayOfMinBodyElementSize.value(bodyIndex);
     mp.maxh = myMDB->ArrayOfMaxBodyElementSize.value(bodyIndex);
-
     //! -------
     //! inputs
     //! -------

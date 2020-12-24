@@ -26,12 +26,17 @@ public:
     void init(const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS);
 
     bool distance(double *P, double *dir, float *d);
+    bool distance(double *P, double *dir, double coneAmplitude, int NbCones, float *d);
 
 private:
 
     igl::embree::EmbreeIntersector myEmbree;
     Eigen::MatrixXd myV;
     Eigen::MatrixXi myF;
+
+private:
+
+    void rotateVector(double *v, double *k, double angle, double *r);
 };
 
 #endif // POINTTOMESHDISTANCE_H

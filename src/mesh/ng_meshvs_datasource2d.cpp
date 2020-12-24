@@ -575,6 +575,11 @@ Ng_MeshVS_DataSource2D::Ng_MeshVS_DataSource2D(const opencascade::handle<Ng_Mesh
         return;
     }
 
+    if(a3DMeshVS_DataSource->myFaceToElements.isEmpty())
+    {
+        cerr<<"Ng_MeshVS_DataSource2D::Ng_MeshVS_DataSource2D()->_____warning: the face to element connectiviy has not been generated. Doing now____"<<endl;
+        a3DMeshVS_DataSource->buildFaceToElementConnectivity();
+    }
     const std::vector<meshElement2D> &surfaceElements = a3DMeshVS_DataSource->mySurfaceElements;
     myNumberOfElements = int(surfaceElements.size());
     if(myNumberOfElements<1) return;
@@ -614,7 +619,7 @@ Ng_MeshVS_DataSource2D::Ng_MeshVS_DataSource2D(const opencascade::handle<Ng_Mesh
             //! ---------------------------------------------------
             //! globalNodeID is the node number within the 3D mesh
             //! ---------------------------------------------------
-            int globalNodeID = aMeshElement.nodeIDs.at(i);
+            int globalNodeID = aMeshElement.nodeIDs[i];
             myElemNodes->SetValue(local2DElementID,i+1,globalNodeID);
 
             if(!myNodes.Contains(globalNodeID))
@@ -1370,10 +1375,12 @@ bool Ng_MeshVS_DataSource2D::readMesh(const QString &meshFileName,
     else return false;
 }
 
-//! ---------------------------------------------
-//! function: compute normal at nodes
-//! details:  compute an average normal at nodes
-//! ---------------------------------------------
+#define ITERATIVE_NORMAL
+#ifndef ITERATIVE_NORMAL
+//! -------------------------------
+//! function: computeNormalAtNodes
+//! details:
+//! -------------------------------
 void Ng_MeshVS_DataSource2D::computeNormalAtNodes()
 {
     //cout<<"Ng_MeshVS_DataSource2D::computeNormalAtNodes()->____function called____"<<endl;
@@ -1480,7 +1487,7 @@ void Ng_MeshVS_DataSource2D::computeNormalAtNodes()
         //! --------------------
         //! inserting the first
         //! --------------------
-        listOfElementNormals<<normals.at(0);
+        listOfElementNormals<<normals[0];
         for(int i=1; i<NbNormalsPerNode; i++)
         {
             QList<double> curNormal = normals.at(i);
@@ -1488,7 +1495,7 @@ void Ng_MeshVS_DataSource2D::computeNormalAtNodes()
             for(int k=0; k<listOfElementNormals.length(); k++)
             {
                 QList<double> aPreviousNormal = listOfElementNormals.at(k);
-                double cos_angle = curNormal.at(0)*aPreviousNormal.at(0)+curNormal.at(1)*aPreviousNormal.at(1)+curNormal.at(2)*aPreviousNormal.at(2);
+                double cos_angle = curNormal[0]*aPreviousNormal[0]+curNormal[1]*aPreviousNormal[1]+curNormal[2]*aPreviousNormal[2];
                 if(cos_angle<0.95) isDifferent = true;
                 else isDifferent = false;
             }
@@ -1514,6 +1521,201 @@ void Ng_MeshVS_DataSource2D::computeNormalAtNodes()
         myNodeNormals.insert(nodeNumber, aveNormal);
     }
 }
+#endif
+
+#ifdef ITERATIVE_NORMAL
+//! ----------------------------------
+//! function: compute normal at nodes
+//! details:
+//! ----------------------------------
+void Ng_MeshVS_DataSource2D::computeNormalAtNodes()
+{
+    cout<<"Ng_MeshVS_DataSourceFace::computeNormalAtNodes()->____function called____"<<endl;
+    //FILE *fp = fopen("D:/nodeNormals_iterative.txt","w");
+
+    //! -----------------------------
+    //! node to element connectivity
+    //! -----------------------------
+    if(myNodeToElements.isEmpty()) this->computeNodeToElementsConnectivity();
+
+    //! ----------------------------
+    //! parameters of the algorithm
+    //! ----------------------------
+    //const double PI = 3.14159236538;
+    const double limit = 0.0001;
+    const int NMaxSteps = 500;
+    const double b = 0.5;               // relaxation
+    const double oneminusb = 1-b;       // 1-relaxation
+    for(TColStd_MapIteratorOfPackedMapOfInteger it(myNodes); it.More(); it.Next())
+    {
+        int globalNodeID = it.Key();
+        int localNodeID = myNodesMap.FindIndex(globalNodeID);
+
+        const QList<int> &attachedElementsLocalIDs = myNodeToElements.value(localNodeID);
+        int N = attachedElementsLocalIDs.length();
+        std::vector<int> surroundingElementsGlobalIDs;  // same information using global numbering
+
+        //! -----------------------
+        //! initialize the weights
+        //! -----------------------
+        std::vector<double> wg;
+        for(int n=0; n<N; n++)
+        {
+            wg.push_back(1.0/N);
+            int curLocalElementID = attachedElementsLocalIDs[n];
+            int curGlobalElementID = this->myElementsMap.FindKey(curLocalElementID);
+            surroundingElementsGlobalIDs.push_back(curGlobalElementID);
+        }
+
+        //! -----------------------------
+        //! initial guess for the normal
+        //! -----------------------------
+        double NP[3] {0,0,0};
+        //double NP[3] {sqrt(3)/3,sqrt(3)/3,sqrt(3)/3};
+        double NPnew[3] {0,0,0};
+        double NPcorrection[3] {0,0,0};
+        for(int n=0; n<N; n++)
+        {
+            int curLocalElementID = attachedElementsLocalIDs[n];
+            double cnx = myElemNormals->Value(curLocalElementID,1);
+            double cny = myElemNormals->Value(curLocalElementID,2);
+            double cnz = myElemNormals->Value(curLocalElementID,3);
+            double w = wg[n];
+            NP[0] += w*cnx;
+            NP[1] += w*cny;
+            NP[2] += w*cnz;
+        }
+        double norm = sqrt(pow(NP[0],2)+pow(NP[1],2)+pow(NP[2],2));
+        NP[0] /= norm;
+        NP[1] /= norm;
+        NP[2] /= norm;
+
+        //cout<<"***************************************************"<<endl;
+        //cout<<" Initial normal ("<<NP[0]<<", "<<NP[1]<<", "<<NP[2]<<")"<<endl;
+
+        //fprintf(fp,"*************************************\n");
+        //fprintf(fp,"%d\n",globalNodeID);
+        //fprintf(fp,"guess %lf\t%lf\t%lf\n",NP[0],NP[1],NP[2]);
+
+        //! ----------------
+        //! start iterating
+        //! ----------------
+        double dotErr = 1e10;
+        double angleErr = 1e10;
+        int step = 0;
+        for(step=1; step<=NMaxSteps; step++)
+        {
+            std::vector<double> alpha;
+            double alphaSum = 0;
+            for(int i=0; i<N; i++)
+            {
+                int curLocalElementID = attachedElementsLocalIDs[i];
+                double nx_i = myElemNormals->Value(curLocalElementID,1);
+                double ny_i = myElemNormals->Value(curLocalElementID,2);
+                double nz_i = myElemNormals->Value(curLocalElementID,3);
+
+                double dot = nx_i*NP[0]+ny_i*NP[1]+nz_i*NP[2];
+                dot /= sqrt(nx_i*nx_i+ny_i*ny_i+nz_i*nz_i)*sqrt(pow(NP[0],2)+pow(NP[1],2)+pow(NP[2],2));
+                if(dot<-1) dot = -1;
+                if(dot>1) dot = 1;
+                double curAlpha = std::acos(dot);
+                alpha.push_back(curAlpha);
+                alphaSum += curAlpha;
+            }
+
+            if(fabs(alphaSum/N)<=0.01745329)    // 1 degree
+            {
+                //! the sum of alpha coeffs should be greated than 0.0
+                //! otherwise we have NaN when dividing alpha_i by alphaSum
+                break;
+            }
+
+            //! ------------------------
+            //! compute the new weights
+            //! ------------------------
+            double sumOfWeights = 0;
+            for(int i=0; i<N; i++)
+            {
+                wg[i] *= alpha[i]/alphaSum;
+                sumOfWeights += wg[i];
+            }
+
+            if(sumOfWeights==0)
+            {
+                cerr<<"Ng_MeshVS_DataSourceFace::computeNormalAtNodes()->____abnormal termination at line 5220____"<<endl;
+                exit(1);
+            }
+
+            //! ----------------------
+            //! normalize the weights
+            //! ----------------------
+            for(int i=0; i<N; i++) wg[i] /= sumOfWeights;
+
+            //! -----------------------------------
+            //! compute a new normal approximation
+            //! -----------------------------------
+            double Sx, Sy, Sz;
+            Sx = Sy = Sz = 0;
+            for(int i=0; i<N; i++)
+            {
+                int curLocalElementID = attachedElementsLocalIDs[i];
+                double nx_i = myElemNormals->Value(curLocalElementID,1);
+                double ny_i = myElemNormals->Value(curLocalElementID,2);
+                double nz_i = myElemNormals->Value(curLocalElementID,3);
+
+                double w_i = wg[i];
+                Sx += w_i*nx_i;
+                Sy += w_i*ny_i;
+                Sz += w_i*nz_i;
+            }
+            double normS = sqrt(Sx*Sx+Sy*Sy+Sz*Sz);
+
+            if(normS==0)
+            {
+                cerr<<"Ng_MeshVS_DataSource2D::computeNormalAtNodes()->____abnormal termination at line 1672____"<<endl;
+                exit(3);               // should never occur
+            }
+
+            NPcorrection[0] = Sx/normS;
+            NPcorrection[1] = Sy/normS;
+            NPcorrection[2] = Sz/normS;
+
+            //! -------------
+            //! relax normal
+            //! -------------
+            NPnew[0] = b*NPcorrection[0] + oneminusb*NP[0];
+            NPnew[1] = b*NPcorrection[1] + oneminusb*NP[1];
+            NPnew[2] = b*NPcorrection[2] + oneminusb*NP[2];
+
+            double lNpNew = sqrt(pow(NPnew[0],2)+pow(NPnew[1],2)+pow(NPnew[2],2));
+            NPnew[0] /= lNpNew;
+            NPnew[1] /= lNpNew;
+            NPnew[2] /= lNpNew;
+
+            dotErr = NPnew[0]*NP[0]+NPnew[1]*NP[1]+NPnew[2]*NP[2];
+            dotErr /= sqrt(pow(NPnew[0],2)+pow(NPnew[1],2)+pow(NPnew[2],2))*sqrt(pow(NP[0],2)+pow(NP[1],2)+pow(NP[2],2));
+
+            NP[0] = NPnew[0];
+            NP[1] = NPnew[1];
+            NP[2] = NPnew[2];
+
+            if(dotErr<-1) dotErr = -1;
+            if(dotErr> 1) dotErr = 1;
+            angleErr = std::acos(dotErr);
+            if(angleErr<=limit) break;
+        }
+
+        //! --------------------------------------
+        //! record the normal at the current node
+        //! --------------------------------------
+        QList<double> aNormal { NP[0],NP[1],NP[2] };
+        myNodeNormals.insert(globalNodeID,aNormal);
+
+        //fprintf(fp,"%d\t%lf\t%lf\t%lf\n",globalNodeID,NP[0],NP[1],NP[2]);
+    }
+    //fclose(fp);
+}
+#endif
 
 //! ----------------------------------
 //! function: computeNormalAtElements
@@ -1530,9 +1732,10 @@ void Ng_MeshVS_DataSource2D::computeNormalAtElements()
         int localElementID = myElementsMap.FindIndex(globalElementID);
         int NbNodes;
         double buf[30];
-        TColStd_Array1OfReal coords(*buf,1,30);
+        TColStd_Array1OfReal coords(*buf,1,24);
         MeshVS_EntityType type;
         this->GetGeom(globalElementID,true,coords,NbNodes,type);
+
         for(int i=0; i<NbNodes; i++)
         {
             int s = 3*i;
@@ -1541,12 +1744,19 @@ void Ng_MeshVS_DataSource2D::computeNormalAtElements()
             double z = coords(s+3);
             polygon::Point aPoint(x,y,z);
             points.push_back(aPoint);
+
         }
+
         const std::vector<double> &n = polygon::getNormal(points);
         myElemNormals->SetValue(localElementID,1,n[0]);
         myElemNormals->SetValue(localElementID,2,n[1]);
         myElemNormals->SetValue(localElementID,3,n[2]);
     }
+
+    //! -----------------------
+    //! put here for debugging
+    //! -----------------------
+    this->computeNormalAtNodes();
 }
 
 //! -----------------------------
@@ -1567,10 +1777,10 @@ std::vector<double> Ng_MeshVS_DataSource2D::getNodeCoordinates(int localNodeID)
     return coords;
 }
 
-//! ------------------------------------------------
+//! --------------------------------------------
 //! function: computeNodeToElementsConnectivity
-//! details:  compute node to elementd connectivity
-//! ------------------------------------------------
+//! details:
+//! --------------------------------------------
 void Ng_MeshVS_DataSource2D::computeNodeToElementsConnectivity()
 {
     cout<<"Ng_MeshVS_DataSource2D::computeNodeToElementsConnectivity()->____function called____"<<endl;
@@ -1580,14 +1790,8 @@ void Ng_MeshVS_DataSource2D::computeNodeToElementsConnectivity()
     //! -------------------------------
     for(int localElementID=1; localElementID<=myNumberOfElements; localElementID++)
     {
-        cout<<"@____element: "<<localElementID<<" of "<<myNumberOfElements<<endl;
-
-        //! -------------------------------------
-        //! iterate over the nodes of an element
-        //! -------------------------------------
         int NbNodes;
         int eType = myElemType->Value(localElementID);
-        cout<<"++++"<<endl;
         switch(eType)
         {
         case TRIG: NbNodes = 3; break;
@@ -1599,10 +1803,7 @@ void Ng_MeshVS_DataSource2D::computeNodeToElementsConnectivity()
         for(int k=1; k<=NbNodes; k++)
         {
             int globalNodeID = myElemNodes->Value(localElementID,k);
-            cout<<" ("<<globalNodeID;
-
             int localNodeID = myNodesMap.FindIndex(globalNodeID);
-            cout<<", "<<localNodeID<<") "<<endl;
 
             if(!myNodeToElements.contains(localNodeID))
             {
@@ -1660,22 +1861,6 @@ void Ng_MeshVS_DataSource2D::computeNodeToElementsConnectivity()
         myNodeToElements.insert(curKey,elementNumbers);
     }
     */
-    //! -----------
-    //! diagnostic
-    //! -----------
-    /*
-    FILE *f =fopen("D:/connectivityTable.txt","w");
-    for(int i=1; i<=myNumberOfNodes; i++)
-    {
-        int localNodeID = i;
-        QList<int> listOfElements = myNodeToElements.value(localNodeID);
-        fprintf(f,"%d\t",localNodeID);
-        for(int k=0; k<listOfElements.length()-2; k++)
-            fprintf(f,"%d\t",listOfElements.at(k));
-        fprintf(f,"%d\n",listOfElements.last());
-    }
-    fclose(f);
-    */
 }
 
 //! ---------------------------
@@ -1730,11 +1915,11 @@ void Ng_MeshVS_DataSource2D::displaceMySelf(const QMap<int, gp_Vec> &displacemen
 std::vector<mesh::tolerantPoint> Ng_MeshVS_DataSource2D::buildTolerantPoints(double tolerance)
 {
     std::vector<mesh::tolerantPoint> points;
-    for(int i=1; i<=myNumberOfNodes; i++)
+    for(int localNodeID=1; localNodeID<=myNumberOfNodes; localNodeID++)
     {
-        double x = myNodeCoords->Value(i,1);
-        double y = myNodeCoords->Value(i,2);
-        double z = myNodeCoords->Value(i,3);
+        double x = myNodeCoords->Value(localNodeID,1);
+        double y = myNodeCoords->Value(localNodeID,2);
+        double z = myNodeCoords->Value(localNodeID,3);
         mesh::tolerantPoint aP(x,y,z,tolerance);
         points.push_back((aP));
     }

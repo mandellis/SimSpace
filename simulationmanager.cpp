@@ -2404,6 +2404,8 @@ void SimulationManager::handleItem(int type)
     case 300: mySimulationDataBase->createParticlesInFieldsRootNode(); break;
     case 301: this->createSimulationNode(SimulationNodeClass::nodeType_electrostaticPotential); break;
 
+    case 52: exit(11); break;
+
 #ifdef COSTAMP_VERSION
     case 1000:
         cout<<"____case 1000: start the time step builder tool____"<<endl;

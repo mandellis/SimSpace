@@ -1,14 +1,23 @@
 //#define WRITE_DIAG_FILE
 
+//! ----------------
+//! custom includes
+//! ----------------
 #include "mshConvert.h"
 
+//! -------
 //! libigl
+//! -------
 #include <libigl/include/igl/readMSH.h>
 
+//! -------
 //! pymesh
+//! -------
 #include <MshLoader.h>
 
+//! ----
 //! C++
+//! ----
 #include <iostream>
 #include <fstream>
 using namespace std;
