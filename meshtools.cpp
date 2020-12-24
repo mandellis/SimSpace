@@ -1847,3 +1847,66 @@ bool MeshTools::saveSTL(const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS, cons
     fclose(aFile);
     return true;
 }
+/*
+//! ------------------------------------------------
+//! function: buildPointToVolumeElementConnectivity
+//! details:
+//! ------------------------------------------------
+bool MeshTools::buildPointToVolumeElementConnectivity(const occHandle(Ng_MeshVS_DataSource3D) &aVolumeMeshDS, std::map<int,std::vector<int>> &connectivityMap)
+{
+    cout<<"MeshTools::buildPointToVolumeElementConnectivity()->____function called____"<<endl;
+    if(aVolumeMeshDS.IsNull()) return false;
+    if(aVolumeMeshDS->GetAllElements().Extent()==0) return false;
+    if(aVolumeMeshDS->GetAllNodes().Extent()<4) return false;
+
+    for(TColStd_MapIteratorOfPackedMapOfInteger it(aVolumeMeshDS->GetAllElements()); it.More(); it.Next())
+    {
+        int globalElementID = it.Key();
+        int NbNodes, buf[8];
+        TColStd_Array1OfInteger nodeIDs(*buf,1,8);
+        aVolumeMeshDS->GetNodesByElement(globalElementID,nodeIDs,NbNodes);
+        for(int n=1; n<=NbNodes; n++)
+        {
+            int globalNodeID = nodeIDs(n);
+            std::map<int,std::vector<int>>::iterator it_ = connectivityMap.find(globalNodeID);
+            if(it_==connectivityMap.end())
+            {
+                std::vector<int> v { globalElementID };
+                connectivityMap.insert(std::make_pair(globalNodeID,v));
+            }
+            else it_->second.push_back(globalElementID);
+        }
+    }
+    cout<<"MeshTools::buildPointToVolumeElementConnectivity()->____exiting function____"<<endl;
+}
+*/
+//! ------------------------------------------
+//! function: buildPointToElementConnectivity
+//! details:
+//! ------------------------------------------
+bool MeshTools::buildPointToElementConnectivity(const occHandle(MeshVS_DataSource) &aMeshDS, std::map<int,std::vector<int>> &connectivityMap)
+{
+    cout<<"MeshTools::buildPointToVolumeElementConnectivity()->____function called____"<<endl;
+    if(aMeshDS.IsNull()) return false;
+    if(aMeshDS->GetAllElements().Extent()<1) return false;
+    for(TColStd_MapIteratorOfPackedMapOfInteger it(aMeshDS->GetAllElements()); it.More(); it.Next())
+    {
+        int globalElementID = it.Key();
+        int NbNodes, buf[8];
+        TColStd_Array1OfInteger nodeIDs(*buf,1,8);
+        aMeshDS->GetNodesByElement(globalElementID,nodeIDs,NbNodes);
+        for(int n=1; n<=NbNodes; n++)
+        {
+            int globalNodeID = nodeIDs(n);
+            std::map<int,std::vector<int>>::iterator it_ = connectivityMap.find(globalNodeID);
+            if(it_==connectivityMap.end())
+            {
+                std::vector<int> v { globalElementID };
+                connectivityMap.insert(std::make_pair(globalNodeID,v));
+            }
+            else it_->second.push_back(globalElementID);
+        }
+    }
+    cout<<"MeshTools::buildPointToVolumeElementConnectivity()->____exiting function____"<<endl;
+    return true;
+}

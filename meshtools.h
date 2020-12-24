@@ -158,6 +158,8 @@ public:
     static occHandle(MeshVS_DataSource) mergeMesh(const occHandle(MeshVS_DataSource) &mesh1, const occHandle(MeshVS_DataSource) &mesh2);
     static void computeAngleDefectMap(const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS, std::map<int,double> &mapOfAngleDefect);
     static bool saveSTL(const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS, const std::string &fileName);
+    //static bool buildPointToVolumeElementConnectivity(const occHandle(Ng_MeshVS_DataSource3D) &aVolumeMeshDS, std::map<int,std::vector<int>> &connectivityMap);
+    static bool buildPointToElementConnectivity(const occHandle(MeshVS_DataSource) &aMeshDS, std::map<int,std::vector<int>> &connectivityMap);
 };
 
 class point
