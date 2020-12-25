@@ -1869,8 +1869,6 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const QString &faceFileName,
 //! ---------------------------------------------------------------
 Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const QList<occHandle(Ng_MeshVS_DataSourceFace)> &faceDSList)
 {
-    cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list of "<<faceDSList.length()<<" face mesh data sources____"<<endl;
-
     //! ------------------
     //! fill the node map
     //! ------------------
@@ -1883,10 +1881,10 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const QList<occHandle(Ng_Mesh
         //! -------------
         //! adding nodes
         //! -------------
-        //TColStd_PackedMapOfInteger curNodeMap = curFaceDS->GetAllNodes();
-        for(TColStd_MapIteratorOfPackedMapOfInteger it(curFaceDS->GetAllNodes());it.More();it.Next())
+        TColStd_PackedMapOfInteger curNodeMap = curFaceDS->GetAllNodes();
+        for(TColStd_MapIteratorOfPackedMapOfInteger aNodeIt(curNodeMap);aNodeIt.More();aNodeIt.Next())
         {
-            int globalNodeID = it.Key();
+            int globalNodeID = aNodeIt.Key();
             if(!myNodes.Contains(globalNodeID))
             {
                 myNodes.Add(globalNodeID);
@@ -1898,9 +1896,10 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const QList<occHandle(Ng_Mesh
         //! ----------------
         //! adding elements
         //! ----------------
-        for(TColStd_MapIteratorOfPackedMapOfInteger it(curFaceDS->GetAllElements());it.More();it.Next())
+        TColStd_PackedMapOfInteger curEleMap = curFaceDS->GetAllElements();
+        for(TColStd_MapIteratorOfPackedMapOfInteger anElemIt(curEleMap);anElemIt.More();anElemIt.Next())
         {
-            int globalElementID = it.Key();
+            int globalElementID = anElemIt.Key();
 
             //! ---------------------------------------------------------
             //! if the meshing method is "patch conforming" the faces

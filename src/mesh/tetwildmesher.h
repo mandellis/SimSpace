@@ -10,20 +10,32 @@
 //! Eigen
 #include <Eigen/Dense>
 
+//! ---
 //! Qt
+//! ---
 #include <QObject>
 #include <QString>
 
+//! ----------------
 //! custom includes
+//! ----------------
 #include <ng_meshvs_datasource3d.h>
 
+//! ----
+//! OCC
+//! ----
+#include <TopoDS_Shape.hxx>
+
 class QProcess;
+class meshDataBase;
 
 class tetWildMesher: public QObject
 {
     Q_OBJECT
 
 private:
+
+    meshDataBase *myMeshDB;
 
     Eigen::MatrixXd myVertices;
     Eigen::MatrixXi myFaces;
@@ -47,6 +59,9 @@ public:
     //! set arguments
     void setParameters(float l_rel, float eps_rel);
 
+    //! set mesh data base
+    void setDataBase(meshDataBase *mDB);
+
     //! setRunOnDisk
     void setRunOnDisk(bool flag) { myWillRunOnDisk = flag; }
 
@@ -64,6 +79,15 @@ public:
                         Eigen::MatrixXd &VS, Eigen::MatrixXi &FS);
 
 private:
+
+    //! write mesh sizing field
+    void writeMeshSizingField(int bodyIndex);
+
+    //! sample geometry
+    void sampleGeometry(const TopoDS_Shape &aShape,
+                        void *parametersForSampling,
+                        std::vector<std::vector<double>> &sampledPoints);
+
 
     //! get path of the executable - helper
     std::string getPathOfExecutable();
