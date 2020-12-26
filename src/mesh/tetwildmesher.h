@@ -35,6 +35,13 @@ class tetWildMesher: public QObject
 
 private:
 
+    struct point
+    {
+        point (double aX, double aY, double aZ, double aValue): x(aX),y(aY),z(aZ),value(aValue){;}
+        point (const point &aPoint) { x = aPoint.x; y = aPoint.y; z = aPoint.z; value = aPoint.value; }
+        double x,y,z,value;
+    };
+
     meshDataBase *myMeshDB;
 
     Eigen::MatrixXd myVertices;
@@ -86,7 +93,7 @@ private:
     //! sample geometry
     void sampleGeometry(const TopoDS_Shape &aShape,
                         void *parametersForSampling,
-                        std::vector<std::vector<double>> &sampledPoints);
+                        std::vector<tetWildMesher::point> &sampledPoints);
 
 
     //! get path of the executable - helper

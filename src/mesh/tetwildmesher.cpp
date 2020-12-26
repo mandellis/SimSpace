@@ -242,7 +242,7 @@ std::string tetWildMesher::getPathOfExecutable()
 //! --------------------------------------------------------------------
 void tetWildMesher::sampleGeometry(const TopoDS_Shape &aShape,
                                    void *parametersForSampling,
-                                   std::vector<std::vector<double>> &sampledPoints)
+                                   std::vector<tetWildMesher::point> &sampledPoints)
 {
     cout<<"sampleGeometry::sampleGeometry()->____function called____"<<endl;
     if(aShape.IsNull())
@@ -263,10 +263,11 @@ void tetWildMesher::sampleGeometry(const TopoDS_Shape &aShape,
     {
     case TopAbs_FACE:
     {
-
+        //! ------------------------------------------------------------
+        //! one parameter in "samplingParameters": face sizing at point
+        //! ------------------------------------------------------------
         std::vector<double>* samplingParameters =(std::vector<double>*)(parametersForSampling);
         double elementSizeOnFace = samplingParameters->at(0);
-        Q_UNUSED(elementSizeOnFace);
 
         //! -----------------------------------------------
         //! a new bounding box for the face - a bit larger
@@ -303,7 +304,6 @@ void tetWildMesher::sampleGeometry(const TopoDS_Shape &aShape,
         double du = Lu/100;
         double dv = Lv/100;
 
-        //FILE *fp = fopen("D:\\sampled_face.txt","w");
         for(double ucur = umin; ucur<=umax; ucur += du)
         {
             for(double vcur = vmin; vcur<=vmax; vcur +=dv)
@@ -312,33 +312,32 @@ void tetWildMesher::sampleGeometry(const TopoDS_Shape &aShape,
                 double x = curPoint.X();
                 double y = curPoint.Y();
                 double z = curPoint.Z();
-                //fprintf(fp,"%lf\t%lf\t%lf\n",x,y,z);
 
                 //! --------------------------------------------------
                 //! check if the point is whithin the BB of the shape
                 //! --------------------------------------------------
                 if((x>=xmin_bb && x<=xmax_bb) && (y>=ymin_bb && y<=ymax_bb) && (z>=zmin_bb && z<=zmax_bb))
                 {
-                    std::vector<double> P{x,y,z};
-                    sampledPoints.push_back(P);
+                    point aPoint(x,y,z,elementSizeOnFace);
+                    sampledPoints.push_back(aPoint);
                 }
             }
         }
-        //fclose(fp);
     }
         break;
 
     case TopAbs_EDGE:
     {
-        //! ------------------------------------------------
-        //! parameter for the edge sizing
-        //! at the moment only one parameter in the vector:
-        //! the element size on the edge (length)
-        //! ------------------------------------------------
+        //! ------------------------------------------------------------------------------------------------------
+        //! parameter for the edge sizing: two parameters in the vector
+        //! first parameter: type of sizing:
+        //!                 "0" => through size of the element => the second parameter is the element size
+        //!                 "1" => through number of divisions => the second parameter is the number of divisions
+        //! ------------------------------------------------------------------------------------------------------
         std::vector<double> *samplingParameters =  (std::vector<double>*)(parametersForSampling);
-        double size = samplingParameters->at(0);
 
-        //FILE *fp = fopen("D:\\sampled_edge.txt","w");
+        double typeOfSizing = samplingParameters->at(0);
+        double secondParameter = samplingParameters->at(1);
 
         //! ---------
         //! the edge
@@ -348,9 +347,9 @@ void tetWildMesher::sampleGeometry(const TopoDS_Shape &aShape,
         BRepAdaptor_Curve BRepAdaptor(anEdge);
         GeomAdaptor_Curve curve = BRepAdaptor.Curve();
 
-        //! -------------------
-        //! length of the edge
-        //! -------------------
+        //! -------------------------------
+        //! compute the length of the edge
+        //! -------------------------------
         CPnts_AbscissaPoint CP;
         CP.Init(curve);
         double s_old = BRepAdaptor.FirstParameter();
@@ -358,38 +357,36 @@ void tetWildMesher::sampleGeometry(const TopoDS_Shape &aShape,
         double x = P_onEdge.X();
         double y = P_onEdge.Y();
         double z = P_onEdge.Z();
-        std::vector<double> P{x,y,z};
-        sampledPoints.push_back(P);
 
         double Lcurrent = 0;
         double L = CP.Length(curve,1e-2);
+        double size = 0;
+        if(typeOfSizing == 0) size = secondParameter;
+        else if(typeOfSizing == 1) size = L/secondParameter;
 
+        sampledPoints.push_back(point(x,y,z,size)); // first point of the current edge
         for(double s=s_old-size;Lcurrent<=L+size;)
         {
             CP.Perform(size,s,1e-2);
-
             const gp_Pnt &P1_onEdge = BRepAdaptor.Value(s);
             x = P1_onEdge.X();
             y = P1_onEdge.Y();
             z = P1_onEdge.Z();
-            std::vector<double> P1{x,y,z};
-            //fprintf(fp,"%lf\t%lf\t%lf\n",x,y,z);
-            sampledPoints.push_back(P1);
+            sampledPoints.push_back(point(x,y,z,size));
 
             s_old=s;
             s=CP.Parameter();
             Lcurrent += fabs(s-s_old);
         }
-        //fclose(fp);
     }
         break;
 
     case TopAbs_VERTEX:
     {
-        //! ---------------------------------------------
-        //! parameter for the mesh sizing at the vertex.
-        //! one parameters in the vector: pinball radius
-        //! ---------------------------------------------
+        //! --------------------------------------------------
+        //! parameter for the mesh sizing at the vertex
+        //! only one parameters in the vector: pinball radius
+        //! --------------------------------------------------
         std::vector<double> *samplingParameters = (std::vector<double>*)(parametersForSampling);
 
         //! radial, theta, phi divisions
@@ -401,6 +398,9 @@ void tetWildMesher::sampleGeometry(const TopoDS_Shape &aShape,
         //! pinball
         double R = samplingParameters->at(0);
         double dr = R/radialDiv;
+
+        //! mesh sizing
+        double meshSize = samplingParameters->at(1);
 
         //! coordinates of the selected vertex
         const gp_Pnt &V = BRep_Tool::Pnt(TopoDS::Vertex(aShape));
@@ -416,8 +416,7 @@ void tetWildMesher::sampleGeometry(const TopoDS_Shape &aShape,
                     double x = V.X()+r*cos(phi)*cos(theta);
                     double y = V.Y()+r*cos(phi)*sin(theta);
                     double z = V.Z()+r*sin(phi);
-                    std::vector<double> P1{x,y,z};
-                    sampledPoints.push_back(P1);
+                    sampledPoints.push_back(point(x,y,z,meshSize));
                 }
             }
         }
@@ -425,7 +424,6 @@ void tetWildMesher::sampleGeometry(const TopoDS_Shape &aShape,
         break;
     }
 }
-
 
 //! -------------------------------
 //! function: writeMeshSizingField
@@ -437,11 +435,10 @@ void tetWildMesher::sampleGeometry(const TopoDS_Shape &aShape,
 #include <MshSaver.h>
 void tetWildMesher::writeMeshSizingField(int bodyIndex)
 {
-    struct point
-    {
-        double x,y,z;
-        double value;
-    };
+    //! ---------------------------
+    //! mesh sizing field by point
+    //! ---------------------------
+    std::vector<tetWildMesher::point> meshSizingField;
 
     //! -----------------------------------------------------
     //! retrieve the mesh size parameters from the data base
@@ -457,58 +454,95 @@ void tetWildMesher::writeMeshSizingField(int bodyIndex)
     //! -----------------------
     //! mesh controls on faces
     //! -----------------------
-    std::vector<double> parametersFaces;
-    void *parametersForSamplingFaces = (void*)(&parametersFaces);
-    //! to be filled ...
-    //!
     int NbFaces = myMeshDB->MapOfBodyTopologyMap.value(bodyIndex).faceMap.Extent();
     for(int faceNr = 1; faceNr<=NbFaces; faceNr++)
     {
         bool isMeshControlOnFace = myMeshDB->MapOfIsFaceModified.getValue(bodyIndex,faceNr);
         if(isMeshControlOnFace == false) continue;
-        std::vector<std::vector<double>> sampledPoints;
+
+        //! ------------------------------------------------------------
+        //! retrieve the mesh face sizing for the current body and face
+        //! from the mesh data base
+        //! ------------------------------------------------------------
+        std::vector<double> parametersFaces;
+        double faceMeshSizing = myMeshDB->MapOfElementSizeOnFace.getValue(bodyIndex,faceNr);
+        parametersFaces.push_back(faceMeshSizing);
+        void *parametersForSamplingFaces = (void*)(&parametersFaces);
+
         TopoDS_Shape aFace = myMeshDB->MapOfBodyTopologyMap.value(bodyIndex).faceMap.FindKey(faceNr);
         if(aFace.IsNull()) continue;
-        this->sampleGeometry(aFace,parametersForSamplingFaces,sampledPoints);
+        std::vector<tetWildMesher::point> meshSizingFieldOnFace;
+        this->sampleGeometry(aFace,parametersForSamplingFaces,meshSizingFieldOnFace);
 
+        //! ---------------------------
+        //! fill the mesh sizing field
+        //! ---------------------------
+        for(std::vector<tetWildMesher::point>::iterator it = meshSizingFieldOnFace.begin(); it!= meshSizingFieldOnFace.end(); it++)
+        {
+            const tetWildMesher::point &aSampledPoint = *it;
+            meshSizingField.push_back(aSampledPoint);
+        }
     }
 
     //! -----------------------
     //! mesh controls on edges
     //! -----------------------
-    std::vector<double> parametersEdges;
-    void *parametersForSamplingEdges = (void*)(&parametersEdges);
-    //! to be filled ....
-
     int NbEdges = myMeshDB->MapOfBodyTopologyMap.value(bodyIndex).edgeMap.Extent();
     for(int edgeNr = 1; edgeNr<=NbEdges; edgeNr++)
     {
         bool isMeshControlOnEdge = myMeshDB->MapOfIsEdgeModified.getValue(bodyIndex,edgeNr);
         if(isMeshControlOnEdge == false) continue;
-        std::vector<std::vector<double>> sampledPoints;
         TopoDS_Shape anEdge = myMeshDB->MapOfBodyTopologyMap.value(bodyIndex).edgeMap.FindKey(edgeNr);
         if(anEdge.IsNull()) continue;
-        this->sampleGeometry(anEdge,parametersForSamplingEdges,sampledPoints);
 
+        //! ------------------------------------------------------------
+        //! retrieve the mesh face sizing for the current body and face
+        //! from the mesh data base
+        //! ------------------------------------------------------------
+        double typeOfSizing = myMeshDB->MapOfSizingTypeOnEdge.getValue(bodyIndex,edgeNr);
+        double secondParameter = myMeshDB->MapOfElementSizeOnEdge.getValue(bodyIndex,edgeNr);
+        std::vector<double> parametersEdge { typeOfSizing, secondParameter };
+        void *parametersForSamplingEdge = (void*)(&parametersEdge);
+        std::vector<tetWildMesher::point> meshSizingFieldOnEdge;
+        this->sampleGeometry(anEdge,parametersForSamplingEdge,meshSizingFieldOnEdge);
+
+        //! ---------------------------
+        //! fill the mesh sizing field
+        //! ---------------------------
+        for(std::vector<tetWildMesher::point>::iterator it = meshSizingFieldOnEdge.begin(); it!= meshSizingFieldOnEdge.end(); it++)
+        {
+            const tetWildMesher::point &aSampledPoint = *it;
+            meshSizingField.push_back(aSampledPoint);
+        }
     }
 
-    //! ------------------------
+    //! -------------------------------------------
     //! mesh controls on points
-    //! ------------------------
-    std::vector<double> parametersPoints;
-    void *parametersForSamplingPoints = (void*)(&parametersPoints);
-    //! to be filled ...
-
+    //! first parameter: pinball radius
+    //! second parameter: mesh size within pinball
+    //! -------------------------------------------
     int NbVertex = myMeshDB->MapOfBodyTopologyMap.value(bodyIndex).vertexMap.Extent();
-    for(int vertexNr = 1; vertexNr<=NbEdges; vertexNr++)
+    for(int vertexNr = 1; vertexNr<=NbVertex; vertexNr++)
     {
         bool isMeshControlOnVertex = myMeshDB->MapOfIsVertexModified.getValue(bodyIndex,vertexNr);
         if(isMeshControlOnVertex == false) continue;
-        std::vector<std::vector<double>> sampledPoints;
         TopoDS_Shape aVertex = myMeshDB->MapOfBodyTopologyMap.value(bodyIndex).vertexMap.FindKey(vertexNr);
         if(aVertex.IsNull()) continue;
-        this->sampleGeometry(aVertex,parametersForSamplingPoints,sampledPoints);
 
+        double pinBallRadius = myMeshDB->MapOfVertexPinball.getValue(bodyIndex,vertexNr);
+        double meshPointSize = myMeshDB->MapOfElementSizeOnVertex.getValue(bodyIndex,vertexNr);
+        std::vector<double> parameterPoint { pinBallRadius, meshPointSize };
+        void *parametersForSamplingPoint = (void*)(&parameterPoint);
+        std::vector<tetWildMesher::point> meshSizingFieldOnVertex;
+        this->sampleGeometry(aVertex,parametersForSamplingPoint,meshSizingFieldOnVertex);
+
+        //! ---------------------------
+        //! fill the mesh sizing field
+        //! ---------------------------
+        for(std::vector<tetWildMesher::point>::iterator it = meshSizingFieldOnVertex.begin(); it!= meshSizingFieldOnVertex.end(); it++)
+        {
+            const tetWildMesher::point &aSampledPoint = *it;
+            meshSizingField.push_back(aSampledPoint);
+        }
     }
-
 }
