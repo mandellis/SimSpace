@@ -1,4 +1,4 @@
-#define TETWILD_PATH "D:/Work/Qt/build_simSpace/release/FloatTetwild_bin.exe"
+//#define TETWILD_PATH "D:/Work/Qt/build_simSpace/release/FloatTetwild_bin.exe"
 
 //! -------
 //! pyMesh
@@ -89,9 +89,9 @@ tetWildMesher::tetWildMesher(QObject *parent):QObject(parent),
 //! ---------------------
 tetWildMesher::~tetWildMesher()
 {
-    Sleep(2000);
     cout<<"tetWildMesher::~tetWildMesher()->____DESTRUCTOR CALLED____"<<endl;
-    this->removeSupportFilesDirectory();
+    //Sleep(2000);    // this is for checking by the eye view the presence of the support files directory
+    //this->removeSupportFilesDirectory();
 }
 
 //! ---------------------------------------------------------------------
@@ -167,15 +167,14 @@ bool tetWildMesher::perform_onDisk(const QString &absoluteInputFilePath)
     //! search for fTetWild_bin.exe
     //! as a general rule the file should placed into the executable directory
     //! -----------------------------------------------------------------------
-    /*
     std::string exePath = this->getPathOfExecutable()+"\\FloatTetwild_bin.exe";
-    cout<<"@____fTetWildPath: "<<exePath<<"____"<<endl;
+    //cout<<"@____fTetWildPath: "<<exePath<<"____"<<endl;
     struct stat buf;
     int fileExist = stat(exePath.c_str(),&buf);
     if(fileExist!=0) return false;
     myTetWildProcess->setProgram(QString::fromStdString(exePath));
-    */
-    myTetWildProcess->setProgram(TETWILD_PATH);
+
+    //myTetWildProcess->setProgram(TETWILD_PATH);
 
     //! --------------
     //! set arguments
@@ -263,14 +262,12 @@ void tetWildMesher::readTetWildProcess()
 //! ------------------------------
 std::string tetWildMesher::getPathOfExecutable()
 {
-    LPWSTR buffer;
-    GetModuleFileName(NULL, buffer, MAX_PATH);
-    std::string aString;
-    aString.reserve(wcslen(buffer));
-    for (;*buffer; buffer++) aString += (char)*buffer;
-    std::string::size_type pos = aString.find_last_of("\\/");
-    if (pos == std::string::npos) return "";
-    return aString.substr(0, pos);
+    TCHAR buffer[MAX_PATH] = { 0 };
+    GetModuleFileName( NULL, buffer, MAX_PATH );
+    std::wstring::size_type pos = std::wstring(buffer).find_last_of(L"\\/");
+    std::wstring currentPathWS = std::wstring(buffer).substr(0, pos);
+    string currentPath = string(currentPathWS.begin(), currentPathWS.end());
+    return currentPath;
 }
 
 //! --------------------------------------------------------------------
@@ -669,7 +666,11 @@ bool tetWildMesher::writeMeshSizingField(const std::string &backgroundMesh, cons
     //! tetgen.exe location
     //! --------------------
     char tetgenExeLocation[128];
-    sprintf(tetgenExeLocation,"D:/tetgen1.5.0/build/Release/tetgen.exe");
+    string currentPath = this->getPathOfExecutable();
+    sprintf(tetgenExeLocation,"%s\\tetgen.exe",currentPath.c_str());
+    cout<<"____"<<tetgenExeLocation<<"____"<<endl;
+    //exit(2);
+    //sprintf(tetgenExeLocation,"D:/tetgen1.5.0/build/Release/tetgen.exe");
 
     //! ------------------------------------
     //! execute tetgen throgh shell command
@@ -702,7 +703,7 @@ bool tetWildMesher::writeMeshSizingField(const std::string &backgroundMesh, cons
 
     cout<<"____"<<OCCBkgMeshDS->GetAllElements().Extent()<<"____"<<endl;
     cout<<"____"<<OCCBkgMeshDS->GetAllNodes().Extent()<<"____"<<endl;
-    exit(1);
+    exit(111);
 
     //! ------------------------------------------------------
     //! convert the OCC volume mesh into Eigen representation
