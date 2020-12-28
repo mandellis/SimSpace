@@ -319,10 +319,10 @@ bool TetgenMesher::buildPLC(const occHandle(MeshVS_DataSource) &aSurfaceMesh)
     return true;
 }
 
-//! -------------------------------------------------------------------------
+//! -----------------
 //! function: SEfunc
-//! details:  delocalize perform in order to catch also unhandled exceptions
-//! -------------------------------------------------------------------------
+//! details:
+//! -----------------
 void TetgenMesher::SEFunc(tetgenio *meshOut)
 {
     __try
@@ -404,18 +404,6 @@ bool TetgenMesher::perform(tetgenio *meshOut, int bodyIndex, QString &message)
         message = "Tetgen unknown error";
         return false;
     }
-
-    //! --------------
-    //! save the mesh
-    //! --------------
-    //QDir curDir(myPLCMesh);
-    //QString outFileName = myMeshDB->MapOfBodyNames.value(bodyIndex);
-    //QString outFilePath = curDir.absolutePath()+"/"+outFileName+"_out";
-    //char fpout[512];
-    //sprintf(fpout,outFilePath.toStdString().c_str());
-    //meshOut->save_nodes(fpout);
-    //meshOut->save_elements(fpout);
-    //meshOut->save_faces(fpout);
 
     message = "Tetgen mesh OK";
     return true;

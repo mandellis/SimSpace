@@ -1,5 +1,15 @@
 #define TETWILD_PATH "D:/Work/Qt/build_simSpace/release/FloatTetwild_bin.exe"
 
+//! -------
+//! pyMesh
+//! -------
+#include <MshSaver.h>
+
+//! ---------------
+//! tetgen library
+//! ---------------
+#include <tetgen/inc/tetgen.h>
+
 //! ----------------
 //! custom includes
 //! ----------------
@@ -17,6 +27,8 @@
 //! ----
 //! C++
 //! ----
+#include <direct.h>
+#include <random>
 #include <iostream>
 using namespace std;
 
@@ -41,6 +53,24 @@ using namespace std;
 #include <sys/stat.h>
 #include <windows.h>
 
+#include <stdio.h>
+#include <dirent.h>
+#define SUCCESS_STAT 0
+
+//! --------------------------------------
+//! function: dirExists
+//! details:  check if a directory exists
+//! --------------------------------------
+bool dirExists(std::string dir_path)
+{
+    struct stat sb;
+
+    if (stat(dir_path.c_str(), &sb) == 0 && S_ISDIR(sb.st_mode))
+        return true;
+    else
+        return false;
+}
+
 //! ----------------------
 //! function: constructor
 //! details:
@@ -50,6 +80,18 @@ tetWildMesher::tetWildMesher(QObject *parent):QObject(parent),
     myAbsoluteOutputFilePath("")
 {
     myTetWildProcess = new QProcess(this);
+    this->createSupportFilesDirectory();
+}
+
+//! ---------------------
+//! function: destructor
+//! details:
+//! ---------------------
+tetWildMesher::~tetWildMesher()
+{
+    Sleep(2000);
+    cout<<"tetWildMesher::~tetWildMesher()->____DESTRUCTOR CALLED____"<<endl;
+    this->removeSupportFilesDirectory();
 }
 
 //! ---------------------------------------------------------------------
@@ -76,7 +118,7 @@ void tetWildMesher::setInput(const Eigen::MatrixXd &VI, const Eigen::MatrixXi &F
 //! details:  meshParam contains default parameters.
 //!           Using this function they are by-passed
 //! -------------------------------------------------
-void tetWildMesher::setParameters(float l_rel, float eps_rel)
+void tetWildMesher::setGlobalParameters(float l_rel, float eps_rel)
 {
     myMeshParam.eps_rel = eps_rel;
     myMeshParam.initial_edge_len_rel = l_rel;
@@ -151,11 +193,6 @@ bool tetWildMesher::perform_onDisk(const QString &absoluteInputFilePath)
     cout<<"@____running fTetWild mesher with arguments: ";
     for(int i=0; i<arguments.length(); i++) cout<<arguments.at(i).toStdString()<<" ";
     cout<<endl;
-
-    //cout<<"@____input file absolute  path: "<<absoluteInputFilePath.toStdString()<<endl;
-    //cout<<"@____output file absolute path: "<<absoluteOuputFilePath.toStdString()<<endl;
-    //cout<<"@____envelope relative size: "<<myMeshParam.eps_rel<<endl;
-    //cout<<"@____initial relative edge length: "<<myMeshParam.initial_edge_len_rel<<endl;
 
     disconnect(myTetWildProcess,SIGNAL(readyReadStandardOutput()),this,SLOT(readTetWildProcess()));
     connect(myTetWildProcess,SIGNAL(readyReadStandardOutput()),this,SLOT(readTetWildProcess()));
@@ -295,14 +332,14 @@ void tetWildMesher::sampleGeometry(const TopoDS_Shape &aShape,
         //! --------------------------------------------------
         //! retrieve the u,v bounds
         //! enclose the into a rectangle and perform sampling
-        //! for the moment a 100x100 grid is used ...
+        //! for the moment a 10x10 grid is used ...
         //! --------------------------------------------------
         double umin,umax,vmin,vmax;
         BRepTools::UVBounds(aFace,umin,umax,vmin,vmax);
         double Lu = umax-umin;
         double Lv = vmax-vmin;
-        double du = Lu/100;
-        double dv = Lv/100;
+        double du = Lu/10;
+        double dv = Lv/10;
 
         for(double ucur = umin; ucur<=umax; ucur += du)
         {
@@ -372,8 +409,7 @@ void tetWildMesher::sampleGeometry(const TopoDS_Shape &aShape,
             x = P1_onEdge.X();
             y = P1_onEdge.Y();
             z = P1_onEdge.Z();
-            sampledPoints.push_back(point(x,y,z,size));
-
+            sampledPoints.push_back(point(x,y,z,size)); // other points of the edge
             s_old=s;
             s=CP.Parameter();
             Lcurrent += fabs(s-s_old);
@@ -425,21 +461,13 @@ void tetWildMesher::sampleGeometry(const TopoDS_Shape &aShape,
     }
 }
 
-//! -------------------------------
+//! -------------------------------------------------------------------------
 //! function: writeMeshSizingField
-//! details:
-//! -------------------------------
-//! -------
-//! pymesh
-//! -------
-#include <MshSaver.h>
-void tetWildMesher::writeMeshSizingField(int bodyIndex)
+//! details:  the mesh sizing fiels is defined through a vector of locations
+//!           having a value (the mesh size at location)
+//! -------------------------------------------------------------------------
+void tetWildMesher::computeMeshSizingField(int bodyIndex, std::vector<tetWildMesher::point> &meshSizingField)
 {
-    //! ---------------------------
-    //! mesh sizing field by point
-    //! ---------------------------
-    std::vector<tetWildMesher::point> meshSizingField;
-
     //! -----------------------------------------------------
     //! retrieve the mesh size parameters from the data base
     //! -----------------------------------------------------
@@ -545,4 +573,222 @@ void tetWildMesher::writeMeshSizingField(int bodyIndex)
             meshSizingField.push_back(aSampledPoint);
         }
     }
+}
+
+void ReplaceStringInPlace(std::string& subject, const std::string& search,
+                          const std::string& replace) {
+    size_t pos = 0;
+    while((pos = subject.find(search, pos)) != std::string::npos) {
+         subject.replace(pos, search.length(), replace);
+         pos += replace.length();
+    }
+}
+
+//! -------------------------------
+//! function: writeMeshSizingField
+//! details:
+//! -------------------------------
+bool tetWildMesher::writeMeshSizingField(const std::string &backgroundMesh, const std::vector<tetWildMesher::point> &inputMeshSizingField)
+{
+    if(backgroundMesh.empty()) return false;
+    if(inputMeshSizingField.empty()) return false;
+
+    //! -----------------------------------------------------------------------------------------------
+    //! filter the mesh sizing field: the value of the field at a duplicated location will be averaged
+    //! -----------------------------------------------------------------------------------------------
+    std::map<tetWildMesher::point,std::vector<double>> mapOfPointsWithValue;
+    for(std::vector<tetWildMesher::point>::const_iterator it = inputMeshSizingField.cbegin(); it != inputMeshSizingField.cend(); it++)
+    {
+        const tetWildMesher::point &aP = *it;
+        //cout<<aP.x<<"\t"<<aP.y<<"\t"<<aP.z<<"\t"<<aP.value<<endl;
+        std::map<tetWildMesher::point,std::vector<double>>::iterator it1 = mapOfPointsWithValue.find(aP);
+        if(it1==mapOfPointsWithValue.end())
+        {
+            std::vector<double> v { aP.value };
+            mapOfPointsWithValue.insert(std::make_pair(aP,v));
+        }
+        else
+        {
+            it1->second.push_back(aP.value);
+        }
+    }
+
+    //! --------------------------------------------------
+    //! a new sizing field with slighlty perturbed points
+    //! --------------------------------------------------
+    std::random_device rd;      //Will be used to obtain a seed for the random number engine
+    std::mt19937 gen(rd());     //Standard mersenne_twister_engine seeded with rd()
+    std::uniform_real_distribution<> dis(-0.1, 0.1);
+
+    //! ----------------------------------------
+    //! average the values at duplicated points
+    //! ----------------------------------------
+    std::vector<tetWildMesher::point> meshSizingField;
+    for(std::map<tetWildMesher::point,std::vector<double>>::iterator it = mapOfPointsWithValue.begin(); it!=mapOfPointsWithValue.end(); it++)
+    {
+        tetWildMesher::point aPoint = it->first;
+        std::vector<double> values = it->second;
+        double averageValue = 0;
+        int N = 0;
+        for(std::vector<double>::iterator it1 = values.begin(); it1!=values.end(); it1++)
+        {
+            averageValue += *it1;
+            N++;
+        }
+        //cout<<"____"<<values.size()<<"____"<<endl;
+        averageValue /= N;
+        aPoint.x += dis(gen);
+        aPoint.y += dis(gen);
+        aPoint.z += dis(gen);
+        aPoint.value = averageValue;
+        meshSizingField.push_back(aPoint);
+    }
+
+    int NbPoints = int(meshSizingField.size());
+
+    //! ---------
+    //! use disk
+    //! ---------
+    char tetgenNodeFilePath[512];
+    sprintf(tetgenNodeFilePath,"%s\\%s",mySupportFilesDirectory.c_str(),"meshSizingField.node");
+    cout<<"____"<<tetgenNodeFilePath<<"____"<<endl;
+
+    FILE *fp = fopen(tetgenNodeFilePath,"w");
+    fprintf(fp,"# Node count, 3 dim, no attribute, no boundary marker\n");
+    fprintf(fp,"%d\t%d\t%d\t%d\n",NbPoints,3,0,0);
+
+    for(int n=0; n<NbPoints; n++)
+    {
+        const tetWildMesher::point &aP = meshSizingField[n];
+        fprintf(fp,"%d\t%.6lf\t%.6lf\t%.6lf\n",n+1,aP.x,aP.y,aP.z);
+    }
+    fclose(fp);
+
+
+    //! --------------------
+    //! tetgen.exe location
+    //! --------------------
+    char tetgenExeLocation[128];
+    sprintf(tetgenExeLocation,"D:/tetgen1.5.0/build/Release/tetgen.exe");
+
+    //! ------------------------------------
+    //! execute tetgen throgh shell command
+    //! ------------------------------------
+    char command[256];
+    sprintf(command, "%s %s", tetgenExeLocation, tetgenNodeFilePath);
+    system((char *)command);
+
+    char eleFileLocation[512];
+    sprintf(eleFileLocation,"%s\\%s",mySupportFilesDirectory.c_str(),"meshSizingField1.ele");
+    cout<<"____"<<eleFileLocation<<"____"<<endl;
+    char nodeFileLocation[512];
+    sprintf(nodeFileLocation,"%s\\%s",mySupportFilesDirectory.c_str(),"meshSizingField1.node");
+    cout<<"____"<<nodeFileLocation<<"____"<<endl;
+
+    std::string a(nodeFileLocation);
+    ReplaceStringInPlace(a,std::string("\\"),std::string("/"));
+    std::string b(eleFileLocation);
+    ReplaceStringInPlace(b,std::string("\\"),std::string("/"));
+
+    cout<<"____"<<a<<"____"<<endl;
+    cout<<"____"<<b<<"____"<<endl;
+
+    occHandle(Ng_MeshVS_DataSource3D) OCCBkgMeshDS = new Ng_MeshVS_DataSource3D(QString::fromStdString(b),
+                                                                                QString::fromStdString(a));
+
+    if(OCCBkgMeshDS.IsNull()) return false;
+    if(OCCBkgMeshDS->GetAllElements().Extent()==0) return false;
+    if(OCCBkgMeshDS->GetAllNodes().Extent()<3) return false;
+
+    cout<<"____"<<OCCBkgMeshDS->GetAllElements().Extent()<<"____"<<endl;
+    cout<<"____"<<OCCBkgMeshDS->GetAllNodes().Extent()<<"____"<<endl;
+    exit(1);
+
+    //! ------------------------------------------------------
+    //! convert the OCC volume mesh into Eigen representation
+    //! ------------------------------------------------------
+    Eigen::MatrixXd V;
+    Eigen::MatrixXi F;
+
+    V.resize(NbPoints,4);
+    TColStd_MapIteratorOfPackedMapOfInteger it;
+    int NbNodes;
+    MeshVS_EntityType type;
+    double buf[3];
+    TColStd_Array1OfReal coords(*buf,1,3);
+    for(TColStd_MapIteratorOfPackedMapOfInteger it(OCCBkgMeshDS->GetAllNodes());it.More();it.Next())
+    {
+        int globalID = it.Key();
+        int localNodeID = OCCBkgMeshDS->myNodesMap.FindIndex(globalID);
+        OCCBkgMeshDS->GetGeom(globalID,false,coords,NbNodes,type);
+        int pos = localNodeID-1;
+        V(pos,0) = coords(1);
+        V(pos,1) = coords(2);
+        V(pos,2) = coords(3);
+    }
+
+    int NE = OCCBkgMeshDS->GetAllElements().Extent();
+    F.resize(NE,4);
+
+    int bufn[3];
+    TColStd_Array1OfInteger nodeIDs(*bufn,1,3);
+    for(TColStd_MapIteratorOfPackedMapOfInteger it(OCCBkgMeshDS->GetAllElements());it.More();it.Next())
+    {
+        int globalElementID = it.Key();
+        int localElementID = OCCBkgMeshDS->myElementsMap.FindIndex(globalElementID);
+        OCCBkgMeshDS->GetNodesByElement(globalElementID,nodeIDs,NbNodes);
+
+        int pos = localElementID-1;
+        for(int i=1; i<=NbNodes; i++)
+        {
+            int curGlobalNodeID = nodeIDs.Value(i);
+            int curLocalNodeID = OCCBkgMeshDS->myNodesMap.FindIndex(curGlobalNodeID);
+            F(pos,i-1) = curLocalNodeID-1;
+        }
+    }
+
+    PyMesh::MshSaver aMshSaver("D:/sizingFunctionMsh.msh",false);
+    aMshSaver.save_header();
+    aMshSaver.save_nodes(V);
+    aMshSaver.save_elements(F,PyMesh::MshSaver::TET);
+    //aMshSaver.save_scalar_field("Mesh sizing function",);
+    return true;
+}
+
+//! -------------------------------------
+//! function: createSupportFileDirectory
+//! details:
+//! -------------------------------------
+void tetWildMesher::createSupportFilesDirectory()
+{
+    //! -------------------------------
+    //! get the path of the executable
+    //! -------------------------------
+    TCHAR buffer[MAX_PATH] = { 0 };
+    GetModuleFileName( NULL, buffer, MAX_PATH );
+    std::wstring::size_type pos = std::wstring(buffer).find_last_of(L"\\/");
+    std::wstring currentPathWS = std::wstring(buffer).substr(0, pos);
+    string currentPath = string(currentPathWS.begin(), currentPathWS.end());
+
+    //! -------------------------------------------
+    //! create the directory for the support files
+    //! -------------------------------------------
+    mySupportFilesDirectory = currentPath+"\\supportFiles";
+
+    //! ---------------------------
+    //! remove if already existing
+    //! ---------------------------
+    experimental::filesystem::path path(mySupportFilesDirectory.c_str());
+    if(dirExists(mySupportFilesDirectory)==true) experimental::filesystem::remove_all(path);
+    experimental::filesystem::create_directory(path);
+}
+
+//! --------------------------------------
+//! function: removeSupportFilesDirectory
+//! detail:
+//! --------------------------------------
+void tetWildMesher::removeSupportFilesDirectory()
+{
+    experimental::filesystem::path path(mySupportFilesDirectory.c_str());
+    experimental::filesystem::remove_all(path);
 }

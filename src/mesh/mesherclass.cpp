@@ -603,9 +603,9 @@ void MesherClass::generateMesh()
                             QString inputSoup = this->processTetWildSTL(bodyIndex);
                             tetWildMesher aTetWildMesher;
 
-                            //! -------------------
-                            //! meshing parameters
-                            //! -------------------
+                            //! --------------------------
+                            //! global meshing parameters
+                            //! --------------------------
                             double envelopeSize;    //! in TetWild command line this parameter is relative
                             double idealLength;     //! in TetWild command line this parameter is relative
 
@@ -633,7 +633,17 @@ void MesherClass::generateMesh()
                                 D = sqrt(L1*L1+L2*L2+L3*L3);
                                 idealLength = absoluteLength/D;
                             }
-                            aTetWildMesher.setParameters(idealLength,envelopeSize);
+                            aTetWildMesher.setGlobalParameters(idealLength,envelopeSize);
+
+                            //! --------------------------------------------------
+                            //! by setting the mesh data base the mesh engine
+                            //! can gain access to the local mesh sizing controls
+                            //! --------------------------------------------------
+                            aTetWildMesher.setDataBase(myMeshDB);
+                            std::vector<tetWildMesher::point> meshSizingField;
+                            aTetWildMesher.computeMeshSizingField(bodyIndex,meshSizingField);
+                            aTetWildMesher.writeMeshSizingField("D:/meshSizingField.msh",meshSizingField);
+
                             bool isDone = aTetWildMesher.perform_onDisk(inputSoup);
 
                             if(isDone == false)

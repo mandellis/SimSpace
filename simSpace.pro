@@ -186,7 +186,9 @@ SOURCES += main.cpp\
     src/mesh/datasourcebuilder.cpp \
     src/mesh/smoothingtools.cpp \
     src/mesh/pointtomeshdistance.cpp \
-    src/mesh/surfacemeshtofacemeshes.cpp
+    src/mesh/surfacemeshtofacemeshes.cpp \
+    src/pymesh/MshLoader.cpp \
+    src/pymesh/MshSaver.cpp
 
 HEADERS  += mainwindow.h \
     actions3d.h \
@@ -422,7 +424,10 @@ HEADERS  += mainwindow.h \
     src/mesh/datasourcebuilder.h \
     src/mesh/smoothingtools.h \
     src/mesh/pointtomeshdistance.h \
-    src/mesh/surfacemeshtofacemeshes.h
+    src/mesh/surfacemeshtofacemeshes.h \
+    src/pymesh/Exception.h \
+    src/pymesh/MshLoader.h \
+    src/pymesh/MshSaver.h
 
 FORMS    += mainwindow.ui
 
@@ -462,6 +467,7 @@ INCLUDEPATH = D:/Work/Qt/SimSpace/src/geometry \
               C:/CGAL-4.14/auxiliary/gmp/include    \   # needed by cgal
               D:/Work/Qt/SimSpace/libigl   \
               D:/Work/Qt/SimSpace/src/pymesh    \
+              D:/Work/Qt/SimSpace/src/dirent/include
 
 LIBS += \
 -lC:\OpenCASCADE7.3.0-vc14-64\opencascade-7.3.0\win64\vc14\lib\TKBin   \
