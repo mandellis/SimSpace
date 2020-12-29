@@ -574,6 +574,21 @@ bool postObject::buildMeshIO(double min, double max, int Nlevels, bool autoscale
     myNbLevels = Nlevels;
     theMeshes.clear();
 
+    //! -------------------------------------------
+    //! min and max for the colorbox and isostrips
+    //! -------------------------------------------
+    if(autoscale)
+    {
+        std::pair<double,double> minmax = this->getMinMax(component);
+        myMin = minmax.first;
+        myMax = minmax.second;
+    }
+    else {
+        myMin = min;
+        myMax = max;
+        cout<<"postObject::buildMeshIO()->____min max____"<<myMin<<" "<<myMax<<endl;
+    }
+
     //! -----------------
     //! the data content
     //! -----------------
@@ -641,7 +656,7 @@ bool postObject::buildMeshIO(double min, double max, int Nlevels, bool autoscale
             cout<<"postObject::buildMeshIO()->____you are giving me no data____"<<endl;
             return false;
         }
-
+/*
         //! -------------------------------------------
         //! min and max for the colorbox and isostrips
         //! -------------------------------------------
@@ -651,7 +666,11 @@ bool postObject::buildMeshIO(double min, double max, int Nlevels, bool autoscale
             myMin = minmax.first;
             myMax = minmax.second;
         }
-        else { myMin = min; myMax = max; }
+        else {
+            myMin = min;
+            myMax = max;
+            cout<<"postObject::buildMeshIO()->____min max____"<<myMin<<" "<<myMax<<endl;
+        }*/
 
         bool isDone;
         occHandle(MeshVS_Mesh) aColoredMesh;
@@ -661,7 +680,7 @@ bool postObject::buildMeshIO(double min, double max, int Nlevels, bool autoscale
             isDone = MeshTools::buildIsoStrip(theDeformedDS,res,myMin,myMax,myNbLevels,aColoredMesh,true);
             break;
         case resultPresentation::typeOfPresentation_nodalresults:
-            isDone = MeshTools::buildColoredMesh(theDeformedDS,res,aColoredMesh,myMin,myMax,myNbLevels);
+            isDone = MeshTools::buildColoredMesh(theDeformedDS,res,aColoredMesh,myMin,myMax,myNbLevels,false,false);
             break;
         case resultPresentation::typeOfPresentation_isosurfaces:
             isDone = MeshTools::buildIsoSurfaces(theDeformedDS,res,myMin,myMax,myNbLevels,aColoredMesh,false);

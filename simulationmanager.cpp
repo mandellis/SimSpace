@@ -9741,9 +9741,6 @@ void SimulationManager::interpolatePrivate(int mode)
     //! --------------------------
     //! list of times (by double)
     //! --------------------------
-    //std::vector<double> listTimeS;
-    //QList<QString> stringListTimeS;
-    //std::map<double,QString> mapFileTime;
     QList<QString> listTimeS;
     //! ---------------
     //! measuring time
@@ -10040,7 +10037,7 @@ void SimulationManager::interpolatePrivate(int mode)
                 std::map<int,std::pair<double,double>> mapMinMax;
                 std::vector<std::map<int,double>> listOfRes;
                 std::map<GeometryTag,std::vector<std::map<int,double>>> mapOfRes;
-                cout<<"SimulationManager::interpolatePrivate()->____retrieve list of map of result at step "<<pos<<"____"<<endl;
+                //cout<<"SimulationManager::interpolatePrivate()->____retrieve list of map of result at step "<<pos<<"____"<<endl;
 
                 //! retrieve the mapper interpolation result at time "pos"
                 mapper.retrieveResMap(pos);
@@ -10051,7 +10048,7 @@ void SimulationManager::interpolatePrivate(int mode)
                 listOfRes.push_back(mapper.getResults());
                 if(it==vecLocs.begin())
                 {
-                    cout<<"SimulationManager::interpolatePrivate()->inserting results on first body number = "<<bodyIndex<<endl;
+                    //cout<<"SimulationManager::interpolatePrivate()->inserting results on first body number = "<<bodyIndex<<endl;
                     mapMinMax.insert(std::make_pair(bodyIndex,aPair));
                     mapOfRes.insert(std::make_pair(loc,listOfRes));
 
@@ -10061,7 +10058,7 @@ void SimulationManager::interpolatePrivate(int mode)
                 }
                 else
                 {
-                    cout<<"SimulationManager::interpolatePrivate()->inserting results on next body number =  "<<bodyIndex<<endl;
+                    //cout<<"SimulationManager::interpolatePrivate()->inserting results on next body number =  "<<bodyIndex<<endl;
                     mapMinMax = listMapMinMax[pos];
                     mapOfRes = listMapOfRes[pos];
                     mapMinMax.insert(std::make_pair(bodyIndex,aPair));
@@ -10169,17 +10166,18 @@ void SimulationManager::interpolatePrivate(int mode)
         std::map<int,std::pair<double,double>> mapMinMax = listMapMinMax.at(t);
         double min,max;
         std::vector<double> listOfMin,listOfMax;
+
         for(std::map<int,std::pair<double,double>>::iterator it=mapMinMax.begin();it!=mapMinMax.end();++it)
         {
             std::pair<double,double> &aPair = it->second;
             listOfMax.push_back(aPair.second);
             listOfMin.push_back(aPair.first);
         }
+
         std::sort(listOfMax.begin(),listOfMax.end());
         std::sort(listOfMin.begin(),listOfMin.end());
         max = listOfMax.back();
         min = listOfMin.front();
-        cout<<"Min Max at time "<<timeS.toStdString()<<" Min and max = "<<min<<" "<<max<<endl;
         //! ---------------------------------------------------------------------
         //! create the post object: 1-st column of data, 10 levels, autoscale ON
         //! ---------------------------------------------------------------------
@@ -10187,6 +10185,7 @@ void SimulationManager::interpolatePrivate(int mode)
         int component = 0;
         int NbLevels = 10;
         bool isAutoscale = false;
+        //bool isAutoscale = true;
         aPostObject->init(static_cast<meshDataBase*>(this->getDataBase()));
         aPostObject->buildMeshIO(min,max,NbLevels,isAutoscale,component);
 
