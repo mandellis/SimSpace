@@ -54,7 +54,7 @@ using namespace std;
 #include <windows.h>
 
 #include <stdio.h>
-#include <dirent.h>
+//#include <dirent.h>
 #define SUCCESS_STAT 0
 
 //! --------------------------------------
@@ -63,12 +63,16 @@ using namespace std;
 //! --------------------------------------
 bool dirExists(std::string dir_path)
 {
+    experimental::filesystem::path aPath(dir_path);
+    return experimental::filesystem::exists(aPath);
+    /*
     struct stat sb;
 
     if (stat(dir_path.c_str(), &sb) == 0 && S_ISDIR(sb.st_mode))
         return true;
     else
         return false;
+        */
 }
 
 //! ----------------------
