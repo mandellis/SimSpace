@@ -20,9 +20,6 @@ private:
     QProgressIndicator *myProgressIndicator;
     SimulationNodeClass *myNode;
     QString myTargetDirectory;
-//#ifdef COSTAMP_VERSION
-//    std::vector<double> myTimeFolders;
-//#endif
 public:
 
     //! constructor
@@ -34,12 +31,7 @@ public:
 
     //! set progress indicator
     void setProgressIndicator(QProgressIndicator *aProgressIndicator) { myProgressIndicator = aProgressIndicator; }
-/*
-#ifdef COSTAMP_VERSION
-    void setTimeFolders(const std::vector<double> &timeFolders)
-    {myTimeFolders = timeFolders;
-    cout<<"timeFolder size "<<myTimeFolders.size()<<endl;}
-#endif*/
+
 private slots:
 
     //! for stopping the thread
