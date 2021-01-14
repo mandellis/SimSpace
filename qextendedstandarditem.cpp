@@ -1761,6 +1761,7 @@ QVariant QExtendedStandardItem::data(int role) const
             case Property::overpressureFunction_exponential: data.setValue(QString("Exponential")); break;
             case Property::overpressureFunction_linear: data.setValue(QString("Linear")); break;
             case Property::overpressureFunction_tied: data.setValue(QString("Tied")); break;
+            case Property::overpressureFunction_hard: data.setValue(QString("Hard")); break;
             }
             return data;
         }

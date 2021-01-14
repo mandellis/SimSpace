@@ -1155,6 +1155,14 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
                         else return 0;
                     }
                         break;
+                    case Property::overpressureFunction_hard:
+                    {
+                        //! ---------------------------------
+                        //! "nothing can be edited
+                        //! ---------------------------------
+                        return 0;
+                    }
+                        break;
                     }
                 }
                     break;
@@ -2124,6 +2132,10 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
                 editor->addItem("Linear",data);
                 data.setValue(Property::overpressureFunction_exponential);
                 editor->addItem("Exponential",data);
+                data.setValue(Property::overpressureFunction_tied);
+                editor->addItem("Tied",data);
+                data.setValue(Property::overpressureFunction_hard);
+                editor->addItem("Hard",data);
                 return editor;
             }
             else return 0;

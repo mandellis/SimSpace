@@ -1345,19 +1345,19 @@ void SimulationManager::deleteItem(QList<QModelIndex> indexesList)
     //! "Displacement" "Remote displacement" "Remote rotation" have the option "free"
     //! ------------------------------------------------------------------------------
     QList<SimulationNodeClass::nodeType> specialItems;
-    specialItems<<SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Displacement<<
-                  SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RemoteDisplacement<<
-                  SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RemoteRotation;
+    //specialItems<<//SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Displacement<<
+                  //SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RemoteDisplacement<<
+                  //SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RemoteRotation;
 
-    specialItems<<SimulationNodeClass::nodeType_namedSelectionGeometry<<
-                  SimulationNodeClass::nodeType_structuralAnalysisThermalCondition<<
-                  SimulationNodeClass::nodeType_structuralAnalysisBoltPretension<<
-                  SimulationNodeClass::nodeType_thermalAnalysisConvection<<
-                  SimulationNodeClass::nodeType_thermalAnalysisRadiation<<
-                  SimulationNodeClass::nodeType_thermalAnalysisTemperature<<
-                  SimulationNodeClass::nodeType_thermalAnalysisThermalFlow<<
-                  SimulationNodeClass::nodeType_thermalAnalysisThermalFlux<<
-                  SimulationNodeClass::nodeType_thermalAnalysisThermalPower;
+    specialItems<<SimulationNodeClass::nodeType_namedSelectionGeometry;
+                  //SimulationNodeClass::nodeType_structuralAnalysisThermalCondition<<
+                  //SimulationNodeClass::nodeType_structuralAnalysisBoltPretension<<
+                  //SimulationNodeClass::nodeType_thermalAnalysisConvection<<
+                  //SimulationNodeClass::nodeType_thermalAnalysisRadiation<<
+                  //SimulationNodeClass::nodeType_thermalAnalysisTemperature<<
+                  //SimulationNodeClass::nodeType_thermalAnalysisThermalFlow<<
+                  //SimulationNodeClass::nodeType_thermalAnalysisThermalFlux<<
+                  //SimulationNodeClass::nodeType_thermalAnalysisThermalPower;
 
     //! --------------------------------------------------------------------
     //! list of the selected items
@@ -1416,6 +1416,10 @@ void SimulationManager::deleteItem(QList<QModelIndex> indexesList)
             //! ---------------------------------------------------------
             itemListToDelete<<modelIndex;
 
+            QList<int> columsToRemove = mainTreeTools::getColumnsToRead(myTreeView);
+            tabData->removeColumns(columsToRemove.at(0),columsToRemove.at(1)-columsToRemove.at(1));
+
+            /*
             //! --------------------------------------------
             //! items/nodes having the "Define by" property
             //! they require an update of the tabular data
@@ -1436,9 +1440,9 @@ void SimulationManager::deleteItem(QList<QModelIndex> indexesList)
                     break;
                 }
                 tabData->removeColumns(SC,count);
-            }            
+            }*/
         }
-
+/*
         //! ------------------------------------------------------------------------------------
         //! handle the special case of a "Displacement"/"Remote displacement"/"Remote rotation"
         //! ------------------------------------------------------------------------------------
@@ -1468,7 +1472,7 @@ void SimulationManager::deleteItem(QList<QModelIndex> indexesList)
             tabData->removeColumns(SC,count);
             itemListToDelete<<modelIndex;
         }
-
+*/
         //! ------------------------------------------------
         //! handle the special case of a "Named selection"
         //! -----------------------------------------------
@@ -1517,7 +1521,7 @@ void SimulationManager::deleteItem(QList<QModelIndex> indexesList)
             }
 
         }
-
+    /*
         //! ----------------------------------------------------------------
         //! handle the special case of a "Thermal condition" "Model change"
         //! handle the special case of a "Bolt pretension"
@@ -1557,6 +1561,7 @@ void SimulationManager::deleteItem(QList<QModelIndex> indexesList)
             tabData->removeColumns(SC,count);
             itemListToDelete<<modelIndex;
         }
+    */
     }
 
     //! ---------------------------------------------------------------------------

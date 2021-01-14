@@ -86,7 +86,6 @@ bool readsta(const QString &path, QMap<double, QVector<int>> &timeinfo)
     //! fill the time info - last
     //! --------------------------
     //cout<<"set: "<<setnr<<" step: "<<a1<<" substep: "<<a2<<" total time: "<<f1<<endl;
-
     QVector<int> s{setnr,a1_old,a2_old};
     timeinfo.insert(f1,s);
 
