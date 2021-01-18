@@ -874,7 +874,7 @@ bool writeSolverFileClass::perform()
                          //! ---------
                          //! 4th) row
                          //! ---------
-                         myInputFile<<"*SURFACE BEHAVIOR, PRESSURE-OVERCLOSURE=LINEAR";
+                         myInputFile<<"*SURFACE BEHAVIOR, PRESSURE-OVERCLOSURE=LINEAR"<<"\n";
 
                          if(sigmaInfinity == 0.0)
                          {

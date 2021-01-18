@@ -17,7 +17,7 @@ namespace CCXTools
 //! function: readsta
 //! details:
 //! ------------------
-bool readsta(const QString &path, QMap<double, QVector<int>> &timeinfo)
+bool readsta(const QString &path, std::map<double,std::vector<int>> &timeinfo)
 {
     QFile fn(path);
     QString nfn = path;
@@ -54,8 +54,8 @@ bool readsta(const QString &path, QMap<double, QVector<int>> &timeinfo)
     //! ----------------------------------
     //! record the first timeinfo element
     //! ----------------------------------
-    QVector<int> sini{setnr,a1_old,a2_old};
-    timeinfo.insert(f1_old,sini);
+    std::vector<int> sini{setnr,a1_old,a2_old};
+    timeinfo.insert(std::make_pair(f1_old,sini));
 
     for(;feof(f)==0;)
     {
@@ -67,33 +67,44 @@ bool readsta(const QString &path, QMap<double, QVector<int>> &timeinfo)
             r.remove();
             return false;
         }
-        if(a2_old==a2) continue;
+        if(a2_old!=a2)
+        {
+            //! -------------------
+            //! fill the time info
+            //! -------------------
+            std::vector<int> s{setnr,a1,a2};
+            timeinfo.insert(std::make_pair(f1,s));
+            setnr++;
+            //continue;
+        }
+        else
+        {
+            if(a3_old!=a3)
+            {
+                //! -------------------
+                //! fill the time info
+                //! -------------------
+                std::vector<int> s{setnr,a1,a2};
+                timeinfo.insert(std::make_pair(f1+f3,s));
+                setnr++;
+            }
+            else  continue;
+        }
 
-        setnr++;
         //cout<<"set: "<<setnr<<" step: "<<a1_old<<" substep: "<<a2_old<<" total time: "<<f1_old<<endl;
-
+/*
         //! -------------------
         //! fill the time info
         //! -------------------
         QVector<int> s{setnr,a1,a2};
         timeinfo.insert(f1,s);
-
+*/
         a1_old=a1; a2_old=a2; a3_old=a3; a4_old=a4;
         f1_old=f1; f2_old=f2; f3_old=f3;
     }
-
-    //! --------------------------
-    //! fill the time info - last
-    //! --------------------------
-    //cout<<"set: "<<setnr<<" step: "<<a1<<" substep: "<<a2<<" total time: "<<f1<<endl;
-    QVector<int> s{setnr,a1_old,a2_old};
-    timeinfo.insert(f1,s);
-
     fclose(f);
-
     QFile r(nfn);
     r.remove();
-
     return true;
 }
 

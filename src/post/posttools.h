@@ -41,14 +41,23 @@ public:
     //! ---------------------------------------------------------
     //! similar to the previous, but it uses a discrete time map
     //! ---------------------------------------------------------
-    static bool getStepSubStepByTimeDTM(QMap<double, QVector<int>> discreteTimeMap, double analysisTime,
+    static bool getStepSubStepByTimeDTM(std::map<double, std::vector<int>> discreteTimeMap, double analysisTime,
                                          int &foundStep,
                                          int &foundSubStep);
 
     //! ---------------------------------------------------------
     //! similar to the previous, but it uses a discrete time map
     //! ---------------------------------------------------------
-    static bool getStepSubStepBySetDTM(QMap<double, QVector<int>> discreteTimeMap, int setNumber, double &analysisTime, int &foundStep, int &foundSubStep);
+    static bool getStepSubStepBySetDTM(std::map<double, std::vector<int>> discreteTimeMap, int setNumber, double &analysisTime, int &foundStep, int &foundSubStep);
+
+    //! ---------------------------------------------------------
+    //! similar to the previous, but it uses a discrete time map
+    //! ---------------------------------------------------------
+    static bool postTools::getSetBySubStepByStepDTM(std::map<double, std::vector<int>> discreteTimeMap,
+                                           int &setNumber,
+                                           double &analysisTime,
+                                           int step,
+                                           int subStep);
 
     static void principalComponents(double *sik, double *values);
 };

@@ -769,7 +769,7 @@ void Property::readProperty(ifstream &in, Property &prop)
     //! --------------------------------
     else if(propKeyName == "Discrete time map")
     {
-        QMap<double,QVector<int>> amap;
+        std::map<double,std::vector<int>> amap;
         int NbKeys;
         in>>NbKeys;
         for(int n=0; n<NbKeys; n++)
@@ -781,7 +781,7 @@ void Property::readProperty(ifstream &in, Property &prop)
             int NbValues;
             in>>NbValues;
 
-            QVector<int> avalue;
+            std::vector<int> avalue;
             for(int i=0; i<NbValues; i++)
             {
                 int val;
@@ -789,7 +789,7 @@ void Property::readProperty(ifstream &in, Property &prop)
                 avalue.push_back(val);
                 //cout<<"____val "<<i<<": "<<val<<"____"<<endl;
             }
-            amap.insert(akey,avalue);
+            amap.insert(std::make_pair(akey,avalue));
         }
         data.setValue(amap);
         prop.setData(data);

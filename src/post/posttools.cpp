@@ -76,24 +76,27 @@ void postTools::principalComponents(double *sik, double *values)
 //! function: getStepSubStepByTimeDTM
 //! details:
 //! -----------------------------------
-bool postTools::getStepSubStepByTimeDTM(QMap<double,QVector<int>> discreteTimeMap,
+bool postTools::getStepSubStepByTimeDTM(std::map<double,std::vector<int>> discreteTimeMap,
                                         double analysisTime,
                                         int &foundStep,
                                         int &foundSubStep)
 {
-    QVector<int> t;
+    std::vector<int> t;
     double curAnalysisTime;
-    if(analysisTime == 0.0)
+    //FIX LATER
+    /*if(analysisTime == 0.0)
     {
         foundStep = discreteTimeMap.last().at(1);
         foundSubStep = discreteTimeMap.last().at(2);
         return true;
     }
-    for(QMap<double,QVector<int>>::const_iterator mapIt = discreteTimeMap.cbegin(); mapIt!= discreteTimeMap.cend(); ++mapIt)
+    */
+    for(std::map<double,std::vector<int>>::const_iterator mapIt = discreteTimeMap.cbegin(); mapIt!= discreteTimeMap.cend(); ++mapIt)
     {
-        curAnalysisTime = mapIt.key();
+        std::pair<double,std::vector<int>> aPair = *mapIt;
+        curAnalysisTime = aPair.first;
         //cout<<"postTools::getStepSubStepbyTimeDTM->____curAnalysisTime"<<curAnalysisTime<<", analysisTime "<<analysisTime<<endl;
-        t = mapIt.value();
+        t = aPair.second;
         if (curAnalysisTime == analysisTime)
         {
             foundStep = t.at(1);
@@ -109,22 +112,23 @@ bool postTools::getStepSubStepByTimeDTM(QMap<double,QVector<int>> discreteTimeMa
 //! function: getStepSubStepBySetDTM
 //! details:
 //! ---------------------------------
-bool postTools::getStepSubStepBySetDTM(QMap<double, QVector<int>> discreteTimeMap,
+bool postTools::getStepSubStepBySetDTM(std::map<double, std::vector<int>> discreteTimeMap,
                                        int setNumber,
                                        double &analysisTime,
                                        int &foundStep,
                                        int &foundSubStep)
 {
-    QMap<double,QVector<int>>::const_iterator mapIt;
+    std::map<double,std::vector<int>>::const_iterator mapIt;
     int curSetNumber;
     double curTime;
     int curStep,curSubstep;
 
-    QVector<int> t;
+    std::vector<int> t;
     for(mapIt = discreteTimeMap.cbegin(); mapIt!= discreteTimeMap.cend(); ++mapIt)
     {
-        curTime = mapIt.key();
-        t = mapIt.value();
+        std::pair<double,std::vector<int>> curPair=*mapIt;
+        curTime = curPair.first;
+        t = curPair.second;
         curSetNumber = t.at(0);
         curStep = t.at(1);
         curSubstep = t.at(2);
@@ -133,6 +137,40 @@ bool postTools::getStepSubStepBySetDTM(QMap<double, QVector<int>> discreteTimeMa
             analysisTime = curTime;
             foundStep = curStep;
             foundSubStep = curSubstep;
+            return true;
+        }
+    }
+    return false;
+}
+
+//! -----------------------------------
+//! function: getSetBySubStepByStepDTM
+//! details:
+//! -----------------------------------
+bool postTools::getSetBySubStepByStepDTM(std::map<double, std::vector<int>> discreteTimeMap,
+                                       int &setNumber,
+                                       double &analysisTime,
+                                       int step,
+                                       int subStep)
+{
+    std::map<double,std::vector<int>>::const_iterator mapIt;
+    int curSetNumber;
+    double curTime;
+    int curStep,curSubstep;
+
+    std::vector<int> t;
+    for(mapIt = discreteTimeMap.cbegin(); mapIt!= discreteTimeMap.cend(); ++mapIt)
+    {
+        std::pair<double,std::vector<int>> curPair=*mapIt;
+        curTime = curPair.first;
+        t = curPair.second;
+        curSetNumber = t.at(0);
+        curStep = t.at(1);
+        curSubstep = t.at(2);
+        if(curStep == step && curSubstep == subStep)
+        {
+            analysisTime = curTime;
+            setNumber = curSetNumber;
             return true;
         }
     }

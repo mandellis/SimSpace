@@ -28,7 +28,7 @@
 //! function: constructor
 //! details:
 //! ----------------------
-postEngine::postEngine(QObject *parent) : QObject(parent),myDTM(QMap<double,QVector<int>>())
+postEngine::postEngine(QObject *parent) : QObject(parent),myDTM(std::map<double,std::vector<int>>())
 {
     this->buildMap();
 }
@@ -55,7 +55,7 @@ void postEngine::buildMap()
 //! function: setDiscreteTimeMap
 //! details:
 //! -----------------------------
-void postEngine::setDiscreteTimeMap(const QMap<double,QVector<int>> &dtm)
+void postEngine::setDiscreteTimeMap(const std::map<double, std::vector<int> > &dtm)
 {
     myDTM = dtm;
 }
@@ -1016,6 +1016,7 @@ bool postEngine::buildPostObject(const QString &keyName,
 }
 */
 
+//#include <posttools.h>
 bool postEngine::buildPostObject(const QString &keyName,
                                  int component,
                                  int requiredSubStepNb,
@@ -1028,6 +1029,8 @@ bool postEngine::buildPostObject(const QString &keyName,
     //! build the colorBox title
     //! -------------------------
     double time;
+    int setNumber;
+    postTools::getSetBySubStepByStepDTM(myDTM,setNumber,time,requiredStepNb,requiredSubStepNb);
     QString aResultName = this->resultName(keyName, component, requiredStepNb, requiredSubStepNb, time);
 
     //! -------------------------

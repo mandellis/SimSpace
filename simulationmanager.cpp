@@ -1417,7 +1417,10 @@ void SimulationManager::deleteItem(QList<QModelIndex> indexesList)
             itemListToDelete<<modelIndex;
 
             QList<int> columsToRemove = mainTreeTools::getColumnsToRead(myTreeView);
-            tabData->removeColumns(columsToRemove.at(0),columsToRemove.at(1)-columsToRemove.at(1));
+            int columnCount;
+            if(columsToRemove.size()==1) columnCount=1;
+            else columnCount = columsToRemove.back()-columsToRemove.front()+1;
+            tabData->removeColumns(columsToRemove.at(0),columnCount);
 
             /*
             //! --------------------------------------------
@@ -10482,7 +10485,7 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
     myPostEngine->setResultsFile(resultsFilePath);
     QStandardItem *itemSolutionInformation = itemSolution->child(0,0);
     SimulationNodeClass *nodeSolutionInformation = itemSolutionInformation->data(Qt::UserRole).value<SimulationNodeClass*>();
-    QMap<double,QVector<int>> dtm = nodeSolutionInformation->getPropertyValue<QMap<double,QVector<int>>>("Discrete time map");
+    std::map<double,std::vector<int>> dtm = nodeSolutionInformation->getPropertyValue<std::map<double,std::vector<int>>>("Discrete time map");
     myPostEngine->setDiscreteTimeMap(dtm);
 
     //! ----------------------
@@ -10592,7 +10595,7 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
             //! ---------------------------------------
             QStandardItem *itemSolutionInformation = curItem->parent()->child(0,0);
             SimulationNodeClass *nodeSolutionInformation = itemSolutionInformation->data(Qt::UserRole).value<SimulationNodeClass*>();
-            QMap<double,QVector<int>> dTm = nodeSolutionInformation->getPropertyValue<QMap<double,QVector<int>>>("Discrete time map");
+            std::map<double,std::vector<int>> dTm = nodeSolutionInformation->getPropertyValue<std::map<double,std::vector<int>>>("Discrete time map");
 
             //! ------------------------------------------------------------------
             //! execute only if the discrete time map is not empty
@@ -10600,7 +10603,7 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
             //! This avoids application crash when requiring "Evaluate result(s)"
             //! and no result exixts
             //! ------------------------------------------------------------------
-            if(dTm.isEmpty())
+            if(dTm.empty())
             {
                 cout<<"----------------------------------------------------------------------------------------------------------------------"<<endl;
                 cout<<"SimulationManager::callPostEngineEvaluateResult_private()->____cannot evaluate results: the discrete time is empty____"<<endl;
@@ -10698,7 +10701,7 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
             //! ---------------------------------------
             QStandardItem *itemSolutionInformation = curItem->parent()->child(0,0);
             SimulationNodeClass *nodeSolutionInformation = itemSolutionInformation->data(Qt::UserRole).value<SimulationNodeClass*>();
-            QMap<double,QVector<int>> dTm = nodeSolutionInformation->getPropertyValue<QMap<double,QVector<int>>>("Discrete time map");
+            std::map<double,std::vector<int>> dTm = nodeSolutionInformation->getPropertyValue<std::map<double,std::vector<int>>>("Discrete time map");
 
             //! ------------------------------------------------------------------
             //! execute only if the discrete time map is not empty
@@ -10706,7 +10709,7 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
             //! This avoids application crash when requiring "Evaluate result(s)"
             //! and no result exixts
             //! ------------------------------------------------------------------
-            if(dTm.isEmpty())
+            if(dTm.empty())
             {
                 QMessageBox::warning(this,APPNAME,"No result available", QMessageBox::Ok);
                 return;
@@ -10870,7 +10873,7 @@ bool SimulationManager::eventFilter(QObject *object, QEvent *event)
              if(f.exists())
              {
                  //cout<<"____.STA FILE FOUND: \""<<stafile.toStdString()<<"\"____"<<endl;
-                 QMap<double,QVector<int>> timeinfo;
+                 std::map<double,std::vector<int>> timeinfo;
                  bool isDone = CCXTools::readsta(stafile,timeinfo);
                  if(isDone)
                  {
@@ -10880,8 +10883,8 @@ bool SimulationManager::eventFilter(QObject *object, QEvent *event)
                  else
                  {
                      double ini=0.0;
-                     QVector<int> init {0, 0, 0};
-                     timeinfo.insert(ini,init);
+                     std::vector<int> init {0, 0, 0};
+                     timeinfo.insert(std::make_pair(ini,init));
                      data.setValue(timeinfo);
                      nodeSolutionInformation->replaceProperty("Discrete time map",Property("Discrete time map",data,Property::PropertyGroup_Hidden));
                  }
@@ -11280,7 +11283,7 @@ void SimulationManager::readResultsFile(const QString &fileName, const QString &
         if(f.exists())
         {
             //cout<<"____.STA FILE FOUND: \""<<stafile.toStdString()<<"\"____"<<endl;
-            QMap<double,QVector<int>> timeinfo;
+            std::map<double,std::vector<int>> timeinfo;
             bool isDone = CCXTools::readsta(stafile,timeinfo);
             if(isDone)
             {
@@ -11289,10 +11292,12 @@ void SimulationManager::readResultsFile(const QString &fileName, const QString &
             }
             else
             {
-                QVector<int> init;
+                std::vector<int> init;
                 double ini=0.0;
-                init<<0.0<<0.0<<0.0;
-                timeinfo.insert(ini,init);
+                init.push_back(0.0);
+                init.push_back(0.0);
+                init.push_back(0.0);
+                timeinfo.insert(std::make_pair(ini,init));
                 data.setValue(timeinfo);
                 nodeSolutionInformation->replaceProperty("Discrete time map",Property("Discrete time map",data,Property::PropertyGroup_Hidden));
             }

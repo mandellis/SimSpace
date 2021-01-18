@@ -171,8 +171,8 @@ QVariant QExtendedStandardItem::data(int role) const
         //! --------------------
         if(name=="Discrete time map")
         {
-            QMap<double,QVector<int>> dtm = QStandardItem::data(Qt::UserRole).value<Property>().getData().value<QMap<double,QVector<int>>>();
-            if(dtm.isEmpty()) data.setValue(QString("Empty"));
+            std::map<double,std::vector<int>> dtm = QStandardItem::data(Qt::UserRole).value<Property>().getData().value<std::map<double,std::vector<int>>>();
+            if(dtm.empty()) data.setValue(QString("Empty"));
             else data.setValue(QString("%1").arg(dtm.size()));
             return data;
         }
