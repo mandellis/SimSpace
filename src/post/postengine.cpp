@@ -28,7 +28,7 @@
 //! function: constructor
 //! details:
 //! ----------------------
-postEngine::postEngine(QObject *parent) : QObject(parent),myDTM(std::map<double,std::vector<int>>())
+postEngine::postEngine(QObject *parent) : QObject(parent),myDTM(QMap<double,QVector<int>>())
 {
     this->buildMap();
 }
@@ -55,7 +55,7 @@ void postEngine::buildMap()
 //! function: setDiscreteTimeMap
 //! details:
 //! -----------------------------
-void postEngine::setDiscreteTimeMap(const std::map<double, std::vector<int> > &dtm)
+void postEngine::setDiscreteTimeMap(const QMap<double, QVector<int> > &dtm)
 {
     myDTM = dtm;
 }

@@ -10485,7 +10485,7 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
     myPostEngine->setResultsFile(resultsFilePath);
     QStandardItem *itemSolutionInformation = itemSolution->child(0,0);
     SimulationNodeClass *nodeSolutionInformation = itemSolutionInformation->data(Qt::UserRole).value<SimulationNodeClass*>();
-    std::map<double,std::vector<int>> dtm = nodeSolutionInformation->getPropertyValue<std::map<double,std::vector<int>>>("Discrete time map");
+    QMap<double,QVector<int>> dtm = nodeSolutionInformation->getPropertyValue<QMap<double,QVector<int>>>("Discrete time map");
     myPostEngine->setDiscreteTimeMap(dtm);
 
     //! ----------------------
@@ -10595,7 +10595,7 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
             //! ---------------------------------------
             QStandardItem *itemSolutionInformation = curItem->parent()->child(0,0);
             SimulationNodeClass *nodeSolutionInformation = itemSolutionInformation->data(Qt::UserRole).value<SimulationNodeClass*>();
-            std::map<double,std::vector<int>> dTm = nodeSolutionInformation->getPropertyValue<std::map<double,std::vector<int>>>("Discrete time map");
+            QMap<double,QVector<int>> dTm = nodeSolutionInformation->getPropertyValue<QMap<double,QVector<int>>>("Discrete time map");
 
             //! ------------------------------------------------------------------
             //! execute only if the discrete time map is not empty
@@ -10701,7 +10701,7 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
             //! ---------------------------------------
             QStandardItem *itemSolutionInformation = curItem->parent()->child(0,0);
             SimulationNodeClass *nodeSolutionInformation = itemSolutionInformation->data(Qt::UserRole).value<SimulationNodeClass*>();
-            std::map<double,std::vector<int>> dTm = nodeSolutionInformation->getPropertyValue<std::map<double,std::vector<int>>>("Discrete time map");
+            QMap<double,QVector<int>> dTm = nodeSolutionInformation->getPropertyValue<QMap<double,QVector<int>>>("Discrete time map");
 
             //! ------------------------------------------------------------------
             //! execute only if the discrete time map is not empty
@@ -10872,8 +10872,8 @@ bool SimulationManager::eventFilter(QObject *object, QEvent *event)
              QFile f(stafile);
              if(f.exists())
              {
-                 //cout<<"____.STA FILE FOUND: \""<<stafile.toStdString()<<"\"____"<<endl;
-                 std::map<double,std::vector<int>> timeinfo;
+                 cout<<"____.STA FILE FOUND: \""<<stafile.toStdString()<<"\"____"<<endl;
+                 QMap<double,QVector<int>> timeinfo;
                  bool isDone = CCXTools::readsta(stafile,timeinfo);
                  if(isDone)
                  {
@@ -10883,8 +10883,8 @@ bool SimulationManager::eventFilter(QObject *object, QEvent *event)
                  else
                  {
                      double ini=0.0;
-                     std::vector<int> init {0, 0, 0};
-                     timeinfo.insert(std::make_pair(ini,init));
+                     QVector<int> init {0, 0, 0};
+                     timeinfo.insert(ini,init);
                      data.setValue(timeinfo);
                      nodeSolutionInformation->replaceProperty("Discrete time map",Property("Discrete time map",data,Property::PropertyGroup_Hidden));
                  }
@@ -11283,7 +11283,7 @@ void SimulationManager::readResultsFile(const QString &fileName, const QString &
         if(f.exists())
         {
             //cout<<"____.STA FILE FOUND: \""<<stafile.toStdString()<<"\"____"<<endl;
-            std::map<double,std::vector<int>> timeinfo;
+            QMap<double,QVector<int>> timeinfo;
             bool isDone = CCXTools::readsta(stafile,timeinfo);
             if(isDone)
             {
@@ -11292,12 +11292,12 @@ void SimulationManager::readResultsFile(const QString &fileName, const QString &
             }
             else
             {
-                std::vector<int> init;
+                QVector<int> init;
                 double ini=0.0;
                 init.push_back(0.0);
                 init.push_back(0.0);
                 init.push_back(0.0);
-                timeinfo.insert(std::make_pair(ini,init));
+                timeinfo.insert(ini,init);
                 data.setValue(timeinfo);
                 nodeSolutionInformation->replaceProperty("Discrete time map",Property("Discrete time map",data,Property::PropertyGroup_Hidden));
             }

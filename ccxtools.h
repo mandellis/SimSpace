@@ -17,8 +17,10 @@ namespace CCXTools
 //! function: readsta
 //! details:
 //! ------------------
-bool readsta(const QString &path, std::map<double,std::vector<int>> &timeinfo)
+bool readsta(const QString &path, QMap<double,QVector<int>> &timeinfo)
 {
+    cout<<"ccxtools::readsta()--------> function called <------------"<<endl;
+
     QFile fn(path);
     QString nfn = path;
     nfn.chop(4);
@@ -29,9 +31,9 @@ bool readsta(const QString &path, std::map<double,std::vector<int>> &timeinfo)
     if(f==NULL) return false;
 
     char line [256];
-    int a1,a2,a3,a4;
-    int a1_old,a2_old,a3_old,a4_old;
-
+    int a1,a2,a4;
+    int a1_old,a2_old,a4_old;
+    std::string a3,a3_old;
     double f1,f2,f3;
     double f1_old,f2_old,f3_old;
 
@@ -43,7 +45,7 @@ bool readsta(const QString &path, std::map<double,std::vector<int>> &timeinfo)
     int setnr = 1;
 
     fgets(line, sizeof line, f);
-    if(7!=sscanf(line,"%d%d%d%d%lf%lf%lf",&a1_old,&a2_old,&a3_old,&a4_old,&f1_old,&f2_old,&f3_old))
+    if(7!=sscanf(line,"%d%d%s%d%lf%lf%lf",&a1_old,&a2_old,&a3_old,&a4_old,&f1_old,&f2_old,&f3_old))
     {
         fclose(f);
         QFile r(nfn);
@@ -54,13 +56,17 @@ bool readsta(const QString &path, std::map<double,std::vector<int>> &timeinfo)
     //! ----------------------------------
     //! record the first timeinfo element
     //! ----------------------------------
-    std::vector<int> sini{setnr,a1_old,a2_old};
-    timeinfo.insert(std::make_pair(f1_old,sini));
+    QVector<int> sini{setnr,a1_old,a2_old};
+    if(f1_old == 0.0) timeinfo.insert(f3_old,sini);
+    else timeinfo.insert(f1_old,sini);
+    cout<<"ccxtools::readsta()--------> time"<<timeinfo.firstKey()<<" "<<a1_old<<" "<<a2_old<<a3_old<<f1_old<<endl;
 
     for(;feof(f)==0;)
     {
+        cout<<"ccxtools::readsta()--------> entering for <------------"<<endl;
+
         fgets(line, sizeof line, f);
-        if(7!=sscanf(line,"%d%d%d%d%lf%lf%lf",&a1,&a2,&a3,&a4,&f1,&f2,&f3))
+        if(7!=sscanf(line,"%d%d%s%d%lf%lf%lf",&a1,&a2,&a3,&a4,&f1,&f2,&f3))
         {
             fclose(f);
             QFile r(nfn);
@@ -72,8 +78,8 @@ bool readsta(const QString &path, std::map<double,std::vector<int>> &timeinfo)
             //! -------------------
             //! fill the time info
             //! -------------------
-            std::vector<int> s{setnr,a1,a2};
-            timeinfo.insert(std::make_pair(f1,s));
+            QVector<int> s{setnr,a1,a2};
+            timeinfo.insert(f1,s);
             setnr++;
             //continue;
         }
@@ -84,14 +90,14 @@ bool readsta(const QString &path, std::map<double,std::vector<int>> &timeinfo)
                 //! -------------------
                 //! fill the time info
                 //! -------------------
-                std::vector<int> s{setnr,a1,a2};
-                timeinfo.insert(std::make_pair(f1+f3,s));
+                QVector<int> s{setnr,a1,a2};
+                timeinfo.insert(f1+f3,s);
                 setnr++;
             }
             else  continue;
         }
 
-        //cout<<"set: "<<setnr<<" step: "<<a1_old<<" substep: "<<a2_old<<" total time: "<<f1_old<<endl;
+        cout<<"set: "<<setnr<<" step: "<<a1_old<<" substep: "<<a2_old<<" total time: "<<f1_old<<endl;
 /*
         //! -------------------
         //! fill the time info

@@ -926,6 +926,7 @@ bool writeSolverFileClass::perform()
                          //! ---------
                          myInputFile<<frictionCoefficient<<", "<<lambda<<endl;
                      }
+                     if(theOverPressure != Property::overpressureFunction_hard)
                      //! ----------------
                      //! GAP CONDUCTANCE
                      //! ----------------

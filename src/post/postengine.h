@@ -139,11 +139,11 @@ private:
     fatigueModel myFatigueModel;
 
     //! discrete time map
-    std::map<double,std::vector<int>> myDTM;
+    QMap<double,QVector<int>> myDTM;
 
 public:
 
-    void setDiscreteTimeMap(const std::map<double,std::vector<int>> &dtm);
+    void setDiscreteTimeMap(const QMap<double,QVector<int>> &dtm);
     void updateResultsPresentation(QList<sharedPostObject> &postObjectList);
     void updateIsostrips(sharedPostObject &aPostObject, int scaleType, double minValue, double maxValue, int NbIntervals);
 
