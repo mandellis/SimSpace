@@ -1397,6 +1397,7 @@ void SimulationManager::deleteItem(QList<QModelIndex> indexesList)
     //! -------------------------------------------
     SimulationNodeClass* nodeAnalysisSetting = myTreeView->currentIndex().parent().child(0,0).data(Qt::UserRole).value<SimulationNodeClass*>();
     CustomTableModel *tabData = nodeAnalysisSetting->getTabularDataModel();
+    cout<<"SimulationManager::deleteItem()->____indexesLenght____"<<indexesList.length()<<endl;
 
     for(int i=0; i<indexesList.length(); i++)
     {
@@ -1404,24 +1405,26 @@ void SimulationManager::deleteItem(QList<QModelIndex> indexesList)
         SimulationNodeClass *aNode = modelIndex.data(Qt::UserRole).value<SimulationNodeClass*>();
         SimulationNodeClass::nodeType theType = aNode->getType();
 
+        if(undeletableItems.contains(theType)) continue;
+        itemListToDelete<<modelIndex;
         cout<<"SimulationManager::deleteItem()->____trying to delete item: \""<<aNode->type().toStdString()<<"\"____"<<endl;
-
         //! -----------------------------------------------------------------------------
         //! items defined by a one or three components having the "Define by" components
         //! -----------------------------------------------------------------------------
-        if(!undeletableItems.contains(theType) && !specialItems.contains(theType))
+        if(aNode->hasTabularData())
         {
+            cout<<"SimulationManager::deleteItem()->____trying to delete tabular data item____"<<endl;
+
             //! ---------------------------------------------------------
             //! add to the list for final removal fro from the tree view
             //! ---------------------------------------------------------
-            itemListToDelete<<modelIndex;
+            //itemListToDelete<<modelIndex;
 
             QList<int> columsToRemove = mainTreeTools::getColumnsToRead(myTreeView);
             int columnCount;
             if(columsToRemove.size()==1) columnCount=1;
             else columnCount = columsToRemove.back()-columsToRemove.front()+1;
             tabData->removeColumns(columsToRemove.at(0),columnCount);
-
             /*
             //! --------------------------------------------
             //! items/nodes having the "Define by" property
@@ -1481,7 +1484,9 @@ void SimulationManager::deleteItem(QList<QModelIndex> indexesList)
         //! -----------------------------------------------
         if(theType==SimulationNodeClass::nodeType_namedSelectionGeometry)
         {
-            itemListToDelete<<modelIndex;
+            cout<<"SimulationManager::deleteItem()->____trying to delete named selection____"<<endl;
+
+            //itemListToDelete<<modelIndex;
 
             //! ---------------------------------
             //! parse the simulation setup items
@@ -1566,7 +1571,6 @@ void SimulationManager::deleteItem(QList<QModelIndex> indexesList)
         }
     */
     }
-
     //! ---------------------------------------------------------------------------
     //! delete the selected items from the model
     //! see Ref.
@@ -1579,6 +1583,7 @@ void SimulationManager::deleteItem(QList<QModelIndex> indexesList)
     for (int i = indexes.count() - 1; i > -1; --i)
         myModel->removeRow(indexes.at(i).row(),indexes.at(i).parent());
     myTreeView->setUpdatesEnabled(true);
+    cout<<"SimulationManager::deleteItem()->____exiting____"<<endl;
 }
 
 //! ---------------------
