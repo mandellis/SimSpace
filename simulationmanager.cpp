@@ -1345,19 +1345,19 @@ void SimulationManager::deleteItem(QList<QModelIndex> indexesList)
     //! "Displacement" "Remote displacement" "Remote rotation" have the option "free"
     //! ------------------------------------------------------------------------------
     QList<SimulationNodeClass::nodeType> specialItems;
-    specialItems<<SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Displacement<<
-                  SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RemoteDisplacement<<
-                  SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RemoteRotation;
+    //specialItems<<//SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Displacement<<
+                  //SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RemoteDisplacement<<
+                  //SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RemoteRotation;
 
-    specialItems<<SimulationNodeClass::nodeType_namedSelectionGeometry<<
-                  SimulationNodeClass::nodeType_structuralAnalysisThermalCondition<<
-                  SimulationNodeClass::nodeType_structuralAnalysisBoltPretension<<
-                  SimulationNodeClass::nodeType_thermalAnalysisConvection<<
-                  SimulationNodeClass::nodeType_thermalAnalysisRadiation<<
-                  SimulationNodeClass::nodeType_thermalAnalysisTemperature<<
-                  SimulationNodeClass::nodeType_thermalAnalysisThermalFlow<<
-                  SimulationNodeClass::nodeType_thermalAnalysisThermalFlux<<
-                  SimulationNodeClass::nodeType_thermalAnalysisThermalPower;
+    specialItems<<SimulationNodeClass::nodeType_namedSelectionGeometry;
+                  //SimulationNodeClass::nodeType_structuralAnalysisThermalCondition<<
+                  //SimulationNodeClass::nodeType_structuralAnalysisBoltPretension<<
+                  //SimulationNodeClass::nodeType_thermalAnalysisConvection<<
+                  //SimulationNodeClass::nodeType_thermalAnalysisRadiation<<
+                  //SimulationNodeClass::nodeType_thermalAnalysisTemperature<<
+                  //SimulationNodeClass::nodeType_thermalAnalysisThermalFlow<<
+                  //SimulationNodeClass::nodeType_thermalAnalysisThermalFlux<<
+                  //SimulationNodeClass::nodeType_thermalAnalysisThermalPower;
 
     //! --------------------------------------------------------------------
     //! list of the selected items
@@ -1397,6 +1397,7 @@ void SimulationManager::deleteItem(QList<QModelIndex> indexesList)
     //! -------------------------------------------
     SimulationNodeClass* nodeAnalysisSetting = myTreeView->currentIndex().parent().child(0,0).data(Qt::UserRole).value<SimulationNodeClass*>();
     CustomTableModel *tabData = nodeAnalysisSetting->getTabularDataModel();
+    cout<<"SimulationManager::deleteItem()->____indexesLenght____"<<indexesList.length()<<endl;
 
     for(int i=0; i<indexesList.length(); i++)
     {
@@ -1404,18 +1405,27 @@ void SimulationManager::deleteItem(QList<QModelIndex> indexesList)
         SimulationNodeClass *aNode = modelIndex.data(Qt::UserRole).value<SimulationNodeClass*>();
         SimulationNodeClass::nodeType theType = aNode->getType();
 
+        if(undeletableItems.contains(theType)) continue;
+        itemListToDelete<<modelIndex;
         cout<<"SimulationManager::deleteItem()->____trying to delete item: \""<<aNode->type().toStdString()<<"\"____"<<endl;
-
         //! -----------------------------------------------------------------------------
         //! items defined by a one or three components having the "Define by" components
         //! -----------------------------------------------------------------------------
-        if(!undeletableItems.contains(theType) && !specialItems.contains(theType))
+        if(aNode->hasTabularData())
         {
+            cout<<"SimulationManager::deleteItem()->____trying to delete tabular data item____"<<endl;
+
             //! ---------------------------------------------------------
             //! add to the list for final removal fro from the tree view
             //! ---------------------------------------------------------
-            itemListToDelete<<modelIndex;
+            //itemListToDelete<<modelIndex;
 
+            QList<int> columsToRemove = mainTreeTools::getColumnsToRead(myTreeView);
+            int columnCount;
+            if(columsToRemove.size()==1) columnCount=1;
+            else columnCount = columsToRemove.back()-columsToRemove.front()+1;
+            tabData->removeColumns(columsToRemove.at(0),columnCount);
+            /*
             //! --------------------------------------------
             //! items/nodes having the "Define by" property
             //! they require an update of the tabular data
@@ -1436,9 +1446,9 @@ void SimulationManager::deleteItem(QList<QModelIndex> indexesList)
                     break;
                 }
                 tabData->removeColumns(SC,count);
-            }            
+            }*/
         }
-
+/*
         //! ------------------------------------------------------------------------------------
         //! handle the special case of a "Displacement"/"Remote displacement"/"Remote rotation"
         //! ------------------------------------------------------------------------------------
@@ -1468,13 +1478,15 @@ void SimulationManager::deleteItem(QList<QModelIndex> indexesList)
             tabData->removeColumns(SC,count);
             itemListToDelete<<modelIndex;
         }
-
+*/
         //! ------------------------------------------------
         //! handle the special case of a "Named selection"
         //! -----------------------------------------------
         if(theType==SimulationNodeClass::nodeType_namedSelectionGeometry)
         {
-            itemListToDelete<<modelIndex;
+            cout<<"SimulationManager::deleteItem()->____trying to delete named selection____"<<endl;
+
+            //itemListToDelete<<modelIndex;
 
             //! ---------------------------------
             //! parse the simulation setup items
@@ -1517,7 +1529,7 @@ void SimulationManager::deleteItem(QList<QModelIndex> indexesList)
             }
 
         }
-
+    /*
         //! ----------------------------------------------------------------
         //! handle the special case of a "Thermal condition" "Model change"
         //! handle the special case of a "Bolt pretension"
@@ -1557,8 +1569,8 @@ void SimulationManager::deleteItem(QList<QModelIndex> indexesList)
             tabData->removeColumns(SC,count);
             itemListToDelete<<modelIndex;
         }
+    */
     }
-
     //! ---------------------------------------------------------------------------
     //! delete the selected items from the model
     //! see Ref.
@@ -1571,6 +1583,7 @@ void SimulationManager::deleteItem(QList<QModelIndex> indexesList)
     for (int i = indexes.count() - 1; i > -1; --i)
         myModel->removeRow(indexes.at(i).row(),indexes.at(i).parent());
     myTreeView->setUpdatesEnabled(true);
+    cout<<"SimulationManager::deleteItem()->____exiting____"<<endl;
 }
 
 //! ---------------------
@@ -2403,6 +2416,8 @@ void SimulationManager::handleItem(int type)
 
     case 300: mySimulationDataBase->createParticlesInFieldsRootNode(); break;
     case 301: this->createSimulationNode(SimulationNodeClass::nodeType_electrostaticPotential); break;
+
+    case 52: exit(11); break;
 
 #ifdef COSTAMP_VERSION
     case 1000:
@@ -9739,9 +9754,6 @@ void SimulationManager::interpolatePrivate(int mode)
     //! --------------------------
     //! list of times (by double)
     //! --------------------------
-    //std::vector<double> listTimeS;
-    //QList<QString> stringListTimeS;
-    //std::map<double,QString> mapFileTime;
     QList<QString> listTimeS;
     //! ---------------
     //! measuring time
@@ -10038,7 +10050,7 @@ void SimulationManager::interpolatePrivate(int mode)
                 std::map<int,std::pair<double,double>> mapMinMax;
                 std::vector<std::map<int,double>> listOfRes;
                 std::map<GeometryTag,std::vector<std::map<int,double>>> mapOfRes;
-                cout<<"SimulationManager::interpolatePrivate()->____retrieve list of map of result at step "<<pos<<"____"<<endl;
+                //cout<<"SimulationManager::interpolatePrivate()->____retrieve list of map of result at step "<<pos<<"____"<<endl;
 
                 //! retrieve the mapper interpolation result at time "pos"
                 mapper.retrieveResMap(pos);
@@ -10049,7 +10061,7 @@ void SimulationManager::interpolatePrivate(int mode)
                 listOfRes.push_back(mapper.getResults());
                 if(it==vecLocs.begin())
                 {
-                    cout<<"SimulationManager::interpolatePrivate()->inserting results on first body number = "<<bodyIndex<<endl;
+                    //cout<<"SimulationManager::interpolatePrivate()->inserting results on first body number = "<<bodyIndex<<endl;
                     mapMinMax.insert(std::make_pair(bodyIndex,aPair));
                     mapOfRes.insert(std::make_pair(loc,listOfRes));
 
@@ -10059,7 +10071,7 @@ void SimulationManager::interpolatePrivate(int mode)
                 }
                 else
                 {
-                    cout<<"SimulationManager::interpolatePrivate()->inserting results on next body number =  "<<bodyIndex<<endl;
+                    //cout<<"SimulationManager::interpolatePrivate()->inserting results on next body number =  "<<bodyIndex<<endl;
                     mapMinMax = listMapMinMax[pos];
                     mapOfRes = listMapOfRes[pos];
                     mapMinMax.insert(std::make_pair(bodyIndex,aPair));
@@ -10167,17 +10179,18 @@ void SimulationManager::interpolatePrivate(int mode)
         std::map<int,std::pair<double,double>> mapMinMax = listMapMinMax.at(t);
         double min,max;
         std::vector<double> listOfMin,listOfMax;
+
         for(std::map<int,std::pair<double,double>>::iterator it=mapMinMax.begin();it!=mapMinMax.end();++it)
         {
             std::pair<double,double> &aPair = it->second;
             listOfMax.push_back(aPair.second);
             listOfMin.push_back(aPair.first);
         }
+
         std::sort(listOfMax.begin(),listOfMax.end());
         std::sort(listOfMin.begin(),listOfMin.end());
         max = listOfMax.back();
         min = listOfMin.front();
-        cout<<"Min Max at time "<<timeS.toStdString()<<" Min and max = "<<min<<" "<<max<<endl;
         //! ---------------------------------------------------------------------
         //! create the post object: 1-st column of data, 10 levels, autoscale ON
         //! ---------------------------------------------------------------------
@@ -10185,6 +10198,7 @@ void SimulationManager::interpolatePrivate(int mode)
         int component = 0;
         int NbLevels = 10;
         bool isAutoscale = false;
+        //bool isAutoscale = true;
         aPostObject->init(static_cast<meshDataBase*>(this->getDataBase()));
         aPostObject->buildMeshIO(min,max,NbLevels,isAutoscale,component);
 
@@ -10594,7 +10608,7 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
             //! This avoids application crash when requiring "Evaluate result(s)"
             //! and no result exixts
             //! ------------------------------------------------------------------
-            if(dTm.isEmpty())
+            if(dTm.empty())
             {
                 cout<<"----------------------------------------------------------------------------------------------------------------------"<<endl;
                 cout<<"SimulationManager::callPostEngineEvaluateResult_private()->____cannot evaluate results: the discrete time is empty____"<<endl;
@@ -10700,7 +10714,7 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
             //! This avoids application crash when requiring "Evaluate result(s)"
             //! and no result exixts
             //! ------------------------------------------------------------------
-            if(dTm.isEmpty())
+            if(dTm.empty())
             {
                 QMessageBox::warning(this,APPNAME,"No result available", QMessageBox::Ok);
                 return;
@@ -10863,7 +10877,7 @@ bool SimulationManager::eventFilter(QObject *object, QEvent *event)
              QFile f(stafile);
              if(f.exists())
              {
-                 //cout<<"____.STA FILE FOUND: \""<<stafile.toStdString()<<"\"____"<<endl;
+                 cout<<"____.STA FILE FOUND: \""<<stafile.toStdString()<<"\"____"<<endl;
                  QMap<double,QVector<int>> timeinfo;
                  bool isDone = CCXTools::readsta(stafile,timeinfo);
                  if(isDone)
@@ -11285,7 +11299,9 @@ void SimulationManager::readResultsFile(const QString &fileName, const QString &
             {
                 QVector<int> init;
                 double ini=0.0;
-                init<<0.0<<0.0<<0.0;
+                init.push_back(0.0);
+                init.push_back(0.0);
+                init.push_back(0.0);
                 timeinfo.insert(ini,init);
                 data.setValue(timeinfo);
                 nodeSolutionInformation->replaceProperty("Discrete time map",Property("Discrete time map",data,Property::PropertyGroup_Hidden));

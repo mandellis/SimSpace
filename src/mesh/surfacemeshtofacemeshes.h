@@ -24,6 +24,11 @@ using namespace std;
 //! -------
 #include <libigl/include/igl/embree/EmbreeIntersector.h>
 
+//! --------
+//! Windows
+//! --------
+#include <Windows.h>
+
 class Ng_MeshVS_DataSourceFace;
 class Ng_MeshVS_DataSource2D;
 
@@ -43,6 +48,8 @@ private:
                                 std::map<int, occHandle(Ng_MeshVS_DataSourceFace)> &mapOfFaceMeshDS_STL);      // fills the myMeshElementToFaceNumberMap
 
     void initRayCaster(const occHandle(Ng_MeshVS_DataSource2D) &aMeshDS);
+
+    std::string getPathOfExecutable();
 
 private:
 

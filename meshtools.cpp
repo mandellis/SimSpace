@@ -896,7 +896,6 @@ bool MeshTools::toSTLMesh1(const TopoDS_Shape &shape,
     //! ---------------------------------------------------------------------------------------
     QList<QMap<int,int>> maps_localToGlobal_nodeIDs;
     QList<QMap<int,int>> maps_localToGlobal_elementIDs;
-    cout<<"____"<<surfaceMeshFilePath.toStdString()<<"____"<<endl;
     occHandle(StlMesh_Mesh) overallSTL = ExtendedRWStl::ReadExtendedSTLAscii(surfaceMeshFilePath,
                                                                              vecFaceStlMesh,
                                                                              maps_localToGlobal_nodeIDs,
@@ -941,26 +940,30 @@ bool MeshTools::toSTLMesh1(const TopoDS_Shape &shape,
     return true;
 }
 
-
 //! -------------------------------------------------------------------
 //! function: arrayOfFaceDataSourcesToExtendedStlFile
 //! details:  convert an array of face datasources to an extended .stl
 //!           file and write it on disk
 //! -------------------------------------------------------------------
-bool MeshTools::arrayOfFaceDataSourcesToExtendedStlFile(const NCollection_Array1<occHandle(Ng_MeshVS_DataSourceFace)> &arrayOfFaceMeshDS,
-                                                        const QString &extendedStlFileName)
+bool MeshTools::faceDataSourcesToExtendedStlFile(const std::map<int,occHandle(Ng_MeshVS_DataSourceFace)> &mapOfFaceMeshDS,
+                                                        const std::string &extendedStlFileName)
 {
+    cout<<"MeshTools::faceDataSourcesToExtendedStlFile()->____function called____"<<endl;
+
     ofstream s;
-    s.open(extendedStlFileName.toStdString());
+    s.open(extendedStlFileName);
     if(!s.is_open()) return false;
 
     s<<"solid"<<endl;
 
-    for(int faceNr = arrayOfFaceMeshDS.Lower(); faceNr<=arrayOfFaceMeshDS.Upper(); faceNr++)
+    for(std::map<int,occHandle(Ng_MeshVS_DataSourceFace)>::const_iterator it = mapOfFaceMeshDS.cbegin(); it!=mapOfFaceMeshDS.cend(); it++)
     {
+        int faceNr = it->first;
+        const occHandle(Ng_MeshVS_DataSourceFace) &curFaceDS = it->second;
+
         cout<<"____arrayOfFaceDataSourcesToExtendedStlFile()->____working on faceNr: "<<faceNr<<"____"<<endl;
-        const occHandle(Ng_MeshVS_DataSourceFace) &curFaceDS = arrayOfFaceMeshDS.Value(faceNr);
-        if(curFaceDS.IsNull() || curFaceDS->GetAllElements().Extent()==0) continue;
+
+        if(curFaceDS.IsNull()) continue;
 
         char line[512];
         int NbNodes;
@@ -995,20 +998,20 @@ bool MeshTools::arrayOfFaceDataSourcesToExtendedStlFile(const NCollection_Array1
                 double n2 = s21z*s31x-s21x*s31z;
                 double n3 = s21x*s31y-s21y*s31x;
 
-                sprintf(line,
-                        " facet normal %.9e %.9e %.9e\n"
-                        "   outer loop\n"
-                        "     vertex %.9e %.12e %.9e\n"
-                        "     vertex %.9e %.12e %.9e\n"
-                        "     vertex %.9e %.12e %.9e\n"
-                        "   endloop\n"
-                        "   %d\n"
-                        " endfacet\n",
+                sprintf(line,"facet normal %.6e %.6e %.6e\n"
+                             "outer loop\n"
+                             "vertex %.6e %.6e %.6e\n"
+                             "vertex %.6e %.6e %.6e\n"
+                             "vertex %.6e %.6e %.6e\n"
+                             "endloop\n"
+                             "%d\n"
+                             "endfacet\n",
                         n1,n2,n3,
                         x1, y1, z1,
                         x2, y2, z2,
                         x3, y3, z3,
                         faceNr);
+
                 s<<line;
             }
             else continue;
@@ -1349,20 +1352,18 @@ Ng_Mesh* MeshTools::surfaceMeshDSToNetgenMesh(const occHandle(MeshVS_DataSource)
         Ng_AddSurfaceElement(NgMesh,NG_TRIG,N);
     }
 
-    return NgMesh;
-    
-    /*
     //! -----------    
     //! diagnostic
     //! -----------
     Ng_Meshing_Parameters mp;
     Ng_GenerateVolumeMesh(NgMesh,&mp);
-    Ng_SaveMesh(NgMesh,"D://WBtests//testSurfaceMesh.vol");
+    Ng_SaveMesh(NgMesh,"D:/testSurfaceMesh.vol");
     Ng_DeleteMesh(NgMesh);
     //! ---------------
     //! end diagnostic
     //! ---------------
-    */
+
+    return NgMesh;
 }
 
 //! -------------------------------------
@@ -1794,4 +1795,118 @@ void MeshTools::computeAngleDefectMap(const occHandle(Ng_MeshVS_DataSourceFace) 
         cout<<"____(nodeID, angleDeficit) = ("<<globalNodeID<<", "<<angleDefect*180/PI<<")____"<<endl;
         mapOfAngleDefect.insert(std::make_pair(globalNodeID,angleDefect));
     }
+}
+
+
+//! ------------------
+//! function: saveSTL
+//! details:
+//! ------------------
+bool MeshTools::saveSTL(const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS, const std::string &fileName)
+{
+    if(aMeshDS.IsNull()) return false;
+    if(fileName=="") return false;
+
+    FILE *aFile = fopen(fileName.c_str(),"w");
+    if(aFile == NULL) return false;
+
+    fprintf(aFile,"solid surfacemesh\n");
+    for(TColStd_MapIteratorOfPackedMapOfInteger it = aMeshDS->GetAllElements(); it.More(); it.Next())
+    {
+        int globalElementID = it.Key();
+        MeshVS_EntityType aType;
+        double buf[24];
+        TColStd_Array1OfReal coords(*buf,1,24);
+        int NbNodes;
+        double nx, ny,nz;
+        aMeshDS->GetNormal(globalElementID,10,nx,ny,nz);
+        if(aMeshDS->GetGeom(globalElementID,true,coords,NbNodes,aType))
+        {
+            fprintf(aFile,
+                    "facet normal %.6e %.6e %.6e\n"
+                    "outer loop\n"
+                    "vertex %.6e %.6e %.6e\n"
+                    "vertex %.6e %.6e %.6e\n"
+                    "vertex %.6e %.6e %.6e\n"
+                    "endloop\n"
+                    "endfacet\n",
+                    nx,ny,nz,
+                    coords(1),coords(2),coords(3),
+                    coords(4),coords(5),coords(6),
+                    coords(7),coords(8),coords(9)
+                    );
+        }
+        else
+        {
+            cerr<<"____the node cannot be found: the STL is not valid____"<<endl;
+            fclose(aFile);
+            return false;
+        }
+    }
+    fprintf(aFile,"endsolid surfacemesh\n");
+    fclose(aFile);
+    return true;
+}
+/*
+//! ------------------------------------------------
+//! function: buildPointToVolumeElementConnectivity
+//! details:
+//! ------------------------------------------------
+bool MeshTools::buildPointToVolumeElementConnectivity(const occHandle(Ng_MeshVS_DataSource3D) &aVolumeMeshDS, std::map<int,std::vector<int>> &connectivityMap)
+{
+    cout<<"MeshTools::buildPointToVolumeElementConnectivity()->____function called____"<<endl;
+    if(aVolumeMeshDS.IsNull()) return false;
+    if(aVolumeMeshDS->GetAllElements().Extent()==0) return false;
+    if(aVolumeMeshDS->GetAllNodes().Extent()<4) return false;
+
+    for(TColStd_MapIteratorOfPackedMapOfInteger it(aVolumeMeshDS->GetAllElements()); it.More(); it.Next())
+    {
+        int globalElementID = it.Key();
+        int NbNodes, buf[8];
+        TColStd_Array1OfInteger nodeIDs(*buf,1,8);
+        aVolumeMeshDS->GetNodesByElement(globalElementID,nodeIDs,NbNodes);
+        for(int n=1; n<=NbNodes; n++)
+        {
+            int globalNodeID = nodeIDs(n);
+            std::map<int,std::vector<int>>::iterator it_ = connectivityMap.find(globalNodeID);
+            if(it_==connectivityMap.end())
+            {
+                std::vector<int> v { globalElementID };
+                connectivityMap.insert(std::make_pair(globalNodeID,v));
+            }
+            else it_->second.push_back(globalElementID);
+        }
+    }
+    cout<<"MeshTools::buildPointToVolumeElementConnectivity()->____exiting function____"<<endl;
+}
+*/
+//! ------------------------------------------
+//! function: buildPointToElementConnectivity
+//! details:
+//! ------------------------------------------
+bool MeshTools::buildPointToElementConnectivity(const occHandle(MeshVS_DataSource) &aMeshDS, std::map<int,std::vector<int>> &connectivityMap)
+{
+    cout<<"MeshTools::buildPointToVolumeElementConnectivity()->____function called____"<<endl;
+    if(aMeshDS.IsNull()) return false;
+    if(aMeshDS->GetAllElements().Extent()<1) return false;
+    for(TColStd_MapIteratorOfPackedMapOfInteger it(aMeshDS->GetAllElements()); it.More(); it.Next())
+    {
+        int globalElementID = it.Key();
+        int NbNodes, buf[8];
+        TColStd_Array1OfInteger nodeIDs(*buf,1,8);
+        aMeshDS->GetNodesByElement(globalElementID,nodeIDs,NbNodes);
+        for(int n=1; n<=NbNodes; n++)
+        {
+            int globalNodeID = nodeIDs(n);
+            std::map<int,std::vector<int>>::iterator it_ = connectivityMap.find(globalNodeID);
+            if(it_==connectivityMap.end())
+            {
+                std::vector<int> v { globalElementID };
+                connectivityMap.insert(std::make_pair(globalNodeID,v));
+            }
+            else it_->second.push_back(globalElementID);
+        }
+    }
+    cout<<"MeshTools::buildPointToVolumeElementConnectivity()->____exiting function____"<<endl;
+    return true;
 }

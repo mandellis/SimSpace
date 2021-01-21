@@ -221,11 +221,16 @@ bool OpenFoamReader::perform(SimulationNodeClass *OFnode)
     }
     cout<<"OpenFoamReader::perform()->____"<<mySourceDir.toStdString()<<"____"<<endl;
 
-#ifdef COSTAMP_VERSION
-    //! retrieve the time list from the node
-    const QVector<double> timeList = OFnode->getPropertyValue<QVector<double>>("Time list");
-    myTimeFolders = timeList.toStdVector();
-#endif
+//#ifdef COSTAMP_VERSION
+    //! retrieve the time list from the node if exist
+    if(OFnode->getPropertyItem("Time list") != Q_NULLPTR)
+    {
+        const QVector<double> timeList = OFnode->getPropertyValue<QVector<double>>("Time list");
+        myTimeFolders = timeList.toStdVector();
+    }
+    //else {myTimeFolders = }
+//#endif
+
     QDir curDir(mySourceDir);
 
     cout<<(QString("OpenFoamReader::OpenFoamReader->____starting dir: ").append(curDir.absolutePath()).append("____")).toStdString()<<endl;
@@ -504,27 +509,33 @@ bool OpenFoamReader::perform(SimulationNodeClass *OFnode)
 
         for(int i=0; i<entriesInfo.length(); i++)
         {
-#ifdef COSTAMP_VERSION
-        int nBstep = int(myTimeFolders.size());
-        for(int j=0;j<nBstep;j++)
-        {
-            double endTime = myTimeFolders.at(j);
-            QString dirTime = QString("%1").arg(endTime,0,'g',-1);
-            //cout<<"time "<<endTime<<" dirTime "<<directoryList.at(i).toStdString()<<endl;
-            if(entriesInfo.at(i).isDir() && directoryList.at(i) == dirTime)
+//#ifdef COSTAMP_VERSION
+            int nBstep = int(myTimeFolders.size());
+            if(nBstep!=0)
             {
-                directoryListFiltered.append(directoryList.at(i));
+                for(int j=0;j<nBstep;j++)
+                {
+                    double endTime = myTimeFolders.at(j);
+                    QString dirTime = QString("%1").arg(endTime,0,'g',-1);
+                    //cout<<"time "<<endTime<<" dirTime "<<directoryList.at(i).toStdString()<<endl;
+                    if(entriesInfo.at(i).isDir() && directoryList.at(i) == dirTime)
+                    {
+                        directoryListFiltered.append(directoryList.at(i));
+                    }
+                }
             }
-        }
-#endif
-#ifndef COSTAMP_VERSION
-            if(entriesInfo.at(i).isDir() && directoryList.at(i)!="." && directoryList.at(i)!=".."
-                    && directoryList.at(i)!="constant" && directoryList.at(i)!="system")
+            //#endif
+            else
             {
-                directoryListFiltered.append(directoryList.at(i));
-                //cout<<"____"<<directoryList.at(i).toStdString()<<"____"<<endl;
+                //#ifndef COSTAMP_VERSION
+                if(entriesInfo.at(i).isDir() && directoryList.at(i)!="." && directoryList.at(i)!=".."
+                        && directoryList.at(i)!="constant" && directoryList.at(i)!="system")
+                {
+                    directoryListFiltered.append(directoryList.at(i));
+                    //cout<<"____"<<directoryList.at(i).toStdString()<<"____"<<endl;
+                }
             }
-#endif
+//#endif
         }
 
         //! ------------------------------
@@ -580,7 +591,7 @@ bool OpenFoamReader::perform(SimulationNodeClass *OFnode)
             //! "T" can be changed into another scalar
             //! -----------------------------------------------
             sprintf(fileName,"%s",curDir.absoluteFilePath("TCel").toStdString().c_str());
-            cout<<"OpenFoamReader::perform()->____Opening file: \""<<fileName<<"\"____"<<endl;
+            //scout<<"OpenFoamReader::perform()->____Opening file: \""<<fileName<<"\"____"<<endl;
             is.open(fileName);
 
             //! ----------------

@@ -46,12 +46,12 @@ struct meshPoint
     meshPoint(){ x=y=z=0; ID = -1; }
     meshPoint(double xP, double yP, double zP, int pointID = -1):x(xP),y(yP),z(zP),ID(pointID){;}
 
-    //! ------------
+    //! --------------------------------------------------------------------
     //! operator ==
-    //! ------------
+    //! the equal operator is intentionally defined only wrt to coordinates
+    //! --------------------------------------------------------------------
     inline bool operator == (const meshPoint &rhs) const
     {
-        //if(x==rhs.x && y==rhs.y && z == rhs.z && ID == rhs.ID) return true;
         if(x==rhs.x && y==rhs.y && z == rhs.z) return true;
         return false;
     }
@@ -121,14 +121,39 @@ struct meshSegment
     //! ------------
     bool operator == (const meshSegment &rhs) const
     {
-        if(nodeIDs.length()!=rhs.nodeIDs.length()) return false;
+        bool equal = false;
+        if(nodeIDs.length()!=rhs.nodeIDs.length()) return equal;
         int NbNodes = nodeIDs.length();
-        QList<int> tmp = nodeIDs;
-        QList<int> tmp1 = rhs.nodeIDs;
-        std::sort(tmp.begin(),tmp.end());
-        std::sort(tmp1.begin(),tmp1.end());
-        for(int i=0; i<NbNodes; i++) if(tmp[i]!=tmp1[i]) return false;
-        return true;
+        switch(NbNodes)
+        {
+        case 2:
+        {
+            //! --------------------
+            //! first order segment
+            //! --------------------
+            if(     (nodeIDs[0]==rhs.nodeIDs[0] && nodeIDs[1]==rhs.nodeIDs[1]) ||
+                    (nodeIDs[0]==rhs.nodeIDs[1] && nodeIDs[1]==rhs.nodeIDs[0])
+                    ) equal = true;
+        }
+            break;
+
+        case 3:
+        {
+            //! ---------------------
+            //! second order segment
+            //! ---------------------
+            if(     (nodeIDs[0]==rhs.nodeIDs[0] && nodeIDs[1]==rhs.nodeIDs[1] && nodeIDs[2]==rhs.nodeIDs[2]) ||
+                    (nodeIDs[0]==rhs.nodeIDs[1] && nodeIDs[1]==rhs.nodeIDs[2] && nodeIDs[2]==rhs.nodeIDs[0]) ||
+                    (nodeIDs[0]==rhs.nodeIDs[2] && nodeIDs[1]==rhs.nodeIDs[0] && nodeIDs[2]==rhs.nodeIDs[1]) ||
+
+                    (nodeIDs[0]==rhs.nodeIDs[2] && nodeIDs[1]==rhs.nodeIDs[1] && nodeIDs[2]==rhs.nodeIDs[0]) ||
+                    (nodeIDs[0]==rhs.nodeIDs[0] && nodeIDs[1]==rhs.nodeIDs[2] && nodeIDs[2]==rhs.nodeIDs[1]) ||
+                    (nodeIDs[0]==rhs.nodeIDs[1] && nodeIDs[1]==rhs.nodeIDs[0] && nodeIDs[2]==rhs.nodeIDs[2])
+                    ) equal = true;
+        }
+            break;
+        }
+        return equal;
     }
 
     //! -----------
@@ -192,10 +217,9 @@ struct meshElement
         return *this;
     }
 
-    //! -----------------------------
+    //! -----------
     //! operator <
-    //! QMap::contains, QMap::insert
-    //! -----------------------------
+    //! -----------
     bool operator < (const meshElement &other) const
     {
         std::vector<int> vec(theNodeIDs.begin(), theNodeIDs.end());
@@ -215,11 +239,9 @@ struct meshElement
         return false;
     }
 
-    //! ---------------------------------------
+    //! ------------
     //! operator ==
-    //! QList::contains, QList::insert, ...
-    //! this checks identity in a cyclic sense
-    //! ---------------------------------------
+    //! ------------
     bool operator == (const meshElement &other)
     {        
         int NbNodes = int(this->theNodeIDs.size());
@@ -234,7 +256,6 @@ struct meshElement
         for(firstIndex = 0; firstIndex<NbNodes; firstIndex++)
         {
             val1 = theNodeIDs[firstIndex];
-            //val2 = other.theNodeIDs.at(0);
             val2 = other.theNodeIDs[0];
             if(val1==val2)
             {
@@ -245,8 +266,6 @@ struct meshElement
         if(!found) return false;
         for(int i=1; i<NbNodes; i++)
         {
-            //val1 = theNodeIDs.at((i+firstIndex)%NbNodes);
-            //val2 = other.theNodeIDs.at(i);
             val1 = theNodeIDs[(i+firstIndex)%NbNodes];
             val2 = other.theNodeIDs[i];
             if(val1!=val2) return false;
@@ -264,7 +283,6 @@ struct elementNormal
     double nx,ny,nz;
     double tolerance;
 
-    //elementNormal(){;}
     elementNormal(double a=0.0, double b=0.0, double c=0.0, double aTolerance = 0.0174):
         nx(a),ny(b),nz(c),tolerance(aTolerance){;}
 
@@ -342,8 +360,6 @@ struct elementNormal
         return false;
     }
 };
-
-
 
 //! end namespace
 }

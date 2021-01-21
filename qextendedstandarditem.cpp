@@ -172,7 +172,7 @@ QVariant QExtendedStandardItem::data(int role) const
         if(name=="Discrete time map")
         {
             QMap<double,QVector<int>> dtm = QStandardItem::data(Qt::UserRole).value<Property>().getData().value<QMap<double,QVector<int>>>();
-            if(dtm.isEmpty()) data.setValue(QString("Empty"));
+            if(dtm.empty()) data.setValue(QString("Empty"));
             else data.setValue(QString("%1").arg(dtm.size()));
             return data;
         }
@@ -1761,6 +1761,7 @@ QVariant QExtendedStandardItem::data(int role) const
             case Property::overpressureFunction_exponential: data.setValue(QString("Exponential")); break;
             case Property::overpressureFunction_linear: data.setValue(QString("Linear")); break;
             case Property::overpressureFunction_tied: data.setValue(QString("Tied")); break;
+            case Property::overpressureFunction_hard: data.setValue(QString("Hard")); break;
             }
             return data;
         }

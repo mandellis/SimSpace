@@ -68,6 +68,7 @@ QList<int> mainTreeTools::getColumnsToRead(QStandardItem *anItem)
                SimulationNodeClass::nodeType_thermalAnalysisThermalFlux<<
                SimulationNodeClass::nodeType_thermalAnalysisThermalPower<<
                SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Pressure<<
+               SimulationNodeClass::nodeType_modelChange<<
                SimulationNodeClass::nodeType_electrostaticPotential;
 
     //! -----------------

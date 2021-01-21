@@ -655,6 +655,7 @@ Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(const tetgenio &aMesh)
     this->buildElementsTopology();
 }
 
+/*
 //! ----------------------------------------------
 //! function: constructor
 //! details:  constructor from a Tetgen .ele file
@@ -663,16 +664,15 @@ Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(const QString &tetgenEleFileName,
 {
     cout<<"Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D()->____constructor from Tetgen files called____"<<endl;
 
-    FILE *tetgenNodeFile = fopen(tetgenNodeFileName.toStdString().c_str(),"r");
-    if(tetgenNodeFile==NULL) return;
     FILE *tetgenEleFile = fopen(tetgenEleFileName.toStdString().c_str(),"r");
     if(tetgenEleFile==NULL) return;
+    FILE *tetgenNodeFile = fopen(tetgenNodeFileName.toStdString().c_str(),"r");
+    if(tetgenNodeFile==NULL) return;
 
     //! ----------------------------------------------------------------------------------------
     //! read the nodes
     //! First line: <# of points> <dimension (3)> <# of attributes> <boundary markers (0 or 1)>
     //! ----------------------------------------------------------------------------------------
-    //cout<<"____Start reading: "<<tetgenNodeFileName.toStdString()<<"____"<<endl;
     unsigned int NbPoints, dimension, NbAttributes, boundaryMarkerFlag;
     fscanf(tetgenNodeFile,"%d%d%d%d",&NbPoints,&dimension,&NbAttributes,&boundaryMarkerFlag);
 
@@ -707,14 +707,11 @@ Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(const QString &tetgenEleFileName,
         return;
     }
 
-    //cout<<"____Start reading elements file: "<<tetgenEleFileName.toStdString()<<"____"<<endl;
-
     //! ----------------------------------------------------------------------------------------
     //! read the elements
     //! First line: <# of points> <dimension (3)> <# of attributes> <boundary markers (0 or 1)>
     //! ----------------------------------------------------------------------------------------
     unsigned int NbElements;
-    //unsigned int NbPoints;
     unsigned int region;
     unsigned int eNumber;
     unsigned int n1,n2,n3,n4,n5,n6,n7,n8,n9,n10;
@@ -723,8 +720,6 @@ Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(const QString &tetgenEleFileName,
     myNumberOfElements = NbElements;
     myElemType = new TColStd_HArray1OfInteger(1,NbElements);
     myElemNodes = new TColStd_HArray2OfInteger(1,NbElements,1,10);
-
-    //cout<<"____Number of volume elements: "<<NbElements<<"____"<<endl;
 
     bool isElementReadingOk = true;
     for(unsigned int line = 1; line<=NbElements; line++)
@@ -768,9 +763,74 @@ Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(const QString &tetgenEleFileName,
         }
     }
 
-    //! -------------------------
-    //! build elements toipology
-    //! -------------------------
+    //! ------------------------
+    //! build elements topology
+    //! ------------------------
+    this->buildElementsTopology();
+
+    //cout<<"Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D()->____constructor from Tetgen files OK____"<<endl;
+}
+*/
+
+Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(const QString &tetgenEleFileName, const QString &tetgenNodeFileName)
+{
+    cout<<"Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D()->____constructor from Tetgen files called____"<<endl;
+
+    ifstream tetgenEleFile(tetgenEleFileName.toStdString());
+    if(tetgenEleFile.is_open()==false) return;
+    ifstream tetgenNodeFile(tetgenNodeFileName.toStdString());
+    if(tetgenNodeFile.is_open()==false) return;
+
+    //! ----------------------------------------------------------------------------------------
+    //! read the nodes
+    //! First line: <# of points> <dimension (3)> <# of attributes> <boundary markers (0 or 1)>
+    //! ----------------------------------------------------------------------------------------
+    unsigned int NbPoints, dimension, NbAttributes, boundaryMarkerFlag;
+    tetgenNodeFile>>NbPoints>>dimension>>NbAttributes>>boundaryMarkerFlag;
+
+    myNumberOfNodes = NbPoints;
+    myNodeCoords = new TColStd_HArray2OfReal(1,NbPoints,1,3);
+
+    unsigned int nodeNumber, flag;
+    double x,y,z;
+    for(unsigned int line = 1; line<=NbPoints; line++)
+    {
+        tetgenNodeFile>>nodeNumber>>x>>y>>z>>flag;
+        myNodes.Add(nodeNumber);
+        myNodesMap.Add(nodeNumber);
+        myNodeCoords->SetValue(nodeNumber,1,x);
+        myNodeCoords->SetValue(nodeNumber,2,y);
+        myNodeCoords->SetValue(nodeNumber,3,z);
+    }
+
+    //! ----------------------------------------------------------------------------------------
+    //! read the elements
+    //! First line: <# of points> <dimension (3)> <# of attributes> <boundary markers (0 or 1)>
+    //! ----------------------------------------------------------------------------------------
+    unsigned int NbElements;
+    unsigned int region;
+    unsigned int eNumber;
+    unsigned int n1,n2,n3,n4;
+    tetgenEleFile>>NbElements>>NbPoints>>region;
+    myNumberOfElements = NbElements;
+    myElemType = new TColStd_HArray1OfInteger(1,NbElements);
+    myElemNodes = new TColStd_HArray2OfInteger(1,NbElements,1,10);
+
+    for(unsigned int line = 1; line<=NbElements; line++)
+    {
+        tetgenEleFile>>eNumber>>n1>>n2>>n3>>n4;
+        myElemType->SetValue(eNumber,TET);
+        myElemNodes->SetValue(eNumber,1,n1);
+        myElemNodes->SetValue(eNumber,2,n2);
+        myElemNodes->SetValue(eNumber,4,n3);
+        myElemNodes->SetValue(eNumber,3,n4);
+        myElements.Add(eNumber);
+        myElementsMap.Add(eNumber);
+    }
+
+    //! ------------------------
+    //! build elements topology
+    //! ------------------------
     this->buildElementsTopology();
 
     //cout<<"Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D()->____constructor from Tetgen files OK____"<<endl;
@@ -1983,6 +2043,7 @@ bool Ng_MeshVS_DataSource3D::readMesh(const QString &meshFileName,
         elements.push_back(anElement);
     }
     fclose(filein);
+
     return true;
 }
 
@@ -2150,18 +2211,77 @@ void Ng_MeshVS_DataSource3D::buildFaceToElementConnectivity()
             //! ::contains() uses "<" in the "weak" form
             //! not aware of nodal ordering
             //! -----------------------------------------
+            QList<int> elements;
             if(myFaceToElements.contains(aMeshElement2D))
             {
-                QList<int> elements = myFaceToElements.value(aMeshElement2D);
+                //QList<int> elements = myFaceToElements.value(aMeshElement2D);
+                elements = myFaceToElements.value(aMeshElement2D);
                 elements<<localElementID;
-                myFaceToElements.insert(aMeshElement2D,elements);
+                //myFaceToElements.insert(aMeshElement2D,elements);
             }
             else
             {
-                QList<int> elements;
+                //QList<int> elements;
                 elements<<localElementID;
-                myFaceToElements.insert(aMeshElement2D,elements);
+                //myFaceToElements.insert(aMeshElement2D,elements);
             }
+
+            //! ---------------------
+            //! check - experimental
+            //! ---------------------
+            std::vector<polygon::Point> points;
+            std::map<int,int> mapPoints;
+            for(int n=0; n<aMeshElement2D.nodeIDs.size(); n++)
+            {
+                int globalNodeID = aMeshElement2D.nodeIDs[n];
+                int localNodeID = myNodesMap.FindIndex(globalNodeID);
+                mapPoints.insert(std::make_pair(globalNodeID,localNodeID));
+                double x = myNodeCoords->Value(localNodeID,1);
+                double y = myNodeCoords->Value(localNodeID,2);
+                double z = myNodeCoords->Value(localNodeID,3);
+                points.push_back(polygon::Point(x,y,z));
+            }
+
+            double a,b,c,d;
+            polygon::planeCoefficients(points,a,b,c,d);
+
+            int NbNodes_, bufn[20];
+            TColStd_Array1OfInteger nodeIDs(*bufn,1,20);
+            int globalElementID = myElementsMap.FindIndex(localElementID);
+            this->GetNodesByElement(globalElementID,nodeIDs,NbNodes_);
+
+            int thePoint = -1;
+            for(int j=1; j<=NbNodes_; j++)
+            {
+                int currentPoint_global = nodeIDs(j);
+                if(mapPoints.count(currentPoint_global)>0) continue;
+                thePoint = nodeIDs(j);
+                break;
+            }
+            int thePoint_local = myNodesMap.FindIndex(thePoint);
+            double x = myNodeCoords->Value(thePoint_local,1);
+            double y = myNodeCoords->Value(thePoint_local,2);
+            double z = myNodeCoords->Value(thePoint_local,3);
+            polygon::Point P(x,y,z);
+            double distance = polygon::pointPlaneDistance(P,a,b,c,d);
+            if(distance>0)
+            {
+                //cout<<"____distance: "<<distance<<"____"<<endl;
+                meshElement2D invertedElement2D;
+                int NbPoints = aMeshElement2D.nodeIDs.length();
+                //cout<<"____NbPoints: "<<NbPoints<<"____"<<endl;
+                for(int i=NbPoints-1; i>=0; i--)
+                {
+                    //cout<<"____i: "<<i<<"____"<<endl;
+                    invertedElement2D.ID = aMeshElement2D.ID;
+                    invertedElement2D.nodeIDs<<aMeshElement2D.nodeIDs[i];
+                }
+                aMeshElement2D = invertedElement2D;
+            }
+            //! -------------------------
+            //! end check - experimental
+            //! -------------------------
+            myFaceToElements.insert(aMeshElement2D,elements);
         }
     }
 
@@ -3523,3 +3643,4 @@ Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(const occHandle(MeshVS_DataSource
 
     this->buildElementsTopology();
 }
+

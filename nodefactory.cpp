@@ -324,8 +324,11 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
         ListOfShape scope;
         for(int i=1; i<= NbBodies; i++)
         {
-            TopoDS_Solid aSolid = TopoDS::Solid(mDB->bodyMap.value(i));
-            scope.Append(aSolid);
+            if(mDB->MapOfIsActive.value(i))
+            {
+                TopoDS_Solid aSolid = TopoDS::Solid(mDB->bodyMap.value(i));
+                scope.Append(aSolid);
+            }
         }
         std::vector<GeometryTag> vecLocAllBodies = TopologyTools::generateLocationPairs(mDB, scope);
 
@@ -411,8 +414,11 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
         ListOfShape scope;
         for(int i=1; i<= NbBodies; i++)
         {
-            TopoDS_Solid aSolid = TopoDS::Solid(mDB->bodyMap.value(i));
-            scope.Append(aSolid);
+            if(mDB->MapOfIsActive.value(i))
+            {
+                TopoDS_Solid aSolid = TopoDS::Solid(mDB->bodyMap.value(i));
+                scope.Append(aSolid);
+            }
         }
         std::vector<GeometryTag> vecLocAllBodies = TopologyTools::generateLocationPairs(mDB, scope);
 
@@ -497,8 +503,11 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
         ListOfShape scope;
         for(int i=1; i<= NbBodies; i++)
         {
-            TopoDS_Solid aSolid = TopoDS::Solid(mDB->bodyMap.value(i));
-            scope.Append(aSolid);
+            if(mDB->MapOfIsActive.value(i))
+            {
+                TopoDS_Solid aSolid = TopoDS::Solid(mDB->bodyMap.value(i));
+                scope.Append(aSolid);
+            }
         }
         std::vector<GeometryTag> vecLocAllBodies = TopologyTools::generateLocationPairs(mDB, scope);
 
@@ -2460,8 +2469,11 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
         ListOfShape scope;
         for(int i=1; i<= NbBodies; i++)
         {
-            TopoDS_Solid aSolid = TopoDS::Solid(mDB->bodyMap.value(i));
-            scope.Append(aSolid);
+            if(mDB->MapOfIsActive.value(i))
+            {
+                TopoDS_Solid aSolid = TopoDS::Solid(mDB->bodyMap.value(i));
+                scope.Append(aSolid);
+            }
         }
         std::vector<GeometryTag> vecLocAllBodies = TopologyTools::generateLocationPairs(mDB, scope);
 
@@ -2540,8 +2552,11 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
         ListOfShape scope;
         for(int i=1; i<= NbBodies; i++)
         {
-            TopoDS_Solid aSolid = TopoDS::Solid(mDB->bodyMap.value(i));
-            scope.Append(aSolid);
+            if(mDB->MapOfIsActive.value(i))
+            {
+                TopoDS_Solid aSolid = TopoDS::Solid(mDB->bodyMap.value(i));
+                scope.Append(aSolid);
+            }
         }
         std::vector<GeometryTag> vecLocAllBodies = TopologyTools::generateLocationPairs(mDB, scope);
 

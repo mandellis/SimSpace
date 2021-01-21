@@ -99,16 +99,6 @@ public:
                                              const QMap<int,mesh::meshPoint> indexedMapOfAllMeshPoints,
                                              int faceNr);
 
-    //! ------------------------------------------------------------------------------------------------
-    //! constructor: from Tetgen files. The list of nodes, and the list of elements should be provided.
-    //! They are read from the .face and .node files. This constructor is equivalent to the previous,
-    //! but it is optimized, since all the face mesh data sources can be generated reading the .face
-    //! and .node files
-    //! ------------------------------------------------------------------------------------------------
-    Standard_EXPORT Ng_MeshVS_DataSourceFace(const QList<QList<double>> &listOfAllNodes,
-                                             const QList<QList<int>> &listOfAllElements,
-                                             int faceNr);
-
     //! -----------------------------------------
     //! constructor from "triangle" library data
     //! -----------------------------------------
@@ -143,12 +133,6 @@ public:
     //! --------------------------
     Standard_EXPORT Ng_MeshVS_DataSourceFace(const std::string &fileName);
 
-    //! ---------------------------------------------------------------------
-    //! constructor - from a list of mesh points and a list of mesh elements
-    //! ---------------------------------------------------------------------
-    Standard_EXPORT Ng_MeshVS_DataSourceFace(const QList<mesh::meshPoint> &meshPointList,
-                                             const QList<mesh::meshElement> &meshElementList);
-
     //! ---------------------------------------------------------------------------------
     //! constructor - from a list of (2D) mesh elements, each one defined by coordinates
     //! ---------------------------------------------------------------------------------
@@ -162,7 +146,7 @@ public:
     //! ---------------------------------------
     //! constructor - clone a mesh data source
     //! ---------------------------------------
-    Standard_EXPORT Ng_MeshVS_DataSourceFace(const occHandle(Ng_MeshVS_DataSourceFace) &aFaceMesh, bool invertNormals = false);
+    Standard_EXPORT Ng_MeshVS_DataSourceFace(const occHandle(Ng_MeshVS_DataSourceFace) &aFaceMesh);
 
     //! --------------------------------------------------
     //! constructor - from a vector of elements and nodes

@@ -6497,7 +6497,7 @@ void DetailViewer::handleVolumeMesherChanged()
         data.setValue(envelopeSizing);
         Property prop_envelopeSizingType("Envelope sizing", data, Property::PropertyGroup_TetWild);
         myCurNode->addProperty(prop_envelopeSizingType);
-        double value = 0.0025;
+        double value = 0.001;
         data.setValue(value);
         Property prop_relativeSize("Relative size",data, Property::PropertyGroup_TetWild);
         myCurNode->addProperty(prop_relativeSize);
@@ -6505,7 +6505,7 @@ void DetailViewer::handleVolumeMesherChanged()
         data.setValue(idealLengthSizing);
         Property prop_idealLength("Ideal length sizing",data, Property::PropertyGroup_TetWild);
         myCurNode->addProperty(prop_idealLength);
-        double relativeLength = 0.10;
+        double relativeLength = 0.05;
         data.setValue(relativeLength);
         Property prop_relativeLength("Relative length",data, Property::PropertyGroup_TetWild);
         myCurNode->addProperty(prop_relativeLength);

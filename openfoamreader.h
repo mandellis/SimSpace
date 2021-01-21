@@ -108,9 +108,9 @@ private:
     //! -----------------------
     QProgressIndicator *myProgressIndicator;
 
-#ifdef COSTAMP_VERSION
+//#ifdef COSTAMP_VERSION
     std::vector<double> myTimeFolders;
-#endif
+//#endif
 
 private:
 
@@ -173,10 +173,10 @@ public slots:
     //! timer
     void updateTimer();
 
-#ifdef COSTAMP_VERSION
+//#ifdef COSTAMP_VERSION
     void setTimeFolders(const std::vector<double> timeFolders)
     {myTimeFolders = timeFolders;}
-#endif
+//#endif
 };
 
 #endif // OPENFOAMREADER_H

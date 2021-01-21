@@ -1,10 +1,14 @@
 #ifndef MSHCONVERT_H
 #define MSHCONVERT_H
 
+//! ---
 //! Qt
+//! ---
 #include <QString>
 
+//! ------
 //! Eigen
+//! ------
 #include <Eigen/Dense>
 
 class mshConvert

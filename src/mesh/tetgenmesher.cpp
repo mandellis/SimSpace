@@ -69,10 +69,10 @@ TetgenMesher::TetgenMesher(QObject *parent):QObject(parent)
     this->createTetgenDirs();
 }
 
-//! ----------------------
-//! function: setDataBase
+//! ---------------
+//! function: init
 //! details:
-//! ----------------------
+//! ---------------
 void TetgenMesher::init(meshDataBase *mDB)
 {
     myMeshDB = mDB;
@@ -319,10 +319,10 @@ bool TetgenMesher::buildPLC(const occHandle(MeshVS_DataSource) &aSurfaceMesh)
     return true;
 }
 
-//! -------------------------------------------------------------------------
+//! -----------------
 //! function: SEfunc
-//! details:  delocalize perform in order to catch also unhandled exceptions
-//! -------------------------------------------------------------------------
+//! details:
+//! -----------------
 void TetgenMesher::SEFunc(tetgenio *meshOut)
 {
     __try
@@ -405,20 +405,6 @@ bool TetgenMesher::perform(tetgenio *meshOut, int bodyIndex, QString &message)
         return false;
     }
 
-    //! --------------
-    //! save the mesh
-    //! --------------
-    if(0==1)
-    {
-        QDir curDir(myPLCMesh);
-        QString outFileName = myMeshDB->MapOfBodyNames.value(bodyIndex);
-        QString outFilePath = curDir.absolutePath()+"/"+outFileName+"_out";
-        char fpout[512];
-        sprintf(fpout,outFilePath.toStdString().c_str());
-        meshOut->save_nodes(fpout);
-        meshOut->save_elements(fpout);
-        meshOut->save_faces(fpout);
-    }
     message = "Tetgen mesh OK";
     return true;
 }
@@ -429,10 +415,9 @@ bool TetgenMesher::perform(tetgenio *meshOut, int bodyIndex, QString &message)
 //! --------------------------------------------------
 void TetgenMesher::setSwitches(int preserveSurfaceMesh, int bodyIndex)
 {
-    double tolerance = TOLERANCE;
+    const double tolerance = 1e-8;
     double L = myMeshDB->ArrayOfMaxBodyElementSize.value(bodyIndex);
-    double maxVolSize = (4.0/3.0)*3.14159*pow(L,3);
-    //maxVolSize = pow(maxVolSize,0.3333);
+    double maxVolSize = (sqrt(2)/12.0)*pow(L,3);        // volume of a regular tetrahedron
 
     switch(preserveSurfaceMesh)
     {
@@ -1015,7 +1000,6 @@ int TetgenMesher::performOnDisk1(const NCollection_Array1<occHandle(Ng_MeshVS_Da
     //! set the arguments
     //! ------------------
     QList<QString> arguments;
-    //arguments<<QString::fromLatin1(mySwitches)<<polyFilePath;
     arguments<<QString("-")+QString::fromLatin1(mySwitches)<<polyFilePath;
 
     cout<<"TetgenMesher::performOnDisk1()->____arguments: "<<mySwitches<<" "<<polyFilePath.toStdString()<<endl;

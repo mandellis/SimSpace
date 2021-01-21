@@ -167,5 +167,7 @@
         <file>icons/icon_select geometry.png</file>
         <file>icons/icon_select mesh.png</file>
         <file>icons/icon_open from file.png</file>
+        <file>icons/icon_import.png</file>
+        <file>icons/icon_export.png</file>
     </qresource>
 </RCC>

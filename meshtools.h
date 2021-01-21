@@ -5,6 +5,7 @@
 //! C++
 //! ----
 #include <map>
+#include <string>
 
 //! ----
 //! OCC
@@ -128,8 +129,8 @@ public:
                               occHandle(MeshVS_Mesh) &aColoredMesh,
                               bool showEdges = false);
 
-    static bool arrayOfFaceDataSourcesToExtendedStlFile(const NCollection_Array1<occHandle(Ng_MeshVS_DataSourceFace)> &arrayOfFaceMeshDS,
-                                                        const QString &extendedStlFileName);
+    static bool faceDataSourcesToExtendedStlFile(const std::map<int,occHandle(Ng_MeshVS_DataSourceFace)> &mapOfFaceMeshDS,
+                                                        const std::string &extendedStlFileName);
 
     static void sortPointsOnEdge(const QList<mesh::meshPoint> &pointsOfTheEdge,
                                  const TopoDS_Edge &anEdge,
@@ -156,7 +157,9 @@ public:
     static std::map<GeometryTag,std::vector<occHandle(MeshVS_Mesh)>> groupMeshes(const std::map<GeometryTag,occHandle(MeshVS_Mesh)> &mapOfMeshes);
     static occHandle(MeshVS_DataSource) mergeMesh(const occHandle(MeshVS_DataSource) &mesh1, const occHandle(MeshVS_DataSource) &mesh2);
     static void computeAngleDefectMap(const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS, std::map<int,double> &mapOfAngleDefect);
-
+    static bool saveSTL(const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS, const std::string &fileName);
+    //static bool buildPointToVolumeElementConnectivity(const occHandle(Ng_MeshVS_DataSource3D) &aVolumeMeshDS, std::map<int,std::vector<int>> &connectivityMap);
+    static bool buildPointToElementConnectivity(const occHandle(MeshVS_DataSource) &aMeshDS, std::map<int,std::vector<int>> &connectivityMap);
 };
 
 class point

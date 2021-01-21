@@ -55,7 +55,7 @@ void postEngine::buildMap()
 //! function: setDiscreteTimeMap
 //! details:
 //! -----------------------------
-void postEngine::setDiscreteTimeMap(const QMap<double,QVector<int>> &dtm)
+void postEngine::setDiscreteTimeMap(const QMap<double, QVector<int> > &dtm)
 {
     myDTM = dtm;
 }
@@ -478,7 +478,15 @@ std::vector<std::map<int,double>> postEngine::evaluateResultOnBody(const QString
     std::map<int,int> indexedMapOfNodes;
     int bodyIndex = bodyTag.parentShapeNr;
     int offset = 0;
-    for(int k=1; k<bodyIndex; k++) offset = offset+myMeshDataBase->ArrayOfMeshDS.value(k)->GetAllNodes().Extent();
+    for(int k=1; k<bodyIndex; k++)
+    {
+        if(!myMeshDataBase->ArrayOfMeshDS.value(k).IsNull())
+
+        {
+            cout<<"@ - postEngine::evaluateResultOnBody ____tag00"<<endl;
+            offset = offset+myMeshDataBase->ArrayOfMeshDS.value(k)->GetAllNodes().Extent();
+        }
+    }
     for(TColStd_MapIteratorOfPackedMapOfInteger anIter(aMeshDS->GetAllNodes()); anIter.More(); anIter.Next())
     {
         int nodeID = anIter.Key()+offset;
@@ -1016,6 +1024,7 @@ bool postEngine::buildPostObject(const QString &keyName,
 }
 */
 
+//#include <posttools.h>
 bool postEngine::buildPostObject(const QString &keyName,
                                  int component,
                                  int requiredSubStepNb,
@@ -1028,6 +1037,8 @@ bool postEngine::buildPostObject(const QString &keyName,
     //! build the colorBox title
     //! -------------------------
     double time;
+    int setNumber;
+    postTools::getSetBySubStepByStepDTM(myDTM,setNumber,time,requiredStepNb,requiredSubStepNb);
     QString aResultName = this->resultName(keyName, component, requiredStepNb, requiredSubStepNb, time);
 
     //! -------------------------

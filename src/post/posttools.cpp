@@ -81,19 +81,22 @@ bool postTools::getStepSubStepByTimeDTM(QMap<double,QVector<int>> discreteTimeMa
                                         int &foundStep,
                                         int &foundSubStep)
 {
-    QVector<int> t;
+    std::vector<int> t;
     double curAnalysisTime;
+
     if(analysisTime == 0.0)
     {
         foundStep = discreteTimeMap.last().at(1);
         foundSubStep = discreteTimeMap.last().at(2);
+        cout<<"postTools::getStepSubStepbyTimeDTM->____curAnalysisTime"<<analysisTime<<", step substep "<<foundStep<<"  "<<foundSubStep<<endl;
         return true;
     }
+
     for(QMap<double,QVector<int>>::const_iterator mapIt = discreteTimeMap.cbegin(); mapIt!= discreteTimeMap.cend(); ++mapIt)
     {
         curAnalysisTime = mapIt.key();
-        //cout<<"postTools::getStepSubStepbyTimeDTM->____curAnalysisTime"<<curAnalysisTime<<", analysisTime "<<analysisTime<<endl;
-        t = mapIt.value();
+        cout<<"postTools::getStepSubStepbyTimeDTM->____curAnalysisTime"<<curAnalysisTime<<", analysisTime "<<analysisTime<<endl;
+        t = mapIt.value().toStdVector();
         if (curAnalysisTime == analysisTime)
         {
             foundStep = t.at(1);
@@ -109,7 +112,7 @@ bool postTools::getStepSubStepByTimeDTM(QMap<double,QVector<int>> discreteTimeMa
 //! function: getStepSubStepBySetDTM
 //! details:
 //! ---------------------------------
-bool postTools::getStepSubStepBySetDTM(QMap<double, QVector<int>> discreteTimeMap,
+bool postTools::getStepSubStepBySetDTM(QMap<double,QVector<int>> discreteTimeMap,
                                        int setNumber,
                                        double &analysisTime,
                                        int &foundStep,
@@ -120,11 +123,11 @@ bool postTools::getStepSubStepBySetDTM(QMap<double, QVector<int>> discreteTimeMa
     double curTime;
     int curStep,curSubstep;
 
-    QVector<int> t;
+    std::vector<int> t;
     for(mapIt = discreteTimeMap.cbegin(); mapIt!= discreteTimeMap.cend(); ++mapIt)
     {
         curTime = mapIt.key();
-        t = mapIt.value();
+        t = mapIt.value().toStdVector();
         curSetNumber = t.at(0);
         curStep = t.at(1);
         curSubstep = t.at(2);
@@ -133,6 +136,39 @@ bool postTools::getStepSubStepBySetDTM(QMap<double, QVector<int>> discreteTimeMa
             analysisTime = curTime;
             foundStep = curStep;
             foundSubStep = curSubstep;
+            return true;
+        }
+    }
+    return false;
+}
+
+//! -----------------------------------
+//! function: getSetBySubStepByStepDTM
+//! details:
+//! -----------------------------------
+bool postTools::getSetBySubStepByStepDTM(QMap<double,QVector<int>> discreteTimeMap,
+                                       int &setNumber,
+                                       double &analysisTime,
+                                       int step,
+                                       int subStep)
+{
+    QMap<double,QVector<int>>::const_iterator mapIt;
+    int curSetNumber;
+    double curTime;
+    int curStep,curSubstep;
+
+    std::vector<int> t;
+    for(mapIt = discreteTimeMap.cbegin(); mapIt!= discreteTimeMap.cend(); ++mapIt)
+    {
+        curTime = mapIt.key();
+        t = mapIt.value().toStdVector();
+        curSetNumber = t.at(0);
+        curStep = t.at(1);
+        curSubstep = t.at(2);
+        if(curStep == step && curSubstep == subStep)
+        {
+            analysisTime = curTime;
+            setNumber = curSetNumber;
             return true;
         }
     }

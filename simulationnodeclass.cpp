@@ -1223,6 +1223,7 @@ bool SimulationNodeClass::hasTabularData()
     case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Pressure:
     case SimulationNodeClass::nodeType_structuralAnalysisThermalCondition:
     case SimulationNodeClass::nodeType_structuralAnalysisBoltPretension:
+    case SimulationNodeClass::nodeType_modelChange:
 
     case SimulationNodeClass::nodeType_thermalAnalysisConvection:
     case SimulationNodeClass::nodeType_thermalAnalysisRadiation:

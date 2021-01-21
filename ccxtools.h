@@ -17,8 +17,10 @@ namespace CCXTools
 //! function: readsta
 //! details:
 //! ------------------
-bool readsta(const QString &path, QMap<double, QVector<int>> &timeinfo)
+bool readsta(const QString &path, QMap<double,QVector<int>> &timeinfo)
 {
+    cout<<"ccxtools::readsta()--------> function called <------------"<<endl;
+
     QFile fn(path);
     QString nfn = path;
     nfn.chop(4);
@@ -29,9 +31,10 @@ bool readsta(const QString &path, QMap<double, QVector<int>> &timeinfo)
     if(f==NULL) return false;
 
     char line [256];
-    int a1,a2,a3,a4;
-    int a1_old,a2_old,a3_old,a4_old;
-
+    int a1,a2,a4;
+    int a1_old,a2_old,a4_old;
+    char a3[24],a3_old[24];
+    std::string a33,a33_old;
     double f1,f2,f3;
     double f1_old,f2_old,f3_old;
 
@@ -43,58 +46,80 @@ bool readsta(const QString &path, QMap<double, QVector<int>> &timeinfo)
     int setnr = 1;
 
     fgets(line, sizeof line, f);
-    if(7!=sscanf(line,"%d%d%d%d%lf%lf%lf",&a1_old,&a2_old,&a3_old,&a4_old,&f1_old,&f2_old,&f3_old))
+    if(7!=sscanf(line,"%d%d%s%d%lf%lf%lf",&a1_old,&a2_old,&a3_old,&a4_old,&f1_old,&f2_old,&f3_old))
     {
         fclose(f);
         QFile r(nfn);
         r.remove();
         return false;
     }
-
+    a33_old.assign(a3_old);
     //! ----------------------------------
     //! record the first timeinfo element
     //! ----------------------------------
     QVector<int> sini{setnr,a1_old,a2_old};
-    timeinfo.insert(f1_old,sini);
+    if(f1_old == 0.0) timeinfo.insert(f3_old,sini);
+    else timeinfo.insert(f1_old,sini);
+    cout<<"ccxtools::readsta()--------> time "<<timeinfo.firstKey()<<" "<<a1_old<<" "<<a2_old<<" "<<a3_old<<" "<<a4_old<<" "<<f1_old<<" "<<f2_old<<" "<<f3_old<<endl;
 
     for(;feof(f)==0;)
     {
+        cout<<"ccxtools::readsta()--------> entering for <------------"<<endl;
+
         fgets(line, sizeof line, f);
-        if(7!=sscanf(line,"%d%d%d%d%lf%lf%lf",&a1,&a2,&a3,&a4,&f1,&f2,&f3))
+        if(7!=sscanf(line,"%d%d%s%d%lf%lf%lf",&a1,&a2,&a3,&a4,&f1,&f2,&f3))
         {
+            cout<<"ccxtools::readsta()--------> exiting for <------------"<<endl;
+
             fclose(f);
             QFile r(nfn);
             r.remove();
             return false;
         }
-        if(a2_old==a2) continue;
+        cout<<"ccxtools::readsta()--------> 2nd line"<<" "<<a1<<" "<<a2<<" "<<a3<<" "<<a4<<" "<<f1<<" "<<f2<<" "<<f3<<endl;
 
-        setnr++;
-        //cout<<"set: "<<setnr<<" step: "<<a1_old<<" substep: "<<a2_old<<" total time: "<<f1_old<<endl;
+        a33.assign(a3);
+        if(a2_old!=a2)
+        {
+            //! -------------------
+            //! fill the time info
+            //! -------------------
+            QVector<int> s{setnr,a1,a2};
+            timeinfo.insert(f1,s);
+            setnr++;
+            //continue;
+        }
+        else
+        {
+            if(a33_old!=a33)
+            {
+                cout<<"find an attempt"<<endl;
+                //! -------------------
+                //! fill the time info
+                //! -------------------
+                QVector<int> s{setnr,a1,a2};
+                timeinfo.insert(f1+f3,s);
+                setnr++;
+            }
+            //cout<<"ccxtools::readsta()--------> exiting for <------------"<<endl;
+            //else  continue;
+        }
 
+        cout<<"set: "<<setnr<<" step: "<<a1_old<<" substep: "<<a2_old<<" total time: "<<f1_old<<endl;
+/*
         //! -------------------
         //! fill the time info
         //! -------------------
         QVector<int> s{setnr,a1,a2};
         timeinfo.insert(f1,s);
-
-        a1_old=a1; a2_old=a2; a3_old=a3; a4_old=a4;
+*/
+        a1_old=a1; a2_old=a2; /*a3_old=a3; */a4_old=a4;
         f1_old=f1; f2_old=f2; f3_old=f3;
+        a33_old=a33;
     }
-
-    //! --------------------------
-    //! fill the time info - last
-    //! --------------------------
-    //cout<<"set: "<<setnr<<" step: "<<a1<<" substep: "<<a2<<" total time: "<<f1<<endl;
-
-    QVector<int> s{setnr,a1_old,a2_old};
-    timeinfo.insert(f1,s);
-
     fclose(f);
-
     QFile r(nfn);
     r.remove();
-
     return true;
 }
 

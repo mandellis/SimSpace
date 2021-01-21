@@ -185,7 +185,10 @@ SOURCES += main.cpp\
     src/post/rainflow.cpp \
     src/mesh/datasourcebuilder.cpp \
     src/mesh/smoothingtools.cpp \
-    src/mesh/pointtomeshdistance.cpp
+    src/mesh/pointtomeshdistance.cpp \
+    src/mesh/surfacemeshtofacemeshes.cpp \
+    src/pymesh/MshLoader.cpp \
+    src/pymesh/MshSaver.cpp
 
 HEADERS  += mainwindow.h \
     actions3d.h \
@@ -356,7 +359,6 @@ HEADERS  += mainwindow.h \
     compatibility/StlMesh/StlMesh_SequenceOfMesh.hxx \
     compatibility/StlMesh/StlMesh_SequenceOfMeshDomain.hxx \
     compatibility/StlMesh/StlMesh_SequenceOfMeshTriangle.hxx \
-    src/mesh/cgal_tools.h \
     src/geometry/geometrytag.h \
     src/geometry/polygon.h \
     src/mesh/tetwildmesher.h \
@@ -421,7 +423,11 @@ HEADERS  += mainwindow.h \
     src/post/rainflow.h \
     src/mesh/datasourcebuilder.h \
     src/mesh/smoothingtools.h \
-    src/mesh/pointtomeshdistance.h
+    src/mesh/pointtomeshdistance.h \
+    src/mesh/surfacemeshtofacemeshes.h \
+    src/pymesh/Exception.h \
+    src/pymesh/MshLoader.h \
+    src/pymesh/MshSaver.h
 
 FORMS    += mainwindow.ui
 
@@ -432,7 +438,7 @@ DEFINES += WNT  \
            _TURNONFPES_ \
            TETLIBRARY  \
            DEBUG_VERSION   \
-           COSTAMP_VERSION \
+           #COSTAMP_VERSION \
            GENERATE_FACE_MESH_DATASOURCES   \
            #USE_MESHFIX
 
@@ -461,6 +467,7 @@ INCLUDEPATH = D:/Work/Qt/SimSpace/src/geometry \
               C:/CGAL-4.14/auxiliary/gmp/include    \   # needed by cgal
               D:/Work/Qt/SimSpace/libigl   \
               D:/Work/Qt/SimSpace/src/pymesh    \
+              D:/Work/Qt/SimSpace/src/dirent/include
 
 LIBS += \
 -lC:\OpenCASCADE7.3.0-vc14-64\opencascade-7.3.0\win64\vc14\lib\TKBin   \
@@ -653,3 +660,4 @@ DEPENDPATH += $$PWD/QCustomPlot/qcp
 win32: LIBS += -L$$PWD/Embree/embree-3.11.0.x64.vc14.windows/lib/ -lembree3
 INCLUDEPATH += $$PWD/Embree/embree-3.11.0.x64.vc14.windows/include/embree3
 DEPENDPATH += $$PWD/Embree/embree-3.11.0.x64.vc14.windows/include/embree3
+
