@@ -24,7 +24,7 @@
 #include <prismaticlayerparameters.h>
 #include "meshtools.h"
 #include "geomtoolsclass.h"
-#include <tetwildmesher.h>
+//#include <tetwildmesher.h>
 #include <surfacemeshsmoother.h>
 //#include <renumberingtool.h>
 #include <meshnodesrenumberingtool.h>
@@ -571,7 +571,7 @@ void MesherClass::generateMesh()
                         //! ---------------------------------------------
                         this->removeSupportFiles();
                     }
-                    if(MeshEngine3D == Property::meshEngine3D_TetWild)
+                    /*if(MeshEngine3D == Property::meshEngine3D_TetWild)
                     {
                         bool runInMemory = myMeshDB->MapOfIsMeshingRunningInMemory.value(bodyIndex);
 
@@ -759,7 +759,7 @@ void MesherClass::generateMesh()
                             myMeshDB->ArrayOfMeshIsToBeUdpdated.insert(bodyIndex, true);
                         }
                     }
-                }
+                */}
                     break;
                 }
             }
@@ -2280,68 +2280,6 @@ void MesherClass::removeSupportFiles(bool remove)
         if(file.exists()) file.remove();
     }
 }
-
-//! -------------------------------------------------
-//! function: processTetWildSTL
-//! details:  generate the triangle soup for TetWild
-//! -------------------------------------------------
-QString MesherClass::processTetWildSTL(int bodyIndex)
-{
-    //! --------------------------------------
-    //! clean the tessellation from the shape
-    //! --------------------------------------
-    BRepTools::Clean(myMeshDB->bodyMap.value(bodyIndex));
-
-    //! -------------------------------------------
-    //! retrieve the parameters of the discretizer
-    //! -------------------------------------------
-    Property::meshEngine2D surfaceTessellator = myMeshDB->mapOfDiscretizer.value(bodyIndex);
-    double angularDeflection = myMeshDB->mapOfAngularDeflection.value(bodyIndex);
-    double linearDeflection = myMeshDB->mapOfLinearDeflection.value(bodyIndex);
-
-    //! -----------------------------
-    //! generate the "triangle soup"
-    //! -----------------------------
-    switch(surfaceTessellator)
-    {
-    case Property::meshEngine2D_OCC_STL:
-    {
-        bool isInParallel = true;
-        bool isRelative = true;
-        BRepMesh_IncrementalMesh stlOccMesher(myMeshDB->bodyMap.value(bodyIndex),linearDeflection,isRelative,angularDeflection,isInParallel);
-        Q_UNUSED(stlOccMesher)
-    }
-        break;
-
-    case Property::meshEngine2D_OCC_ExpressMesh:
-    {
-        occMesher anExpressMeshMesher(myMeshDB->bodyMap.value(bodyIndex));
-        double minSize = myMeshDB->ArrayOfMinBodyElementSize.value(bodyIndex);
-        double maxSize = myMeshDB->ArrayOfMaxBodyElementSize.value(bodyIndex);
-
-        meshParam mp;
-        mp.minElementSize = minSize;
-        mp.maxElementSize = maxSize;
-
-        bool isDone = anExpressMeshMesher.perform(angularDeflection, linearDeflection, minSize, maxSize);
-        if(!isDone)
-        {
-            bool isInParallel = false;
-            bool isRelative = true;
-            BRepMesh_IncrementalMesh stlOccMesher(myMeshDB->bodyMap.value(bodyIndex),linearDeflection,isRelative,angularDeflection,isInParallel);
-            Q_UNUSED(stlOccMesher)
-        }
-    }
-        break;
-    }
-
-    QString inputStandardSTL = tools::getWorkingDir()+"/inputStandardSTLMesh.stl";
-    const TopoDS_Shape &shape = myMeshDB->bodyMap.value(bodyIndex);
-    STLAPIWriter aWriter;
-    aWriter.Write(shape,inputStandardSTL.toStdString().c_str());
-    return inputStandardSTL;
-}
-
 //! ---------------------
 //! function: processSTL
 //! details:

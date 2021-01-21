@@ -158,7 +158,7 @@ private:
     //! --------------------------------------------
     //! generate an .stl file as input for TetWild
     //! --------------------------------------------
-    QString processTetWildSTL(int bodyIndex);
+    //QString processTetWildSTL(int bodyIndex);
 
 public slots:
 

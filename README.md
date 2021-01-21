@@ -1,2 +1,0 @@
-# SimSpace
-Flexible Simulation Platform 

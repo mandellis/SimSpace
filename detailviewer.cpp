@@ -211,8 +211,8 @@ void DetailViewer::createConnections()
     //! -------------------
     //! TetWild parameters
     //! -------------------
-    connect(myGeneralDelegate,SIGNAL(idealLengthChanged()),this,SLOT(handleIdealLengthChanged()));
-    connect(myGeneralDelegate,SIGNAL(envelopeSizingChanged()),this,SLOT(handleEnvelopeSizingChanged()));
+    //connect(myGeneralDelegate,SIGNAL(idealLengthChanged()),this,SLOT(handleIdealLengthChanged()));
+    //connect(myGeneralDelegate,SIGNAL(envelopeSizingChanged()),this,SLOT(handleEnvelopeSizingChanged()));
 
     //! --------------
     //! interpolation
