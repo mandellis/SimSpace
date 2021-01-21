@@ -478,7 +478,15 @@ std::vector<std::map<int,double>> postEngine::evaluateResultOnBody(const QString
     std::map<int,int> indexedMapOfNodes;
     int bodyIndex = bodyTag.parentShapeNr;
     int offset = 0;
-    for(int k=1; k<bodyIndex; k++) offset = offset+myMeshDataBase->ArrayOfMeshDS.value(k)->GetAllNodes().Extent();
+    for(int k=1; k<bodyIndex; k++)
+    {
+        if(!myMeshDataBase->ArrayOfMeshDS.value(k).IsNull())
+
+        {
+            cout<<"@ - postEngine::evaluateResultOnBody ____tag00"<<endl;
+            offset = offset+myMeshDataBase->ArrayOfMeshDS.value(k)->GetAllNodes().Extent();
+        }
+    }
     for(TColStd_MapIteratorOfPackedMapOfInteger anIter(aMeshDS->GetAllNodes()); anIter.More(); anIter.Next())
     {
         int nodeID = anIter.Key()+offset;
