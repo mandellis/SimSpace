@@ -772,7 +772,7 @@ simulationDataBase::simulationDataBase(const TopoDS_Shape &shape, const QString&
     this->createNamedSelectionRootNode();
 
     //! create a structural analysis root node
-    //this->createStructuralAnalysisRootNode();
+    this->createStructuralAnalysisRootNode();
 }
 
 //!----------------------

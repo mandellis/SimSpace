@@ -760,33 +760,6 @@ void contextMenuBuilder::buildModelRootContextMenu(QMenu *contextMenu, bool addC
 
     menuInsert->addSeparator();
 
-    //! ---------------------
-    //! add thermal analysis
-    //! ---------------------
-    QAction *ActionAddThermalAnalysisBranch = menuInsert->addAction("Thermal analysis");
-    ActionAddThermalAnalysisBranch->setIcon(QIcon(":/icons/icon_thermal analysis.png"));
-    ActionAddThermalAnalysisBranch->setData(104);
-
-    menuInsert->addSeparator();
-
-    //! ----------------------
-    //! add combined analysis
-    //! ----------------------
-    //QAction *ActionAddCombinedAnalysisBranch = menuInsert->addAction("Combined analysis");
-    //ActionAddCombinedAnalysisBranch->setIcon(QIcon(":/icons/icon_combined analysis.png"));
-    //ActionAddCombinedAnalysisBranch->setData(107);
-
-    //menuInsert->addSeparator();
-
-    //! ---------------------------------
-    //! add particles in fields analysis
-    //! ---------------------------------
-    //QAction *ActionAddParcitlesInFieldsAnalysisBranch = menuInsert->addAction("Particles in fields");
-    //ActionAddParcitlesInFieldsAnalysisBranch->setIcon(QIcon(":/icons/icon_a field.png"));
-    //ActionAddParcitlesInFieldsAnalysisBranch->setData(300);
-
-    menuInsert->addSeparator();
-
     //! --------------------------------------------------
     //! add remote points root - only one root is allowed
     //! --------------------------------------------------
