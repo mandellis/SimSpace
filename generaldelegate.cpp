@@ -691,6 +691,11 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
                 editor->addItem("Tetgen",data);
                 data.setValue(Property::meshEngine3D_Tetgen_BR);    // index "2"
                 editor->addItem("Tetgen BR",data);
+                //! ---------------
+                //! blindo TetWild
+                //! ---------------
+                data.setValue(Property::meshEngine3D_TetWild);      // index "3"
+                editor->addItem("Experimental mesher",data);
             }
             return editor;
         }

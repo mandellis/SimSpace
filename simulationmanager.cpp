@@ -1949,6 +1949,14 @@ void SimulationManager::handleItem(int type)
         break;
     case 107:
     {
+        mySimulationDataBase->createCombinedAnalysisRootNode();
+        //! ------------------------------------------
+        //! make the last inserted branch the current
+        //! ------------------------------------------
+        QStandardItem *itemRoot = Geometry_RootItem->parent();
+        int Nb = itemRoot->rowCount();
+        myTreeView->selectionModel()->setCurrentIndex(myModel->indexFromItem(itemRoot->child(Nb-1,0)),QItemSelectionModel::Current);
+        this->setTheActiveAnalysisBranch();
     }
     case 106:
     {
@@ -2405,6 +2413,9 @@ void SimulationManager::handleItem(int type)
         }
     }
         break;
+
+    case 300: mySimulationDataBase->createParticlesInFieldsRootNode(); break;
+    case 301: this->createSimulationNode(SimulationNodeClass::nodeType_electrostaticPotential); break;
 
     case 52: exit(11); break;
 

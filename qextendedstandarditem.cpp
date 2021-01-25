@@ -472,7 +472,7 @@ QVariant QExtendedStandardItem::data(int role) const
             case Property::meshEngine3D_Netgen: data.setValue(QString("Netgen")); break;
             case Property::meshEngine3D_Tetgen: data.setValue(QString("Tetgen")); break;
             case Property::meshEngine3D_Tetgen_BR: data.setValue(QString("Tetgen BR")); break;
-            //case Property::meshEngine3D_TetWild: data.setValue(QString("Experimental mesher")); break;
+            case Property::meshEngine3D_TetWild: data.setValue(QString("Experimental mesher")); break;
             }
             return data;
         }

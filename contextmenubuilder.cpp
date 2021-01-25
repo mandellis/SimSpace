@@ -752,11 +752,38 @@ void contextMenuBuilder::buildModelRootContextMenu(QMenu *contextMenu, bool addC
     menuInsert->setIcon(QIcon(":/icons/icon_insert.png"));
 
     //! ---------------------
-    //! add structural analysis
+    //! add thermal analysis
     //! ---------------------
     QAction *ActionAddStructuralAnalysisBranch = menuInsert->addAction("Structural analysis");
     ActionAddStructuralAnalysisBranch->setIcon(QIcon(":/icons/icon_static structural.png"));
     ActionAddStructuralAnalysisBranch->setData(105);
+
+    menuInsert->addSeparator();
+
+    //! ---------------------
+    //! add thermal analysis
+    //! ---------------------
+    QAction *ActionAddThermalAnalysisBranch = menuInsert->addAction("Thermal analysis");
+    ActionAddThermalAnalysisBranch->setIcon(QIcon(":/icons/icon_thermal analysis.png"));
+    ActionAddThermalAnalysisBranch->setData(104);
+
+    menuInsert->addSeparator();
+
+    //! ----------------------
+    //! add combined analysis
+    //! ----------------------
+    QAction *ActionAddCombinedAnalysisBranch = menuInsert->addAction("Combined analysis");
+    ActionAddCombinedAnalysisBranch->setIcon(QIcon(":/icons/icon_combined analysis.png"));
+    ActionAddCombinedAnalysisBranch->setData(107);
+
+    menuInsert->addSeparator();
+
+    //! ---------------------------------
+    //! add particles in fields analysis
+    //! ---------------------------------
+    QAction *ActionAddParcitlesInFieldsAnalysisBranch = menuInsert->addAction("Particles in fields");
+    ActionAddParcitlesInFieldsAnalysisBranch->setIcon(QIcon(":/icons/icon_a field.png"));
+    ActionAddParcitlesInFieldsAnalysisBranch->setData(300);
 
     menuInsert->addSeparator();
 

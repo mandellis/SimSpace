@@ -62,6 +62,12 @@ public:
     //! create the structural analysis root node
     void createStructuralAnalysisRootNode();
 
+    //! create a combined analysis root
+    void createCombinedAnalysisRootNode();
+
+    //! create particles in fields root
+    void createParticlesInFieldsRootNode();
+
 public slots:
 
     //! create the remote points root node
