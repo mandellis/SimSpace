@@ -27,7 +27,7 @@
 //! -------
 //! libigl
 //! -------
-#include <libigl/include/igl/embree/EmbreeIntersector.h>
+#include <ext/libigl/include/igl/embree/EmbreeIntersector.h>
 
 class MeshVS_DataSource;
 class Ng_MeshVS_DataSource2D;

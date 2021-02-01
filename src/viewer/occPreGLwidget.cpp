@@ -3,21 +3,21 @@
 //! ----------------
 #include <occPreGLwidget.h>
 #include "simulationdatabase.h"
-#include "mydefines.h"
+#include "src/main/mydefines.h"
 #include "stlapiwriter.h"
 
-#include "meshtools.h"
-#include "exportingtools.h"
+#include "src/utils/meshtools.h"
+#include "src/utils/exportingtools.h"
 #include "stepimporter.h"
-#include "ais_colorscaleextended.h"
+#include "ext/occ_extended/ais_colorscaleextended.h"
 #include "qbackgroundevent.h"
-#include "ccout.h"
+#include "src/utils/ccout.h"
 #include "contextmenubuilder.h"
-#include "simulationmanager.h"
-#include "tools.h"
+#include "src/main/simulationmanager.h"
+#include "src/utils/tools.h"
 #include "resultstoolbar.h"
-#include "ais_meshsegmentmarker.h"
-#include "modelloader.h"
+#include "ext/occ_extended/ais_meshsegmentmarker.h"
+#include "src/utils/modelloader.h"
 
 #include <ng_meshvs_datasource1d.h>
 #include <ng_meshvs_datasource3d.h>

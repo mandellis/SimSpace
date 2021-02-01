@@ -5,11 +5,11 @@
 //! custom includes
 //! ----------------
 #include "occGLwidget.h"
-#include "geomtoolsclass.h"
-#include "tools.h"
-#include "mydefines.h"
-#include "ais_cormarker.h"
-#include "ais_spheremarker.h"
+#include "src/utils/geomtoolsclass.h"
+#include "src/utils/tools.h"
+#include "src/main/mydefines.h"
+#include "ext/occ_extended/ais_cormarker.h"
+#include "ext/occ_extended/ais_spheremarker.h"
 #include "markers.h"
 
 //! ---

@@ -3,7 +3,7 @@
 #include <ng_meshvs_datasource1d.h>
 #include <ng_meshvs_datasource3d.h>
 #include <ng_meshvs_datasourceface.h>
-#include <meshtools.h>
+#include <src/utils/meshtools.h>
 
 //! OCC
 #include <TopExp.hxx>

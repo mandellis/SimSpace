@@ -20,7 +20,7 @@
 //! ----------------
 //! custom includes
 //! ----------------
-#include "mydefines.h"
+#include "src/main/mydefines.h"
 #include "meshdatabase.h"
 
 class FrdReader: public QObject

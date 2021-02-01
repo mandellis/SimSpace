@@ -30,7 +30,7 @@
 #include <GProp_GProps.hxx>
 
 //! Eigen
-#include <Eigen/Dense>
+#include <ext/eigen/Eigen/Dense>
 
 using namespace std;
 

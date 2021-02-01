@@ -16,10 +16,10 @@
 //! ----
 //! igl
 //! ----
-#include <libigl/include/igl/cotmatrix.h>
-#include <libigl/include/igl/massmatrix.h>
-#include <libigl/include/igl/slice.h>
-#include <libigl/include/igl/min_quad_with_fixed.h>
+#include <ext/libigl/include/igl/cotmatrix.h>
+#include <ext/libigl/include/igl/massmatrix.h>
+#include <ext/libigl/include/igl/slice.h>
+#include <ext/libigl/include/igl/min_quad_with_fixed.h>
 
 //! ---------------------------------------------------------
 //! function: constructor

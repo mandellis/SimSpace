@@ -1,7 +1,7 @@
 #ifndef TETQUALITYCLASS_H
 #define TETQUALITYCLASS_H
 
-#include <Eigen/Dense>
+#include <ext/eigen/Eigen/Dense>
 
 #include <mesh.h>
 #include <polygon.h>

@@ -14,7 +14,7 @@
 #include <fstream>
 
 //! custom includes
-#include "mydefines.h"
+#include "src/main/mydefines.h"
 #include <meshdatabase.h>
 using namespace std;
 

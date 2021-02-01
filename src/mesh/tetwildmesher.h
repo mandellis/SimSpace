@@ -8,7 +8,7 @@
 #include <Args.h>
 
 //! Eigen
-#include <Eigen/Dense>
+#include <ext/eigen/Eigen/Dense>
 
 //! ---
 //! Qt
@@ -20,7 +20,7 @@
 //! custom includes
 //! ----------------
 #include <ng_meshvs_datasource3d.h>
-#include <hash_c.h>
+#include <src/utils/hash_c.h>
 
 //! ----
 //! OCC

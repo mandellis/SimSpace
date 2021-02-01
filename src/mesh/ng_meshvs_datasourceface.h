@@ -31,16 +31,16 @@
 //! ----------------
 #include <meshelement2d.h>
 #include <StlMesh_Mesh.hxx>
-#include "hash_c.h"
+#include "src/utils/hash_c.h"
 #include <mesh.h>
 #include <ng_meshvs_datasource2d.h>
 
 //! ------
 //! Eigen
 //! ------
-#include <Eigen/Dense>
-#include <Eigen/Core>
-#include <Eigen/Sparse>
+#include <ext/eigen/Eigen/Dense>
+#include <ext/eigen/Eigen/Core>
+#include <ext/eigen/Eigen/Sparse>
 
 namespace nglib {
     #include <nglib.h>

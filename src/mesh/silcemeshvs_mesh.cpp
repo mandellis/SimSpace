@@ -1,5 +1,5 @@
 #include <slicemeshvs_mesh.h>
-#include "ais_customsignatures.h"
+#include "ext/occ_extended/ais_customsignatures.h"
 #include <AIS_KindOfInteractive.hxx>
 
 IMPLEMENT_STANDARD_HANDLE(SliceMeshVS_Mesh,MeshVS_Mesh)

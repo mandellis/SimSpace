@@ -9,7 +9,7 @@
 //! ------
 //! Eigen
 //! ------
-#include <Eigen/Dense>
+#include <ext/eigen/Eigen/Dense>
 
 class mshConvert
 {

@@ -2,10 +2,10 @@
 //! custom includes
 //! ----------------
 #include <occpostwidget.h>
-#include "graphicstools.h"
-#include "meshtools.h"
+#include "src/utils/graphicstools.h"
+#include "src/utils/meshtools.h"
 #include "simulationdatabase.h"
-#include "simulationmanager.h"
+#include "src/main/simulationmanager.h"
 #include "resultstoolbar.h"
 #include <meshslicer.h>
 

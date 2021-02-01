@@ -2,8 +2,8 @@
 //! custom includes
 //! ----------------
 #include "convergencedatachart1.h"
-#include "tools.h"
-#include "solutioninfo.h"
+#include "src/utils/tools.h"
+#include "src/ccxSolver/solutioninfo.h"
 
 //! ---
 //! Qt
@@ -16,7 +16,7 @@
 //! ------------
 //! QCustomPlot
 //! ------------
-#include <QCustomPlot/qcp/qcustomplot.h>
+#include <ext/QCustomPlot/qcp/qcustomplot.h>
 
 //! --------------------------------
 //! function: ConvergenceDataChart1

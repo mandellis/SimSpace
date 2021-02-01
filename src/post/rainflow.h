@@ -20,7 +20,7 @@
 
 #include <QObject>
 #include <QMetaType>
-#include "mydefines.h"
+#include "src/main/mydefines.h"
 #include "postengine.h"
 
 using namespace std;

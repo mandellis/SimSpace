@@ -4,7 +4,7 @@
 //! ----------------
 //! custom includes
 //! ----------------
-#include <hash_c.h>
+#include <src/utils/hash_c.h>
 
 //! ---
 //! Qt

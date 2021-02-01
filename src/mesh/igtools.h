@@ -8,7 +8,7 @@
 #include "occhandle.h"
 
 //! Eigen
-#include <Eigen/Dense>
+#include <ext/eigen/Eigen/Dense>
 
 //! custom includes
 #include <ng_meshvs_datasourceface.h>

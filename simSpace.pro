@@ -29,42 +29,7 @@ DEFINES += QT_DEPRECATED_WARNINGS   \
 ##############
 #DEFINES += QCUSTOMPLOT_USE_OPENGL
 
-SOURCES += main.cpp\
-        mainwindow.cpp \
-    ais_extendedshape.cpp \
-    arrayofcolors.cpp \
-    textviewer.cpp \
-    simulationnodeclass.cpp \
-    shapeselectorbox.cpp \
-    property.cpp \
-    generaldelegate.cpp \
-    detailviewer.cpp \
-    simulationmanager.cpp \
-    qextendedstandarditem.cpp \
-    shapeselector.cpp \
-    writesolverfileclass.cpp \
-    geomtoolsclass.cpp \
-    load.cpp \
-    customtablemodel.cpp \
-    tableviewclass.cpp \
-    tableviewclassitemdelegate.cpp \
-    tablewidget.cpp \
-    lineedit.cpp \
-    directionselector.cpp \
-    markers.cpp \
-    vectortool.cpp \
-    writelabelclass.cpp \
-    serializerclass.cpp \
-    deserializerclass.cpp \
-    tools.cpp \
-    nodefactory.cpp \
-    qpushbuttonextended.cpp \
-    exportingtools.cpp \
-    topologytools.cpp \
-    graphicstools.cpp \
-    mapper3dclass.cpp \
-    stepimporter.cpp \
-    src/mesh/ng_meshvs_datasource1d.cpp \
+SOURCES += src/mesh/ng_meshvs_datasource1d.cpp \
     src/mesh/ng_meshvs_datasource2d.cpp \
     src/mesh/ng_meshvs_datasource3d.cpp \
     src/mesh/ng_meshvs_datasourceface.cpp \
@@ -72,69 +37,26 @@ SOURCES += main.cpp\
     src/mesh/ng_mesher2.cpp \
     src/viewer/occGLwidget.cpp \
     src/viewer/occPreGLwidget.cpp \
-    testtools.cpp \
     src/mesh/mesherclass.cpp \
     src/mesh/edgemeshdatasourcebuildesclass.cpp \
-    ais_colorscaleextended.cpp \
     src/viewer/occpostwidget.cpp \
-    stlapiwriter.cpp \
-    openfoamreader.cpp \
     src/mesh/polygon_triangulate.cpp \
-    contextmenubuilder.cpp \
-    postobject.cpp \
-    optionsWidget/colorselector.cpp \
-    optionsWidget/optionswidget.cpp \
-    optionsWidget/qtablestandarditem.cpp \
-    optionsWidget/tabledelegate.cpp \
-    meshingserver.cpp \
-    meshworker.cpp \
-    systemConsole/systemconsole.cpp \
-    ccout.cpp \
-    solutionworker.cpp \
     src/post/frdreader.cpp \
     src/post/occmeshtoccxmesh.cpp \
-    ccxconsoletofile.cpp \
     src/post/postengine.cpp \
     src/post/posttools.cpp \
     src/post/cubicequation.cpp \
-    parser.cpp \
     src/mesh/stldoctor.cpp \
-    modelloader.cpp \
     src/viewer/qprogressindicator.cpp \
     src/viewer/qoccprogressindicator.cpp \
-    modelloadercontroller.cpp \
     src/mesh/extendedrwstl.cpp \
     src/mesh/ng_meshvs_deformeddatasource2d.cpp \
-    ais_cormarker.cpp \
-    ais_meshsegmentmarker.cpp \
-    systemConsole/SimulationMonitor.cpp \
     src/mesh/occmesher.cpp \
-    resultstoolbar.cpp \
     src/viewer/scaleselector.cpp \
-    dockableviewport.cpp \
-    contactparameters.cpp \
-    ais_spheremarker.cpp \
-    ais_arrowmarker.cpp \
-    src/cliptool/clipTool.cpp \
-    src/cliptool/cliptooldelegate.cpp \
     src/mesh/simplifymesh.cpp \
-    meshtoolbar.cpp \
     src/mesh/curvature.cpp \
     src/mesh/prismaticlayer.cpp \
-    bolttool.cpp \
-    ais_doublearrowmarker.cpp \
-    markerbuilder.cpp \
-    ais_customtrihedron.cpp \
-    maintreetools.cpp \
-    ais_curvedarrowmarker.cpp \
-    databases/geometrydatabase.cpp \
-    databases/meshdatabase.cpp \
-    databases/simulationdatabase.cpp \
-    steptools.cpp \
-    geometrynodebuilder.cpp \
-    simulationmanagerdelegate.cpp \
     src/gui/itemselector.cpp \
-    meshtools.cpp \
     src/mesh/netgentools.cpp \
     src/gui/qfileselect.cpp \
     src/memory/memoryprofiler.cpp \
@@ -150,8 +72,6 @@ SOURCES += main.cpp\
     src/mesh/meshuvprojection.cpp \
     src/mesh/customMesher/custommesher.cpp \
     src/mesh/surfacemeshcutter.cpp \
-    openfoamcontroller.cpp \
-    interpolatorcontroller.cpp \
     src/mesh/datasourcebuildercontroller.cpp \
     src/mesh/surfacemeshsmoother.cpp \
     src/mesh/nettgentool2.cpp \
@@ -168,75 +88,114 @@ SOURCES += main.cpp\
     src/viewer/wbtrihedron.cpp \
     src/mesh/meshslicer.cpp \
     src/mesh/silcemeshvs_mesh.cpp \
-    contactfinder.cpp \
     src/mesh/tetqualityclass.cpp \
     src/viewer/qhistogram.cpp \
-    tabulardataviewerclass1.cpp \
     src/post/convergencedatachart1.cpp \
     src/electrostatic/poissonsolver.cpp \
     src/electrostatic/particlesinfieldssolver.cpp \
     src/electrostatic/particlesemitter.cpp \
     src/mesh/meshnodesrenumberingtool.cpp \
-    inputfilegenerator.cpp \
-    ccxsolvermanager1.cpp \
     src/mesh/isostripbuilder.cpp \
     src/mesh/rayintersectmesh.cpp \
-    meshselector.cpp \
     src/post/rainflow.cpp \
     src/mesh/datasourcebuilder.cpp \
     src/mesh/smoothingtools.cpp \
     src/mesh/pointtomeshdistance.cpp \
     src/mesh/surfacemeshtofacemeshes.cpp \
-    src/pymesh/MshLoader.cpp \
-    src/pymesh/MshSaver.cpp
+    compatibility/StlMesh/StlTransfer.cxx \
+    ext/occ_extended/ais_arrowmarker.cpp \
+    ext/occ_extended/ais_colorscaleextended.cpp \
+    ext/occ_extended/ais_cormarker.cpp \
+    ext/occ_extended/ais_curvedarrowmarker.cpp \
+    ext/occ_extended/ais_customtrihedron.cpp \
+    ext/occ_extended/ais_doublearrowmarker.cpp \
+    ext/occ_extended/ais_extendedshape.cpp \
+    ext/occ_extended/ais_meshsegmentmarker.cpp \
+    ext/occ_extended/ais_spheremarker.cpp \
+    ext/occ_extended/arrayofcolors.cpp \
+    ext/pymesh/MshLoader.cpp \
+    ext/pymesh/MshSaver.cpp \
+    src/ccxSolver/ccxconsoletofile.cpp \
+    src/ccxSolver/ccxsolvermanager1.cpp \
+    src/ccxSolver/consolereader.cpp \
+    src/ccxSolver/inputfilegenerator.cpp \
+    src/ccxSolver/solutionworker.cpp \
+    src/ccxSolver/writesolverfileclass.cpp \
+    src/connections/contactfinder.cpp \
+    src/connections/contactparameters.cpp \
+    src/databases/geometrydatabase.cpp \
+    src/databases/meshdatabase.cpp \
+    src/databases/simulationdatabase.cpp \
+    src/main/main.cpp \
+    src/main/maintreetools.cpp \
+    src/main/mainwindow.cpp \
+    src/mesh/isostrip.cpp \
+    src/post/postobject.cpp \
+    src/utils/ccout.cpp \
+    src/utils/parser.cpp \
+    src/viewer/dockableviewport.cpp \
+    src/viewer/shapeselector.cpp \
+    src/viewer/shapeselectorbox.cpp \
+    src/controller/meshingserver.cpp \
+    src/controller/meshworker.cpp \
+    src/controller/modelloadercontroller.cpp \
+    src/gui/optionsWidget/colorselector.cpp \
+    src/gui/optionsWidget/optionswidget.cpp \
+    src/gui/optionsWidget/qtablestandarditem.cpp \
+    src/gui/optionsWidget/tabledelegate.cpp \
+    src/gui/boundaryvaluemanager.cpp \
+    src/gui/contextmenubuilder.cpp \
+    src/gui/deserializerclass.cpp \
+    src/gui/detailviewer.cpp \
+    src/gui/directionselector.cpp \
+    src/gui/generaldelegate.cpp \
+    src/gui/geometrynodebuilder.cpp \
+    src/gui/lineedit.cpp \
+    src/gui/load.cpp \
+    src/gui/markerbuilder.cpp \
+    src/gui/markers.cpp \
+    src/gui/meshselector.cpp \
+    src/gui/meshtoolbar.cpp \
+    src/gui/nodefactory.cpp \
+    src/gui/property.cpp \
+    src/gui/qextendedstandarditem.cpp \
+    src/gui/qpushbuttonextended.cpp \
+    src/gui/resultstoolbar.cpp \
+    src/gui/serializerclass.cpp \
+    src/gui/simulationnodeclass.cpp \
+    src/gui/stepimporter.cpp \
+    src/gui/stlapiwriter.cpp \
+    src/gui/writelabelclass.cpp \
+    src/main/simulationmanager.cpp \
+    src/main/simulationmanagerdelegate.cpp \
+    src/mapper/interpolatorcontroller.cpp \
+    src/mapper/mapper3dclass.cpp \
+    src/mapper/openfoamcontroller.cpp \
+    src/mapper/openfoamreader.cpp \
+    src/utils/cliptool/clipTool.cpp \
+    src/utils/cliptool/cliptooldelegate.cpp \
+    src/utils/feaTool/bolttool.cpp \
+    src/utils/exportingtools.cpp \
+    src/utils/geomtoolsclass.cpp \
+    src/utils/graphicstools.cpp \
+    src/utils/meshtools.cpp \
+    src/utils/modelloader.cpp \
+    src/utils/steptools.cpp \
+    src/utils/testtools.cpp \
+    src/utils/textviewer.cpp \
+    src/utils/tools.cpp \
+    src/utils/topologytools.cpp \
+    src/utils/vectortool.cpp \
+    src/gui/systemConsole/SimulationMonitor.cpp \
+    src/gui/systemConsole/systemconsole.cpp \
+    src/gui/StepGenerationWidget/stepgenerationwidget.cpp \
+    src/gui/tabularData/customtablemodel.cpp \
+    src/gui/tabularData/tableviewclass.cpp \
+    src/gui/tabularData/tableviewclassitemdelegate.cpp \
+    src/gui/tabularData/tablewidget.cpp \
+    src/gui/tabularData/tabulardataviewerclass1.cpp
 
-HEADERS  += mainwindow.h \
-    actions3d.h \
-    selectionmodes.h \
-    ais_extendedshape.h \
-    displaymode.h \
-    displayquality.h \
-    workingmode.h \
-    mydefines.h \
-    myenumvariables.h \
-    textviewer.h \
-    simulationnodeclass.h \
-    shapeselectorbox.h \
-    property.h \
-    listofshape.h \
-    generaldelegate.h \
-    detailviewer.h \
-    simulationmanager.h \
-    qextendedstandarditem.h \
-    shapeselector.h \
-    writesolverfileclass.h \
-    geomtoolsclass.h \
-    load.h \
-    customtablemodel.h \
-    tableviewclass.h \
-    tableviewclassitemdelegate.h \
-    tablewidget.h \
-    lineedit.h \
-    directionselector.h \
-    markers.h \
-    vectortool.h \
-    writelabelclass.h \
-    serializerclass.h \
-    deserializerclass.h \
-    tools.h \
-    nodefactory.h \
-    meshtools.h \
-    qpushbuttonextended.h \
-    exportingtools.h \
-    topologytools.h \
-    graphicstools.h \
-    mapper3dclass.h \
-    arrayofcolors.h \
-    mathtools.h \
-    nr3.h \
-    stepimporter.h \
-    se_exception.h \
-    src/mesh/ng_meshvs_datasource1d.h \
+HEADERS  += src/mesh/ng_meshvs_datasource1d.h \
     src/mesh/ng_meshvs_datasource2d.h \
     src/mesh/ng_meshvs_datasource3d.h \
     src/mesh/ng_meshvs_datasourceface.h \
@@ -244,108 +203,37 @@ HEADERS  += mainwindow.h \
     src/mesh/ng_mesher2.h \
     src/viewer/occGLwidget.h \
     src/viewer/occPreGLwidget.h \
-    testtools.h \
     src/mesh/elementtypes.h \
     src/mesh/mesherclass.h \
     src/mesh/edgemeshdatasourcebuildesclass.h \
-    ais_colorscaleextended.h \
     src/viewer/occpostwidget.h \
-    listofmesh.h \
-    stlapiwriter.h \
-    openfoamreader.h \
     src/mesh/polygon_triangulate.h \
-    contextmenubuilder.h \
-    postobject.h \
-    mapofmeshdatasources.h \
-    optionsWidget/celldata.h \
-    optionsWidget/colorselector.h \
-    optionsWidget/optionswidget.h \
-    optionsWidget/qtablestandarditem.h \
-    optionsWidget/tabledelegate.h \
-    optionsWidget/viewoptions.h \
-    qprogressevent.h \
-    qbackgroundevent.h \
-    meshingserver.h \
-    meshworker.h \
-    systemConsole/systemconsole.h \
-    ccout.h \
-    qconsoleevent.h \
-    solutionworker.h \
     src/post/frdreader.h \
     src/post/occmeshtoccxmesh.h \
-    ccxconsoletofile.h \
-    qtabwidgetextended.h \
-    solutioninfo.h \
     src/post/postengine.h \
     src/post/posttools.h \
     src/post/cubicequation.h \
-    qsimulationstatusevent.h \
     src/post/runterminationdata.h \
-    parser.h \
-    prebuiltcontactoptions.h \
     src/mesh/stldoctor.h \
-    modelloader.h \
     src/viewer/qprogressindicator.h \
     src/viewer/qoccprogressindicator.h \
-    modelloadercontroller.h \
-    topods_shape_reg.h \
-    handle_qoccprogressindicator_reg.h \
     src/mesh/extendedrwstl.h \
     src/mesh/ng_meshvs_deformeddatasource2d.h \
-    ais_cormarker.h \
-    ais_meshsegmentmarker.h \
-    ais_extendedshape.h \
-    prebuiltcontactoptions.h \
-    systemConsole/SimulationMonitor.h \
-    noteditabledelegate.h \
     src/mesh/occmesher.h \
-    resultstoolbar.h \
     src/viewer/scaleselector.h \
-    dockableviewport.h \
-    tabulardatacolumns.h \
-    contactparameters.h \
-    ais_spheremarker.h \
-    ais_arrowmarker.h \
-    ais_customsignatures.h \
-    src/cliptool/clipTool.h \
-    src/cliptool/cliptooldelegate.h \
     src/mesh/simplifymesh.h \
-    meshtoolbar.h \
     src/mesh/curvature.h \
     src/mesh/prismaticlayer.h \
     src/mesh/meshpoint.h \
     src/mesh/mesh.h \
-    bolttool.h \
     src/mesh/meshelement2d.h \
-    ais_doublearrowmarker.h \
-    markerbuilder.h \
-    ais_customtrihedron.h \
-    myconstant.h \
-    handle_ais_trihedron_reg.h \
-    handle_ais_customtrihedron_reg.h \
-    handle_ais_doublearrowmarker_reg.h \
-    handle_ais_arrowmarker_reg.h \
-    maintreetools.h \
-    handle_ais_curvedarrowmarker_reg.h \
-    ais_curvedarrowmarker.h \
     src/mesh/prismaticlayerparameters.h \
-    databases/geometrydatabase.h \
-    databases/meshdatabase.h \
-    databases/simulationdatabase.h \
-    meshvs_mesh_handle_reg.h \
-    handle_ais_coloredshape_reg.h \
-    handle_ais_spheremarker_reg.h \
-    steptools.h \
-    geometrynodebuilder.h \
-    simulationmanagerdelegate.h \
     src/gui/itemselector.h \
     src/mesh/netgentools.h \
     src/gui/qfileselect.h \
     src/memory/memoryprofiler.h \
     src/geometry/geometryhealing.h \
     src/mesh/igtools.h \
-    hash_c.h \
-    occhandle.h \
     compatibility/StlMesh/NCollection_StlIterator.hxx \
     compatibility/StlMesh/StlAPI.hxx \
     compatibility/StlMesh/StlAPI_ErrorStatus.hxx \
@@ -364,21 +252,16 @@ HEADERS  += mainwindow.h \
     src/mesh/tetwildmesher.h \
     src/mesh/mshconvert.h \
     src/mesh/mshconvert.h \
-    libigl/include/igl/copyleft/cgal/test.h \
     src/mesh/meshuvprojection.h \
     src/mesh/indexedmapofmeshdatasources.h \
     src/mesh/customMesher/custommesher.h \
-    connectionpairgenerationoptions.h \
     src/viewer/resultpresentation.h \
     src/mesh/surfacemeshcutter.h \
-    openfoamcontroller.h \
     src/mesh/simulationdata.h \
-    interpolatorcontroller.h \
     src/geometry/polyhedron.h \
     src/mesh/datasourcebuildercontroller.h \
     src/mesh/surfacemeshsmoother.h \
     src/mesh/nettgentool2.h \
-    global.h \
     src/mesh/qmorph.h \
     src/mesh/triangleaccessor.h \
     src/geometry/triangletotriangleintersection.h \
@@ -395,19 +278,13 @@ HEADERS  += mainwindow.h \
     src/mesh/tethex.h \
     src/mesh/meshelementbycoords.h \
     src/mesh/meshselectnlayers.h \
-    mystdlib.h \
     src/geometry/shapecomparison.h \
     src/viewer/wbtrihedron.h \
     src/mesh/meshslicer.h \
     src/mesh/slicemeshvs_mesh.h \
-    contactfinder.h \
     src/mesh/tetqualityclass.h \
     src/viewer/qhistogramdata.h \
     src/viewer/qhistogram.h \
-    qccxsolvermessageevent.h \
-    ccxsolvermessage.h \
-    ccxtools.h \
-    tabulardataviewerclass1.h \
     src/post/convergencedatachart1.h \
     src/electrostatic/poissonsolver.h \
     src/electrostatic/particle.h \
@@ -415,21 +292,151 @@ HEADERS  += mainwindow.h \
     src/electrostatic/particlesemitter.h \
     src/mesh/renumberingtool.h \
     src/mesh/meshnodesrenumberingtool.h \
-    inputfilegenerator.h \
-    ccxsolvermanager1.h \
     src/mesh/isostripbuilder.h \
     src/mesh/rayintersectmesh.h \
-    meshselector.h \
     src/post/rainflow.h \
     src/mesh/datasourcebuilder.h \
     src/mesh/smoothingtools.h \
     src/mesh/pointtomeshdistance.h \
     src/mesh/surfacemeshtofacemeshes.h \
-    src/pymesh/Exception.h \
-    src/pymesh/MshLoader.h \
-    src/pymesh/MshSaver.h
+    src/ccxSolver/ccxconsoletofile.h \
+    src/ccxSolver/ccxsolvermanager1.h \
+    src/ccxSolver/ccxsolvermessage.h \
+    src/ccxSolver/consolereader.h \
+    src/ccxSolver/inputfilegenerator.h \
+    src/ccxSolver/qccxsolvermessageevent.h \
+    src/ccxSolver/solutionworker.h \
+    src/ccxSolver/writesolverfileclass.h \
+    src/connections/connectionpairgenerationoptions.h \
+    src/connections/contactfinder.h \
+    src/connections/contactparameters.h \
+    src/databases/geometrydatabase.h \
+    src/databases/meshdatabase.h \
+    src/databases/simulationdatabase.h \
+    src/geometry/PQP_Internal.h \
+    src/main/maintreetools.h \
+    src/main/mainwindow.h \
+    src/main/mydefines.h \
+    src/mesh/cgal_tools.h \
+    src/mesh/isostrip.h \
+    src/post/postobject.h \
+    src/registeredMetatypes/meshvs_mesh_handle_reg.h \
+    src/utils/ccout.h \
+    src/utils/mathtools.h \
+    src/utils/myconstant.h \
+    src/utils/myenumvariables.h \
+    src/utils/mystdlib.h \
+    src/utils/nr3.h \
+    src/utils/parser.h \
+    src/viewer/dockableviewport.h \
+    src/viewer/shapeselector.h \
+    src/viewer/shapeselectorbox.h \
+    ext/occ_extended/ais_arrowmarker.h \
+    ext/occ_extended/ais_colorscaleextended.h \
+    ext/occ_extended/ais_cormarker.h \
+    ext/occ_extended/ais_curvedarrowmarker.h \
+    ext/occ_extended/ais_customsignatures.h \
+    ext/occ_extended/ais_customtrihedron.h \
+    ext/occ_extended/ais_doublearrowmarker.h \
+    ext/occ_extended/ais_extendedshape.h \
+    ext/occ_extended/ais_meshsegmentmarker.h \
+    ext/occ_extended/ais_spheremarker.h \
+    ext/occ_extended/arrayofcolors.h \
+    ext/occ_extended/handle_ais_arrowmarker_reg.h \
+    ext/occ_extended/handle_ais_coloredshape_reg.h \
+    ext/occ_extended/handle_ais_curvedarrowmarker_reg.h \
+    ext/occ_extended/handle_ais_customtrihedron_reg.h \
+    ext/occ_extended/handle_ais_doublearrowmarker_reg.h \
+    ext/occ_extended/handle_ais_spheremarker_reg.h \
+    ext/occ_extended/handle_ais_trihedron_reg.h \
+    ext/occ_extended/handle_meshvs_datasource_reg.h \
+    ext/occ_extended/handle_qoccprogressindicator_reg.h \
+    src/ccxSolver/solutioninfo.h \
+    src/connections/prebuiltcontactoptions.h \
+    src/controller/meshingserver.h \
+    src/controller/meshworker.h \
+    src/controller/modelloadercontroller.h \
+    src/gui/optionsWidget/celldata.h \
+    src/gui/optionsWidget/colorselector.h \
+    src/gui/optionsWidget/optionswidget.h \
+    src/gui/optionsWidget/qtablestandarditem.h \
+    src/gui/optionsWidget/tabledelegate.h \
+    src/gui/optionsWidget/viewoptions.h \
+    src/gui/actions3d.h \
+    src/gui/boundaryvaluemanager.h \
+    src/gui/contextmenubuilder.h \
+    src/gui/deserializerclass.h \
+    src/gui/detailviewer.h \
+    src/gui/directionselector.h \
+    src/gui/generaldelegate.h \
+    src/gui/geometrynodebuilder.h \
+    src/gui/lineedit.h \
+    src/gui/load.h \
+    src/gui/markerbuilder.h \
+    src/gui/markers.h \
+    src/gui/meshselector.h \
+    src/gui/meshtoolbar.h \
+    src/gui/nodefactory.h \
+    src/gui/noteditabledelegate.h \
+    src/gui/property.h \
+    src/gui/qbackgroundevent.h \
+    src/gui/qconsoleevent.h \
+    src/gui/qextendedstandarditem.h \
+    src/gui/qprogressevent.h \
+    src/gui/qpushbuttonextended.h \
+    src/gui/qsimulationstatusevent.h \
+    src/gui/qtabwidgetextended.h \
+    src/gui/resultstoolbar.h \
+    src/gui/se_exception.h \
+    src/gui/selectionmodes.h \
+    src/gui/serializerclass.h \
+    src/gui/simulationnodeclass.h \
+    src/gui/stepimporter.h \
+    src/gui/stlapiwriter.h \
+    src/gui/workingmode.h \
+    src/gui/writelabelclass.h \
+    src/main/simulationmanager.h \
+    src/main/simulationmanagerdelegate.h \
+    src/main/ui_mainwindow.h \
+    src/mapper/interpolatorcontroller.h \
+    src/mapper/mapper3dclass.h \
+    src/mapper/openfoamcontroller.h \
+    src/mapper/openfoamreader.h \
+    src/registeredMetatypes/listofmesh.h \
+    src/registeredMetatypes/listofshape.h \
+    src/registeredMetatypes/mapofmeshdatasources.h \
+    src/registeredMetatypes/topods_shape_reg.h \
+    src/utils/cliptool/clipTool.h \
+    src/utils/cliptool/cliptooldelegate.h \
+    src/utils/feaTool/bolttool.h \
+    src/utils/exportingtools.h \
+    src/utils/geomtoolsclass.h \
+    src/utils/global.h \
+    src/utils/graphicstools.h \
+    src/utils/hash_c.h \
+    src/utils/meshtools.h \
+    src/utils/modelloader.h \
+    src/utils/steptools.h \
+    src/utils/testtools.h \
+    src/utils/textviewer.h \
+    src/utils/tools.h \
+    src/utils/topologytools.h \
+    src/utils/vectortool.h \
+    src/viewer/displaymode.h \
+    src/viewer/displayquality.h \
+    src/viewer/occhandle.h \
+    src/gui/systemConsole/SimulationMonitor.h \
+    src/gui/systemConsole/systemconsole.h \
+    src/gui/StepGenerationWidget/stepgenerationwidget.h \
+    src/gui/tabularData/customtablemodel.h \
+    src/gui/tabularData/tableviewclass.h \
+    src/gui/tabularData/tableviewclassitemdelegate.h \
+    src/gui/tabularData/tablewidget.h \
+    src/gui/tabularData/tabulardatacolumns.h \
+    src/gui/tabularData/tabulardataviewerclass1.h \
+    src/utils/ccxtools.h
 
-FORMS    += mainwindow.ui
+FORMS    += src/main/mainwindow.ui
 
 DEFINES += WNT  \
            OCCGEOMETRY \
@@ -447,27 +454,38 @@ DEFINES += QCUSTOMPLOT_USE_LIBRARY
 #DEFINES += ONLY_MESHER
 DEFINES += NEW_HASH
 
-INCLUDEPATH = D:/Work/Qt/SimSpace/src/geometry \
+INCLUDEPATH = $$PWD/src/geometry \
               C:/OpenCASCADE7.3.0-vc14-64/opencascade-7.3.0/inc \
               D:/Work/Qt/SimSpace/compatibility/StlMesh    \
               "D:/Work/Costamp/OCC lib/EMESH_7.3.0_binaries_win64vc14/inc"     \
               "D:/Work/Costamp/OCC lib/OMF_7.3.0_binaries_win64vc14/inc"   \
-              D:/Work/Qt/SimSpace/src/mesh   \
-              D:/Work/Qt/SimSpace/src/viewer   \
-              D:/Work/Qt/SimSpace/optionsWidget    \
-              D:/Work/Qt/SimSpace/src/post \
-              D:/Work/Qt/SimSpace/src/testTools    \
-              D:/Work/Qt/SimSpace/databases    \
-              D:/Work/Qt/SimSpace/registeredMetatypes  \
-              D:/Work/Qt/SimSpace/src/gui  \
-              D:/Work/Qt/SimSpace/eigen    \
-              D:/Work/Qt/SimSpace    \
+              $$PWD/src/gui/optionsWidget    \
+              $$PWD/src/connections \
+              $$PWD/src/controller \
+              $$PWD/src/geometry \
+              $$PWD/src/main \
+              $$PWD/src/utils \
+              $$PWD/src/gui/tabularData    \
+              $$PWD/src/gui/systemConsole    \
+              $$PWD/src/gui/stepGenerationWidget    \
+              $$PWD/src/ccxSolver    \
+              $$PWD/src/mesh   \
+              $$PWD/src/viewer   \
+              $$PWD/src/post \
+              $$PWD/src/testTools    \
+              $$PWD/src/mapper    \
+              $$PWD/src/databases    \
+              $$PWD/src/registeredMetatypes  \
+              $$PWD/src/gui  \
+              $$PWD/src/utils  \
+              $$PWD/ext/eigen    \
+              $$PWD    \
               C:/CGAL-4.14/include    \
               C:/local/boost_1_69_0   \                 # needed by cgal
               C:/CGAL-4.14/auxiliary/gmp/include    \   # needed by cgal
-              D:/Work/Qt/SimSpace/libigl   \
-              D:/Work/Qt/SimSpace/src/pymesh    \
-              D:/Work/Qt/SimSpace/src/dirent/include
+              $$PWD/ext/libigl   \
+              $$PWD/ext/pymesh    \
+              $$PWD/ext/occ_extended
 
 LIBS += \
 -lC:\OpenCASCADE7.3.0-vc14-64\opencascade-7.3.0\win64\vc14\lib\TKBin   \
@@ -552,10 +570,9 @@ LIBS += \
 #-l"C:\CGAL-4.14\build_MSVC14.0\lib\Debug\CGAL_Core-vc140-mt-gd-4.14" \
 
 RESOURCES += \
-    icons.qrc \
-    cursors.qrc \
-    stylesheets.qrc \
-    #src/TimeStepBuilder/resources.qrc
+    resources/cursors.qrc \
+    resources/icons.qrc \
+    resources/stylesheets.qrc
 
 #----------------------
 # unhandled exceptions
@@ -567,43 +584,43 @@ QMAKE_CXXFLAGS += /EHa
 #----------------
 # quazip library
 #----------------
-win32: LIBS += -L$$PWD/quazip/bin/ -lquazip
+win32: LIBS += -L$$PWD/ext/quazip/bin/ -lquazip
 
-INCLUDEPATH += $$PWD/quazip/inc
-DEPENDPATH += $$PWD/quazip/inc
+INCLUDEPATH += $$PWD/ext/quazip/inc
+DEPENDPATH += $$PWD/ext/quazip/inc
 
 #-----------------------------------------------
 # zlib - only need the .h file (see Quazip doc)
 #-----------------------------------------------
-win32: LIBS += -L$$PWD/zlib/x64/lib/ -lzlib1
+win32: LIBS += -L$$PWD/ext/zlib/x64/lib/ -lzlib1
 
-INCLUDEPATH += $$PWD/zlib/include
-DEPENDPATH += $$PWD/zlib/include
+INCLUDEPATH += $$PWD/ext/zlib/include
+DEPENDPATH += $$PWD/ext/zlib/include
 
-win32:!win32-g++: PRE_TARGETDEPS += $$PWD/zlib/x64/lib/zlib1.lib
-else:win32-g++: PRE_TARGETDEPS += $$PWD/zlib/x64/lib/libzlib1.a
+win32:!win32-g++: PRE_TARGETDEPS += $$PWD/ext/zlib/x64/lib/zlib1.lib
+else:win32-g++: PRE_TARGETDEPS += $$PWD/ext/zlib/x64/lib/libzlib1.a
 
 #-------
 # nglib
 #-------
-win32: LIBS += -L$$PWD/nglib/lib/ -lnglib
+win32: LIBS += -L$$PWD/ext/nglib/lib/ -lnglib
 
-INCLUDEPATH += $$PWD/nglib/inc
-DEPENDPATH += $$PWD/nglib/inc
+INCLUDEPATH += $$PWD/ext/nglib/inc
+DEPENDPATH += $$PWD/ext/nglib/inc
 
 # --------------
 # Tetgen define
 # --------------
-win32: LIBS += -L$$PWD/tetgen/bin/ -ltet
+win32: LIBS += -L$$PWD/ext/tetgen/bin/ -ltet
 
 #----------------
 # tetgen library
 #----------------
-INCLUDEPATH += $$PWD/tetgen/inc
-DEPENDPATH += $$PWD/tetgen/inc
+INCLUDEPATH += $$PWD/ext/tetgen/inc
+DEPENDPATH += $$PWD/ext/tetgen/inc
 
-win32:!win32-g++: PRE_TARGETDEPS += $$PWD/tetgen/bin/tet.lib
-else:win32-g++: PRE_TARGETDEPS += $$PWD/tetgen/bin/libtet.a
+win32:!win32-g++: PRE_TARGETDEPS += $$PWD/ext/tetgen/bin/tet.lib
+else:win32-g++: PRE_TARGETDEPS += $$PWD/ext/tetgen/bin/libtet.a
 
 win32: LIBS += -LC:/CGAL-4.14/auxiliary/gmp/lib/ -llibgmp-10
 
@@ -624,20 +641,15 @@ DEPENDPATH += C:/CGAL-4.14/auxiliary/gmp/include
 win32:!win32-g++: PRE_TARGETDEPS += C:/CGAL-4.14/auxiliary/gmp/lib/libmpfr-4.lib
 else:win32-g++: PRE_TARGETDEPS += C:/CGAL-4.14/auxiliary/gmp/lib/liblibmpfr-4.a
 
-DISTFILES += \
-    compatibility/StlMesh/StlMesh_Mesh.lxx \
-    compatibility/StlMesh/StlMesh_MeshDomain.lxx \
-    compatibility/StlMesh/StlMesh_MeshExplorer.lxx
-
 # ---------------
 # TetWild mesher
 # ---------------
-win32: LIBS += -L$$PWD/tetwild/lib/ -ltetwild
-INCLUDEPATH += $$PWD/tetwild/inc
-DEPENDPATH += $$PWD/tetwild/inc
+win32: LIBS += -L$$PWD/ext/tetwild/lib/ -ltetwild
+INCLUDEPATH += $$PWD/ext/tetwild/inc
+DEPENDPATH += $$PWD/ext/tetwild/inc
 
-win32:!win32-g++: PRE_TARGETDEPS += $$PWD/tetwild/lib/tetwild.lib
-else:win32-g++: PRE_TARGETDEPS += $$PWD/tetwild/lib/libtetwild.a
+win32:!win32-g++: PRE_TARGETDEPS += $$PWD/ext/tetwild/lib/tetwild.lib
+else:win32-g++: PRE_TARGETDEPS += $$PWD/ext/tetwild/lib/libtetwild.a
 
 # ---------------------------------------------
 # this is for generating a valid debug version
@@ -647,17 +659,17 @@ QMAKE_CXXFLAGS += -bigobj
 # --------------------
 # QCustomPlot library
 # --------------------
-LIBS += -L$$PWD/QCustomPlot/qcp/ -lqcustomplot2
+LIBS += -L$$PWD/ext/QCustomPlot/qcp/ -lqcustomplot2
 #win32:CONFIG(release, debug|release): LIBS += -L$$PWD/QCustomPlot/qcp/ -lqcustomplot2
 #else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/QCustomPlot/qcp/ -lqcustomplot2d
 
-INCLUDEPATH += $$PWD/QCustomPlot/qcp
-DEPENDPATH += $$PWD/QCustomPlot/qcp
+INCLUDEPATH += $$PWD/ext/QCustomPlot/qcp
+DEPENDPATH += $$PWD/ext/QCustomPlot/qcp
 
 # -------
 # embree
 # -------
-win32: LIBS += -L$$PWD/Embree/embree-3.11.0.x64.vc14.windows/lib/ -lembree3
-INCLUDEPATH += $$PWD/Embree/embree-3.11.0.x64.vc14.windows/include/embree3
-DEPENDPATH += $$PWD/Embree/embree-3.11.0.x64.vc14.windows/include/embree3
+win32: LIBS += -L$$PWD/ext/Embree/embree-3.11.0.x64.vc14.windows/lib/ -lembree3
+INCLUDEPATH += $$PWD/ext/Embree/embree-3.11.0.x64.vc14.windows/include/embree3
+DEPENDPATH += $$PWD/ext/Embree/embree-3.11.0.x64.vc14.windows/include/embree3
 

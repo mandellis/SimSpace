@@ -14,7 +14,7 @@
 //! ----------------
 //! custom includes
 //! ----------------
-#include "mydefines.h"
+#include "src/main/mydefines.h"
 #include <mesh.h>
 #include <meshdatabase.h>
 #include <ng_meshvs_datasource3d.h>

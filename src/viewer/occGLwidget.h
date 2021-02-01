@@ -30,12 +30,12 @@
 //! ----------------
 //! custom includes
 //! ----------------
-#include "mydefines.h"
+#include "src/main/mydefines.h"
 #include "actions3d.h"
 #include "selectionmodes.h"
 #include "displaymode.h"
 #include "displayquality.h"
-#include "ais_customsignatures.h"
+#include "ext/occ_extended/ais_customsignatures.h"
 
 #define HIGHLIGHT_COLOR Quantity_NOC_RED
 #define TRANSPARENCY_HIGHLIGHT 0.50

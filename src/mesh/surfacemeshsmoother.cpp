@@ -3,10 +3,10 @@
 //! ----------------
 #include "surfacemeshsmoother.h"
 #include "qprogressevent.h"
-#include "global.h"
+#include "src/utils/global.h"
 #include "userMessage.h"
 #include <mesh.h>
-#include <meshtools.h>
+#include <src/utils/meshtools.h>
 #include <tetqualityclass.h>
 
 //! ----
@@ -51,12 +51,12 @@
 //! ------
 //! Eigen
 //! ------
-#include <Eigen/Dense>
+#include <ext/eigen/Eigen/Dense>
 
 //! -------
 //! libigl
 //! -------
-#include <libigl/include/igl/embree/EmbreeIntersector.h>
+#include <ext/libigl/include/igl/embree/EmbreeIntersector.h>
 
 //! ----------------------
 //! function: constructor

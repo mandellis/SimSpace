@@ -12,9 +12,9 @@
 #include <triangleaccessor.h>
 #include <elementtypes.h>
 #include <polygon.h>
-#include "meshtools.h"
-#include "tools.h"
-#include "ccout.h"
+#include "src/utils/meshtools.h"
+#include "src/utils/tools.h"
+#include "src/utils/ccout.h"
 #include <polygon.h>
 #include <igtools.h>
 
@@ -56,19 +56,19 @@
 //! ------------
 //! igl & Eigen
 //! ------------
-#include <libigl/include/igl/per_vertex_normals.h>
-#include <libigl/include/igl/per_corner_normals.h>
-#include <libigl/include/igl/per_face_normals.h>
-#include <libigl/include/igl/gaussian_curvature.h>
-#include <libigl/include/igl/invert_diag.h>
-#include <libigl/include/igl/massmatrix.h>
-#include <libigl/include/igl/grad.h>
-#include <libigl/include/igl/cotmatrix.h>
-#include <libigl/include/igl/principal_curvature.h>
-#include <libigl/include/igl/ARAPEnergyType.h>
-#include <libigl/include/igl/arap_linear_block.h>
-#include <libigl/include/igl/arap.h>
-#include <libigl/include/igl/harmonic.h>
+#include <ext/libigl/include/igl/per_vertex_normals.h>
+#include <ext/libigl/include/igl/per_corner_normals.h>
+#include <ext/libigl/include/igl/per_face_normals.h>
+#include <ext/libigl/include/igl/gaussian_curvature.h>
+#include <ext/libigl/include/igl/invert_diag.h>
+#include <ext/libigl/include/igl/massmatrix.h>
+#include <ext/libigl/include/igl/grad.h>
+#include <ext/libigl/include/igl/cotmatrix.h>
+#include <ext/libigl/include/igl/principal_curvature.h>
+#include <ext/libigl/include/igl/ARAPEnergyType.h>
+#include <ext/libigl/include/igl/arap_linear_block.h>
+#include <ext/libigl/include/igl/arap.h>
+#include <ext/libigl/include/igl/harmonic.h>
 
 
 //! 2D elements - nodal ordering
@@ -2414,7 +2414,7 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const Eigen::MatrixXd &V, con
 //! ------------------------------------------------------------------
 #include <StlTransfer.hxx>
 #include <igtools.h>
-#include <libigl/include/igl/copyleft/cgal/intersect_other.h>
+#include <ext/libigl/include/igl/copyleft/cgal/intersect_other.h>
 #include <TopoDS_Shell.hxx>
 #include "topologytools.h"
 #include <meshuvprojection.h>

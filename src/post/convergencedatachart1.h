@@ -11,7 +11,7 @@
 //! ----------------
 //! custom includes
 //! ----------------
-#include "solutioninfo.h"
+#include "src/ccxSolver/solutioninfo.h"
 
 //! ----
 //! C++

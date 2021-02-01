@@ -17,7 +17,7 @@
 #include <QList>
 
 //! custom includes
-#include "mydefines.h"
+#include "src/main/mydefines.h"
 #include "se_exception.h"
 #include <userMessage.h>
 #include "qprogressindicator.h"

@@ -5,12 +5,12 @@
 //! custom includes
 //! ----------------
 #include "occGLwidget.h"
-#include "ais_extendedshape.h"
-#include "ArrayOfColors.h"
+#include "ext/occ_extended/ais_extendedshape.h"
+#include "ext/occ_extended/ArrayOfColors.h"
 #include "workingmode.h"
 #include "simulationnodeclass.h"
-#include "myenumvariables.h"
-#include "ais_colorscaleextended.h"
+#include "src/utils/myenumvariables.h"
+#include "ext/occ_extended/ais_colorscaleextended.h"
 #include <indexedmapofmeshdatasources.h>
 #include "geometrytag.h"
 #include "occhandle.h"

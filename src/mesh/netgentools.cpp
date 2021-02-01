@@ -3,7 +3,7 @@
 #include <ng_meshvs_datasource2d.h>
 #include <ng_meshvs_datasource3d.h>
 
-#include "ccout.h"
+#include "src/utils/ccout.h"
 #include "se_exception.h"
 #include <ngexception.hpp>
 #include "qprogressevent.h"

@@ -2,13 +2,13 @@
 //! custom includes
 //! ----------------
 #include "prismaticlayer.h"
-#include "meshtools.h"
-#include "ccout.h"
-#include "geomtoolsclass.h"
+#include "src/utils/meshtools.h"
+#include "src/utils/ccout.h"
+#include "src/utils/geomtoolsclass.h"
 #include "igtools.h"
 #include <ng_meshvs_datasourceface.h>
-#include "meshtools.h"
-#include "global.h"
+#include "src/utils/meshtools.h"
+#include "src/utils/global.h"
 #include <tetqualityclass.h>
 #include <meshface.h>
 #include <OCCface.h>
@@ -21,7 +21,7 @@
 //! ------
 //! Eigen
 //! ------
-#include <Eigen/Dense>
+#include <ext/eigen/Eigen/Dense>
 
 //! ----------------------
 //! used by "displayMesh"
@@ -31,7 +31,7 @@
 #include <MeshVS_MeshPrsBuilder.hxx>
 #include <MeshVS_Drawer.hxx>
 #include <MeshVS_DrawerAttribute.hxx>
-#include "arrayofcolors.h"
+#include "ext/occ_extended/arrayofcolors.h"
 #include "qprogressevent.h"
 
 //! ---

@@ -4,7 +4,7 @@
 #include "postengine.h"
 #include "posttools.h"
 #include "occmeshtoccxmesh.h"
-#include "meshtools.h"
+#include "src/utils/meshtools.h"
 #include <rainflow.h>
 
 //! ---
@@ -22,7 +22,7 @@
 //! -------
 //! global
 //! -------
-#include "global.h"
+#include "src/utils/global.h"
 
 //! ----------------------
 //! function: constructor
@@ -1527,7 +1527,7 @@ std::map<GeometryTag,std::map<int,std::vector<double>>> postEngine::readFatigueR
             sscanf(val.c_str(),"%s",tdata);
             cout<<"****************************************"<<endl;
 
-            int step,substep;
+            //int step,substep;
             int n = 0;
             //postTools::getStepSubStepByTimeDTM(myDTM,times.at(n),step,substep);
 

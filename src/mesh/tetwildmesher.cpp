@@ -3,12 +3,12 @@
 //! -------
 //! pyMesh
 //! -------
-#include <MshSaver.h>
+#include <ext/pymesh/MshSaver.h>
 
 //! ---------------
 //! tetgen library
 //! ---------------
-#include <tetgen/inc/tetgen.h>
+#include <ext/tetgen/inc/tetgen.h>
 
 //! ----------------
 //! custom includes

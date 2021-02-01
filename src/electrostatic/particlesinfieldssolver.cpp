@@ -18,10 +18,10 @@
 //! -------
 //! libigl
 //! -------
-#include <libigl/include/igl/in_element.h>
-#include <libigl/include/igl/grad.h>
-#include <libigl/include/igl/massmatrix.h>
-#include <libigl/include/igl/invert_diag.h>
+#include <ext/libigl/include/igl/in_element.h>
+#include <ext/libigl/include/igl/grad.h>
+#include <ext/libigl/include/igl/massmatrix.h>
+#include <ext/libigl/include/igl/invert_diag.h>
 
 //! -------------------------------------------------
 //! function: tetVol
