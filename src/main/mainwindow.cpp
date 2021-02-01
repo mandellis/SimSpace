@@ -30,7 +30,7 @@
 #include "qconsoleevent.h"
 #include "qtabwidgetextended.h"
 
-#include "convergencedatachart1.h"
+#include "convergencedatachart.h"
 
 #include "systemConsole/SimulationMonitor.h"
 #include "qprogressindicator.h"
@@ -374,10 +374,10 @@ MainWindow::MainWindow(QWidget *parent):QMainWindow(parent),ui(new Ui::MainWindo
     //myConvergenceDataChart = new ConvergenceDataChart(this);
     //myConvergenceDataChart->setObjectName("ConvergenceDataChart");
 
-    myConvergenceDataChart1 = new ConvergenceDataChart1(this);
-    myConvergenceDataChart1->setObjectName("ConvergenceDataChart1");
+    myConvergenceDataChart = new ConvergenceDataChart(this);
+    myConvergenceDataChart->setObjectName("ConvergenceDataChart");
 
-    myCentralTabWidget->addTab(myConvergenceDataChart1,"Convergence");
+    myCentralTabWidget->addTab(myConvergenceDataChart,"Convergence");
 
     //! -----------------------------------------------------------
     //! the tabular data graph view - loads vs time through charts
@@ -2107,7 +2107,7 @@ void MainWindow::startAnalysis()
     //! -------------------------------------
     //! reset the ConvergenceDataChart panel
     //! -------------------------------------
-    if(hasStarted) myConvergenceDataChart1->clearViewer();
+    if(hasStarted) myConvergenceDataChart->clearViewer();
 }
 
 //! -----------------------------------
@@ -2786,7 +2786,7 @@ void MainWindow::setUpConnections()
     connect(mySimulationManager,SIGNAL(requestSetActiveCentralTab(QString)),myCentralTabWidget,SLOT(setCurrentTab(QString)));
     connect(mySimulationManager, SIGNAL(requestMeshInvalidate(std::vector<int>)),myMainOCCViewer, SLOT(invalidateMeshes(std::vector<int>)));
 
-    connect(mySimulationManager,SIGNAL(requestUpdateConvergenceViewer(const QList<solutionInfo> &)), myConvergenceDataChart1,SLOT(plotConvergenceData(const QList<solutionInfo> &)));
+    connect(mySimulationManager,SIGNAL(requestUpdateConvergenceViewer(const QList<solutionInfo> &)), myConvergenceDataChart,SLOT(plotConvergenceData(const QList<solutionInfo> &)));
 
     //! ----------------
     //! selection modes

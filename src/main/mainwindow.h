@@ -65,7 +65,7 @@ class systemConsole;
 class QTabWidgetExtended;
 
 class ConvergenceDataChart;
-class ConvergenceDataChart1;
+//class ConvergenceDataChart1;
 
 class QProgressIndicator;
 class ResultsToolBar;
@@ -111,7 +111,7 @@ private:
     //! convergence data viewer - it displays the convergence trend
     //! ------------------------------------------------------------
     ConvergenceDataChart *myConvergenceDataChart;
-    ConvergenceDataChart1 *myConvergenceDataChart1;
+    //ConvergenceDataChart1 *myConvergenceDataChart1;
 
     //! ---------------------
     //! the worksheet viewer

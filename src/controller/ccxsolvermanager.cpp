@@ -1,7 +1,7 @@
 //! ----------------
 //! custom includes
 //! ----------------
-#include "ccxsolvermanager1.h"
+#include "ccxsolvermanager.h"
 #include "qprogressindicator.h"
 #include <qprogressevent.h>
 
@@ -15,7 +15,7 @@
 //! function: constructor
 //! details:
 //! ----------------------
-CCXSolverManager1::CCXSolverManager1(QObject *parent):QThread(parent)
+CCXSolverManager::CCXSolverManager(QObject *parent):QThread(parent)
 {
     myNbProcessors = 2;
 }
@@ -24,7 +24,7 @@ CCXSolverManager1::CCXSolverManager1(QObject *parent):QThread(parent)
 //! function: setInputFile
 //! details:
 //! -----------------------
-void CCXSolverManager1::setInputFile(const QString &inputFile)
+void CCXSolverManager::setInputFile(const QString &inputFile)
 {
     myInputFileName = inputFile;
 }
@@ -33,7 +33,7 @@ void CCXSolverManager1::setInputFile(const QString &inputFile)
 //! function: setNbProcessors
 //! details:
 //! --------------------------
-void CCXSolverManager1::setNbProcessors(int NbProcessors)
+void CCXSolverManager::setNbProcessors(int NbProcessors)
 {
     if(NbProcessors<1) NbProcessors = 2;
     myNbProcessors = NbProcessors;
@@ -43,7 +43,7 @@ void CCXSolverManager1::setNbProcessors(int NbProcessors)
 //! function: setProgressIndicator
 //! details:
 //! -------------------------------
-void CCXSolverManager1::setProgressIndicator(QProgressIndicator *aProgressIndicator)
+void CCXSolverManager::setProgressIndicator(QProgressIndicator *aProgressIndicator)
 {
     myProgressIndicator = aProgressIndicator;
 }
@@ -52,7 +52,7 @@ void CCXSolverManager1::setProgressIndicator(QProgressIndicator *aProgressIndica
 //! function: run
 //! details:
 //! --------------
-void CCXSolverManager1::run()
+void CCXSolverManager::run()
 {
     //! -----------------
     //! create a process

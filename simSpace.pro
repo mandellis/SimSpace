@@ -62,11 +62,6 @@ SOURCES += src/mesh/ng_meshvs_datasource1d.cpp \
     src/memory/memoryprofiler.cpp \
     src/geometry/geometryhealing.cpp \
     src/mesh/igtools.cpp \
-    compatibility/StlMesh/StlMesh.cxx \
-    compatibility/StlMesh/StlMesh_Mesh.cxx \
-    compatibility/StlMesh/StlMesh_MeshDomain.cxx \
-    compatibility/StlMesh/StlMesh_MeshExplorer.cxx \
-    compatibility/StlMesh/StlMesh_MeshTriangle.cxx \
     src/mesh/tetwildmesher.cpp \
     src/mesh/mshconvert.cpp \
     src/mesh/meshuvprojection.cpp \
@@ -90,7 +85,6 @@ SOURCES += src/mesh/ng_meshvs_datasource1d.cpp \
     src/mesh/silcemeshvs_mesh.cpp \
     src/mesh/tetqualityclass.cpp \
     src/viewer/qhistogram.cpp \
-    src/post/convergencedatachart1.cpp \
     src/electrostatic/poissonsolver.cpp \
     src/electrostatic/particlesinfieldssolver.cpp \
     src/electrostatic/particlesemitter.cpp \
@@ -102,7 +96,6 @@ SOURCES += src/mesh/ng_meshvs_datasource1d.cpp \
     src/mesh/smoothingtools.cpp \
     src/mesh/pointtomeshdistance.cpp \
     src/mesh/surfacemeshtofacemeshes.cpp \
-    compatibility/StlMesh/StlTransfer.cxx \
     ext/occ_extended/ais_arrowmarker.cpp \
     ext/occ_extended/ais_colorscaleextended.cpp \
     ext/occ_extended/ais_cormarker.cpp \
@@ -116,10 +109,9 @@ SOURCES += src/mesh/ng_meshvs_datasource1d.cpp \
     ext/pymesh/MshLoader.cpp \
     ext/pymesh/MshSaver.cpp \
     src/ccxSolver/ccxconsoletofile.cpp \
-    src/ccxSolver/ccxsolvermanager1.cpp \
     src/ccxSolver/consolereader.cpp \
     src/ccxSolver/inputfilegenerator.cpp \
-    src/ccxSolver/solutionworker.cpp \
+    src/controller/solutionworker.cpp \
     src/ccxSolver/writesolverfileclass.cpp \
     src/connections/contactfinder.cpp \
     src/connections/contactparameters.cpp \
@@ -167,10 +159,7 @@ SOURCES += src/mesh/ng_meshvs_datasource1d.cpp \
     src/gui/stlapiwriter.cpp \
     src/gui/writelabelclass.cpp \
     src/main/simulationmanager.cpp \
-    src/main/simulationmanagerdelegate.cpp \
-    src/mapper/interpolatorcontroller.cpp \
     src/mapper/mapper3dclass.cpp \
-    src/mapper/openfoamcontroller.cpp \
     src/mapper/openfoamreader.cpp \
     src/utils/cliptool/clipTool.cpp \
     src/utils/cliptool/cliptooldelegate.cpp \
@@ -193,7 +182,18 @@ SOURCES += src/mesh/ng_meshvs_datasource1d.cpp \
     src/gui/tabularData/tableviewclass.cpp \
     src/gui/tabularData/tableviewclassitemdelegate.cpp \
     src/gui/tabularData/tablewidget.cpp \
-    src/gui/tabularData/tabulardataviewerclass1.cpp
+    src/gui/tabularData/tabulardataviewerclass1.cpp \
+    ext/StlMesh/StlMesh.cxx \
+    ext/StlMesh/StlMesh_Mesh.cxx \
+    ext/StlMesh/StlMesh_MeshDomain.cxx \
+    ext/StlMesh/StlMesh_MeshExplorer.cxx \
+    ext/StlMesh/StlMesh_MeshTriangle.cxx \
+    ext/StlMesh/StlTransfer.cxx \
+    src/gui/simulationmanagerdelegate.cpp \
+    src/controller/interpolatorcontroller.cpp \
+    src/controller/openfoamcontroller.cpp \
+    src/controller/ccxsolvermanager.cpp \
+    src/post/convergencedatachart.cpp
 
 HEADERS  += src/mesh/ng_meshvs_datasource1d.h \
     src/mesh/ng_meshvs_datasource2d.h \
@@ -234,19 +234,6 @@ HEADERS  += src/mesh/ng_meshvs_datasource1d.h \
     src/memory/memoryprofiler.h \
     src/geometry/geometryhealing.h \
     src/mesh/igtools.h \
-    compatibility/StlMesh/NCollection_StlIterator.hxx \
-    compatibility/StlMesh/StlAPI.hxx \
-    compatibility/StlMesh/StlAPI_ErrorStatus.hxx \
-    compatibility/StlMesh/StlAPI_Reader.hxx \
-    compatibility/StlMesh/StlAPI_Writer.hxx \
-    compatibility/StlMesh/StlMesh.hxx \
-    compatibility/StlMesh/StlMesh_Mesh.hxx \
-    compatibility/StlMesh/StlMesh_MeshDomain.hxx \
-    compatibility/StlMesh/StlMesh_MeshExplorer.hxx \
-    compatibility/StlMesh/StlMesh_MeshTriangle.hxx \
-    compatibility/StlMesh/StlMesh_SequenceOfMesh.hxx \
-    compatibility/StlMesh/StlMesh_SequenceOfMeshDomain.hxx \
-    compatibility/StlMesh/StlMesh_SequenceOfMeshTriangle.hxx \
     src/geometry/geometrytag.h \
     src/geometry/polygon.h \
     src/mesh/tetwildmesher.h \
@@ -285,7 +272,6 @@ HEADERS  += src/mesh/ng_meshvs_datasource1d.h \
     src/mesh/tetqualityclass.h \
     src/viewer/qhistogramdata.h \
     src/viewer/qhistogram.h \
-    src/post/convergencedatachart1.h \
     src/electrostatic/poissonsolver.h \
     src/electrostatic/particle.h \
     src/electrostatic/particlesinfieldssolver.h \
@@ -300,12 +286,10 @@ HEADERS  += src/mesh/ng_meshvs_datasource1d.h \
     src/mesh/pointtomeshdistance.h \
     src/mesh/surfacemeshtofacemeshes.h \
     src/ccxSolver/ccxconsoletofile.h \
-    src/ccxSolver/ccxsolvermanager1.h \
     src/ccxSolver/ccxsolvermessage.h \
     src/ccxSolver/consolereader.h \
     src/ccxSolver/inputfilegenerator.h \
     src/ccxSolver/qccxsolvermessageevent.h \
-    src/ccxSolver/solutionworker.h \
     src/ccxSolver/writesolverfileclass.h \
     src/connections/connectionpairgenerationoptions.h \
     src/connections/contactfinder.h \
@@ -396,11 +380,8 @@ HEADERS  += src/mesh/ng_meshvs_datasource1d.h \
     src/gui/workingmode.h \
     src/gui/writelabelclass.h \
     src/main/simulationmanager.h \
-    src/main/simulationmanagerdelegate.h \
     src/main/ui_mainwindow.h \
-    src/mapper/interpolatorcontroller.h \
     src/mapper/mapper3dclass.h \
-    src/mapper/openfoamcontroller.h \
     src/mapper/openfoamreader.h \
     src/registeredMetatypes/listofmesh.h \
     src/registeredMetatypes/listofshape.h \
@@ -434,7 +415,30 @@ HEADERS  += src/mesh/ng_meshvs_datasource1d.h \
     src/gui/tabularData/tablewidget.h \
     src/gui/tabularData/tabulardatacolumns.h \
     src/gui/tabularData/tabulardataviewerclass1.h \
-    src/utils/ccxtools.h
+    src/utils/ccxtools.h \
+    ext/StlMesh/NCollection_StlIterator.hxx \
+    ext/StlMesh/StlAPI.hxx \
+    ext/StlMesh/StlAPI_ErrorStatus.hxx \
+    ext/StlMesh/StlAPI_Reader.hxx \
+    ext/StlMesh/StlAPI_Writer.hxx \
+    ext/StlMesh/StlMesh.hxx \
+    ext/StlMesh/StlMesh_Mesh.hxx \
+    ext/StlMesh/StlMesh_MeshDomain.hxx \
+    ext/StlMesh/StlMesh_MeshExplorer.hxx \
+    ext/StlMesh/StlMesh_MeshTriangle.hxx \
+    ext/StlMesh/StlMesh_SequenceOfMesh.hxx \
+    ext/StlMesh/StlMesh_SequenceOfMeshDomain.hxx \
+    ext/StlMesh/StlMesh_SequenceOfMeshTriangle.hxx \
+    ext/StlMesh/StlTransfer.hxx \
+    ext/pymesh/Exception.h \
+    ext/pymesh/MshLoader.h \
+    ext/pymesh/MshSaver.h \
+    src/gui/simulationmanagerdelegate.h \
+    src/controller/interpolatorcontroller.h \
+    src/controller/openfoamcontroller.h \
+    src/controller/ccxsolvermanager.h \
+    src/controller/solutionworker.h \
+    src/post/convergencedatachart.h
 
 FORMS    += src/main/mainwindow.ui
 
@@ -456,7 +460,7 @@ DEFINES += NEW_HASH
 
 INCLUDEPATH = $$PWD/src/geometry \
               C:/OpenCASCADE7.3.0-vc14-64/opencascade-7.3.0/inc \
-              D:/Work/Qt/SimSpace/compatibility/StlMesh    \
+              D:/Work/Qt/SimSpace/ext/StlMesh    \
               "D:/Work/Costamp/OCC lib/EMESH_7.3.0_binaries_win64vc14/inc"     \
               "D:/Work/Costamp/OCC lib/OMF_7.3.0_binaries_win64vc14/inc"   \
               $$PWD/src/gui/optionsWidget    \
@@ -672,4 +676,5 @@ DEPENDPATH += $$PWD/ext/QCustomPlot/qcp
 win32: LIBS += -L$$PWD/ext/Embree/embree-3.11.0.x64.vc14.windows/lib/ -lembree3
 INCLUDEPATH += $$PWD/ext/Embree/embree-3.11.0.x64.vc14.windows/include/embree3
 DEPENDPATH += $$PWD/ext/Embree/embree-3.11.0.x64.vc14.windows/include/embree3
+
 

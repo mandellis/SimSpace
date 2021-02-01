@@ -1,5 +1,5 @@
-#ifndef CONVERGENCEDATACHART1_H
-#define CONVERGENCEDATACHART1_H
+#ifndef CONVERGENCEDATACHART_H
+#define CONVERGENCEDATACHART_H
 
 //! ---
 //! Qt
@@ -11,7 +11,7 @@
 //! ----------------
 //! custom includes
 //! ----------------
-#include "src/ccxSolver/solutioninfo.h"
+#include "solutioninfo.h"
 
 //! ----
 //! C++
@@ -22,7 +22,7 @@ using namespace  std;
 class QAction;
 class QCustomPlot;
 
-class ConvergenceDataChart1: public QWidget
+class ConvergenceDataChart: public QWidget
 {
     Q_OBJECT
 
@@ -78,8 +78,8 @@ private slots:
 
 public:
 
-    ConvergenceDataChart1(QWidget *parent=0);
-    virtual ~ConvergenceDataChart1();
+    ConvergenceDataChart(QWidget *parent=0);
+    virtual ~ConvergenceDataChart();
 
 public slots:
 
@@ -106,4 +106,4 @@ protected:
     //void mousePressEvent(QMouseEvent* event);
 };
 
-#endif // CONVERGENCEDATACHART1_H
+#endif // CONVERGENCEDATACHART_H

@@ -1,7 +1,7 @@
 //! ----------------
 //! custom includes
 //! ----------------
-#include "convergencedatachart1.h"
+#include "convergencedatachart.h"
 #include "src/utils/tools.h"
 #include "src/ccxSolver/solutioninfo.h"
 
@@ -19,12 +19,12 @@
 #include <ext/QCustomPlot/qcp/qcustomplot.h>
 
 //! --------------------------------
-//! function: ConvergenceDataChart1
+//! function: ConvergenceDataChart
 //! details:
 //! --------------------------------
-ConvergenceDataChart1::ConvergenceDataChart1(QWidget *parent):QWidget(parent)
+ConvergenceDataChart::ConvergenceDataChart(QWidget *parent):QWidget(parent)
 {
-    cout<<"ConvergenceDataChart1::ConvergenceDataChart1()->____contructor called____"<<endl;
+    cout<<"ConvergenceDataChart::ConvergenceDataChart()->____contructor called____"<<endl;
 
     this->setMouseTracking(true);
 
@@ -173,25 +173,25 @@ ConvergenceDataChart1::ConvergenceDataChart1(QWidget *parent):QWidget(parent)
 //! function: destructor
 //! details:
 //! ---------------------
-ConvergenceDataChart1::~ConvergenceDataChart1()
+ConvergenceDataChart::~ConvergenceDataChart()
 {
-    cout<<"ConvergenceDataChart1::~ConvergenceDataChart1()->____DESTRUCTOR CALLED____"<<endl;
+    cout<<"ConvergenceDataChart::~ConvergenceDataChart()->____DESTRUCTOR CALLED____"<<endl;
 }
 
 //! -------------------
 //! function: showData
 //! details:
 //! -------------------
-void ConvergenceDataChart1::showData()
+void ConvergenceDataChart::showData()
 {
-    cout<<"ConvergenceDataChart1::showData()->____function called____"<<endl;
+    cout<<"ConvergenceDataChart::showData()->____function called____"<<endl;
 }
 
 //! ------------------------------
 //! function: handleMarkerClicked
 //! details:
 //! ------------------------------
-void ConvergenceDataChart1::handleMarkerClicked()
+void ConvergenceDataChart::handleMarkerClicked()
 {
     ;
 }
@@ -200,7 +200,7 @@ void ConvergenceDataChart1::handleMarkerClicked()
 //! function: connectMarkers
 //! details:
 //! -------------------------
-void ConvergenceDataChart1::connectMarkers()
+void ConvergenceDataChart::connectMarkers()
 {
     ;
 }
@@ -209,7 +209,7 @@ void ConvergenceDataChart1::connectMarkers()
 //! function: clearViewer
 //! details:
 //! ----------------------
-void ConvergenceDataChart1::clearViewer()
+void ConvergenceDataChart::clearViewer()
 {
     for(int i=0; i<myChartView->graphCount(); i++)
     {
@@ -233,9 +233,9 @@ void ConvergenceDataChart1::clearViewer()
 //! function: showContextMenu
 //! details:
 //! --------------------------
-void ConvergenceDataChart1::showContextMenu(const QPoint& p)
+void ConvergenceDataChart::showContextMenu(const QPoint& p)
 {
-    cout<<"ConvergenceDataChart1::showContextMenu()->____function called____"<<endl;
+    cout<<"ConvergenceDataChart::showContextMenu()->____function called____"<<endl;
 
     if(myChartView->graph()->data()->isEmpty()) return;
 
@@ -256,9 +256,9 @@ void ConvergenceDataChart1::showContextMenu(const QPoint& p)
 //! function: showContextMenu
 //! details:
 //! --------------------------
-void ConvergenceDataChart1::showContextMenu1(const QPoint& p)
+void ConvergenceDataChart::showContextMenu1(const QPoint& p)
 {
-    cout<<"ConvergenceDataChart1::showContextMenu1()->____function called____"<<endl;
+    cout<<"ConvergenceDataChart::showContextMenu1()->____function called____"<<endl;
 
     if(myChartView1->graph()->data()->isEmpty()) return;
 
@@ -278,9 +278,9 @@ void ConvergenceDataChart1::showContextMenu1(const QPoint& p)
 //! function: plotConvergenceData
 //! details:  read and display the data
 //! ------------------------------------
-void ConvergenceDataChart1::plotConvergenceData(const QList<solutionInfo> &solutionInfoList)
+void ConvergenceDataChart::plotConvergenceData(const QList<solutionInfo> &solutionInfoList)
 {
-    cout<<"ConvergenceDataChart1::plotConvergenceData()->____function called: updating convergence viewer____"<<endl;
+    cout<<"ConvergenceDataChart::plotConvergenceData()->____function called: updating convergence viewer____"<<endl;
 
     //! --------------
     //! show the axes
@@ -302,7 +302,7 @@ void ConvergenceDataChart1::plotConvergenceData(const QList<solutionInfo> &solut
     //! ---------------------------------------
     if(solutionInfoList.isEmpty()) return;
     int NbData = solutionInfoList.length();
-    //cout<<"ConvergenceDataChart1::plotConvergenceData()->____tag00____"<<endl;
+    //cout<<"ConvergenceDataChart::plotConvergenceData()->____tag00____"<<endl;
 
     //! ---------------
     //! top panel data
@@ -325,7 +325,7 @@ void ConvergenceDataChart1::plotConvergenceData(const QList<solutionInfo> &solut
         Y1_top.push_back(solutionInfoList.at(i).largestResidual);
         Y2_top.push_back(solutionInfoList.at(i).average);
     }
-    //cout<<"ConvergenceDataChart1::plotConvergenceData()->____tag01____"<<endl;
+    //cout<<"ConvergenceDataChart::plotConvergenceData()->____tag01____"<<endl;
 
     //! -------
     //! labels
@@ -340,7 +340,7 @@ void ConvergenceDataChart1::plotConvergenceData(const QList<solutionInfo> &solut
     myChartView->graph(0)->setData(X_top,Y1_top);
     myChartView->graph(1)->setData(X_top,Y2_top);
     myChartView->rescaleAxes(true);
-    //cout<<"ConvergenceDataChart1::plotConvergenceData()->____tag03____"<<endl;
+    //cout<<"ConvergenceDataChart::plotConvergenceData()->____tag03____"<<endl;
 
     //! --------
     //! scale Y
@@ -359,7 +359,7 @@ void ConvergenceDataChart1::plotConvergenceData(const QList<solutionInfo> &solut
         X_bottom.push_back(solutionInfoList.at(i).globalIterationNb);
         Y1_bottom.push_back(solutionInfoList.at(i).time);
     }
-    //cout<<"ConvergenceDataChart1::plotConvergenceData()->____tag04____"<<endl;
+    //cout<<"ConvergenceDataChart::plotConvergenceData()->____tag04____"<<endl;
 
     //! -------
     //! labels
@@ -369,26 +369,26 @@ void ConvergenceDataChart1::plotConvergenceData(const QList<solutionInfo> &solut
     yLabel1 = "Total time";
 
     myChartView1->graph(0)->setData(X_bottom,Y1_bottom);
-    //cout<<"ConvergenceDataChart1::plotConvergenceData()->____tag05____"<<endl;
+    //cout<<"ConvergenceDataChart::plotConvergenceData()->____tag05____"<<endl;
 
     myChartView1->rescaleAxes(true);
-    //cout<<"ConvergenceDataChart1::plotConvergenceData()->____tag06____"<<endl;
+    //cout<<"ConvergenceDataChart::plotConvergenceData()->____tag06____"<<endl;
 
     myChartView1->xAxis->setLabel(xLabel1);
-    //cout<<"ConvergenceDataChart1::plotConvergenceData()->____tag07____"<<endl;
+    //cout<<"ConvergenceDataChart::plotConvergenceData()->____tag07____"<<endl;
 
     myChartView1->yAxis->setLabel(yLabel1);
-    //cout<<"ConvergenceDataChart1::plotConvergenceData()->____tag08____"<<endl;
+    //cout<<"ConvergenceDataChart::plotConvergenceData()->____tag08____"<<endl;
 
     myChartView1->replot();
-    //cout<<"ConvergenceDataChart1::plotConvergenceData()->____tag09____"<<endl;
+    //cout<<"ConvergenceDataChart::plotConvergenceData()->____tag09____"<<endl;
 }
 
 //! ---------------------
 //! function: initMinMax
 //! details:
 //! ---------------------
-void ConvergenceDataChart1::initMinMax()
+void ConvergenceDataChart::initMinMax()
 {
     //! x axis max value - initial value (@ start)
     myXmax = 5;
@@ -402,7 +402,7 @@ void ConvergenceDataChart1::initMinMax()
 //! function: hideLegend
 //! details:
 //! ---------------------
-void ConvergenceDataChart1::hideLegend()
+void ConvergenceDataChart::hideLegend()
 {
     ;
 }
@@ -411,7 +411,7 @@ void ConvergenceDataChart1::hideLegend()
 //! function: showLegend
 //! details:
 //! ---------------------
-void ConvergenceDataChart1::showLegend()
+void ConvergenceDataChart::showLegend()
 {
 
 }
@@ -420,7 +420,7 @@ void ConvergenceDataChart1::showLegend()
 //! function: saveImage
 //! details:
 //! --------------------
-void ConvergenceDataChart1::saveImage()
+void ConvergenceDataChart::saveImage()
 {
     QString filters("PNG files (*.png);;JPG files (*.jpg);; BMP files (*.bmp);; PDF files (*.pdf)");
     QString selectedFilter;
@@ -438,7 +438,7 @@ void ConvergenceDataChart1::saveImage()
 //! function: hideAxes
 //! details:
 //! -------------------
-void ConvergenceDataChart1::hideAxes()
+void ConvergenceDataChart::hideAxes()
 {
     myChartView->xAxis->setVisible(false);
     myChartView->xAxis2->setVisible(false);
@@ -454,7 +454,7 @@ void ConvergenceDataChart1::hideAxes()
 //! function: showAxes
 //! details:
 //! -------------------
-void ConvergenceDataChart1::showAxes()
+void ConvergenceDataChart::showAxes()
 {
     myChartView->xAxis->setVisible(true);
     myChartView->xAxis2->setVisible(true);
@@ -471,7 +471,7 @@ void ConvergenceDataChart1::showAxes()
 //! function: changeYScale
 //! details:
 //! -----------------------
-void ConvergenceDataChart1::changeYScale()
+void ConvergenceDataChart::changeYScale()
 {
     if(myScaleType == scaleType::linear)
     {

@@ -1,5 +1,5 @@
-#ifndef CCXSOLVERMANAGER1_H
-#define CCXSOLVERMANAGER1_H
+#ifndef CCXSOLVERMANAGER_H
+#define CCXSOLVERMANAGER_H
 
 #include <QWidget>
 #include <QThread>
@@ -13,7 +13,7 @@
 
 class QProgressIndicator;
 
-class CCXSolverManager1: public QThread
+class CCXSolverManager: public QThread
 {
     Q_OBJECT
 
@@ -23,7 +23,7 @@ private:
 
 public:
 
-    CCXSolverManager1(QObject *parent = 0);
+    CCXSolverManager(QObject *parent = 0);
     void setNbProcessors(int NbProcessors=2);
     void setInputFile(const QString &inputFile);
     void setProgressIndicator(QProgressIndicator *aProgressIndicator);
@@ -246,4 +246,4 @@ private slots:
     }
 };
 
-#endif // CCXSOLVERMANAGER1_H
+#endif // CCXSOLVERMANAGER_H

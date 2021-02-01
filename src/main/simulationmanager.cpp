@@ -59,7 +59,7 @@
 #include "tablewidget.h"
 #include "generaldelegate.h"
 #include "qccxsolvermessageevent.h"
-#include "ccxsolvermanager1.h"
+#include "ccxsolvermanager.h"
 #include "ccxsolvermessage.h"
 #include "ccxtools.h"
 #include "inputfilegenerator.h"
@@ -7212,7 +7212,7 @@ bool SimulationManager::startAnalysis(const QString &projectDataDir)
     //! ---------------------------------------------------------------------------------------
     //! create the solver manager - put the progress indicator into the constructor. To do ...
     //! ---------------------------------------------------------------------------------------
-    CCXSolverManager1 *CCXsm = new CCXSolverManager1(this);
+    CCXSolverManager *CCXsm = new CCXSolverManager(this);
 
     CCXsm->setNbProcessors(NbThreads);
     CCXsm->setInputFile(fileName);
@@ -7228,8 +7228,8 @@ bool SimulationManager::startAnalysis(const QString &projectDataDir)
     //disconnect(CCXsm,SIGNAL(CCXRunFinished()),this,SLOT(retrieveSolverInfo()));
     //connect(CCXsm,SIGNAL(CCXRunFinished()),this,SLOT(retrieveSolverInfo()));
 
-    disconnect(CCXsm,&CCXSolverManager1::CCXRunFinished,aProgressIndicator,&QProgressIndicator::hide);
-    connect(CCXsm,&CCXSolverManager1::CCXRunFinished,aProgressIndicator,&QProgressIndicator::hide);
+    disconnect(CCXsm,&CCXSolverManager::CCXRunFinished,aProgressIndicator,&QProgressIndicator::hide);
+    connect(CCXsm,&CCXSolverManager::CCXRunFinished,aProgressIndicator,&QProgressIndicator::hide);
     CCXsm->start();
 
     //! ---------------------------------------------------------
