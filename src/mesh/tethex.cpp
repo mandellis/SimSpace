@@ -4,7 +4,7 @@
 #include "tethex.h"
 #include "tetsplitter.h"
 #include <meshelementbycoords.h>
-#include "global.h"
+#include "src/utils/global.h"
 #include "qprogressevent.h"
 
 //! ---

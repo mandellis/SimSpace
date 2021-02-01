@@ -1,8 +1,8 @@
 //! custom include
 #include "frdreader.h"
-#include "mydefines.h"
+#include "src/main/mydefines.h"
 #include <meshdatabase.h>
-#include "tools.h"
+#include "src/utils/tools.h"
 
 //! OCC
 

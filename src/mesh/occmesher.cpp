@@ -1,9 +1,9 @@
 //! custom includes
 #include "occMesher.h"
-#include "meshtools.h"
+#include "src/utils/meshtools.h"
 #include <ng_mesher2.h>
 #include <ng_meshvs_datasource3d.h>
-#include "ccout.h"
+#include "src/utils/ccout.h"
 #include "qprogressevent.h"
 
 //! OCC

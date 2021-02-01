@@ -6,7 +6,7 @@
 #include <MeshVS_HArray1OfSequenceOfInteger.hxx>
 #include <MeshVS_EntityType.hxx>
 #include <meshelementbycoords.h>
-#include "hash_c.h"
+#include "src/utils/hash_c.h"
 
 //! ----
 //! OCC

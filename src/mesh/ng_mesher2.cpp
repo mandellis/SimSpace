@@ -5,9 +5,9 @@
 #include "ng_meshvs_datasource2d.h"
 #include "ng_meshvs_datasource3d.h"
 #include "ng_meshvs_datasourceface.h"
-#include "mydefines.h"
-#include "tools.h"
-#include "ccout.h"
+#include "src/main/mydefines.h"
+#include "src/utils/tools.h"
+#include "src/utils/ccout.h"
 #include "qprogressevent.h"
 
 //! ----

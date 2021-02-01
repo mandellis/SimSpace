@@ -1,0 +1,173 @@
+<RCC>
+    <qresource prefix="/">
+        <file>icons/icon_exit.png</file>
+        <file>icons/icon_import geometry file.png</file>
+        <file>icons/icon_rotate.png</file>
+        <file>icons/icon_pan.png</file>
+        <file>icons/icon_zoom.png</file>
+        <file>icons/icon_fit all.png</file>
+        <file>icons/icon_select face.png</file>
+        <file>icons/icon_select solid.png</file>
+        <file>icons/icon_select edge.png</file>
+        <file>icons/icon_select vertex.png</file>
+        <file>icons/icon_single select.png</file>
+        <file>icons/icon_multiple select.png</file>
+        <file>icons/icon_view.png</file>
+        <file>icons/icon_right view.png</file>
+        <file>icons/icon_back view.png</file>
+        <file>icons/icon_bottom view.png</file>
+        <file>icons/icon_front view.png</file>
+        <file>icons/icon_left view.png</file>
+        <file>icons/icon_top view.png</file>
+        <file>icons/icon_lamp OFF.png</file>
+        <file>icons/icon_lamp ON.png</file>
+        <file>icons/icon_isometric view.png</file>
+        <file>icons/icon_pick point coordinates.png</file>
+        <file>icons/icon_discard.png</file>
+        <file>icons/icon_volume mesh.png</file>
+        <file>icons/icon_surface mesh.png</file>
+        <file>icons/icon_clear data.png</file>
+        <file>icons/icon_mesh method.png</file>
+        <file>icons/icon_mesh face sizing.png</file>
+        <file>icons/icon_suppress.png</file>
+        <file>icons/icon_unsuppress.png</file>
+        <file>icons/icon_BC pressure.png</file>
+        <file>icons/icon_BC force.png</file>
+        <file>icons/icon_BC displacement.png</file>
+        <file>icons/icon_solve.png</file>
+        <file>icons/icon_write solver input file.png</file>
+        <file>icons/icon_BC fixed support.png</file>
+        <file>icons/icon_insert contact.png</file>
+        <file>icons/icon_delete.png</file>
+        <file>icons/icon_geometry root item.png</file>
+        <file>icons/icon_coordinate system root item.png</file>
+        <file>icons/icon_model root item.png</file>
+        <file>icons/icon_named selection root item.png</file>
+        <file>icons/icon_results root item.png</file>
+        <file>icons/icon_BC cylindrical support.png</file>
+        <file>icons/icon_BC frictionless support.png</file>
+        <file>icons/icon_BC moment.png</file>
+        <file>icons/icon_root item.png</file>
+        <file>icons/icon_body1D.png</file>
+        <file>icons/icon_body2D.png</file>
+        <file>icons/icon_body3D.png</file>
+        <file>icons/icon_insert.png</file>
+        <file>icons/icon_thermal analysis.png</file>
+        <file>icons/icon_analysis settings.png</file>
+        <file>icons/icon_add contact.png</file>
+        <file>icons/icon_flip contact.png</file>
+        <file>icons/icon_invert suppression.png</file>
+        <file>icons/icon_duplicate.png</file>
+        <file>icons/icon_static structural.png</file>
+        <file>icons/icon_named selection geometry.png</file>
+        <file>icons/icon_question mark.png</file>
+        <file>icons/icon_system of reference.png</file>
+        <file>icons/icon_mask.bmp</file>
+        <file>icons/icon_translation y.png</file>
+        <file>icons/icon_rotation x.png</file>
+        <file>icons/icon_rotation y.png</file>
+        <file>icons/icon_rotation z.png</file>
+        <file>icons/icon_translation z.png</file>
+        <file>icons/icon_translation x.png</file>
+        <file>icons/icon_solution.png</file>
+        <file>icons/icon_right arrow.png</file>
+        <file>icons/icon_thermal condition.png</file>
+        <file>icons/icon_open project.png</file>
+        <file>icons/icon_save project as.png</file>
+        <file>icons/icon_save project.png</file>
+        <file>icons/icon_remote point.png</file>
+        <file>icons/icon_extend to adjacent.png</file>
+        <file>icons/icon_extend to limit.png</file>
+        <file>icons/icon_STL format.png</file>
+        <file>icons/icon_edge mesh.png</file>
+        <file>icons/icon_cloud points.png</file>
+        <file>icons/icon_image to file.png</file>
+        <file>icons/icon_mapping.png</file>
+        <file>icons/icon_insert body temperature dist.png</file>
+        <file>icons/icon_insert initial strain.png</file>
+        <file>icons/icon_insert initial stress.png</file>
+        <file>icons/icon_colorbox.png</file>
+        <file>icons/icon_openfoam.png</file>
+        <file>icons/icon_tools.png</file>
+        <file>icons/icon_select type.png</file>
+        <file>icons/icon_clock.png</file>
+        <file>icons/icon_deformation.png</file>
+        <file>icons/icon_options.png</file>
+        <file>icons/icon_pause.png</file>
+        <file>icons/icon_save as.png</file>
+        <file>icons/icon_clear.png</file>
+        <file>icons/icon_save.png</file>
+        <file>icons/icon_hide menu.png</file>
+        <file>icons/icon_show menu.png</file>
+        <file>icons/icon_solution information.png</file>
+        <file>icons/icon_spring.png</file>
+        <file>icons/icon_folder.png</file>
+        <file>icons/icon_gravity.png</file>
+        <file>icons/icon_rotational velocity.png</file>
+        <file>icons/icon_acceleration.png</file>
+        <file>icons/icon_select all.png</file>
+        <file>icons/icon_repair tool.png</file>
+        <file>icons/icon_rename.png</file>
+        <file>icons/icon_edge sizing.png</file>
+        <file>icons/icon_healing patch.png</file>
+        <file>icons/icon_point.png</file>
+        <file>icons/icon_bolt.png</file>
+        <file>icons/icon_wireframe.png</file>
+        <file>icons/icon_no wireframe.png</file>
+        <file>icons/icon_show elements.png</file>
+        <file>icons/icon_undeformed model.png</file>
+        <file>icons/icon_remote displacement.png</file>
+        <file>icons/icon_remote force.png</file>
+        <file>icons/icon_pin.png</file>
+        <file>icons/icon_clipping plane.png</file>
+        <file>icons/icon_add.png</file>
+        <file>icons/icon_remove.png</file>
+        <file>icons/icon_curvature.png</file>
+        <file>icons/icon_prismatic layer.png</file>
+        <file>icons/icon_form new part.png</file>
+        <file>icons/icon_crack.png</file>
+        <file>icons/icon_nodal force.png</file>
+        <file>icons/icon_closure force.png</file>
+        <file>icons/icon_locator.png</file>
+        <file>icons/icon_export BREP.png</file>
+        <file>icons/icon_export step.png</file>
+        <file>icons/icon_exporting tools.png</file>
+        <file>icons/icon_show elements by type.png</file>
+        <file>icons/icon_tetrahedron.png</file>
+        <file>icons/icon_pyramid.png</file>
+        <file>icons/icon_prism.png</file>
+        <file>icons/icon_rotation.png</file>
+        <file>icons/icon_contact penetration.png</file>
+        <file>icons/icon_contact sliding.png</file>
+        <file>icons/icon_contact pressure.png</file>
+        <file>icons/icon_contact friction.png</file>
+        <file>icons/icon_balordo.png</file>
+        <file>icons/icon_type of mesh.png</file>
+        <file>icons/icon_hexahedron.png</file>
+        <file>icons/icon_replicate on twins.png</file>
+        <file>icons/icon_merge.png</file>
+        <file>icons/icon_metric.png</file>
+        <file>icons/icon_temperature.png</file>
+        <file>icons/icon_thermal flow.png</file>
+        <file>icons/icon_thermal flux.png</file>
+        <file>icons/icon_thermal power.png</file>
+        <file>icons/icon_adiabatic wall.png</file>
+        <file>icons/icon_convection.png</file>
+        <file>icons/icon_radiation.png</file>
+        <file>icons/icon_combined analysis.png</file>
+        <file>icons/icon_compression only support.png</file>
+        <file>icons/icon_graph scale.png</file>
+        <file>icons/icon_a field.png</file>
+        <file>icons/icon_electrostatic potential.png</file>
+        <file>icons/icon_point mass.png</file>
+        <file>icons/icon_isosurfaces.svg</file>
+        <file>icons/icon_isostrips.png</file>
+        <file>icons/icon_isolines.png</file>
+        <file>icons/icon_color gradient 1.jpg</file>
+        <file>icons/icon_select geometry.png</file>
+        <file>icons/icon_select mesh.png</file>
+        <file>icons/icon_open from file.png</file>
+        <file>icons/icon_import.png</file>
+        <file>icons/icon_export.png</file>
+    </qresource>
+</RCC>

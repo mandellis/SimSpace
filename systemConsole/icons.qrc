@@ -1,9 +1,0 @@
-<RCC>
-    <qresource prefix="/">
-        <file>icons/icon_solve.png</file>
-        <file>icons/icon_save as.png</file>
-        <file>icons/icon_clear.png</file>
-        <file>icons/icon_exit.png</file>
-        <file>icons/icon_pause.png</file>
-    </qresource>
-</RCC>

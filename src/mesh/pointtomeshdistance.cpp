@@ -6,13 +6,13 @@
 //! ------
 //! Eigen
 //! ------
-#include <Eigen/Dense>
+#include <ext/eigen/Eigen/Dense>
 
 //! -------
 //! libigl
 //! -------
-#include <libigl/include/igl/embree/line_mesh_intersection.h>
-#include <libigl/include/igl/Hit.h>
+#include <ext/libigl/include/igl/embree/line_mesh_intersection.h>
+#include <ext/libigl/include/igl/Hit.h>
 
 //! ----------------------
 //! function: constructor

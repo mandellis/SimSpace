@@ -1,7 +1,0 @@
-<RCC>
-    <qresource prefix="/">
-        <file>cursors/mask.bmp</file>
-        <file>cursors/cursor_rotate.png</file>
-        <file>cursors/icon_zoom.png</file>
-    </qresource>
-</RCC>

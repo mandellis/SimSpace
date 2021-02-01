@@ -22,7 +22,7 @@ using namespace std;
 //! -------
 //! libigl
 //! -------
-#include <libigl/include/igl/embree/EmbreeIntersector.h>
+#include <ext/libigl/include/igl/embree/EmbreeIntersector.h>
 
 //! --------
 //! Windows

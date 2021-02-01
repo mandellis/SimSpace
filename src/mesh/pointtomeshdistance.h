@@ -3,12 +3,12 @@
 
 #include "occhandle.h"
 #include <ng_meshvs_datasourceface.h>
-#include <libigl/include/igl/embree/EmbreeIntersector.h>
+#include <ext/libigl/include/igl/embree/EmbreeIntersector.h>
 
 //! ------
 //! Eigen
 //! ------
-#include <Eigen/Dense>
+#include <ext/eigen/Eigen/Dense>
 
 //! ----
 //! C++

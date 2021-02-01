@@ -30,7 +30,7 @@ using namespace std;
 //! -------
 //! global
 //! -------
-#include "global.h"
+#include "src/utils/global.h"
 
 //! ----------------------
 //! function: constructor

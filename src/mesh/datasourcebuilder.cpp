@@ -9,7 +9,7 @@
 #include <ng_meshvs_datasourceface.h>
 #include <ng_meshvs_datasource2d.h>
 #include <ng_meshvs_datasource3d.h>
-#include "hash_c.h"
+#include "src/utils/hash_c.h"
 
 #ifdef USE_MESH_CUTTER
 #include <surfacemeshcutter.h>

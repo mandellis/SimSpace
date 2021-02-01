@@ -4,9 +4,9 @@
 //! ------
 //! Eigen
 //! ------
-#include <Eigen/Dense>
-#include <Eigen/Core>
-#include <Eigen/Sparse>
+#include <ext/eigen/Eigen/Dense>
+#include <ext/eigen/Eigen/Core>
+#include <ext/eigen/Eigen/Sparse>
 
 //! ---
 //! Qt

@@ -2,8 +2,8 @@
 //! custom includes
 //! ----------------
 #include "ng_meshvs_datasource3d.h"
-#include "mydefines.h"
-#include "ccout.h"
+#include "src/main/mydefines.h"
+#include "src/utils/ccout.h"
 #include <polygon.h>
 
 //! ----
@@ -32,10 +32,10 @@
 //! ----
 //! igl
 //! ----
-#include <libigl/include/igl/ARAPEnergyType.h>
-#include <libigl/include/igl/arap_linear_block.h>
-#include <libigl/include/igl/arap.h>
-#include <libigl/include/igl/harmonic.h>
+#include <ext/libigl/include/igl/ARAPEnergyType.h>
+#include <ext/libigl/include/igl/arap_linear_block.h>
+#include <ext/libigl/include/igl/arap.h>
+#include <ext/libigl/include/igl/harmonic.h>
 
 
 IMPLEMENT_STANDARD_HANDLE(Ng_MeshVS_DataSource3D,MeshVS_DataSource)

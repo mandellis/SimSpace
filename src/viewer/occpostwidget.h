@@ -5,9 +5,9 @@
 //! custom includes
 //! ----------------
 #include <occPreGLwidget.h>
-#include "ais_colorscaleextended.h"
-#include "listofmesh.h"
-#include "mydefines.h"
+#include "ext/occ_extended/ais_colorscaleextended.h"
+#include "src/registeredMetatypes/listofmesh.h"
+#include "src/main/mydefines.h"
 #include "postobject.h"
 #include "frdreader.h"
 #include <meshdatabase.h>

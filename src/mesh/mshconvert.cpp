@@ -6,13 +6,13 @@
 //! -------
 //! libigl
 //! -------
-#include <libigl/include/igl/readMSH.h>
+#include <ext/libigl/include/igl/readMSH.h>
 //#include <libigl/include/igl/writeMSH.h>
 
 //! -------
 //! pymesh
 //! -------
-#include <MshLoader.h>
+#include <ext/pymesh/MshLoader.h>
 
 //! ----
 //! C++

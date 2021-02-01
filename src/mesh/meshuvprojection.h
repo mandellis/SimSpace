@@ -1,7 +1,7 @@
 #ifndef MESHUVPROJECTION_H
 #define MESHUVPROJECTION_H
 
-#include <Eigen/Dense>
+#include <ext/eigen/Eigen/Dense>
 #include <TopoDS_Face.hxx>
 
 class meshUVprojection

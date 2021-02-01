@@ -33,14 +33,14 @@ using namespace std;
 //! ------
 //! Eigen
 //! ------
-#include <Eigen/Dense>
-#include <Eigen/Core>
-#include <Eigen/Sparse>
+#include <ext/eigen/Eigen/Dense>
+#include <ext/eigen/Eigen/Core>
+#include <ext/eigen/Eigen/Sparse>
 
 //! -------
 //! libigl
 //! -------
-#include <libigl/include/igl/AABB.h>
+#include <ext/libigl/include/igl/AABB.h>
 
 //! ----
 //! C++

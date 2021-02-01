@@ -12,7 +12,7 @@
 #include "frdreader.h"
 #include <meshdatabase.h>
 #include "postobject.h"
-#include "global.h"
+#include "src/utils/global.h"
 #include "qprogressindicator.h"
 #include "qprogressevent.h"
 

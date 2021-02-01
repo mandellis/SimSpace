@@ -2,7 +2,7 @@
 #define OCCMESHTOCCXMESH_H
 
 #include <meshdatabase.h>
-#include "mydefines.h"
+#include "src/main/mydefines.h"
 
 class OCCMeshToCCXmesh
 {

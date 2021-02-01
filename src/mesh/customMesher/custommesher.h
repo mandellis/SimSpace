@@ -22,7 +22,7 @@
 #include <QList>
 
 //! custom
-#include "hash_c.h"
+#include "src/utils/hash_c.h"
 #include <mesh.h>
 
 class QProcess;
