@@ -14,9 +14,9 @@
 #include <TopAbs_ShapeEnum.hxx>
 
 //! custom includes
-#include "ext/occ_extended/ais_colorscaleextended.h"
-#include "src/registeredMetatypes/listofmesh.h"
-#include "src/utils/hash_c.h"
+#include "ais_colorscaleextended.h"
+#include "listofmesh.h"
+#include "hash_c.h"
 
 #define SYSTEM_PROGRAM_DATA "C:/ProgramData"
 #define GEOMETRY_DIR "D:/Work/Qt/geometries"
