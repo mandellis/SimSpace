@@ -39,19 +39,19 @@ private:
 
     simulationDataBase *myDB;
     QExtendedStandardItem *mySimulationRoot;
-    QString myFileName;
-    ofstream myInputFile;
-    ofstream myMesh;
+    QString myFileDir;
+    //ofstream myInputFile;
+    //ofstream myMesh;
 
     QProgressDialog *myProgressDialog;
     QProgressIndicator *myProgressIndicator;
     QTreeView *myMainTree;
 
     //std::map<int, std::map<meshElement2D,std::vector<std::pair<int,std::string>>>> bigMap;
-    std::map<int, std::map<meshElement2D,std::vector<std::pair<int,int>>>> bigMap;
+    //std::map<int, std::map<meshElement2D,std::vector<std::pair<int,int>>>> bigMap;
 
-    int totalNumberOfNodes;
-    int totalNumberOfElements;
+    //int totalNumberOfNodes;
+    //int totalNumberOfElements;
 
 private:
 
@@ -84,7 +84,7 @@ public:
     ofwrite(simulationDataBase *aDB, QExtendedStandardItem* aSimulationRoot, QObject *parent=0);
 
     //! set file name
-    void setName(const QString &aName) { myFileName = aName; }
+    void setName(const QString &aName) { myFileDir = aName; }
 
     //! set main tree
     void setSimTree(QTreeView *aTreeView) { myMainTree = aTreeView; }

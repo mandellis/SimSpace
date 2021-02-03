@@ -836,7 +836,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 //! --------------
                 //! set the model
                 //! --------------
-                QModelIndex index_analysisSettings = this->getAnalysisSettingsItemFromCurrentItem()->index();
+                QModelIndex index_analysisSettings = mainTreeTools::getAnalysisSettingsItemFromCurrentItem(myTreeView)->index();
                 emit requestTabularData(index_analysisSettings);
 
                 //! ---------------------------------
@@ -954,7 +954,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 this->changeColor();
 
                 //! set the model
-                QModelIndex index_analysisSettings = this->getAnalysisSettingsItemFromCurrentItem()->index();
+                QModelIndex index_analysisSettings = mainTreeTools::getAnalysisSettingsItemFromCurrentItem(myTreeView)->index();
 
                 emit requestTabularData(index_analysisSettings);
 
@@ -2082,7 +2082,7 @@ void SimulationManager::handleItem(int type)
             selectedBodiesIndexes.push_back(selectedBodyIndex);
         }
 
-        QExtendedStandardItem *geomeytryRootItem = static_cast<QExtendedStandardItem*>(mainTreeTools::getTreeItem(SimulationNodeClass::nodeType_geometry));
+        QExtendedStandardItem *geomeytryRootItem = static_cast<QExtendedStandardItem*>(mainTreeTools::getTreeItem(myModel,SimulationNodeClass::nodeType_geometry));
         TColStd_ListOfInteger allOtherBodies;
         int NbBodies = geomeytryRootItem->rowCount();
         for(int i=0; i<NbBodies; i++)
@@ -2743,7 +2743,7 @@ void SimulationManager::createSimulationNode(SimulationNodeClass::nodeType type,
             this->myModel->itemFromIndex(myTreeView->currentIndex())->appendRow(item);
             break;
         case SimulationNodeClass::nodeType_mapper:
-            mainTreeTools::getCurrentSimulationRoot(myTreeView)->insertRow(mainTreeTools::getInsertionRow(*myTreeView),item);
+            mainTreeTools::getCurrentSimulationRoot(myTreeView)->insertRow(mainTreeTools::getInsertionRow(myTreeView),item);
             break;
         }
     }
@@ -2817,7 +2817,8 @@ void SimulationManager::createSimulationNode(SimulationNodeClass::nodeType type,
         item->setData(data,Qt::DisplayRole);
         data.setValue(aNode);
         item->setData(data,Qt::UserRole);
-        mainTreeTools::getCurrentSimulationRoot(myTreeView)->insertRow(mainTreeTools::getInsertionRow(myTreeView),item);
+        int insRow=mainTreeTools::getInsertionRow(myTreeView);
+        mainTreeTools::getCurrentSimulationRoot(myTreeView)->insertRow(insRow,item);
 
         emit request2DBodySelectionMode(true);
         emit requestStartEditingScope();
@@ -3343,7 +3344,7 @@ void SimulationManager::setDataBase(simulationDataBase *aDB)
 
     Geometry_RootItem = mainTreeTools::getTreeItem(myModel,SimulationNodeClass::nodeType_geometry);
     CoordinateSystems_RootItem = mainTreeTools::getTreeItem(myModel,SimulationNodeClass::nodeType_coordinateSystems);
-    RemotePoint_RootItem = mainTreeTools::getTreeItem(myModel,myModel,SimulationNodeClass::nodeType_remotePointRoot);
+    RemotePoint_RootItem = mainTreeTools::getTreeItem(myModel,SimulationNodeClass::nodeType_remotePointRoot);
     Mesh_RootItem = mainTreeTools::getTreeItem(myModel,SimulationNodeClass::nodeType_meshControl);
     Connections_RootItem = mainTreeTools::getTreeItem(myModel,SimulationNodeClass::nodeType_connection);
     NamedSelection_RootItem = mainTreeTools::getTreeItem(myModel,SimulationNodeClass::nodeType_namedSelection);
@@ -3633,7 +3634,7 @@ void SimulationManager::transferMeshNodes()
     //! ----------
     //! relevance
     //! ----------
-    QExtendedStandardItem *itemMeshRoot = this->getTreeItem(SimulationNodeClass::nodeType_meshControl);
+    QExtendedStandardItem *itemMeshRoot = mainTreeTools::getTreeItem(myModel,SimulationNodeClass::nodeType_meshControl);
 
     int r = itemMeshRoot->data(Qt::UserRole).value<SimulationNodeClass*>()->getPropertyItem("Relevance")->data(Qt::UserRole).value<Property>().getData().toInt();
     //! -------------------
@@ -4529,7 +4530,7 @@ void SimulationManager::handleMeshItemChange(QStandardItem *item)
 void SimulationManager::updateRemotePointAbsCoordinates()
 {
     cout<<"SimulationManager::updateRemotePointAbsCoordinates()->____function called____"<<endl;
-    QExtendedStandardItem *itemRemotePointRoot = this->getTreeItem(SimulationNodeClass::nodeType_remotePointRoot);
+    QExtendedStandardItem *itemRemotePointRoot = mainTreeTools::getTreeItem(myModel,SimulationNodeClass::nodeType_remotePointRoot);
     if(itemRemotePointRoot==Q_NULLPTR) return;
 
     //! ------------------------------------------------------------------------------
@@ -4837,7 +4838,7 @@ void SimulationManager::handleItemChange(QStandardItem *item)
             //! update the remote points, which can contain in their definition
             //! one of the defined coordinate systems
             //! ----------------------------------------------------------------
-            QStandardItem *itemRemotePointRoot = this->getTreeItem(SimulationNodeClass::nodeType_remotePointRoot);
+            QStandardItem *itemRemotePointRoot = mainTreeTools::getTreeItem(myModel,SimulationNodeClass::nodeType_remotePointRoot);
             if(itemRemotePointRoot!=NULL)
             {
                 //! ------------------------------------------------------
@@ -4879,7 +4880,7 @@ void SimulationManager::handleItemChange(QStandardItem *item)
             //! the simulation roots, in order to avoid multiple calls of this function, causing
             //! application crash. Then unblock/reconnect/at the end [*]
             //! ------------------------------------------------------------------------------------
-            QList<QExtendedStandardItem*> listOfSimulationRootItems =
+            QList<QStandardItem*> listOfSimulationRootItems =
                     mainTreeTools::getAllTreeItemOfType(myModel,SimulationNodeClass::nodeType_structuralAnalysis);
 
             for(int n = 0; n<listOfSimulationRootItems.length(); n++)
@@ -5047,8 +5048,8 @@ void SimulationManager::handleItemChange(QStandardItem *item)
         //! the simulation roots, in order to avoid multiple calls of this function, causing
         //! application crash. Then unblock/reconnect/at the end [*]
         //! ------------------------------------------------------------------------------------
-        QList<QExtendedStandardItem*> listOfSimulationRootItems =
-                this->getAllTreeItemOfType(SimulationNodeClass::nodeType_structuralAnalysis);
+        QList<QStandardItem*> listOfSimulationRootItems =
+                mainTreeTools::getAllTreeItemOfType(myModel,SimulationNodeClass::nodeType_structuralAnalysis);
 
         for(int n = 0; n<listOfSimulationRootItems.length(); n++)
         {
@@ -5916,7 +5917,7 @@ void SimulationManager::handleMeshingResults(bool isMeshingSuccessfull)
         //this->buildMeshIO();
 
         emit requestSetWorkingMode(0);
-        SimulationNodeClass *nodeMeshRoot = this->getTreeItem(SimulationNodeClass::nodeType_meshControl)->data(Qt::UserRole).value<SimulationNodeClass*>();
+        SimulationNodeClass *nodeMeshRoot = mainTreeTools::getTreeItem(myModel,SimulationNodeClass::nodeType_meshControl)->data(Qt::UserRole).value<SimulationNodeClass*>();
         bool showMeshNodes = nodeMeshRoot->getPropertyValue<bool>("Show mesh nodes");
 
         //! ----------------
@@ -6040,7 +6041,7 @@ void SimulationManager::changeNodeSuppressionStatus(Property::SuppressionStatus 
         //! ------------------------------------------------------------------------
         //! scan the main tree and update the properties "Suppressed" and "Visible"
         //! ------------------------------------------------------------------------
-        QExtendedStandardItem *itemGeometry = this->getTreeItem(SimulationNodeClass::nodeType_geometry);
+        QExtendedStandardItem *itemGeometry = mainTreeTools::getTreeItem(myModel,SimulationNodeClass::nodeType_geometry);
         for(int i=0; i<itemGeometry->rowCount(); i++)
         {
             QExtendedStandardItem *itemBody = static_cast<QExtendedStandardItem*>(itemGeometry->child(i,0));
@@ -6447,7 +6448,7 @@ void SimulationManager::duplicateItem(QExtendedStandardItem *item)
     //! ----------------
     //! attach the item
     //! ----------------
-    theParent->insertRow(this->getInsertionRow(),itemCopy);
+    theParent->insertRow(mainTreeTools::getInsertionRow(myTreeView),itemCopy);
     myTreeView->setCurrentIndex(itemCopy->index());
 }
 
@@ -6461,7 +6462,7 @@ void SimulationManager::ChangeElementControl()
     Property::elementControl theElementControl = Geometry_RootItem->data(Qt::UserRole).value<SimulationNodeClass*>()
             ->getPropertyValue<Property::elementControl>("Element control");
 
-    int N = this->getAllTreeItemOfType(SimulationNodeClass::nodeType_geometryBody).length();
+    int N = mainTreeTools::getAllTreeItemOfType(myModel,SimulationNodeClass::nodeType_geometryBody).length();
 
     //! if the element control is "Program controlled" remove all the items "Integration scheme"
     if(theElementControl==Property::elementControl_programControlled)
@@ -6660,7 +6661,7 @@ void SimulationManager::changeColor()
 
                     QVector<int> newVecParentShapes = QVector<int>::fromStdVector(vecParentShapes);
 
-                    QExtendedStandardItem *itemGeometryRoot = this->getTreeItem(SimulationNodeClass::nodeType_geometry);
+                    QExtendedStandardItem *itemGeometryRoot = mainTreeTools::getTreeItem(myModel,SimulationNodeClass::nodeType_geometry);
                     QExtendedStandardItem *itemGeometryBody;
                     for(int i=0; i<itemGeometryRoot->rowCount(); i++)
                     {
@@ -6720,7 +6721,7 @@ void SimulationManager::changeColor()
 
                     QVector<int> newVecParentShapes = QVector<int>::fromStdVector(vecParentShapes);
 
-                    QExtendedStandardItem *itemGeometryRoot = this->getTreeItem(SimulationNodeClass::nodeType_geometry);
+                    QExtendedStandardItem *itemGeometryRoot = mainTreeTools::getTreeItem(myModel,SimulationNodeClass::nodeType_geometry);
                     QExtendedStandardItem *itemGeometryBody;
                     for(int i=0; i<itemGeometryRoot->rowCount(); i++)
                     {
@@ -7409,7 +7410,7 @@ void SimulationManager::HandleTabularData()
     //! ------------------------------------
     //! access the "Analysis settings" item
     //! ------------------------------------
-    SimulationNodeClass *nodeAnalysisSettings = this->getAnalysisSettingsNodeFromCurrentItem();
+    SimulationNodeClass *nodeAnalysisSettings = mainTreeTools::getAnalysisSettingsNodeFromCurrentItem(myTreeView);
 
     //! -----------------------------------------
     //! here handle the property change
@@ -7736,7 +7737,7 @@ void SimulationManager::HandleTabularData()
         tabData->insertColumns(startColumn,1);
     }
 
-    emit requestTabularData(this->getAnalysisSettingsItemFromCurrentItem()->index());
+    emit requestTabularData(mainTreeTools::getAnalysisSettingsItemFromCurrentItem(myTreeView)->index());
 
     QList<int> N1;
     N1 << TABULAR_DATA_STEP_END_TIME_COLUMN << mainTreeTools::getColumnsToRead(myTreeView);
@@ -7774,7 +7775,7 @@ int SimulationManager::getInsertionRow() const
     return insertionRow;
 }
 */
-
+/*
 //! -------------------------------------------------
 //! function: getAnalysisSettingsNodeFromCurrentItem
 //! details:
@@ -7834,7 +7835,7 @@ QExtendedStandardItem* SimulationManager::getAnalysisSettingsItemFromCurrentItem
     }
     return Q_NULLPTR;
 }
-
+*/
 //! -----------------------------------------------------
 //! function: handleFilmCoefficientLoadDefinitionChanged
 //! details:
@@ -7851,7 +7852,7 @@ void SimulationManager::handleFilmCoefficientLoadDefinitionChanged(const QString
     //! --------------------------
     //! retrieve the tabular data
     //! --------------------------
-    SimulationNodeClass *nodeAnalysisSettings = this->getAnalysisSettingsNodeFromCurrentItem();
+    SimulationNodeClass *nodeAnalysisSettings = mainTreeTools::getAnalysisSettingsNodeFromCurrentItem(myTreeView);
     CustomTableModel *tabData = nodeAnalysisSettings->getTabularDataModel();
 
     //! ------------------------------------------------------
@@ -7934,7 +7935,7 @@ void SimulationManager::handleReferenceTemperatureLoadDefinitionChanged(const QS
     //! --------------------------
     //! retrieve the tabular data
     //! --------------------------
-    SimulationNodeClass *nodeAnalysisSettings = this->getAnalysisSettingsNodeFromCurrentItem();
+    SimulationNodeClass *nodeAnalysisSettings = mainTreeTools::getAnalysisSettingsNodeFromCurrentItem(myTreeView);
     CustomTableModel *tabData = nodeAnalysisSettings->getTabularDataModel();
 
     //! ------------------------------------------------------
@@ -8019,7 +8020,7 @@ void SimulationManager::handleLoadMagnitudeDefinitionChanged(const QString& text
     //! --------------------------
     //! retrieve the tabular data
     //! --------------------------
-    SimulationNodeClass *nodeAnalysisSettings = this->getAnalysisSettingsNodeFromCurrentItem();
+    SimulationNodeClass *nodeAnalysisSettings = mainTreeTools::getAnalysisSettingsNodeFromCurrentItem(myTreeView);
     CustomTableModel *tabData = nodeAnalysisSettings->getTabularDataModel();
 
     //! ------------------------------------------------------
@@ -8127,7 +8128,7 @@ void SimulationManager::handleLoadMagnitudeDefinitionChanged(const QString& text
         //! ------------------------------------------------
         //! this means that at least a component is present
         //! ------------------------------------------------
-        SimulationNodeClass *nodeAnalysisSettings = this->getAnalysisSettingsNodeFromCurrentItem();
+        SimulationNodeClass *nodeAnalysisSettings = mainTreeTools::getAnalysisSettingsNodeFromCurrentItem(myTreeView);
         CustomTableModel *tabData = nodeAnalysisSettings->getTabularDataModel();
         emit requestShowGraph(tabData,N);
     }
@@ -8157,7 +8158,7 @@ void SimulationManager::handleLoadXDefinitionChanged(const QString &textData)
     //! --------------------------
     //! retrieve the tabular data
     //! --------------------------
-    SimulationNodeClass *nodeAnalysisSettings = this->getAnalysisSettingsNodeFromCurrentItem();
+    SimulationNodeClass *nodeAnalysisSettings = mainTreeTools::getAnalysisSettingsNodeFromCurrentItem(myTreeView);
     CustomTableModel *tabData = nodeAnalysisSettings->getTabularDataModel();
 
     //! ------------------------------------------------------
@@ -8296,7 +8297,7 @@ void SimulationManager::handleLoadXDefinitionChanged(const QString &textData)
         //! ------------------------------------------------
         //! this means that at least a component is present
         //! ------------------------------------------------
-        SimulationNodeClass *nodeAnalysisSettings = this->getAnalysisSettingsNodeFromCurrentItem();
+        SimulationNodeClass *nodeAnalysisSettings = mainTreeTools::getAnalysisSettingsNodeFromCurrentItem(myTreeView);
         CustomTableModel *tabData = nodeAnalysisSettings->getTabularDataModel();
         emit requestShowGraph(tabData,N);
     }
@@ -8334,7 +8335,7 @@ void SimulationManager::handleLoadYDefinitionChanged(const QString &textData)
             theCurNode->getType()==SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RemoteRotation)
     {
         Property::loadDefinition oldYdef = theCurNode->getOldYLoadDefinition();
-        SimulationNodeClass *nodeAnalysisSettings = this->getAnalysisSettingsNodeFromCurrentItem();
+        SimulationNodeClass *nodeAnalysisSettings = mainTreeTools::getAnalysisSettingsNodeFromCurrentItem(myTreeView);
         CustomTableModel *tabData = nodeAnalysisSettings->getTabularDataModel();
         Property::loadDefinition loadDefinition_Ycomponent = theCurNode->getPropertyValue<Property::loadDefinition>("Y component");
 
@@ -8437,7 +8438,7 @@ void SimulationManager::handleLoadYDefinitionChanged(const QString &textData)
         //! -------------------------
         //! what is not displacement
         //! -------------------------
-        SimulationNodeClass *nodeAnalysisSettings = this->getAnalysisSettingsNodeFromCurrentItem();
+        SimulationNodeClass *nodeAnalysisSettings = mainTreeTools::getAnalysisSettingsNodeFromCurrentItem(myTreeView);
         CustomTableModel *tabData = nodeAnalysisSettings->getTabularDataModel();
         Property::loadDefinition loadDefinition_Ycomponent = theCurNode->getPropertyValue<Property::loadDefinition>("Y component");
 
@@ -8509,7 +8510,7 @@ void SimulationManager::handleLoadYDefinitionChanged(const QString &textData)
         //! ------------------------------------------------
         //! this means that at least a component is present
         //! ------------------------------------------------
-        SimulationNodeClass *nodeAnalysisSettings = this->getAnalysisSettingsNodeFromCurrentItem();
+        SimulationNodeClass *nodeAnalysisSettings = mainTreeTools::getAnalysisSettingsNodeFromCurrentItem(myTreeView);
         CustomTableModel *tabData = nodeAnalysisSettings->getTabularDataModel();
         emit requestShowGraph(tabData,N);
     }
@@ -8545,7 +8546,7 @@ void SimulationManager::handleLoadZDefinitionChanged(const QString &textData)
             theCurNode->getType()==SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RemoteRotation)
     {
         Property::loadDefinition oldZdef = theCurNode->getOldZLoadDefinition();
-        SimulationNodeClass *nodeAnalysisSettings = this->getAnalysisSettingsNodeFromCurrentItem();
+        SimulationNodeClass *nodeAnalysisSettings = mainTreeTools::getAnalysisSettingsNodeFromCurrentItem(myTreeView);
         CustomTableModel *tabData = nodeAnalysisSettings->getTabularDataModel();
         Property::loadDefinition loadDefinition_Zcomponent = theCurNode->getPropertyValue<Property::loadDefinition>("Z component");
 
@@ -8674,7 +8675,7 @@ void SimulationManager::handleLoadZDefinitionChanged(const QString &textData)
         //! -------------------------
         //! what is not displacement
         //! -------------------------
-        SimulationNodeClass *nodeAnalysisSettings = this->getAnalysisSettingsNodeFromCurrentItem();
+        SimulationNodeClass *nodeAnalysisSettings = mainTreeTools::getAnalysisSettingsNodeFromCurrentItem(myTreeView);
         CustomTableModel *tabData = nodeAnalysisSettings->getTabularDataModel();
         Property::loadDefinition loadDefinition_Zcomponent = theCurNode->getPropertyItem("Z component")->data(Qt::UserRole).value<Property>().getData().value<Property::loadDefinition>();
 
@@ -8748,7 +8749,7 @@ void SimulationManager::handleLoadZDefinitionChanged(const QString &textData)
         //! ------------------------------------------------
         //! this means that at least a component is present
         //! ------------------------------------------------
-        SimulationNodeClass *nodeAnalysisSettings = this->getAnalysisSettingsNodeFromCurrentItem();
+        SimulationNodeClass *nodeAnalysisSettings = mainTreeTools::getAnalysisSettingsNodeFromCurrentItem(myTreeView);
         CustomTableModel *tabData = nodeAnalysisSettings->getTabularDataModel();
         emit requestShowGraph(tabData,N);
     }
@@ -8777,7 +8778,7 @@ QString SimulationManager::createItemDescriptor() const
             theNode->getType()!=SimulationNodeClass::nodeType_structuralAnalysisSettings)
     {
         //! retrieve the current time step
-        SimulationNodeClass *nodeAnalysisSettings = this->getAnalysisSettingsNodeFromCurrentItem();
+        SimulationNodeClass *nodeAnalysisSettings = mainTreeTools::getAnalysisSettingsNodeFromCurrentItem(myTreeView);
         int currentStepNumber = nodeAnalysisSettings->getPropertyValue<int>("Current step number");
 
         //! retrieve the tabular data
@@ -9313,12 +9314,12 @@ void SimulationManager::buildDataBaseFromDisk(const QString &fileName)
     //! -------------------
     //! retrieve the roots
     //! -------------------
-    Geometry_RootItem = this->getTreeItem(SimulationNodeClass::nodeType_geometry);
-    RemotePoint_RootItem = this->getTreeItem(SimulationNodeClass::nodeType_remotePointRoot);
-    CoordinateSystems_RootItem = this->getTreeItem(SimulationNodeClass::nodeType_coordinateSystems);
-    NamedSelection_RootItem = this->getTreeItem(SimulationNodeClass::nodeType_namedSelection);
-    Connections_RootItem = this->getTreeItem(SimulationNodeClass::nodeType_connection);
-    Mesh_RootItem = this->getTreeItem(SimulationNodeClass::nodeType_meshControl);
+    Geometry_RootItem = mainTreeTools::getTreeItem(myModel,SimulationNodeClass::nodeType_geometry);
+    RemotePoint_RootItem = mainTreeTools::getTreeItem(myModel,SimulationNodeClass::nodeType_remotePointRoot);
+    CoordinateSystems_RootItem = mainTreeTools::getTreeItem(myModel,SimulationNodeClass::nodeType_coordinateSystems);
+    NamedSelection_RootItem = mainTreeTools::getTreeItem(myModel,SimulationNodeClass::nodeType_namedSelection);
+    Connections_RootItem = mainTreeTools::getTreeItem(myModel,SimulationNodeClass::nodeType_connection);
+    Mesh_RootItem = mainTreeTools::getTreeItem(myModel,SimulationNodeClass::nodeType_meshControl);
 
     //! -------------------------------------------------
     //! hide the dummy named selectio "Select from list"
@@ -9529,7 +9530,7 @@ void SimulationManager::buildDataBaseFromDisk(const QString &fileName)
     //! -----------------------------
     //! transfer DislayRole to array
     //! -----------------------------
-    QStandardItem *itemGeometryRoot = this->getTreeItem(SimulationNodeClass::nodeType_geometry);
+    QStandardItem *itemGeometryRoot = mainTreeTools::getTreeItem(myModel,SimulationNodeClass::nodeType_geometry);
     int NbBodies = itemGeometryRoot->rowCount();
     for(int i=0; i<NbBodies; i++)
     {
@@ -10676,8 +10677,8 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
             //! ---------------------
             int fatigueAlgo = curNode->getPropertyValue<int>("Fatigue algo");
             myPostEngine->setFatigueModel(fatigueAlgo);
-            CustomTableModel *tabData =  this->getAnalysisSettingsNodeFromCurrentItem()->getTabularDataModel();
-            QStandardItem *theGeometryRoot = this->getTreeItem(SimulationNodeClass::nodeType_geometry);
+            CustomTableModel *tabData =  mainTreeTools::getAnalysisSettingsNodeFromCurrentItem(myTreeView)->getTabularDataModel();
+            QStandardItem *theGeometryRoot = mainTreeTools::getTreeItem(myModel,SimulationNodeClass::nodeType_geometry);
             QMap<int,int> materialBodyMap;
             for(int k=0; k<theGeometryRoot->rowCount();k++)
             {
@@ -12350,7 +12351,7 @@ void SimulationManager::resetAndUpdateModel()
     //! -------------------------
     //! reload the geometry file
     //! -------------------------
-    QStandardItem *item = getTreeItem(SimulationNodeClass::nodeType_import);
+    QStandardItem *item = mainTreeTools::getTreeItem(myModel,SimulationNodeClass::nodeType_import);
     SimulationNodeClass *nodeImport = item->data(Qt::UserRole).value<SimulationNodeClass*>();
     QString filePath = nodeImport->getPropertyValue<QString>("Source file path");
 
@@ -13506,7 +13507,7 @@ void SimulationManager::replicateBolt()
         //! -------------------------------
         //! build a coordinate system item
         //! -------------------------------
-        QExtendedStandardItem *itemCSRoot = this->getTreeItem(SimulationNodeClass::nodeType_coordinateSystems);
+        QExtendedStandardItem *itemCSRoot = mainTreeTools::getTreeItem(myModel,SimulationNodeClass::nodeType_coordinateSystems);
         int NbCoordinateSystems = itemCSRoot->rowCount()-1;
         QString coordinateSystemNodeName = QString("Coordinate system %1").arg(++NbCoordinateSystems);
         SimulationNodeClass *nodeCS = nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType_coordinateSystem);

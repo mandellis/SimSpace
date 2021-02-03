@@ -846,7 +846,7 @@ void DetailViewer::handleScopingMethodChange()
                 myCurNode->removeProperty("Slave mesh data sources");
 
                 SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
-                QExtendedStandardItem *itemNSRoot = sm->getTreeItem(SimulationNodeClass::nodeType_namedSelection);
+                QExtendedStandardItem *itemNSRoot = mainTreeTools::getTreeItem(sm->getModel(),SimulationNodeClass::nodeType_namedSelection);
                 QExtendedStandardItem *itemNSempty = static_cast<QExtendedStandardItem*>(itemNSRoot->child(0,0));
                 void *p = (void*)itemNSempty;
 
@@ -879,7 +879,7 @@ void DetailViewer::handleScopingMethodChange()
                 myCurNode->removeProperty("Tags");
 
                 SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
-                QExtendedStandardItem *itemNSRoot = sm->getTreeItem(SimulationNodeClass::nodeType_namedSelection);
+                QExtendedStandardItem *itemNSRoot = mainTreeTools::getTreeItem(sm->getModel(),SimulationNodeClass::nodeType_namedSelection);
                 QExtendedStandardItem *itemNSempty = static_cast<QExtendedStandardItem*>(itemNSRoot->child(0,0));
                 void *p = (void*)itemNSempty;
                 QVariant data;
@@ -918,7 +918,7 @@ void DetailViewer::handleScopingMethodChange()
 
             //! scan the Remote point branch
             SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
-            QStandardItem *itemRemotePointRoot = sm->getTreeItem(SimulationNodeClass::nodeType_remotePointRoot);
+            QStandardItem *itemRemotePointRoot = mainTreeTools::getTreeItem(sm->getModel(),SimulationNodeClass::nodeType_remotePointRoot);
 
             //! this "if" statement is unessential, since the delegate does not return
             //! any editor if the remote point root has not been created
@@ -3257,9 +3257,8 @@ void DetailViewer::handleDefineByChanged()
         QExtendedStandardItem *item_CS = myCurNode->getPropertyItem("Coordinate system");
         if(item_CS==Q_NULLPTR)
         {
-            SimulationManager *theSimulationManager = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
-
-            QExtendedStandardItem *itemCSroot = theSimulationManager->getTreeItem(SimulationNodeClass::nodeType_coordinateSystems);
+            SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
+            QExtendedStandardItem *itemCSroot = mainTreeTools::getTreeItem(sm->getModel(),SimulationNodeClass::nodeType_coordinateSystems);
             QExtendedStandardItem *itemGlobalCS = static_cast<QExtendedStandardItem*>(itemCSroot->child(0,0));
             void *itemGlobalCSvoid = (void*)itemGlobalCS;
             QVariant data;
@@ -5576,7 +5575,7 @@ void DetailViewer::handleBoundaryScopingMethodChanged()
         myCurNode->removeProperty("Boundary tags");
 
         SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
-        QExtendedStandardItem *itemNSRoot = sm->getTreeItem(SimulationNodeClass::nodeType_namedSelection);
+        QExtendedStandardItem *itemNSRoot = mainTreeTools::getTreeItem(sm->getModel(),SimulationNodeClass::nodeType_namedSelection);
         QExtendedStandardItem *itemNSempty = static_cast<QExtendedStandardItem*>(itemNSRoot->child(0,0));
         void *p = (void*)itemNSempty;
         data.setValue(p);
@@ -6751,7 +6750,7 @@ void DetailViewer::handleModelChangeScopingMethodChanged()
         myCurNode->removeProperty("Tags");
 
         SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
-        QStandardItem *itemContactRoot = sm->getTreeItem(SimulationNodeClass::nodeType_connection);
+        QStandardItem *itemContactRoot = mainTreeTools::getTreeItem(sm->getModel(),SimulationNodeClass::nodeType_connection);
         //cout<<"____number of children: "<<itemContactGroup->rowCount()<<"____"<<endl;
         QStandardItem *itemDummyContactPair = itemContactRoot->child(0,0);
         if(itemDummyContactPair!=Q_NULLPTR)
@@ -6785,7 +6784,7 @@ void DetailViewer::handleModelChangeActivationStatusChanged()
     //! --------------------------
     //! retrieve the tabular data
     //! --------------------------
-    SimulationNodeClass *nodeAnalysisSettings = sm->getAnalysisSettingsNodeFromCurrentItem();
+    SimulationNodeClass *nodeAnalysisSettings = mainTreeTools::getAnalysisSettingsNodeFromCurrentItem(sm->myTreeView);
 
     CustomTableModel *tabData = nodeAnalysisSettings->getTabularDataModel();
 

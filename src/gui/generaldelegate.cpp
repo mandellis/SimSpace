@@ -15,6 +15,7 @@
 #include "optionsWidget/colorselector.h"
 #include <itemselector.h>
 #include <qfileselect.h>
+#include "maintreetools.h"
 
 //! ---
 //! Qt
@@ -237,7 +238,7 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
             //! retrieve the "Model" root item
             //! -------------------------------
             SimulationManager* sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
-            QStandardItem *itemModelRoot = sm->getTreeItem(SimulationNodeClass::nodeType_root);
+            QStandardItem *itemModelRoot = mainTreeTools::getTreeItem(sm->getModel(),SimulationNodeClass::nodeType_root);
 
             QStandardItem *curAnalysisRoot = Q_NULLPTR;
             for(int n=0; n<itemModelRoot->rowCount(); n++)
@@ -289,7 +290,7 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
             //! -----------------------------------------------------------------------
             QString timeTag = node->getPropertyValue<QString>("Time tag");
             SimulationManager* sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
-            QStandardItem *itemModelRoot = sm->getTreeItem(SimulationNodeClass::nodeType_root);
+            QStandardItem *itemModelRoot = mainTreeTools::getTreeItem(sm->getModel(),SimulationNodeClass::nodeType_root);
             //cout<<"____"<<itemModelRoot->data(Qt::DisplayRole).value<QString>().toStdString()<<"____"<<endl;
             bool found = false;
             QStandardItem *itemAnalysis;
@@ -354,7 +355,7 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
             //! retrieve the "Model" root item
             //! -------------------------------
             SimulationManager* sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
-            QStandardItem *itemModelRoot = sm->getTreeItem(SimulationNodeClass::nodeType_root);
+            QStandardItem *itemModelRoot = mainTreeTools::getTreeItem(sm->getModel(),SimulationNodeClass::nodeType_root);
             cout<<"____"<<itemModelRoot->data(Qt::DisplayRole).value<QString>().toStdString()<<"____"<<endl;
 
             //! -----------------------------------
@@ -992,7 +993,7 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
             //! -----------------------------------------------------------------
             QComboBox *editor = new QComboBox(parent);
             SimulationManager* sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
-            QStandardItem *itemRemotePointRoot = sm->getTreeItem(SimulationNodeClass::nodeType_remotePointRoot);
+            QStandardItem *itemRemotePointRoot = mainTreeTools::getTreeItem(sm->getModel(),SimulationNodeClass::nodeType_remotePointRoot);
             if(itemRemotePointRoot!=NULL)
             {
                 for(int k=0; k<itemRemotePointRoot->rowCount(); k++)
@@ -1892,7 +1893,7 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
                 //! --------------------
                 DetailViewer *theDetailViewer = static_cast<DetailViewer*>(parent->parent());
                 SimulationManager *sm = theDetailViewer->parent()->parent()->findChild<SimulationManager*>();
-                int max = sm->getAnalysisSettingsNodeFromCurrentItem()->getPropertyItem("Number of steps")->
+                int max = mainTreeTools::getAnalysisSettingsNodeFromCurrentItem(sm->myTreeView)->getPropertyItem("Number of steps")->
                         data(Qt::UserRole).value<Property>().getData().toInt();
                 editor->setMaximum(max);
                 return editor;
@@ -2239,8 +2240,7 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
         {
             cout<<"Creating editor for Coordinate system"<<endl;
             SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
-            QExtendedStandardItem *itemCSRoot = sm->getTreeItem(SimulationNodeClass::nodeType_coordinateSystems);
-
+            QExtendedStandardItem *itemCSRoot = mainTreeTools::getTreeItem(sm->getModel(),SimulationNodeClass::nodeType_coordinateSystems);
             QComboBox *editor = new QComboBox(parent);
             for(int k=0; k<itemCSRoot->rowCount(); k++)
             {
@@ -2259,7 +2259,7 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
         else if(propertyName =="Named selection" || propertyName =="Boundary named selection")
         {
             SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
-            QExtendedStandardItem *itemNSRoot = sm->getTreeItem(SimulationNodeClass::nodeType_namedSelection);
+            QExtendedStandardItem *itemNSRoot = mainTreeTools::getTreeItem(sm->getModel(),SimulationNodeClass::nodeType_namedSelection);
 
             QComboBox *editor = new QComboBox(parent);
             for(int k=0; k<itemNSRoot->rowCount(); k++)
@@ -2279,7 +2279,7 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
         else if(propertyName =="Contact pair")
         {
             SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
-            QExtendedStandardItem *itemConnectionRoot = sm->getTreeItem(SimulationNodeClass::nodeType_connection);
+            QExtendedStandardItem *itemConnectionRoot = mainTreeTools::getTreeItem(sm->getModel(),SimulationNodeClass::nodeType_connection);
 
             QComboBox *editor = new QComboBox(parent);
 
@@ -2350,7 +2350,7 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
                 //! the scope of master/slave is defined through a "Named selection"
                 //! -----------------------------------------------------------------
                 SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
-                QExtendedStandardItem *itemNSRoot = sm->getTreeItem(SimulationNodeClass::nodeType_namedSelection);
+                QExtendedStandardItem *itemNSRoot = mainTreeTools::getTreeItem(sm->getModel(),SimulationNodeClass::nodeType_namedSelection);
 
                 QComboBox *editor = new QComboBox(parent);
                 for(int k=0; k<itemNSRoot->rowCount(); k++)
@@ -2659,7 +2659,7 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
             //! (it automatically contains the "dummy" remote point "Select from list"
             //! -----------------------------------------------------------------------------------
             SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
-            if(sm->getTreeItem(SimulationNodeClass::nodeType_remotePointRoot)!=NULL)
+            if(mainTreeTools::getTreeItem(sm->getModel(),SimulationNodeClass::nodeType_remotePointRoot)!=NULL)
             {
                 if(nodeType == SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RemoteForce ||
                         nodeType == SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RemoteDisplacement ||

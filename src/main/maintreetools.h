@@ -57,9 +57,8 @@ public:
     static bool getTreeItemsFromShapes(QTreeView *tree, const std::vector<TopoDS_Shape> &vecShapes, std::vector<QStandardItem*> &vecItems);
     static QExtendedStandardItem* getTreeItem(QStandardItemModel* model, SimulationNodeClass::nodeType theNodeType);
     static QExtendedStandardItem* ItemFromScope(QStandardItemModel* model, const TopoDS_Shape &aShape);
-    static QList<QExtendedStandardItem*> getAllTreeItemOfType(QStandardItemModel* model, SimulationNodeClass::nodeType theNodeType);
-    const int mainTreeTools::getInsertionRow(QTreeView *tree);
-
+    static QList<QStandardItem*> getAllTreeItemOfType(QStandardItemModel* model, SimulationNodeClass::nodeType theNodeType);
+    static const int mainTreeTools::getInsertionRow(QTreeView *tree);
 };
 
 #endif // MAINTREETOOLS_H

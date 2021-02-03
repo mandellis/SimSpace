@@ -18,12 +18,12 @@
 #include "detailviewer.h"
 #include "shapeselector.h"
 #include "generaldelegate.h"
+#include "maintreetools.h"
+#include "tabularData/tabulardataviewerclass1.h"
 
-#include "src/gui/tabularData/tabulardataviewerclass1.h"
-
-#include "src/gui/tabularData/tablewidget.h"
+#include "tabularData/tablewidget.h"
 #include "qpushbuttonextended.h"
-#include "src/utils/tools.h"
+#include "tools.h"
 #include "optionsWidget/optionswidget.h"
 #include "systemConsole/systemconsole.h"
 #include "src/utils/ccout.h"
@@ -1522,7 +1522,7 @@ void MainWindow::importFile(QString &fileName)
                 //! -------------------------------------------------
                 //! feed the clip plane tool with coordinate systems
                 //! -------------------------------------------------
-                QStandardItem *itemCSRoot = mySimulationManager->getTreeItem(SimulationNodeClass::nodeType_coordinateSystems);
+                QStandardItem *itemCSRoot = mainTreeTools::getTreeItem(mySimulationManager->getModel(),SimulationNodeClass::nodeType_coordinateSystems);
                 myClipTool->setCoordinateSystemRoot(itemCSRoot);
 
                 //! -------------------------------------------------
@@ -1803,7 +1803,7 @@ void MainWindow::openProject()
             //! -------------------------------------------------
             //! feed the clip plane tool with coordinate systems
             //! -------------------------------------------------
-            QStandardItem *itemCSRoot = mySimulationManager->getTreeItem(SimulationNodeClass::nodeType_coordinateSystems);
+            QStandardItem *itemCSRoot = mainTreeTools::getTreeItem(mySimulationManager->getModel(),SimulationNodeClass::nodeType_coordinateSystems);
             myClipTool->setCoordinateSystemRoot(itemCSRoot);
 
             //! -------------------------------------------------

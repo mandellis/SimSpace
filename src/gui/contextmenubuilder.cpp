@@ -9,6 +9,7 @@
 #include "src/utils/tools.h"
 #include "mainwindow.h"
 #include "src/main/simulationmanager.h"
+#include "maintreetools.h"
 
 //! ---
 //! Qt
@@ -791,7 +792,7 @@ void contextMenuBuilder::buildModelRootContextMenu(QMenu *contextMenu, bool addC
     //! add remote points root - only one root is allowed
     //! --------------------------------------------------
     SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
-    if(sm->getTreeItem(SimulationNodeClass::nodeType_remotePointRoot)==Q_NULLPTR)
+    if(mainTreeTools::getTreeItem(sm->getModel(),SimulationNodeClass::nodeType_remotePointRoot)==Q_NULLPTR)
     {
         QAction *ActionInsertRemotePointRoot = menuInsert->addAction("Insert remote point");
         ActionInsertRemotePointRoot->setIcon(QIcon(":/icons/icon_remote point.png"));

@@ -18,7 +18,7 @@
 #include "resultstoolbar.h"
 #include "ext/occ_extended/ais_meshsegmentmarker.h"
 #include "src/utils/modelloader.h"
-
+#include "maintreetools.h"
 #include <ng_meshvs_datasource1d.h>
 #include <ng_meshvs_datasource3d.h>
 #include <ng_meshvs_datasource2d.h>
@@ -2060,7 +2060,7 @@ void occPreGLWidget::buildSuppressionContextMenu()
     //! ------------------------------------------
     QWidget *smw = tools::getWidgetByName("simmanager");
     SimulationManager *sm = static_cast<SimulationManager*>(smw);
-    QStandardItem *itemGeometryRoot = sm->getTreeItem(SimulationNodeClass::nodeType_geometry);
+    QStandardItem *itemGeometryRoot = mainTreeTools::getTreeItem(sm->getModel(),SimulationNodeClass::nodeType_geometry);
     int NbBodies = itemGeometryRoot->rowCount();
     bool somethingIsSuppressed = false;
     for(int i=0; i<NbBodies; i++)

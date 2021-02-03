@@ -77,18 +77,8 @@ ofwrite::ofwrite(simulationDataBase *aDB, QExtendedStandardItem* aSimulationRoot
     myInputFile.setf(ios::scientific);
     myInputFile.precision(EXPFORMAT_PRECISION);
 
-    vecMatNames.push_back("Structural_steel");
-    vecMatNames.push_back("Bilinear_steel");
-    vecMatNames.push_back("H11_fatigue");
-    vecMatNames.push_back("F22_fatigue");
-    vecMatNames.push_back("B16_fatigue");
-    vecMatNames.push_back("F6NM_fatigue");
-    vecMatNames.push_back("F92_fatigue");
-    vecMatNames.push_back("A479_fatigue");
-    vecMatNames.push_back("SA479_XM19_fatigue");
-    vecMatNames.push_back("SA182-B8M_CL2");
-    vecMatNames.push_back("SA182-F316");
-    vecMatNames.push_back("SA352-LCB");
+    vecMatNames.push_back("Water");
+    vecMatNames.push_back("Air");
 }
 
 
@@ -105,7 +95,70 @@ void ofwrite::setProgressIndicator(QProgressIndicator *aProgressIndicator)
 //! function: perform
 //! details:
 //! ------------------
-bool ofwrite::perform() {return true;}
+bool ofwrite::perform()
+{
+
+    //! -----------------------------------
+    //! reset the running status of global
+    //! -----------------------------------
+    Global::status().code = 1;
+
+    //! ----------------------
+    //! init the progress bar
+    //! ----------------------
+    int done = 0;
+    int Nevents = 7;
+    if(myProgressIndicator!=Q_NULLPTR)
+    {
+        //! ---------------------------------
+        //! hide the additional progress bar
+        //! ---------------------------------
+        myProgressIndicator->setSecondaryBarVisible(false);
+
+        QProgressEvent *e = new QProgressEvent(QProgressEvent_Init,0,Nevents,0,"Writing solver input file",
+                                               QProgressEvent_None,-1,-1,-1,"Writing CCX input file");
+        QApplication::postEvent(myProgressIndicator,e);
+        QApplication::processEvents();
+        QThread::msleep(1000);
+    }
+
+    //! --------------------
+    //! update the progress
+    //! --------------------
+    if(myProgressIndicator!=Q_NULLPTR)
+    {
+        done++;
+        QProgressEvent *e = new QProgressEvent(QProgressEvent_Update,0,Nevents-1,done,"Connectivity maps generated",
+                                               QProgressEvent_None,-1,-1,-1,"Writing CCX solver input file");
+        QApplication::postEvent(myProgressIndicator,e);
+        QApplication::processEvents();
+        QThread::msleep(250);
+
+        if(Global::status().code==0)
+        {
+            cout<<"writeSolverFileClass::perform()->____process stopped____"<<endl;
+            return false;
+        }
+    }
+
+    //! ----------------------------------
+    //! a default name for the input dir
+    //! ----------------------------------
+    if(myFileDir=="") myFileDir ="input.inp";  //qui ci va nome salvataggio
+
+    //! open the file and set current directory
+    //myInputFile.open(myFileName.toStdString());
+    //QString inputName = myFileName;
+
+    //! number of items within the tree
+    int N = mySimulationRoot->rowCount();
+
+    //! read the "Analysis settings" item
+    SimulationNodeClass *nodeAnalysisSettings = mySimulationRoot->child(0,0)->data(Qt::UserRole).value<SimulationNodeClass*>();
+    CustomTableModel *tabData = nodeAnalysisSettings->getTabularDataModel();
+
+    return true;
+}
 
 void ofwrite::clock()
 {

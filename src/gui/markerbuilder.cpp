@@ -156,7 +156,7 @@ bool markerBuilder::addMarker(SimulationNodeClass *node, geometryDataBase *gDB)
         QTreeView *theTree = sm->myTreeView;
         QList<int> tableColumns = mainTreeTools::getColumnsToRead(theTree);
 
-        SimulationNodeClass *nodeAnalysisSetting = sm->getAnalysisSettingsNodeFromCurrentItem();
+        SimulationNodeClass *nodeAnalysisSetting = mainTreeTools::getAnalysisSettingsNodeFromCurrentItem(theTree);
         CustomTableModel *tabModel = nodeAnalysisSetting->getTabularDataModel();
         Property::defineBy defineBy = node->getPropertyValue<Property::defineBy>("Define by");
         int curStepNumber = nodeAnalysisSetting->getPropertyValue<int>("Current step number");
@@ -314,7 +314,7 @@ bool markerBuilder::addMarker(SimulationNodeClass *node, geometryDataBase *gDB)
         SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
         QTreeView *theTree = sm->myTreeView;
         QList<int> tableColumns = mainTreeTools::getColumnsToRead(theTree);
-        SimulationNodeClass *nodeAnalysisSetting = sm->getAnalysisSettingsNodeFromCurrentItem();
+        SimulationNodeClass *nodeAnalysisSetting = mainTreeTools::getAnalysisSettingsNodeFromCurrentItem(theTree);
         CustomTableModel *tabModel = nodeAnalysisSetting->getTabularDataModel();
         Property::defineBy defineBy = node->getPropertyValue<Property::defineBy>("Define by");
 

@@ -868,14 +868,14 @@ QExtendedStandardItem* mainTreeTools::ItemFromScope(QStandardItemModel *model,co
 //! function: getAllTreeItemOfType
 //! details:
 //! -------------------------------
-QList<QExtendedStandardItem*> mainTreeTools::getAllTreeItemOfType(QStandardItemModel *model, SimulationNodeClass::nodeType theNodeType)
+QList<QStandardItem*> mainTreeTools::getAllTreeItemOfType(QStandardItemModel *model, SimulationNodeClass::nodeType theNodeType)
 {
-    if(model==Q_NULLPTR) return QList<QExtendedStandardItem*>();
-    QList<QExtendedStandardItem*> items, itemsout;
+    if(model==Q_NULLPTR) return QList<QStandardItem*>();
+    QList<QStandardItem*> items, itemsout;
     mainTreeTools::getTreeItemsRecursively(model,items);
-    for(QList<QExtendedStandardItem*>::iterator it = items.begin(); it!=items.end(); ++it)
+    for(QList<QStandardItem*>::iterator it = items.begin(); it!=items.end(); ++it)
     {
-        QExtendedStandardItem* curItem = *it;
+        QStandardItem* curItem = *it;
         if(curItem->data(Qt::UserRole).value<SimulationNodeClass*>()->getType()==theNodeType) itemsout.append(curItem);
     }
     return itemsout;
