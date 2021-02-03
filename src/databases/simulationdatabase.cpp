@@ -8,9 +8,9 @@
 #include "postobject.h"
 #include "nodefactory.h"
 #include <src/gui/tabularData/customtablemodel.h>
-#include "src/ccxSolver/ccxsolvermessage.h"
+#include "ccxsolvermessage.h"
 #include "src/main/maintreetools.h"
-#include "src/ccxSolver/solutioninfo.h"
+#include "solutioninfo.h"
 
 //! ----
 //! OCC

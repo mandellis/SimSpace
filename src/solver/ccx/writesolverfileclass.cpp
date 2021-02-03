@@ -549,7 +549,8 @@ bool writeSolverFileClass::perform()
     //! -----------------
     //! write point mass
     //! -----------------
-    QStandardItem *theGeometryRoot=this->getTreeItem(SimulationNodeClass::nodeType_geometry);
+    QStandardItemModel *model =myDB->getModel();
+    QStandardItem *theGeometryRoot=mainTreeTools::getTreeItem(model, SimulationNodeClass::nodeType_geometry);
     cout<<"writeSolverFileClass::perform()->____writing Point Mass___"<<endl;
     for(int k=0; k<theGeometryRoot->rowCount();k++)
     {
@@ -627,7 +628,7 @@ bool writeSolverFileClass::perform()
     //! map for storage of master and slave name
     QMap<QString,pair<QString,QString>> contactMapName;
 
-    QExtendedStandardItem *theConnectionItem = this->getTreeItem(SimulationNodeClass::nodeType_connection);
+    QExtendedStandardItem *theConnectionItem = mainTreeTools::getTreeItem(myDB->getModel(),SimulationNodeClass::nodeType_connection);
     for(int n=0; n<theConnectionItem->rowCount(); n++)
     {
         if(Global::status().code==0)
@@ -2604,7 +2605,8 @@ void writeSolverFileClass::writeNodesAndElements(QString aName,QMap<int,QList<in
     //! --------------------------------
     //! retrieve the integration scheme
     //! --------------------------------
-    QExtendedStandardItem *theGeometryRoot=static_cast<QExtendedStandardItem*>(this->getTreeItem(SimulationNodeClass::nodeType_geometry));
+    QStandardItemModel *model = myDB->getModel();
+    QExtendedStandardItem *theGeometryRoot=static_cast<QExtendedStandardItem*>(mainTreeTools::getTreeItem(model,SimulationNodeClass::nodeType_geometry));
     Property::elementControl theElementControl =  theGeometryRoot->data(Qt::UserRole).value<SimulationNodeClass*>()
             ->getPropertyValue<Property::elementControl>("Element control");
 
@@ -2618,7 +2620,8 @@ void writeSolverFileClass::writeNodesAndElements(QString aName,QMap<int,QList<in
         if(flag==true)
         {
             const TopoDS_Shape &theBody = myDB->bodyMap.value(bodyIndex);
-            QExtendedStandardItem *theGeometryItem = this->ItemFromScope(theBody);
+            QStandardItemModel *model = myDB->getModel();
+            QExtendedStandardItem *theGeometryItem = mainTreeTools::ItemFromScope(model,theBody);
             SimulationNodeClass *theNode = theGeometryItem->data(Qt::UserRole).value<SimulationNodeClass*>();
             theIntegrationScheme = theNode->getPropertyValue<Property::integrationScheme>("Integration scheme");
         }
@@ -3137,45 +3140,6 @@ void writeSolverFileClass::createElementSurface(std::vector<int> &theElementIDs,
             }
         }
      }
-}
-
-//! --------------------------------------------
-//! function: getTreeItem
-//! details:  already used in SimulationManager
-//! --------------------------------------------
-QExtendedStandardItem* writeSolverFileClass::getTreeItem(SimulationNodeClass::nodeType theNodeType)
-{
-    //! retrieve the root nodes
-    QStandardItemModel *myModel = myDB->getModel();
-    for(int k=0; k<myModel->invisibleRootItem()->child(0,0)->rowCount(); k++)
-    {
-        QExtendedStandardItem *item = static_cast<QExtendedStandardItem*>(myModel->invisibleRootItem()->child(0,0)->child(k,0));
-        if(item->data(Qt::UserRole).value<SimulationNodeClass*>()->getType()==theNodeType)
-        {
-            return item;
-        }
-    }
-    return NULL;
-}
-
-//! ----------------------------------------------------------------
-//! function: ItemFromScope
-//! details:  for a given shape in a geometry item, return the item
-//! ----------------------------------------------------------------
-QExtendedStandardItem* writeSolverFileClass::ItemFromScope(const TopoDS_Shape &aShape)
-{
-    QStandardItem *theGeometryRoot=this->getTreeItem(SimulationNodeClass::nodeType_geometry);
-    int N = theGeometryRoot->rowCount();
-    for(int k=0; k<N;k++)
-    {
-        QStandardItem *aGeometryItem = theGeometryRoot->child(k,0);
-        SimulationNodeClass *aNode = aGeometryItem->data(Qt::UserRole).value<SimulationNodeClass*>();
-        if(aNode->getType()==SimulationNodeClass::nodeType_pointMass) continue;
-        int mapIndex = aNode->getPropertyValue<int>("Map index");
-        TopoDS_Shape theShape = myDB->bodyMap.value(mapIndex);
-        if(theShape==aShape) return static_cast<QExtendedStandardItem*>(aGeometryItem);
-    }
-    return Q_NULLPTR;
 }
 
 //! ------------------------------------------

@@ -108,11 +108,7 @@ SOURCES += src/mesh/ng_meshvs_datasource1d.cpp \
     ext/occ_extended/arrayofcolors.cpp \
     ext/pymesh/MshLoader.cpp \
     ext/pymesh/MshSaver.cpp \
-    src/ccxSolver/ccxconsoletofile.cpp \
-    src/ccxSolver/consolereader.cpp \
-    src/ccxSolver/inputfilegenerator.cpp \
     src/controller/solutionworker.cpp \
-    src/ccxSolver/writesolverfileclass.cpp \
     src/connections/contactfinder.cpp \
     src/connections/contactparameters.cpp \
     src/databases/geometrydatabase.cpp \
@@ -193,7 +189,12 @@ SOURCES += src/mesh/ng_meshvs_datasource1d.cpp \
     src/controller/interpolatorcontroller.cpp \
     src/controller/openfoamcontroller.cpp \
     src/controller/ccxsolvermanager.cpp \
-    src/post/convergencedatachart.cpp
+    src/post/convergencedatachart.cpp \
+    src/solver/ccx/ccxconsoletofile.cpp \
+    src/solver/ccx/consolereader.cpp \
+    src/solver/ccx/writesolverfileclass.cpp \
+    src/solver/OF/ofwrite.cpp \
+    src/solver/inputfilegenerator.cpp
 
 HEADERS  += src/mesh/ng_meshvs_datasource1d.h \
     src/mesh/ng_meshvs_datasource2d.h \
@@ -285,12 +286,6 @@ HEADERS  += src/mesh/ng_meshvs_datasource1d.h \
     src/mesh/smoothingtools.h \
     src/mesh/pointtomeshdistance.h \
     src/mesh/surfacemeshtofacemeshes.h \
-    src/ccxSolver/ccxconsoletofile.h \
-    src/ccxSolver/ccxsolvermessage.h \
-    src/ccxSolver/consolereader.h \
-    src/ccxSolver/inputfilegenerator.h \
-    src/ccxSolver/qccxsolvermessageevent.h \
-    src/ccxSolver/writesolverfileclass.h \
     src/connections/connectionpairgenerationoptions.h \
     src/connections/contactfinder.h \
     src/connections/contactparameters.h \
@@ -335,7 +330,6 @@ HEADERS  += src/mesh/ng_meshvs_datasource1d.h \
     ext/occ_extended/handle_ais_trihedron_reg.h \
     ext/occ_extended/handle_meshvs_datasource_reg.h \
     ext/occ_extended/handle_qoccprogressindicator_reg.h \
-    src/ccxSolver/solutioninfo.h \
     src/connections/prebuiltcontactoptions.h \
     src/controller/meshingserver.h \
     src/controller/meshworker.h \
@@ -438,7 +432,15 @@ HEADERS  += src/mesh/ng_meshvs_datasource1d.h \
     src/controller/openfoamcontroller.h \
     src/controller/ccxsolvermanager.h \
     src/controller/solutionworker.h \
-    src/post/convergencedatachart.h
+    src/post/convergencedatachart.h \
+    src/solver/ccx/ccxconsoletofile.h \
+    src/solver/ccx/ccxsolvermessage.h \
+    src/solver/ccx/consolereader.h \
+    src/solver/ccx/qccxsolvermessageevent.h \
+    src/solver/ccx/solutioninfo.h \
+    src/solver/ccx/writesolverfileclass.h \
+    src/solver/OF/ofwrite.h \
+    src/solver/inputfilegenerator.h
 
 FORMS    += src/main/mainwindow.ui
 
@@ -460,7 +462,7 @@ DEFINES += NEW_HASH
 
 INCLUDEPATH = $$PWD/src/geometry \
               C:/OpenCASCADE7.3.0-vc14-64/opencascade-7.3.0/inc \
-              D:/Work/Qt/SimSpace/ext/StlMesh    \
+              $$PWD/ext/StlMesh    \
               "D:/Work/Costamp/OCC lib/EMESH_7.3.0_binaries_win64vc14/inc"     \
               "D:/Work/Costamp/OCC lib/OMF_7.3.0_binaries_win64vc14/inc"   \
               $$PWD/src/gui/optionsWidget    \
@@ -472,7 +474,9 @@ INCLUDEPATH = $$PWD/src/geometry \
               $$PWD/src/gui/tabularData    \
               $$PWD/src/gui/systemConsole    \
               $$PWD/src/gui/stepGenerationWidget    \
-              $$PWD/src/ccxSolver    \
+              $$PWD/src/solver    \
+              $$PWD/src/solver/ccx    \
+              $$PWD/src/solver/OF    \
               $$PWD/src/mesh   \
               $$PWD/src/viewer   \
               $$PWD/src/post \

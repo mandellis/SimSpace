@@ -6,14 +6,14 @@
 #include "postobject.h"
 #include "ng_meshvs_datasource2d.h"
 #include "ng_meshvs_datasource3d.h"
-#include "src/utils/tools.h"
-#include "src/registeredMetatypes/listofmesh.h"
+#include "tools.h"
+#include "listofmesh.h"
 #include "detailviewer.h"
-#include "src/main/simulationmanager.h"
-#include "src/gui/tabularData/customtablemodel.h"
-#include "src/main/maintreetools.h"
-#include "src/ccxSolver/ccxsolvermessage.h"
-#include "src/ccxSolver/solutioninfo.h"
+#include "simulationmanager.h"
+#include "customtablemodel.h"
+#include "maintreetools.h"
+#include "ccxsolvermessage.h"
+#include "solutioninfo.h"
 
 //! ----
 //! OCC

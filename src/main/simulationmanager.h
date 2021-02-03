@@ -30,16 +30,16 @@
 //! ----------------
 #include "simulationnodeclass.h"
 #include <simulationdatabase.h>
-#include "src/ccxSolver/writesolverfileclass.h"
+#include "writesolverfileclass.h"
 #include "writelabelclass.h"
 #include "serializerclass.h"
 #include "deserializerclass.h"
-#include "src/registeredMetatypes/listofmesh.h"
+#include "listofmesh.h"
 #include "postobject.h"
 #include "frdreader.h"
 #include "postengine.h"
 #include "qoccprogressindicator.h"
-#include "src/ccxSolver/solutioninfo.h"
+#include "solutioninfo.h"
 #include <indexedmapofmeshdatasources.h>
 #include "detailviewer.h"
 #include <userMessage.h>
@@ -500,9 +500,9 @@ signals:
 
 private:
 
-    QList<QStandardItem*> ItemListFromListOfShape(TopTools_ListOfShape *listOfShapes);
+    //QList<QStandardItem*> ItemListFromListOfShape(TopTools_ListOfShape *listOfShapes);
     //QExtendedStandardItem* getTreeItem(nodeType theNodeType);
-    int getInsertionRow() const;
+    //int getInsertionRow() const;
 
     //SimulationNodeClass* getAnalysisSettingsNodeFromCurrentItem() const;
     //QExtendedStandardItem *getAnalysisSettingsItemFromCurrentItem() const;
@@ -512,10 +512,10 @@ private:
 
 public:
 
-    QExtendedStandardItem* getTreeItem(SimulationNodeClass::nodeType theNodeType);
-    QList<QExtendedStandardItem *> getAllTreeItemOfType(SimulationNodeClass::nodeType theNodeType);
-    SimulationNodeClass* getAnalysisSettingsNodeFromCurrentItem() const;
-    QExtendedStandardItem *getAnalysisSettingsItemFromCurrentItem() const;
+    //QExtendedStandardItem* getTreeItem(SimulationNodeClass::nodeType theNodeType);
+    //QList<QExtendedStandardItem *> getAllTreeItemOfType(SimulationNodeClass::nodeType theNodeType);
+    //SimulationNodeClass* getAnalysisSettingsNodeFromCurrentItem() const;
+    //QExtendedStandardItem *getAnalysisSettingsItemFromCurrentItem() const;
 
 public slots:
 

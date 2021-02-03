@@ -2,8 +2,8 @@
 #define CCXSYSTEMCONSOLE_H
 
 //! custom includes
-#include "systemConsole/systemconsole.h"
-#include "src/ccxSolver/solutioninfo.h"
+#include "systemconsole.h"
+#include "solutioninfo.h"
 
 //! Qt
 #include <QWidget>

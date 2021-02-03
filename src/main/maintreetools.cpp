@@ -5,8 +5,8 @@
 #include "simulationnodeclass.h"
 #include "src/gui/tabularData/tabulardatacolumns.h"
 #include "qextendedstandarditem.h"
-#include "src/ccxSolver/ccxsolvermessage.h"
-#include "src/ccxSolver/solutioninfo.h"
+#include "ccxsolvermessage.h"
+#include "solutioninfo.h"
 
 //! ---
 //! Qt
@@ -735,7 +735,6 @@ SimulationNodeClass* mainTreeTools::getAnalysisSettingsNodeFromIndex(QModelIndex
 {
     if(curIndex.isValid()==false) return Q_NULLPTR;
     SimulationNodeClass *nodeAnalysisSettings = Q_NULLPTR;
-
     SimulationNodeClass *curNode = curIndex.data(Qt::UserRole).value<SimulationNodeClass*>();
     if(curNode->isAnalysisRoot()) nodeAnalysisSettings = curIndex.child(0,0).data(Qt::UserRole).value<SimulationNodeClass*>();
     if(curNode->isAnalysisSettings()) nodeAnalysisSettings = curIndex.data(Qt::UserRole).value<SimulationNodeClass*>();
@@ -807,4 +806,103 @@ SimulationNodeClass* mainTreeTools::getAnalysisSettingsNodeFromCurrentItem(QTree
     QStandardItem *item = mainTreeTools::getAnalysisSettingsItemFromCurrentItem(treeView);
     SimulationNodeClass *node = item->data(Qt::UserRole).value<SimulationNodeClass*>();
     return node;
+}
+
+//! --------------------------------------------
+//! function: getTreeItem
+//! details:  already used in SimulationManager
+//! --------------------------------------------
+QExtendedStandardItem* mainTreeTools::getTreeItem(QStandardItemModel *model, SimulationNodeClass::nodeType theNodeType)
+{
+    if(model==Q_NULLPTR)
+    {
+        cerr<<"SimulationManager::getTreeItem()->____NULL model____"<<endl;
+        return Q_NULLPTR;
+    }
+
+    //! retrieve the root nodes
+    QList<QStandardItem*> items;
+    mainTreeTools::getTreeItemsRecursively(model,items);
+    for(QList<QStandardItem*>::iterator it = items.begin(); it!=items.end(); it++)
+    {
+        QStandardItem* curItem = *it;
+        SimulationNodeClass *curNode = curItem->data(Qt::UserRole).value<SimulationNodeClass*>();
+
+        if(curNode==Q_NULLPTR) return Q_NULLPTR;
+
+        SimulationNodeClass::nodeType curNodeType = curNode->getType();
+        if(curNodeType==theNodeType)
+        {
+            return static_cast<QExtendedStandardItem*>(curItem);
+        }
+    }
+    return Q_NULLPTR;
+}
+
+
+//! ----------------------------------------------------------------
+//! function: ItemFromScope
+//! details:  for a given shape in a geometry item, return the item
+//! ----------------------------------------------------------------
+QExtendedStandardItem* mainTreeTools::ItemFromScope(QStandardItemModel *model,const TopoDS_Shape &aShape)
+{
+    QStandardItem *theGeometryRoot=mainTreeTools::getTreeItem(model,SimulationNodeClass::nodeType_geometry);
+    int N = theGeometryRoot->rowCount();
+    for(int k=0; k<N;k++)
+    {
+        QStandardItem *aGeometryItem = theGeometryRoot->child(k,0);
+        SimulationNodeClass *aNode = aGeometryItem->data(Qt::UserRole).value<SimulationNodeClass*>();
+        if(aNode->getType()==SimulationNodeClass::nodeType_pointMass) continue;
+        //int mapIndex = aNode->getPropertyValue<int>("Map index");
+        //TopoDS_Shape theShape = myDB->bodyMap.value(mapIndex);
+        //if(theShape==aShape) return static_cast<QExtendedStandardItem*>(aGeometryItem);
+        TopoDS_Shape shapeInItem = aNode->getPropertyValue<TopoDS_Shape>("Shape");
+        if(shapeInItem == aShape)
+        return static_cast<QExtendedStandardItem*>(aGeometryItem);
+
+    }
+    return Q_NULLPTR;
+}
+
+//! -------------------------------
+//! function: getAllTreeItemOfType
+//! details:
+//! -------------------------------
+QList<QExtendedStandardItem*> mainTreeTools::getAllTreeItemOfType(QStandardItemModel *model, SimulationNodeClass::nodeType theNodeType)
+{
+    if(model==Q_NULLPTR) return QList<QExtendedStandardItem*>();
+    QList<QExtendedStandardItem*> items, itemsout;
+    mainTreeTools::getTreeItemsRecursively(model,items);
+    for(QList<QExtendedStandardItem*>::iterator it = items.begin(); it!=items.end(); ++it)
+    {
+        QExtendedStandardItem* curItem = *it;
+        if(curItem->data(Qt::UserRole).value<SimulationNodeClass*>()->getType()==theNodeType) itemsout.append(curItem);
+    }
+    return itemsout;
+}
+
+//! ------------------------------------------------------------------------
+//! function: getInsertionRow
+//! details:  when adding a simulation setup item, that item must be placed
+//!           between the "Analysis settings" item and the "Solution" item.
+//!           The function finds the right row for inserting the new item
+//! ------------------------------------------------------------------------
+const int mainTreeTools::getInsertionRow(QTreeView *tree)
+{
+    QModelIndex theCurIndex = tree->currentIndex();
+    QStandardItem *theCurItem = static_cast<QStandardItemModel*>(tree->model())->itemFromIndex(theCurIndex);
+    SimulationNodeClass* theCurNode = theCurItem->data(Qt::UserRole).value<SimulationNodeClass*>();
+    int insertionRow;
+    if(theCurNode->isAnalysisRoot())
+    {
+        insertionRow = theCurItem->rowCount()-1;    //! the (-1) inserts before the "Solution" item
+    }
+    else
+    {
+        insertionRow = theCurItem->parent()->rowCount();
+        SimulationNodeClass *parentNode = theCurItem->parent()->data(Qt::UserRole).value<SimulationNodeClass*>();
+        if(parentNode->isAnalysisRoot()) insertionRow--;
+    }
+    //cout<<"____insertion row: "<<insertionRow<<"____"<<endl;
+    return insertionRow;
 }

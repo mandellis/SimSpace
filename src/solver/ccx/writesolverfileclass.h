@@ -70,8 +70,8 @@ private:
     void writeElementSet(std::vector<GeometryTag> vecLoc,QList<QString> &bodyNameList);
     void writeNodesAndElements(QString aName,QMap<int,QList<int>> &nodeListByBody);
 
-    QExtendedStandardItem *ItemFromScope(const TopoDS_Shape &aShape);
-    QExtendedStandardItem* getTreeItem(SimulationNodeClass::nodeType theNodeType);
+    //QExtendedStandardItem *ItemFromScope(const TopoDS_Shape &aShape);
+    //QExtendedStandardItem* getTreeItem(SimulationNodeClass::nodeType theNodeType);
 
     //! -----------------------------------------------------------
     //! create element surface (uses face to element connectivity)
