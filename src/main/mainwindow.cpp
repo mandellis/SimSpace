@@ -19,7 +19,7 @@
 #include "shapeselector.h"
 #include "generaldelegate.h"
 #include "maintreetools.h"
-#include "tabularData/tabulardataviewerclass1.h"
+#include "tabularData/tabulardataviewerclass.h"
 
 #include "tabularData/tablewidget.h"
 #include "qpushbuttonextended.h"

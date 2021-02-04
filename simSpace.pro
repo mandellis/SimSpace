@@ -178,7 +178,6 @@ SOURCES += src/mesh/ng_meshvs_datasource1d.cpp \
     src/gui/tabularData/tableviewclass.cpp \
     src/gui/tabularData/tableviewclassitemdelegate.cpp \
     src/gui/tabularData/tablewidget.cpp \
-    src/gui/tabularData/tabulardataviewerclass1.cpp \
     ext/StlMesh/StlMesh.cxx \
     ext/StlMesh/StlMesh_Mesh.cxx \
     ext/StlMesh/StlMesh_MeshDomain.cxx \
@@ -194,7 +193,8 @@ SOURCES += src/mesh/ng_meshvs_datasource1d.cpp \
     src/solver/ccx/consolereader.cpp \
     src/solver/ccx/writesolverfileclass.cpp \
     src/solver/OF/ofwrite.cpp \
-    src/solver/inputfilegenerator.cpp
+    src/solver/inputfilegenerator.cpp \
+    src/gui/tabularData/tabulardataviewerclass.cpp
 
 HEADERS  += src/mesh/ng_meshvs_datasource1d.h \
     src/mesh/ng_meshvs_datasource2d.h \
@@ -408,7 +408,6 @@ HEADERS  += src/mesh/ng_meshvs_datasource1d.h \
     src/gui/tabularData/tableviewclassitemdelegate.h \
     src/gui/tabularData/tablewidget.h \
     src/gui/tabularData/tabulardatacolumns.h \
-    src/gui/tabularData/tabulardataviewerclass1.h \
     src/utils/ccxtools.h \
     ext/StlMesh/NCollection_StlIterator.hxx \
     ext/StlMesh/StlAPI.hxx \
@@ -440,7 +439,8 @@ HEADERS  += src/mesh/ng_meshvs_datasource1d.h \
     src/solver/ccx/solutioninfo.h \
     src/solver/ccx/writesolverfileclass.h \
     src/solver/OF/ofwrite.h \
-    src/solver/inputfilegenerator.h
+    src/solver/inputfilegenerator.h \
+    src/gui/tabularData/tabulardataviewerclass.h
 
 FORMS    += src/main/mainwindow.ui
 

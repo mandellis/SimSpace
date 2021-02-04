@@ -38,7 +38,7 @@
 #include "maintreetools.h"
 #include "openfoamcontroller.h"
 #include <connectionpairgenerationoptions.h>
-#include <tabulardataviewerclass1.h>
+#include <tabulardataviewerclass.h>
 
 #include <ng_mesher2.h>
 #include <occmesher.h>

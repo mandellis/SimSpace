@@ -15,7 +15,7 @@
 //! ----------------
 //! custom includes
 //! ----------------
-#include "src/registeredMetatypes/listofshape.h"
+#include "listofshape.h"
 
 class Property
 {

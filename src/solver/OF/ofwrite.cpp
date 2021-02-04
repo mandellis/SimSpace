@@ -74,8 +74,8 @@ ofwrite::ofwrite(simulationDataBase *aDB, QExtendedStandardItem* aSimulationRoot
     mySimulationRoot = aSimulationRoot;
 
     //! set format
-    myInputFile.setf(ios::scientific);
-    myInputFile.precision(EXPFORMAT_PRECISION);
+    //myInputDir.setf(ios::scientific);
+    //myInputDir.precision(EXPFORMAT_PRECISION);
 
     vecMatNames.push_back("Water");
     vecMatNames.push_back("Air");

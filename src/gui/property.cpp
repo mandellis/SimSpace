@@ -2,13 +2,13 @@
 //! custom includes
 //! ----------------
 #include "property.h"
-#include "src/utils/tools.h"
+#include "tools.h"
 #include "qextendedstandarditem.h"
 #include "postobject.h"
 #include "deserializerclass.h"
 #include <ng_meshvs_datasource2d.h>
 #include <ng_meshvs_datasource3d.h>
-#include "src/registeredMetatypes/topods_shape_reg.h"
+#include "topods_shape_reg.h"
 #include <indexedmapofmeshdatasources.h>
 #include <qhistogram.h>
 #include "ccxsolvermessage.h"
