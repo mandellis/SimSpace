@@ -58,7 +58,7 @@ class SimulationManager;
 class DetailViewer;
 class TableWidget;
 
-class TabularDataViewerClass1;
+class TabularDataViewerClass;
 
 class QProgressBar;
 class systemConsole;
@@ -344,7 +344,7 @@ private:
     //! ------------------------------------------
     //! graph viewer - loads vs time using charts
     //! ------------------------------------------
-    TabularDataViewerClass1 *myTabularDataGraphViewer1;
+    TabularDataViewerClass *myTabularDataGraphViewer1;
 
     //! -------------
     //! tabular data

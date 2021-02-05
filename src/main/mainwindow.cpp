@@ -382,7 +382,7 @@ MainWindow::MainWindow(QWidget *parent):QMainWindow(parent),ui(new Ui::MainWindo
     //! -----------------------------------------------------------
     //! the tabular data graph view - loads vs time through charts
     //! ------------------------------------------------------------
-    myTabularDataGraphViewer1 = new TabularDataViewerClass1(this);
+    myTabularDataGraphViewer1 = new TabularDataViewerClass(this);
 
     //! -----------------------------
     //! graph viewer and dock window
