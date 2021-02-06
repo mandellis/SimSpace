@@ -1938,6 +1938,26 @@ void contextMenuBuilder::buildCombinedAnalysisResultsContextMenu(QMenu* contextM
     //! add separator
     contextMenu->addSeparator();
 
+    if(node->getType() == SimulationNodeClass::nodeType_CFDAnalysisSolution ||
+      node->getType() == SimulationNodeClass::nodeType_CFDAnalysisSolutionInformation)
+    {
+        QAction *ActionEvaluateResult = contextMenu->addAction("Evaluate all results");
+        ActionEvaluateResult->setIcon(QIcon(":/icons/icon_solve.png"));
+        ActionEvaluateResult->setData(204);
+
+        //! add separator
+        contextMenu->addSeparator();
+
+        //! ---------------------
+        //! Clear generated data
+        //! ---------------------
+        QAction *ActionClearGeneratedData = contextMenu->addAction("Clear generated data");
+        ActionClearGeneratedData->setIcon(QIcon(":/icons/icon_clear data.png"));
+        ActionClearGeneratedData->setData(205);
+    }
+
+    //! add separator
+    contextMenu->addSeparator();
     contextMenuBuilder::addActionCreateNamedSelection(contextMenu);
 }
 

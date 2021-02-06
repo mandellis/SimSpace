@@ -161,6 +161,23 @@ public:
         nodeType_combinedAnalysisSolution,
         nodeType_combinedAnalysisSolutionInformation,
 
+        //! ------------------
+        //! CFD analysis
+        //! ------------------
+        nodeType_CFDAnalysis,
+        nodeType_CFDAnalysisSettings,
+        nodeType_CFDAnalysisSolution,
+        nodeType_CFDAnalysisSolutionInformation,
+
+        //! ----------------------
+        //! Construction geometry
+        //! ----------------------
+        nodeType_constructionGeometry,
+        //! ----------------------
+        //! Construction geometry
+        //! ----------------------
+        nodeType_monitorAnalysis,
+
         //! --------------------
         //! particles in fields
         //! --------------------

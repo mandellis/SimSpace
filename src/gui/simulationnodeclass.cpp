@@ -566,6 +566,11 @@ SimulationNodeClass::nodeType SimulationNodeClass::getFamily()
         RV = nodeType_combinedAnalysis;
         break;
 
+    case nodeType_CFDAnalysis:
+    case nodeType_CFDAnalysisSettings:
+        RV = nodeType_CFDAnalysis;
+        break;
+
    case nodeType_particlesInFieldsAnalysis:
    case nodeType_particlesInFieldsAnalysisSettings:
    case nodeType_electrostaticPotential:
@@ -580,6 +585,11 @@ SimulationNodeClass::nodeType SimulationNodeClass::getFamily()
     case nodeType_combinedAnalysisSolution:
     case nodeType_combinedAnalysisSolutionInformation:
         RV = nodeType_combinedAnalysisSolution;
+        break;
+
+    case nodeType_CFDAnalysisSolution:
+    case nodeType_CFDAnalysisSolutionInformation:
+        RV = nodeType_CFDAnalysisSolution;
         break;
 
     case nodeType_remotePointRoot:
@@ -952,7 +962,9 @@ void SimulationNodeClass::createSeparators()
         myNodeRootItem->appendRow(itemStepControls);
         myNodeRootItem->appendRow(itemSolverControl);
         break;
-
+    case nodeType_CFDAnalysisSettings:
+        myNodeRootItem->appendRow(itemStepControls);
+        myNodeRootItem->appendRow(itemOutputSettings);
     case nodeType_root:
         myNodeRootItem->appendRow(itemBackground);
         myNodeRootItem->appendRow(itemLighting);
@@ -1086,6 +1098,7 @@ void SimulationNodeClass::createSeparators()
     case nodeType_thermalAnalysisSolutionInformation:
     case nodeType_combinedAnalysisSolutionInformation:
     case nodeType_particlesInFieldsSolutionInformation:
+    case nodeType_CFDAnalysisSolutionInformation:
         myNodeRootItem->appendRow(itemSolutionInformation);
         myNodeRootItem->appendRow(itemHidden);
         break;

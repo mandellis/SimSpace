@@ -508,6 +508,7 @@ void mainTreeTools::addSolution(QStandardItem *analysisRootItem)
     case SimulationNodeClass::nodeType_structuralAnalysis: typeOfSolution = SimulationNodeClass::nodeType_StructuralAnalysisSolution; break;
     case SimulationNodeClass::nodeType_thermalAnalysis: typeOfSolution = SimulationNodeClass::nodeType_thermalAnalysisSolution; break;
     case SimulationNodeClass::nodeType_combinedAnalysis: typeOfSolution = SimulationNodeClass::nodeType_combinedAnalysisSolution; break;
+    case SimulationNodeClass::nodeType_CFDAnalysis: typeOfSolution = SimulationNodeClass::nodeType_CFDAnalysisSolution; break;
     case SimulationNodeClass::nodeType_particlesInFieldsAnalysis: typeOfSolution = SimulationNodeClass::nodeType_particlesInFieldsSolution; break;
     }
 

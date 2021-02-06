@@ -2366,6 +2366,7 @@ QIcon QExtendedStandardItem::getIcon(SimulationNodeClass::nodeType theNodeType) 
 {
     switch(theNodeType)
     {
+    case SimulationNodeClass::nodeType_CFDAnalysis: return QIcon(":/icons/icon_CFD.png"); break;
     case SimulationNodeClass::nodeType_combinedAnalysis: return QIcon(":/icons/icon_combined analysis.png"); break;
     case SimulationNodeClass::nodeType_particlesInFieldsAnalysis: return QIcon(":/icons/icon_a field.png"); break;
     case SimulationNodeClass::nodeType_meshMeshMetric: return QIcon(":/icons/icon_metric.png"); break;
@@ -2393,6 +2394,7 @@ QIcon QExtendedStandardItem::getIcon(SimulationNodeClass::nodeType theNodeType) 
     case SimulationNodeClass::nodeType_thermalAnalysisSettings:
     case SimulationNodeClass::nodeType_structuralAnalysisSettings:
     case SimulationNodeClass::nodeType_combinedAnalysisSettings:
+    case SimulationNodeClass::nodeType_CFDAnalysisSettings:
     case SimulationNodeClass::nodeType_particlesInFieldsAnalysisSettings:
         return QIcon(":/icons/icon_analysis settings.png"); break;
 
@@ -2423,6 +2425,7 @@ QIcon QExtendedStandardItem::getIcon(SimulationNodeClass::nodeType theNodeType) 
     case SimulationNodeClass::nodeType_StructuralAnalysisSolution:
     case SimulationNodeClass::nodeType_thermalAnalysisSolution:
     case SimulationNodeClass::nodeType_combinedAnalysisSolution:
+    case SimulationNodeClass::nodeType_CFDAnalysisSolution:
     case SimulationNodeClass::nodeType_particlesInFieldsSolution:
         return QIcon(":/icons/icon_solution.png"); break;
 

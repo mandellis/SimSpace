@@ -2565,7 +2565,6 @@ void writeSolverFileClass::writeNodesAndElements(QString aName,QMap<int,QList<in
         if(!aMeshVS_DataSource.IsNull())
         {
             QList<int> listOfNodes;
-
             //! retrieve and write the nodes
             const TColStd_PackedMapOfInteger& aNodes = aMeshVS_DataSource->GetAllNodes();
             if(aNodes.Extent()!=0)
@@ -3360,7 +3359,6 @@ void writeSolverFileClass::writeGapElement(const IndexedMapOfMeshDataSources &an
         occHandle(Ng_MeshVS_DataSourceFace) &faceMeshDS = occHandle(Ng_MeshVS_DataSourceFace)::DownCast(theCurMeshDS);
         if(faceMeshDS->myNodeNormals.isEmpty()) faceMeshDS->computeNormalAtNodes();
         const QMap<int,QList<double>> &nodeNormals = faceMeshDS->myNodeNormals;
-
         for(TColStd_MapIteratorOfPackedMapOfInteger anIter(theCurMeshDS->GetAllNodes()); anIter.More(); anIter.Next())
         {
             totalNumberOfNodes++;

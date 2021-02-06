@@ -1738,6 +1738,7 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
         case SimulationNodeClass::nodeType_structuralAnalysisSettings:
         case SimulationNodeClass::nodeType_thermalAnalysisSettings:
         case SimulationNodeClass::nodeType_combinedAnalysisSettings:
+        case SimulationNodeClass::nodeType_CFDAnalysisSettings:
         {
             int column = topLeftIndex.column();
             QVariant data = tabularDataModel->dataRC(row,column);

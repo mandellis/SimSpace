@@ -1490,6 +1490,228 @@ void simulationDataBase::createCombinedAnalysisRootNode()
     mainTreeTools::addSolutionInformation(CombinedAnalysisItem->child(CombinedAnalysisItem->rowCount()-1,0));
 }
 
+//! -----------------------------------------
+//! function: createCombinedAnalysisRootNode
+//! details:
+//! -----------------------------------------
+void simulationDataBase::createCFDAnalysisRootNode()
+{
+    cout<<"simulationDataBase::createCFDAnalysisRootNode()->____creating a structural analysis branch____"<<endl;
+
+    QVariant data;
+    QString name = "CFD analysis";
+
+    //! ---------------
+    //! the properties
+    //! ---------------
+    QVector<Property> props;
+
+    //! --------------
+    //! node creation
+    //! --------------
+    SimulationNodeClass *nodeCFDAnalysis = new SimulationNodeClass(name,SimulationNodeClass::nodeType_CFDAnalysis,props,this);
+
+    //! -----------------------------
+    //! time tag and parent time tag
+    //! -----------------------------
+    nodeCFDAnalysis->addTimeTag();
+    QString timeTag = myRootItem->data(Qt::UserRole).value<SimulationNodeClass*>()->getPropertyValue<QString>("Time tag");
+    data.setValue(timeTag);
+    nodeCFDAnalysis->addProperty(Property("Parent time tag",data,Property::PropertyGroup_Identifier));
+
+    //! --------------------------------------------------
+    //! create the item and append to the model root item
+    //! --------------------------------------------------
+    QExtendedStandardItem *CFDAnalysisItem = new QExtendedStandardItem();
+    CFDAnalysisItem->setData("CFD analysis",Qt::DisplayRole);
+    data.setValue(nodeCFDAnalysis);
+    CFDAnalysisItem->setData(data, Qt::UserRole);
+    myRootItem->appendRow(CFDAnalysisItem);
+
+    //! ---------------------------------------------
+    //! create the item combined "Analysis settings"
+    //! ---------------------------------------------
+    QExtendedStandardItem *CFDAnalysisSettingsItem = new QExtendedStandardItem();
+
+    //! ----------------------------
+    //! the default Number of steps
+    //! ----------------------------
+    data.setValue(1);
+    Property property_numberOfSteps("Number of steps",data,Property::PropertyGroup_StepControls);
+
+    //! --------------------------
+    //! the "Current step number"
+    //! --------------------------
+    data.setValue(1);
+    Property property_currentStepNumber("Current step number",data,Property::PropertyGroup_StepControls);
+
+    //! ------------------------------
+    //! the default analysis end time
+    //! ------------------------------
+    double endTime =1.0;
+    data.setValue(endTime);
+    Property property_stepEndTime("Step end time",data,Property::PropertyGroup_StepControls);
+
+
+    //! -----------------------
+    //! steady state/transient
+    //! -----------------------
+    Property::timeIntegration timeIntegration = Property::timeIntegration_steadyState;
+    data.setValue(timeIntegration);
+    Property property_timeIntegration("Static/Transient",data,Property::PropertyGroup_StepControls);
+
+    //! --------------
+    //! time stepping
+    //! --------------
+    Property::autoTimeStepping theTimeStepping = Property::autoTimeStepping_OFF;
+    data.setValue(theTimeStepping);
+    Property property_autoTimeStepping("Auto time stepping",data,Property::PropertyGroup_StepControls);
+
+
+    //! ------------------
+    //! number of threads
+    //! ------------------
+    int numberOfThreads = 6;
+    data.setValue(numberOfThreads);
+    Property property_numberOfThreads("Number of threads",data,Property::PropertyGroup_SolverControls);
+
+    props.push_back(property_numberOfSteps);
+    props.push_back(property_currentStepNumber);
+    props.push_back(property_stepEndTime);
+    props.push_back(property_timeIntegration);
+    props.push_back(property_autoTimeStepping);
+    props.push_back(property_numberOfThreads);
+
+    //! -------------------------------
+    //! "Output settings"
+    //! "0" => do not save "1" => save
+    //! -------------------------------
+    QVector<int> outputSettings;
+
+    int saveVelocity = 1;
+    data.setValue(saveVelocity);
+    outputSettings.push_back(saveVelocity);
+    Property property_velocity("Velocity",data,Property::PropertyGroup_OutputSettings);
+    props.push_back(property_velocity);
+
+    int savePressure = 1;
+    data.setValue(savePressure);
+    outputSettings.push_back(savePressure);
+    Property property_pressure("Pressure",data,Property::PropertyGroup_OutputSettings);
+    props.push_back(property_pressure);
+
+    data.setValue(outputSettings);
+    QVector<QVariant> values9; values9.push_back(data);
+    load loadOuputSettings(values9,Property::loadType_outputSettings);
+
+    //! -------------------------------------
+    //! options for storing analysis results
+    //! "0" => "All time points" (defaults)
+    //! "1" => "Last time point"
+    //! "2" => "Specified recurrence rate"
+    //! -------------------------------------
+    int storeResultsAt = 0;
+    data.setValue(storeResultsAt);
+    Property property_storeResultsAt("Store results at",data,Property::PropertyGroup_OutputSettings);
+    props.push_back(property_storeResultsAt);
+
+    int FREQUENCY = 1;
+    QVector<int> storeResultsAtFlags;
+    storeResultsAtFlags.push_back(storeResultsAt);
+    storeResultsAtFlags.push_back(FREQUENCY);
+    data.setValue(storeResultsAtFlags);
+    QVector<QVariant> values10; values10.push_back(data);
+    load loadStoreResultsAt(values10,Property::loadType_storeResultsAt);
+
+    //! ------------------------------------
+    //! create the "Analysis settings" node
+    //! ------------------------------------
+    SimulationNodeClass *nodeCFDAnalysisSettings =
+            new SimulationNodeClass("Analysis settings",SimulationNodeClass::nodeType_CFDAnalysisSettings,props,this);
+
+    //! -------------------------------------------------
+    //! create the tabular data for the time step policy
+    //! -------------------------------------------------
+    QVector<QVariant> stepNumbers;
+    QVector<QVariant> stepEndTimes;
+    QVector<QVariant> vecSubsteps;
+
+    //! time step number - a default value
+    data.setValue(1);
+    stepNumbers.push_back(data);
+
+    //! Step end time - a default value
+    double aStepEndTime = 1.0;
+    data.setValue(aStepEndTime);
+    stepEndTimes.push_back(data);
+
+    //! ----------------------------------------------------------------------
+    //! time step divisions
+    //! the last value is for the time step policy (Auto = 0, ON = 1, OFF =2)
+    //! ----------------------------------------------------------------------
+    QVector<int> T;
+    T.append(5); T.append(2); T.append(10);
+    //! the time step policy
+    T.append(0);
+
+    data.setValue(T);
+    vecSubsteps.append(data);
+
+    load aLoad1(stepNumbers,Property::loadType_stepNumber);
+    load aLoad2(stepEndTimes,Property::loadType_stepEndTime);
+    load aLoad3(vecSubsteps,Property::loadType_autoTimeStepping);
+
+    //! --------------------------
+    //! static/transient in table
+    //! --------------------------
+    data.setValue(timeIntegration);
+    QVector<QVariant> vecTimeIntegration;
+    vecTimeIntegration.push_back(data);
+    load loadTimeIntegration(vecTimeIntegration,Property::loadType_timeIntegration);
+
+    //! -------------------------
+    //! build the internal table
+    //! -------------------------
+    QVector<load> vecLoad;
+
+    //! 1-st time step numner (column # 0)
+    vecLoad.push_back(aLoad1);
+    //! 2-nd step end time (column # 1)
+    vecLoad.push_back(aLoad2);
+    //! 3-th column time step policy (column # 2)
+    vecLoad.push_back(aLoad3);
+    //! 4-th column (column #3)
+    vecLoad.push_back(loadOuputSettings);
+    //! 5-th column (column #4)
+    vecLoad.push_back(loadStoreResultsAt);
+    //! 6-th column (column #5)
+    vecLoad.push_back(loadTimeIntegration);
+
+    //! ------------------------
+    //! create the tabular data
+    //! ------------------------
+    nodeCFDAnalysisSettings->createTabularData(vecLoad);
+
+    //! -----------------------------
+    //! time tag and parent time tag
+    //! -----------------------------
+    nodeCFDAnalysisSettings->addTimeTag();
+    QString parentTimeTag = CFDAnalysisItem->data(Qt::UserRole).value<SimulationNodeClass*>()->getPropertyValue<QString>("Time tag");
+    data.setValue(parentTimeTag);
+    nodeCFDAnalysisSettings->addProperty(Property("Parent time tag",data,Property::PropertyGroup_Identifier));
+
+    //! ------------------------------------------------------
+    //! create the item and append to the "Combined analysis"
+    //! ------------------------------------------------------
+    data.setValue(nodeCFDAnalysisSettings);
+    CFDAnalysisSettingsItem->setData(data,Qt::UserRole);
+    CFDAnalysisSettingsItem->setData("Analysis settings", Qt::DisplayRole);
+    CFDAnalysisItem->appendRow(CFDAnalysisSettingsItem);
+
+    mainTreeTools::addSolution(CFDAnalysisItem);
+    mainTreeTools::addSolutionInformation(CFDAnalysisItem->child(CFDAnalysisItem->rowCount()-1,0));
+}
+
 //! --------------------------------
 //! function: createRemotePointRoot
 //! details:
