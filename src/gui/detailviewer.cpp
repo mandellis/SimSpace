@@ -1696,7 +1696,8 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
     //! retrieve the "Current step number"
     //! -----------------------------------
     SimulationNodeClass *nodeAnalysisSettings = Q_NULLPTR;
-    if(myCurNode->isAnalysisRoot()) nodeAnalysisSettings = myCurModelIndex.child(0,0).data(Qt::UserRole).value<SimulationNodeClass*>();
+    nodeAnalysisSettings = mainTreeTools::getAnalysisSettingsNodeFromIndex(myCurModelIndex);
+/*    if(myCurNode->isAnalysisRoot()) nodeAnalysisSettings = myCurModelIndex.child(0,0).data(Qt::UserRole).value<SimulationNodeClass*>();
     if(myCurNode->isAnalysisSettings()) nodeAnalysisSettings = myCurModelIndex.data(Qt::UserRole).value<SimulationNodeClass*>();
     if(myCurNode->isSimulationSetUpNode()) nodeAnalysisSettings = myCurModelIndex.parent().child(0,0).data(Qt::UserRole).value<SimulationNodeClass*>();
     if(myCurNode->isSolution()) nodeAnalysisSettings = myCurModelIndex.parent().child(0,0).data(Qt::UserRole).value<SimulationNodeClass*>();
@@ -1704,7 +1705,7 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
     if(myCurNode->isAnalysisResult()) nodeAnalysisSettings = myCurModelIndex.parent().parent().child(0,0).data(Qt::UserRole).value<SimulationNodeClass*>();
     if(myCurNode->isChildSimulationSetUpNode()) nodeAnalysisSettings = myCurModelIndex.parent().parent().child(0,0).data(Qt::UserRole).value<SimulationNodeClass*>();
     if(myCurNode->isNephewSimulationSetUpNode()) nodeAnalysisSettings = myCurModelIndex.parent().parent().parent().child(0,0).data(Qt::UserRole).value<SimulationNodeClass*>();
-
+*/
     if(nodeAnalysisSettings==Q_NULLPTR)
     {
         cerr<<"@---------------------------------------------------------@"<<endl;
@@ -1738,7 +1739,6 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
         case SimulationNodeClass::nodeType_structuralAnalysisSettings:
         case SimulationNodeClass::nodeType_thermalAnalysisSettings:
         case SimulationNodeClass::nodeType_combinedAnalysisSettings:
-        case SimulationNodeClass::nodeType_CFDAnalysisSettings:
         {
             int column = topLeftIndex.column();
             QVariant data = tabularDataModel->dataRC(row,column);
@@ -1769,6 +1769,31 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
                 break;
 
             case TABULAR_DATA_TIME_INTEGRATION_COLUMN:
+            {
+                Property::timeIntegration timeIntegration = data.value<Property::timeIntegration>();
+                data.setValue(timeIntegration);
+                myCurNode->replaceProperty("Static/Transient",Property("Static/Transient",data,Property::PropertyGroup_StepControls));
+            }
+                break;
+            }
+        }
+            break;
+
+        case SimulationNodeClass::nodeType_CFDAnalysisSettings:
+        {
+            int column = topLeftIndex.column();
+            QVariant data = tabularDataModel->dataRC(row,column);
+            switch(column)
+            {
+            case 1:
+            {
+                double stepEndTime = data.toDouble();
+                data.setValue(stepEndTime);
+                myCurNode->replaceProperty("Step end time",Property("Step end time",data,Property::PropertyGroup_StepControls));
+            }
+                break;
+
+            case 2:
             {
                 Property::timeIntegration timeIntegration = data.value<Property::timeIntegration>();
                 data.setValue(timeIntegration);

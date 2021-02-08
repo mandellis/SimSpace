@@ -263,13 +263,14 @@ void SimulationManager::setSelectionModel()
 //! ----------------------
 void SimulationManager::highlighter(QModelIndex modelIndex)
 {
-    //cout<<"SimulationManager::highlighter()->____function called____"<<endl;
+    cout<<"SimulationManager::highlighter()->____function called____"<<endl;
     Q_UNUSED(modelIndex)
 
     //! -------------------------------
     //! set the active analysis branch
     //! -------------------------------
     this->setTheActiveAnalysisBranch();
+    cout<<"SimulationManager::highlighter()->____tag00____"<<endl;
 
     QList<QModelIndex> selectedIndexes = myTreeView->selectionModel()->selectedRows();
 
@@ -376,6 +377,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
             //! transfer the node model to the detail viewer
             //! ---------------------------------------------
             emit updatedetailViewer(index);
+            cout<<"SimulationManager::highlighter()->____tag01____"<<endl;
 
             QStandardItem *curItem = myModel->itemFromIndex(index);
             SimulationNodeClass *theNode = curItem->data(Qt::UserRole).value<SimulationNodeClass*>();
@@ -936,7 +938,6 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 if(columnsToShow.length()>=3)
                 {
                     emit requestShowColumns(columnsToShow);
-
                     //! ------------------------------------
                     //! remove the column showing the times
                     //! ------------------------------------
@@ -12770,7 +12771,7 @@ std::vector<std::pair<std::vector<GeometryTag>,std::vector<GeometryTag>>> Simula
 void SimulationManager::setTheActiveAnalysisBranch()
 {
     static QStandardItem *theActiveAnalysis_old;
-
+//bubi
     //! -----------------------------------
     //! pointer to the standard item model
     //! -----------------------------------

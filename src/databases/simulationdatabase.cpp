@@ -1491,7 +1491,7 @@ void simulationDataBase::createCombinedAnalysisRootNode()
 }
 
 //! -----------------------------------------
-//! function: createCombinedAnalysisRootNode
+//! function: createCFDAnalysisRootNode
 //! details:
 //! -----------------------------------------
 void simulationDataBase::createCFDAnalysisRootNode()
@@ -1566,7 +1566,6 @@ void simulationDataBase::createCFDAnalysisRootNode()
     Property::autoTimeStepping theTimeStepping = Property::autoTimeStepping_OFF;
     data.setValue(theTimeStepping);
     Property property_autoTimeStepping("Auto time stepping",data,Property::PropertyGroup_StepControls);
-
 
     //! ------------------
     //! number of threads

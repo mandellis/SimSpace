@@ -194,7 +194,8 @@ SOURCES += src/mesh/ng_meshvs_datasource1d.cpp \
     src/solver/ccx/writesolverfileclass.cpp \
     src/solver/OF/ofwrite.cpp \
     src/solver/inputfilegenerator.cpp \
-    src/gui/tabularData/tabulardataviewerclass.cpp
+    src/gui/tabularData/tabulardataviewerclass.cpp \
+    src/geometry/polygon.cpp
 
 HEADERS  += src/mesh/ng_meshvs_datasource1d.h \
     src/mesh/ng_meshvs_datasource2d.h \
