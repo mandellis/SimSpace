@@ -1496,7 +1496,7 @@ void simulationDataBase::createCombinedAnalysisRootNode()
 //! -----------------------------------------
 void simulationDataBase::createCFDAnalysisRootNode()
 {
-    cout<<"simulationDataBase::createCFDAnalysisRootNode()->____creating a structural analysis branch____"<<endl;
+    cout<<"simulationDataBase::createCFDAnalysisRootNode()->____creating a CFD analysis branch____"<<endl;
 
     QVariant data;
     QString name = "CFD analysis";
@@ -1701,7 +1701,7 @@ void simulationDataBase::createCFDAnalysisRootNode()
     nodeCFDAnalysisSettings->addProperty(Property("Parent time tag",data,Property::PropertyGroup_Identifier));
 
     //! ------------------------------------------------------
-    //! create the item and append to the "Combined analysis"
+    //! create the item and append to the "CFD analysis"
     //! ------------------------------------------------------
     data.setValue(nodeCFDAnalysisSettings);
     CFDAnalysisSettingsItem->setData(data,Qt::UserRole);

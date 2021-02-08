@@ -29,7 +29,8 @@ public:
     static void buildStructuralSolutionContextMenu(QMenu *contextMenu, bool addCommonActions=true, bool isEnabled = true);     //!ok
     static void buildThermalResultsContextMenu(QMenu *contextMenu, bool addCommonActions = true, bool isEnabled = true);
     static void buildCombinedAnalysisResultsContextMenu(QMenu* contextMenu, bool addCommonActions, bool isEnabled);
-
+    static void buildCFDAnalysisResultsContextMenu(QMenu* contextMenu, bool addCommonActions, bool isEnabled);
+    static void buildCFDAnalysisContextMenu(QMenu *contextMenu, bool addCommonActions=true, bool isEnabled = true);
     static void buildPostObjectContextMenu(QMenu *contextMenu);
     static void buildCommonActions(QMenu* contextMenu, bool isEnabled = true);
 

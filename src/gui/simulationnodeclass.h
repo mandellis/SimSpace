@@ -168,6 +168,12 @@ public:
         nodeType_CFDAnalysisSettings,
         nodeType_CFDAnalysisSolution,
         nodeType_CFDAnalysisSolutionInformation,
+        nodeType_CFDAnalysisBoundaryConditionPressure,
+        nodeType_CFDAnalysisBoundaryConditionVelocity,
+        nodeType_CFDAnalysisBoundaryConditionMassFlow,
+        nodeType_CFDAnalysisBoundaryConditionWall,
+        nodeType_solutionCFDvelocity,                    //! velocity
+        nodeType_solutionCFDpressure,                    //! pressure
 
         //! ----------------------
         //! Construction geometry

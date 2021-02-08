@@ -12,3 +12,6 @@ typedef QMap<int,occHandle(MeshVS_DataSource)> IndexedMapOfMeshDataSources;
 Q_DECLARE_METATYPE(IndexedMapOfMeshDataSources)
 
 #endif // INDEXEDMAPOFMESHDATASOURCES_H
+
+
+// perform(MeshVS_DataSource, std::map<std::map<std::string,IndexedMapOfMeshDataSources>>)

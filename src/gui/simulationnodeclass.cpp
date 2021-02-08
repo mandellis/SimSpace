@@ -568,7 +568,15 @@ SimulationNodeClass::nodeType SimulationNodeClass::getFamily()
 
     case nodeType_CFDAnalysis:
     case nodeType_CFDAnalysisSettings:
+    case nodeType_CFDAnalysisBoundaryConditionPressure:
+    case nodeType_CFDAnalysisBoundaryConditionVelocity:
+    case nodeType_CFDAnalysisBoundaryConditionWall:
         RV = nodeType_CFDAnalysis;
+        break;
+
+    case nodeType_solutionCFDpressure:
+    case nodeType_solutionCFDvelocity:
+        RV = nodeType_CFDAnalysisSolution;
         break;
 
    case nodeType_particlesInFieldsAnalysis:
@@ -1261,6 +1269,7 @@ bool SimulationNodeClass::isAnalysisRoot()
     if(myNodeType == SimulationNodeClass::nodeType_structuralAnalysis ||
             myNodeType == SimulationNodeClass::nodeType_thermalAnalysis ||
             myNodeType == SimulationNodeClass::nodeType_combinedAnalysis ||
+            myNodeType == SimulationNodeClass::nodeType_CFDAnalysis ||
             myNodeType == SimulationNodeClass::nodeType_particlesInFieldsAnalysis)
     return true;
     return false;
@@ -1342,7 +1351,10 @@ bool SimulationNodeClass::isSimulationSetUpNode()
             myNodeType == SimulationNodeClass::nodeType_structuralAnalysisThermalCondition ||
             myNodeType == SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_ImportedTemperatureDistribution ||
             myNodeType == SimulationNodeClass::nodeType_mapper ||
-            myNodeType == SimulationNodeClass::nodeType_modelChange)
+            myNodeType == SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionPressure ||
+            myNodeType == SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionVelocity ||
+            myNodeType == SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionWall
+            )
         return true;
 
 #ifdef COSTAMP_VERSION
@@ -1386,6 +1398,7 @@ bool SimulationNodeClass::isAnalysisSettings()
     if(myNodeType == SimulationNodeClass::nodeType_structuralAnalysisSettings ||
             myNodeType == SimulationNodeClass::nodeType_thermalAnalysisSettings ||
             myNodeType == SimulationNodeClass::nodeType_combinedAnalysisSettings ||
+            myNodeType == SimulationNodeClass::nodeType_CFDAnalysisSettings ||
             myNodeType == SimulationNodeClass::nodeType_particlesInFieldsAnalysisSettings)
         return true;
     return false;
@@ -1400,7 +1413,8 @@ bool SimulationNodeClass::isSolution()
     if(myNodeType == SimulationNodeClass::nodeType_StructuralAnalysisSolution ||
             myNodeType == SimulationNodeClass::nodeType_thermalAnalysisSolution ||
             myNodeType == SimulationNodeClass::nodeType_combinedAnalysisSolution ||
-            myNodeType == SimulationNodeClass::nodeType_particlesInFieldsSolution)
+            myNodeType == SimulationNodeClass::nodeType_particlesInFieldsSolution ||
+            myNodeType == SimulationNodeClass::nodeType_CFDAnalysisSolution)
         return true;
     return false;
 }
@@ -1414,7 +1428,8 @@ bool SimulationNodeClass::isSolutionInformation()
     if(myNodeType == SimulationNodeClass::nodeType_StructuralAnalysisSolutionInformation ||
             myNodeType == SimulationNodeClass::nodeType_thermalAnalysisSolutionInformation ||
             myNodeType == SimulationNodeClass::nodeType_combinedAnalysisSolutionInformation ||
-            myNodeType == SimulationNodeClass::nodeType_particlesInFieldsSolutionInformation)
+            myNodeType == SimulationNodeClass::nodeType_particlesInFieldsSolutionInformation ||
+            myNodeType == SimulationNodeClass::nodeType_CFDAnalysisSolutionInformation)
         return true;
     return false;
 }
@@ -1437,7 +1452,9 @@ bool SimulationNodeClass::isAnalysisResult()
             myNodeType == SimulationNodeClass::nodeType_solutionStructuralTotalStrain ||
             myNodeType == SimulationNodeClass::nodeType_solutionThermalTemperature ||
             myNodeType == SimulationNodeClass::nodeType_solutionThermalFlux ||
-            myNodeType == SimulationNodeClass::nodeType_solutionStructuralContact)
+            myNodeType == SimulationNodeClass::nodeType_solutionStructuralContact ||
+            myNodeType == SimulationNodeClass::nodeType_solutionCFDpressure ||
+            myNodeType == SimulationNodeClass::nodeType_solutionCFDvelocity)
         return true;
     return false;
 }

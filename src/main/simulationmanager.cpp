@@ -389,15 +389,15 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
             //! left here for documentation
             //! -------------------------------------------------
             //this->buildCustomMenu(index);
-
             //! ---------------------------------------
             //! switch the panel of the central widget
             //! ---------------------------------------
             switch(theNodeType)
             {
-            case SimulationNodeClass::nodeType_StructuralAnalysisSolution:
-            case SimulationNodeClass::nodeType_thermalAnalysisSolution:
+            case SimulationNodeClass::nodeType_structuralAnalysis:
+            case SimulationNodeClass::nodeType_thermalAnalysis:
             case SimulationNodeClass::nodeType_combinedAnalysis:
+            case SimulationNodeClass::nodeType_CFDAnalysis:
             {
                 emit requestSetActiveCentralTab("maingwindow");
                 emit requestHideAllResults();
@@ -407,6 +407,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
             case SimulationNodeClass::nodeType_StructuralAnalysisSolutionInformation:
             case SimulationNodeClass::nodeType_thermalAnalysisSolutionInformation:
             case SimulationNodeClass::nodeType_combinedAnalysisSolutionInformation:
+            case SimulationNodeClass::nodeType_CFDAnalysisSolutionInformation:
             {
                 emit requestSetActiveCentralTab("worksheetViewer");
             }
@@ -461,6 +462,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
             case SimulationNodeClass::nodeType_StructuralAnalysisSolution:
             case SimulationNodeClass::nodeType_thermalAnalysisSolution:
             case SimulationNodeClass::nodeType_combinedAnalysisSolution:
+            case SimulationNodeClass::nodeType_CFDAnalysisSolution:
             {
                 emit requestUnhighlightBodies(false);
                 emit requestSetWorkingMode(2);
@@ -473,6 +475,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
             case SimulationNodeClass::nodeType_StructuralAnalysisSolutionInformation:
             case SimulationNodeClass::nodeType_thermalAnalysisSolutionInformation:
             case SimulationNodeClass::nodeType_combinedAnalysisSolutionInformation:
+            case SimulationNodeClass::nodeType_CFDAnalysisSolutionInformation:
             {
                 CCXSolverMessage solverOutput = theNode->getPropertyValue<CCXSolverMessage>("Solver output");
                 emit requestDisplayTextOnConsole(solverOutput.myText);
@@ -747,6 +750,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
             case SimulationNodeClass::nodeType_thermalAnalysis:
             case SimulationNodeClass::nodeType_structuralAnalysis:
             case SimulationNodeClass::nodeType_combinedAnalysis:
+            case SimulationNodeClass::nodeType_CFDAnalysis:
             {
                 emit requestHideAllResults();
                 emit requestUnhighlightBodies(Standard_True);
@@ -760,6 +764,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
             case SimulationNodeClass::nodeType_structuralAnalysisSettings:
             case SimulationNodeClass::nodeType_thermalAnalysisSettings:
             case SimulationNodeClass::nodeType_combinedAnalysisSettings:
+            case SimulationNodeClass::nodeType_CFDAnalysisSettings:
             {
                 cout<<"SimulationManager::highlighter()->____analysis settings selected____"<<endl;
                 emit requestHideAllResults();
@@ -1272,6 +1277,10 @@ void SimulationManager::buildCustomMenu(const QModelIndex &modelIndex)
             if(nodeType==SimulationNodeClass::nodeType_OpenFoamScalarData) break;
             if(nodeType==SimulationNodeClass::nodeType_mapper) break;
             contextMenuBuilder::buildThermalAnalysisContextMenu(myContextMenu,false,isEnabled);
+            break;
+
+        case SimulationNodeClass::nodeType_CFDAnalysis:
+            contextMenuBuilder::buildCFDAnalysisContextMenu(myContextMenu,true,isEnabled);
             break;
 
         case SimulationNodeClass::nodeType_particlesInFieldsAnalysis:
@@ -2419,6 +2428,32 @@ void SimulationManager::handleItem(int type)
 
     case 52: exit(11); break;
 
+    //! ----------------------------------------------
+    //! 400 -> insert CFD root
+    //! 401 -> insert CFD pressure
+    //! 402 -> insert CFD velocity
+    //! 403 -> insert CFD wall
+    //!
+    //! 431 -> insert CFD result Pressure
+    //! 432 -> insert CFD result velocity
+    //! ----------------------------------------------
+    case 400:
+    {
+        mySimulationDataBase->createCFDAnalysisRootNode();
+        //! ------------------------------------------
+        //! make the last inserted branch the current
+        //! ------------------------------------------
+        QStandardItem *itemRoot = Geometry_RootItem->parent();
+        int Nb = itemRoot->rowCount();
+        myTreeView->selectionModel()->setCurrentIndex(myModel->indexFromItem(itemRoot->child(Nb-1,0)),QItemSelectionModel::Current);
+        this->setTheActiveAnalysisBranch();
+    }
+    case 401: this->createSimulationNode(SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionPressure); break;
+    case 402: this->createSimulationNode(SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionVelocity); break;
+    case 403: this->createSimulationNode(SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionWall); break;
+    case 431: this->createSimulationNode(SimulationNodeClass::nodeType_solutionCFDpressure); break;
+    case 432: this->createSimulationNode(SimulationNodeClass::nodeType_solutionCFDvelocity); break;
+
 #ifdef COSTAMP_VERSION
     case 1000:
         cout<<"____case 1000: start the time step builder tool____"<<endl;
@@ -2426,9 +2461,6 @@ void SimulationManager::handleItem(int type)
         break;
 #endif
     }
-
-    //for(myCTX->InitSelected();myCTX->MoreSelected();myCTX->NextSelected()) myCTX->ClearSelected(false);
-    //myCTX->UpdateCurrentViewer();
 
     //! expand the tree branch if not expanded
     myTreeView->expand(myTreeView->selectionModel()->currentIndex());

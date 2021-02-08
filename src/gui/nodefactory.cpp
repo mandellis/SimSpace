@@ -2,21 +2,21 @@
 //! custom includes
 //! ----------------
 #include "nodefactory.h"
-#include "src/registeredMetatypes/listofshape.h"
+#include "listofshape.h"
 #include "property.h"
-#include "src/main/mydefines.h"
-#include "src/utils/topologytools.h"
-#include "src/utils/tools.h"
+#include "mydefines.h"
+#include "topologytools.h"
+#include "tools.h"
 #include "parser.h"
-#include "src/connections/prebuiltcontactoptions.h"
+#include "prebuiltcontactoptions.h"
 #include "load.h"
 #include <occPreGLwidget.h>
 
 #include "markers.h"
-#include "ext/occ_extended/handle_ais_doublearrowmarker_reg.h"
-#include "ext/occ_extended/handle_ais_trihedron_reg.h"
+#include "handle_ais_doublearrowmarker_reg.h"
+#include "handle_ais_trihedron_reg.h"
 #include <indexedmapofmeshdatasources.h>        //! registered typedef for QMap<int,occHandle(MeshVS_DataSource)>
-#include <src/connections/connectionpairgenerationoptions.h>
+#include <connectionpairgenerationoptions.h>
 
 //! ----
 //! OCC
@@ -97,6 +97,40 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
 
     switch(type)
     {
+    case SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionPressure:
+    case SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionVelocity:
+    {
+        //! -----------------
+        //! generate a name
+        //! -----------------
+        switch(type)
+        {
+        case SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionPressure: "Pressure"; break;
+        case SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionVelocity: "Velocity"; break;
+        }
+
+        //! -------------------------------------------------------
+        //! Add the property "Define by"
+        //! -------------------------------------------------------
+        Property::defineBy theDefineby = Property::defineBy_normal;
+        data.setValue(theDefineby);
+        Property prop_defineBy("Define by",data,Property::PropertyGroup_Definition);
+        vecProp.push_back(prop_defineBy);
+
+        data.setValue(Property::loadDefinition_constant);
+        Property prop_loadMagnitude("Magnitude",data,Property::PropertyGroup_Definition);
+        data.setValue(prop_loadMagnitude);
+        vecProp.push_back(prop_loadMagnitude);
+
+        //! -------------------------------
+        //! under "Scope" and "Definition"
+        //! -------------------------------
+        vecProp.push_back(prop_suppressed);
+        vecProp.push_back(prop_scopingMethod);
+        vecProp.push_back(prop_scope);
+        vecProp.push_back(prop_tags);
+    }
+        break;
     case SimulationNodeClass::nodeType_pointMass:
     {
         name = "Point mass"; //bubi
@@ -818,11 +852,6 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
             vecProp.push_back(prop_radial);
             vecProp.push_back(prop_axial);
             vecProp.push_back(prop_tangential);
-        }
-            break;
-        case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_CompressionOnlySupport:
-        {
-            name = "Compression only support";
         }
             break;
         }
