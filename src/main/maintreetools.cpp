@@ -448,6 +448,7 @@ QStandardItem* mainTreeTools::getCurrentSimulationRoot(QTreeView *treeView)
     QModelIndex curIndex = treeView->currentIndex();
     QStandardItemModel *treeModel = static_cast<QStandardItemModel*>(treeView->model());
     QStandardItem *curItem = treeModel->itemFromIndex(curIndex);
+    if(curItem==NULL) return Q_NULLPTR;
     SimulationNodeClass* node = curIndex.data(Qt::UserRole).value<SimulationNodeClass*>();
 
     if(node->isAnalysisRoot()) return curItem;
@@ -595,6 +596,7 @@ void mainTreeTools::addSolutionInformation(QStandardItem* solutionItem)
     case SimulationNodeClass::nodeType_structuralAnalysis: typeOfSolutionInformation = SimulationNodeClass::nodeType_StructuralAnalysisSolutionInformation; break;
     case SimulationNodeClass::nodeType_thermalAnalysis: typeOfSolutionInformation = SimulationNodeClass::nodeType_thermalAnalysisSolutionInformation; break;
     case SimulationNodeClass::nodeType_combinedAnalysis: typeOfSolutionInformation = SimulationNodeClass::nodeType_combinedAnalysisSolutionInformation; break;
+    case SimulationNodeClass::nodeType_CFDAnalysis: typeOfSolutionInformation = SimulationNodeClass::nodeType_CFDAnalysisSolutionInformation; break;
     case SimulationNodeClass::nodeType_particlesInFieldsAnalysis: typeOfSolutionInformation = SimulationNodeClass::nodeType_particlesInFieldsSolutionInformation; break;
     }
 
@@ -750,12 +752,12 @@ SimulationNodeClass* mainTreeTools::getAnalysisSettingsNodeFromIndex(QModelIndex
 }
 
 //! -------------------------------------------------
-//! function: getAnalysisSettingsNodeFromCurrentItem
+//! function: getAnalysisSettingsItemFromCurrentItem
 //! details:
 //! -------------------------------------------------
 QStandardItem* mainTreeTools::getAnalysisSettingsItemFromCurrentItem(QTreeView *treeView)
 {
-    cout<<"mainTreeTools::getAnalysisSettingsNodeFromCurrentItem()->____function called____"<<endl;
+    cout<<"mainTreeTools::getAnalysisSettingsItemFromCurrentItem()->____function called____"<<endl;
 
     QModelIndex currentModelIndex = treeView->currentIndex();
     QStandardItem *curItem = static_cast<QStandardItemModel*>(treeView->model())->itemFromIndex(currentModelIndex);
@@ -767,15 +769,15 @@ QStandardItem* mainTreeTools::getAnalysisSettingsItemFromCurrentItem(QTreeView *
     if(curNode->isAnalysisRoot())
     {
         QStandardItem *item = curItem->child(0,0);
-        return static_cast<QExtendedStandardItem*>(item);
+        return item;
     }
     //! ---------------------------------------------------------
     //! case 2: the current item is a child of a simulation root
     //! ---------------------------------------------------------
-    if(curNode->isSimulationSetUpNode() || curNode->isAnalysisSettings())
+    if(curNode->isSimulationSetUpNode() || curNode->isAnalysisSettings() || curNode->isSolution())
     {
         QStandardItem *item = curItem->parent()->child(0,0);
-        return static_cast<QExtendedStandardItem*>(item);
+        return item;
     }
 
     //! -----------------------------------------------------------------------------------
@@ -784,7 +786,7 @@ QStandardItem* mainTreeTools::getAnalysisSettingsItemFromCurrentItem(QTreeView *
     if(curNode->isAnalysisResult() || curNode->isSolutionInformation() || curNode->isChildSimulationSetUpNode())
     {
         QStandardItem *item = curItem->parent()->parent()->child(0,0);
-        return static_cast<QExtendedStandardItem*>(item);
+        return item;
     }
 
     //! ----------------------------------------------------------
@@ -793,13 +795,74 @@ QStandardItem* mainTreeTools::getAnalysisSettingsItemFromCurrentItem(QTreeView *
     if(curNode->isNephewSimulationSetUpNode())
     {
         QStandardItem *item = curItem->parent()->parent()->parent()->child(0,0);
-        return static_cast<QExtendedStandardItem*>(item);
+        return item;
     }
     return Q_NULLPTR;
 }
 
 //! -------------------------------------------------
-//! function: getAnalysisSettingsItemFromCurrentItem
+//! function: getSolutionItemFromCurrentItem
+//! details:
+//! -------------------------------------------------
+QStandardItem* mainTreeTools::getSolutionItemFromCurrentItem(QTreeView *treeView)
+{
+    cout<<"mainTreeTools::getSolutionItemFromCurrentItem()->____function called____"<<endl;
+
+    QModelIndex currentModelIndex = treeView->currentIndex();
+    QStandardItem *curItem = static_cast<QStandardItemModel*>(treeView->model())->itemFromIndex(currentModelIndex);
+    SimulationNodeClass *curNode = currentModelIndex.data(Qt::UserRole).value<SimulationNodeClass*>();
+    cout<<"mainTreeTools::getSolutionItemFromCurrentItem()->____"<<curNode->getName().toStdString()<<"____"<<endl;
+/*
+    //! ----------------------------------------------
+    //! case 1: the current item is a simulation root
+    //! ----------------------------------------------
+    if(curNode->isAnalysisRoot())
+    {
+        QStandardItem *item = curItem->child(curItem->rowCount()-1,0);
+        return item;
+    }*/
+    //! ---------------------------------------------------------
+    //! case 2: the current item is a child of a simulation root
+    //! ---------------------------------------------------------
+    if(curNode->isSimulationSetUpNode() || curNode->isAnalysisSettings())
+    {
+        int rowCount = curItem->parent()->rowCount()-1;
+        QStandardItem *item = curItem->parent()->child(rowCount,0);
+        return item;
+    }
+
+    //! ---------------------------------------------------
+    //! case 3: the current item is a post processing item
+    //! ---------------------------------------------------
+    if(curNode->isSolution()) return curItem;
+    if(curNode->isSolutionInformation() || curNode->isAnalysisResult())
+        return curItem->parent();
+
+    //! -------------------------------------------------------
+    //! case 4: the current item is child of a simulation node
+    //! -------------------------------------------------------
+    if(curNode->isChildSimulationSetUpNode())
+    {
+        int rowCount = curItem->parent()->parent()->rowCount()-1;
+        QStandardItem *item = curItem->parent()->parent()->child(rowCount,0);
+        return item;
+    }
+
+    //! ----------------------------------------------------------
+    //! case 5: the current item is a nephew of a simulation node
+    //! ----------------------------------------------------------
+    if(curNode->isNephewSimulationSetUpNode())
+    {
+        int rowCount = curItem->parent()->parent()->parent()->rowCount()-1;
+        QStandardItem *item = curItem->parent()->parent()->parent()->child(rowCount,0);
+        return item;
+    }
+    return Q_NULLPTR;
+}
+
+
+//! -------------------------------------------------
+//! function: getAnalysisSettingsNodeFromCurrentItem
 //! details:
 //! -------------------------------------------------
 SimulationNodeClass* mainTreeTools::getAnalysisSettingsNodeFromCurrentItem(QTreeView *treeView)

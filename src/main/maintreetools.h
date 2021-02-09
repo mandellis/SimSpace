@@ -59,7 +59,8 @@ public:
     static QExtendedStandardItem* ItemFromScope(QStandardItemModel* model, const TopoDS_Shape &aShape);
     static QList<QStandardItem*> getAllTreeItemOfType(QStandardItemModel* model, SimulationNodeClass::nodeType theNodeType);
     static const int mainTreeTools::getInsertionRow(QTreeView *tree);
-    static QStandardItem* getActiveAnalysisBranch(QStandardItem curItem);
+    static QStandardItem* getSolutionItemFromCurrentItem(QTreeView *treeView);
+
 };
 
 #endif // MAINTREETOOLS_H

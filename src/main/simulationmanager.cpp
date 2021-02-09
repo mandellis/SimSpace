@@ -270,10 +270,8 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
     //! set the active analysis branch
     //! -------------------------------
     this->setTheActiveAnalysisBranch();
-    cout<<"SimulationManager::highlighter()->____tag00____"<<endl;
 
     QList<QModelIndex> selectedIndexes = myTreeView->selectionModel()->selectedRows();
-
     //! ----------------------------------------------------------------
     //! try to handle multiple selections within a group - experimental - gildotta
     //! ----------------------------------------------------------------
@@ -355,6 +353,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
 
     if(!selectedIndexes.isEmpty())
     {
+
         DetailViewer *detailViewer = static_cast<DetailViewer*>(tools::getWidgetByName("detailViewer"));
         detailViewer->setCurrentMultipleSelectionNode(Q_NULLPTR);
         //! ----------------------------------------------
@@ -377,7 +376,6 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
             //! transfer the node model to the detail viewer
             //! ---------------------------------------------
             emit updatedetailViewer(index);
-            cout<<"SimulationManager::highlighter()->____tag01____"<<endl;
 
             QStandardItem *curItem = myModel->itemFromIndex(index);
             SimulationNodeClass *theNode = curItem->data(Qt::UserRole).value<SimulationNodeClass*>();
@@ -2449,6 +2447,7 @@ void SimulationManager::handleItem(int type)
         myTreeView->selectionModel()->setCurrentIndex(myModel->indexFromItem(itemRoot->child(Nb-1,0)),QItemSelectionModel::Current);
         this->setTheActiveAnalysisBranch();
     }
+        break;
     case 401: this->createSimulationNode(SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionPressure); break;
     case 402: this->createSimulationNode(SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionVelocity); break;
     case 403: this->createSimulationNode(SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionWall); break;
@@ -2629,6 +2628,19 @@ void SimulationManager::createSimulationNode(SimulationNodeClass::nodeType type,
     //! -------------
     QExtendedStandardItem *item = new QExtendedStandardItem();
 
+    QStandardItem *itemAnalysisSettings,*currentSimulationRoot,*curSolutionItem;
+
+    currentSimulationRoot = mainTreeTools::getCurrentSimulationRoot(myTreeView);
+    itemAnalysisSettings = mainTreeTools::getAnalysisSettingsItemFromCurrentItem(myTreeView);
+    curSolutionItem = mainTreeTools::getSolutionItemFromCurrentItem(myTreeView);
+    SimulationNodeClass *nodeAnalysisSettings;
+
+    if(itemAnalysisSettings != NULL)
+    nodeAnalysisSettings = itemAnalysisSettings->data(Qt::UserRole).value<SimulationNodeClass*>();
+
+    //SimulationNodeClass *currentRootNode = currentSimulationRoot->data(Qt::UserRole).value<SimulationNodeClass*>();
+    //SimulationNodeClass *curSolutionNode = curSolutionItem->data(Qt::UserRole).value<SimulationNodeClass*>();
+
     //! -------------
     //! MODEL CHANGE
     //! -------------
@@ -2640,17 +2652,7 @@ void SimulationManager::createSimulationNode(SimulationNodeClass::nodeType type,
         item->setData(aNode->getName(),Qt::DisplayRole);
         data.setValue(aNode);
         item->setData(data,Qt::UserRole);
-        mainTreeTools::getCurrentSimulationRoot(myTreeView)->insertRow(mainTreeTools::getInsertionRow(myTreeView),item);
-
-        //! ------------------------------------
-        //! retrieve the item Analysis Settings
-        //! ------------------------------------
-        QStandardItem *curItem = myModel->itemFromIndex(mySelectionModel->currentIndex());
-        SimulationNodeClass *curNode = curItem->data(Qt::UserRole).value<SimulationNodeClass*>();
-        QStandardItem *itemAnalysisSettings;
-        if(curNode->isAnalysisRoot()) itemAnalysisSettings = curItem->child(0,0);
-        else itemAnalysisSettings = curItem->parent()->child(0,0);
-        SimulationNodeClass *nodeAnalysisSettings = itemAnalysisSettings->data(Qt::UserRole).value<SimulationNodeClass*>();
+        currentSimulationRoot->insertRow(mainTreeTools::getInsertionRow(myTreeView),item);
 
         //! ---------------------------------------------------------------
         //! add "Time info" - these properties must be added here, since
@@ -2689,20 +2691,10 @@ void SimulationManager::createSimulationNode(SimulationNodeClass::nodeType type,
         item->setData(aNode->getName(),Qt::DisplayRole);
         data.setValue(aNode);
         item->setData(data,Qt::UserRole);
-
-        //! --------------------------------------------------------------
-        //! search for the "Solution" item starting from the current item
-        //! --------------------------------------------------------------
-        QStandardItem *curItem = myModel->itemFromIndex(myTreeView->currentIndex());
-        SimulationNodeClass *curNode = curItem->data(Qt::UserRole).value<SimulationNodeClass*>();
-        QStandardItem *solutionItem;
-        if(curNode->isSolution()) solutionItem = curItem;
-        else if(curNode->isSolutionInformation()) solutionItem = curItem->parent();
-        if(curNode->isAnalysisResult()) solutionItem = curItem->parent();
         //! ----------------
         //! append the item
         //! ----------------
-        solutionItem->appendRow(item);
+        curSolutionItem->appendRow(item);
     }
     else if (type ==SimulationNodeClass::nodeType_solutionStructuralTemperature)
     {
@@ -2712,19 +2704,11 @@ void SimulationManager::createSimulationNode(SimulationNodeClass::nodeType type,
         item->setData(aNode->getName(),Qt::DisplayRole);
         data.setValue(aNode);
         item->setData(data,Qt::UserRole);
-        //! --------------------------------------------------------------
-        //! search for the "Solution" item starting from the current item
-        //! --------------------------------------------------------------
-        QStandardItem *curItem = myModel->itemFromIndex(myTreeView->currentIndex());
-        SimulationNodeClass *curNode = curItem->data(Qt::UserRole).value<SimulationNodeClass*>();
-        QStandardItem *solutionItem;
-        if(curNode->isSolution()) solutionItem = curItem;
-        else if(curNode->isSolutionInformation()) solutionItem = curItem->parent();
-        if(curNode->isAnalysisResult()) solutionItem = curItem->parent();
+
         //! ----------------
         //! append the item
         //! ----------------
-        solutionItem->appendRow(item);
+        curSolutionItem->appendRow(item);
     }
     //! ---------------------------------------
     //! HANDLING THERMAL POST PROCESSING ITEMS
@@ -2738,19 +2722,10 @@ void SimulationManager::createSimulationNode(SimulationNodeClass::nodeType type,
         item->setData(aNode->getName(),Qt::DisplayRole);
         data.setValue(aNode);
         item->setData(data,Qt::UserRole);
-        //! --------------------------------------------------------------
-        //! search for the "Solution" item starting from the current item
-        //! --------------------------------------------------------------
-        QStandardItem *curItem = myModel->itemFromIndex(myTreeView->currentIndex());
-        SimulationNodeClass *curNode = curItem->data(Qt::UserRole).value<SimulationNodeClass*>();
-        QStandardItem *solutionItem;
-        if(curNode->isSolution()) solutionItem = curItem;
-        else if(curNode->isSolutionInformation()) solutionItem = curItem->parent();
-        if(curNode->isAnalysisResult()) solutionItem = curItem->parent();
         //! ----------------
         //! append the item
         //! ----------------
-        solutionItem->appendRow(item);
+        curSolutionItem->appendRow(item);
     }
     //! ------------------------------------------
     //! HANDLING MAPPER ROOT/IMPORTED BODY SCALAR
@@ -2776,7 +2751,7 @@ void SimulationManager::createSimulationNode(SimulationNodeClass::nodeType type,
             this->myModel->itemFromIndex(myTreeView->currentIndex())->appendRow(item);
             break;
         case SimulationNodeClass::nodeType_mapper:
-            mainTreeTools::getCurrentSimulationRoot(myTreeView)->insertRow(mainTreeTools::getInsertionRow(myTreeView),item);
+            currentSimulationRoot->insertRow(mainTreeTools::getInsertionRow(myTreeView),item);
             break;
         }
     }
@@ -2851,7 +2826,7 @@ void SimulationManager::createSimulationNode(SimulationNodeClass::nodeType type,
         data.setValue(aNode);
         item->setData(data,Qt::UserRole);
         int insRow=mainTreeTools::getInsertionRow(myTreeView);
-        mainTreeTools::getCurrentSimulationRoot(myTreeView)->insertRow(insRow,item);
+        currentSimulationRoot->insertRow(insRow,item);
 
         emit request2DBodySelectionMode(true);
         emit requestStartEditingScope();
@@ -2868,20 +2843,7 @@ void SimulationManager::createSimulationNode(SimulationNodeClass::nodeType type,
         item->setData(data,Qt::DisplayRole);
         data.setValue(aNode);
         item->setData(data,Qt::UserRole);
-        mainTreeTools::getCurrentSimulationRoot(myTreeView)->insertRow(mainTreeTools::getInsertionRow(myTreeView),item);
-
-        //! ------------------------------------------------------------------------------
-        //! access the "Analysis settings" item: if the current node is a simulation root
-        //! the Analysis Settings item is the first child
-        //! ------------------------------------------------------------------------------
-        SimulationNodeClass *nodeAnalysisSettings = Q_NULLPTR;
-        SimulationNodeClass *curNode = myTreeView->currentIndex().data(Qt::UserRole).value<SimulationNodeClass*>();
-        if(curNode->isAnalysisRoot())
-        {
-            nodeAnalysisSettings = myTreeView->currentIndex().child(0,0).data(Qt::UserRole).value<SimulationNodeClass*>();
-        }
-        else nodeAnalysisSettings = myTreeView->currentIndex().parent().child(0,0).data(Qt::UserRole).value<SimulationNodeClass*>();
-        if(nodeAnalysisSettings==Q_NULLPTR) return;
+        currentSimulationRoot->insertRow(mainTreeTools::getInsertionRow(myTreeView),item);
 
         //! -----------------------------
         //! append a column to the table
@@ -2904,20 +2866,7 @@ void SimulationManager::createSimulationNode(SimulationNodeClass::nodeType type,
         item->setData(data,Qt::DisplayRole);
         data.setValue(aNode);
         item->setData(data,Qt::UserRole);
-        mainTreeTools::getCurrentSimulationRoot(myTreeView)->insertRow(mainTreeTools::getInsertionRow(myTreeView),item);
-
-        //! ------------------------------------------------------------------------------
-        //! access the "Analysis settings" item: if the current node is a simulation root
-        //! the Analysis Settings item is the first child
-        //! ------------------------------------------------------------------------------
-        SimulationNodeClass *nodeAnalysisSettings = Q_NULLPTR;
-        SimulationNodeClass *curNode = myTreeView->currentIndex().data(Qt::UserRole).value<SimulationNodeClass*>();
-        if(curNode->isAnalysisRoot())
-        {
-            nodeAnalysisSettings = myTreeView->currentIndex().child(0,0).data(Qt::UserRole).value<SimulationNodeClass*>();
-        }
-        else nodeAnalysisSettings = myTreeView->currentIndex().parent().child(0,0).data(Qt::UserRole).value<SimulationNodeClass*>();
-        if(nodeAnalysisSettings==Q_NULLPTR) return;
+        currentSimulationRoot->insertRow(mainTreeTools::getInsertionRow(myTreeView),item);
 
         //! ----------------------
         //! film coefficient load
@@ -2978,13 +2927,12 @@ void SimulationManager::createSimulationNode(SimulationNodeClass::nodeType type,
         //! -------------------------------------------
         //! append the three columns to the load table
         //! -------------------------------------------
-        SimulationNodeClass *nodeAnalysisSettings = mainTreeTools::getAnalysisSettingsNodeFromCurrentItem(myTreeView);
         nodeAnalysisSettings->getTabularDataModel()->appendColumn(loadBoltStatusDefinedBy);
         nodeAnalysisSettings->getTabularDataModel()->appendColumn(loadForce);
         nodeAnalysisSettings->getTabularDataModel()->appendColumn(loadAdjustment);
 
         markerBuilder::addMarker(this->getCurrentNode(),mySimulationDataBase);
-        mainTreeTools::getCurrentSimulationRoot(myTreeView)->insertRow(mainTreeTools::getInsertionRow(myTreeView),item);
+        currentSimulationRoot->insertRow(mainTreeTools::getInsertionRow(myTreeView),item);
     }
     else if(type==SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_CylindricalSupport ||
             type==SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_FrictionlessSupport ||
@@ -2997,7 +2945,7 @@ void SimulationManager::createSimulationNode(SimulationNodeClass::nodeType type,
         item->setData(data,Qt::DisplayRole);
         data.setValue(aNode);
         item->setData(data,Qt::UserRole);
-        mainTreeTools::getCurrentSimulationRoot(myTreeView)->insertRow(mainTreeTools::getInsertionRow(myTreeView),item);
+        currentSimulationRoot->insertRow(mainTreeTools::getInsertionRow(myTreeView),item);
     }
     else if(type==SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Displacement ||
             type==SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RemoteDisplacement ||
@@ -3022,7 +2970,7 @@ void SimulationManager::createSimulationNode(SimulationNodeClass::nodeType type,
         item->setData(data,Qt::UserRole);
         data.setValue(aNode->getName());
         item->setData(data,Qt::DisplayRole);
-        mainTreeTools::getCurrentSimulationRoot(myTreeView)->insertRow(mainTreeTools::getInsertionRow(myTreeView),item);
+        currentSimulationRoot->insertRow(mainTreeTools::getInsertionRow(myTreeView),item);
 
         //! ---------------------------------------------------------------
         //! begin editing X component: don't parse the item immediately...
@@ -3052,11 +3000,6 @@ void SimulationManager::createSimulationNode(SimulationNodeClass::nodeType type,
         //! In the following, the tabular data for the node are created, and added to the tabular data
         //! model in "Analysis settings"
         //! ------------------------------------------------------------------------------------------
-
-        //! ------------------------------------
-        //! access the "Analysis settings" item
-        //! ------------------------------------
-        SimulationNodeClass *nodeAnalysisSettings = mainTreeTools::getAnalysisSettingsNodeFromCurrentItem(myTreeView);
 
         //! --------------------------------------------------------------------------
         //! the default constructor load::load() inits a load of type "loadType_none"
@@ -3125,7 +3068,49 @@ void SimulationManager::createSimulationNode(SimulationNodeClass::nodeType type,
             break;
         }
         markerBuilder::addMarker(aNode,mySimulationDataBase);
-        mainTreeTools::getCurrentSimulationRoot(myTreeView)->insertRow(mainTreeTools::getInsertionRow(myTreeView),item);
+        currentSimulationRoot->insertRow(mainTreeTools::getInsertionRow(myTreeView),item);
+    }
+    //! ----------------------------------------------
+    //! HANDLING CFD BOUNDARY CONDITIONS ITEMS
+    //! ----------------------------------------------
+    else if(type==SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionPressure ||
+            type==SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionVelocity)
+    {
+        aNode = nodeFactory::nodeFromScratch(type,mySimulationDataBase,myCTX);
+        aNode->setParent(this);
+        data.setValue(aNode);
+        item->setData(data,Qt::UserRole);
+        data.setValue(aNode->getName());
+        item->setData(data,Qt::DisplayRole);
+
+        //! --------------------------------------------------------------------------
+        //! the default constructor load::load() inits a load of type "loadType_none"
+        //! --------------------------------------------------------------------------
+        load aLoad;
+        data.setValue(0.0);
+        QVector<QVariant> vecData{data};
+        aLoad.setData(vecData);
+
+        aLoad.setType(Property::loadType_momentMagnitude);
+        nodeAnalysisSettings->getTabularDataModel()->appendColumn(aLoad);
+
+        markerBuilder::addMarker(aNode,mySimulationDataBase);
+        currentSimulationRoot->insertRow(mainTreeTools::getInsertionRow(myTreeView),item);
+    }
+
+    else if(type==SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionWall)
+    {
+        aNode = nodeFactory::nodeFromScratch(type,mySimulationDataBase,myCTX);
+        aNode->setParent(this);
+        data.setValue(aNode->getName());
+        item->setData(data,Qt::DisplayRole);
+        data.setValue(aNode);
+        item->setData(data,Qt::UserRole);
+        int insRow=mainTreeTools::getInsertionRow(myTreeView);
+        currentSimulationRoot->insertRow(insRow,item);
+
+        emit request2DBodySelectionMode(true);
+        emit requestStartEditingScope();
     }
     //! --------------------------
     //! imported body temperature
@@ -3139,7 +3124,7 @@ void SimulationManager::createSimulationNode(SimulationNodeClass::nodeType type,
         data.setValue(aNode);
         item->setData(data,Qt::UserRole);
 
-        mainTreeTools::getCurrentSimulationRoot(myTreeView)->insertRow(mainTreeTools::getInsertionRow(myTreeView),item);
+        currentSimulationRoot->insertRow(mainTreeTools::getInsertionRow(myTreeView),item);
     }
     //! -----------
     //! POINT MASS
@@ -12260,7 +12245,6 @@ bool SimulationManager::COSTAMP_addProcessParameters()
                 scopes.Append(aSolid);
             }
             std::vector<GeometryTag> vecLocAllBodies = TopologyTools::generateLocationPairs(mySimulationDataBase, scopes);
-            //cout<<"tag01"<<endl;
 
             if(!casting.empty())
             {
@@ -12770,83 +12754,19 @@ std::vector<std::pair<std::vector<GeometryTag>,std::vector<GeometryTag>>> Simula
 //! -------------------------------------
 void SimulationManager::setTheActiveAnalysisBranch()
 {
-    static QStandardItem *theActiveAnalysis_old;
-//bubi
-    //! -----------------------------------
-    //! pointer to the standard item model
-    //! -----------------------------------
-    QModelIndex theModelIndex = myTreeView->currentIndex();
-    //QStandardItemModel *theModel = static_cast<QStandardItemModel*>(myTreeView->model());
-
-    QStandardItem *theCurrentItem = myModel->itemFromIndex(theModelIndex);
-    SimulationNodeClass *theCurrentNode = theCurrentItem->data(Qt::UserRole).value<SimulationNodeClass*>();
-
-    //! ----------------------
-    //! Simulation setup item
-    //! "Solution" item
-    //! "Analysis settings"
-    //! ----------------------
-    if(theCurrentNode->isSimulationSetUpNode() || theCurrentNode->isSolution() || theCurrentNode->isAnalysisSettings())
-    {
-        myActiveAnalysisBranch = theCurrentItem->parent();
-        theActiveAnalysis_old = myActiveAnalysisBranch;
-        cout<<"@ ------------------------------------------------------------@"<<endl;
-        cout<<"@ the current analysis branch is: "<<myActiveAnalysisBranch->data(Qt::UserRole).value<SimulationNodeClass*>()->getName().toStdString()<<endl;
-        cout<<"@ ------------------------------------------------------------@"<<endl;
-        return;
-    }
-    //! --------------------------
-    //! the item is Analysis root
-    //! --------------------------
-    if(theCurrentNode->isAnalysisRoot())
-    {
-        myActiveAnalysisBranch = theCurrentItem;
-        theActiveAnalysis_old = myActiveAnalysisBranch;
-        cout<<"@ ------------------------------------------------------------@"<<endl;
-        cout<<"@ the current analysis branch is: "<<myActiveAnalysisBranch->data(Qt::UserRole).value<SimulationNodeClass*>()->getName().toStdString()<<endl;
-        cout<<"@ ------------------------------------------------------------@"<<endl;
-        return;
-    }
-    //! -------------------------
-    //! "Solution information"
-    //! a post processing item
-    //! or a child of simulation
-    //! node
-    //! -------------------------
-    if(theCurrentNode->isSolutionInformation() || theCurrentNode->isAnalysisResult()|| theCurrentNode->isChildSimulationSetUpNode())
-    {
-        myActiveAnalysisBranch = theCurrentItem->parent()->parent();
-        theActiveAnalysis_old = myActiveAnalysisBranch;
-        cout<<"@ ------------------------------------------------------------@"<<endl;
-        cout<<"@ the current analysis branch is: "<<myActiveAnalysisBranch->data(Qt::UserRole).value<SimulationNodeClass*>()->getName().toStdString()<<endl;
-        cout<<"@ ------------------------------------------------------------@"<<endl;
-        return;
-    }
-
-    //! -----------------------
-    //! nephew of a simulation
-    //! node
-    //! -----------------------
-    if(theCurrentNode->isNephewSimulationSetUpNode())
-    {
-        myActiveAnalysisBranch = theCurrentItem->parent()->parent()->parent();
-        theActiveAnalysis_old = myActiveAnalysisBranch;
-        cout<<"@ ------------------------------------------------------------@"<<endl;
-        cout<<"@ the current analysis branch is: "<<myActiveAnalysisBranch->data(Qt::UserRole).value<SimulationNodeClass*>()->getName().toStdString()<<endl;
-        cout<<"@ ------------------------------------------------------------@"<<endl;
-        return;
-    }
-
+    QStandardItem *oldAnalysisBranch = myActiveAnalysisBranch;
+    myActiveAnalysisBranch = mainTreeTools::getCurrentSimulationRoot(myTreeView);
     //! ------------------------------------------------------------
     //! the current item is can not be retrieved from current item:
     //! the previously value is used (which can be NULL)
     //! ------------------------------------------------------------
-    myActiveAnalysisBranch = theActiveAnalysis_old;
-
     if(myActiveAnalysisBranch==NULL)
     {
+        myActiveAnalysisBranch = oldAnalysisBranch;
         cout<<"@ ------------------------------------@"<<endl;
-        cout<<"@ the current analysis branch is NULL @"<<endl;
+        if(myActiveAnalysisBranch==NULL)
+            cout<<"@ the current analysis branch is NULL @"<<endl;
+        else  cout<<"@ the current analysis branch is: "<<myActiveAnalysisBranch->data(Qt::UserRole).value<SimulationNodeClass*>()->getName().toStdString()<<endl;
         cout<<"@ ------------------------------------@"<<endl;
     }
     else
