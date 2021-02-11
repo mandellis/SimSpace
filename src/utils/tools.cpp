@@ -5,6 +5,8 @@
 #include "property.h"
 #include "qextendedstandarditem.h"
 #include "src/main/mydefines.h"
+#include <experimental/filesystem>
+namespace fs = std::experimental::filesystem;
 
 //! ---
 //! Qt
@@ -22,6 +24,7 @@
 //! ----
 #include <set>
 #include <vector>
+#include <ctime>
 
 tools::tools() { ; }
 
@@ -40,45 +43,18 @@ void tools::changeIconOpacity(QExtendedStandardItem *item, bool isOpaque)
     item->setIcon(theModifiedIcon);
 }
 
-//! ---------------------------------------------------
+//! -------------------
 //! function: clearDir
-//! details:  completely delete the content of a dir
-//! ---------------------------------------------------
+//! details:
+//! -------------------
 void tools::clearDir(const QString &path)
 {
     cout<<"tools::clearDir()->____function called____"<<endl;
-    QDir dir(path);
-    if(QDir(dir).exists())
-    {
-        cout<<"tools::clearDir()->____the directory exists____"<<endl;
-        dir.setFilter(QDir::NoDotAndDotDot | QDir::Files);
-        foreach(QString dirItem, dir.entryList())
-        {
-            if(dir.remove(dirItem)==false)
-            {
-                cerr<<"tools::clearDir()->____cannot remove file: "<<dirItem.toStdString()<<"____"<<endl;
-            }
-            else
-            {
-                cout<<"tools::clearDir()->____removing file: "<<dirItem.toStdString()<<"____"<<endl;
-            }
-        }
-        dir.setFilter(QDir::NoDotAndDotDot | QDir::Dirs);
-        foreach(QString dirItem, dir.entryList())
-        {
-            QDir subDir(dir.absoluteFilePath(dirItem));
-            if(subDir.removeRecursively()==false)
-            {
-                cerr<<"tools::clearDir()->____cannot remove directory: "<<subDir.absolutePath().toStdString()<<"____"<<endl;
-            }
-            else
-            {
-                cout<<"tools::clearDir()->____removing: "<<subDir.absolutePath().toStdString()<<"____"<<endl;
-            }
-        }
-    }
-    dir.cdUp();
+    const std::string &p = path.toStdString();
+    fs::path fspath(p.c_str());
+    remove_all(fspath);
 }
+
 
 //! -------------------------------------
 //! function: writeVectorOfLocations
@@ -358,30 +334,32 @@ QString tools::getWorkingDir()
 std::vector<int> tools::clearFromDuplicates(const std::vector<int> &aVec)
 {
     std::set<int> B(aVec.begin(), aVec.end());
-    std::vector<int> vec;
-    for(int n=0;n<B.size();n++)
-    {
-        int x = *std::next(B.begin(), n);
-        vec.push_back(x);
-    }
+    std::vector<int> vec(B.begin(), B.end());
     return vec;
 }
 
-//! ---------------------------
+//! --------------------
 //! function: timeStamp
-//! details:  time stamp label
-//! ---------------------------
+//! details:
+//! ---------------------
 QString tools::timeStamp()
 {
-    QDateTime dateTime;
-    QString dateFormat = "dd/MM/yyyy";
-    QString dateString = dateTime.currentDateTime().toString(dateFormat);
-    QString timeFormat = "hh:mm";
-    QString timeString = dateTime.currentDateTime().toString(timeFormat);
-    QString timeStamp;
-    timeStamp.append("Date: ").append(dateString).append("\n").append("Time: ").append(timeString);
+    const int MAXLEN = 8;
+    char month[MAXLEN],day[MAXLEN],year[MAXLEN],hours[MAXLEN],minutes[MAXLEN];
+    time_t t = time(0);
+    strftime(month, MAXLEN, "%m", localtime(&t));
+    strftime(day, MAXLEN, "%d", localtime(&t));
+    strftime(year, MAXLEN, "%Y", localtime(&t));
+    strftime(hours, MAXLEN, "%H", localtime(&t));
+    strftime(minutes, MAXLEN, "%M", localtime(&t));
 
-    return timeStamp;
+    char timeStampPointer[32];
+    sprintf(timeStampPointer,"Time: %s/%s/%s\n"
+                             "Date: %s:%s",
+            day,month,year,hours,minutes);
+
+    std::string timeStamp(timeStampPointer);
+    return QString::fromStdString(timeStamp);
 }
 
 //! ------------------------------

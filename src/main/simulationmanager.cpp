@@ -11650,7 +11650,8 @@ void SimulationManager::COSTAMP_startTimeStepBuilder()
     cout<<"SimulationManager::startTimeStepBuilder()->____function called____"<<endl;
     SimulationNodeClass *curNode = myTreeView->currentIndex().data(Qt::UserRole).value<SimulationNodeClass*>();
     const QString &timeHistoryFileLoc = curNode->getPropertyValue<QString>("Time history file");    
-    QString program = QString("D:/Work/Qt/build_simSpace/release/TimeStepBuilder.exe");
+    QString program =
+            QString("D:/Work/Qt/build_simSpace/release/TimeStepBuilder.exe");
 
     QStandardItem *itemSimulationRoot = mainTreeTools::getCurrentSimulationRoot(myTreeView);
     QStandardItem *itemSolution = itemSimulationRoot->child(itemSimulationRoot->rowCount()-1);
@@ -12763,7 +12764,7 @@ void SimulationManager::setTheActiveAnalysisBranch()
     if(myActiveAnalysisBranch==NULL)
     {
         myActiveAnalysisBranch = oldAnalysisBranch;
-        cout<<"@ ------------------------------------@"<<endl;
+        cout<<"@ --------------N--------------------@"<<endl;
         if(myActiveAnalysisBranch==NULL)
             cout<<"@ the current analysis branch is NULL @"<<endl;
         else  cout<<"@ the current analysis branch is: "<<myActiveAnalysisBranch->data(Qt::UserRole).value<SimulationNodeClass*>()->getName().toStdString()<<endl;

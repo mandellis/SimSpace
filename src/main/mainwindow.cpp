@@ -2720,18 +2720,18 @@ void MainWindow::myClose()
     cout<<"MainWindow::myClose()->____application current directory: "<<QDir::current().absolutePath().toStdString()<<"____"<<endl;
     cout<<"MainWindow::myClose()->____directory to be removed: "<<dirToDelete.toStdString()<<"____"<<endl;
 
-    bool isDone = curDir.removeRecursively();
+    //bool isDone = curDir.removeRecursively();
 
     //! alternative to the previous line
-    //tools::clearDir(dirToDelete);
+    tools::clearDir(dirToDelete);
 
     curDir.cdUp();
     cout<<"MainWindow::myClose()->____going up to dir: "<<curDir.absolutePath().toStdString()<<"____"<<endl;
 
     //bool isDone = curDir.rmdir(dirToDelete);
 
-    if(isDone) cout<<"MainWindow::myClose()->____directory: "<<dirToDelete.toStdString()<<" successfully removed____"<<endl;
-    else cerr<<"MainWindow::myClose()->____directory: "<<dirToDelete.toStdString()<<" not removed____"<<endl;
+    //if(isDone) cout<<"MainWindow::myClose()->____directory: "<<dirToDelete.toStdString()<<" successfully removed____"<<endl;
+    //else cerr<<"MainWindow::myClose()->____directory: "<<dirToDelete.toStdString()<<" not removed____"<<endl;
     this->close();
 }
 
