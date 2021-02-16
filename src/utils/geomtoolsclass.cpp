@@ -2,6 +2,7 @@
 //! custom includes
 //! ----------------
 #include "geomtoolsclass.h"
+using namespace GeomToolsClass;
 
 //! ----
 //! OCC
@@ -10,16 +11,13 @@
 #include <TopoDS_Edge.hxx>
 #include <TopAbs_ShapeEnum.hxx>
 #include <TopExp_Explorer.hxx>
-
 #include <BRep_Tool.hxx>
 #include <BRepGProp.hxx>
 #include <GProp_GProps.hxx>
-
 #include <Geom_Surface.hxx>
 #include <GeomAdaptor_Surface.hxx>
 #include <Geom_CylindricalSurface.hxx>
 #include <Geom_SphericalSurface.hxx>
-
 #include <gp_Pnt.hxx>
 #include <gp_Ax1.hxx>
 #include <gp_Cylinder.hxx>
@@ -27,22 +25,11 @@
 #include <gp_Lin.hxx>
 #include <gp_Circ.hxx>
 #include <gp_Elips.hxx>
-
 #include <Geom_Plane.hxx>
 #include <Geom_Ellipse.hxx>
-
+#include <gp_Parab.hxx>
 #include <GProp_PGProps.hxx>
 #include <BRep_Builder.hxx>
-
-GeomToolsClass::GeomToolsClass()
-{
-    ;
-}
-
-GeomToolsClass::~GeomToolsClass()
-{
-    ;
-}
 
 //! --------------------
 //! function: faceGenus
@@ -176,7 +163,6 @@ bool GeomToolsClass::getConicalFaceInfo(const TopoDS_Face &aFace, gp_Ax1 &theAxi
 //! function: getEdgeInfo
 //! details:
 //! ----------------------
-#include <gp_Parab.hxx>
 bool GeomToolsClass::getEdgeInfo(const TopoDS_Edge &anEdge, gp_Ax1 &theAxis, gp_Pnt &P)
 {
     double uin, uend;
@@ -284,10 +270,10 @@ bool GeomToolsClass::getEllipseInfo(const TopoDS_Edge &anEdge, gp_Ax1 &theAxis, 
 //! function: calculateCentroid
 //! details:
 //! ----------------------------
-QList<double> GeomToolsClass::calculateCentroid(geometryDataBase *gDB, const std::vector<GeometryTag> &vecLoc)
+std::vector<double> GeomToolsClass::calculateCentroid(geometryDataBase *gDB, const std::vector<GeometryTag> &vecLoc)
 {
-    if(gDB==NULL) return QList<double>();
-    if(vecLoc.size()==0) return QList<double>();
+    if(gDB==NULL) return std::vector<double>(3,0);
+    if(vecLoc.size()==0) return std::vector<double>(3,0);
 
     //! ----------------------------------------------
     //! compute the centroid of the selected entities
@@ -308,122 +294,26 @@ QList<double> GeomToolsClass::calculateCentroid(geometryDataBase *gDB, const std
 
         switch(type)
         {
-        case TopAbs_COMPSOLID:
-            S = gDB->MapOfBodyTopologyMap.value(parentShape).csolidMap.FindKey(childShape);
-            theBuilder.Add(theCompound,S);
-            break;
-
-        case TopAbs_FACE:
-            S = gDB->MapOfBodyTopologyMap.value(parentShape).faceMap.FindKey(childShape);
-            theBuilder.Add(theCompound,S);
-            break;
-
-        case TopAbs_EDGE:
-            S = gDB->MapOfBodyTopologyMap.value(parentShape).edgeMap.FindKey(childShape);
-            theBuilder.Add(theCompound,S);
-            break;
-
-            //! -------------------------------------------
-            //! TopAbs_VERTEX is intentionally not present
-            //! -------------------------------------------
-        case TopAbs_VERTEX:
-            break;
+        case TopAbs_COMPSOLID: S = gDB->MapOfBodyTopologyMap.value(parentShape).csolidMap.FindKey(childShape); break;
+        case TopAbs_FACE: S = gDB->MapOfBodyTopologyMap.value(parentShape).faceMap.FindKey(childShape); break;
+        case TopAbs_EDGE: S = gDB->MapOfBodyTopologyMap.value(parentShape).edgeMap.FindKey(childShape); break;
+        case TopAbs_VERTEX: break; // intentionally not present
         }
+        theBuilder.Add(theCompound,S);
     }
 
     BRepGProp::SurfaceProperties(theCompound,prop,Standard_False);
     CM = prop.CentreOfMass();
-    QList<double> C;
-    C<<CM.X()<<CM.Y()<<CM.Z();
-    return C;
-}
-
-//! ---------------------------------------------
-//! function: getRotationMatrix
-//! details:  feed with three not aligned points
-//! ---------------------------------------------
-bool GeomToolsClass::getRotationMatrix(const QList<QList<double>> &threePoints, QList<double> &rotationMatrix)
-{
-    const double TINY = 1e-20;
-    const QList<double> &P1 = threePoints.at(0);
-    const QList<double> &P2 = threePoints.at(1);
-    const QList<double> &P3 = threePoints.at(2);
-
-    double xP1 = P1.at(0), yP1 = P1.at(1), zP1 = P1.at(2);
-    double xP2 = P2.at(0), yP2 = P2.at(1), zP2 = P2.at(2);
-    double xP3 = P3.at(0), yP3 = P3.at(1), zP3 = P3.at(2);
-
-    double a11,a12,a13,a21,a22,a23,a31,a32,a33;
-
-    //! ----------------------
-    //! local Z normal vector
-    //!  i      j       k
-    //! x2-x1   y2-y1   z2-z1
-    //! x3-x1   y3-y1   z3-z1
-    //! ----------------------
-    a31 = (yP2-yP1)*(zP3-zP1)-(zP2-zP1)*(yP3-yP1);
-    a32 = (zP2-zP1)*(xP3-xP1)-(xP2-xP1)*(zP3-zP1);
-    a33 = (xP2-xP1)*(yP3-yP1)-(yP2-yP1)*(xP3-xP1);
-
-    double Lz = sqrt(pow(a31,2)+pow(a32,2)+pow(a33,2));
-
-    if(Lz>TINY)
-    {
-        a31 = a31/Lz;  a32 = a32/Lz;  a33 = a33/Lz;
-
-        //! (2-1)   local X
-        double Lx = sqrt(pow(xP2-xP1,2)+pow(yP2-yP1,2)+pow(zP2-zP1,2));
-
-        if(Lx>TINY)
-        {
-            a11 = (xP2-xP1)/Lx;
-            a12 = (yP2-yP1)/Lx;
-            a13 = (zP2-zP1)/Lx;
-
-            //! --------------------------------
-            //! local Y = local Z cross local X
-            //!  i      j       k
-            //! a31     a32     a33
-            //! a11     a12     a13
-            //! --------------------------------
-            a21 = a32*a13 - a33*a12;
-            a22 = a33*a11 - a31*a13;
-            a23 = a31*a12 - a32*a11;
-            double Ly = sqrt(pow(a21,2)+pow(a22,2)+pow(a23,2));
-
-            if(Ly>TINY)
-            {
-                a21 = a21/Ly; a22 = a22/Ly; a23 = a23/Ly;
-            }
-            else
-            {
-                cerr<<"---->Ly too small<----"<<endl;
-                return false;
-            }
-        }
-        else
-        {
-            cerr<<"---->Lx too small<----"<<endl;;
-            return false;
-        }
-    }
-    else
-    {
-        cerr<<"---->Lz too small<----"<<endl;
-        return false;
-    }
-
-    rotationMatrix<<a11<<a12<<a13<<a21<<a22<<a23<<a31<<a32<<a33;
-    return true;
+    return std::vector<double> { CM.X(), CM.Y(), CM.Z() };
 }
 
 //! ----------------------------
 //! function: getRotationMatrix
-//! details:  optimized
+//! details:
 //! ----------------------------
 bool GeomToolsClass::getRotationMatrix(double *P1, double *P2, double *P3, double *rotationMatrix)
 {
-    const double TINY = 1e-20;
+    const double TINY = std::numeric_limits<double>::epsilon();
     double xP1 = P1[0], yP1 = P1[1], zP1 = P1[2];
     double xP2 = P2[0], yP2 = P2[1], zP2 = P2[2];
     double xP3 = P3[0], yP3 = P3[1], zP3 = P3[2];
@@ -502,33 +392,10 @@ bool GeomToolsClass::getRotationMatrix(double *P1, double *P2, double *P3, doubl
 
 //! ----------------------
 //! function: isCollinear
-//! details:
-//! ----------------------
-bool GeomToolsClass::isCollinear(const QList<double> &A0, const QList<double> &A1, const QList<double> &A2)
-{
-    //!cout<<"GeomToolsClass::isCollinear()->____function called____"<<endl;
-    const double TINY1 = 1e-12;
-    double x0 = A0.at(0), y0 = A0.at(1), z0 = A0.at(2);
-    double x1 = A1.at(0), y1 = A1.at(1), z1 = A1.at(2);
-    double x2 = A2.at(0), y2 = A2.at(1), z2 = A2.at(2);
-
-    double L10 = sqrt(pow(x1-x0,2)+pow(y1-y0,2)+pow(z1-z0,2));
-    double L20 = sqrt(pow(x2-x0,2)+pow(y2-y0,2)+pow(z2-z0,2));
-    double sp = (x1-x0)*(x2-x0)+(y1-y0)*(y2-y0)+(z1-z0)*(z2-z0);
-    double r = fabs(sp/(L10*L20));
-    if(r<1.0-TINY1) return false;
-    else return true;
-}
-
-//! ----------------------
-//! function: isCollinear
 //! details:  optimized
 //! ----------------------
 bool GeomToolsClass::isCollinear(double *A0, double *A1, double *A2)
 {
-    //!cout<<"GeomToolsClass::isCollinear()->____function called____"<<endl;
-    const double TINY1 = 1e-12;
-
     double x0 = A0[0], y0 = A0[1], z0 = A0[2];
     double x1 = A1[0], y1 = A1[1], z1 = A1[2];
     double x2 = A2[0], y2 = A2[1], z2 = A2[2];
@@ -537,24 +404,12 @@ bool GeomToolsClass::isCollinear(double *A0, double *A1, double *A2)
     double L20 = sqrt(pow(x2-x0,2)+pow(y2-y0,2)+pow(z2-z0,2));
     double sp = (x1-x0)*(x2-x0)+(y1-y0)*(y2-y0)+(z1-z0)*(z2-z0);
     double r = fabs(sp/(L10*L20));
-    if(r<1.0-TINY1) return false;
+    if(r<std::numeric_limits<double>::epsilon()) return false;
 
     else return true;
 }
 
-//! ----------------------
-//! function: isCollinear
-//! details:  overload
-//! ----------------------
-bool GeomToolsClass::isCollinear(const QList<QList<double>> &threePoints)
-{
-    //!cout<<"GeomToolsClass::isCollinear()->____function called (overload)____"<<endl;
-    const QList<double> &A0 = threePoints.at(0);
-    const QList<double> &A1 = threePoints.at(1);
-    const QList<double> &A2 = threePoints.at(2);
-    return GeomToolsClass::isCollinear(A0,A1,A2);
-}
-
+/*
 //! ------------------------
 //! function: getFaceCenter
 //! details:
@@ -563,7 +418,7 @@ bool GeomToolsClass::getFaceCenter(const QList<QList<double>> &pointList,
                                    const QList<double> &rotationMatrix,
                                    QList<double> &faceCenter, double &faceArea)
 {
-    const double TINY = 1e-20;
+    const double TINY = std::numeric_limits<double>::epsilon();
 
     //! -------------------------
     //! the face rotation matrix
@@ -656,7 +511,7 @@ bool GeomToolsClass::getFaceCenter(const QList<QList<double>> &pointList,
         return false;
     }
 }
-
+*/
 
 //! ------------------------
 //! function: getFaceCenter
@@ -666,11 +521,9 @@ bool GeomToolsClass::getFaceCenter(const std::vector<double*> &pointList,
                                    double *rotationMatrix,
                                    double *faceCenter, double &faceArea)
 {
-    const double TINY = 1e-20;
+    const double TINY = std::numeric_limits<double>::epsilon();
 
-    //! -------------------------
     //! the face rotation matrix
-    //! -------------------------
     double a11 = rotationMatrix[0];
     double a12 = rotationMatrix[1];
     double a13 = rotationMatrix[2];
@@ -685,15 +538,18 @@ bool GeomToolsClass::getFaceCenter(const std::vector<double*> &pointList,
     double yP1 = pointList[0][1];
     double zP1 = pointList[0][2];
 
-    //! ----------------------
     //! the transformed nodes
-    //! ----------------------            
-    struct Pt { double xt,yt,zt; };
+    struct Pt
+    {
+        double xt,yt,zt;
+        Pt(double x=0, double y=0, double z=0):xt(x),yt(y),zt(z){;}
+        Pt(const Pt &aP) { xt=aP.xt; yt=aP.yt; zt=aP.zt; }
+        bool operator == (const Pt &aP) { if(xt==aP.xt && yt==aP.yt && zt==aP.zt) return true; return false; }
+        Pt operator = (const Pt &aP) { xt=aP.xt; yt=aP.yt; zt=aP.zt; return *this; }
+    };
     std::vector<Pt> transfPointList;
 
-    //! ---------------------------------
     //! transform the points coordinates
-    //! ---------------------------------
     for(int n=0; n<pointList.size(); n++)
     {
         double *curPoint = pointList[n];
@@ -702,28 +558,19 @@ bool GeomToolsClass::getFaceCenter(const std::vector<double*> &pointList,
         double dyP = curPoint[1]-yP1;
         double dzP = curPoint[2]-zP1;
 
-        //! ---------------------------------
         //! from global to local coordinates
-        //! ---------------------------------
         double XP = dxP*a11+dyP*a12+dzP*a13;
         double YP = dxP*a21+dyP*a22+dzP*a23;
         double ZP = dxP*a31+dyP*a32+dzP*a33;
 
-        Pt aPt;
-        aPt.xt = XP;
-        aPt.yt = YP;
-        aPt.zt = ZP;
-        transfPointList.push_back(aPt);
+        transfPointList.push_back(Pt(XP,YP,ZP));
     }
 
-    //! ---------------------------------------------------------
     //! calculate the ->signed<- area and the center of the face
-    //! ---------------------------------------------------------
     double Area = 0.0;
     double CX = 0, CY = 0;
     for(int i=0; i<pointList.size()-1; i++)
     {
-        //Area = Area + transfPointList.at(i).at(0)*transfPointList.at(i+1).at(1)-transfPointList.at(i+1).at(0)*transfPointList.at(i).at(1);
         Area = Area + transfPointList[i].xt*transfPointList[i+1].yt-transfPointList[i+1].xt*transfPointList[i].yt;
     }
     Area = Area*0.5;
@@ -732,31 +579,19 @@ bool GeomToolsClass::getFaceCenter(const std::vector<double*> &pointList,
     {
         for(int i=0; i<pointList.size()-1; i++)
         {
-
-            //CX = CX + (transfPointList.at(i).at(0)+transfPointList.at(i+1).at(0))*
-            //        (transfPointList.at(i).at(0)*transfPointList.at(i+1).at(1)-transfPointList.at(i+1).at(0)*transfPointList.at(i).at(1));
-
             CX = CX + (transfPointList[i].xt+transfPointList[i+1].xt)*
                     (transfPointList[i].xt*transfPointList[i+1].yt-transfPointList[i+1].xt*transfPointList[i].yt);
-
-            //CY = CY + (transfPointList.at(i).at(1)+transfPointList.at(i+1).at(1))*
-            //        (transfPointList.at(i).at(0)*transfPointList.at(i+1).at(1)-transfPointList.at(i+1).at(0)*transfPointList.at(i).at(1));
-
             CY = CY + (transfPointList[i].yt+transfPointList[i+1].yt)*
                     (transfPointList[i].xt*transfPointList[i+1].yt-transfPointList[i+1].xt*transfPointList[i].yt);
         }
-        CX = CX/(6.0*Area);
-        CY = CY/(6.0*Area);
+        CX /= (6.0*Area);
+        CY /= (6.0*Area);
 
-        //! -----------------------------------
         //! from local system to global system
-        //! -----------------------------------
         double Cx = xP1 + CX*a11+CY*a21;
         double Cy = yP1 + CX*a12+CY*a22;
         double Cz = zP1 + CX*a13+CY*a23;
-        faceCenter[0] = Cx;
-        faceCenter[1] = Cy;
-        faceCenter[2] = Cz;
+        faceCenter[0] = Cx; faceCenter[1] = Cy; faceCenter[2] = Cz;
         faceArea = Area;
         return true;
     }
@@ -788,8 +623,7 @@ gp_Pnt GeomToolsClass::getCenterOfMass(const TopTools_ListOfShape &aListOfShapes
     TopoDS_Builder theBuilder;
     TopoDS_Compound compound;
     theBuilder.MakeCompound(compound);
-    TopTools_ListIteratorOfListOfShape it;
-    for(it.Initialize(aListOfShapes); it.More(); it.Next())
+    for(TopTools_ListIteratorOfListOfShape it(aListOfShapes); it.More(); it.Next())
     {
         const TopoDS_Shape &curShape = it.Value();
         theBuilder.Add(compound,curShape);
@@ -800,102 +634,23 @@ gp_Pnt GeomToolsClass::getCenterOfMass(const TopTools_ListOfShape &aListOfShapes
     return CM;
 }
 
-//! ------------------------------------------
-//! function: polygon_area
-//! details:  calculate the area of a polygon
-//! ------------------------------------------
-double GeomToolsClass::polygon_area(const QList<QList<double>> &points)
-{
-    QList<QList<double>> threePoints;
-    threePoints<<points.first()<<points.at(1)<<points.last();
-    QList<double> rotationMatrix;
-    getRotationMatrix(threePoints,rotationMatrix);
-
-    //! -------------------------
-    //! the face rotation matrix
-    //! -------------------------
-    double a11 = rotationMatrix.at(0);
-    double a12 = rotationMatrix.at(1);
-    double a13 = rotationMatrix.at(2);
-    double a21 = rotationMatrix.at(3);
-    double a22 = rotationMatrix.at(4);
-    double a23 = rotationMatrix.at(5);
-    double a31 = rotationMatrix.at(6);
-    double a32 = rotationMatrix.at(7);
-    double a33 = rotationMatrix.at(8);
-
-    //! the transformed points
-    QList<QList<double>> transfPoints;
-
-    //! ---------------------------
-    //! first point (local origin)
-    //! ---------------------------
-    QList<double> P1 = points.first();
-    double xP1 = P1.at(0);
-    double yP1 = P1.at(1);
-    double zP1 = P1.at(2);
-
-    int Nb = points.length();
-    for(int n=0; n<Nb; n++)
-    {
-        QList<double> transPoint;
-        double xCurr = points.at(n).at(0);
-        double yCurr = points.at(n).at(1);
-        double zCurr = points.at(n).at(2);
-
-        double dxP = xCurr-xP1;
-        double dyP = yCurr-yP1;
-        double dzP = zCurr-zP1;
-        //! ---------------------------------
-        //! from global to local coordinates
-        //! ---------------------------------
-        double XP = dxP*a11+dyP*a12+dzP*a13;
-        double YP = dxP*a21+dyP*a22+dzP*a23;
-        double ZP = dxP*a31+dyP*a32+dzP*a33;
-
-        transPoint.append(XP);
-        transPoint.append(YP);
-        transPoint.append(ZP);
-        transfPoints.append(transPoint);
-    }
-
-    double Area = 0.0;
-    for(int i=0; i<Nb-1; i++)
-    {
-        Area += transfPoints.at(i).at(0)*transfPoints.at(i+1).at(1)-
-                transfPoints.at(i+1).at(0)*transfPoints.at(i).at(1);
-    }
-    Area = fabs(Area)*0.5;
-    return Area;
-}
-
+/*
 //! -------------------------------
 //! function: getPlaneCoefficients
 //! details:
 //! -------------------------------
-std::vector<double> GeomToolsClass::getPlaneCoefficients(const std::vector<std::vector<double>> &threePoints)
+std::tuple<double,double,double,double> GeomToolsClass::getPlaneCoefficients(const std::vector<std::tuple<double,double,double>> &threePoints)
 {
-    double x0 = threePoints.at(0).at(0);
-    double y0 = threePoints.at(0).at(1);
-    double z0 = threePoints.at(0).at(2);
-    double x1 = threePoints.at(1).at(0);
-    double y1 = threePoints.at(1).at(1);
-    double z1 = threePoints.at(1).at(2);
-    double x2 = threePoints.at(2).at(0);
-    double y2 = threePoints.at(2).at(1);
-    double z2 = threePoints.at(2).at(2);
-    std::vector<double> planeCoeff;
-    double a,b,c,d;
-
-    a= (y1-y0)*(z2-z0)-(z1-z0)*(y2-y0);
-    b =(z1-z0)*(x2-x0)-(x1-x0)*(z2-z0);
-    c= (x1-x0)*(y2-y0)-(y1-y0)*(x2-x0);
-    d = -x0*a-y0*b-z0*c;
-
-    planeCoeff.push_back(a);
-    planeCoeff.push_back(b);
-    planeCoeff.push_back(c);
-    planeCoeff.push_back(d);
-
-    return planeCoeff;
+    const std::tuple<double,double,double> &first = threePoints[0];
+    const std::tuple<double,double,double> &second = threePoints[1];
+    const std::tuple<double,double,double> &third = threePoints[2];
+    double x0 = std::get<0>(first); double y0 = std::get<1>(first); double z0 = std::get<2>(first);
+    double x1 = std::get<0>(second); double y1 = std::get<1>(second); double z1 = std::get<2>(second);
+    double x2 = std::get<0>(third); double y2 = std::get<1>(third); double z2 = std::get<2>(third);
+    double a = (y1-y0)*(z2-z0)-(z1-z0)*(y2-y0);
+    double b = (z1-z0)*(x2-x0)-(x1-x0)*(z2-z0);
+    double c = (x1-x0)*(y2-y0)-(y1-y0)*(x2-x0);
+    double d = -x0*a-y0*b-z0*c;
+    return std::tuple<double,double,double,double> {a,b,c,d};
 }
+*/

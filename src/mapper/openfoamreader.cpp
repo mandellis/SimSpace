@@ -1257,7 +1257,7 @@ void OpenFoamReader::getCellCenters(fstream &is,
     //! ------------------------------------------------------
     //cout<<"OpenFoamReader::getCellCenters()->____decomposing cell faces into triangles____"<<endl;
 
-    FILE *fc = fopen("D:/centers.txt","w");
+    //FILE *fc = fopen("D:/centers.txt","w");
     for(NE=elementsByFaces.firstKey(); NE<=elementsByFaces.lastKey(); NE++)
     {
         //! -------------------------------------------------------------------------
@@ -1489,7 +1489,7 @@ void OpenFoamReader::getCellCenters(fstream &is,
             //aCenter[0] = Cx; aCenter[1] = Cy; aCenter[2] = Cz;
             std::vector<double> aCenter{Cx,Cy,Cz};
 
-            fprintf(fc,"%lf\t%lf\t%lf\n",Cx,Cy,Cz);
+            //fprintf(fc,"%lf\t%lf\t%lf\n",Cx,Cy,Cz);
             //cout<<"____CENTER("<<Cx<<", "<<Cy<<", "<<Cz<<")____"<<endl;
             myMapOfCellCenters.insert(NE,aCenter);
         }
@@ -1502,7 +1502,7 @@ void OpenFoamReader::getCellCenters(fstream &is,
             continue;
         }
     }
-    fclose(fc);
+    //fclose(fc);
 }
 
 //! -----------------------

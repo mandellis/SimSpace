@@ -83,15 +83,14 @@ double contactParameters::calc_discretizedArea(const opencascade::handle<Ng_Mesh
         bool isOK = faceMesh->GetGeom(globalElementID,true,coords,NbNodes,type);
         if(isOK)
         {
-            QList<QList<double>> points;
+            std::vector<polygon::Point> points;
             for(int i=0; i<NbNodes; i++)
             {
-                QList<double> P;
                 int s = 3*i;
-                P<<coords(s+1)<<coords(s+2)<<coords(s+3);
-                points<<P;
+                polygon::Point P(coords(s+1),coords(s+2),coords(s+3));
+                points.push_back(P);
             }
-            elementArea = GeomToolsClass::polygon_area(points);
+            elementArea = polygon::area3D_Polygon(points);
             A += elementArea;
             //cout<<"contactParameters::calc_discretizedArea()->____area_=  "<<A<<endl;
         }

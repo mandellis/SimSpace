@@ -549,7 +549,7 @@ void SimplifyMesh::load_Stl(const char* fileName, int &NbNodes, int &NbElements)
     //! ----------------------
     //! fill the vertex array
     //! ----------------------
-    FILE *f = fopen("D:/testboundary.txt","w");
+    //FILE *f = fopen("D:/testboundary.txt","w");
     for(TColgp_SequenceOfXYZ::const_iterator it = seqPoints.cbegin(); it != seqPoints.cend(); ++it)
     {
         gp_XYZ PXYZ = *it;
@@ -562,7 +562,7 @@ void SimplifyMesh::load_Stl(const char* fileName, int &NbNodes, int &NbElements)
         {
             cout<<"SimplifyMesh::load_Stl()->____fixing point: ("<<PXYZ.X()<<", "<<PXYZ.Y()<<", "<<PXYZ.Z()<<")____"<<endl;
             v.border = 1;  //! the point cannot be modified
-            fprintf(f,"%lf\t%lf\t%lf\n",PXYZ.X(),PXYZ.Y(),PXYZ.Z());
+            //fprintf(f,"%lf\t%lf\t%lf\n",PXYZ.X(),PXYZ.Y(),PXYZ.Z());
         }
 
         //! ------------
@@ -572,7 +572,7 @@ void SimplifyMesh::load_Stl(const char* fileName, int &NbNodes, int &NbElements)
 
         vertices.push_back(v);
     }
-    fclose(f);
+    //fclose(f);
 
     //! ------------------------
     //! fill the triangle array

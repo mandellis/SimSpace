@@ -78,6 +78,7 @@ void QExtendedStandardItem::setData(const QVariant &value, int role)
         SimulationNodeClass::nodeType theType = node->getType();
         //cout<<"family "<<theFamily<<" type: "<<theType<<endl;
         if(theFamily == SimulationNodeClass::nodeType_StructuralAnalysisSolution &&
+                theFamily == SimulationNodeClass::nodeType_thermalAnalysisSolution &&
                 theType != SimulationNodeClass::nodeType_StructuralAnalysisSolutionInformation &&
                 theType != SimulationNodeClass::nodeType_StructuralAnalysisSolution)
         {

@@ -1183,10 +1183,10 @@ void DetailViewer::updateTags()
         SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
         simulationDataBase *sdb = sm->getDataBase();
         std::vector<GeometryTag> vecLoc = myCurNode->getPropertyValue<std::vector<GeometryTag>>("Tags");
-        QList<double> newReferencePoint = GeomToolsClass::calculateCentroid(sdb,vecLoc);
+        std::vector<double> newReferencePoint = GeomToolsClass::calculateCentroid(sdb,vecLoc);
         //cout<<"DetailViewer::updateTags()->____updating reference point ("<<newReferencePoint.at(0)<<", "<<newReferencePoint.at(1)<<", "<<newReferencePoint.at(2)<<")____"<<endl;
         QVariant data;
-        data.setValue(newReferencePoint.toVector());
+        data.setValue(newReferencePoint);
         Property prop_referencePoint("Reference point",data,Property::PropertyGroup_Hidden);
         myCurNode->replaceProperty("Reference point",prop_referencePoint);
     }

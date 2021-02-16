@@ -7,7 +7,7 @@
 #include "src/utils/vectortool.h"
 #include "src/main/mydefines.h"
 #include "src/utils/geomtoolsclass.h"
-#include "src/gui/tabularData/customtablemodel.h"
+#include "customtablemodel.h"
 #include "src/utils/tools.h"
 #include "ng_meshvs_datasourceface.h"
 #include "qprogressevent.h"

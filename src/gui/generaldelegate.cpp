@@ -47,28 +47,6 @@ const QString sliderStyleSheet = QString("QSlider::groove:horizontal { "
                                  "margin: 0px 0px; "
                                  "} ");
 
-//! ------------------------
-//! function: getWorkingDir
-//! details:
-//! ------------------------
-QString GeneralDelegate::getWorkingDir() const
-{
-    ifstream is;
-    QString settingsFileName = QString(SYSTEM_PROGRAM_DATA).append("\\WB\\settings.txt");
-    cout<<"Settings file name: "<<settingsFileName.toStdString()<<endl;
-    is.open(settingsFileName.toStdString());
-    if(is.is_open())
-    {
-        std::string val;
-        char tmp[512],wd[512];
-        std::getline(is,val);
-        is.close();
-        sscanf(val.c_str(),"%s%s",tmp,wd);
-        return QString::fromLatin1(wd);
-    }
-    return "";
-}
-
 //! ----------------------
 //! function: constructor
 //! details:
@@ -1919,7 +1897,7 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
             editor->setFileMode(QFileDialog::ExistingFiles);
             editor->setNameFilter("Text files (*.txt *.dat)");
             //cout<<"GeneralDelegate::getWorkingDir()->____function called____"<<this->getWorkingDir().toStdString()<<"____"<<endl;
-            editor->setDirectory(this->getWorkingDir());
+            editor->setDirectory(QString::fromStdString(tools::getWorkingDir()));
             return editor;
         }
         else if(propertyName =="Source directory" || propertyName == "Target directory")
@@ -1931,7 +1909,7 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
             editor->setFileMode(QFileDialog::Directory);
             editor->setNameFilter("Text files (*.txt *.dat)");
             //cout<<"GeneralDelegate::getWorkingDir()->____function called____"<<this->getWorkingDir().toStdString()<<"____"<<endl;
-            editor->setDirectory(this->getWorkingDir());
+            editor->setDirectory(QString::fromStdString(tools::getWorkingDir()));
             return editor;
         }
         else if(propertyName =="Smoothing")
