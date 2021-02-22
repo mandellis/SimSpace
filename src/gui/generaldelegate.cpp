@@ -1897,7 +1897,7 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
             editor->setFileMode(QFileDialog::ExistingFiles);
             editor->setNameFilter("Text files (*.txt *.dat)");
             //cout<<"GeneralDelegate::getWorkingDir()->____function called____"<<this->getWorkingDir().toStdString()<<"____"<<endl;
-            editor->setDirectory(QString::fromStdString(tools::getWorkingDir()));
+            editor->setDirectory(tools::getWorkingDir());
             return editor;
         }
         else if(propertyName =="Source directory" || propertyName == "Target directory")
@@ -1909,7 +1909,7 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
             editor->setFileMode(QFileDialog::Directory);
             editor->setNameFilter("Text files (*.txt *.dat)");
             //cout<<"GeneralDelegate::getWorkingDir()->____function called____"<<this->getWorkingDir().toStdString()<<"____"<<endl;
-            editor->setDirectory(QString::fromStdString(tools::getWorkingDir()));
+            editor->setDirectory(tools::getWorkingDir());
             return editor;
         }
         else if(propertyName =="Smoothing")

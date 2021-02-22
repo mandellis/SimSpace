@@ -854,6 +854,7 @@ bool MeshTools::toSTLMesh1(const TopoDS_Shape &shape,
                            QProgressIndicator *aProgressIndicator,
                            int done)
 {
+    //cout<<"MeshTools::toSTLMesh1()->____function called "<<endl;
     //! ----------------------------------------------
     //! This generates the overall 2D mesh datasource
     //! An .stl (extended) format is used, with tags
@@ -926,6 +927,7 @@ bool MeshTools::toSTLMesh1(const TopoDS_Shape &shape,
         if(curStlMesh.IsNull())
         {
             vecFaceMeshDS[faceNr]=faceMeshDS;
+           // cout<<"MeshTools::toSTLMesh1()->____tag "<<endl;
             continue;
         }
         if(curStlMesh->NbTriangles()<=0)
@@ -934,7 +936,7 @@ bool MeshTools::toSTLMesh1(const TopoDS_Shape &shape,
             continue;
         }
         faceMeshDS = new Ng_MeshVS_DataSourceFace(curStlMesh,maps_localToGlobal_nodeIDs,maps_localToGlobal_elementIDs,faceNr);
-        //cout<<"MeshTools::toSTLMesh1()->____face nr: "<<faceNr<<" nodes: "<<faceMeshDS->GetAllNodes().Extent()<<"____"<<endl;
+        //cout<<"MeshTools::toSTLMesh1()->____face nr: "<<faceNr<<" nodes: "<<faceMeshDS->GetAllNodes().Extent()<<"____"<<faceMeshDS.IsNull()<<endl;
         vecFaceMeshDS[faceNr]=faceMeshDS;
     }
     return true;

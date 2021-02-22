@@ -696,8 +696,8 @@ int contactFinder::prepareSTLTessellation_useDisk(const std::vector<std::pair<Ge
         const TopoDS_Shape &curShape = myMDB->bodyMap.value(bodyIndex,TopoDS_Shape());
         if(curShape.IsNull()) continue;
 
-        //QString fileName("D:/test.stl");
-        std::string fileName = tools::getWorkingDir().append("/test.stl");
+        //std::string fileName("D:/test.stl");
+        std::string fileName = tools::getWorkingDir().append("/test.stl").toStdString();
         //! ----------------------------
         //! write the extended stl file
         //! ----------------------------
@@ -716,6 +716,9 @@ int contactFinder::prepareSTLTessellation_useDisk(const std::vector<std::pair<Ge
         std::vector<occHandle(Ng_MeshVS_DataSourceFace)> faceSubMeshes;
         for(int i=0; i<=NbFaces; i++) faceSubMeshes.push_back(occHandle(Ng_MeshVS_DataSourceFace)());
         MeshTools::toSTLMesh1(curShape,QString::fromStdString(fileName),anSTLMesh,faceSubMeshes);
+
+        //occHandle(Ng_MeshVS_DataSourceFace) aface = faceSubMeshes[0];
+        //cerr<<"____check first face: "<<aface->GetAllNodes().Extent()<<" ____"<<endl;
 
         //! ----------------------------------------------
         //! fill the map of the surface mesh data sources
