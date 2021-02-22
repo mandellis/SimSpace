@@ -460,7 +460,7 @@ DEFINES += NEW_HASH
 
 INCLUDEPATH = $$PWD/src/geometry \
               C:/OpenCASCADE7.3.0-vc14-64/opencascade-7.3.0/inc \
-              D:/Work/Qt/SimSpace/ext/StlMesh    \
+              $$PWD/ext/StlMesh    \
               "D:/Work/Costamp/OCC lib/EMESH_7.3.0_binaries_win64vc14/inc"     \
               "D:/Work/Costamp/OCC lib/OMF_7.3.0_binaries_win64vc14/inc"   \
               $$PWD/src/gui/optionsWidget    \
