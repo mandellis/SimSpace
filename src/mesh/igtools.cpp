@@ -9,7 +9,7 @@
 #include <ext/libigl/include/igl/copyleft/cgal/remesh_self_intersections.h>
 #include <ext/libigl/include/igl/copyleft/cgal/SelfIntersectMesh.h>
 #include <ext/libigl/include/igl/copyleft/cgal/intersect_other.h>
-#include "C:/CGAL-4.14/build_MSVC14.0/include/CGAL/compiler_config.h"
+#include <CGAL/compiler_config.h>
 
 //! ----
 //! OCC

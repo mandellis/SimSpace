@@ -12767,7 +12767,7 @@ void SimulationManager::setTheActiveAnalysisBranch()
         cout<<"@ --------------N--------------------@"<<endl;
         if(myActiveAnalysisBranch==NULL)
             cout<<"@ the current analysis branch is NULL @"<<endl;
-        else  cout<<"@ the current analysis branch is: "<<myActiveAnalysisBranch->data(Qt::UserRole).value<SimulationNodeClass*>()->getName().toStdString()<<endl;
+        else  //cout<<"@ the current analysis branch is: "<<myActiveAnalysisBranch->data(Qt::UserRole).value<SimulationNodeClass*>()->getName().toStdString()<<endl;
         cout<<"@ ------------------------------------@"<<endl;
     }
     else

@@ -1177,7 +1177,7 @@ void MainWindow::createToolBars()
     actionMultipleSelect = new QAction(QIcon(":/icons/icon_multiple select.png"),"Box select");
     connect(actionMultipleSelect,SIGNAL(triggered(bool)),this,SLOT(setSelectionModeBox()));
 
-    actionSelectAll = new QAction(QIcon(":/icons/icon_select all.png"),"Salect all");
+    actionSelectAll = new QAction(QIcon(":/icons/icon_select all.png"),"Select all");
     connect(actionSelectAll,SIGNAL(triggered(bool)),this,SLOT(HandleSelectAll()));
 
     menuButtonTypeOfSelection->addAction(actionSingleSelect);

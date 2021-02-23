@@ -105,8 +105,8 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
         //! -----------------
         switch(type)
         {
-        case SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionPressure: "Pressure"; break;
-        case SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionVelocity: "Velocity"; break;
+        case SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionPressure: name = "Pressure"; break;
+        case SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionVelocity: name = "Velocity"; break;
         }
 
         //! -------------------------------------------------------
@@ -131,9 +131,21 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
         vecProp.push_back(prop_tags);
     }
         break;
+    case SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionWall:
+    {
+        name = "Wall";
+        //! -------------------------------
+        //! under "Scope" and "Definition"
+        //! -------------------------------
+        vecProp.push_back(prop_suppressed);
+        vecProp.push_back(prop_scopingMethod);
+        vecProp.push_back(prop_scope);
+        vecProp.push_back(prop_tags);
+    }
+        break;
     case SimulationNodeClass::nodeType_pointMass:
     {
-        name = "Point mass"; //bubi
+        name = "Point mass";
 
         //! ------------
         //! under scope

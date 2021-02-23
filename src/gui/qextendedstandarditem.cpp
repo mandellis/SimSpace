@@ -14,6 +14,10 @@
 #include "maintreetools.h"
 #include "ccxsolvermessage.h"
 #include "solutioninfo.h"
+#include "ext/occ_extended/handle_ais_doublearrowmarker_reg.h"
+#include "src/registeredMetatypes/meshvs_mesh_handle_reg.h"
+#include "occhandle.h"
+#include <indexedmapofmeshdatasources.h>
 
 //! ----
 //! OCC
@@ -104,11 +108,6 @@ void QExtendedStandardItem::setData(const QVariant &value, int role)
 //! function: data
 //! details:
 //! ---------------
-#include "ext/occ_extended/handle_ais_doublearrowmarker_reg.h"
-#include "src/registeredMetatypes/meshvs_mesh_handle_reg.h"
-#include "occhandle.h"
-#include <indexedmapofmeshdatasources.h>
-
 QVariant QExtendedStandardItem::data(int role) const
 {
     if(role==Qt::DisplayRole)
@@ -2399,6 +2398,13 @@ QIcon QExtendedStandardItem::getIcon(SimulationNodeClass::nodeType theNodeType) 
     case SimulationNodeClass::nodeType_particlesInFieldsAnalysisSettings:
         return QIcon(":/icons/icon_analysis settings.png"); break;
 
+        //! --------------------
+        //! "CFD BC"
+        //! --------------------
+    case SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionPressure:  return QIcon(":/icons/icon_CFD.png"); break;
+    case SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionVelocity:  return QIcon(":/icons/icon_CFD.png"); break;
+    case SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionWall: return QIcon(":/icons/icon_CFD.png"); break;
+
     case SimulationNodeClass::nodeType_root: return QIcon(":/icons/icon_model root item.png"); break;
     case SimulationNodeClass::nodeType_connection:
     case SimulationNodeClass::nodeType_connectionPair: return QIcon(":/icons/icon_insert contact.png"); break;
@@ -2439,6 +2445,10 @@ QIcon QExtendedStandardItem::getIcon(SimulationNodeClass::nodeType theNodeType) 
     case SimulationNodeClass::nodeType_solutionStructuralNodalDisplacement: return QIcon(":/icons/icon_deformation.png"); break;
     case SimulationNodeClass::nodeType_solutionStructuralStress: return QIcon(":/icons/icon_spring.png"); break;
     case SimulationNodeClass::nodeType_solutionStructuralTotalStrain: return QIcon(":/icons/icon_spring.png"); break;
+
+        //! "CFD Solution"
+    case SimulationNodeClass::nodeType_solutionCFDpressure: return QIcon(":/icons/icon_CFD.png"); break;
+    case SimulationNodeClass::nodeType_solutionCFDvelocity: return QIcon(":/icons/icon_CFD.png"); break;
 
         //! -----------------------
         //! "Solution information"
