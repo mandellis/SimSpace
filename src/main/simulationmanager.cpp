@@ -1349,9 +1349,6 @@ void SimulationManager::deleteItem(QList<QModelIndex> indexesList)
                       SimulationNodeClass::nodeType_coordinateSystems<<
                       SimulationNodeClass::nodeType_coordinateSystem_global;
 
-    //! ------------------------------------------------------------------------------
-    //! "Displacement" "Remote displacement" "Remote rotation" have the option "free"
-    //! ------------------------------------------------------------------------------
     QList<SimulationNodeClass::nodeType> specialItems;
     //specialItems<<//SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Displacement<<
                   //SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RemoteDisplacement<<
@@ -8844,7 +8841,7 @@ QString SimulationManager::createItemDescriptor() const
     }
     return textDescriptor;
 }
-
+/*
 //! ------------------------------------
 //! function: getTreeItemsRecursively
 //! details:  scan recursively the tree
@@ -8862,7 +8859,7 @@ void SimulationManager::getTreeItemsRecursively(QStandardItemModel* model, QList
             getTreeItemsRecursively(model, items, index);
         }
     }
-}
+}*/
 
 //! --------------------------------------------------------------------------
 //! function: saveSimulationDataBase
@@ -8878,8 +8875,8 @@ void SimulationManager::saveSimulationDataBase(const QString &savingDir, const Q
     //! ---------------------------
     //! [0] get all the tree items
     //! ---------------------------
-    QList<QExtendedStandardItem*> items;
-    this->getTreeItemsRecursively(myModel,items);
+    QList<QStandardItem*> items;
+    mainTreeTools::getTreeItemsRecursively(myModel,items);
 
     //! ----------------------------------------------------------------------
     //! update the "Projct files dir" property for all the "Simulation" items
@@ -8958,7 +8955,7 @@ void SimulationManager::saveSimulationDataBase(const QString &savingDir, const Q
     //! ------------------
     for(int i=0; i<items.length(); i++)
     {
-        QExtendedStandardItem* curItem = items.at(i);
+        QStandardItem* curItem = items.at(i);
         QString text = QString("Saving tree item: '").append(curItem->data(Qt::DisplayRole).toString()).append("'");
 
         //! ------------------------------
@@ -9369,11 +9366,11 @@ void SimulationManager::buildDataBaseFromDisk(const QString &fileName)
     //! ----------------------------------------------------
     //! reconnect signals/slots for handling item changes
     //! ----------------------------------------------------
-    QList<QExtendedStandardItem*> allItems;
-    this->getTreeItemsRecursively(this->myModel,allItems);    
-    for(QList<QExtendedStandardItem*>::iterator it = allItems.begin(); it!=allItems.end(); ++it)
+    QList<QStandardItem*> allItems;
+    mainTreeTools::getTreeItemsRecursively(/*this->*/myModel,allItems);
+    for(QList<QStandardItem*>::iterator it = allItems.begin(); it!=allItems.end(); ++it)
     {
-        QExtendedStandardItem *anItem = *it;
+        QStandardItem *anItem = *it;
         SimulationNodeClass *aNode = anItem->data(Qt::UserRole).value<SimulationNodeClass*>();
 
         //! ---------------------------------------------
@@ -13854,8 +13851,8 @@ void SimulationManager::deleteDataSourcesFromModel()
     //! ------------------------------------------
     //! delete the data sources from the treeview
     //! ------------------------------------------
-    QList<QExtendedStandardItem*> items;
-    this->getTreeItemsRecursively(myModel,items);
+    QList<QStandardItem*> items;
+    mainTreeTools::getTreeItemsRecursively(myModel,items);
     int NbDeleted = 0;
     int NbItems = items.length();
     for(int n=0; n<NbItems; n++)

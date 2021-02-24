@@ -873,6 +873,17 @@ void SimulationNodeClass::createSeparators()
         myNodeRootItem->appendRow(itemMeshDataSources);
         break;
 
+    case nodeType_CFDAnalysisBoundaryConditionPressure:
+    case nodeType_CFDAnalysisBoundaryConditionVelocity:
+    case nodeType_CFDAnalysisBoundaryConditionWall:
+        myNodeRootItem->appendRow(itemScope);
+        myNodeRootItem->appendRow(itemDefinition);
+        myNodeRootItem->appendRow(itemAdvanced);
+        myNodeRootItem->appendRow(itemHidden);
+        myNodeRootItem->appendRow(itemGraphicObject);
+        myNodeRootItem->appendRow(itemMeshDataSources);
+        break;
+
     case nodeType_pointMass:
         myNodeRootItem->appendRow(itemScope);
         myNodeRootItem->appendRow(itemDefinition);
@@ -1093,6 +1104,17 @@ void SimulationNodeClass::createSeparators()
         //! ----------------------------
     case SimulationNodeClass::nodeType_solutionThermalTemperature:
     case SimulationNodeClass::nodeType_solutionThermalFlux:
+        myNodeRootItem->appendRow(itemScope);
+        myNodeRootItem->appendRow(itemDefinition);
+        myNodeRootItem->appendRow(itemGraphicObject);
+        myNodeRootItem->appendRow(itemColorBox);
+        break;
+
+        //! ----------------------------
+        //! CFD environment results
+        //! ----------------------------
+    case SimulationNodeClass::nodeType_solutionCFDpressure:
+    case SimulationNodeClass::nodeType_solutionCFDvelocity:
         myNodeRootItem->appendRow(itemScope);
         myNodeRootItem->appendRow(itemDefinition);
         myNodeRootItem->appendRow(itemGraphicObject);

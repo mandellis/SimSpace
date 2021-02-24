@@ -154,7 +154,7 @@ private:
 
 private:
 
-    void getTreeItemsRecursively(QStandardItemModel* model, QList<QExtendedStandardItem*> &items, QModelIndex parent = QModelIndex());
+    //void getTreeItemsRecursively(QStandardItemModel* model, QList<QExtendedStandardItem*> &items, QModelIndex parent = QModelIndex());
     //int calculateStartColumn() const;
 
     TopoDS_Shape fromTagToShape(const GeometryTag &aTag);

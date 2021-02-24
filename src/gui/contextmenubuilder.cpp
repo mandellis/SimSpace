@@ -1317,9 +1317,6 @@ void contextMenuBuilder::buildCFDAnalysisContextMenu(QMenu *contextMenu, bool ad
     ActionInsertVelocity->setIcon(QIcon(":/icons/icon_CFD.png"));
     ActionInsertVelocity->setData(402);
 
-    //! add a separator
-    menuInsertCFD->addSeparator();
-
     //! ----------------
     //! insert pressure
     //! -----------------

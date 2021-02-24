@@ -345,7 +345,7 @@ void mainTreeTools::getTreeItemsRecursively(QStandardItemModel* model, QList<QSt
     for(int r = 0; r<model->rowCount(parent); ++r)
     {
         QModelIndex index = model->index(r, 0, parent);
-        QExtendedStandardItem *item = static_cast<QExtendedStandardItem*>(model->itemFromIndex(index));
+        QStandardItem *item = static_cast<QStandardItem*>(model->itemFromIndex(index));
         items.push_back(item);
         if(model->hasChildren(index))
         {

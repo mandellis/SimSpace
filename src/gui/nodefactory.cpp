@@ -108,7 +108,6 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
         case SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionPressure: name = "Pressure"; break;
         case SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionVelocity: name = "Velocity"; break;
         }
-
         //! -------------------------------------------------------
         //! Add the property "Define by"
         //! -------------------------------------------------------
@@ -386,13 +385,6 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
         vecProp.push_back(prop_scopeAllBodies);
         vecProp.push_back(prop_tagsAllBodies);
 
-        /*
-        //! under scope
-        vecProp.push_back(prop_scopingMethod);
-        vecProp.push_back(prop_scope);
-        vecProp.push_back(prop_tags);
-        */
-
         //! under definition
         Property prop_type("Type ",typeOfStrain,Property::PropertyGroup_Definition);
         vecProp.push_back(prop_type);
@@ -450,7 +442,6 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
         case 9: name = "Shear stress YZ"; break;
         case 10: name = "Shear stress XZ"; break;
         }
-
         //! -------------------------------------------------------------------
         //! redefine tags and scope:
         //! initially the scope is "All bodies" for the structural diagnostic
@@ -475,13 +466,6 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
         vecProp.push_back(prop_scopingMethod);
         vecProp.push_back(prop_scopeAllBodies);
         vecProp.push_back(prop_tagsAllBodies);
-
-        /*
-        //! under scope
-        vecProp.push_back(prop_scopingMethod);
-        vecProp.push_back(prop_scope);
-        vecProp.push_back(prop_tags);
-        */
 
         //! under definition
         Property prop_type("Type ",typeOfStress,Property::PropertyGroup_Definition);

@@ -29,9 +29,9 @@
 //! function: setItem()
 //! details:
 //! --------------------
-void serializerClass::setItem(QExtendedStandardItem *anItem)
+void serializerClass::setItem(QStandardItem *anItem)
 {
-    myItem = anItem;
+    myItem = static_cast<QExtendedStandardItem*>(anItem);
 }
 
 //! ----------------------
