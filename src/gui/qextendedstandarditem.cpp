@@ -1615,8 +1615,8 @@ QVariant QExtendedStandardItem::data(int role) const
                 return data;
             }
             int row = nodeAnalysisSettings->getPropertyValue<int>("Current step number");
-            int SC = mainTreeTools::calculateStartColumn(sm->myTreeView);
             CustomTableModel *tabularDataModel = nodeAnalysisSettings->getTabularDataModel();
+            int SC = mainTreeTools::calculateStartColumn(sm->myTreeView,tabularDataModel->getColumnBeforeBC());
             double val = tabularDataModel->dataRC(row,SC,Qt::EditRole).toDouble();
             Property::loadDefinition theLoadDefinition = QStandardItem::data(Qt::UserRole).value<Property>().getData().value<Property::loadDefinition>();
             switch(theLoadDefinition)
@@ -1645,8 +1645,8 @@ QVariant QExtendedStandardItem::data(int role) const
                 return data;
             }
             int row = nodeAnalysisSettings->getPropertyValue<int>("Current step number");
-            int SC = mainTreeTools::calculateStartColumn(sm->myTreeView);
             CustomTableModel *tabularDataModel = nodeAnalysisSettings->getTabularDataModel();
+            int SC = mainTreeTools::calculateStartColumn(sm->myTreeView,tabularDataModel->getColumnBeforeBC());
             double val = tabularDataModel->dataRC(row,SC+1,Qt::EditRole).toDouble();
             Property::loadDefinition theLoadDefinition = QStandardItem::data(Qt::UserRole).value<Property>().getData().value<Property::loadDefinition>();
             switch(theLoadDefinition)

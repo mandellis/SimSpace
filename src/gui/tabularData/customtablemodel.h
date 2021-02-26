@@ -50,6 +50,8 @@ public:
         m_mapping.clear();
     }
 
+    int getColumnBeforeBC() {return columBeforeBC;}
+
 private:
 
     QList<QVector<QVariant>*> m_data;
@@ -59,6 +61,8 @@ private:
     QList<Property::loadType> m_loadTypes;
     //QString getHeaderString(int section) const;
     load loadToAppend;
+
+    int columBeforeBC;
 
 public:
 

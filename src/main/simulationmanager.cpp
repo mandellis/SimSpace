@@ -853,7 +853,8 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 //! calculate the number of columns to show => in the table <=
                 //! -----------------------------------------------------------
                 QList<int> columnsToShow;
-                columnsToShow << TABULAR_DATA_STEP_NUMBER_COLUMN << TABULAR_DATA_STEP_END_TIME_COLUMN << mainTreeTools::getColumnsToRead(myTreeView);
+                CustomTableModel *tabData = index_analysisSettings.data(Qt::UserRole).value<SimulationNodeClass*>()->getTabularDataModel();
+                columnsToShow << TABULAR_DATA_STEP_NUMBER_COLUMN << TABULAR_DATA_STEP_END_TIME_COLUMN << mainTreeTools::getColumnsToRead(myTreeView,tabData->getColumnBeforeBC());
                 if(columnsToShow.length()>=2)
                 {
                     emit requestShowColumns(columnsToShow);
@@ -862,7 +863,6 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                     //! remove the column showing the times
                     //! ------------------------------------
                     columnsToShow.removeFirst();
-                    CustomTableModel *tabData = index_analysisSettings.data(Qt::UserRole).value<SimulationNodeClass*>()->getTabularDataModel();
                     emit requestShowGraph(tabData,columnsToShow);
                 }
                 bool isDone = markerBuilder::addMarker(this->getCurrentNode(), mySimulationDataBase);
@@ -932,7 +932,8 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 //! calculate the number of columns to show => in the table <=
                 //! -----------------------------------------------------------
                 QList<int> columnsToShow;
-                columnsToShow << TABULAR_DATA_STEP_NUMBER_COLUMN << TABULAR_DATA_STEP_END_TIME_COLUMN << mainTreeTools::getColumnsToRead(myTreeView);
+                CustomTableModel *tabData = index_analysisSettings.data(Qt::UserRole).value<SimulationNodeClass*>()->getTabularDataModel();
+                columnsToShow << TABULAR_DATA_STEP_NUMBER_COLUMN << TABULAR_DATA_STEP_END_TIME_COLUMN << mainTreeTools::getColumnsToRead(myTreeView,tabData->getColumnBeforeBC());
                 if(columnsToShow.length()>=3)
                 {
                     emit requestShowColumns(columnsToShow);
@@ -940,7 +941,6 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                     //! remove the column showing the times
                     //! ------------------------------------
                     columnsToShow.removeFirst();
-                    CustomTableModel *tabData = index_analysisSettings.data(Qt::UserRole).value<SimulationNodeClass*>()->getTabularDataModel();
                     emit requestShowGraph(tabData,columnsToShow);
                 }
 
@@ -969,7 +969,8 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 //! calculate the number of columns to show => in the table <=
                 //! -----------------------------------------------------------
                 QList<int> columnsToShow;
-                columnsToShow << TABULAR_DATA_STEP_NUMBER_COLUMN << TABULAR_DATA_STEP_END_TIME_COLUMN << mainTreeTools::getColumnsToRead(myTreeView);
+                CustomTableModel *tabData = index_analysisSettings.data(Qt::UserRole).value<SimulationNodeClass*>()->getTabularDataModel();
+                columnsToShow << TABULAR_DATA_STEP_NUMBER_COLUMN << TABULAR_DATA_STEP_END_TIME_COLUMN << mainTreeTools::getColumnsToRead(myTreeView,tabData->getColumnBeforeBC());
                 if(columnsToShow.length()>=3)
                 {
                     emit requestShowColumns(columnsToShow);
@@ -978,7 +979,6 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                     //! remove the column showing the times
                     //! ------------------------------------
                     columnsToShow.removeFirst();
-                    CustomTableModel *tabData = index_analysisSettings.data(Qt::UserRole).value<SimulationNodeClass*>()->getTabularDataModel();
                     emit requestShowGraph(tabData,columnsToShow);
                 }
 
@@ -1425,7 +1425,7 @@ void SimulationManager::deleteItem(QList<QModelIndex> indexesList)
             //! ---------------------------------------------------------
             //itemListToDelete<<modelIndex;
 
-            QList<int> columsToRemove = mainTreeTools::getColumnsToRead(myTreeView);
+            QList<int> columsToRemove = mainTreeTools::getColumnsToRead(myTreeView,tabData->getColumnBeforeBC());
             int columnCount;
             if(columsToRemove.size()==1) columnCount=1;
             else columnCount = columsToRemove.back()-columsToRemove.front()+1;
@@ -6439,8 +6439,8 @@ void SimulationManager::duplicateItem(QExtendedStandardItem *item)
         //! -----------------------------------------------------------------------
         //! determine the number of columns to copy and append to the tabular data
         //! -----------------------------------------------------------------------
-        int NbCol = mainTreeTools::getColumnsToRead(myTreeView).length();
-        int columnToCopy = mainTreeTools::calculateStartColumn(myTreeView);
+        int NbCol = mainTreeTools::getColumnsToRead(myTreeView,theTabularData->getColumnBeforeBC()).length();
+        int columnToCopy = mainTreeTools::calculateStartColumn(myTreeView, theTabularData->getColumnBeforeBC());
 
         for(int i=0; i<NbCol; i++)
         {
@@ -7432,7 +7432,7 @@ void SimulationManager::HandleTabularData()
     //! -----------------------------------------
     CustomTableModel *tabData = nodeAnalysisSettings->getTabularDataModel();
 
-    int startColumn = mainTreeTools::calculateStartColumn(myTreeView);
+    int startColumn = mainTreeTools::calculateStartColumn(myTreeView,tabData->getColumnBeforeBC());
 
     //! ----------------------------------
     //! check if the data in table exsist
@@ -7755,7 +7755,7 @@ void SimulationManager::HandleTabularData()
     emit requestTabularData(mainTreeTools::getAnalysisSettingsItemFromCurrentItem(myTreeView)->index());
 
     QList<int> N1;
-    N1 << TABULAR_DATA_STEP_END_TIME_COLUMN << mainTreeTools::getColumnsToRead(myTreeView);
+    N1 << TABULAR_DATA_STEP_END_TIME_COLUMN << mainTreeTools::getColumnsToRead(myTreeView,tabData->getColumnBeforeBC());
 
     cout<<"\\--------------------------------------------------------\\"<<endl;
     for(int n=0; n<N1.length(); n++) cout<<"\\ N (by maintreetools) = "<<N1.at(n)<<endl;
@@ -7893,7 +7893,7 @@ void SimulationManager::handleFilmCoefficientLoadDefinitionChanged(const QString
     SimulationNodeClass *theCurNode = myTreeView->currentIndex().data(Qt::UserRole).value<SimulationNodeClass*>();
     Property::loadDefinition theLoadDefinition = theCurNode->getPropertyValue<Property::loadDefinition>("Film coefficient");
 
-    int startColumn = mainTreeTools::calculateStartColumn(myTreeView);
+    int startColumn = mainTreeTools::calculateStartColumn(myTreeView,tabData->getColumnBeforeBC());
 
     if(theLoadDefinition==Property::loadDefinition_constant)
     {
@@ -7976,7 +7976,7 @@ void SimulationManager::handleReferenceTemperatureLoadDefinitionChanged(const QS
     SimulationNodeClass *theCurNode = myTreeView->currentIndex().data(Qt::UserRole).value<SimulationNodeClass*>();
     Property::loadDefinition theLoadDefinition = theCurNode->getPropertyValue<Property::loadDefinition>("Reference temperature");
 
-    int startColumn = mainTreeTools::calculateStartColumn(myTreeView);
+    int startColumn = mainTreeTools::calculateStartColumn(myTreeView,tabData->getColumnBeforeBC());
 
     if(theLoadDefinition==Property::loadDefinition_constant)
     {
@@ -8100,7 +8100,7 @@ void SimulationManager::handleLoadMagnitudeDefinitionChanged(const QString& text
         break;
     }
 
-    int startColumn = mainTreeTools::calculateStartColumn(myTreeView);
+    int startColumn = mainTreeTools::calculateStartColumn(myTreeView,tabData->getColumnBeforeBC());
 
     if(theLoadDefinition==Property::loadDefinition_constant)
     {
@@ -8136,7 +8136,7 @@ void SimulationManager::handleLoadMagnitudeDefinitionChanged(const QString& text
     }
 
     QList<int> N;
-    N << TABULAR_DATA_STEP_END_TIME_COLUMN << mainTreeTools::getColumnsToRead(myTreeView);
+    N << TABULAR_DATA_STEP_END_TIME_COLUMN << mainTreeTools::getColumnsToRead(myTreeView,tabData->getColumnBeforeBC());
 
     if(N.length()>=2)
     {
@@ -8192,7 +8192,7 @@ void SimulationManager::handleLoadXDefinitionChanged(const QString &textData)
     //! -----------------------
     //! calculate the position
     //! -----------------------
-    int startColumn = mainTreeTools::calculateStartColumn(myTreeView);
+    int startColumn = mainTreeTools::calculateStartColumn(myTreeView,tabData->getColumnBeforeBC());
 
     SimulationNodeClass *theCurNode = myTreeView->currentIndex().data(Qt::UserRole).value<SimulationNodeClass*>();
     if(theCurNode->getType()==SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Displacement ||
@@ -8250,7 +8250,7 @@ void SimulationManager::handleLoadXDefinitionChanged(const QString &textData)
                 //! ------------------
                 //! remove the column
                 //! ------------------
-                int startColumn = mainTreeTools::calculateStartColumn(myTreeView);
+                int startColumn = mainTreeTools::calculateStartColumn(myTreeView,tabData->getColumnBeforeBC());
                 tabData->removeColumns(startColumn,1,QModelIndex());
             }
         }
@@ -8305,7 +8305,7 @@ void SimulationManager::handleLoadXDefinitionChanged(const QString &textData)
     }
 
     QList<int> N;
-    N << TABULAR_DATA_STEP_END_TIME_COLUMN << mainTreeTools::getColumnsToRead(myTreeView);
+    N << TABULAR_DATA_STEP_END_TIME_COLUMN << mainTreeTools::getColumnsToRead(myTreeView,tabData->getColumnBeforeBC());
 
     if(N.length()>=2)
     {
@@ -8360,7 +8360,7 @@ void SimulationManager::handleLoadYDefinitionChanged(const QString &textData)
             //! add the column for the Y displacement
             //! calculate the point of insertion
             //! --------------------------------------
-            int startColumn = mainTreeTools::calculateStartColumn(myTreeView);
+            int startColumn = mainTreeTools::calculateStartColumn(myTreeView,tabData->getColumnBeforeBC());
 
             //! ---------------------------------------------------------------------------------------
             //! check if X component is present (in order to calculate the right column for insertion)
@@ -8400,7 +8400,7 @@ void SimulationManager::handleLoadYDefinitionChanged(const QString &textData)
             //! add the column for the Y displacement
             //! calculate the point of insertion
             //! --------------------------------------
-            int startColumn = mainTreeTools::calculateStartColumn(myTreeView);
+            int startColumn = mainTreeTools::calculateStartColumn(myTreeView,tabData->getColumnBeforeBC());
 
             //! ---------------------------------------------------------------------------------------
             //! check if X component is present (in order to calculate the right column for insertion)
@@ -8441,7 +8441,7 @@ void SimulationManager::handleLoadYDefinitionChanged(const QString &textData)
             //! -------
             //! remove
             //! -------
-            int startColumn = mainTreeTools::calculateStartColumn(myTreeView);
+            int startColumn = mainTreeTools::calculateStartColumn(myTreeView,tabData->getColumnBeforeBC());
             Property::loadDefinition loadDefinition_Xcomponent = theCurNode->getPropertyValue<Property::loadDefinition>("X component");
             if(loadDefinition_Xcomponent!=Property::loadDefinition_free) startColumn++;
             if(oldYdef!=Property::loadDefinition_free) tabData->removeColumns(startColumn,1,QModelIndex());
@@ -8476,7 +8476,7 @@ void SimulationManager::handleLoadYDefinitionChanged(const QString &textData)
             break;
         }
 
-        int startColumn = mainTreeTools::calculateStartColumn(myTreeView);
+        int startColumn = mainTreeTools::calculateStartColumn(myTreeView,tabData->getColumnBeforeBC());
 
         if(loadDefinition_Ycomponent==Property::loadDefinition_constant)
         {
@@ -8518,15 +8518,15 @@ void SimulationManager::handleLoadYDefinitionChanged(const QString &textData)
     }
 
     QList<int> N;
-    N << TABULAR_DATA_STEP_END_TIME_COLUMN << mainTreeTools::getColumnsToRead(myTreeView);
+    SimulationNodeClass *nodeAnalysisSettings = mainTreeTools::getAnalysisSettingsNodeFromCurrentItem(myTreeView);
+    CustomTableModel *tabData = nodeAnalysisSettings->getTabularDataModel();
+    N << TABULAR_DATA_STEP_END_TIME_COLUMN << mainTreeTools::getColumnsToRead(myTreeView,tabData->getColumnBeforeBC());
 
     if(N.length()>=2)
     {
         //! ------------------------------------------------
         //! this means that at least a component is present
         //! ------------------------------------------------
-        SimulationNodeClass *nodeAnalysisSettings = mainTreeTools::getAnalysisSettingsNodeFromCurrentItem(myTreeView);
-        CustomTableModel *tabData = nodeAnalysisSettings->getTabularDataModel();
         emit requestShowGraph(tabData,N);
     }
     else emit requestClearGraph();
@@ -8575,7 +8575,7 @@ void SimulationManager::handleLoadZDefinitionChanged(const QString &textData)
             //! add the column for the Z displacement
             //! calculate the point of insertion
             //! --------------------------------------
-            int startColumn = mainTreeTools::calculateStartColumn(myTreeView);
+            int startColumn = mainTreeTools::calculateStartColumn(myTreeView,tabData->getColumnBeforeBC());
 
             //! --------------------------------
             //! check if X component is present
@@ -8620,7 +8620,7 @@ void SimulationManager::handleLoadZDefinitionChanged(const QString &textData)
             //! add the column for the Z displacement
             //! calculate the point of insertion
             //! --------------------------------------
-            int startColumn = mainTreeTools::calculateStartColumn(myTreeView);
+            int startColumn = mainTreeTools::calculateStartColumn(myTreeView,tabData->getColumnBeforeBC());
 
             //! --------------------------------
             //! check if X component is present
@@ -8667,7 +8667,7 @@ void SimulationManager::handleLoadZDefinitionChanged(const QString &textData)
             //! remove the column for the X displacement
             //! calculate the point of removal
             //! -----------------------------------------
-            int startColumn = mainTreeTools::calculateStartColumn(myTreeView);
+            int startColumn = mainTreeTools::calculateStartColumn(myTreeView,tabData->getColumnBeforeBC());
 
             //! -----------------------------------------------------------------------------
             //! check if X component is present for calculating the right column for removal
@@ -8713,7 +8713,7 @@ void SimulationManager::handleLoadZDefinitionChanged(const QString &textData)
             break;
         }
 
-        int startColumn = mainTreeTools::calculateStartColumn(myTreeView);
+        int startColumn = mainTreeTools::calculateStartColumn(myTreeView,tabData->getColumnBeforeBC());
 
         if(loadDefinition_Zcomponent==Property::loadDefinition_constant)
         {
@@ -8757,15 +8757,15 @@ void SimulationManager::handleLoadZDefinitionChanged(const QString &textData)
     }
 
     QList<int> N;
-    N << TABULAR_DATA_STEP_END_TIME_COLUMN << mainTreeTools::getColumnsToRead(myTreeView);
+    SimulationNodeClass *nodeAnalysisSettings = mainTreeTools::getAnalysisSettingsNodeFromCurrentItem(myTreeView);
+    CustomTableModel *tabData = nodeAnalysisSettings->getTabularDataModel();
+    N << TABULAR_DATA_STEP_END_TIME_COLUMN << mainTreeTools::getColumnsToRead(myTreeView,tabData->getColumnBeforeBC());
 
     if(N.length()>=2)
     {
         //! ------------------------------------------------
         //! this means that at least a component is present
         //! ------------------------------------------------
-        SimulationNodeClass *nodeAnalysisSettings = mainTreeTools::getAnalysisSettingsNodeFromCurrentItem(myTreeView);
-        CustomTableModel *tabData = nodeAnalysisSettings->getTabularDataModel();
         emit requestShowGraph(tabData,N);
     }
     else requestClearGraph();

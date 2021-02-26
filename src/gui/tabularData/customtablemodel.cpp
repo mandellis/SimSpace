@@ -20,6 +20,8 @@ CustomTableModel::CustomTableModel(const QVector<load> &vecLoads, bool addFirstR
         m_loadTypes.append(vecLoads.at(k).type());
 
     m_columnCount = vecLoads.size();
+    columBeforeBC = m_columnCount-1;
+    cout<<" CustomTable model COLUMN BEFORE BC"<<columBeforeBC<<endl;
     m_rowCount = vecLoads.at(0).NbTimes();  //! number of values
 
     for(int i=0; i<m_rowCount; i++)

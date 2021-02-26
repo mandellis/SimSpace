@@ -214,11 +214,8 @@ void TabularDataViewerClass::plotXYs()
 //! --------------------
 void TabularDataViewerClass::showData(CustomTableModel *tabData, const QList<int> &columnsToShow)
 {
-    //cout<<"TabularDataViewerClass::showData1()->____function called____"<<endl;
-
     myData = tabData;
     myColumns = columnsToShow;
-
     //! -----------------------------------------------------------------------------------
     //! actually the effect of this connection consists in updating of the axes and labels
     //! ------------------------------------------------------------------------------------
@@ -226,8 +223,6 @@ void TabularDataViewerClass::showData(CustomTableModel *tabData, const QList<int
     connect(myData,SIGNAL(dataChanged(QModelIndex,QModelIndex,QVector<int>)),this,SLOT(updateViewer()));
 
     this->plotXYs();
-
-    //cout<<"TabularDataViewerClass::showData1()->____exiting function____"<<endl;
 }
 
 //! -----------------------

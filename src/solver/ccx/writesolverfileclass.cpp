@@ -1737,7 +1737,7 @@ bool writeSolverFileClass::perform()
                 {
                 case SimulationNodeClass::nodeType_structuralAnalysisBoltPretension:
                 {
-                    QList<int> ColumnList = mainTreeTools::getColumnsToRead(theCurItem);
+                    QList<int> ColumnList = mainTreeTools::getColumnsToRead(theCurItem,tabData->getColumnBeforeBC());
 
                     QString RN = SetName+"_RN";
 
@@ -1770,7 +1770,7 @@ bool writeSolverFileClass::perform()
                     break;
                 case SimulationNodeClass::nodeType_structuralAnalysisThermalCondition:
                 {
-                    QList<int> ColumnList = mainTreeTools::getColumnsToRead(theCurItem);
+                    QList<int> ColumnList = mainTreeTools::getColumnsToRead(theCurItem,tabData->getColumnBeforeBC());
                     for(int n=0;n<ColumnList.length();n++)
                     {
                         //! -----------------------------------
@@ -1931,7 +1931,7 @@ bool writeSolverFileClass::perform()
                     int itemType = theCurNode->getPropertyValue<int>("Item type");
                     QString type;
 
-                    QList<int> ColumnList = mainTreeTools::getColumnsToRead(theCurItem);
+                    QList<int> ColumnList = mainTreeTools::getColumnsToRead(theCurItem,tabData->getColumnBeforeBC());
                     int loadValue = tabData->dataRC(i,ColumnList.at(0)).toInt();
                     if(loadValue!=0)
                     {
@@ -1977,7 +1977,7 @@ bool writeSolverFileClass::perform()
                     break;
                 case SimulationNodeClass::nodeType_thermalAnalysisTemperature:
                 {
-                    QList<int> columnList = mainTreeTools::getColumnsToRead(theCurItem);
+                    QList<int> columnList = mainTreeTools::getColumnsToRead(theCurItem,tabData->getColumnBeforeBC());
                     double loadValue = tabData->dataRC(i,columnList.at(0)).toDouble();
                     if(loadValue!=0)
                     {
@@ -1988,7 +1988,7 @@ bool writeSolverFileClass::perform()
                     break;
                 case SimulationNodeClass::nodeType_thermalAnalysisConvection:
                 {
-                    QList<int> ColumnList = mainTreeTools::getColumnsToRead(theCurItem);                            ;
+                    QList<int> ColumnList = mainTreeTools::getColumnsToRead(theCurItem,tabData->getColumnBeforeBC());                            ;
                     double loadValue = tabData->dataRC(i,ColumnList.at(0)).toDouble();
                     //double refTemperature = theCurNode->getPropertyValue<double>("Reference temperature");
                     double refTemperature = tabData->dataRC(i,ColumnList.at(1)).toDouble();
@@ -2005,14 +2005,14 @@ bool writeSolverFileClass::perform()
                 case SimulationNodeClass::nodeType_thermalAnalysisThermalFlow:
                 case SimulationNodeClass::nodeType_thermalAnalysisThermalFlux:
                 {
-                    QList<int> ColumnList = mainTreeTools::getColumnsToRead(theCurItem);                            ;
+                    QList<int> ColumnList = mainTreeTools::getColumnsToRead(theCurItem,tabData->getColumnBeforeBC());                            ;
                     double loadValue = tabData->dataRC(i,ColumnList.at(0)).toDouble();
                     this->writeDflux(loadValue,SetName);
                 }
                     break;
                 case SimulationNodeClass::nodeType_thermalAnalysisThermalPower:
                 {
-                    QList<int> ColumnList = mainTreeTools::getColumnsToRead(theCurItem);
+                    QList<int> ColumnList = mainTreeTools::getColumnsToRead(theCurItem,tabData->getColumnBeforeBC());
                     //! -----------------------------------
                     //! the loadValue is the "Temperature"
                     //! -----------------------------------
@@ -2023,7 +2023,7 @@ bool writeSolverFileClass::perform()
                     break;
                 default:
                 {
-                    QList<int> ColumnList = mainTreeTools::getColumnsToRead(theCurItem);
+                    QList<int> ColumnList = mainTreeTools::getColumnsToRead(theCurItem,tabData->getColumnBeforeBC());
                     Property::defineBy theDefineBy = theCurNode->getPropertyValue<Property::defineBy>("Define by");
                     Property::ScopingMethod scopingMethod = theCurNode->getPropertyValue<Property::ScopingMethod>("Scoping method");
 

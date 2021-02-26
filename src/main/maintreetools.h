@@ -26,11 +26,11 @@ public:
 
     mainTreeTools(){;}
 
-    static int calculateStartColumn(QTreeView *tree);
-    static int calculateStartColumn(QStandardItem *anItem);
+    static int calculateStartColumn(QTreeView *tree, int columnsBeforeBC);
+    static int calculateStartColumn(QStandardItem *anItem, int columnsBeforeBC);
 
-    static QList<int> getColumnsToRead(QTreeView *tree);
-    static QList<int> getColumnsToRead(QStandardItem *anItem);
+    static QList<int> getColumnsToRead(QTreeView *tree, int columnsBeforeBC);
+    static QList<int> getColumnsToRead(QStandardItem *anItem, int columnsBeforeBC);
 
     static QStandardItem* getCurrentSimulationRoot(QTreeView *treeView);
 

@@ -22,13 +22,13 @@
 //! function: getColumnsToRead
 //! details:
 //! ---------------------------
-QList<int> mainTreeTools::getColumnsToRead(QTreeView *tree)
+QList<int> mainTreeTools::getColumnsToRead(QTreeView *tree, int columnsBeforeBC)
 {
     //cout<<"mainTreeTools::getColumnsToRead()->____function called____"<<endl;
 
     QModelIndex currentIndex=tree->currentIndex();
     QStandardItem *anItem = static_cast<QStandardItemModel*>(tree->model())->itemFromIndex(currentIndex);
-    const QList<int> &theColumnsToShow = mainTreeTools::getColumnsToRead(anItem);
+    const QList<int> &theColumnsToShow = mainTreeTools::getColumnsToRead(anItem,columnsBeforeBC);
     return theColumnsToShow;
 }
 
@@ -36,12 +36,12 @@ QList<int> mainTreeTools::getColumnsToRead(QTreeView *tree)
 //! function: getColumnsToRead
 //! details:
 //! ---------------------------
-QList<int> mainTreeTools::getColumnsToRead(QStandardItem *anItem)
+QList<int> mainTreeTools::getColumnsToRead(QStandardItem *anItem,int columnsBeforeBC)
 {
     //cout<<"mainTreeTools::getColumnsToRead()->____function called____"<<endl;
 
     QList<int> theColumnsToShow;
-    int SC = mainTreeTools::calculateStartColumn(anItem);
+    int SC = mainTreeTools::calculateStartColumn(anItem,columnsBeforeBC);
     SimulationNodeClass *aNode = anItem->data(Qt::UserRole).value<SimulationNodeClass*>();
     SimulationNodeClass::nodeType theType = aNode->getType();
 
@@ -168,7 +168,7 @@ QList<int> mainTreeTools::getColumnsToRead(QStandardItem *anItem)
 //! function: calculateStartColumn
 //! details:
 //! -------------------------------
-int mainTreeTools::calculateStartColumn(QStandardItem *anItem)
+int mainTreeTools::calculateStartColumn(QStandardItem *anItem, int columnsBeforeBC)
 {
     //cout<<"mainTreeTools::calculateStartColumn()->____function called____"<<endl;
 
@@ -290,7 +290,8 @@ int mainTreeTools::calculateStartColumn(QStandardItem *anItem)
     //! --------------------------------------------------
     //! number of columns defining the "Analysis setting"
     //! --------------------------------------------------
-    int initNumberOfColumns = NUMBER_OF_COLUMNS_BEFORE_BC_DATA;
+    //int initNumberOfColumns = NUMBER_OF_COLUMNS_BEFORE_BC_DATA;
+    int initNumberOfColumns = columnsBeforeBC;
     startColumn = (rrow+initNumberOfColumns)+offset;
     //cout<<"mainTreeTools::calculateStartColumn()->____exiting function: "<<startColumn<<"____"<<endl;
     return startColumn;
@@ -300,7 +301,7 @@ int mainTreeTools::calculateStartColumn(QStandardItem *anItem)
 //! function: calculateStartColumn
 //! details:
 //! -------------------------------
-int mainTreeTools::calculateStartColumn(QTreeView *tree)
+int mainTreeTools::calculateStartColumn(QTreeView *tree,int columnsBeforeBC)
 {
     //! -----------------
     //! the start column
@@ -309,7 +310,7 @@ int mainTreeTools::calculateStartColumn(QTreeView *tree)
 
     QModelIndex currentIndex=tree->currentIndex();
     QStandardItem *currentItem = static_cast<QStandardItemModel*>(tree->model())->itemFromIndex(currentIndex);
-    startColumn = mainTreeTools::calculateStartColumn(static_cast<QExtendedStandardItem*>(currentItem));
+    startColumn = mainTreeTools::calculateStartColumn(static_cast<QExtendedStandardItem*>(currentItem),columnsBeforeBC);
     return startColumn;
 }
 
