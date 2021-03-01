@@ -3088,7 +3088,7 @@ void SimulationManager::createSimulationNode(SimulationNodeClass::nodeType type,
         QVector<QVariant> vecData{data};
         aLoad.setData(vecData);
 
-        aLoad.setType(Property::loadType_momentMagnitude);
+        aLoad.setType(Property::loadType_scalar);
         nodeAnalysisSettings->getTabularDataModel()->appendColumn(aLoad);
 
         markerBuilder::addMarker(aNode,mySimulationDataBase);
@@ -8098,8 +8098,13 @@ void SimulationManager::handleLoadMagnitudeDefinitionChanged(const QString& text
     case SimulationNodeClass::nodeType_thermalAnalysisThermalFlux:
         aLoadType = Property::loadType_thermalFluxMagnitude;
         break;
+    case SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionPressure:
+        aLoadType = Property::loadType_scalar;
+        break;
+    case SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionVelocity:
+        aLoadType = Property::loadType_scalar;
+        break;
     }
-
     int startColumn = mainTreeTools::calculateStartColumn(myTreeView,tabData->getColumnBeforeBC());
 
     if(theLoadDefinition==Property::loadDefinition_constant)

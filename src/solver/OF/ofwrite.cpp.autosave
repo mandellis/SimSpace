@@ -20,6 +20,7 @@
 #include "src/main/maintreetools.h"
 #include <datasourcebuilder.h>
 #include <src/utils/feaTool/bolttool.h>
+#include <cfdTool/occtoof.h>
 
 //! -------
 //! global
@@ -163,6 +164,46 @@ bool ofwrite::perform()
     SimulationNodeClass *nodeAnalysisSettings = mySimulationRoot->child(0,0)->data(Qt::UserRole).value<SimulationNodeClass*>();
     CustomTableModel *tabData = nodeAnalysisSettings->getTabularDataModel();
 
+    
+    
+    
+    //! --------------------------------------------    
+    //! OF TEST
+    //! --------------------------------------------
+    
+    std::map<std::string,std::map<int,occHandle(Ng_MeshVS_DataSourceFace)>> oFMap;
+    
+    for(int k=1; k<N-1; k++)
+    {
+        QString itemName = itemNameClearSpaces(mySimulationRoot->child(k,0)->data(Qt::DisplayRole).toString());
+        cout<<"ofWriteClass::perform()->____found Item of type____"<<itemName.toStdString()<<"___"<<endl;
+        
+        SimulationNodeClass *theItemNode = mySimulationRoot->child(k,0)->data(Qt::UserRole).value<SimulationNodeClass*>();
+        Property::SuppressionStatus theNodeSS = theItemNode->getPropertyValue<Property::SuppressionStatus>("Suppressed");
+        
+        if(theNodeSS==Property::SuppressionStatus_Active)
+        {
+            QString SetName = itemName.append("_").append(QString("%1").arg(k));
+            IndexedMapOfMeshDataSources anIndexedMapOfFaceMeshDS;
+            anIndexedMapOfFaceMeshDS = theItemNode->getPropertyValue<IndexedMapOfMeshDataSources>("Mesh data sources");
+            std::map<int,occHandle(Ng_MeshVS_DataSourceFace)> tempMap;
+            for (IndexedMapOfMeshDataSources::iterator iter = anIndexedMapOfFaceMeshDS.begin();
+                 iter!=anIndexedMapOfFaceMeshDS.end(); ++iter)
+            {
+                int key = iter.key();
+                const occHandle(MeshVS_DataSource) &valore = iter.value();
+                const occHandle(Ng_MeshVS_DataSourceFace) &corrVal =
+                        occHandle(Ng_MeshVS_DataSourceFace)::DownCast(valore);
+                tempMap.insert(std::make_pair(key, corrVal));
+            }
+            oFMap.insert(std::make_pair(SetName.toStdString(), tempMap));
+        }
+    }
+    
+    const occHandle(MeshVS_DataSource) &corpo =  myDB->ArrayOfMeshDS.value(1);
+    bool writeMesh = opFo::occToOF(corpo, oFMap, std::string("C:/Users/FRA/Desktop/prova/backwardFacingStep2D"));
+    
+    
     return true;
 }
 
@@ -171,25 +212,4 @@ void ofwrite::clock()
     QTime time = QTime::currentTime();
     QString text = time.toString("mm:ss:zzz");
     cout<<text.toStdString()<<endl;
-}
-
-void ofwrite::makeHeader(ifstream &is)
-{
-    is<<"/*--------------------------------*- C++ -*----------------------------------*\ "<<endl;
-    is<<"| =========                 |                                                 | "<<endl;
-    is<<"| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           | "<<endl;
-    is<<"|  \\    /   O peration     | Version:  v2006                                 | "<<endl;
-    is<<"|   \\  /    A nd           | Website:  www.openfoam.com                      | "<<endl;
-    is<<"|    \\/     M anipulation  |                                                 | "<<endl;
-    is<<"\*---------------------------------------------------------------------------*/ "<<endl;
-}
-
-void ofwrite::makeSeparator(ifstream &is)
-{
-    is<<"// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * // "<<endl;
-}
-
-void ofwrite::makeEndFile(ifstream &is)
-{
-    is<<"// ************************************************************************* // "<<endl;
 }

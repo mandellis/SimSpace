@@ -78,6 +78,10 @@ private:
         return ss;
     }
 
+    void makeHeader(ifstream &is);
+    void makeSeparator(ifstream &is);
+    void makeEndFile(ifstream &is);
+
 public:
 
     //! constructor

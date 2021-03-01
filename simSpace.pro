@@ -195,7 +195,8 @@ SOURCES += src/mesh/ng_meshvs_datasource1d.cpp \
     src/solver/OF/ofwrite.cpp \
     src/solver/inputfilegenerator.cpp \
     src/gui/tabularData/tabulardataviewerclass.cpp \
-    src/geometry/polygon.cpp
+    src/geometry/polygon.cpp \
+    src/utils/cfdTool/occtoof.cpp
 
 HEADERS  += src/mesh/ng_meshvs_datasource1d.h \
     src/mesh/ng_meshvs_datasource2d.h \
@@ -441,7 +442,9 @@ HEADERS  += src/mesh/ng_meshvs_datasource1d.h \
     src/solver/ccx/writesolverfileclass.h \
     src/solver/OF/ofwrite.h \
     src/solver/inputfilegenerator.h \
-    src/gui/tabularData/tabulardataviewerclass.h
+    src/gui/tabularData/tabulardataviewerclass.h \
+    src/solver/OF/occtoof.h \
+    src/utils/cfdTool/occtoof.h
 
 FORMS    += src/main/mainwindow.ui
 

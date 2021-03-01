@@ -246,6 +246,8 @@ public:
 
     enum loadType
     {
+        loadType_scalar,
+
         //! force and remote force
         loadType_forceX,
         loadType_forceY,

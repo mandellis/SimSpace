@@ -69,6 +69,8 @@ QList<int> mainTreeTools::getColumnsToRead(QStandardItem *anItem,int columnsBefo
                SimulationNodeClass::nodeType_thermalAnalysisThermalPower<<
                SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Pressure<<
                SimulationNodeClass::nodeType_modelChange<<
+               SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionPressure<<
+               SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionVelocity<<
                SimulationNodeClass::nodeType_electrostaticPotential;
 
     //! -----------------
@@ -80,6 +82,7 @@ QList<int> mainTreeTools::getColumnsToRead(QStandardItem *anItem,int columnsBefo
                  SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_FrictionlessSupport<<
                  SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_CompressionOnlySupport<<
                  SimulationNodeClass::nodeType_thermalAnalysisAdiabaticWall<<
+                 SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionWall<<
                  SimulationNodeClass::nodeType_particlesInFieldsParticlePack;
 
     //! ------------

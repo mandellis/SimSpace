@@ -342,7 +342,8 @@ QVariant CustomTableModel::data(const QModelIndex &index, int role) const
             cellStringVariant.setValue(cellString);
             return cellStringVariant;
         }
-        else if(m_loadTypes.at(index.column())==Property::loadType_forceMagnitude ||
+        else if(m_loadTypes.at(index.column())==Property::loadType_scalar ||
+                m_loadTypes.at(index.column())==Property::loadType_forceMagnitude ||
                 m_loadTypes.at(index.column())==Property::loadType_forceX ||
                 m_loadTypes.at(index.column())==Property::loadType_forceY ||
                 m_loadTypes.at(index.column())==Property::loadType_forceZ ||
@@ -535,11 +536,23 @@ bool CustomTableModel::setDataRC(const QVariant &value, int row, int column, int
 //! function: strings for the horizontal header
 //! details:
 //! --------------------------------------------
+/*QString CustomTableModel::setHeaderString(int section) const
+{
+    QString horizontalHeaderString = QString("");
+
+}*/
+
+//! --------------------------------------------
+//! function: strings for the horizontal header
+//! details:
+//! --------------------------------------------
 QString CustomTableModel::getHeaderString(int section) const
 {
     QString horizontalHeaderString = QString("");
     switch(m_loadTypes.at(section))
     {
+    case Property::loadType_scalar: horizontalHeaderString = "SCA"; break;
+
     case Property::loadType_temperatureMagnitude: horizontalHeaderString = "T"; break;
     case Property::loadType_thermalConvectionFilmCoefficientMagnitude: horizontalHeaderString = "Film coeff"; break;
     case Property::loadType_thermalConvectionReferenceTemperatureMagnitude: horizontalHeaderString = "Ref temperature"; break;

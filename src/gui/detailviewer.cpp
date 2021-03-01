@@ -1697,15 +1697,7 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
     //! -----------------------------------
     SimulationNodeClass *nodeAnalysisSettings = Q_NULLPTR;
     nodeAnalysisSettings = mainTreeTools::getAnalysisSettingsNodeFromIndex(myCurModelIndex);
-/*    if(myCurNode->isAnalysisRoot()) nodeAnalysisSettings = myCurModelIndex.child(0,0).data(Qt::UserRole).value<SimulationNodeClass*>();
-    if(myCurNode->isAnalysisSettings()) nodeAnalysisSettings = myCurModelIndex.data(Qt::UserRole).value<SimulationNodeClass*>();
-    if(myCurNode->isSimulationSetUpNode()) nodeAnalysisSettings = myCurModelIndex.parent().child(0,0).data(Qt::UserRole).value<SimulationNodeClass*>();
-    if(myCurNode->isSolution()) nodeAnalysisSettings = myCurModelIndex.parent().child(0,0).data(Qt::UserRole).value<SimulationNodeClass*>();
-    if(myCurNode->isSolutionInformation()) nodeAnalysisSettings = myCurModelIndex.parent().parent().child(0,0).data(Qt::UserRole).value<SimulationNodeClass*>();
-    if(myCurNode->isAnalysisResult()) nodeAnalysisSettings = myCurModelIndex.parent().parent().child(0,0).data(Qt::UserRole).value<SimulationNodeClass*>();
-    if(myCurNode->isChildSimulationSetUpNode()) nodeAnalysisSettings = myCurModelIndex.parent().parent().child(0,0).data(Qt::UserRole).value<SimulationNodeClass*>();
-    if(myCurNode->isNephewSimulationSetUpNode()) nodeAnalysisSettings = myCurModelIndex.parent().parent().parent().child(0,0).data(Qt::UserRole).value<SimulationNodeClass*>();
-*/
+
     if(nodeAnalysisSettings==Q_NULLPTR)
     {
         cerr<<"@---------------------------------------------------------@"<<endl;

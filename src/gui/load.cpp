@@ -214,6 +214,7 @@ void load::write(std::ofstream &out) const
     case Property::loadType_time:
     case Property::loadType_boltForce:
     case Property::loadType_boltAdjustment:
+    case Property::loadType_scalar: //added for testing purpose
     {
         //! write the type of content
         QVariant data;
