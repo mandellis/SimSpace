@@ -25,7 +25,7 @@
 #include <TColStd_MapIteratorOfPackedMapOfInteger.hxx>
 
 
-namespace opFo {
+namespace of {
 
     bool occToOF(const occHandle(MeshVS_DataSource) &sSMesh,
                  const std::map<std::string,std::map<int,occHandle(Ng_MeshVS_DataSourceFace)>> &allBound,
@@ -50,8 +50,8 @@ namespace opFo {
 
             //!print points file heading
 
-            opFo::printMark(points);
-            opFo::printHeading(points, std::string("vectorField"), std::string("points"), std::vector<int>());
+            of::printMark(points);
+            of::printHeading(points, std::string("vectorField"), std::string("points"), std::vector<int>());
             points<<aNodes.Extent()<<endl;
             points<<"("<<endl;
 
@@ -64,7 +64,7 @@ namespace opFo {
                 points<<"("<<coords(1)<<" "<<coords(2)<<" "<<coords(3)<<")"<<endl;
             }
 
-            opFo::printEnd(points);
+            of::printEnd(points);
 
             //!open faces, owner, neighbour ofstream
 
@@ -99,20 +99,20 @@ namespace opFo {
             notes.push_back(volumeSSMesh->myFaceToElements.size());
             notes.push_back(volumeSSMesh->myFaceToElements.size()- int(volumeSSMesh->mySurfaceElements.size()));
 
-            opFo::printMark(faces);
-            opFo::printHeading(faces, std::string("faceList"), std::string("faces"), std::vector<int>());
+            of::printMark(faces);
+            of::printHeading(faces, std::string("faceList"), std::string("faces"), std::vector<int>());
             faces<<notes.at(2)<<endl;
             faces<<"("<<endl;
-            opFo::printMark(owner);
-            opFo::printHeading(owner, std::string("labelList"), std::string("owner"), notes);
+            of::printMark(owner);
+            of::printHeading(owner, std::string("labelList"), std::string("owner"), notes);
             owner<<notes.at(2)<<endl;
             owner<<"("<<endl;
-            opFo::printMark(neighbour);
-            opFo::printHeading(neighbour, std::string("labelList"), std::string("owner"), notes);
+            of::printMark(neighbour);
+            of::printHeading(neighbour, std::string("labelList"), std::string("owner"), notes);
             neighbour<<notes.at(3)<<endl;
             neighbour<<"("<<endl;
-            opFo::printMark(boundary);
-            opFo::printHeading(boundary, std::string("polyBoundaryMesh"), std::string("boundary"), std::vector<int>());
+            of::printMark(boundary);
+            of::printHeading(boundary, std::string("polyBoundaryMesh"), std::string("boundary"), std::vector<int>());
             boundary<<allBound.size()<<endl;
             boundary<<"("<<endl;
 
@@ -186,7 +186,7 @@ namespace opFo {
                     const QList<int> &surfaceOwner = volumeSSMesh->myFaceToElements.value(tempMeshElement2);
                     owner<<surfaceOwner.at(0)-1<<endl;
                 }
-                printBoundary(boundary, bName, int(boundarySet.size()), gap);
+                printMshBoundary(boundary, bName, int(boundarySet.size()), gap);
                 gap += int(boundarySet.size());
             }
 
@@ -206,37 +206,39 @@ namespace opFo {
 
             //!print the end lines in faces, owner and neighbour files
 
-            opFo::printEnd(faces);
-            opFo::printEnd(owner);
-            opFo::printEnd(neighbour);
-            opFo::printEnd(boundary);
+            of::printEnd(faces);
+            of::printEnd(owner);
+            of::printEnd(neighbour);
+            of::printEnd(boundary);
 
         }
 
         return true;
     }
 
+
+
     void printMark(std::ofstream &textFile)
     {
         if (!textFile.is_open()) return;
-        textFile<<"/*--------------------------------*- C++ -*----------------------------------*\\"<<endl;
-        textFile<<"| =========                 |                                                 |"<<endl;
+        textFile<<"/*--------------------------------*-  C++ -*----------------------------------*\\"<<endl;
+        textFile<<"| =========                   |                                                 |"<<endl;
         textFile<<"| \\\\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |"<<endl;
         textFile<<"|  \\\\    /   O peration     | Version:  v2012                                 |"<<endl;
         textFile<<"|   \\\\  /    A nd           | Website:  www.openfoam.com                      |"<<endl;
         textFile<<"|    \\\\/     M anipulation  |                                                 |"<<endl;
-        textFile<<"\\*---------------------------------------------------------------------------*/"<<endl;
+        textFile<<"\\*----------------------------------------------------------------------------*/"<<endl;
         return;
     }
 
-    void printHeading(std::ofstream &textFile, std::string classe, std::string object, std::vector<int> &notes)
+    void printHeading(std::ofstream &textFile, std::string clas, std::string object, std::vector<int> &notes)
     {
         if (!textFile.is_open()) return;
         textFile<<"FoamFile"<<endl;
         textFile<<"{"<<endl;
         textFile<<"    version     2.0;"<<endl;
         textFile<<"    format      ascii;"<<endl;
-        textFile<<"    class       "<<classe<<";"<<endl;
+        textFile<<"    class       "<<clas<<";"<<endl;
         if (notes.size()>0) textFile<<"    note        "<<"\"nPoints:"<<notes.at(0)<<"  nCells:"<<notes.at(1)
                <<"  nFaces:"<<notes.at(2)<<"  nInternalFaces:"<<notes.at(3)<<"\";"<<endl;
         textFile<<"    location    \"constant/polyMesh\";"<<endl;
@@ -258,7 +260,7 @@ namespace opFo {
          return;
      }
 
-    void printBoundary(std::ofstream &textFile, std::string name, int nFaces, int startFace)
+    void printMshBoundary(std::ofstream &textFile, std::string name, int nFaces, int startFace)
     {
         if (!textFile.is_open()) return;
         textFile<<"    "<<name<<endl;
@@ -278,6 +280,31 @@ namespace opFo {
         }
         textFile<<"        nFaces          "<<nFaces<<";"<<endl;
         textFile<<"        startFace       "<<startFace<<";"<<endl;
+        textFile<<"    }"<<endl;
+        return;
+    }
+    void printBoundary(std::ofstream &textFile, std::string stype, std::vector<double> value)
+    {
+        if (!textFile.is_open()) return;
+        textFile<<"    "<<stype<<endl;
+        textFile<<"    {"<<endl;
+        textFile<<" type    "<<stype<<endl;
+        if(stype=="fixedValue")
+        textFile<<" value       uniform (";
+        if(value.size()>1)
+                  textFile<<value.at(0)<<" "<<value.at(1)<<" "<<value.at(2)<<endl;
+        else textFile<<value.at(0)<<");"<<endl;
+        textFile<<"    }"<<endl;
+        return;
+    }
+    void printBoundary(std::ofstream &textFile, std::string stype, std::string value)
+    {
+        if (!textFile.is_open()) return;
+        textFile<<"    "<<stype<<endl;
+        textFile<<"    {"<<endl;
+        textFile<<" type    "<<stype<<endl;
+        if(stype=="fixedValue")
+        textFile<<" value       "<<value<<endl;
         textFile<<"    }"<<endl;
         return;
     }

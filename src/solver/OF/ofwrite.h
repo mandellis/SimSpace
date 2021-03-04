@@ -41,7 +41,7 @@ private:
     QExtendedStandardItem *mySimulationRoot;
     QString myFileDir;
     //ofstream myInputFile;
-    //ofstream myMesh;
+    ofstream myU,myP,myK,myEPS,myW,myNu,myNUT,myT;
 
     QProgressDialog *myProgressDialog;
     QProgressIndicator *myProgressIndicator;
@@ -52,6 +52,16 @@ private:
 
     //int totalNumberOfNodes;
     //int totalNumberOfElements;
+    /*enum bcType{
+        U,
+        p,
+        k,
+        eps,
+        w,
+        T,
+        nu,
+        nut
+    };*/
 
 private:
 
@@ -78,9 +88,7 @@ private:
         return ss;
     }
 
-    void makeHeader(ifstream &is);
-    void makeSeparator(ifstream &is);
-    void makeEndFile(ifstream &is);
+    void writeBC(ofstream of, std::string stype, double value);
 
 public:
 

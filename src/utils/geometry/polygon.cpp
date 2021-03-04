@@ -111,10 +111,9 @@ bool polygon::isPointInside(const polygon::Point &P,
 bool polygon::getPolygonCenter(const std::vector<polygon::Point> &aPolygon,
                                polygon::Point &faceCenter, double &faceArea)
 {
-    //! ------------------------------------------
-    //! the polygon is actually a triangle
-    //! direct (faster) calculation of the center
-    //! ------------------------------------------
+    //! --------------------------
+    //! the polygon is a triangle
+    //! --------------------------
     if(aPolygon.size()==3)
     {
         faceCenter.x = (aPolygon[0].x+aPolygon[1].x+aPolygon[2].x)/3.0;
@@ -132,7 +131,6 @@ bool polygon::getPolygonCenter(const std::vector<polygon::Point> &aPolygon,
     if(!isDone)
     {
         cerr<<"polygon::getPolygonCenter()->____error in retrieving the rotation matrix____"<<endl;
-        //exit(100);
         return false;
     }
 
@@ -146,7 +144,7 @@ bool polygon::getPolygonCenter(const std::vector<polygon::Point> &aPolygon,
     double a32 = rotationMatrix[7];
     double a33 = rotationMatrix[8];
 
-    const polygon::Point P1 = aPolygon[0];
+    const polygon::Point &P1 = aPolygon[0];
     double xP1 = P1.x; double yP1 = P1.y; double zP1 = P1.z;
 
     //! ----------------------
@@ -160,7 +158,7 @@ bool polygon::getPolygonCenter(const std::vector<polygon::Point> &aPolygon,
     size_t NbPoints = aPolygon.size();
     for(int n=0; n<NbPoints; n++)
     {
-        const polygon::Point &curPoint = aPolygon.at(n);
+        const polygon::Point &curPoint = aPolygon[n];
         polygon::Point transPoint;
 
         double dxP = curPoint.x-xP1;
@@ -199,8 +197,8 @@ bool polygon::getPolygonCenter(const std::vector<polygon::Point> &aPolygon,
 
     for(int i=0; i<NbPoints-1; i++)
     {
-        const polygon::Point &Pi = transfPointList[0];
-        const polygon::Point &Pii = transfPointList[1];
+        const polygon::Point &Pi = transfPointList[i];
+        const polygon::Point &Pii = transfPointList[i+1];
 
         CX = CX + (Pi.x+Pii.x)*(Pi.x*Pii.y-Pii.x*Pi.y);
         CY = CY + (Pi.y+Pii.y)*(Pi.x*Pii.y-Pii.x*Pi.y);
@@ -535,6 +533,7 @@ bool polygon::polygon_triangulate(const std::vector<Point> &aPolygon, std::vecto
     }
     if(foundNotCollinear==false) return false;
 
+    //cout<<"\n____COSINES____"<<endl;
     //! ------------
     //! 2. eX local
     //! ------------
@@ -543,6 +542,7 @@ bool polygon::polygon_triangulate(const std::vector<Point> &aPolygon, std::vecto
     double eXz = B.z-A.z;
     double lX = sqrt(eXx*eXx+eXy*eXy+eXz*eXz);
     eXx /= lX; eXy /= lX; eXz /= lX;
+    //cout<<"____ey ("<<eXx<<", "<<eXy<<", "<<eXz<<")____"<<endl;
 
     //! ----
     //! C-A
@@ -559,9 +559,10 @@ bool polygon::polygon_triangulate(const std::vector<Point> &aPolygon, std::vecto
     //! -------------------
     double eZx = eXy*zCA-eXz*yCA;
     double eZy = eXz*xCA-eXx*zCA;
-    double eZz = eXz*yCA-eZy*xCA;
+    double eZz = eXx*yCA-eXy*xCA;
     double lZ = sqrt(eZx*eZx+eZy*eZy+eZz*eZz);
     eZx /= lZ; eZy /= lZ; eZz /= lZ;
+    //cout<<"____ez ("<<eZx<<", "<<eZy<<", "<<eZz<<")____"<<endl;
 
     //! -------------------
     //! 3. eY local
@@ -569,15 +570,17 @@ bool polygon::polygon_triangulate(const std::vector<Point> &aPolygon, std::vecto
     //! eZx     eZy     eZz
     //! eXx     eXy     eXz
     //! --------------------
-    double eYx = eZy*eXz-eZz*eXx;
+    double eYx = eZy*eXz-eZz*eXy;
     double eYy = eZz*eXx-eZx*eXz;
     double eYz = eZx*eXy-eZy*eXx;
     double lY = sqrt(eYx*eYx+eYy*eYy+eYz*eYz);
     eYx /= lY; eYz /= lY; eZy /= lY;
+    //cout<<"____ey ("<<eYx<<", "<<eYy<<", "<<eYz<<")____"<<endl;
 
     //! ---------------------------------------------
     //! definition of the polygon on the local plane
     //! ---------------------------------------------
+    //cout<<"\n____POLYGON ON LOCAL PLANE____"<<endl;
     std::vector<double> x,y;
     for(int i=0; i<n; i++)
     {
@@ -598,6 +601,7 @@ bool polygon::polygon_triangulate(const std::vector<Point> &aPolygon, std::vecto
         //double ZP = dxP*eZx+dyP*eZy+dzP*eZz;        // should be zero
         x.push_back(XP);
         y.push_back(YP);
+        //cout<<"____("<<XP<<", "<<YP<<", "<<ZP<<")____"<<endl;
     }
 
     //! -------------------------------
@@ -610,11 +614,18 @@ bool polygon::polygon_triangulate(const std::vector<Point> &aPolygon, std::vecto
     //! ---------------------------------------
     //! return to the global coordinate system
     //! ---------------------------------------
-    int NbTriangles = int(trianglesDefinitions.size()/(3*(n-2)));
+    //cout<<"____"<<trianglesDefinitions.size()<<"____"<<endl;
+    //size_t Nt = trianglesDefinitions.size()/3;
+    //for(int i=0; i<Nt; i++)
+    //{
+    //    cout<<"____triangle: "<<i<<"____"<<endl;
+    //    int s=3*i;
+    //    cout<<"____"<<trianglesDefinitions[s]<<", "<<trianglesDefinitions[s+1]<<", "<<trianglesDefinitions[s+2]<<"____"<<endl;
+    //}
+
+    size_t NbTriangles = trianglesDefinitions.size()/3;
     for(int n=0; n<NbTriangles; n++)
     {
-        std::vector<polygon::Point> a3DTriangle(3);
-
         int s = n*3;
         int i0 = trianglesDefinitions[s+0];
         double x0 = x[i0];
@@ -622,7 +633,6 @@ bool polygon::polygon_triangulate(const std::vector<Point> &aPolygon, std::vecto
         double x0_global = A.x+eXx*x0+eYx*y0;
         double y0_global = A.y+eXy*x0+eYy*y0;
         double z0_global = A.z+eXz*x0+eYz*y0;
-        a3DTriangle.push_back(polygon::Point(x0_global,y0_global,z0_global));
 
         int i1 = trianglesDefinitions[s+1];
         double x1 = x[i1];
@@ -630,7 +640,6 @@ bool polygon::polygon_triangulate(const std::vector<Point> &aPolygon, std::vecto
         double x1_global = A.x+eXx*x1+eYx*y1;
         double y1_global = A.y+eXy*x1+eYy*y1;
         double z1_global = A.z+eXz*x1+eYz*y1;
-        a3DTriangle.push_back(polygon::Point(x1_global,y1_global,z1_global));
 
         int i2 = trianglesDefinitions[s+2];
         double x2 = x[i2];
@@ -639,7 +648,14 @@ bool polygon::polygon_triangulate(const std::vector<Point> &aPolygon, std::vecto
         double y2_global = A.y+eXy*x2+eYy*y2;
         double z2_global = A.z+eXz*x2+eYz*y2;
 
-        a3DTriangle.push_back(polygon::Point(x2_global,y2_global,z2_global));
+        std::vector<polygon::Point> a3DTriangle
+        {
+            polygon::Point(x0_global,y0_global,z0_global),
+                    polygon::Point(x1_global,y1_global,z1_global),
+                    polygon::Point(x2_global,y2_global,z2_global)
+        };
+
+        //cout<<"____("<<i0<<", "<<i1<<", "<<i2<<")____"<<endl;
         triangles.push_back(a3DTriangle);
     }
     return true;
@@ -655,10 +671,12 @@ bool polygon::polygon_triangulate_planar(const std::vector<double> &x,
                                          const std::vector<double> &y,
                                          std::vector<int> &triangles)
 {
-    int n = int(x.size());
+    //cout<<"polygon::polygon_triangulate_planar()->____function called____"<<endl;
+    size_t n = x.size();
     std::vector<bool> ear(n);
     std::vector<int> prev_node(n), next_node(n);
-    triangles.reserve(3*(n-2));
+    triangles = std::vector<int>(3*(n-2));
+    //triangles.reserve(3*(n-2));
 
     int i0, i1, i2, i3, i4;
     int triangle_num;
@@ -685,8 +703,9 @@ bool polygon::polygon_triangulate_planar(const std::vector<double> &x,
     //! that can be sliced off immediately
     //! -----------------------------------------------------------------------
     for (i=0; i<n; i++)
+    {
         ear[i] = polygon::diagonal(prev_node[i], next_node[i], prev_node, next_node, x, y);
-
+    }
     triangle_num = 0;
     i2 = 0;
 
@@ -694,7 +713,13 @@ bool polygon::polygon_triangulate_planar(const std::vector<double> &x,
     while (triangle_num<n-3)
     {
         tryn++;
-        if(tryn>n-1) return false;        //! avoid entering in an endless loop
+        if(tryn>n-1)    //! avoid entering in an endless loop
+        {
+            ear.clear();
+            next_node.clear();
+            prev_node.clear();
+            return false;
+        }
 
         //!  If I2 is an ear, gather information necessary to carry out
         //!  the slicing operation and subsequent "healing"
@@ -705,15 +730,15 @@ bool polygon::polygon_triangulate_planar(const std::vector<double> &x,
             i1 = prev_node[i2];
             i0 = prev_node[i1];
 
-            //!  make vertex I2 disappear
+            //! make vertex I2 disappear
             next_node[i1] = i3;
             prev_node[i3] = i1;
 
-            //!  update the earity of I1 and I3, because I2 disappeared.
+            //! update the earity of I1 and I3, because I2 disappeared.
             ear[i1] = polygon::diagonal(i0, i3, prev_node, next_node, x, y);
             ear[i3] = polygon::diagonal(i1, i4, prev_node, next_node, x, y);
 
-            //!  add the diagonal [I3, I1, I2] to the list.
+            //! add the diagonal [I3, I1, I2] to the list.
             triangles[0+triangle_num*3] = i3;
             triangles[1+triangle_num*3] = i1;
             triangles[2+triangle_num*3] = i2;

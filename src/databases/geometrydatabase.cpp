@@ -9,7 +9,7 @@
 #include "src/utils/ccout.h"
 #include "src/utils/topologytools.h"
 #include "src/registeredMetatypes/topods_shape_reg.h"
-#include "src/geometry/geometryhealing.h"
+#include "geometryhealing.h"
 #include "OCCface.h"
 #include "src/utils/geomtoolsclass.h"
 

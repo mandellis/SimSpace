@@ -20,6 +20,8 @@
 #include "src/main/maintreetools.h"
 #include <datasourcebuilder.h>
 #include <src/utils/feaTool/bolttool.h>
+#include <cfdTool/occtoof.h>
+#include "src/utils/cfdTool/occtoof.h"
 
 //! -------
 //! global
@@ -116,7 +118,7 @@ bool ofwrite::perform()
         myProgressIndicator->setSecondaryBarVisible(false);
 
         QProgressEvent *e = new QProgressEvent(QProgressEvent_Init,0,Nevents,0,"Writing solver input file",
-                                               QProgressEvent_None,-1,-1,-1,"Writing CCX input file");
+                                               QProgressEvent_None,-1,-1,-1,"Writing OF input file");
         QApplication::postEvent(myProgressIndicator,e);
         QApplication::processEvents();
         QThread::msleep(1000);
@@ -129,7 +131,7 @@ bool ofwrite::perform()
     {
         done++;
         QProgressEvent *e = new QProgressEvent(QProgressEvent_Update,0,Nevents-1,done,"Connectivity maps generated",
-                                               QProgressEvent_None,-1,-1,-1,"Writing CCX solver input file");
+                                               QProgressEvent_None,-1,-1,-1,"Writing OF solver input file");
         QApplication::postEvent(myProgressIndicator,e);
         QApplication::processEvents();
         QThread::msleep(250);
@@ -163,6 +165,147 @@ bool ofwrite::perform()
     SimulationNodeClass *nodeAnalysisSettings = mySimulationRoot->child(0,0)->data(Qt::UserRole).value<SimulationNodeClass*>();
     CustomTableModel *tabData = nodeAnalysisSettings->getTabularDataModel();
 
+    std::string path = myFileDir.toStdString() + "/0";
+    myU.open((path+"/U").c_str());
+    myP.open((path+"/p").c_str());
+    myK.open((path+"/k").c_str());
+    myEPS.open((path+"/epsilon").c_str());
+    myW.open((path+"/omega").c_str());
+    myNUT.open((path+"/nuTilda").c_str());
+    myNu.open((path+"/nut").c_str());
+/*
+    std::vector<ofstream> allBCfiles;
+    allBCfiles.push_back(myU);
+    allBCfiles.push_back(myP);
+    allBCfiles.push_back(myK);
+    allBCfiles.push_back(myEPS);
+    allBCfiles.push_back(myW);
+    allBCfiles.push_back(myNUT);
+    allBCfiles.push_back(myNu);
+*/
+    of::printMark(myU);
+    of::printHeading(myU,std::string("volVectorField"),std::string("U"),std::vector<int>());
+    myU<<"dimensions      [0 1 -1 0 0 0 0];"<<endl;
+    myU<<"internalField   uniform (0 0 0);"<<endl;
+    myU<<"boundaryField"<<endl;
+    myU<<"{"<<endl;
+
+    of::printMark(myP);
+    of::printHeading(myP,std::string("volScalarField"),std::string("p"),std::vector<int>());
+    myP<<"dimensions      [0 2 -2 0 0 0 0];"<<endl;
+    myP<<"internalField   uniform 0;"<<endl;
+    myP<<"boundaryField"<<endl;
+    myP<<"{"<<endl;
+
+    of::printMark(myK);
+    of::printHeading(myK,std::string("volScalarField"),std::string("k"),std::vector<int>());
+    myK<<"dimensions      [0 2 -2 0 0 0 0];"<<endl;
+    myK<<"internalField   uniform 1e-3;"<<endl;
+    myK<<"boundaryField"<<endl;
+    myK<<"{"<<endl;
+
+
+    of::printHeading(myEPS,std::string("volScalarField"),std::string("epsilon"),std::vector<int>());
+    myEPS<<"dimensions      [0 2 -3 0 0 0 0];"<<endl;
+    myEPS<<"internalField   uniform 10;"<<endl;
+    myEPS<<"boundaryField"<<endl;
+    myEPS<<"{"<<endl;
+
+    of::printHeading(myW,std::string("volScalarField"),std::string("omega"),std::vector<int>());
+    myW<<"dimensions      [0 0 -1 0 0 0 0];"<<endl;
+    myW<<"internalField   uniform 100000;"<<endl;
+    myW<<"boundaryField"<<endl;
+    myW<<"{"<<endl;
+
+    of::printHeading(myNUT,std::string("volScalarField"),std::string("nuTilda"),std::vector<int>());
+    myNUT<<"dimensions      [0 2 -1 0 0 0 0];"<<endl;
+    myNUT<<"internalField   uniform 0;"<<endl;
+    myNUT<<"boundaryField"<<endl;
+    myNUT<<"{"<<endl;
+
+    of::printHeading(myNu,std::string("volScalarField"),std::string("nut"),std::vector<int>());
+    myNu<<"dimensions      [0 2 -1 0 0 0 0];"<<endl;
+    myNu<<"internalField   uniform 0;"<<endl;
+    myNu<<"boundaryField"<<endl;
+    myNu<<"{"<<endl;
+
+    std::map<std::string,std::map<int,occHandle(Ng_MeshVS_DataSourceFace)>> oFMap;
+    for(int k=1; k<N-1; k++)
+    {
+        QString itemName = itemNameClearSpaces(mySimulationRoot->child(k,0)->data(Qt::DisplayRole).toString());
+        cout<<"ofWriteClass::perform()->____found Item of type____"<<itemName.toStdString()<<"___"<<endl;
+
+        SimulationNodeClass *theNode = mySimulationRoot->child(k,0)->data(Qt::UserRole).value<SimulationNodeClass*>();
+        QStandardItem *theItem = mySimulationRoot->child(k,0)->data(Qt::UserRole).value<QStandardItem*>();
+
+        Property::SuppressionStatus theNodeSS = theNode->getPropertyValue<Property::SuppressionStatus>("Suppressed");
+        SimulationNodeClass::nodeType theNodeType = theNode->getType();
+
+        if(theNodeSS==Property::SuppressionStatus_Active)
+        {
+            QString SetName = itemName.append("_").append(QString("%1").arg(k));
+            IndexedMapOfMeshDataSources anIndexedMapOfFaceMeshDS;
+            anIndexedMapOfFaceMeshDS = theNode->getPropertyValue<IndexedMapOfMeshDataSources>("Mesh data sources");
+            std::map<int,occHandle(Ng_MeshVS_DataSourceFace)> tempMap;
+            for (IndexedMapOfMeshDataSources::iterator iter = anIndexedMapOfFaceMeshDS.begin();
+                 iter!=anIndexedMapOfFaceMeshDS.end(); ++iter)
+            {
+                int key = iter.key();
+                const occHandle(MeshVS_DataSource) &valore = iter.value();
+                const occHandle(Ng_MeshVS_DataSourceFace) &corrVal =
+                        occHandle(Ng_MeshVS_DataSourceFace)::DownCast(valore);
+                tempMap.insert(std::make_pair(key, corrVal));
+            }
+
+            //! possible BC value
+            double p,U,k,w,eps,T,rho,v;
+
+            QList<int> columnList = mainTreeTools::getColumnsToRead(theItem,tabData->getColumnBeforeBC());
+            v = tabData->dataRC(1,columnList.at(0)).value<double>();
+            std::vector<double> vec;
+            vec.push_back(v);
+
+            switch(theNodeType)
+            {
+            case SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionVelocity:
+            {
+                std::vector<double> p;
+                SetName.prepend("inlet_");
+                of::printBoundary(myU,std::string("fixedValue"),vec);
+                of::printBoundary(myP,std::string("zeroGradient"),p);
+                of::printBoundary(myK,std::string("fixedValue"),std::string("$internalField"));
+                of::printBoundary(myEPS,std::string("fixedValue"),std::string("$internalField"));
+                of::printBoundary(myW,std::string("fixedValue"),std::string("$internalField"));
+                of::printBoundary(myNu,std::string("calculated"),std::string("$internalField"));
+                of::printBoundary(myNUT,std::string("calculated"),std::string("$internalField"));
+            }
+                break;
+
+            case SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionPressure:
+            {
+                SetName.prepend("pressure_");
+            }
+                break;
+
+            case SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionWall:
+            {
+                SetName.prepend("wall_");
+            }
+                break;
+            }
+
+            oFMap.insert(std::make_pair(SetName.toStdString(), tempMap));
+
+
+
+        }
+    }
+
+
+    const occHandle(MeshVS_DataSource) &bodyMesh =  myDB->ArrayOfMeshDS.value(1); //change in vector/array of MeshVS_DS
+    bool writeMesh = of::occToOF(bodyMesh, oFMap, myFileDir.toStdString());
+
+
     return true;
 }
 
@@ -173,23 +316,7 @@ void ofwrite::clock()
     cout<<text.toStdString()<<endl;
 }
 
-void ofwrite::makeHeader(ifstream &is)
+void ofwrite::writeBC(std::ofstream of, std::string stype, double value)
 {
-    is<<"/*--------------------------------*- C++ -*----------------------------------*\ "<<endl;
-    is<<"| =========                 |                                                 | "<<endl;
-    is<<"| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           | "<<endl;
-    is<<"|  \\    /   O peration     | Version:  v2006                                 | "<<endl;
-    is<<"|   \\  /    A nd           | Website:  www.openfoam.com                      | "<<endl;
-    is<<"|    \\/     M anipulation  |                                                 | "<<endl;
-    is<<"\*---------------------------------------------------------------------------*/ "<<endl;
-}
 
-void ofwrite::makeSeparator(ifstream &is)
-{
-    is<<"// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * // "<<endl;
-}
-
-void ofwrite::makeEndFile(ifstream &is)
-{
-    is<<"// ************************************************************************* // "<<endl;
 }

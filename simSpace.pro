@@ -60,7 +60,6 @@ SOURCES += src/mesh/ng_meshvs_datasource1d.cpp \
     src/mesh/netgentools.cpp \
     src/gui/qfileselect.cpp \
     src/memory/memoryprofiler.cpp \
-    src/geometry/geometryhealing.cpp \
     src/mesh/igtools.cpp \
     src/mesh/tetwildmesher.cpp \
     src/mesh/mshconvert.cpp \
@@ -72,11 +71,7 @@ SOURCES += src/mesh/ng_meshvs_datasource1d.cpp \
     src/mesh/nettgentool2.cpp \
     src/mesh/qmorph.cpp \
     src/mesh/triangleaccessor.cpp \
-    src/geometry/TriDist.cpp \
     src/gui/usermessagesmodel.cpp \
-    src/geometry/geometryface.cpp \
-    src/geometry/OCCface.cpp \
-    src/geometry/meshface.cpp \
     src/mesh/tetsplitter.cpp \
     src/mesh/tethex.cpp \
     src/mesh/meshselectnlayers.cpp \
@@ -195,8 +190,14 @@ SOURCES += src/mesh/ng_meshvs_datasource1d.cpp \
     src/solver/OF/ofwrite.cpp \
     src/solver/inputfilegenerator.cpp \
     src/gui/tabularData/tabulardataviewerclass.cpp \
-    src/geometry/polygon.cpp \
-    src/utils/cfdTool/occtoof.cpp
+    src/utils/cfdTool/occtoof.cpp \
+    src/utils/geometry/geometryface.cpp \
+    src/utils/geometry/geometryhealing.cpp \
+    src/utils/geometry/meshface.cpp \
+    src/utils/geometry/OCCface.cpp \
+    src/utils/geometry/polygon.cpp \
+    src/utils/geometry/polyhedron.cpp \
+    src/utils/geometry/TriDist.cpp
 
 HEADERS  += src/mesh/ng_meshvs_datasource1d.h \
     src/mesh/ng_meshvs_datasource2d.h \
@@ -235,10 +236,7 @@ HEADERS  += src/mesh/ng_meshvs_datasource1d.h \
     src/mesh/netgentools.h \
     src/gui/qfileselect.h \
     src/memory/memoryprofiler.h \
-    src/geometry/geometryhealing.h \
     src/mesh/igtools.h \
-    src/geometry/geometrytag.h \
-    src/geometry/polygon.h \
     src/mesh/tetwildmesher.h \
     src/mesh/mshconvert.h \
     src/mesh/mshconvert.h \
@@ -248,27 +246,17 @@ HEADERS  += src/mesh/ng_meshvs_datasource1d.h \
     src/viewer/resultpresentation.h \
     src/mesh/surfacemeshcutter.h \
     src/mesh/simulationdata.h \
-    src/geometry/polyhedron.h \
     src/mesh/datasourcebuildercontroller.h \
     src/mesh/surfacemeshsmoother.h \
     src/mesh/nettgentool2.h \
     src/mesh/qmorph.h \
     src/mesh/triangleaccessor.h \
-    src/geometry/triangletotriangleintersection.h \
-    src/geometry/Tri.h \
-    src/geometry/TriDist.h \
-    src/geometry/PQP_Compile.h \
-    src/geometry/MatVec.h \
     src/gui/usermessagesmodel.h \
     src/mesh/userMessage.h \
-    src/geometry/geometryface.h \
-    src/geometry/OCCface.h \
-    src/geometry/meshface.h \
     src/mesh/tetsplitter.h \
     src/mesh/tethex.h \
     src/mesh/meshelementbycoords.h \
     src/mesh/meshselectnlayers.h \
-    src/geometry/shapecomparison.h \
     src/viewer/wbtrihedron.h \
     src/mesh/meshslicer.h \
     src/mesh/slicemeshvs_mesh.h \
@@ -294,7 +282,6 @@ HEADERS  += src/mesh/ng_meshvs_datasource1d.h \
     src/databases/geometrydatabase.h \
     src/databases/meshdatabase.h \
     src/databases/simulationdatabase.h \
-    src/geometry/PQP_Internal.h \
     src/main/maintreetools.h \
     src/main/mainwindow.h \
     src/main/mydefines.h \
@@ -443,8 +430,22 @@ HEADERS  += src/mesh/ng_meshvs_datasource1d.h \
     src/solver/OF/ofwrite.h \
     src/solver/inputfilegenerator.h \
     src/gui/tabularData/tabulardataviewerclass.h \
-    src/solver/OF/occtoof.h \
-    src/utils/cfdTool/occtoof.h
+    src/utils/cfdTool/occtoof.h \
+    src/utils/geometry/geometrydoctor.h \
+    src/utils/geometry/geometryface.h \
+    src/utils/geometry/geometryhealing.h \
+    src/utils/geometry/geometrytag.h \
+    src/utils/geometry/MatVec.h \
+    src/utils/geometry/meshface.h \
+    src/utils/geometry/OCCface.h \
+    src/utils/geometry/polygon.h \
+    src/utils/geometry/polyhedron.h \
+    src/utils/geometry/PQP_Compile.h \
+    src/utils/geometry/PQP_Internal.h \
+    src/utils/geometry/shapecomparison.h \
+    src/utils/geometry/Tri.h \
+    src/utils/geometry/triangletotriangleintersection.h \
+    src/utils/geometry/TriDist.h
 
 FORMS    += src/main/mainwindow.ui
 
@@ -464,7 +465,7 @@ DEFINES += QCUSTOMPLOT_USE_LIBRARY
 #DEFINES += ONLY_MESHER
 DEFINES += NEW_HASH
 
-INCLUDEPATH = $$PWD/src/geometry \
+INCLUDEPATH = $$PWD/src/utils/geometry \
               C:/OpenCASCADE7.3.0-vc14-64/opencascade-7.3.0/inc \
               $$PWD/ext/StlMesh    \
               "D:/Work/Costamp/OCC lib/EMESH_7.3.0_binaries_win64vc14/inc"     \
@@ -472,7 +473,6 @@ INCLUDEPATH = $$PWD/src/geometry \
               $$PWD/src/gui/optionsWidget    \
               $$PWD/src/connections \
               $$PWD/src/controller \
-              $$PWD/src/geometry \
               $$PWD/src/main \
               $$PWD/src/utils \
               $$PWD/src/gui/tabularData    \
