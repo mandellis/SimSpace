@@ -23,6 +23,9 @@ namespace of {
 
     void printBoundary(std::ofstream &textFile, std::string stype, std::vector<double> value);
     void printBoundary(std::ofstream &textFile, std::string stype, std::string value);
+
+    void closeBoundary(std::ofstream &textFile);
+
 }
 
 /* simulationmanager(generateboundaryconditiondatasource)

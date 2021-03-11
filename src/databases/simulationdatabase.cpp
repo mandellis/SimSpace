@@ -1533,17 +1533,6 @@ void simulationDataBase::createCFDAnalysisRootNode()
     //! ---------------------------------------------
     QExtendedStandardItem *CFDAnalysisSettingsItem = new QExtendedStandardItem();
 
-    //! ----------------------------
-    //! the default Number of steps
-    //! ----------------------------
-    data.setValue(1);
-    Property property_numberOfSteps("Number of steps",data,Property::PropertyGroup_StepControls);
-
-    //! --------------------------
-    //! the "Current step number"
-    //! --------------------------
-    data.setValue(1);
-    Property property_currentStepNumber("Current step number",data,Property::PropertyGroup_StepControls);
 
     //! ------------------------------
     //! the default analysis end time
@@ -1552,20 +1541,12 @@ void simulationDataBase::createCFDAnalysisRootNode()
     data.setValue(endTime);
     Property property_stepEndTime("Step end time",data,Property::PropertyGroup_StepControls);
 
-
     //! -----------------------
     //! steady state/transient
     //! -----------------------
     Property::timeIntegration timeIntegration = Property::timeIntegration_steadyState;
     data.setValue(timeIntegration);
     Property property_timeIntegration("Static/Transient",data,Property::PropertyGroup_StepControls);
-
-    //! --------------
-    //! time stepping
-    //! --------------
-    Property::autoTimeStepping theTimeStepping = Property::autoTimeStepping_OFF;
-    data.setValue(theTimeStepping);
-    Property property_autoTimeStepping("Auto time stepping",data,Property::PropertyGroup_StepControls);
 
     //! ------------------
     //! number of threads
@@ -1574,11 +1555,8 @@ void simulationDataBase::createCFDAnalysisRootNode()
     data.setValue(numberOfThreads);
     Property property_numberOfThreads("Number of threads",data,Property::PropertyGroup_SolverControls);
 
-    props.push_back(property_numberOfSteps);
-    props.push_back(property_currentStepNumber);
     props.push_back(property_stepEndTime);
     props.push_back(property_timeIntegration);
-    props.push_back(property_autoTimeStepping);
     props.push_back(property_numberOfThreads);
 
     //! -------------------------------

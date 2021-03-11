@@ -204,7 +204,6 @@ bool ofwrite::perform()
     myK<<"boundaryField"<<endl;
     myK<<"{"<<endl;
 
-
     of::printHeading(myEPS,std::string("volScalarField"),std::string("epsilon"),std::vector<int>());
     myEPS<<"dimensions      [0 2 -3 0 0 0 0];"<<endl;
     myEPS<<"internalField   uniform 10;"<<endl;
@@ -236,8 +235,7 @@ bool ofwrite::perform()
         cout<<"ofWriteClass::perform()->____found Item of type____"<<itemName.toStdString()<<"___"<<endl;
 
         SimulationNodeClass *theNode = mySimulationRoot->child(k,0)->data(Qt::UserRole).value<SimulationNodeClass*>();
-        QStandardItem *theItem = mySimulationRoot->child(k,0)->data(Qt::UserRole).value<QStandardItem*>();
-
+        QStandardItem *theItem = static_cast<QStandardItem*>(mySimulationRoot->child(k,0));
         Property::SuppressionStatus theNodeSS = theNode->getPropertyValue<Property::SuppressionStatus>("Suppressed");
         SimulationNodeClass::nodeType theNodeType = theNode->getType();
 
@@ -259,7 +257,7 @@ bool ofwrite::perform()
 
             //! possible BC value
             double p,U,k,w,eps,T,rho,v;
-
+            std::vector<double> e;
             QList<int> columnList = mainTreeTools::getColumnsToRead(theItem,tabData->getColumnBeforeBC());
             v = tabData->dataRC(1,columnList.at(0)).value<double>();
             std::vector<double> vec;
@@ -269,10 +267,9 @@ bool ofwrite::perform()
             {
             case SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionVelocity:
             {
-                std::vector<double> p;
                 SetName.prepend("inlet_");
                 of::printBoundary(myU,std::string("fixedValue"),vec);
-                of::printBoundary(myP,std::string("zeroGradient"),p);
+                of::printBoundary(myP,std::string("zeroGradient"),e);
                 of::printBoundary(myK,std::string("fixedValue"),std::string("$internalField"));
                 of::printBoundary(myEPS,std::string("fixedValue"),std::string("$internalField"));
                 of::printBoundary(myW,std::string("fixedValue"),std::string("$internalField"));
@@ -284,24 +281,50 @@ bool ofwrite::perform()
             case SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionPressure:
             {
                 SetName.prepend("pressure_");
+                of::printBoundary(myU,std::string("zeroGradient"),e);
+                of::printBoundary(myP,std::string("fixedValue"),vec);
+                of::printBoundary(myK,std::string("zeroGradient"),e);
+                of::printBoundary(myEPS,std::string("zeroGradient"),e);
+                of::printBoundary(myW,std::string("zeroGradient"),e);
+                of::printBoundary(myNu,std::string("calculated"),std::string("uniform 0"));
+                of::printBoundary(myNUT,std::string("calculated"),std::string("uniform 0"));
             }
                 break;
 
             case SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionWall:
             {
                 SetName.prepend("wall_");
+                of::printBoundary(myU,std::string("noSlip"),e);
+                of::printBoundary(myP,std::string("zeroGradient"),e);
+                of::printBoundary(myK,std::string("kqRWallFunction;"),std::string("$internalField"));
+                of::printBoundary(myEPS,std::string("epsilonWallFunction;"),std::string("$internalField"));
+                of::printBoundary(myW,std::string("omegaWallFunction;"),std::string("$internalField"));
+                of::printBoundary(myNu,std::string("nutUBlendedWallFunction;"),std::string("uniform 0"));
+                of::printBoundary(myNUT,std::string("zeroGradient"),e);
             }
                 break;
             }
 
             oFMap.insert(std::make_pair(SetName.toStdString(), tempMap));
-
-
-
         }
     }
 
+    of::closeBoundary(myU);
+    of::closeBoundary(myP);
+    of::closeBoundary(myK);
+    of::closeBoundary(myEPS);
+    of::closeBoundary(myW);
+    of::closeBoundary(myNUT);
+    of::closeBoundary(myNu);
 
+  /*  myU.close();
+    myP.close();
+    myK.close();
+    myEPS.close();
+    myW.close();
+    myNUT.close();
+    myNu.close();
+*/
     const occHandle(MeshVS_DataSource) &bodyMesh =  myDB->ArrayOfMeshDS.value(1); //change in vector/array of MeshVS_DS
     bool writeMesh = of::occToOF(bodyMesh, oFMap, myFileDir.toStdString());
 
@@ -316,7 +339,7 @@ void ofwrite::clock()
     cout<<text.toStdString()<<endl;
 }
 
-void ofwrite::writeBC(std::ofstream of, std::string stype, double value)
-{
+//void ofwrite::writeControlDict(std::ofstream of, std::string stype, double value)
+//{
 
-}
+//}

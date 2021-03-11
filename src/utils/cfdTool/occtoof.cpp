@@ -308,4 +308,13 @@ namespace of {
         textFile<<"    }"<<endl;
         return;
     }
+
+    void closeBoundary(std::ofstream &textFile)
+    {
+        if (!textFile.is_open()) return;
+        textFile<<"}"<<endl;
+        textFile<<endl;
+        textFile<<"// ************************************************************************* //"<<endl;
+        return;
+    }
 }
