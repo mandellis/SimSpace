@@ -2152,14 +2152,14 @@ void SimulationManager::handleItem(int type)
         break;
     case 66:    // show all bodies
     {
-        QExtendedStandardItem *itemGeometryRoot = static_cast<QExtendedStandardItem*>(mainTreeTools::getTreeItem(myModel,SimulationNodeClass::nodeType_geometry));
+        //QExtendedStandardItem *itemGeometryRoot = static_cast<QExtendedStandardItem*>(mainTreeTools::getTreeItem(myModel,SimulationNodeClass::nodeType_geometry));
         QVariant data;
         data.setValue(true);
         Property prop_visible("Visible",data,Property::PropertyGroup_GraphicProperties);
-        int NbBodies = itemGeometryRoot->rowCount();
+        int NbBodies = Geometry_RootItem->rowCount();
         for(int i=0; i<NbBodies; i++)
         {
-            QExtendedStandardItem *itemBody = static_cast<QExtendedStandardItem*>(itemGeometryRoot->child(i,0));
+            QExtendedStandardItem *itemBody = static_cast<QExtendedStandardItem*>(Geometry_RootItem->child(i,0));
             SimulationNodeClass *curNode = itemBody->data(Qt::UserRole).value<SimulationNodeClass*>();
             disconnect(curNode->getModel(),SIGNAL(itemChanged(QStandardItem*)),this,SLOT(handleItemChange(QStandardItem*)));
             curNode->replaceProperty("Visible",prop_visible);
@@ -12819,7 +12819,7 @@ void SimulationManager::exportSTEPFile()
 }
 
 //! -------------------------
-//! function: exportSTEPFile
+//! function: exportBREPFile
 //! details:
 //! -------------------------
 void SimulationManager::exportBREPFile()

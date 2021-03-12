@@ -1822,6 +1822,24 @@ void MainWindow::openProject()
             //! inform the system the model has been loaded (it avoids multiple import operations)
             //! -----------------------------------------------------------------------------------
             myGeometryImportStatus = geometryImportStatus_Loaded;
+
+            QStandardItemModel *myModel = mySimulationManager->getModel();
+            //QStandardItem *geometryRoot =mySimulationManager->Geometry_RootItem;
+            QExtendedStandardItem *geometryRoot = static_cast<QExtendedStandardItem*>(mainTreeTools::getTreeItem(myModel,SimulationNodeClass::nodeType_geometry));
+
+            for(int i=0; i<geometryRoot->rowCount();i++)
+            {
+                QStandardItem *curBody = geometryRoot->child(i,0);
+                SimulationNodeClass *curBodyNode = curBody->data(Qt::UserRole).value<SimulationNodeClass*>();
+                curBodyNode->getModel()->blockSignals(true);
+
+                Property::SuppressionStatus ss = curBodyNode->getPropertyValue<Property::SuppressionStatus>("Suppressed");
+                mySimulationManager->myTreeView->setCurrentIndex(curBody->index());
+                if(ss == Property::SuppressionStatus_Suppressed)
+                    mySimulationManager->changeNodeSuppressionStatus(Property::SuppressionStatus_Suppressed);
+                else continue;
+                curBodyNode->getModel()->blockSignals(false);
+            }
         }
         else
         {

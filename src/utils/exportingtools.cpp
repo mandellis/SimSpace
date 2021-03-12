@@ -52,7 +52,7 @@ exportingTools::exportingTools()
 }
 
 //! ----------------------
-//! function: exportCloud
+//! function: exportSTL
 //! details:
 //! ----------------------
 void exportingTools::exportSTL(const occHandle(AIS_InteractiveContext) &theCTX, meshDataBase *theDB)

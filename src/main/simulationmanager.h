@@ -205,9 +205,6 @@ private slots:
     //! update the mesh statistics
     void updateMeshStatistics();
 
-    //! suppress-unsuppress an item
-    void changeNodeSuppressionStatus(Property::SuppressionStatus newSuppressionStatus);
-
     //! unsuppress all the geometry items (geometry nodes)
     void unsuppressAllBodies();
 
@@ -249,6 +246,9 @@ private slots:
 
 
 public slots:
+
+    //! suppress-unsuppress an item
+    void changeNodeSuppressionStatus(Property::SuppressionStatus newSuppressionStatus);
 
     //! write solver input file (CCX) - initialized with a default parameter
     void writeSolverInputFile();

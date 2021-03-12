@@ -2605,34 +2605,22 @@ void occPreGLWidget::showBody(const TColStd_ListOfInteger &listOfBodies)
     //! the selection mode is the same for all the shapes
     TopAbs_ShapeEnum shapeSelectionMode = this->curSelectionMode();
     int displayMode = occContext->DisplayMode();
-    cout<<"tag00 "<<endl;
-
     for(TColStd_ListIteratorOfListOfInteger it(listOfBodies); it.More(); it.Next())
     {
         int bodyIndex = it.Value();
         const occHandle(AIS_ExtendedShape) &curAISShape = occHandle(AIS_ExtendedShape)::DownCast(myMapOfInteractiveShapes.value(bodyIndex));
         if(curAISShape.IsNull()) continue;
-        cout<<"tag01 "<<endl;
         //if(shapeSelectionMode==TopAbs_ShapeEnum
         occContext->Display(curAISShape,displayMode,AIS_Shape::SelectionMode(shapeSelectionMode),true,AIS_DS_Displayed);
-        cout<<"tag02 "<<endl;
-
         curAISShape->setShapeVisibility(Standard_True);
-        cout<<"tag03 "<<endl;
-
     }
-    cout<<"tag00 "<<endl;
-
     //! -------------------------------------------------------------------------
     //! now the selection modes must be reactivated, because when the
     //! context is closed, the selection modes (and the selection list) are lost
     //! -------------------------------------------------------------------------
     this->reactivateSelectionMode();
-    cout<<"tag01 "<<endl;
-
+//bubi
     occContext->UpdateCurrentViewer();
-    cout<<"tag02 "<<endl;
-
 }
 
 //! ------------------------
