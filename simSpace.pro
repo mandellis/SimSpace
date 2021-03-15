@@ -197,7 +197,9 @@ SOURCES += src/mesh/ng_meshvs_datasource1d.cpp \
     src/utils/geometry/OCCface.cpp \
     src/utils/geometry/polygon.cpp \
     src/utils/geometry/polyhedron.cpp \
-    src/utils/geometry/TriDist.cpp
+    src/utils/geometry/TriDist.cpp \
+    src/gui/tabularData/basetabledelegate.cpp \
+    src/gui/tabularData/xyviewer.cpp
 
 HEADERS  += src/mesh/ng_meshvs_datasource1d.h \
     src/mesh/ng_meshvs_datasource2d.h \
@@ -445,7 +447,11 @@ HEADERS  += src/mesh/ng_meshvs_datasource1d.h \
     src/utils/geometry/shapecomparison.h \
     src/utils/geometry/Tri.h \
     src/utils/geometry/triangletotriangleintersection.h \
-    src/utils/geometry/TriDist.h
+    src/utils/geometry/TriDist.h \
+    src/gui/tabularData/basetabledelegate.h \
+    src/gui/tabularData/basetablemodel.h \
+    src/gui/tabularData/xyviewer.h \
+    src/utils/stlwrappers.h
 
 FORMS    += src/main/mainwindow.ui
 
