@@ -11641,7 +11641,6 @@ void SimulationManager::renameItemBasedOnDefinition()
         curItem->setEditable(false);
     }
 }
-
 #ifdef COSTAMP_VERSION
 //! -------------------------------
 //! function: startTimeStepBuilder
@@ -11652,8 +11651,8 @@ void SimulationManager::COSTAMP_startTimeStepBuilder()
     cout<<"SimulationManager::startTimeStepBuilder()->____function called____"<<endl;
     SimulationNodeClass *curNode = myTreeView->currentIndex().data(Qt::UserRole).value<SimulationNodeClass*>();
     const QString &timeHistoryFileLoc = curNode->getPropertyValue<QString>("Time history file");    
-    QString program =
-            QString("D:/Work/Qt/build_simSpace/release/TimeStepBuilder.exe");
+
+    QString program = QString::fromStdString(tools::getPathOfExecutable()+"\\TimeStepBuilder.exe");
 
     QStandardItem *itemSimulationRoot = mainTreeTools::getCurrentSimulationRoot(myTreeView);
     QStandardItem *itemSolution = itemSimulationRoot->child(itemSimulationRoot->rowCount()-1);
