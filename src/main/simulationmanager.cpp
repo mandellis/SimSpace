@@ -11652,7 +11652,8 @@ void SimulationManager::COSTAMP_startTimeStepBuilder()
     SimulationNodeClass *curNode = myTreeView->currentIndex().data(Qt::UserRole).value<SimulationNodeClass*>();
     const QString &timeHistoryFileLoc = curNode->getPropertyValue<QString>("Time history file");    
 
-    QString program = QString::fromStdString(tools::getPathOfExecutable()+"\\TimeStepBuilder.exe");
+    //QString program = QString::fromStdString(tools::getPathOfExecutable()+"\\TimeStepBuilder.exe");
+    QString program = QString("D:/Work/Qt/build_simSpace/release/TimeStepBuilder.exe");
 
     QStandardItem *itemSimulationRoot = mainTreeTools::getCurrentSimulationRoot(myTreeView);
     QStandardItem *itemSolution = itemSimulationRoot->child(itemSimulationRoot->rowCount()-1);
@@ -11835,7 +11836,7 @@ bool SimulationManager::COSTAMP_addProcessParameters()
             curRow++;
             myTreeView->setCurrentIndex(itemSimulationRoot->index().child(mapperIndex,0));
             SimulationNodeClass *mapperNode = myTreeView->currentIndex().data(Qt::UserRole).value<SimulationNodeClass*>();
-            QExtendedStandardItem *mapperItem = this->getTreeItem(mapperNode->getType());
+            QExtendedStandardItem *mapperItem = mainTreeTools::getTreeItem(myModel,mapperNode->getType());
             this->createSimulationNode(SimulationNodeClass::nodeType_OpenFoamScalarData);
             myTreeView->setCurrentIndex(mapperItem->index().child(0,0));
             SimulationNodeClass *ofNode = myTreeView->currentIndex().data(Qt::UserRole).value<SimulationNodeClass*>();
@@ -12045,7 +12046,7 @@ bool SimulationManager::COSTAMP_addProcessParameters()
                     {
                         myTreeView->setCurrentIndex(itemSimulationRoot->index().child(closureIndex,0));
                         double force = closureForceValue;
-                        QList<int> columns = mainTreeTools::getColumnsToRead(myTreeView);
+                        QList<int> columns = mainTreeTools::getColumnsToRead(myTreeView,tabData->getColumnBeforeBC());
                         tabData->setDataRC(force,stepNb,columns.at(0),Qt::EditRole);
                         cout<<"closureIndex "<<closureIndex<<" column n "<<columns.at(0)<<endl;
                     }
@@ -12053,35 +12054,35 @@ bool SimulationManager::COSTAMP_addProcessParameters()
                     {
                         myTreeView->setCurrentIndex(itemSimulationRoot->index().child(prexIndex,0));
                         double prex = 0;
-                        QList<int> columns = mainTreeTools::getColumnsToRead(myTreeView);
+                        QList<int> columns = mainTreeTools::getColumnsToRead(myTreeView,tabData->getColumnBeforeBC());
                         tabData->setDataRC(prex,stepNb,columns.at(0),Qt::EditRole);
                     }
                     if(type.at(i)==1)
                     {
                         myTreeView->setCurrentIndex(itemSimulationRoot->index().child(prexIndex,0));
                         double prex = innerPressureValue;
-                        QList<int> columns = mainTreeTools::getColumnsToRead(myTreeView);
+                        QList<int> columns = mainTreeTools::getColumnsToRead(myTreeView,tabData->getColumnBeforeBC());
                         tabData->setDataRC(prex,stepNb,columns.at(0),Qt::EditRole);
                     }
                 }
                 else if(type.at(i)==2)
                 {
                     myTreeView->setCurrentIndex(itemSimulationRoot->index().child(modelChangeIndex,0));
-                    QList<int> columns = mainTreeTools::getColumnsToRead(myTreeView);
+                    QList<int> columns = mainTreeTools::getColumnsToRead(myTreeView,tabData->getColumnBeforeBC());
                     int mChangeValue=-1;
                     tabData->setDataRC(mChangeValue,stepNb,columns.at(0),Qt::EditRole);
                     if(prexIndex!=-1)
                     {
                         myTreeView->setCurrentIndex(itemSimulationRoot->index().child(prexIndex,0));
                         double prex = 0;
-                        QList<int> columns = mainTreeTools::getColumnsToRead(myTreeView);
+                        QList<int> columns = mainTreeTools::getColumnsToRead(myTreeView,tabData->getColumnBeforeBC());
                         tabData->setDataRC(prex,stepNb,columns.at(0),Qt::EditRole);
                     }
                     if(closureIndex!=-1)
                     {
                         myTreeView->setCurrentIndex(itemSimulationRoot->index().child(closureIndex,0));
                         double load = 0;
-                        QList<int> columns = mainTreeTools::getColumnsToRead(myTreeView);
+                        QList<int> columns = mainTreeTools::getColumnsToRead(myTreeView,tabData->getColumnBeforeBC());
                         tabData->setDataRC(load,stepNb,columns.at(0),Qt::EditRole);
                     }
                 }

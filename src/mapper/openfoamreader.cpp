@@ -290,7 +290,6 @@ bool OpenFoamReader::perform(SimulationNodeClass *OFnode)
 
     curDir.cdUp();
     curDir.cd("constant");
-    //cout<<"____tag02____"<<endl;
 
     //! ------------------------------
     //! entering the data directories

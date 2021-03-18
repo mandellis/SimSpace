@@ -225,7 +225,7 @@ public:
     //! experimental
     //! -------------
     //void buildCCXFaceToElementConnectivity(std::map<meshElement2D, std::vector<std::pair<int, std::string> > > &map);
-    void buildCCXFaceToElementConnectivity(std::map<meshElement2D, std::vector<std::pair<int, int> > > &map);
+    void buildCCXFaceToElementConnectivity(std::map<meshElement2D, std::vector<std::pair<int,int>>> &map);
 
     //! ---------------------------------------
     //! change the coordinates of a mesh point

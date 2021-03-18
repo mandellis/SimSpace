@@ -269,7 +269,7 @@ void geometryDataBase::printSummary()
     cout<<"____free wires: "<<NbWires<<"____"<<endl;
     cout<<"____free edges: "<<NbEdges<<"____"<<endl;
 }
-
+/*
 //!-------------------------
 //! function: getSubShapeNr
 //! details:
@@ -327,6 +327,71 @@ bool geometryDataBase::getSubShapeNr(const TopoDS_Shape &aSubShape, int &mainSha
         break;
     }
     return isTheShapeContained;
+}
+*/
+//!-------------------------
+//! function: getSubShapeNr
+//! details:
+//! ------------------------
+bool geometryDataBase::getSubShapeNr(const TopoDS_Shape &aSubShape,
+                                     int &mainShapeIndex,
+                                     int &subShapeIndex,
+                                     TopAbs_ShapeEnum &subShapeType) const
+{
+    TopAbs_ShapeEnum type = aSubShape.ShapeType();
+
+    //! -------------------------------------------------------
+    //! search for the body as a body of its own type
+    //! this check if "aSubShape" is actually a "parent" shape
+    //! -------------------------------------------------------
+    for(QMap<int,TopoDS_Shape>::const_iterator it = bodyMap.cbegin(); it!=bodyMap.cend(); it++)
+    {
+        TopoDS_Shape curShape = it.value();
+        if(curShape==aSubShape)
+        {
+            mainShapeIndex = it.key();
+            subShapeIndex = it.key();
+            subShapeType = type;
+            //cout<<"* main shape ("<<mainShapeIndex<<", "<<subShapeIndex<<", "<<subShapeType<<")"<<endl;
+            return true;
+        }
+    }
+
+    //! ---------------------------------------------------
+    //! search for the body as a sub shape of another body
+    //! ---------------------------------------------------
+    for(QMap<int,TopoDS_Shape>::const_iterator it = bodyMap.cbegin(); it!=bodyMap.cend(); it++)
+    {
+        //const body& curBody = it->second;
+        TopoDS_Shape curShape = it.value();
+        int bodyIndex = it.key();
+        TopTools_IndexedMapOfShape subShapeMap;
+
+        switch(type)
+        {
+        case TopAbs_SOLID: subShapeMap = MapOfBodyTopologyMap.value(bodyIndex).solidMap; break;
+        case TopAbs_SHELL: subShapeMap = MapOfBodyTopologyMap.value(bodyIndex).shellMap; break;
+        case TopAbs_FACE: subShapeMap = MapOfBodyTopologyMap.value(bodyIndex).faceMap; break;
+        case TopAbs_WIRE: subShapeMap = MapOfBodyTopologyMap.value(bodyIndex).wireMap; break;
+        case TopAbs_EDGE: subShapeMap = MapOfBodyTopologyMap.value(bodyIndex).edgeMap; break;
+        case TopAbs_VERTEX: subShapeMap = MapOfBodyTopologyMap.value(bodyIndex).vertexMap;
+        }
+
+        if(subShapeMap.IsEmpty()) { exit(38786); return false; }  // this should never occur
+
+        for(int subShapeIndex_ = 1; subShapeIndex_<=subShapeMap.Extent(); subShapeIndex_++)
+        {
+            if(subShapeMap.FindKey(subShapeIndex_).IsEqual(aSubShape))
+            {
+                mainShapeIndex = it.key();
+                subShapeIndex = subShapeIndex_;
+                subShapeType = type;
+                //cout<<"* child shape ("<<mainShapeIndex<<", "<<subShapeIndex<<", "<<(int)subShapeType<<")"<<endl;
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 //! --------------------------

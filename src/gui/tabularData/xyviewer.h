@@ -13,7 +13,7 @@
 //! ----------------
 //! custom includes
 //! ----------------
-#include <QCustomPlot/qcp/qcustomplot.h>
+#include <qcustomplot.h>
 #include "basetablemodel.h"
 
 //! --------

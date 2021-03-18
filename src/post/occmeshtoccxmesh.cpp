@@ -46,6 +46,7 @@ std::map<int,int> OCCMeshToCCXmesh::performCCXtoOCC(GeometryTag loc, meshDataBas
         int offset = 0;
         for(int k=1; k<bodyIndex; k++)
         {
+            if(!mDB->ArrayOfMeshDS.value(k).IsNull())
             offset = offset+mDB->ArrayOfMeshDS.value(k)->GetAllNodes().Extent();
         }
 
