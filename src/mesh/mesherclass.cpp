@@ -672,8 +672,8 @@ void MesherClass::generateMesh()
                             //! rebuild the face mesh data sources
                             //! this mesher cannot build the face mesh data sources: do it here
                             //! ----------------------------------------------------------------
-                            bool faceMeshDSRebuilt = this->rebuildFaceMeshDataSources(bodyIndex);
-                            Q_UNUSED(faceMeshDSRebuilt);
+                            //bool faceMeshDSRebuilt = this->rebuildFaceMeshDataSources(bodyIndex);
+                            //Q_UNUSED(faceMeshDSRebuilt);
 
                             if(isMeshReady) myMeshDB->ArrayOfMeshIsToBeUdpdated.insert(bodyIndex, false);
                             else myMeshDB->ArrayOfMeshIsToBeUdpdated.insert(bodyIndex, true);
@@ -2046,8 +2046,8 @@ userMessage MesherClass::Netgen_STL_generateVolumeMesh(int bodyIndex,
         //! the data sources are set directly by the tool
         //! experimental: rebuild the face mesh data sources
         //! -------------------------------------------------
-        bool faceMeshDSRebuilt = this->rebuildFaceMeshDataSources(bodyIndex);
-        Q_UNUSED(faceMeshDSRebuilt);
+        //bool faceMeshDSRebuilt = this->rebuildFaceMeshDataSources(bodyIndex);
+        //Q_UNUSED(faceMeshDSRebuilt);
 
         //! ----------------------
         //! remove supports files

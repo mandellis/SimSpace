@@ -216,8 +216,8 @@ bool STLdoctor::performMeshFix(const QString &inputFile, const QString &outputFi
     //! ---------------------------------
     //! set the program for the QProcess
     //! ---------------------------------
-    QString program = QString::fromLatin1(std::getenv("MESHFIX_VT_PATH")).append("\\MeshFix_WT.exe");
-    //QString program = QString::fromStdString(tools::getPathOfExecutable()+"/MeshFix_WT.exe");
+    //QString program = QString::fromLatin1(std::getenv("MESHFIX_VT_PATH")).append("\\MeshFix_WT.exe");
+    QString program = QString::fromStdString(tools::getPathOfExecutable()+"/MeshFix_WT.exe");
     //cout<<program.toStdString()<<endl;
 
     MeshFix->setProgram(program);
