@@ -558,6 +558,7 @@ SimulationNodeClass::nodeType SimulationNodeClass::getFamily()
     case nodeType_solutionStructuralEquivalentPlasticStrain:
     case nodeType_solutionStructuralNodalForces:
     case nodeType_solutionStructuralContact:
+    case nodeType_probe:
         RV = nodeType_StructuralAnalysisSolution;
         break;
 
@@ -1093,6 +1094,7 @@ void SimulationNodeClass::createSeparators()
     case nodeType_solutionStructuralEquivalentPlasticStrain:
     case nodeType_solutionStructuralNodalForces:
     case nodeType_solutionStructuralContact:
+    case nodeType_probe:
         myNodeRootItem->appendRow(itemScope);
         myNodeRootItem->appendRow(itemDefinition);
         myNodeRootItem->appendRow(itemGraphicObject);
@@ -1468,7 +1470,6 @@ bool SimulationNodeClass::isAnalysisResult()
             myNodeType == SimulationNodeClass::nodeType_solutionStructuralNodalDisplacement ||
             myNodeType == SimulationNodeClass::nodeType_solutionStructuralNodalForces ||
             myNodeType == SimulationNodeClass::nodeType_solutionStructuralStress ||
-            myNodeType == SimulationNodeClass::nodeType_solutionStructuralFatigueTool ||
             myNodeType == SimulationNodeClass::nodeType_solutionStructuralTemperature ||
             myNodeType == SimulationNodeClass::nodeType_solutionStructuralThermalStrain ||
             myNodeType == SimulationNodeClass::nodeType_solutionStructuralTotalStrain ||
@@ -1476,7 +1477,8 @@ bool SimulationNodeClass::isAnalysisResult()
             myNodeType == SimulationNodeClass::nodeType_solutionThermalFlux ||
             myNodeType == SimulationNodeClass::nodeType_solutionStructuralContact ||
             myNodeType == SimulationNodeClass::nodeType_solutionCFDpressure ||
-            myNodeType == SimulationNodeClass::nodeType_solutionCFDvelocity)
+            myNodeType == SimulationNodeClass::nodeType_solutionCFDvelocity ||
+        myNodeType == SimulationNodeClass::nodeType_probe )
         return true;
     return false;
 }

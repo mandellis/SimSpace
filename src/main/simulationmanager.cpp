@@ -563,6 +563,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
             case SimulationNodeClass::nodeType_solutionStructuralEquivalentPlasticStrain:
             case SimulationNodeClass::nodeType_solutionStructuralContact:
             case SimulationNodeClass::nodeType_solutionStructuralFatigueTool:
+            case SimulationNodeClass::nodeType_probe:
             {
                 //! ---------------------------------------------------------------------
                 //! hide the meshes: keep the bodies in wireframe mode for the selection
@@ -8097,9 +8098,6 @@ void SimulationManager::handleLoadMagnitudeDefinitionChanged(const QString& text
         break;
     case SimulationNodeClass::nodeType_thermalAnalysisThermalFlux:
         aLoadType = Property::loadType_thermalFluxMagnitude;
-        break;
-    case SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionPressure:
-        aLoadType = Property::loadType_scalar;
         break;
     case SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionVelocity:
         aLoadType = Property::loadType_scalar;

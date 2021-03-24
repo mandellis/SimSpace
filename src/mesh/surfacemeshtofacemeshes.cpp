@@ -676,7 +676,7 @@ bool surfaceMeshToFaceMeshes::perform(std::map<int,occHandle(Ng_MeshVS_DataSourc
 
         cout<<"surfaceMeshToFaceMeshes::perform()->____# "<<unassociatedElements.size()<<" have not been reassigned____"<<endl;
     }
-
+    if(elementsOfTheFaces.empty()) exit(3000);
     //! ---------------------------------
     //! build the face mesh data sources
     //! ---------------------------------

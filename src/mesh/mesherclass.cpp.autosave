@@ -672,7 +672,7 @@ void MesherClass::generateMesh()
                             //! rebuild the face mesh data sources
                             //! this mesher cannot build the face mesh data sources: do it here
                             //! ----------------------------------------------------------------
-                            bool faceMeshDSRebuilt = this->rebuildFaceMeshDataSources(bodyIndex);
+                            //bool faceMeshDSRebuilt = this->rebuildFaceMeshDataSources(bodyIndex);
                             Q_UNUSED(faceMeshDSRebuilt);
 
                             if(isMeshReady) myMeshDB->ArrayOfMeshIsToBeUdpdated.insert(bodyIndex, false);

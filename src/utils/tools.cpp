@@ -362,19 +362,46 @@ QString tools::timeStamp()
     return QString::fromStdString(timeStamp);
 }
 
-//! ------------------------------
+//! --------------------------------
+//! function: s2ws
+//! details:  string to wide string
+//! --------------------------------
+std::wstring tools::s2ws(const std::string& str)
+{
+    using convert_typeX = std::codecvt_utf8<wchar_t>;
+    std::wstring_convert<convert_typeX, wchar_t> converterX;
+    return converterX.from_bytes(str);
+}
+
+//! --------------------------------
+//! function: ws2s
+//! details:  wide string to string
+//! --------------------------------
+std::string tools::ws2s(const std::wstring& wstr)
+{
+    using convert_typeX = std::codecvt_utf8<wchar_t>;
+    std::wstring_convert<convert_typeX, wchar_t> converterX;
+    return converterX.to_bytes(wstr);
+}
+
+//! ------------------------------------------------------------------------------------------------------------------
 //! function: getPathOfExecutable
-//! details:
-//! ------------------------------
+//! details:  DWORD GetModuleFileNameA(HMODULE hModule,LPSTR   lpFilename, DWORD nSize);
+//!           "Retrieves the fully qualified path for the file that contains the specified module.
+//!           The module must have been loaded by the current process.
+//!           hModule: A handle to the loaded module whose path is being requested.
+//!           If this parameter is NULL, GetModuleFileName retrieves the path of the executable
+//!           file of the current process.
+//!           See: https://docs.microsoft.com/it-it/windows/win32/api/libloaderapi/nf-libloaderapi-getmodulefilenamew
+//! ------------------------------------------------------------------------------------------------------------------
 #include <Windows.h>
 std::string tools::getPathOfExecutable()
 {
-    LPWSTR buffer;
-    GetModuleFileName(NULL, buffer, MAX_PATH);
-    std::string aString;
-    aString.reserve(wcslen(buffer));
-    for (;*buffer; buffer++) aString += (char)*buffer;
-    std::string::size_type pos = aString.find_last_of("\\/");
-    if (pos == std::string::npos) return "";
-    return aString.substr(0, pos);
+    wchar_t buff[MAX_PATH+10]={0};
+    GetModuleFileNameW(NULL, buff, MAX_PATH);
+    std::wstring fulllocation(buff);
+    int last_slash = fulllocation.find_last_of(L"\\");
+    fulllocation = fulllocation.substr(0, last_slash);
+    return ws2s(fulllocation);
 }
+

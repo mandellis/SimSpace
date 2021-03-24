@@ -139,8 +139,16 @@ public:
     //! time stamp
     static QString timeStamp();
 
+    //! s2ws
+    static std::wstring s2ws(const std::string& str);
+
+    //! ws2s
+    static std::string ws2s(const std::wstring& wstr);
+
     //! get path of executable
     static std::string getPathOfExecutable();
+
+#define MAX_PATH 260
 };
 
 #endif // TOOLS_H

@@ -174,6 +174,8 @@ public:
         nodeType_solutionCFDvelocity,                    //! velocity
         nodeType_solutionCFDpressure,                    //! pressure
 
+        nodeType_probe,               //! probe tool
+
         //! ----------------------
         //! Construction geometry
         //! ----------------------
