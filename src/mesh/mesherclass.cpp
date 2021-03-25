@@ -672,8 +672,8 @@ void MesherClass::generateMesh()
                             //! rebuild the face mesh data sources
                             //! this mesher cannot build the face mesh data sources: do it here
                             //! ----------------------------------------------------------------
-                            //bool faceMeshDSRebuilt = this->rebuildFaceMeshDataSources(bodyIndex);
-                            //Q_UNUSED(faceMeshDSRebuilt);
+                            bool faceMeshDSRebuilt = this->rebuildFaceMeshDataSources(bodyIndex);
+                            Q_UNUSED(faceMeshDSRebuilt);
 
                             if(isMeshReady) myMeshDB->ArrayOfMeshIsToBeUdpdated.insert(bodyIndex, false);
                             else myMeshDB->ArrayOfMeshIsToBeUdpdated.insert(bodyIndex, true);
@@ -2898,12 +2898,13 @@ bool MesherClass::rebuildFaceMeshDataSources(int bodyIndex)
     aFaceMeshRebuilder.setShape(myMeshDB->bodyMap.value(bodyIndex));
 
     std::map<int,occHandle(Ng_MeshVS_DataSourceFace)> theFaceMeshes;
-    aFaceMeshRebuilder.perform(theFaceMeshes);
+    bool isDone = aFaceMeshRebuilder.perform(theFaceMeshes);
     for(std::map<int,occHandle(Ng_MeshVS_DataSourceFace)>::iterator it = theFaceMeshes.begin(); it!=theFaceMeshes.end(); it++)
     {
         int faceNr = it->first;
         myMeshDB->ArrayOfMeshDSOnFaces.setValue(bodyIndex,faceNr,it->second);
     }
     cout<<"MesherClass::generateFaceMeshDataSources()->____exiting function____"<<endl;
-    return true;
+    if(isDone) return true;
+    else return false;
 }

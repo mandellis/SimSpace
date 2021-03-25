@@ -484,7 +484,8 @@ bool surfaceMeshToFaceMeshes::perform(std::map<int,occHandle(Ng_MeshVS_DataSourc
         //! ---------------------------------
         cout<<"surfaceMeshToFaceMeshes::perform()->____generating face to segments map____"<<endl;
         std::map<mesh::meshSegment,std::vector<int>> segmentFaceNrMap;
-        for(std::map<int,occHandle(Ng_MeshVS_DataSourceFace)>::iterator it = theFaceMeshDataSources.begin(); it!=theFaceMeshDataSources.end(); it++)
+        //for(std::map<int,occHandle(Ng_MeshVS_DataSourceFace)>::iterator it = theFaceMeshDataSources.begin(); it!=theFaceMeshDataSources.end(); it++)
+        for(std::map<int,occHandle(Ng_MeshVS_DataSourceFace)>::iterator it = mapOfFaceMeshDS_STL.begin(); it!=mapOfFaceMeshDS_STL.end(); it++)
         {
             int faceNr = it->first;
             occHandle(Ng_MeshVS_DataSourceFace) aFaceMeshDS = it->second;
@@ -676,17 +677,25 @@ bool surfaceMeshToFaceMeshes::perform(std::map<int,occHandle(Ng_MeshVS_DataSourc
 
         cout<<"surfaceMeshToFaceMeshes::perform()->____# "<<unassociatedElements.size()<<" have not been reassigned____"<<endl;
     }
-    if(elementsOfTheFaces.empty()) exit(3000);
+
+    cout<<"surfaceMeshToFaceMeshes::____building faceMeshDS____"<<elementsOfTheFaces.size()<<endl;
+
     //! ---------------------------------
     //! build the face mesh data sources
     //! ---------------------------------
     for(std::map<int,std::vector<meshElementByCoords>>::iterator it = elementsOfTheFaces.begin(); it!=elementsOfTheFaces.end(); it++)
     {
         int faceNr = it->first;
+        cout<<"facenR "<<faceNr<<endl;
         const std::vector<meshElementByCoords> &elements = it->second;
+        if(elements.empty()) cout<<"isEmpty"<<endl;
+else cout<<" elements not empty"<<endl;
         occHandle(Ng_MeshVS_DataSourceFace) aFaceMeshDS = new Ng_MeshVS_DataSourceFace(elements,false,false);
+        cout<<" DS created "<<endl;
+
         theFaceMeshDataSources.insert(std::make_pair(faceNr,aFaceMeshDS));
     }
-    if(unassociatedElements.size()==0) return false;
+    if(unassociatedElements.size()!=0) return false;
+    cout<<"surfaceMeshToFaceMeshes:: return true____"<<endl;
     return true;
 }
