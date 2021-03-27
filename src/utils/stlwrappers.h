@@ -18,8 +18,321 @@ using namespace std;
 #include <QVector>
 #include <QVariant>
 #include <QString>
+#ifdef SIMSPACE_USES_QT
+#include <QMetaType>
+#include <QList>
+#endif
+//namespace fs = std::experimental::filesystem;
 
-namespace fs = std::experimental::filesystem;
+namespace ss
+{
+// begin namespace
+
+//! -------------
+//! hash combine
+//! -------------
+template <class T>
+inline void hash_c(std::size_t &seed, const T &v)
+{
+    std::hash<T> hasher;
+    seed ^= hasher(v)+0x9e3779b9+(seed<<6)+(seed>>2);
+}
+/*
+template <typename T>
+class Matrix
+{
+    SSVector<SSVector<T>> inner_;
+    unsigned int dimx_, dimy_;
+
+public:
+
+    //! constructor
+    Matrix (unsigned int dimx, unsigned int dimy):
+        dimx_(dimx),dimy_(dimy)
+    {
+        inner_.resize(dimx_*dimy_);
+        for(unsigned int row=0; row<dimx_; row++)
+            for(unsigned int col=0; col<dimy_; col++)
+                inner_.push_back(T());
+    }
+
+    //! copy constructor
+    Matrix (const Matrix &other)
+    {
+        inner_.resize(other.dimx_*other.dimy_);
+        for(unsigned int row=0; row<other.dimx_; row++)
+            for(unsigned int col=0; col<other.dimy_; col++)
+                inner_.push_back(other.inner_[dimy_*row + col]);
+    }
+
+    T& operator()(unsigned int row, unsigned int col)
+    {
+        if (row >= dimx_ || col>= dimy_) throw std::out_of_range("matrix indices out of range");
+        return inner_[dimy_*row + col];
+    }
+
+    T operator()(unsigned int row, unsigned int col) const
+    {
+        if (row >= dimx_ || col>= dimy_) throw std::out_of_range("matrix indices out of range");
+        return inner_[dimy_*row + col];
+    }
+
+    size_t size() const { return dimx_*dimy_; }
+    void clear() { inner_.clear(); }
+
+    //! insert
+    void insert(unsigned int row, unsigned int col, const T &value)
+    {
+        if (row >= dimx_ || col>= dimy_) throw std::out_of_range("matrix indices out of range");
+        inner_[row*dimy_+col] = value;
+    }
+
+    //! number of rows and columns
+    int NbRows() const { return dimx_; }
+    int NbCols() const { return dimy_; }
+
+    //! print table - diagnostic
+    void print() const
+    {
+        cout<<endl;
+        for(unsigned int row=0; row<dimx_; row++)
+        {
+            unsigned int col = 0;
+            for(; col<dimy_-1; col++) cout<<inner_[row*dimy_+col]<<"\t";
+            cout<<inner_[row*dimy_+dimx_-1]<<endl;
+        }
+        cout<<endl;
+    }
+};
+*/
+//! -------------
+//! stdException
+//! -------------
+class stdException
+{
+public:
+
+    stdException(const std::string &error="", int errorCode=0):error(error),errorCode(errorCode){;}
+    stdException(const stdException &other) { error = other.error; errorCode = other.errorCode; }
+    ~stdException() {;}
+
+private:
+
+    std::string error;
+    int errorCode;
+};
+
+//! ------
+//! SSMap
+//! ------
+template<class Q, class T>
+class SSMap
+{
+    std::multimap<Q,T> map_;
+
+public:
+
+    //! ------------------------------------------
+    //! constructor, destructor, copy constructor
+    //! ------------------------------------------
+    SSMap(const std::multimap<Q,T> &aMap = std::multimap<Q,T>()):map_(aMap) {;}
+    virtual ~SSMap() { map_.clear(); }
+    SSMap(const SSMap &aMap) { map_ = aMap.map_; }
+
+    using size_type=typename std::multimap<Q,T>::size_type;                  // static size_type
+
+    //! ----------
+    //! operators
+    //! ----------
+    inline bool operator == (const SSMap &other) { if(map_ == other.map_) return true; return false; }
+    inline SSMap operator = (const SSMap &other) { map_ = other.map_; return *this; }
+
+    //! ----------
+    //! iterators
+    //! ----------
+    using iterator= typename std::multimap<Q,T>::iterator;                   // iterator
+    iterator begin() { return map_.begin(); }                                // begin
+    iterator end() { return map_.end(); }                                    // end
+    using const_iterator = typename std::multimap<Q,T>::const_iterator;      // const_iterator
+    const_iterator cbegin() const { return map_.cbegin(); }                  // cbegin
+    const_iterator cend() const { return map_.cend(); }                      // cend
+
+    //! --------------------------------------------------------------
+    //! insert - insert if not existing: it behaves like C++ std::map
+    //! the "if" statement is necessary because the data container is
+    //! a std::multimap
+    //! --------------------------------------------------------------
+    virtual void insert(const std::pair<Q,T> &aPair)
+    {
+        if(map_.count(aPair.first)==0) map_.insert(aPair);
+    }
+    virtual void insert(const_iterator hint, const std::pair<Q,T> &aPair)
+    {
+         if(map_.count(aPair.first)==0)  map_.insert(hint, aPair);
+    }
+
+    //! ------
+    //! erase
+    //! ------
+    size_type erase(const Q &key) { return map_.erase(key); }
+    iterator erase(const_iterator where) { return map_.erase(where); }
+    iterator erase(const_iterator first, const_iterator last) { return map_.erase(first,last); }
+    void clear() { map_.clear(); }
+
+    //! -------------------
+    //! access/exploration
+    //! -------------------
+    size_type size() const { return map_.size(); }
+    size_type count(const Q &key) const { return map_.count(key); }
+    iterator find(const Q &key) { return map_.find(key); }
+    const_iterator find(const Q &key) const { return map_.find(key); }
+    T& at(const Q &key)
+    {
+        std::multimap<Q,T>::iterator it = map_.find(key);
+        if(it==map_.end()) throw stdException("element not found in map",1);
+        else return it->second;
+    }
+    //const T& at(const Q &key) const { return map_.at(key); }
+    T& operator [](const Q &key) { return map_.operator [](key); }
+    bool isEmpty() const { return map_.empty(); }
+    T last()
+    {
+        if(!map_.empty()) return (--map_.end())->second;
+        else { throw stdException("empty map",1); }
+    }
+    T first()
+    {
+        if(!map_.empty()) return (map_.begin())->second;
+        else { throw stdException("empty map",1); }
+    }
+    T lastKey()
+    {
+        if(!map_.empty()) return (--map_.end())->first;
+        else { throw stdException("empty map",1); }
+    }
+    T firstKey()
+    {
+        if(!map_.empty()) return (map_.begin())->first;
+        else { throw stdException("empty map",1); }
+    }
+
+    //! ---------
+    //! Qt style
+    //! ---------
+    const Q key(const T &value, const Q &defaultKey = Q()) const
+    {
+        for(std::multimap<Q,T>::const_iterator it = map_.cbegin(); it!= map_.cend(); it++)
+        {
+            if(it->second != value) continue;
+            return it->first;
+        }
+        return defaultKey;
+    }
+    const T value(const Q &key, const T &defaultValue = T()) const
+    {
+        std::multimap<Q,T>::const_iterator it = map_.find(key);
+        if(it==map_.cend()) return defaultValue;
+        return it->second;
+    }
+    void insert(const Q &key, const T &value)   // Qt style insert and replace
+    {
+        if(map_.count(key)!=0) map_.erase(key);
+        map_.insert(std::make_pair(key,value));
+    }
+    void insertMulti(const Q &key, const T &value)
+    {
+        map_.insert(std::make_pair(key,value));
+    }
+    int remove(const Q &key) { return int(map_.erase(key)); }
+    bool contains(const Q &key) const { if(map_.count(key)!=0) return true; return false; }
+
+#ifndef SIMSPACE_USES_QT
+    std::vector<Q> keys() const     // all the keys
+    {
+        std::vector<Q> vecKeys;
+        for(std::multimap<Q,T>::iterator it = map_.begin(); it!= map_.end(); it++)
+            vecKeys.push_back(it->first);
+        return vecKeys;
+    }
+    std::vector<Q> keys(const T &value) const   // all the keys corresponding to a value
+    {
+        std::vector<Q> vecKeys;
+        for(std::multimap<Q,T>::iterator it = map_.begin(); it!= map_.end(); it++)
+            if(it->second == value) vecKeys.push_back(it->first);
+        return vecKeys;
+    }
+    std::vector<T> values() const       // all the values
+    {
+        std::vector<T> vecValues;
+        for(std::multimap<Q,T>::iterator it = map_.begin(); it!= map_.end(); it++)
+            vecValues.push_back(it->second);
+        return vecValues;
+    }
+    std::vector<T> values(const Q &key) const   // all the values corresponding to a key
+    {
+        std::vector<T> vecValues;
+        for(std::multimap<Q,T>::iterator it = map_.begin(); it!= map_.end(); it++)
+            if(it->first == key) vecValues.push_back(it->second);
+        return vecValues;
+    }
+#else
+    QList<T> values() const       // all the values
+    {
+        QList<T> vecValues;
+        for(std::multimap<Q,T>::const_iterator it = map_.cbegin(); it!= map_.cend(); it++)
+            vecValues.push_back(it->second);
+        return vecValues;
+    }
+    QList<T> values(const Q &key) const // Qt compatibility
+    {
+        QList<T> vecValues;
+        for(std::multimap<Q,T>::const_iterator it = map_.cbegin(); it!= map_.cend(); it++)
+            if(it->first == key) vecValues.push_back(it->second);
+        return vecValues;
+    }
+    QList<Q> keys(const T &value) const // Qt compatibility
+    {
+        QList<Q> vecKeys;
+        for(std::multimap<Q,T>::iterator it = map_.begin(); it!= map_.end(); it++)
+            if(it->second == value) vecKeys.push_back(it->first);
+        return veckeys;
+    }
+    QList<Q> keys() const       // Qt compatibility
+    {
+        QList<Q> vecKeys;
+        for(std::multimap<Q,T>::const_iterator it = map_.cbegin(); it!= map_.cend(); it++)
+            vecKeys.push_back(it->first);
+        return vecKeys;
+    }
+#endif
+};
+
+#ifdef SIMSPACE_USES_QT
+Q_DECLARE_METATYPE_TEMPLATE_2ARG(ss::SSMap)
+#endif
+
+template <class Q, class T>
+class SSMultimap: public SSMap<Q,T>
+{
+
+public:
+
+    //! ------------------------------------------
+    //! constructor, destructor, copy constructor
+    //! ------------------------------------------
+    SSMultimap(const std::multimap<Q,T> &aMap = std::multimap<Q,T>()):map_(aMap) {;}
+    virtual ~SSMultimap() { ; }
+    SSMultimap(const SSMultimap<Q,T> &aMap) { map_ = aMap.map_; }
+
+    //! ---------
+    //! Qt style
+    //! ---------
+    virtual void insert(const Q &key, const T &value) override { map_.insert(std::make_pair(key,value)); }
+};
+
+#ifdef SIMSPACE_USES_QT
+Q_DECLARE_METATYPE_TEMPLATE_2ARG(ss::SSMultimap)
+#endif
 
 //! ---------
 //! SSVector
@@ -257,5 +570,8 @@ Q_DECLARE_METATYPE(SSVector<QString>)
 Q_DECLARE_METATYPE(SSVector<QList<int>>)
 Q_DECLARE_METATYPE(SSVector<QList<double>>)
 Q_DECLARE_METATYPE(SSVector<QList<QString>>)
+
+// end namespace
+}
 
 #endif // STLWRAPPERS_H

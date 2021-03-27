@@ -38,7 +38,7 @@ Q_DECLARE_METATYPE(TopoDS_Shape)
 template <typename T>
 class Matrix
 {
-    SSVector<SSVector<T>> inner_;
+    ss::SSVector<ss::SSVector<T>> inner_;
     unsigned int dimx_, dimy_;
 
 public:
@@ -102,6 +102,8 @@ public:
     }
 };
 
+
+
 //! --------------------------------------------------------
 //! class BaseTableModel
 //! a basic table in which inner data are organized per row
@@ -127,7 +129,7 @@ public:
     //! ----------------------
     //! function: constructor
     //! ----------------------
-    BaseTableModel(const SSVector<SSVector<QVariant>>& table, bool byRows = true, QObject* parent=nullptr):
+    BaseTableModel(const ss::SSVector<ss::SSVector<QVariant>>& table, bool byRows = true, QObject* parent=nullptr):
         QAbstractTableModel(parent)
     {
         if(byRows)
@@ -137,7 +139,7 @@ public:
             m_rowCount = table.size();
             for(int row = 0; row<m_rowCount; row++)
             {
-                const SSVector<QVariant> &aRow = table.at(row);
+                const ss::SSVector<QVariant> &aRow = table.at(row);
                 m_data.push_back(aRow);
             }
         }
@@ -280,7 +282,7 @@ public:
         if(row>=this->rowCount()) return false;
 
         emit beginInsertRows(QModelIndex(),row,row);
-        SSVector<QVariant> addRow = m_data.at(row);
+        ss::SSVector<QVariant> addRow = m_data.at(row);
         m_data.insert(row,addRow);
         //! update the number of rows
         m_rowCount = m_data.size();
@@ -301,7 +303,7 @@ public:
         Q_UNUSED(parent);
 
         emit beginInsertRows(QModelIndex(),row,row+count-1);
-        SSVector<QVariant> vec = m_data.at(row);
+        ss::SSVector<QVariant> vec = m_data.at(row);
         for(int c=row; c<row+count; c++) m_data.insert(c,vec);
 
         //! update the number of rows
@@ -375,7 +377,7 @@ public:
         this->beginInsertColumns(QModelIndex(),first,last);
         for(int row=0; row<Nrows; row++)
         {
-            SSVector<QVariant> vec = m_data.at(row);
+            ss::SSVector<QVariant> vec = m_data.at(row);
             for(int col = first; col<count; col++)
             {
                 QVariant val = m_data.at(row).at(col);
@@ -433,7 +435,7 @@ public:
         emit beginRemoveColumns(QModelIndex(),column,column);
         for(int row = 0; row<this->rowCount(); row++)
         {
-            SSVector<QVariant> vec = m_data.at(row);
+            ss::SSVector<QVariant> vec = m_data.at(row);
             vec.remove(column);
             m_data.replace(row,vec);
         }
@@ -458,7 +460,7 @@ public:
         emit beginRemoveColumns(QModelIndex(),first,first+count-1);
         for(int i=0; i<this->rowCount(); i++)
         {
-            SSVector<QVariant> dataVec = m_data.at(i);
+            ss::SSVector<QVariant> dataVec = m_data.at(i);
             for(int k=first+count-1; k>=first; k--) dataVec.remove(k);
             m_data.replace(i,dataVec);
         }
@@ -560,7 +562,7 @@ public:
         emit beginInsertColumns(QModelIndex(),pos,pos);
         for(int row=0; row<this->rowCount(); row++)
         {
-            SSVector<QVariant> aRow = m_data.at(row);
+            ss::SSVector<QVariant> aRow = m_data.at(row);
             aRow.insert(pos,vecData.at(row));
             m_data.replace(row,aRow);
         }
@@ -579,7 +581,7 @@ public:
         if(vecData.empty()) return false;
         if(pos<0 || pos>this->rowCount()-1) return false;
         emit beginInsertRows(QModelIndex(),pos,pos);
-        SSVector<QVariant> aRow;
+        ss::SSVector<QVariant> aRow;
         for(int i=0; i<vecData.size(); i++) aRow.push_back(vecData[i]);
         m_data.insert(pos,aRow);
         m_rowCount = m_data.size();
@@ -597,7 +599,7 @@ public:
         if(vecData.empty()) return false;
         int pos = this->rowCount();                     // use new row index
         emit beginInsertRows(QModelIndex(),pos,pos);
-        SSVector<QVariant> aRow;
+        ss::SSVector<QVariant> aRow;
         for(int i=0; i<vecData.size(); i++) aRow.push_back(vecData[i]);
         m_data.push_back(aRow);
         m_rowCount = m_data.size();
@@ -619,7 +621,7 @@ public:
         {
             //cout<<"____adding element at row: "<<row;
             //cout<<" value: "<<vecData.at(row).toDouble()<<"____"<<endl;
-            SSVector<QVariant> aRow = m_data.at(row);
+            ss::SSVector<QVariant> aRow = m_data.at(row);
             aRow.push_back(vecData.at(row));
             m_data.replace(row,aRow);
         }
@@ -636,7 +638,7 @@ public:
 
 protected:  // class members
 
-    SSVector<SSVector<QVariant>> m_data;            // inner SSVector => row
+    ss::SSVector<ss::SSVector<QVariant>> m_data;            // inner SSVector => row
     size_t m_columnCount;                           // number of columns
     size_t m_rowCount;                              // number of rows
     std::map<int,QString> m_hlabels;                // horizontal labels for header
