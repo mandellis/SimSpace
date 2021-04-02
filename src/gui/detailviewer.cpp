@@ -769,30 +769,57 @@ void DetailViewer::handleScopingMethodChange()
         case Property::ScopingMethod_GeometrySelection:
         {
             myCurNode->removeProperty("Remote points");
+            myCurNode->removeProperty("Named selection");
+
             if(myCurNode->getType()==SimulationNodeClass::nodeType_connectionPair)
             {
-                myCurNode->removeProperty("Master");
-                myCurNode->removeProperty("Tags master");
-                myCurNode->removeProperty("Slave");
-                myCurNode->removeProperty("Tags slave");
+                std::vector<GeometryTag> masterTags = myCurNode->getPropertyValue<std::vector<GeometryTag>>("Tags master");
+                if(masterTags.size()!=0)
+                {
+                    myCurNode->removeProperty("Master");
+                    QVariant data;
+                    data.setValue(masterTags);
+                    myCurNode->addProperty(Property("Master",data,Property::PropertyGroup_Scope),1);
+                }
+                else
+                {
+                    myCurNode->removeProperty("Master");
+                    myCurNode->removeProperty("Tags master");
+                    QVariant data;
+                    std::vector<GeometryTag> vecLoc;
+                    data.setValue(vecLoc);
 
+                    Property prop_master("Master",data,Property::PropertyGroup_Scope);
+                    Property prop_tagsMaster("Tags master",data,Property::PropertyGroup_Scope);
+                    myCurNode->addProperty(prop_master);
+                    myCurNode->addProperty(prop_tagsMaster);
+                }
+
+                std::vector<GeometryTag> slaveTags = myCurNode->getPropertyValue<std::vector<GeometryTag>>("Tags slave");
+                if(slaveTags.size()!=0)
+                {
+                    myCurNode->removeProperty("Slave");
+                    QVariant data;
+                    data.setValue(slaveTags);
+                    myCurNode->addProperty(Property("Slave",data,Property::PropertyGroup_Scope),1);
+                }
+                else{
+
+                    myCurNode->removeProperty("Slave");
+                    myCurNode->removeProperty("Tags slave");
+
+                    QVariant data;
+                    std::vector<GeometryTag> vecLoc;
+                    data.setValue(vecLoc);
+
+                    Property prop_slave("Slave",data,Property::PropertyGroup_Scope);
+                    Property prop_tagsSlave("Tags slave",data,Property::PropertyGroup_Scope);
+
+                    myCurNode->addProperty(prop_slave);
+                    myCurNode->addProperty(prop_tagsSlave);
+                }
                 myCurNode->removeProperty("Master mesh data sources");
                 myCurNode->removeProperty("Slave mesh data sources");
-
-                QVariant data;
-                std::vector<GeometryTag> vecLoc;
-                data.setValue(vecLoc);
-
-                Property prop_master("Master",data,Property::PropertyGroup_Scope);
-                Property prop_slave("Slave",data,Property::PropertyGroup_Scope);
-
-                Property prop_tagsMaster("Tags master",data,Property::PropertyGroup_Scope);
-                Property prop_tagsSlave("Tags slave",data,Property::PropertyGroup_Scope);
-
-                myCurNode->addProperty(prop_master);
-                myCurNode->addProperty(prop_tagsMaster);
-                myCurNode->addProperty(prop_slave);
-                myCurNode->addProperty(prop_tagsSlave);
 
                 //! ----------------------------------------------------------------------------------------
                 //! The private slot "updateTags()" is called when the delegate emits "scopeChanged()"
@@ -1935,7 +1962,36 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
             // add here the other cases...
         }
             break;
+        case SimulationNodeClass::nodeType_thermalAnalysisConvection:
+        {
 
+            cout<<"____function called for convection____"<<endl;
+
+            QList<QString> propNames;
+            propNames<<"Film coefficient"<<"Reference temperature";
+            for(int i=0; i<2; i++)
+            {
+                //! ----------------------------
+                //! diagnostic - can be removed
+                //! ----------------------------
+                SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
+                int col = mainTreeTools::calculateStartColumn(sm->myTreeView,tabularDataModel->getColumnBeforeBC())+i;
+                int row = currentStepNumber;
+                double componentValue = tabularDataModel->dataRC(row,col,Qt::EditRole).toDouble();
+                cout<<"____step nr: "<<row<<" tab col= "<<col<<" "<<propNames.at(i).toStdString()<<" read val: "<<componentValue<<"____"<<endl;
+                //! ---------------
+                //! end diagnostic
+                //! ---------------
+
+                QVariant data;
+                data.setValue(Property::loadDefinition_tabularData);
+                QString propName = propNames.at(i);
+                Property prop_component(propName,data,Property::PropertyGroup_Definition);
+                myCurNode->replaceProperty(propName,prop_component);
+            }
+
+        }
+            break;
         case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Displacement:
         case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RemoteDisplacement:
         case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RemoteRotation:
@@ -2102,7 +2158,6 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
             break;
         case SimulationNodeClass::nodeType_structuralAnalysisThermalCondition:
         case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Pressure:
-        case SimulationNodeClass::nodeType_thermalAnalysisConvection:
         case SimulationNodeClass::nodeType_thermalAnalysisTemperature:
         case SimulationNodeClass::nodeType_thermalAnalysisThermalFlow:
         case SimulationNodeClass::nodeType_thermalAnalysisThermalFlux:

@@ -489,6 +489,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
 
             case SimulationNodeClass::nodeType_OpenFoamScalarData:
             case SimulationNodeClass::nodeType_importedBodyScalar:
+            case SimulationNodeClass::nodeType_probe:
             {
                 emit requestSetActiveCentralTab("maingwindow");
             }
@@ -563,7 +564,6 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
             case SimulationNodeClass::nodeType_solutionStructuralEquivalentPlasticStrain:
             case SimulationNodeClass::nodeType_solutionStructuralContact:
             case SimulationNodeClass::nodeType_solutionStructuralFatigueTool:
-            case SimulationNodeClass::nodeType_probe:
             {
                 //! ---------------------------------------------------------------------
                 //! hide the meshes: keep the bodies in wireframe mode for the selection
@@ -844,18 +844,23 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 //! --------------
                 QModelIndex index_analysisSettings = mainTreeTools::getAnalysisSettingsItemFromCurrentItem(myTreeView)->index();
                 emit requestTabularData(index_analysisSettings);
-
+                cout<<"tag00"<<endl;
                 //! ---------------------------------
                 //! show the first row with Time = 0
                 //! ---------------------------------
                 emit requestShowFirstRow();
+                cout<<"tag01"<<endl;
 
                 //! -----------------------------------------------------------
                 //! calculate the number of columns to show => in the table <=
                 //! -----------------------------------------------------------
                 QList<int> columnsToShow;
                 CustomTableModel *tabData = index_analysisSettings.data(Qt::UserRole).value<SimulationNodeClass*>()->getTabularDataModel();
+                cout<<"tag02"<<endl;
+
                 columnsToShow << TABULAR_DATA_STEP_NUMBER_COLUMN << TABULAR_DATA_STEP_END_TIME_COLUMN << mainTreeTools::getColumnsToRead(myTreeView,tabData->getColumnBeforeBC());
+                cout<<"column to show "<<columnsToShow.at(0)<<" size "<<columnsToShow.size()<<endl;
+
                 if(columnsToShow.length()>=2)
                 {
                     emit requestShowColumns(columnsToShow);
@@ -864,10 +869,14 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                     //! remove the column showing the times
                     //! ------------------------------------
                     columnsToShow.removeFirst();
+
                     emit requestShowGraph(tabData,columnsToShow);
                 }
                 bool isDone = markerBuilder::addMarker(this->getCurrentNode(), mySimulationDataBase);
-                if(isDone == true) this->displayMarker();
+                cout<<"tag03"<<endl;
+
+                if(isDone == true){ this->displayMarker();                    cout<<"tag03"<<endl;}
+;
             }
                 break;
 
@@ -1511,26 +1520,24 @@ void SimulationManager::deleteItem(QList<QModelIndex> indexesList)
                 {
                     QStandardItem *setUpItem = analysisRoot->child(i,0);
                     SimulationNodeClass *nodeSetUp = setUpItem->data(Qt::UserRole).value<SimulationNodeClass*>();
-                    if(nodeSetUp->isSimulationSetUpNode()== false) return;
-                    if(nodeSetUp->isChildSimulationSetUpNode()== false) return;
-                    if(nodeSetUp->isNephewSimulationSetUpNode()== false) return;
+                    //if(nodeSetUp->isSimulationSetUpNode()== false) return;
+                    //if(nodeSetUp->isChildSimulationSetUpNode()== false) return;
+                    //if(nodeSetUp->isNephewSimulationSetUpNode()== false) return;
 
                     //! --------------------------------------------------------------------
                     //! if a named selection is contained replace with a geometry selection
                     //! and change the scoping method accordingly
                     //! --------------------------------------------------------------------
                     if(nodeSetUp->getPropertyItem("Named selection")==Q_NULLPTR) continue;
-                    {
-                        nodeSetUp->getModel()->blockSignals(true);
+                    nodeSetUp->getModel()->blockSignals(true);
 
-                        QVariant data;
-                        data.setValue(std::vector<GeometryTag>());
-                        nodeSetUp->replaceProperty("Geometry",Property("Tags",data,Property::Property::PropertyGroup_Scope));
-                        nodeSetUp->replaceProperty("Tags",Property("Tags",data,Property::Property::PropertyGroup_Scope));
-                        data.setValue(Property::ScopingMethod_GeometrySelection);
-                        nodeSetUp->replaceProperty("Scoping method",Property("Scoping method",data,Property::PropertyGroup_Scope));
-                        nodeSetUp->getModel()->blockSignals(false);
-                    }
+                    QVariant data;
+                    data.setValue(std::vector<GeometryTag>());
+                    nodeSetUp->replaceProperty("Geometry",Property("Tags",data,Property::Property::PropertyGroup_Scope));
+                    nodeSetUp->replaceProperty("Tags",Property("Tags",data,Property::Property::PropertyGroup_Scope));
+                    data.setValue(Property::ScopingMethod_GeometrySelection);
+                    nodeSetUp->replaceProperty("Scoping method",Property("Scoping method",data,Property::PropertyGroup_Scope));
+                    nodeSetUp->getModel()->blockSignals(false);
                 }
             }
 
@@ -2305,6 +2312,8 @@ void SimulationManager::handleItem(int type)
     case 228: this->createSimulationNode(SimulationNodeClass::nodeType_solutionStructuralTemperature); break;
     case 229: this->createSimulationNode(SimulationNodeClass::nodeType_solutionStructuralEquivalentPlasticStrain); break;
 
+    case 440: this->createSimulationNode(SimulationNodeClass::nodeType_probe); break;
+
     //! ------------------------------------------------------------------
     //! 230 -> insert total "Nodal forces"
     //! directional nodal forces (option "1" => "x" direction by default)
@@ -2638,7 +2647,6 @@ void SimulationManager::createSimulationNode(SimulationNodeClass::nodeType type,
 
     //SimulationNodeClass *currentRootNode = currentSimulationRoot->data(Qt::UserRole).value<SimulationNodeClass*>();
     //SimulationNodeClass *curSolutionNode = curSolutionItem->data(Qt::UserRole).value<SimulationNodeClass*>();
-
     //! -------------
     //! MODEL CHANGE
     //! -------------
@@ -2681,7 +2689,8 @@ void SimulationManager::createSimulationNode(SimulationNodeClass::nodeType type,
             type ==SimulationNodeClass::nodeType_solutionStructuralStress ||
             type ==SimulationNodeClass::nodeType_solutionStructuralFatigueTool ||
             type ==SimulationNodeClass::nodeType_solutionStructuralNodalForces ||
-            type ==SimulationNodeClass::nodeType_solutionStructuralContact)
+            type ==SimulationNodeClass::nodeType_solutionStructuralContact||
+        type== SimulationNodeClass::nodeType_probe)
     {
         aNode = nodeFactory::nodeFromScratch(type,mySimulationDataBase, myCTX, addOptions);
         aNode->setParent(this);
@@ -12903,11 +12912,18 @@ void SimulationManager::generateBoundaryConditionsMeshDS(bool computeDual)
         int bodyIndex = it.key();
         mapOfIsMeshDSExact.insert(bodyIndex,true);
     }
+/*
     int NbMeshControls = Mesh_RootItem->rowCount();
+
     for(int k=0; k<NbMeshControls; k++)
     {
+
         QStandardItem *meshControl = Mesh_RootItem->child(k,0);
+        cout<<"SimulationManager::generateBoundaryConditionsMeshDS()->____tag00____"<<endl;
+
         SimulationNodeClass *meshNode = meshControl->data(Qt::UserRole).value<SimulationNodeClass*>();
+        cout<<"SimulationManager::generateBoundaryConditionsMeshDS()->____tag01____"<<endl;
+
         if(meshNode->getType()==SimulationNodeClass::nodeType_meshMethod)
         {
             Property::meshEngine2D meshEngine = meshNode->getPropertyValue<Property::meshEngine2D>("Surface mesher");
@@ -12917,6 +12933,8 @@ void SimulationManager::generateBoundaryConditionsMeshDS(bool computeDual)
             case Property::meshEngine2D_Netgen_STL:
             case Property::meshEngine2D_OCC_ExpressMesh:
             {
+                cout<<"SimulationManager::generateBoundaryConditionsMeshDS()->____tag02____"<<endl;
+
                 const std::vector<GeometryTag> &vecLoc = meshNode->getPropertyValue<std::vector<GeometryTag>>("Tags");
                 for(int k=0; k<vecLoc.size(); k++)
                 {
@@ -12954,7 +12972,7 @@ void SimulationManager::generateBoundaryConditionsMeshDS(bool computeDual)
             }
         }
     }
-
+*/
     //! ----------------------------
     //! diagnostic - can be removed
     //! ----------------------------

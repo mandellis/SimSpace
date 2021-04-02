@@ -2500,6 +2500,7 @@ void MainWindow::saveProjectAs()
             QDir MDB_dir(_filesDir+("/MDB"));
             SDB_dir.removeRecursively();
             MDB_dir.removeRecursively();
+            //QStringList allDir = curDir.entryList();
         }
     }
 

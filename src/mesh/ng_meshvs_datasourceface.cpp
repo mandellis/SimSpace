@@ -1428,7 +1428,7 @@ void Ng_MeshVS_DataSourceFace::computeNormalAtElements()
         bool isDone = this->GetGeom(globalElementID,true,coords,NbNodes,type);
         if(isDone == false)
         {
-            cerr<<"Ng_MeshVS_DataSourceFace::computeNormalAtElements()->____cannot found element ID: "<<globalElementID<<"____"<<endl;
+            //cerr<<"Ng_MeshVS_DataSourceFace::computeNormalAtElements()->____cannot found element ID: "<<globalElementID<<"____"<<endl;
             continue;
         }
 
@@ -1873,6 +1873,8 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const QList<occHandle(Ng_Mesh
     //! fill the node map
     //! ------------------
     int NbSharedNodes = 0;
+    //cerr<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____faceDS lenght____"<<faceDSList.length()<<endl;
+
     for(int i=0; i<faceDSList.length(); i++)
     {
         const occHandle(Ng_MeshVS_DataSourceFace) &curFaceDS = faceDSList.at(i);
@@ -2017,10 +2019,13 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const QList<occHandle(Ng_Mesh
     //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list. Start defining nodes____"<<endl;
     int localNodeID = 0;
     TColStd_PackedMapOfInteger alreadyVisitedNodes;
+    //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____faceDS lenght____"<<faceDSList.length()<<endl;
+
     for(int i=0; i<faceDSList.length(); i++)
     {
         const occHandle(Ng_MeshVS_DataSourceFace) &curFaceDS = faceDSList.at(i);
         if(curFaceDS.IsNull()) continue;
+        //cerr<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____tag00____"<<endl;
 
         TColStd_PackedMapOfInteger curNodeMap = curFaceDS->GetAllNodes();
         for(TColStd_MapIteratorOfPackedMapOfInteger aNodeIt(curNodeMap);aNodeIt.More();aNodeIt.Next())
@@ -2111,7 +2116,7 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const QList<occHandle(Ng_Mesh
         }
         cout<<"done____"<<endl;
     }
-    cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____"<<faceDSList.length()<<" meshes merged. Exiting____"<<endl;
+    //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____"<<faceDSList.length()<<" meshes merged. Exiting____"<<endl;
 }
 
 //! ------------------------------

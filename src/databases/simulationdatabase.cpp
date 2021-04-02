@@ -167,7 +167,7 @@ simulationDataBase::simulationDataBase(const QList<SimulationNodeClass*> listOfN
             continue;
         }
 
-        //cout<<"____"<<curNode->getName().toStdString()<<"____"<<endl;
+        cout<<"____"<<curNode->getName().toStdString()<<"____"<<endl;
         //cout<<"____"<<curNode->getPropertyValue<QString>("Time tag").toStdString()<<"____"<<endl;
 
         if(curNode->getPropertyItem("Parent time tag")==Q_NULLPTR) exit(3);

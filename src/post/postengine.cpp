@@ -471,19 +471,18 @@ std::vector<std::map<int,double>> postEngine::evaluateResultOnBody(const QString
     cout<<"@ -------------------------------------------------"<<endl;
     cout<<"@ - postEngine::evaluateResultOnBody "<<endl;
     cout<<"@ -------------------------------------------------"<<endl;
-
     //! ------------------------------------------------
     //! node conversion map: OCC node ID to CCX node ID
     //! ------------------------------------------------
     std::map<int,int> indexedMapOfNodes;
     int bodyIndex = bodyTag.parentShapeNr;
+
+    //indexedMapOfNodes = OCCMeshToCCXmesh::performOCCtoCCX(bodyTag,)
     int offset = 0;
     for(int k=1; k<bodyIndex; k++)
     {
         if(!myMeshDataBase->ArrayOfMeshDS.value(k).IsNull())
-
         {
-            cout<<"@ - postEngine::evaluateResultOnBody ____tag00"<<endl;
             offset = offset+myMeshDataBase->ArrayOfMeshDS.value(k)->GetAllNodes().Extent();
         }
     }
@@ -492,7 +491,6 @@ std::vector<std::map<int,double>> postEngine::evaluateResultOnBody(const QString
         int nodeID = anIter.Key()+offset;
         indexedMapOfNodes.insert(std::make_pair(nodeID,anIter.Key()));
     }
-
     //! ------------------------------------------------
     //! enter <...>/SolutionData/ResultsData
     //! ------------------------------------------------
@@ -506,7 +504,6 @@ std::vector<std::map<int,double>> postEngine::evaluateResultOnBody(const QString
 
     QList<QString> entryList = curDir.entryList();
     QList<QString> fileList;
-
     //! ------------------------------------------------------
     //! retrieve the files (discard directories)
     //! it could be used to setup the range of a progress bar
@@ -567,6 +564,7 @@ std::vector<std::map<int,double>> postEngine::evaluateResultOnBody(const QString
             {
                 requiredTime = time;
                 eval = true;
+                //cout<<"eval is tue"<<endl;
             }
         }
             break;
@@ -745,6 +743,7 @@ std::vector<std::map<int,double>> postEngine::evaluateResultOnBody(const QString
             case TypeOfResult_EPS:
             {
                 std::map<int,double> resT;
+                cout<<"  tag03  "<<endl;
 
                 //! <>::eof(): call getline before while, then inside {}, @ as last instruction
                 std::getline(curFile,val);
@@ -766,7 +765,7 @@ std::vector<std::map<int,double>> postEngine::evaluateResultOnBody(const QString
                 }
                 //! result
                 res.push_back(resT);
-                //cout<<"Number of components: "<<res.length();
+                cout<<"Number of components: "<<res.size();
             }
                 break;
 
@@ -1075,28 +1074,35 @@ bool postEngine::buildPostObject(const QString &keyName,
         std::map<int,gp_Vec> displMap;
         const std::vector<std::map<int,double>> &nodalDisplacements = this->evaluateResultOnBody("DISP", requiredSubStepNb, requiredStepNb,requiredMode, meshDS, aLoc, time);
 
-        const std::map<int,double> &displX = nodalDisplacements[1];
-        const std::map<int,double> &displY = nodalDisplacements[2];
-        const std::map<int,double> &displZ = nodalDisplacements[3];
-        std::map<int,double>::const_iterator itX = displX.cbegin();
-        std::map<int,double>::const_iterator itY = displY.cbegin();
-        std::map<int,double>::const_iterator itZ = displZ.cbegin();
-
-        for(;itX!=displX.cend() && itY!=displY.cend() && itZ!=displZ.cend(); ++itX, ++itY, ++itZ)
+        if(!nodalDisplacements.empty())
         {
-            int nodeID = itX->first;
-            gp_Vec aVec(itX->second,itY->second,itZ->second);
-            displMap[nodeID] = aVec;
+            const std::map<int,double> &displX = nodalDisplacements[1];
+            const std::map<int,double> &displY = nodalDisplacements[2];
+            const std::map<int,double> &displZ = nodalDisplacements[3];
+            std::map<int,double>::const_iterator itX = displX.cbegin();
+            std::map<int,double>::const_iterator itY = displY.cbegin();
+            std::map<int,double>::const_iterator itZ = displZ.cbegin();
+
+            for(;itX!=displX.cend() && itY!=displY.cend() && itZ!=displZ.cend(); ++itX, ++itY, ++itZ)
+            {
+                int nodeID = itX->first;
+                gp_Vec aVec(itX->second,itY->second,itZ->second);
+                displMap[nodeID] = aVec;
+            }
+
+            mapDisplMap_byBodies.insert(std::make_pair(aLoc,displMap));
         }
-        mapDisplMap_byBodies.insert(std::make_pair(aLoc,displMap));
         resMap_byBody.insert(std::make_pair(aLoc,res));
     }
+    if(resMap_byBody.empty()) return false;
 
     //! -----------------------------------------
     //! creating the result container postObject
     //! -----------------------------------------
     cout<<"postEngine::buildPostObject()->____creating the result container____"<<endl;
     bool useSurfaceMeshForVolumeResults = Global::status().myResultPresentation.useExteriorMeshForVolumeResults;
+
+    if(mapDisplMap_byBodies.empty())     aPostObject = std::make_shared<postObject>(resMap_byBody,vecLoc_byBodies,aResultName);
     aPostObject = std::make_shared<postObject>(resMap_byBody,vecLoc_byBodies,mapDisplMap_byBodies,aResultName,useSurfaceMeshForVolumeResults);
     aPostObject->setMeshDataSources(meshDSforResults);  // replaces init()
     double magnifyFactor = Global::status().myResultPresentation.theScale;

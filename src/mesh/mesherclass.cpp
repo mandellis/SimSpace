@@ -286,7 +286,7 @@ void MesherClass::generateMesh()
                         QProgressEvent *pe = new QProgressEvent(QProgressEvent_Init,0,NbSteps-1,0,"Meshing surface using Express Mesh",QProgressEvent_Init,0,100,0);
                         postUpdateEvent(pe);
                         userMessage mr = this->ExMesh_generateSurfaceMesh(mp,bodyIndex,mainMesh2D);
-                        this->rebuildFaceMeshDataSources(bodyIndex);    // a check
+                        //this->rebuildFaceMeshDataSources(bodyIndex);    // a check
 
                         Global::status().myMessages->appendMessage(mr);
                     }
@@ -2046,8 +2046,8 @@ userMessage MesherClass::Netgen_STL_generateVolumeMesh(int bodyIndex,
         //! the data sources are set directly by the tool
         //! experimental: rebuild the face mesh data sources
         //! -------------------------------------------------
-        //bool faceMeshDSRebuilt = this->rebuildFaceMeshDataSources(bodyIndex);
-        //Q_UNUSED(faceMeshDSRebuilt);
+        bool faceMeshDSRebuilt = this->rebuildFaceMeshDataSources(bodyIndex);
+        Q_UNUSED(faceMeshDSRebuilt);
 
         //! ----------------------
         //! remove supports files

@@ -3953,8 +3953,7 @@ void occPreGLWidget::onLButtonUp(const int theFlags, const QPoint thePoint)
                         occMeshContext->MoveTo(thePoint.x(),thePoint.y(),occView,false);
                         PS = occMeshContext->Select(true);
                     }
-
-                    cout<<"occGLWidget::onLButtonUp->____STATUS OF PICK "<<PS<<"____"  <<endl;
+                    cout<<"occPreGLWidget::onLButtonUp->____STATUS OF PICK "<<PS<<"____"  <<endl;
                 }
                 //! Emits the selectionChanged()
                 emit selectionChanged();
@@ -4055,6 +4054,14 @@ void occPreGLWidget::onMouseMove(const int theFlags, QPoint thePoint)
             int ID = anEntityOwner->ID();
             MeshVS_EntityType aType;
             int NbNodes;
+
+            int buf[20];
+            TColStd_Array1OfInteger nodeIDs(*buf,1,20);
+            aMeshDS->GetNodesByElement(ID,nodeIDs,NbNodes);
+            cout<<"* hoovered element of nodeID "<<ID<<"(";
+            for(int i=1;i<NbNodes;i++) cout<<nodeIDs(i)<<" , ";
+            cout<<nodeIDs(NbNodes)<<")"<<endl;
+            /*
             double buf[30];
             TColStd_Array1OfReal coords(*buf,1,30);
             aMeshDS->GetGeom(ID,true,coords,NbNodes,aType);
@@ -4072,7 +4079,7 @@ void occPreGLWidget::onMouseMove(const int theFlags, QPoint thePoint)
             polygon::planeCoefficients(aPolygon,a,b,c,d);
             double ll = sqrt(a*a+b*b+c*c);
             a /= ll; b /= ll; c /= ll; d /= ll;
-
+*/
             // implement here ray casting and calculation of point on mesh
         }
         static int theOldDetectedMeshEntity;

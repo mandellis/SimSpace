@@ -40,6 +40,8 @@ QList<int> mainTreeTools::getColumnsToRead(QStandardItem *anItem,int columnsBefo
 {
     //cout<<"mainTreeTools::getColumnsToRead()->____function called____"<<endl;
 
+    columnsBeforeBC = NUMBER_OF_COLUMNS_BEFORE_BC_DATA;
+
     QList<int> theColumnsToShow;
     int SC = mainTreeTools::calculateStartColumn(anItem,columnsBeforeBC);
     SimulationNodeClass *aNode = anItem->data(Qt::UserRole).value<SimulationNodeClass*>();
@@ -158,9 +160,9 @@ QList<int> mainTreeTools::getColumnsToRead(QStandardItem *anItem,int columnsBefo
     //! ----------------------------
     //! diagnostic - can be removed
     //! ----------------------------
-    //cout<<"mainTreeTools::getColumnsToRead()->____columns to read: {";
-    //int i; for(i=0;i<theColumnsToShow.length()-1;i++) cout<<theColumnsToShow.at(i)<<",";
-    //cout<<theColumnsToShow.at(i)<<"}"<<endl;
+    cout<<"mainTreeTools::getColumnsToRead()->____columns to read: {";
+    int i; for(i=0;i<theColumnsToShow.length()-1;i++) cout<<theColumnsToShow.at(i)<<",";
+    cout<<theColumnsToShow.at(i)<<"}"<<endl;
     //! ---------------
     //! end diagnostic
     //! ---------------
@@ -174,6 +176,8 @@ QList<int> mainTreeTools::getColumnsToRead(QStandardItem *anItem,int columnsBefo
 int mainTreeTools::calculateStartColumn(QStandardItem *anItem, int columnsBeforeBC)
 {
     //cout<<"mainTreeTools::calculateStartColumn()->____function called____"<<endl;
+
+    columnsBeforeBC = NUMBER_OF_COLUMNS_BEFORE_BC_DATA;
 
     //! -----------------
     //! the start column
