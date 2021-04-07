@@ -1406,6 +1406,17 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
             return editor;
         }
         //! ---------------
+        //! "Probe location"
+        //! ---------------
+        else if(propertyName =="Node ID")
+        {
+            QLineEdit *editor = new QLineEdit(parent);
+            QDoubleValidator *doubleValidator = new QDoubleValidator();
+            doubleValidator->setBottom(0.0);
+            editor->setValidator(doubleValidator);
+            return editor;
+        }
+        //! ---------------
         //! "Mode number"
         //! ---------------
         else if(propertyName =="Mode number")
@@ -3919,6 +3930,15 @@ void GeneralDelegate::setEditorData(QWidget *editor, const QModelIndex &index) c
         le->setText(QString("%1").arg(value));
     }
     //! ---------------
+    //! "Probe location"
+    //! ---------------
+    else if(propertyName =="Node ID")
+    {
+        double value = data.value<Property>().getData().toDouble();
+        QLineEdit *le = static_cast<QLineEdit*>(editor);
+        le->setText(QString("%1").arg(value));
+    }
+    //! ---------------
     //! "Mode number"
     //! ---------------
     else if(propertyName =="Mode number")
@@ -5997,6 +6017,14 @@ void GeneralDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, c
         //! "Display time"
         //! ---------------
         else if(propertyName=="Display time")
+        {
+            QLineEdit *le = static_cast<QLineEdit*>(editor);
+            data.setValue(le->text().toDouble());
+        }
+        //! ---------------
+        //! "Probe location"
+        //! ---------------
+        else if(propertyName=="Node ID")
         {
             QLineEdit *le = static_cast<QLineEdit*>(editor);
             data.setValue(le->text().toDouble());

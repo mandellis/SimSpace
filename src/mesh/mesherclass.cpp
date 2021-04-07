@@ -2046,8 +2046,8 @@ userMessage MesherClass::Netgen_STL_generateVolumeMesh(int bodyIndex,
         //! the data sources are set directly by the tool
         //! experimental: rebuild the face mesh data sources
         //! -------------------------------------------------
-        bool faceMeshDSRebuilt = this->rebuildFaceMeshDataSources(bodyIndex);
-        Q_UNUSED(faceMeshDSRebuilt);
+        //bool faceMeshDSRebuilt = this->rebuildFaceMeshDataSources(bodyIndex);
+        //Q_UNUSED(faceMeshDSRebuilt);
 
         //! ----------------------
         //! remove supports files

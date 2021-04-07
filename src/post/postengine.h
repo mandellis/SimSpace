@@ -107,6 +107,9 @@ public slots:
     //! evaluate fatigue results
     bool buildFatiguePostObject(int type, const std::vector<GeometryTag> &locs, std::vector<double> times, QMap<int,int> materialBodyMap, int nCycle, sharedPostObject &aPostObject);
 
+    //! evaluate probe
+    bool buildProbe(int nodeID,const std::vector<GeometryTag> &locs);
+
     //! build a post object
     bool buildPostObject(const QString &keyName,
                          int component,

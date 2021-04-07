@@ -9468,7 +9468,8 @@ void SimulationManager::buildDataBaseFromDisk(const QString &fileName)
             //! ------------------
             //! working exception
             //! ------------------
-            if(curPostProcessingNode->getType()==SimulationNodeClass::nodeType_solutionStructuralFatigueTool) continue;
+            if(curPostProcessingNode->getType()==SimulationNodeClass::nodeType_solutionStructuralFatigueTool
+                    || curPostProcessingNode->getType()==SimulationNodeClass::nodeType_probe) continue;
 
             bool immediatelyDisplay = false;
             this->callPostEngineEvaluateResult_private(curPostProcessingItem,immediatelyDisplay);
@@ -10476,6 +10477,7 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
     //! retrieve the location
     //! ----------------------
     std::vector<GeometryTag> vecLoc = curNode->getPropertyValue<std::vector<GeometryTag>>("Tags");
+
     /*
     //! ----------------------------------------------------------------
     //! check if a mesh for each location exists
@@ -10534,8 +10536,10 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
     //! --------------
     sharedPostObject aPostObject;
 
-    if(type!=SimulationNodeClass::nodeType_solutionStructuralFatigueTool)
+    if(type!=SimulationNodeClass::nodeType_solutionStructuralFatigueTool && type!=SimulationNodeClass::nodeType_probe)
     {
+        cout<<" tags 01"<<endl;
+
         int component = curNode->getPropertyValue<int>("Type ");
         int mode = curNode->getPropertyValue<int>("Mode number");
         if(curNode->getPropertyItem("Post object")!=Q_NULLPTR)
@@ -10665,6 +10669,24 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
     }
     else
     {
+        if(type==SimulationNodeClass::nodeType_probe)
+        {
+            //QMap<double,QVector<int>> dTm = nodeSolutionInformation->getPropertyValue<QMap<double,QVector<int>>>("Discrete time map");
+            int nodeID = curNode->getPropertyValue<int>("Node ID");
+            //! -----------------------------------------------------------------------------
+            //! create the postObject
+            //! the post object retrieves the mesh data sources from the simulation database
+            //! and internally builds its own interactive mesh objects
+            //! -----------------------------------------------------------------------------
+            bool isDone = myPostEngine->buildProbe(nodeID,vecLoc);
+            if(isDone == false)
+            {
+                QMessageBox::critical(this,"Simulation manager","Cannot create result view",QMessageBox::Ok);
+                return;
+            }
+            return;
+        }
+
         std::vector<double> timeList;
         int component = curNode->getPropertyValue<int>("Component");
         int NbCycles = curNode->getPropertyValue<int>("Number of cycles");

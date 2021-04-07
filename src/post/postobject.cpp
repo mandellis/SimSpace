@@ -616,12 +616,14 @@ bool postObject::buildMeshIO(double min, double max, int Nlevels, bool autoscale
         else
         {
             curMeshDS = anIt->second->GetNonDeformedDataSource();
+            cout<<"postObject::buildMeshIO()->____tag00____"<<curMeshDS->GetAllNodes().Extent()<<endl;
         }
 
         //! ----------------------------------
         //! build a deformed mesh data source
         //! ----------------------------------
         occHandle(MeshVS_DeformedDataSource) theDeformedDS = new MeshVS_DeformedDataSource(curMeshDS,deformationScale);
+        cout<<"postObject::buildMeshIO()->____tag01____"<<endl;
 
         // can also use .size()==0 instead of try {} catch (...) {}
         std::map<int,gp_Vec> displacementMap;
@@ -638,14 +640,22 @@ bool postObject::buildMeshIO(double min, double max, int Nlevels, bool autoscale
             myMapOfNodalDisplacements.insert(std::make_pair(loc,displacementMap));
         }
         theDeformedDS->SetNonDeformedDataSource(curMeshDS);
-
         for(TColStd_MapIteratorOfPackedMapOfInteger it(curMeshDS->GetAllNodes()); it.More(); it.Next())
         {
             int globalNodeID = it.Key();
-            const gp_Vec &d = displacementMap.at(globalNodeID);
+            gp_Vec &d = gp_Vec(0,0,0);
+            try
+            {
+                d = displacementMap.at(globalNodeID);
+            }
+            catch(...)
+            {
+               d =  gp_Vec(0,0,0);
+            }
             theDeformedDS->SetVector(globalNodeID,d);
         }
         theDeformedDS->SetMagnify(deformationScale);
+
         theMeshDataSourcesForView[loc]=theDeformedDS;   //! abruptly replace - do not use "insert"
 
         const std::vector<std::map<int, double>> &listOfRes = theData.at(loc);

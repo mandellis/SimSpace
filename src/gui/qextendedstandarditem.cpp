@@ -1017,6 +1017,14 @@ QVariant QExtendedStandardItem::data(int role) const
             data.setValue(QString::fromLatin1(v));
             return data;
         }
+        else if(name=="Node ID")
+        {
+            double val = QStandardItem::data(Qt::UserRole).value<Property>().getData().toDouble();
+            char v[16];
+            sprintf(v,"%g",val);
+            data.setValue(QString::fromLatin1(v));
+            return data;
+        }
         else if(name=="Mode number")
         {
             int val = QStandardItem::data(Qt::UserRole).value<Property>().getData().toInt();

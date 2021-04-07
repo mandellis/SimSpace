@@ -1444,7 +1444,172 @@ bool postEngine::buildFatiguePostObject(int type, const std::vector<GeometryTag>
     return isDone;
 }
 
+bool postEngine::buildProbe(int nodeID,const std::vector<GeometryTag> &locs)
+{
 
+    //rainflow rf;
+    //rf.setFatigueModel(myFatigueModel);
+
+    const GeometryTag bodyTag = locs.at(0);
+
+    //! --------------------------------------
+    //! group the mesh data sources by bodies
+    //! --------------------------------------
+    std::map<GeometryTag,occHandle(MeshVS_DataSource)> meshDSforResults;
+    this->groupAndMergeMeshDataSourcesByBodies(locs,meshDSforResults);
+    const occHandle(MeshVS_DataSource) &aMeshDS = meshDSforResults.at(bodyTag);
+    //bool isDone = rf.perform(strainDistTimeHistory,damageDist);
+    //if(isDone == false) continue;                                   // try to handle this error
+
+    QString resultKeyName = "NDTEMP";
+    //! ------------------------------------------
+    //! generate the results grouped by body tags
+    //! access data by bodies
+    //! ------------------------------------------
+    std::vector<double> tempHistory,stressHistory;
+
+    //! -----------------------------------------------
+    //! node conversion map: from OCC to CCX numbering
+    //! -----------------------------------------------
+    int bodyIndex = bodyTag.parentShapeNr;
+    std::map<int,int> indexedMapOfNodes;
+
+    int offset = 0;
+    for(int k=1; k<bodyIndex; k++)
+    {
+        offset = offset+myMeshDataBase->ArrayOfMeshDS.value(k)->GetAllNodes().Extent();
+    }
+    for(TColStd_MapIteratorOfPackedMapOfInteger anIter(aMeshDS->GetAllNodes()); anIter.More(); anIter.Next())
+    {
+        int nodeID = anIter.Key()+offset;
+        indexedMapOfNodes.insert(std::make_pair(nodeID,anIter.Key()));
+    }
+    nodeID+=offset;
+
+    //! -------------------------------------
+    //! enter <...>/SolutionData/ResultsData
+    //! -------------------------------------
+    QString tmp = myResultsFilePath.split("/").last();
+    QString path = myResultsFilePath;
+    path.chop(tmp.length());
+
+    QDir curDir(path);
+    curDir.cd("ResultsData");
+    QFileInfoList entriesInfo = curDir.entryInfoList();
+
+    QList<QString> entryList = curDir.entryList();
+    QList<QString> fileList;
+
+    //! ------------------------------------------------------
+    //! retrieve the files (discard directories)
+    //! it could be used to setup the range of a progress bar
+    //! ------------------------------------------------------
+    for(int k=0; k<entryList.length(); k++)
+    {
+        if(entriesInfo.at(k).isFile() == false) continue;
+        QString fileName = curDir.absolutePath()+"/"+entryList.at(k);
+        fileList.append(fileName);
+    }
+
+    std::vector<double> times;
+
+    ofstream os;
+    os.open("D:/tempHystory.txt");
+    os<<"time   "<<"T"<<endl;
+
+    int n = 0;
+
+    //! ---------------
+    //! scan the files
+    //! ---------------
+    for(int i=0; i<fileList.length(); i++)
+    {
+        cout<<"****************************************"<<endl;
+        cout<<"* scanning file: "<<i<<endl;
+
+        QString filePath = fileList.at(i);
+        ifstream curFile(filePath.toStdString());
+
+        std::string val;
+        std::getline(curFile,val);
+        cout<<"* "<<val<<endl;
+        std::getline(curFile,val);
+        cout<<"* "<<val<<endl;
+        double time;
+        sscanf(val.c_str(),"Time= %lf",&time);
+        std::getline(curFile,val);
+        cout<<"* "<<val<<endl;
+        int subStepNb, stepNb;
+        sscanf(val.c_str(),"Substep n=%d Step n=%d",&subStepNb,&stepNb);
+        std::getline(curFile,val);
+        cout<<"* "<<val<<endl;
+        char tdata[32];
+        sscanf(val.c_str(),"%s",tdata);
+        cout<<"****************************************"<<endl;
+
+        //int step,substep;
+        //postTools::getStepSubStepByTimeDTM(myDTM,times.at(n),step,substep);
+
+        if(strcmp(tdata,resultKeyName.toStdString().c_str())==0)
+            //if(strcmp(tdata,resultKeyName.toStdString().c_str())==0 && subStepNb==substep && stepNb == step)
+        {
+            cout<<"\n=> data file found: start reading data within <=\n"<<endl;
+            n++;
+
+            //! ----------------------------------------------------------------------------
+            //! <>::eof(): call getline before while, then inside {}, @ as last instruction
+            //! ----------------------------------------------------------------------------
+            std::getline(curFile,val);
+            while(curFile.eof()!=true)
+            {
+                //! read the components of the 3x3 data
+                int ni;
+                double cxx,cyy,czz,cxy,cyz,cxz;
+                //sscanf(val.c_str(),"%d%lf%lf%lf%lf%lf%lf",&ni,&cxx,&cyy,&czz,&cxy,&cyz,&cxz);
+                sscanf(val.c_str(),"%d%lf%lf%lf%lf%lf%lf",&ni,&cxx);
+
+                //! nodeID within the MeshVS_dataSource
+                std::map<int,int>::iterator it = indexedMapOfNodes.find(ni);
+                if(it==indexedMapOfNodes.end())
+                {
+                    std::getline(curFile,val);
+                    continue;
+                }
+                if(ni==nodeID)
+                {
+                    cout<<"node ID found "<<ni<<","<<nodeID<<endl;
+                //int OCCnodeID = it->second;
+                tempHistory.push_back(cxx);
+                times.push_back(time);
+
+                os<<time<<" "<<cxx<<endl;
+                cout<<" writing on disk "<<n<<endl;
+
+                std::getline(curFile,val);
+                cout<<" break"<<endl;
+
+                break;
+                //double vonMises = (2.0/3.0)*sqrt((3.0/2.0)*(cxx*cxx+cyy*cyy+czz*czz)+(3.0/4.0)*(cxy*cxy+cyz*cyz+cxz*cxz));
+                //std::map<int,std::vector<double>>::iterator itt = resMISES.find(OCCnodeID);
+                //if(itt == resMISES.end())
+                //{
+                //    std::vector<double> th {vonMises};
+                //    resMISES.insert(std::make_pair(OCCnodeID,th));
+                }
+                //else itt->second.push_back(vonMises);
+                else std::getline(curFile,val);
+            }
+            curFile.close();
+        }
+        else
+        {
+            curFile.close();
+        }
+    }
+    cout<<" exiting "<<endl;
+
+    os.close();
+}
 //! ---------------------------------------------------
 //! function: readFatigueResults
 //! details:  type = 1 => equivalent mechanical strain

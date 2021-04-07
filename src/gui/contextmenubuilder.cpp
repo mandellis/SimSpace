@@ -1774,6 +1774,15 @@ void contextMenuBuilder::buildStructuralSolutionContextMenu(QMenu *contextMenu, 
     //! add separator
     contextMenu->addSeparator();
 
+    //! -------------
+    //! probe tool
+    //! -------------
+    QAction *ActionInsertProbeTool = menuInsert->addAction("Probe tool");
+    ActionInsertProbeTool->setIcon(QIcon(":/icons/icon_crack.png"));
+    ActionInsertProbeTool->setData(440);
+
+    //! add separator
+    contextMenu->addSeparator();
     if(node->getFamily() == SimulationNodeClass::nodeType_StructuralAnalysisSolution
             && node->getType() != SimulationNodeClass::nodeType_StructuralAnalysisSolutionInformation
             && node->getType() != SimulationNodeClass::nodeType_StructuralAnalysisSolution)
@@ -1867,6 +1876,16 @@ void contextMenuBuilder::buildThermalResultsContextMenu(QMenu *contextMenu, bool
     QAction *ActionInsertFlux = menuInsert->addAction("Flux");
     ActionInsertFlux->setIcon(QIcon(":/icons/icon_thermal flux.png"));
     ActionInsertFlux->setData(241);
+
+    //! add separator
+    contextMenu->addSeparator();
+
+    //! -------------
+    //! probe tool
+    //! -------------
+    QAction *ActionInsertProbeTool = menuInsert->addAction("Probe tool");
+    ActionInsertProbeTool->setIcon(QIcon(":/icons/icon_crack.png"));
+    ActionInsertProbeTool->setData(440);
 
     //! add separator
     contextMenu->addSeparator();

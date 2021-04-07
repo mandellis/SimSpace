@@ -112,15 +112,19 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
         Property prop_component("Component",data,Property::PropertyGroup_Definition);
         vecProp.push_back(prop_component);
 
+        //! time info
+        data.setValue(0.0);
+        Property prop_location("Node ID",data,Property::PropertyGroup_Definition);
+
         //! ------------
         //! under scope
         //! ------------
         vecProp.push_back(prop_scopingMethod);
         vecProp.push_back(prop_scope);
         vecProp.push_back(prop_tags);
+        vecProp.push_back(prop_location);
     }
         break;
-
 
     case SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionPressure:
     case SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionVelocity:
