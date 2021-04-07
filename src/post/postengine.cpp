@@ -1461,7 +1461,9 @@ bool postEngine::buildProbe(int nodeID,const std::vector<GeometryTag> &locs)
     //bool isDone = rf.perform(strainDistTimeHistory,damageDist);
     //if(isDone == false) continue;                                   // try to handle this error
 
-    QString resultKeyName = "NDTEMP";
+    //QString resultKeyName = "NDTEMP";
+    QString resultKeyName = "STRESS";
+
     //! ------------------------------------------
     //! generate the results grouped by body tags
     //! access data by bodies
@@ -1514,7 +1516,7 @@ bool postEngine::buildProbe(int nodeID,const std::vector<GeometryTag> &locs)
     std::vector<double> times;
 
     ofstream os;
-    os.open("D:/tempHystory.txt");
+    os.open("D:/hystory.txt");
     os<<"time   "<<"T"<<endl;
 
     int n = 0;
@@ -1565,8 +1567,8 @@ bool postEngine::buildProbe(int nodeID,const std::vector<GeometryTag> &locs)
                 //! read the components of the 3x3 data
                 int ni;
                 double cxx,cyy,czz,cxy,cyz,cxz;
-                //sscanf(val.c_str(),"%d%lf%lf%lf%lf%lf%lf",&ni,&cxx,&cyy,&czz,&cxy,&cyz,&cxz);
-                sscanf(val.c_str(),"%d%lf%lf%lf%lf%lf%lf",&ni,&cxx);
+                sscanf(val.c_str(),"%d%lf%lf%lf%lf%lf%lf",&ni,&cxx,&cyy,&czz,&cxy,&cyz,&cxz);
+                //sscanf(val.c_str(),"%d%lf%lf%lf%lf%lf%lf",&ni,&cxx);
 
                 //! nodeID within the MeshVS_dataSource
                 std::map<int,int>::iterator it = indexedMapOfNodes.find(ni);
@@ -1577,24 +1579,28 @@ bool postEngine::buildProbe(int nodeID,const std::vector<GeometryTag> &locs)
                 }
                 if(ni==nodeID)
                 {
-                    cout<<"node ID found "<<ni<<","<<nodeID<<endl;
-                //int OCCnodeID = it->second;
-                tempHistory.push_back(cxx);
-                times.push_back(time);
+                    //cout<<"node ID found "<<ni<<","<<nodeID<<endl;
+                    //int OCCnodeID = it->second;
 
-                os<<time<<" "<<cxx<<endl;
-                cout<<" writing on disk "<<n<<endl;
+                    double vonMises = (2.0/3.0)*sqrt((3.0/2.0)*(cxx*cxx+cyy*cyy+czz*czz)+(3.0/4.0)*(cxy*cxy+cyz*cyz+cxz*cxz));
+                    tempHistory.push_back(vonMises);
+                    times.push_back(time);
 
-                std::getline(curFile,val);
-                cout<<" break"<<endl;
+                    //os<<time<<" "<<cxx<<endl;
+                    os<<time<<" "<<vonMises<<endl;
 
-                break;
-                //double vonMises = (2.0/3.0)*sqrt((3.0/2.0)*(cxx*cxx+cyy*cyy+czz*czz)+(3.0/4.0)*(cxy*cxy+cyz*cyz+cxz*cxz));
-                //std::map<int,std::vector<double>>::iterator itt = resMISES.find(OCCnodeID);
-                //if(itt == resMISES.end())
-                //{
-                //    std::vector<double> th {vonMises};
-                //    resMISES.insert(std::make_pair(OCCnodeID,th));
+                    //cout<<" writing on disk "<<n<<endl;
+
+                    std::getline(curFile,val);
+                    //cout<<" break"<<endl;
+
+                    break;
+
+                    //std::map<int,std::vector<double>>::iterator itt = resMISES.find(OCCnodeID);
+                    //if(itt == resMISES.end())
+                    //{
+                    //    std::vector<double> th {vonMises};
+                    //    resMISES.insert(std::make_pair(OCCnodeID,th));
                 }
                 //else itt->second.push_back(vonMises);
                 else std::getline(curFile,val);

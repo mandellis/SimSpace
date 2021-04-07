@@ -9472,7 +9472,7 @@ void SimulationManager::buildDataBaseFromDisk(const QString &fileName)
                     || curPostProcessingNode->getType()==SimulationNodeClass::nodeType_probe) continue;
 
             bool immediatelyDisplay = false;
-            this->callPostEngineEvaluateResult_private(curPostProcessingItem,immediatelyDisplay);
+            //this->callPostEngineEvaluateResult_private(curPostProcessingItem,immediatelyDisplay);
         }
 
         //cesere

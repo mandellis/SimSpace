@@ -614,16 +614,12 @@ bool postObject::buildMeshIO(double min, double max, int Nlevels, bool autoscale
             }
         }
         else
-        {
             curMeshDS = anIt->second->GetNonDeformedDataSource();
-            cout<<"postObject::buildMeshIO()->____tag00____"<<curMeshDS->GetAllNodes().Extent()<<endl;
-        }
 
         //! ----------------------------------
         //! build a deformed mesh data source
         //! ----------------------------------
         occHandle(MeshVS_DeformedDataSource) theDeformedDS = new MeshVS_DeformedDataSource(curMeshDS,deformationScale);
-        cout<<"postObject::buildMeshIO()->____tag01____"<<endl;
 
         // can also use .size()==0 instead of try {} catch (...) {}
         std::map<int,gp_Vec> displacementMap;
