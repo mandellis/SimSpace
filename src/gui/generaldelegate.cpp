@@ -3682,6 +3682,7 @@ void GeneralDelegate::setEditorData(QWidget *editor, const QModelIndex &index) c
         QLineEdit *le = static_cast<QLineEdit*>(editor);
         int value = data.value<Property>().getData().toInt();
         le->setText(QString("%1").arg(value));
+        connect(le,SIGNAL(editingFinished()),this,SLOT(commitAndCloseStoreResultsAt()));
     }
     //! ---------------------------------------
     //! Output settings for "Store results at"

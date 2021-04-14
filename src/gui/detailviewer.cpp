@@ -5150,15 +5150,18 @@ void DetailViewer::handleStoreResultsAtChanged()
 
     case 2:
     {
-        //! -------------------------------------
-        //! "2" => "Specified recurrence rate"
-        //! add the "--Recurrence rate" selector
-        //! -------------------------------------
-        int recurrenceRate = 1;     //! set a default value for "--Recurrence rate"
-        QVariant data;
-        data.setValue(recurrenceRate);
-        Property prop_recurrenceRate("--Recurrence rate",data,Property::PropertyGroup_OutputSettings);
-        myCurNode->addProperty(prop_recurrenceRate);
+        if(myCurNode->getPropertyItem("--Recurrence rate")==Q_NULLPTR)
+        {
+            //! -------------------------------------
+            //! "2" => "Specified recurrence rate"
+            //! add the "--Recurrence rate" selector
+            //! -------------------------------------
+            int recurrenceRate = 1;     //! set a default value for "--Recurrence rate"
+            QVariant data;
+            data.setValue(recurrenceRate);
+            Property prop_recurrenceRate("--Recurrence rate",data,Property::PropertyGroup_OutputSettings);
+            myCurNode->addProperty(prop_recurrenceRate);
+        }
     }
         break;
     }
