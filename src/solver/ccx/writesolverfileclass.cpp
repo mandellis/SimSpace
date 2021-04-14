@@ -2191,17 +2191,22 @@ bool writeSolverFileClass::perform()
                             //! -------------
                             //! Displacement
                             //! -------------
-                            myInputFile<<"*BOUNDARY"<<endl;
+
                             if(loadDefinitionXcomponent!=Property::loadDefinition_free)
                             {
+                                if(loadX_global==0.0) myInputFile<<"*BOUNDARY,FIXED"<<endl;
                                 myInputFile<<SetName.toStdString()<<", 1, 1, "<<loadX_global<<endl;
                             }
                             if(loadDefinitionYcomponent!=Property::loadDefinition_free)
                             {
+                                if(loadY_global==0.0) myInputFile<<"*BOUNDARY,FIXED"<<endl;
+                                else myInputFile<<"*BOUNDARY"<<endl;
                                 myInputFile<<SetName.toStdString()<<", 2, 2, "<<loadY_global<<endl;
                             }
                             if(loadDefinitionZcomponent!=Property::loadDefinition_free)
                             {
+                                if(loadZ_global==0.0) myInputFile<<"*BOUNDARY,FIXED"<<endl;
+                                else myInputFile<<"*BOUNDARY"<<endl;
                                 myInputFile<<SetName.toStdString()<<", 3, 3, "<<loadZ_global<<endl;
                             }
                         }
