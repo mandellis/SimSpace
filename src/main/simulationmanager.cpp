@@ -10673,12 +10673,13 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
         {
             //QMap<double,QVector<int>> dTm = nodeSolutionInformation->getPropertyValue<QMap<double,QVector<int>>>("Discrete time map");
             int nodeID = curNode->getPropertyValue<int>("Node ID");
+            int source = curNode->getPropertyValue<int>("Source");
             //! -----------------------------------------------------------------------------
             //! create the postObject
             //! the post object retrieves the mesh data sources from the simulation database
             //! and internally builds its own interactive mesh objects
             //! -----------------------------------------------------------------------------
-            bool isDone = myPostEngine->buildProbe(nodeID,vecLoc);
+            bool isDone = myPostEngine->buildProbe(nodeID,vecLoc,source);
             if(isDone == false)
             {
                 QMessageBox::critical(this,"Simulation manager","Cannot create result view",QMessageBox::Ok);

@@ -1444,7 +1444,7 @@ bool postEngine::buildFatiguePostObject(int type, const std::vector<GeometryTag>
     return isDone;
 }
 
-bool postEngine::buildProbe(int nodeID,const std::vector<GeometryTag> &locs)
+bool postEngine::buildProbe(int nodeID,const std::vector<GeometryTag> &locs,int source)
 {
 
     //rainflow rf;
@@ -1461,8 +1461,20 @@ bool postEngine::buildProbe(int nodeID,const std::vector<GeometryTag> &locs)
     //bool isDone = rf.perform(strainDistTimeHistory,damageDist);
     //if(isDone == false) continue;                                   // try to handle this error
 
-    //QString resultKeyName = "NDTEMP";
-    QString resultKeyName = "STRESS";
+    QString resultKeyName;
+    switch(source)
+    {
+    case 0:
+    {
+        resultKeyName = "NDTEMP";
+    }
+        break;
+    case 1:
+    {
+        resultKeyName = "STRESS";
+    }
+        break;
+    }
 
     //! ------------------------------------------
     //! generate the results grouped by body tags
@@ -1517,7 +1529,7 @@ bool postEngine::buildProbe(int nodeID,const std::vector<GeometryTag> &locs)
 
     ofstream os;
     os.open("D:/hystory.txt");
-    os<<"time   "<<"T"<<endl;
+    os<<"time   "<<"Val"<<endl;
 
     int n = 0;
 
@@ -1549,11 +1561,7 @@ bool postEngine::buildProbe(int nodeID,const std::vector<GeometryTag> &locs)
         sscanf(val.c_str(),"%s",tdata);
         cout<<"****************************************"<<endl;
 
-        //int step,substep;
-        //postTools::getStepSubStepByTimeDTM(myDTM,times.at(n),step,substep);
-
         if(strcmp(tdata,resultKeyName.toStdString().c_str())==0)
-            //if(strcmp(tdata,resultKeyName.toStdString().c_str())==0 && subStepNb==substep && stepNb == step)
         {
             cout<<"\n=> data file found: start reading data within <=\n"<<endl;
             n++;
@@ -1567,8 +1575,17 @@ bool postEngine::buildProbe(int nodeID,const std::vector<GeometryTag> &locs)
                 //! read the components of the 3x3 data
                 int ni;
                 double cxx,cyy,czz,cxy,cyz,cxz;
-                sscanf(val.c_str(),"%d%lf%lf%lf%lf%lf%lf",&ni,&cxx,&cyy,&czz,&cxy,&cyz,&cxz);
-                //sscanf(val.c_str(),"%d%lf%lf%lf%lf%lf%lf",&ni,&cxx);
+
+
+                switch(source)
+                {
+                case 0:
+                    sscanf(val.c_str(),"%d%lf%lf%lf%lf%lf%lf",&ni,&cxx);
+                    break;
+                case 1:
+                    sscanf(val.c_str(),"%d%lf%lf%lf%lf%lf%lf",&ni,&cxx,&cyy,&czz,&cxy,&cyz,&cxz);
+                    break;
+                }
 
                 //! nodeID within the MeshVS_dataSource
                 std::map<int,int>::iterator it = indexedMapOfNodes.find(ni);
@@ -1581,39 +1598,30 @@ bool postEngine::buildProbe(int nodeID,const std::vector<GeometryTag> &locs)
                 {
                     //cout<<"node ID found "<<ni<<","<<nodeID<<endl;
                     //int OCCnodeID = it->second;
+                    double value;
 
-                    double vonMises = (2.0/3.0)*sqrt((3.0/2.0)*(cxx*cxx+cyy*cyy+czz*czz)+(3.0/4.0)*(cxy*cxy+cyz*cyz+cxz*cxz));
-                    tempHistory.push_back(vonMises);
+                    switch(source)
+                    {
+                    case 0: value = cxx; break;
+                    case 1: value = (2.0/3.0)*sqrt((3.0/2.0)*(cxx*cxx+cyy*cyy+czz*czz)+(3.0/4.0)*(cxy*cxy+cyz*cyz+cxz*cxz));
+                        break;
+                    }
+
+                    tempHistory.push_back(value);
                     times.push_back(time);
 
                     //os<<time<<" "<<cxx<<endl;
-                    os<<time<<" "<<vonMises<<endl;
-
-                    //cout<<" writing on disk "<<n<<endl;
+                    os<<time<<" "<<value<<endl;
 
                     std::getline(curFile,val);
-                    //cout<<" break"<<endl;
-
                     break;
-
-                    //std::map<int,std::vector<double>>::iterator itt = resMISES.find(OCCnodeID);
-                    //if(itt == resMISES.end())
-                    //{
-                    //    std::vector<double> th {vonMises};
-                    //    resMISES.insert(std::make_pair(OCCnodeID,th));
                 }
-                //else itt->second.push_back(vonMises);
                 else std::getline(curFile,val);
             }
             curFile.close();
         }
-        else
-        {
-            curFile.close();
-        }
+        else curFile.close();
     }
-    cout<<" exiting "<<endl;
-
     os.close();
 }
 //! ---------------------------------------------------

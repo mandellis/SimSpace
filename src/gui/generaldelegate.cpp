@@ -712,6 +712,16 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
             editor->addItem("Equivalent plastic strain",1);
             return editor;
         }
+        //! ----------------------------------------
+        //! Source - for probe tool
+        //! ----------------------------------------
+        if(propertyName =="Source")
+        {
+            QComboBox *editor = new QComboBox(parent);
+            editor->addItem("Temperature",0);
+            editor->addItem("Equivalent von mises stress",1);
+            return editor;
+        }
         //! --------
         //! Mapping
         //! --------
@@ -3424,6 +3434,16 @@ void GeneralDelegate::setEditorData(QWidget *editor, const QModelIndex &index) c
         cb->setCurrentIndex(val);
         connect(cb,SIGNAL(currentIndexChanged(int)),this,SLOT(commitAndCloseComboBox()));
     }
+    //! ---------------------------------------------
+    //! Source for fatigue tool
+    //! ---------------------------------------------
+    if(propertyName =="Source")
+    {
+        QComboBox *cb = static_cast<QComboBox*>(editor);
+        int val = data.value<Property>().getData().toInt();
+        cb->setCurrentIndex(val);
+        connect(cb,SIGNAL(currentIndexChanged(int)),this,SLOT(commitAndCloseComboBox()));
+    }
     //! ------------------------------------------------
     //! stress strain/strain component for fatigue tool
     //! ------------------------------------------------
@@ -5550,6 +5570,15 @@ void GeneralDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, c
         //! "Stress/strain source"
         //! -----------------------
         if(propertyName == "Stress/strain source")
+        {
+            QComboBox *cb = static_cast<QComboBox*>(editor);
+            int val = cb->currentData().toInt();
+            data.setValue(val);
+        }
+        //! -----------------------
+        //! "Source"
+        //! -----------------------
+        if(propertyName == "Source")
         {
             QComboBox *cb = static_cast<QComboBox*>(editor);
             int val = cb->currentData().toInt();

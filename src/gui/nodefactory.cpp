@@ -98,14 +98,14 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
     switch(type)
     {
     //! -------------
-    //! fatigue tool
+    //! probe tool
     //! -------------
     case SimulationNodeClass::nodeType_probe:
     {
         name = "Probe";
 
         data.setValue(0);
-        Property prop_stressStrainSource("Stress/strain source",data,Property::PropertyGroup_Definition);
+        Property prop_stressStrainSource("Source",data,Property::PropertyGroup_Definition);
         vecProp.push_back(prop_stressStrainSource);
 
         data.setValue(1);

@@ -3110,7 +3110,7 @@ void MainWindow::readResultsFile()
         QString resultsDataDir = files_dir+"/"+QString("SolutionData_")+timeTag+"/"+QString("ResultsData");
 
         cout<<"____resultsDataDir: "<<resultsDataDir.toStdString()<<"____"<<endl;
-
+/*
         QDir d(resultsDataDir);
         if(d.exists())
         {
@@ -3132,7 +3132,7 @@ void MainWindow::readResultsFile()
             cout<<"MainWindow::readResultsFile()->____the \"SolutionData\" does not exist: creating it____"<<endl;
             dir.mkdir(resultsDataDir);
             dir.cd(resultsDataDir);
-        }
+        }*/
 
         mySimulationManager->readResultsFile(fileName, solutionDataDir);
     }

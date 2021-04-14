@@ -62,6 +62,7 @@ bool FrdReader::perform()
     }
     else
     {
+        dir.cd(resPath);
         dir.mkdir("ResultsData");
         dir.cd("ResultsData");
         resPath = dir.absolutePath();
