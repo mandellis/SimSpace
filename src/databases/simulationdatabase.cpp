@@ -366,6 +366,8 @@ simulationDataBase::simulationDataBase(const QList<SimulationNodeClass*> listOfN
                 it++;
                 continue;
             }
+            QString nodeName = curNode->getName();
+            cout<<"____NODE TO ATTACH FOUND____"<<nodeName.toStdString()<<endl;
 
             QString curParentTimeTag = curNode->getPropertyValue<QString>("Parent time tag");
             QString curTimeTag = curNode->getPropertyValue<QString>("Time tag");
@@ -375,8 +377,6 @@ simulationDataBase::simulationDataBase(const QList<SimulationNodeClass*> listOfN
                 continue;
             }
 
-            QString nodeName = curNode->getName();
-            cout<<"____NODE TO ATTACH FOUND____"<<nodeName.toStdString()<<endl;
             cout<<"____PARENT TIME TAG: "<<curParentTimeTag.toStdString()<<"____"<<endl;
             cout<<"____TIME TAG: "<<curTimeTag.toStdString()<<"____"<<endl;
 

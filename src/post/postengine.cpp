@@ -1103,7 +1103,7 @@ bool postEngine::buildPostObject(const QString &keyName,
     bool useSurfaceMeshForVolumeResults = Global::status().myResultPresentation.useExteriorMeshForVolumeResults;
 
     if(mapDisplMap_byBodies.empty())     aPostObject = std::make_shared<postObject>(resMap_byBody,vecLoc_byBodies,aResultName);
-    aPostObject = std::make_shared<postObject>(resMap_byBody,vecLoc_byBodies,mapDisplMap_byBodies,aResultName,useSurfaceMeshForVolumeResults);
+    else aPostObject = std::make_shared<postObject>(resMap_byBody,vecLoc_byBodies,mapDisplMap_byBodies,aResultName,useSurfaceMeshForVolumeResults);
     aPostObject->setMeshDataSources(meshDSforResults);  // replaces init()
     double magnifyFactor = Global::status().myResultPresentation.theScale;
     bool isDone = aPostObject->buildMeshIO(-1,-1,10,true,component,magnifyFactor);
@@ -1575,8 +1575,6 @@ bool postEngine::buildProbe(int nodeID,const std::vector<GeometryTag> &locs,int 
                 //! read the components of the 3x3 data
                 int ni;
                 double cxx,cyy,czz,cxy,cyz,cxz;
-
-
                 switch(source)
                 {
                 case 0:
@@ -1598,12 +1596,20 @@ bool postEngine::buildProbe(int nodeID,const std::vector<GeometryTag> &locs,int 
                 {
                     //cout<<"node ID found "<<ni<<","<<nodeID<<endl;
                     //int OCCnodeID = it->second;
-                    double value;
+                    double value,s11;
+
 
                     switch(source)
                     {
                     case 0: value = cxx; break;
-                    case 1: value = (2.0/3.0)*sqrt((3.0/2.0)*(cxx*cxx+cyy*cyy+czz*czz)+(3.0/4.0)*(cxy*cxy+cyz*cyz+cxz*cxz));
+                    case 1:
+                    {
+                        double sik[6] {cxx,cyy,czz,cxy,cyz,cxz};
+                        double s[3];
+                        postTools::principalComponents(sik,s);
+                        s11 = s[2];
+                        value = (2.0/3.0)*sqrt((3.0/2.0)*(cxx*cxx+cyy*cyy+czz*czz)+(3.0/4.0)*(cxy*cxy+cyz*cyz+cxz*cxz));
+                    }
                         break;
                     }
 
@@ -1611,8 +1617,12 @@ bool postEngine::buildProbe(int nodeID,const std::vector<GeometryTag> &locs,int 
                     times.push_back(time);
 
                     //os<<time<<" "<<cxx<<endl;
-                    os<<time<<" "<<value<<endl;
-
+                    switch(source)
+                    {
+                    case 0:os<<time<<" "<<value<<endl; break;
+                    case 1:
+                    os<<time<<" "<<value<<" "<<s11<<endl;break;
+                    }
                     std::getline(curFile,val);
                     break;
                 }
