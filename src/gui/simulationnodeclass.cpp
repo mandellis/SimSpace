@@ -1036,6 +1036,7 @@ void SimulationNodeClass::createSeparators()
         //! ---------
     case nodeType_thermalAnalysisSolution:
     case nodeType_StructuralAnalysisSolution:
+    case nodeType_CFDAnalysisSolution:
     case nodeType_combinedAnalysisSolution:
     case nodeType_particlesInFieldsSolution:
         myNodeRootItem->appendRow(itemInformation);
@@ -1276,6 +1277,9 @@ bool SimulationNodeClass::hasTabularData()
     case SimulationNodeClass::nodeType_thermalAnalysisThermalFlow:
     case SimulationNodeClass::nodeType_thermalAnalysisTemperature:
     case SimulationNodeClass::nodeType_thermalAnalysisThermalPower:
+
+    case SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionPressure:
+    case SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionVelocity:
         return true;
         break;
     default:

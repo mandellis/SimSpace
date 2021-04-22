@@ -369,6 +369,7 @@ simulationDataBase::simulationDataBase(const QList<SimulationNodeClass*> listOfN
 
             QString curParentTimeTag = curNode->getPropertyValue<QString>("Parent time tag");
             QString curTimeTag = curNode->getPropertyValue<QString>("Time tag");
+
             if(curParentTimeTag!=analysisRootTimeTag)
             {
                 it++;
@@ -1541,6 +1542,13 @@ void simulationDataBase::createCFDAnalysisRootNode()
     data.setValue(endTime);
     Property property_stepEndTime("Step end time",data,Property::PropertyGroup_StepControls);
 
+    //! --------------
+    //! analysis type
+    //! --------------
+    Property::analysisType analysisType = Property::analysisType_CFD;
+    data.setValue(analysisType);
+    Property property_analysisType("Analysis type",data,Property::PropertyGroup_StepControls);
+
     //! -----------------------
     //! steady state/transient
     //! -----------------------
@@ -1556,6 +1564,7 @@ void simulationDataBase::createCFDAnalysisRootNode()
     Property property_numberOfThreads("Number of threads",data,Property::PropertyGroup_SolverControls);
 
     props.push_back(property_stepEndTime);
+    props.push_back(property_analysisType);
     props.push_back(property_timeIntegration);
     props.push_back(property_numberOfThreads);
 
@@ -1685,7 +1694,42 @@ void simulationDataBase::createCFDAnalysisRootNode()
     CFDAnalysisSettingsItem->setData("Analysis settings", Qt::DisplayRole);
     CFDAnalysisItem->appendRow(CFDAnalysisSettingsItem);
 
-    mainTreeTools::addSolution(CFDAnalysisItem);
+    //! ---------------------------
+    //! create the "Status" item
+    //! ---------------------------
+    props.clear();
+    Property::solutionInformation theSolutionStatus = Property::solutionInformation_solveRequired;
+    data.setValue(theSolutionStatus);
+    Property prop_status("Status",data,Property::PropertyGroup_Information);
+    props.push_back(prop_status);
+
+    //! --------------------
+    //! "Project files dir"
+    //! --------------------
+    data.setValue(QString("undefined"));
+    Property prop_solutionFileDir("Project files dir",data,Property::PropertyGroup_Information);
+    props.push_back(prop_solutionFileDir);
+    SimulationNodeClass *nodeSolution = new SimulationNodeClass("Solution",SimulationNodeClass::nodeType_CFDAnalysisSolution,props,this);
+    data.setValue(nodeSolution);
+
+    //! -----------------------------
+    //! time tag and parent time tag
+    //! -----------------------------
+    nodeSolution->addTimeTag();
+    parentTimeTag = CFDAnalysisItem->data(Qt::UserRole).value<SimulationNodeClass*>()->getPropertyValue<QString>("Time tag");
+    data.setValue(parentTimeTag);
+    nodeSolution->addProperty(Property("Parent time tag",data,Property::PropertyGroup_Identifier));
+
+    //! ----------------
+    //! create the item
+    //! ----------------
+    QExtendedStandardItem *SolutionItem = new QExtendedStandardItem();
+    data.setValue(nodeSolution);
+    SolutionItem->setData(data,Qt::UserRole);
+    SolutionItem->setData("Solution",Qt::DisplayRole);
+
+    CFDAnalysisItem->appendRow(SolutionItem);
+
     mainTreeTools::addSolutionInformation(CFDAnalysisItem->child(CFDAnalysisItem->rowCount()-1,0));
 }
 

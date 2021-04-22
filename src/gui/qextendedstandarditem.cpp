@@ -163,6 +163,7 @@ QVariant QExtendedStandardItem::data(int role) const
             case Property::analysisType_frequencyResponse: data.setValue(QString("Frequency response")); break;
             case Property::analysisType_uncoupledTemperatureDisplacement: data.setValue(QString("Uncoupled temperature displacement")); break;
             case Property::analysisType_coupledTemperatureDisplacement: data.setValue(QString("Coupled temperature displacement")); break;
+            case Property::analysisType_CFD: data.setValue(QString("CFD")); break;
             }
             return data;
         }

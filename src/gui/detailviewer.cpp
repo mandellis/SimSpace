@@ -1257,12 +1257,26 @@ void DetailViewer::handleAnalysisTypeChanged()
 //! ---------------------------------------
 void DetailViewer::handleTimeIntegrationChanged()
 {
+
     Property::timeIntegration timeIntegration = myCurNode->getPropertyValue<Property::timeIntegration>("Static/Transient");
-    int tableRow = myCurNode->getPropertyValue<int>("Current step number");
+    //int tableRow = myCurNode->getPropertyValue<int>("Current step number");
+    Property::analysisType analysisType = myCurNode->getPropertyValue<Property::analysisType>("Analysis type");
+    int tableRow, tableCol;
+    if (analysisType == Property::analysisType::analysisType_CFD)
+    {
+        tableRow = 1;
+        tableCol = 5;
+    }
+    else
+    {
+        tableRow = myCurNode->getPropertyValue<int>("Current step number");
+        tableCol = TABULAR_DATA_TIME_INTEGRATION_COLUMN;
+    }
     QVariant data;
     data.setValue(timeIntegration);
     CustomTableModel *tabData = myCurNode->getTabularDataModel();
-    tabData->setDataRC(data,tableRow,TABULAR_DATA_TIME_INTEGRATION_COLUMN,Qt::EditRole);
+    tabData->setDataRC(data,tableRow,tableCol,Qt::EditRole);
+
 }
 
 //! -----------------------------------
@@ -1273,11 +1287,23 @@ void DetailViewer::handleStepEndTimeChanged()
 {
     //! the value of the "Step end time"
     double newStepEndTime = myCurNode->getPropertyValue<double>("Step end time");
-    int tableRow = myCurNode->getPropertyValue<int>("Current step number");
+    //int tableRow = myCurNode->getPropertyValue<int>("Current step number");
+    Property::analysisType analysisType = myCurNode->getPropertyValue<Property::analysisType>("Analysis type");
+    int tableRow, tableCol;
+    if (analysisType == Property::analysisType::analysisType_CFD)
+    {
+        tableRow = 1;
+        tableCol = 1;
+    }
+    else
+    {
+        tableRow = myCurNode->getPropertyValue<int>("Current step number");
+        tableCol = TABULAR_DATA_STEP_END_TIME_COLUMN;
+    }
     CustomTableModel *tabData = myCurNode->getTabularDataModel();
     QVariant data;
     data.setValue(newStepEndTime);
-    tabData->setDataRC(data,tableRow,TABULAR_DATA_STEP_END_TIME_COLUMN,Qt::EditRole);
+    tabData->setDataRC(data,tableRow,tableCol,Qt::EditRole);
     //tabData->setDataRC(newStepEndTime,tableRow,TABULAR_DATA_STEP_END_TIME_COLUMN,Qt::EditRole);
 }
 
@@ -1733,7 +1759,19 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
         return;
     }
 
-    int currentStepNumber = nodeAnalysisSettings->getPropertyValue<int>("Current step number");
+    int currentStepNumber;
+
+    cout<<nodeAnalysisSettings->type().toStdString()<<endl;
+
+    if (nodeAnalysisSettings->getType() == SimulationNodeClass::nodeType_CFDAnalysisSettings)
+    {
+        currentStepNumber = 1;
+    }
+    else
+    {
+        currentStepNumber = nodeAnalysisSettings->getPropertyValue<int>("Current step number");
+    }
+
     tabularDataModel = nodeAnalysisSettings->getTabularDataModel();
 
     //! -------------------------------------------------------------------------------------------------------------------------
@@ -1812,7 +1850,7 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
             }
                 break;
 
-            case 2:
+            case 5:
             {
                 Property::timeIntegration timeIntegration = data.value<Property::timeIntegration>();
                 data.setValue(timeIntegration);
@@ -1898,6 +1936,7 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
         case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Moment:
         case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RotationalVelocity:
         case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Acceleration:
+        case SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionVelocity:
         {
             cout<<"____function called for a vectorial quantity____"<<endl;
             Property::defineBy theDefineBy = myCurNode->getPropertyValue<Property::defineBy>("Define by");
@@ -2162,6 +2201,7 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
         case SimulationNodeClass::nodeType_thermalAnalysisThermalFlow:
         case SimulationNodeClass::nodeType_thermalAnalysisThermalFlux:
         case SimulationNodeClass::nodeType_thermalAnalysisThermalPower:
+        case SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionPressure:
         {
             //cout<<"DetailViewer::updateDetailViewerFromTabularData()->____function called for \"Pressure\"____"<<endl;
             QVariant data;
@@ -5164,8 +5204,20 @@ void DetailViewer::handleStoreResultsAtChanged()
     }
 
     //! row of the table - current step number
-    int currentStep = myCurNode->getPropertyValue<int>("Current step number");
+    //int currentStep = myCurNode->getPropertyValue<int>("Current step number");//MODIFICARE
+    SimulationNodeClass *nodeAnalysisSettings = mainTreeTools::getAnalysisSettingsNodeFromIndex(myCurModelIndex);
+    int currentStep, currentCol;
 
+    if (nodeAnalysisSettings->getType() == SimulationNodeClass::nodeType_CFDAnalysisSettings)
+    {
+        currentStep = 1;
+        currentCol = 4;
+    }
+    else
+    {
+        currentStep = myCurNode->getPropertyValue<int>("Current step number");
+        currentCol = TABULAR_DATA_STORE_RESULTS_AT_COLUMN;
+    }
     //! --------------------------------------------------
     //! update the table: the second value is FREQUENCY
     //! "All time points"           => in table (0,1)
@@ -5189,7 +5241,8 @@ void DetailViewer::handleStoreResultsAtChanged()
     flags1.push_back(FREQUENCY);
 
     QVariant data; data.setValue(flags1);
-    myCurNode->getTabularDataModel()->setDataRC(data,currentStep,TABULAR_DATA_STORE_RESULTS_AT_COLUMN,Qt::EditRole);
+
+    myCurNode->getTabularDataModel()->setDataRC(data,currentStep,currentCol,Qt::EditRole);
     cout<<"____writing pair: ("<<flags1.at(0)<<", "<<flags1.at(1)<<")____"<<endl;
 }
 

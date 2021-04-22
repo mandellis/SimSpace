@@ -30,6 +30,9 @@ public:
     //! return the volume
     double getVolume() const;
 
+    //! add a face to myFaces
+    void addFace(face &faccia) { myFaces.push_back(faccia); }
+
 private:
 
     std::vector<face> myFaces;
