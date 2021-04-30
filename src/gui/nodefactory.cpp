@@ -1234,16 +1234,16 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
         vecProp.push_back(prop_frictionCoefficient);
 
         //! --------------------------------------------
-        //! small sliding: "0" => inactive "1" => active
+        //! small sliding: "false" => inactive "true" => active
         //! --------------------------------------------
-        data.setValue(int(1));
+        data.setValue(false);
         Property prop_smallSliding("Small sliding",data,Property::PropertyGroup_Definition);
         vecProp.push_back(prop_smallSliding);
 
         //! --------------------------------------------
-        //! adjust to touch: "0" => inactive "1" => active
+        //! adjust to touch: "false" => inactive "true" => active
         //! --------------------------------------------
-        data.setValue(int(1));
+        data.setValue(false);
         Property prop_adjust("Adjust to touch",data,Property::PropertyGroup_Definition);
         vecProp.push_back(prop_adjust);
 

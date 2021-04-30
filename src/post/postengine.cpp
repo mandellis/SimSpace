@@ -1395,7 +1395,8 @@ bool postEngine::buildFatiguePostObject(int type, const std::vector<GeometryTag>
                 {
                     elasticModulusAve = 1.76e5;
                     altStress = 0.5*(mises+eps*elasticModulusAve);
-                    Y = log10(28300*altStress/elasticModulusAve);
+                    //Y = log10(28300*altStress/elasticModulusAve);
+                    Y = log10(195000*altStress/elasticModulusAve);
 
                     r=35.9;
                     a=9.030556;
@@ -1596,7 +1597,7 @@ bool postEngine::buildProbe(int nodeID,const std::vector<GeometryTag> &locs,int 
                 {
                     //cout<<"node ID found "<<ni<<","<<nodeID<<endl;
                     //int OCCnodeID = it->second;
-                    double value,s11;
+                    double value;
 
 
                     switch(source)
@@ -1607,7 +1608,7 @@ bool postEngine::buildProbe(int nodeID,const std::vector<GeometryTag> &locs,int 
                         double sik[6] {cxx,cyy,czz,cxy,cyz,cxz};
                         double s[3];
                         postTools::principalComponents(sik,s);
-                        s11 = s[2];
+                        //s11 = s[2];
                         value = (2.0/3.0)*sqrt((3.0/2.0)*(cxx*cxx+cyy*cyy+czz*czz)+(3.0/4.0)*(cxy*cxy+cyz*cyz+cxz*cxz));
                     }
                         break;
@@ -1621,7 +1622,7 @@ bool postEngine::buildProbe(int nodeID,const std::vector<GeometryTag> &locs,int 
                     {
                     case 0:os<<time<<" "<<value<<endl; break;
                     case 1:
-                    os<<time<<" "<<value<<" "<<s11<<endl;break;
+                    os<<time<<" "<<value<<" "<<cxx<<" "<<cyy<<" "<<czz<<" "<<cxy<<" "<<cyz<<" "<<cxz<<endl;break;
                     }
                     std::getline(curFile,val);
                     break;

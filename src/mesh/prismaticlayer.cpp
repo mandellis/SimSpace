@@ -3017,7 +3017,7 @@ void prismaticLayer::analyzeFront(const occHandle(Ng_MeshVS_DataSourceFace) &the
             double ly = V[1] - P_star[1];
             double lz = V[2] - P_star[2];
 
-            double dot = (lx*normal[0]+ly*normal[1]*lz*normal[2]);
+            double dot = (lx*normal[0]+ly*normal[1]+lz*normal[2]);
             double dotNorm = sqrt(lx*lx+ly*ly+lz*lz)*sqrt(normal[0]*normal[0]+normal[1]*normal[1]+normal[2]*normal[2]);
             dot /= dotNorm;
             if(dot > 1) dot = 1;

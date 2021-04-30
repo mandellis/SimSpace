@@ -1193,10 +1193,9 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
             if(val == Property::contactBehavior_asymmetric)
             {
                 QComboBox *editor = new QComboBox(parent);
-                QVariant data;
-                data.setValue(0);
+                data.setValue(false);
                 editor->addItem("Off",data);
-                data.setValue(1);
+                data.setValue(true);
                 editor->addItem("On",data);
                 return editor;
             }
@@ -1213,13 +1212,12 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
 
             if(val == Property::contactBehavior_asymmetric || form ==Property::contactFormulation_MPC)
             {
-            QComboBox *editor = new QComboBox(parent);
-            QVariant data;
-            data.setValue(0);
-            editor->addItem("Off",data);
-            data.setValue(1);
-            editor->addItem("On",data);
-            return editor;
+                QComboBox *editor = new QComboBox(parent);
+                data.setValue(false);
+                editor->addItem("Off",data);
+                data.setValue(true);
+                editor->addItem("On",data);
+                return editor;
             }
             else return 0;
         }
@@ -3737,9 +3735,10 @@ void GeneralDelegate::setEditorData(QWidget *editor, const QModelIndex &index) c
         Property::contactBehavior val = curNode->getPropertyItem("Behavior")->data(Qt::UserRole).value<Property>().getData().value<Property::contactBehavior>();
         if(val == Property::contactBehavior_asymmetric)
         {
-            int value = data.value<Property>().getData().toInt();
             QComboBox *cb = static_cast<QComboBox*>(editor);
-            cb->setCurrentIndex(value);
+            bool val = data.value<Property>().getData().toBool();
+            if(val==false) cb->setCurrentIndex(0);
+            else cb->setCurrentIndex(1);
             connect(cb,SIGNAL(currentIndexChanged(int)),this,SLOT(commitAndCloseSmallSlidingControl()));
         }
     }
@@ -3753,9 +3752,10 @@ void GeneralDelegate::setEditorData(QWidget *editor, const QModelIndex &index) c
         Property::contactType type = curNode->getPropertyItem("Type")->data(Qt::UserRole).value<Property>().getData().value<Property::contactType>();
         if(val == Property::contactBehavior_asymmetric || type == Property::contactType_bonded)
         {
-            int value = data.value<Property>().getData().toInt();
             QComboBox *cb = static_cast<QComboBox*>(editor);
-            cb->setCurrentIndex(value);
+            bool val = data.value<Property>().getData().toBool();
+            if(val==false) cb->setCurrentIndex(0);
+            else cb->setCurrentIndex(1);
             connect(cb,SIGNAL(currentIndexChanged(int)),this,SLOT(commitAndCloseAdjustControl()));
         }
     }
@@ -5895,10 +5895,9 @@ void GeneralDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, c
             Property::contactBehavior val = curNode->getPropertyItem("Behavior")->data(Qt::UserRole).value<Property>().getData().value<Property::contactBehavior>();
             if(val == Property::contactBehavior_asymmetric)
             {
-                int value = data.value<Property>().getData().toInt();
                 QComboBox *cb = static_cast<QComboBox*>(editor);
-                cb->setCurrentIndex(value);
-                connect(cb,SIGNAL(currentIndexChanged(int)),this,SLOT(commitAndCloseSmallSlidingControl()));
+                bool val = cb->currentData().toBool();
+                data.setValue(val);
             }
         }
         //! ----------------
@@ -5911,10 +5910,9 @@ void GeneralDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, c
             Property::contactType type = curNode->getPropertyItem("Type")->data(Qt::UserRole).value<Property>().getData().value<Property::contactType>();
             if(val == Property::contactBehavior_asymmetric || type == Property::contactType_bonded)
             {
-                int value = data.value<Property>().getData().toInt();
                 QComboBox *cb = static_cast<QComboBox*>(editor);
-                cb->setCurrentIndex(value);
-                connect(cb,SIGNAL(currentIndexChanged(int)),this,SLOT(commitAndCloseAdjustControl()));
+                bool val = cb->currentData().toBool();
+                data.setValue(val);
             }
         }
         //! ------------

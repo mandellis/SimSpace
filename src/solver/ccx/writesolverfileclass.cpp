@@ -1725,6 +1725,9 @@ bool writeSolverFileClass::perform()
         myInputFile<<"100,";
         myInputFile<<"25,"<<endl;
 
+        //myInputFile<<"*AMPLITUDE, NAME=A"<<i<<endl;
+        //myInputFile<<"0,0,"<<TimeWidth<<",1"<<endl;
+
         //! --------------------
         //! boundary conditions
         //! --------------------
@@ -2011,13 +2014,28 @@ bool writeSolverFileClass::perform()
                 case SimulationNodeClass::nodeType_thermalAnalysisConvection:
                 {
                     QString aName = SetName;
+                    QString set = SetName;
                     aName.append(QString("_%1").arg(i));
+                    set.chop(2);
                     QList<int> ColumnList = mainTreeTools::getColumnsToRead(theCurItem,tabData->getColumnBeforeBC());                            ;
+                    double prevT;
                     double loadValue = tabData->dataRC(i,ColumnList.at(0)).toDouble();
-                    //double refTemperature = theCurNode->getPropertyValue<double>("Reference temperature");
+                    if(i!=1) prevT = tabData->dataRC(i-1,ColumnList.at(1)).toDouble();
+                    else prevT = 298;
                     double refTemperature = tabData->dataRC(i,ColumnList.at(1)).toDouble();
+                    double a = 1-(refTemperature-prevT)/refTemperature;
+                    myInputFile<<"*AMPLITUDE, NAME=A"<<aName.toStdString()<<endl;
+                    myInputFile<<"0,"<<a<<","<<TimeWidth<<","<<1<<endl;
                     if(loadValue!=0)
-                    this->writeFilm(loadValue,aName,refTemperature);
+                    {
+                        //if(set=="water" || set=="external")
+                        //{
+                        //    int amp=0;
+                        //    this->writeFilm(loadValue,aName,refTemperature,amp);
+                        //}
+                        //else
+                            this->writeFilm(loadValue,aName,refTemperature);
+                    }
                 }
                     break;
                 case SimulationNodeClass::nodeType_thermalAnalysisAdiabaticWall:
@@ -3283,7 +3301,7 @@ void writeSolverFileClass::writeFilm(double aLoad, QString aName,double refTempe
     myDload.precision(EXPFORMAT_PRECISION);
 
     ifstream mySet;
-
+    QString a = aName;
     QString extension=".dlo";
     QString extension1=".surf";
 
@@ -3304,7 +3322,8 @@ void writeSolverFileClass::writeFilm(double aLoad, QString aName,double refTempe
     myDload.open(name.toStdString());
 
     //! write the header for the DLOAD
-    myDload<<"*FILM"<<endl;
+    myDload<<"*FILM, AMPLITUDE=A"<<a.toStdString()<<endl;
+    //myDload<<"*FILM"<<endl;
     //! assign LoadValue to each surface element
     //! In case of pressure a negative value means traction
     int theElementIDs;
