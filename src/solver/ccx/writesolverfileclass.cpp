@@ -351,9 +351,9 @@ bool writeSolverFileClass::perform()
                     double a1 = dirData.at(4);
                     double a2 = dirData.at(5);
                     int h=500; //to handle
-                    rPx = refPoint.at(0)+h*a0;
-                    rPy = refPoint.at(1)+h*a1;
-                    rPz = refPoint.at(2)+h*a2;
+                    rPx = refPoint.at(0)+fabs(h*a0);
+                    rPy = refPoint.at(1)+fabs(h*a1);
+                    rPz = refPoint.at(2)+fabs(h*a2);
                 }
 #endif
 
@@ -2024,8 +2024,8 @@ bool writeSolverFileClass::perform()
                     else prevT = 298;
                     double refTemperature = tabData->dataRC(i,ColumnList.at(1)).toDouble();
                     double a = 1-(refTemperature-prevT)/refTemperature;
-                    myInputFile<<"*AMPLITUDE, NAME=A"<<aName.toStdString()<<endl;
-                    myInputFile<<"0,"<<a<<","<<TimeWidth<<","<<1<<endl;
+                    //myInputFile<<"*AMPLITUDE, NAME=A"<<aName.toStdString()<<endl;
+                    //myInputFile<<"0,"<<a<<","<<TimeWidth<<","<<1<<endl;
                     if(loadValue!=0)
                     {
                         //if(set=="water" || set=="external")
@@ -3322,8 +3322,8 @@ void writeSolverFileClass::writeFilm(double aLoad, QString aName,double refTempe
     myDload.open(name.toStdString());
 
     //! write the header for the DLOAD
-    myDload<<"*FILM, AMPLITUDE=A"<<a.toStdString()<<endl;
-    //myDload<<"*FILM"<<endl;
+    //myDload<<"*FILM, AMPLITUDE=A"<<a.toStdString()<<endl;
+    myDload<<"*FILM"<<endl;
     //! assign LoadValue to each surface element
     //! In case of pressure a negative value means traction
     int theElementIDs;
