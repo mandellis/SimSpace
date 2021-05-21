@@ -1378,12 +1378,11 @@ bool SimulationNodeClass::isSimulationSetUpNode()
             myNodeType == SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionPressure ||
             myNodeType == SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionVelocity ||
             myNodeType == SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionWall
+        #ifdef COSTAMP_VERSION
+            || myNodeType == SimulationNodeClass::nodeType_timeStepBuilder
+        #endif
             )
         return true;
-
-#ifdef COSTAMP_VERSION
-    if(myNodeType == SimulationNodeClass::nodeType_timeStepBuilder) return true;
-#endif
 
     return false;
 }

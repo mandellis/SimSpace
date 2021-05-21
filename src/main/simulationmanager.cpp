@@ -39,6 +39,8 @@
 #include "openfoamcontroller.h"
 #include <connectionpairgenerationoptions.h>
 #include <tabulardataviewerclass.h>
+#include <src/connections/contactFinder.h>
+#include "src/connections/connectionpairgenerationoptions.h"
 
 #include <ng_mesher2.h>
 #include <occmesher.h>
@@ -10608,7 +10610,7 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
                 //! --------------------------------------------
                 cout<<"SimulationManager::callPostEngineEvaluateResult_private()->____retriving data using \"Display time\": "<<endl;
                 analysisTime = curNode->getPropertyValue<double>("Display time");
-                postTools::getStepSubStepByTimeDTM(dTm,analysisTime, stepNb, subStepNb);
+                if(postTools::getStepSubStepByTimeDTM(dTm,analysisTime, stepNb, subStepNb)==false) return;
                 cout<<"\"StepNb\" = "<<stepNb<<endl;
                 cout<<"\"SubStepNb\" = "<<subStepNb<<endl;
             }
@@ -10622,7 +10624,7 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
                 //! -----------------------------------------
                 cout<<"SimulationManager::callPostEngineEvaluateResult_private()->____retriving data using \"Set number\": "<<endl;
                 setNumber = curNode->getPropertyValue<int>("Set number");
-                postTools::getStepSubStepBySetDTM(dTm, setNumber, analysisTime, stepNb, subStepNb);
+                if(postTools::getStepSubStepBySetDTM(dTm, setNumber, analysisTime, stepNb, subStepNb)==false) return;
             }
                 break;
             }
@@ -11682,8 +11684,8 @@ void SimulationManager::COSTAMP_startTimeStepBuilder()
     SimulationNodeClass *curNode = myTreeView->currentIndex().data(Qt::UserRole).value<SimulationNodeClass*>();
     const QString &timeHistoryFileLoc = curNode->getPropertyValue<QString>("Time history file");    
 
-    //QString program = QString::fromStdString(tools::getPathOfExecutable()+"\\TimeStepBuilder.exe");
-    QString program = QString("D:/Work/Qt/build_simSpace/release/TimeStepBuilder.exe");
+    QString program = QString::fromStdString(tools::getPathOfExecutable()+"\\TimeStepBuilder.exe");
+    //QString program = QString("D:/Work/Qt/build_simSpace/release/TimeStepBuilder.exe");
 
     QStandardItem *itemSimulationRoot = mainTreeTools::getCurrentSimulationRoot(myTreeView);
     QStandardItem *itemSolution = itemSimulationRoot->child(itemSimulationRoot->rowCount()-1);
@@ -11831,7 +11833,7 @@ bool SimulationManager::COSTAMP_addProcessParameters()
                 tabData->setDataRC(curTime.at(i),i+1,1,Qt::EditRole);
                 //! change time stepping policy
                 QVector<int> timeStepPolicy;
-                if(i==0 || i==1) timeStepPolicy<<40<<10<<120<<1;
+                if(i==0 || i==1) timeStepPolicy<<30<<10<<120<<1;
                 else timeStepPolicy<<10<<5<<100<<1;
                 data.setValue(timeStepPolicy);
                 tabData->setDataRC(data,i+1,3,Qt::EditRole);
@@ -11955,7 +11957,20 @@ bool SimulationManager::COSTAMP_addProcessParameters()
                     masterLoc = TopologyTools::generateLocationPairs(mySimulationDataBase, masterScope);
                 }
                 if(bodyName.startsWith(bodyList.at(2)) || bodyName.startsWith(bodyList.at(3)) || bodyName.startsWith(bodyList.at(4)))
-                    slaveScope.Append(aSolid);
+                    slaveScope.Append(aSolid);                 
+            }
+            //! create slave scope if missing
+            if(slaveScope.IsEmpty())
+            {
+                for(int i=1; i<=Geometry_RootItem->rowCount();i++)
+                {
+                    QStandardItem *curBody = Geometry_RootItem->child(i-1,0);
+                    SimulationNodeClass *curBodyNode = curBody->data(Qt::UserRole).value<SimulationNodeClass*>();
+                    int mapIndex = curBodyNode->getPropertyValue<int>("Map index");
+                    QString bodyName = curBodyNode->getName();
+                    TopoDS_Solid aSolid = TopoDS::Solid(mySimulationDataBase->bodyMap.value(mapIndex));
+                    if(bodyName!= "CASTING") slaveScope.Append(aSolid);
+                }
             }
             std::vector<GeometryTag> casting;
             if(!masterLoc.empty())
@@ -12148,7 +12163,7 @@ bool SimulationManager::COSTAMP_addProcessParameters()
             QList<ListOfShape> groupShapeList;
             ListOfShape scopeDie,scopeHoldings,scopePlate;
 
-            //! group bodies according to theri function and assing material
+            //! group bodies according to their function and assing material
             QList<std::vector<double>>groupBB;
             std::vector<double> vecBB_Die,vecBB_Holdings,vecBB_Plate; // vector of bounding box max for each group
             for(int i=1; i<=NbBodies; i++)
@@ -12160,7 +12175,6 @@ bool SimulationManager::COSTAMP_addProcessParameters()
                 if(bName=="CASTING")
                     continue;
                 double curBB =mySimulationDataBase->boundingBox(aSolid);
-                //cout<<"Bounding box "<<curBB<<endl;
                 //! is matrice/tassello/colata/controcolata
                 if(bName.startsWith(bodyList.at(2)) || bName.startsWith(bodyList.at(3)) || bName.startsWith(bodyList.at(4)))
                 {
@@ -12363,10 +12377,97 @@ bool SimulationManager::COSTAMP_addProcessParameters()
             cGnode->replaceProperty("Tags",prop_tagsAllBodies);
             cGnode->getModel()->blockSignals(false);
             //! starts automatic contact creation
-            this->createAutomaticConnections();
+            //this->createAutomaticConnections();
+            this->createCostampAutomaticConnections();
 
-            //! TO DO MAYBE__now all contacts are MPC, set frictional contact
+            //! ------------------------------------
+            //! scan the rows of the contact groups
+            //! ------------------------------------
+            if(Connections_RootItem->hasChildren())
+            {
+                int NbContactGroup = Connections_RootItem->rowCount();
+                cout<<"SimulationManager::generateBoundaryConditionsMeshDS()->____number of contact groups: "<<NbContactGroup<<"____"<<endl;
 
+                for(int h=0;h<NbContactGroup;h++)
+                {
+                    //! the current connection group
+                    QStandardItem *itemConnectionGroup = Connections_RootItem->child(h,0);
+                    //! number of contacts under the current connection group
+
+                    if(itemConnectionGroup->hasChildren())
+                    {
+                        int NbContactPairs = itemConnectionGroup->rowCount();
+                        for(int i=0; i<2; i++)
+                        {
+                            for(int n=0; n<NbContactPairs; n++)
+                            {
+                                //! -------------------
+                                //! working on an item
+                                //! -------------------
+                                QStandardItem *curItem = itemConnectionGroup->child(n,0);
+                                SimulationNodeClass *curNode = curItem->data(Qt::UserRole).value<SimulationNodeClass*>();
+
+                                Property::SuppressionStatus isSuppressed = curNode->getPropertyItem("Suppressed")->data(Qt::UserRole).value<Property>().getData().value<Property::SuppressionStatus>();
+                                if(isSuppressed == Property::SuppressionStatus_Active)
+                                {
+                                    std::vector<GeometryTag> vecLoc;
+                                    if(i==0) //Master
+                                        vecLoc = curNode->getPropertyValue<std::vector<GeometryTag>>("Tags master");
+                                    else //Slave
+                                        vecLoc = curNode->getPropertyValue<std::vector<GeometryTag>>("Tags slave");
+                                    GeometryTag mLoc = vecLoc.at(0);
+                                    int curMasterBodyIndex = mLoc.parentShapeNr;
+                                    int curMasterFaceIndex = mLoc.subTopNr ;
+                                    gp_Ax1 theAxis;
+                                    gp_Pnt centroid;
+
+                                    const TopoDS_Shape masterFace = mySimulationDataBase->MapOfBodyTopologyMap.value(curMasterBodyIndex).faceMap.FindKey(curMasterFaceIndex);
+                                    GeomAbs_SurfaceType theMasterSurfaceType;
+                                    GeomToolsClass::getFaceType(TopoDS::Face(masterFace),theMasterSurfaceType);
+                                    if(theMasterSurfaceType!=GeomAbs_Plane) continue;
+
+                                    gp_Ax1 a;
+                                    gp_Vec V;
+                                    gp_Pnt P;
+                                    P.SetX(0);
+                                    P.SetY(0);
+                                    P.SetZ(0);
+                                    a.SetLocation(P);
+
+                                    if(closureForceDir==0)
+                                        V.SetCoord(1,1);V.SetCoord(2,0);V.SetCoord(3,0);
+                                    if(closureForceDir==0)
+                                        V.SetCoord(1,0);V.SetCoord(2,1);V.SetCoord(3,0);
+                                    if(closureForceDir==0)
+                                        V.SetCoord(1,0);V.SetCoord(2,0);V.SetCoord(3,1);
+                                    gp_Dir V1(V);
+                                    a.SetDirection(V1);
+                                    double precision = 0.17;
+
+                                    GeomToolsClass::getPlanarFaceInfo(TopoDS::Face(masterFace),theAxis,centroid);
+                                    if(!theAxis.IsParallel(a, precision))
+                                    {
+                                        curNode->getModel()->blockSignals(true);
+                                        Property::contactFormulation theContactFormulation = Property::contactFormulation_penalty;
+                                        data.setValue(theContactFormulation);
+                                        Property prop_connectionFormulation("Formulation",data,Property::PropertyGroup_Definition);
+                                        curNode->replaceProperty("Formulation",prop_connectionFormulation);
+
+                                        //! ---------------------------------------------------------------
+                                        //! the contact type: contact pair initially created as frictionless
+                                        //! ---------------------------------------------------------------
+                                        Property::contactType theContactType = Property::contactType_frictionless;
+                                        data.setValue(theContactType);
+                                        Property prop_connectionType("Type",data,Property::PropertyGroup_Definition);
+                                        curNode->replaceProperty("Type",prop_connectionType);
+                                        curNode->getModel()->blockSignals(false);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
             //! change scope to importedBS item
             importedBSNode->getModel()->blockSignals(true);
             importedBSNode->replaceProperty("Geometry",prop_scopeAllBodies);
@@ -12497,8 +12598,6 @@ void SimulationManager::displayFaceMesh(const occHandle(MeshVS_DataSource) &aMes
 //! function: createAutomaticConnections
 //! details:
 //! -------------------------------------
-#include <src/connections/contactFinder.h>
-#include "src/connections/connectionpairgenerationoptions.h"
 void SimulationManager::createAutomaticConnections()
 {
     cout<<"SimulationManager::createAutomaticConnections()->____function called____"<<endl;
@@ -12608,36 +12707,6 @@ void SimulationManager::createAutomaticConnections()
         const std::pair<std::vector<GeometryTag>,std::vector<GeometryTag>> &curPair = *it;
         int masterBodyIndex = curPair.first[0].parentShapeNr;
         int slaveBodyIndex = curPair.second[0].parentShapeNr;
-#ifdef COSTAMP_VERSION
-    //! filter the geomety tag, erase all non planar faces
-        std::vector<GeometryTag> master,slave;
-        for(std::vector<GeometryTag>::const_iterator mIt=curPair.first.cbegin() ;mIt!=curPair.first.cend();++mIt)
-        {
-            GeometryTag mLoc = *mIt;
-            int curMasterBodyIndex = mLoc.parentShapeNr;
-            int curMasterFaceIndex = mLoc.subTopNr ;
-
-            TopoDS_Shape masterFace = mySimulationDataBase->MapOfBodyTopologyMap.value(curMasterBodyIndex).faceMap.FindKey(curMasterFaceIndex);
-            GeomAbs_SurfaceType theMasterSurfaceType;
-            GeomToolsClass::getFaceType(TopoDS::Face(masterFace),theMasterSurfaceType);
-            if(theMasterSurfaceType!=GeomAbs_Plane) continue;
-            master.push_back(mLoc);
-        }
-        for(std::vector<GeometryTag>::const_iterator sIt=curPair.second.cbegin() ;sIt!=curPair.second.cend();++sIt)
-        {
-            GeometryTag sLoc = *sIt;
-            int curSlaveBodyIndex = sLoc.parentShapeNr;
-            int curSlaveFaceIndex = sLoc.subTopNr ;
-
-            TopoDS_Shape slaveFace = mySimulationDataBase->MapOfBodyTopologyMap.value(curSlaveBodyIndex).faceMap.FindKey(curSlaveFaceIndex);
-            GeomAbs_SurfaceType theSlaveSurfaceType;
-            GeomToolsClass::getFaceType(TopoDS::Face(slaveFace),theSlaveSurfaceType);
-
-            if(theSlaveSurfaceType!=GeomAbs_Plane) continue;
-            slave.push_back(sLoc);
-        }
-        if(master.empty() || slave.empty()) continue;
-#endif
 
         //! -------------------------------
         //! a name for the connection item
@@ -12659,22 +12728,15 @@ void SimulationManager::createAutomaticConnections()
         SimulationNodeClass *aContactNode = nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType_connectionPair,0,0,data);
 
         aContactNode->getModel()->blockSignals(true);
-#ifdef COSTAMP_VERSION
-        data.setValue(master);
-#endif
-#ifndef COSTAMP_VERSION
         data.setValue(curPair.first);
-#endif
+
         Property prop_master("Master",data,Property::PropertyGroup_Scope);
         Property prop_tagsMaster("Tags master",data,Property::PropertyGroup_Scope);
         aContactNode->replaceProperty("Master",prop_master);
         aContactNode->replaceProperty("Tags master",prop_tagsMaster);
-#ifdef COSTAMP_VERSION
-        data.setValue(slave);
-#endif
-#ifndef COSTAMP_VERSION
+
         data.setValue(curPair.second);
-#endif
+
         Property prop_slave("Slave",data,Property::PropertyGroup_Scope);
         Property prop_tagsSlave("Tags slave",data,Property::PropertyGroup_Scope);
         aContactNode->replaceProperty("Slave",prop_slave);
@@ -12700,6 +12762,285 @@ void SimulationManager::createAutomaticConnections()
         this->myModel->itemFromIndex(myTreeView->currentIndex())->appendRow(itemConnection);
     }
 }
+
+#ifdef COSTAMP_VERSION
+//! -------------------------------------
+//! function: createAutomaticConnections
+//! details:
+//! -------------------------------------
+void SimulationManager::createCostampAutomaticConnections()
+{
+    cout<<"SimulationManager::createCostampAutomaticConnections()->____function called____"<<endl;
+
+    SimulationNodeClass *curNode = myTreeView->currentIndex().data(Qt::UserRole).value<SimulationNodeClass*>();
+    QExtendedStandardItem *itemTags = curNode->getPropertyItem("Tags");
+    std::vector<GeometryTag> vecLoc = itemTags->data(Qt::UserRole).value<Property>().getData().value<std::vector<GeometryTag>>();
+
+    if(vecLoc.size()==0) return;
+
+    //! --------------------------------------
+    //! tolerance for contact pairs detection
+    //! --------------------------------------
+    double tolerance = curNode->getPropertyValue<double>("Tolerance");
+
+    //! ---------------------------------
+    //! time tag of the connection group
+    //! ---------------------------------
+    QString parentTimeTag = curNode->getPropertyValue<QString>("Time tag");
+
+    //! ---------------------------------------------------
+    //! grouping options - compatibility with old versions
+    //! default "By bodies"
+    //! ---------------------------------------------------
+    int grouping = 0;
+    if(curNode->getPropertyItem("Grouping")!=Q_NULLPTR) grouping = curNode->getPropertyValue<int>("Grouping");
+
+    //! ----------------------------------------------------
+    //! angular criterion - compatibility with old versions
+    //! default angle 30 degrees
+    //! ----------------------------------------------------
+    double angularCriterion = 30;
+    if(curNode->getPropertyItem("Angular criterion")!=Q_NULLPTR) curNode->getPropertyValue<double>("Angular criterion");
+
+    //! -----------
+    //! make pairs
+    //! -----------
+    std::vector<std::pair<GeometryTag,GeometryTag>> vectorOfTagPairs;
+    size_t NbBodies = vecLoc.size();
+    for(int i=1; i<NbBodies; i++)
+    {
+        const GeometryTag &firstTag = vecLoc.at(i-1);
+        for(int j=i+1; j<=NbBodies; j++)
+        {
+            //cout<<"____(i,j) = ("<<i<<", "<<j<<")____"<<endl;
+            const GeometryTag &secondTag = vecLoc.at(j-1);
+            std::pair<GeometryTag,GeometryTag> aTagPair;
+            aTagPair.first = firstTag; aTagPair.second = secondTag;
+            vectorOfTagPairs.push_back(aTagPair);
+        }
+    }
+
+    //! --------------------------------------------------------------------
+    //! sanity check - this could be removed when extending to self-contact
+    //! detection, indeed for that case a single body is enough
+    //! --------------------------------------------------------------------
+    if(NbBodies<=1)
+    {
+        QMessageBox::information(this,"Contact finder","Insert at least two bodies in selector",QMessageBox::Ok);
+        return;
+    }
+
+    //! ---------------------------------------------
+    //! define the result: a vector of mesh pairs
+    //! indexed as the input vector of geometry tags
+    //! ---------------------------------------------
+    std::vector<std::pair<std::vector<GeometryTag>,std::vector<GeometryTag>>> allContactPairs;
+
+    //! -------------------------------------------------------------
+    //! create an instance of contactFinder
+    //! Note: using the default constructor the angular criterion is
+    //! inizialied as angle = 20.0
+    //! -------------------------------------------------------------
+    contactFinder aContactFinder;
+    aContactFinder.setBodyPairs(vectorOfTagPairs);
+    aContactFinder.setDataBase(this->getDataBase());
+    aContactFinder.setAngularCriterion(angularCriterion);
+
+    //! -------------------------------------------------------
+    //! set the progress indicator for the contactFinder tool
+    //! -------------------------------------------------------
+    QProgressIndicator *myProgressIndicator = static_cast<QProgressIndicator*>(tools::getWidgetByName("progressIndicator"));
+    if(myProgressIndicator!=Q_NULLPTR)
+    {
+        myProgressIndicator->setSecondaryBarVisible(true);
+        aContactFinder.setProgressIndicator(myProgressIndicator);
+    }
+
+    //! --------------------------------------------------------------------------
+    //! perform: if the process has been intentionally stopped by the user return
+    //! grouping:
+    //! "0" => by bodies
+    //! "1" => by master face
+    //! "2" => by slave face
+    //! "3" => by master body
+    //! "4" => by slave body
+    //! "5" => none - ungrouped
+    //! --------------------------------------------------------------------------
+    bool stopped = aContactFinder.perform(vectorOfTagPairs,allContactPairs,tolerance,grouping);
+    if(stopped) return;
+
+    gp_Ax1 X,Y,Z;
+    gp_Vec Vx,Vy,Vz;
+    gp_Pnt P;
+    P.SetX(0);
+    P.SetY(0);
+    P.SetZ(0);
+    X.SetLocation(P);
+    Y.SetLocation(P);
+    Z.SetLocation(P);
+    Vx.SetCoord(1,1);Vx.SetCoord(2,0);Vx.SetCoord(3,0);
+    Vy.SetCoord(1,0);Vy.SetCoord(2,1);Vz.SetCoord(3,0);
+    Vz.SetCoord(1,0);Vz.SetCoord(2,0);Vz.SetCoord(3,1);
+    gp_Dir Vxx(Vx);
+    gp_Dir Vyy(Vy);
+    gp_Dir Vzz(Vz);
+    X.SetDirection(Vxx);Y.SetDirection(Vyy);Z.SetDirection(Vzz);
+    double precision = 0.17;
+    //! -----------------------
+    //! create the model items
+    //! -----------------------
+    for(std::vector<std::pair<std::vector<GeometryTag>,std::vector<GeometryTag>>>::iterator it = allContactPairs.begin(); it!=allContactPairs.end(); it++)
+    {
+        const std::pair<std::vector<GeometryTag>,std::vector<GeometryTag>> &curPair = *it;
+        //int masterBodyIndex = curPair.first[0].parentShapeNr;
+        //int slaveBodyIndex = curPair.second[0].parentShapeNr;
+
+    //! filter the geomety tag, erase all non planar faces
+        std::vector<GeometryTag> masterX,slaveX,masterY,slaveY,masterZ,slaveZ,master,slave;
+        //! 0 - Xposition
+        //! 1 - Yposition
+        //! 2 - Zposition
+        //! 3 - general
+        std::vector<std::pair<std::vector<GeometryTag>,std::vector<GeometryTag>>> dirPair;
+
+        for(std::vector<GeometryTag>::const_iterator mIt=curPair.first.cbegin() ;mIt!=curPair.first.cend();++mIt)
+        {
+            GeometryTag mLoc = *mIt;
+            int curMasterBodyIndex = mLoc.parentShapeNr;
+            int curMasterFaceIndex = mLoc.subTopNr ;
+            gp_Ax1 theAxis;
+            gp_Pnt centroid;
+
+            TopoDS_Shape masterFace = mySimulationDataBase->MapOfBodyTopologyMap.value(curMasterBodyIndex).faceMap.FindKey(curMasterFaceIndex);
+            GeomAbs_SurfaceType theMasterSurfaceType;
+            GeomToolsClass::getFaceType(TopoDS::Face(masterFace),theMasterSurfaceType);
+            if(theMasterSurfaceType!=GeomAbs_Plane) continue;
+
+            GeomToolsClass::getPlanarFaceInfo(TopoDS::Face(masterFace),theAxis,centroid);
+            if(theAxis.IsParallel(X, precision))
+            { masterX.push_back(mLoc);
+                continue;}
+            if(theAxis.IsParallel(Y, precision))
+              {  masterY.push_back(mLoc);
+                continue;}
+            if(theAxis.IsParallel(Z, precision))
+            {
+                masterZ.push_back(mLoc);
+                continue;}
+            //if(!theAxis.IsParallel(X, precision) && !theAxis.IsParallel(Y, precision) && !theAxis.IsParallel(Z, precision))
+            master.push_back(mLoc);
+        }
+        for(std::vector<GeometryTag>::const_iterator sIt=curPair.second.cbegin() ;sIt!=curPair.second.cend();++sIt)
+        {
+            GeometryTag sLoc = *sIt;
+            int curSlaveBodyIndex = sLoc.parentShapeNr;
+            int curSlaveFaceIndex = sLoc.subTopNr ;
+            gp_Ax1 theAxis;
+            gp_Pnt centroid;
+
+            TopoDS_Shape slaveFace = mySimulationDataBase->MapOfBodyTopologyMap.value(curSlaveBodyIndex).faceMap.FindKey(curSlaveFaceIndex);
+            GeomAbs_SurfaceType theSlaveSurfaceType;
+            GeomToolsClass::getFaceType(TopoDS::Face(slaveFace),theSlaveSurfaceType);
+
+            if(theSlaveSurfaceType!=GeomAbs_Plane) continue;
+            GeomToolsClass::getPlanarFaceInfo(TopoDS::Face(slaveFace),theAxis,centroid);
+            if(theAxis.IsParallel(X, precision))
+            {
+                slaveX.push_back(sLoc);
+                continue;
+            }
+            if(theAxis.IsParallel(Y, precision))
+              {  slaveY.push_back(sLoc);continue;}
+            if(theAxis.IsParallel(Z, precision))
+               { slaveZ.push_back(sLoc); continue;}
+//            if(!theAxis.IsParallel(X, precision) && !theAxis.IsParallel(Y, precision) && !theAxis.IsParallel(Z, precision))
+            slave.push_back(sLoc);
+        }
+        std::pair<std::vector<GeometryTag>,std::vector<GeometryTag>> pairX,pairY,pairZ,pair;
+
+        pairX = std::make_pair(masterX,slaveX);
+        pairY = std::make_pair(masterY,slaveY);
+        pairZ = std::make_pair(masterZ,slaveZ);
+        pair = std::make_pair(master,slave);
+
+
+        dirPair.push_back(pairX);
+        dirPair.push_back(pairY);
+        dirPair.push_back(pairZ);
+        dirPair.push_back(pair);
+
+        for(std::vector<std::pair<std::vector<GeometryTag>,std::vector<GeometryTag>>>::iterator itt = dirPair.begin(); itt!=dirPair.end(); itt++)
+        {        cout<<"____tag01____"<<endl;
+
+            std::pair<std::vector<GeometryTag>,std::vector<GeometryTag>> &cPair = *itt;
+            std::vector<GeometryTag> master = cPair.first;
+            std::vector<GeometryTag> slave = cPair.second;
+            cout<<"____tag01____"<<endl;
+            if(master.empty())             cout<<"____m empty____"<<endl;
+            if(slave.empty())             cout<<"____s empty____"<<endl;
+            if(master.empty() || slave.empty()) continue;
+            cout<<"____tag02____"<<endl;
+
+            int masterBodyIndex = master[0].parentShapeNr;
+            int slaveBodyIndex = slave[0].parentShapeNr;
+            cout<<"____tag03____"<<endl;
+
+            //! -------------------------------
+            //! a name for the connection item
+            //! -------------------------------
+            QString masterName = this->getDataBase()->MapOfBodyNames.value(masterBodyIndex);
+            QString slaveName = this->getDataBase()->MapOfBodyNames.value(slaveBodyIndex);
+            QString connectionName = slaveName + " to " + masterName;
+
+            cout<<"____creating item: (masterBodyIndex, slaveBodyIndex) = ("<<masterBodyIndex<<", "<<slaveBodyIndex<<")____"<<endl;
+
+            //! -----------------------------------------------------
+            //! connection pair generation option: "isManual==false"
+            //! -----------------------------------------------------
+            QVariant data;
+            connectionPairGenerationOption options;
+            options.manual = false;
+            options.connectionPairName = connectionName;
+            data.setValue(options);
+            SimulationNodeClass *aContactNode = nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType_connectionPair,0,0,data);
+
+            aContactNode->getModel()->blockSignals(true);
+            data.setValue(master);
+
+            Property prop_master("Master",data,Property::PropertyGroup_Scope);
+            Property prop_tagsMaster("Tags master",data,Property::PropertyGroup_Scope);
+            aContactNode->replaceProperty("Master",prop_master);
+            aContactNode->replaceProperty("Tags master",prop_tagsMaster);
+
+            data.setValue(slave);
+
+            Property prop_slave("Slave",data,Property::PropertyGroup_Scope);
+            Property prop_tagsSlave("Tags slave",data,Property::PropertyGroup_Scope);
+            aContactNode->replaceProperty("Slave",prop_slave);
+            aContactNode->replaceProperty("Tags slave",prop_tagsSlave);
+            data.setValue(parentTimeTag);
+            aContactNode->replaceProperty("Parent time tag",Property("Parent time tag",data,Property::PropertyGroup_Identifier));
+            aContactNode->getModel()->blockSignals(false);
+
+            connect(aContactNode->getModel(),SIGNAL(itemChanged(QStandardItem*)),this,SLOT(handleItemChange(QStandardItem*)));
+
+            //! --------------
+            //! item creation
+            //! --------------
+            QExtendedStandardItem *itemConnection = new QExtendedStandardItem();
+            data.setValue(connectionName);
+            itemConnection->setData(data,Qt::DisplayRole);
+            data.setValue(aContactNode);
+            itemConnection->setData(data,Qt::UserRole);
+
+            //! -------------------
+            //! append to the tree
+            //! -------------------
+            this->myModel->itemFromIndex(myTreeView->currentIndex())->appendRow(itemConnection);
+        }
+    }
+}
+#endif
 
 //! -------------------------------------
 //! function: findContactFaces
@@ -12727,7 +13068,7 @@ std::vector<std::pair<std::vector<GeometryTag>,std::vector<GeometryTag>>> Simula
         for(int j=1; j<=slaveVecLoc.size(); j++)
         {
             const GeometryTag &secondTag = slaveVecLoc.at(j-1);
-            cout<<"____(i,j) = ("<<firstTag.parentShapeNr<<", "<<secondTag.parentShapeNr<<")____"<<endl;
+            //cout<<"____(i,j) = ("<<firstTag.parentShapeNr<<", "<<secondTag.parentShapeNr<<")____"<<endl;
 
             std::pair<GeometryTag,GeometryTag> aTagPair;
             aTagPair.first = firstTag; aTagPair.second = secondTag;

@@ -601,6 +601,8 @@ private slots:
     //! start time step builder
     void COSTAMP_startTimeStepBuilder();
 
+    void createCostampAutomaticConnections();
+
 private slots:
 
     //! change the time history file location

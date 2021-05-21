@@ -388,6 +388,7 @@ bool exportingTools::exportSTEP(const TopoDS_Compound &aComp)
     return false;
 }
 
+
 //! -----------------------
 //! function: exportResult
 //! details:

@@ -1203,7 +1203,7 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
         }
 
         //! -----------------------------------------------------------------------
-        //! the contact formualation: contact pair initially treated with lagrangian
+        //! the contact formualation: contact pair initially treated with MPC
         //! -----------------------------------------------------------------------
         Property::contactFormulation theContactFormulation = Property::contactFormulation_MPC;
         data.setValue(theContactFormulation);

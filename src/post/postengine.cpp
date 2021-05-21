@@ -1395,8 +1395,8 @@ bool postEngine::buildFatiguePostObject(int type, const std::vector<GeometryTag>
                 {
                     elasticModulusAve = 1.76e5;
                     altStress = 0.5*(mises+eps*elasticModulusAve);
-                    //Y = log10(28300*altStress/elasticModulusAve);
-                    Y = log10(195000*altStress/elasticModulusAve);
+                    Y = log10(28300*altStress/elasticModulusAve);
+                    //Y = log10(195000*altStress/elasticModulusAve);
 
                     r=35.9;
                     a=9.030556;

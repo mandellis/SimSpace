@@ -545,7 +545,7 @@ bool OpenFoamReader::perform(SimulationNodeClass *OFnode)
             //! the "Time" directory (curDirName is ->relative<-)
             const QString &curDirName = directoryListFiltered.at(t);
 
-            //cout<<"OpenFoamReader::perform()->____entering time directory: \""<<curDirName.toStdString()<<"\"____"<<endl;
+            cout<<"OpenFoamReader::perform()->____entering time directory: \""<<curDirName.toStdString()<<"\"____"<<endl;
 
             if(myProgressIndicator!=Q_NULLPTR)
             {
