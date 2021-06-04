@@ -2,11 +2,11 @@
 //! custom includes
 //! ----------------
 #include "solutionworker.h"
-#include "src/utils/ccout.h"
+#include "ccout.h"
 #include "qconsoleevent.h"
 #include "qccxsolvermessageevent.h"
 #include "ccxsolvermessage.h"
-#include "src/main/mydefines.h"
+#include "mydefines.h"
 
 //! ---
 //! Qt

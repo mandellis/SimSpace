@@ -1,8 +1,0 @@
-﻿C:\Program Files (x86)\MSBuild\Microsoft.Cpp\v4.0\V140\Microsoft.CppBuild.targets(392,5): warning MSB8028: The intermediate directory (x64\Release\) contains files shared from another project (libqhull.vcxproj, qconvex.vcxproj, qdelaunay.vcxproj, qhalf.vcxproj, qhull.vcxproj, qhullcpp.vcxproj, qhullstatic.vcxproj, qhullstatic_r.vcxproj, qhull_p.vcxproj, qhull_r.vcxproj, qvoronoi.vcxproj, rbox.vcxproj, testqset_r.vcxproj, user_eg.vcxproj, user_eg2.vcxproj, user_eg3.vcxproj).  This can lead to incorrect clean and rebuild behavior.
-  mem.c
-  qset.c
-  usermem.c
-  testqset.c
-  Generating Code...
-C:\Program Files (x86)\MSBuild\Microsoft.Cpp\v4.0\V140\Microsoft.CppBuild.targets(1189,5): warning MSB8012: TargetPath(D:\Work\Qt\pro_26.0_OCC7.3.0\qhull-2019.1\build\x64\Release\testqset.exe) does not match the Linker's OutputFile property value (D:\Work\Qt\pro_26.0_OCC7.3.0\qhull-2019.1\bin\testqset.exe). This may cause your project to build incorrectly. To correct this, please make sure that $(OutDir), $(TargetName) and $(TargetExt) property values match the value specified in %(Link.OutputFile).
-x64\Release\mem.obj : fatal error LNK1112: module machine type 'x64' conflicts with target machine type 'X86'
