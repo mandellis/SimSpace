@@ -1809,7 +1809,11 @@ std::map<int,std::vector<double>> postEngine::readFatigueResultsOnBody(int type,
     std::map<int,int> indexedMapOfNodes;
 
     int offset = 0;
-    for(int k=1; k<bodyIndex; k++) offset = offset+myMeshDataBase->ArrayOfMeshDS.value(k)->GetAllNodes().Extent();
+    for(int k=1; k<bodyIndex; k++)
+    {
+        if(!myMeshDataBase->ArrayOfMeshDS.value(k).IsNull())
+            offset = offset+myMeshDataBase->ArrayOfMeshDS.value(k)->GetAllNodes().Extent();
+    }
     for(TColStd_MapIteratorOfPackedMapOfInteger anIter(aMeshDS->GetAllNodes()); anIter.More(); anIter.Next())
     {
         int nodeID = anIter.Key()+offset;
