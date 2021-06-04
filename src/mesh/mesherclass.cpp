@@ -275,7 +275,7 @@ void MesherClass::generateMesh()
                                                                 QProgressEvent_Init,0,100,0,"Netgen meshing");
                         this->postUpdateEvent(pe);
                         userMessage mr = Netgen_generateSurfaceMesh(bodyIndex,mainMesh2D);                        
-                        this->rebuildFaceMeshDataSources(bodyIndex);    // a check
+                        //this->rebuildFaceMeshDataSources(bodyIndex);    // a check
 
                         Global::status().myMessages->appendMessage(mr);
                     }
@@ -286,7 +286,7 @@ void MesherClass::generateMesh()
                         QProgressEvent *pe = new QProgressEvent(QProgressEvent_Init,0,NbSteps-1,0,"Meshing surface using Express Mesh",QProgressEvent_Init,0,100,0);
                         postUpdateEvent(pe);
                         userMessage mr = this->ExMesh_generateSurfaceMesh(mp,bodyIndex,mainMesh2D);
-                        this->rebuildFaceMeshDataSources(bodyIndex);    // a check
+                        //this->rebuildFaceMeshDataSources(bodyIndex);    // a check
 
                         Global::status().myMessages->appendMessage(mr);
                     }
@@ -308,7 +308,7 @@ void MesherClass::generateMesh()
                         postUpdateEvent(pe);
 
                         userMessage mr = Netgen_STL_generateSurfaceMesh(bodyIndex,mainMesh2D);                        
-                        this->rebuildFaceMeshDataSources(bodyIndex);    // a check
+                        //this->rebuildFaceMeshDataSources(bodyIndex);    // a check
 
                         Global::status().myMessages->appendMessage(mr);
 
@@ -2046,8 +2046,8 @@ userMessage MesherClass::Netgen_STL_generateVolumeMesh(int bodyIndex,
         //! the data sources are set directly by the tool
         //! experimental: rebuild the face mesh data sources
         //! -------------------------------------------------
-        bool faceMeshDSRebuilt = this->rebuildFaceMeshDataSources(bodyIndex);
-        Q_UNUSED(faceMeshDSRebuilt);
+        //bool faceMeshDSRebuilt = this->rebuildFaceMeshDataSources(bodyIndex);
+        //Q_UNUSED(faceMeshDSRebuilt);
 
         //! ----------------------
         //! remove supports files
@@ -2898,12 +2898,13 @@ bool MesherClass::rebuildFaceMeshDataSources(int bodyIndex)
     aFaceMeshRebuilder.setShape(myMeshDB->bodyMap.value(bodyIndex));
 
     std::map<int,occHandle(Ng_MeshVS_DataSourceFace)> theFaceMeshes;
-    aFaceMeshRebuilder.perform(theFaceMeshes);
+    bool isDone = aFaceMeshRebuilder.perform(theFaceMeshes);
     for(std::map<int,occHandle(Ng_MeshVS_DataSourceFace)>::iterator it = theFaceMeshes.begin(); it!=theFaceMeshes.end(); it++)
     {
         int faceNr = it->first;
         myMeshDB->ArrayOfMeshDSOnFaces.setValue(bodyIndex,faceNr,it->second);
     }
     cout<<"MesherClass::generateFaceMeshDataSources()->____exiting function____"<<endl;
-    return true;
+    if(isDone) return true;
+    else return false;
 }

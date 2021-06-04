@@ -52,7 +52,7 @@ exportingTools::exportingTools()
 }
 
 //! ----------------------
-//! function: exportCloud
+//! function: exportSTL
 //! details:
 //! ----------------------
 void exportingTools::exportSTL(const occHandle(AIS_InteractiveContext) &theCTX, meshDataBase *theDB)
@@ -387,6 +387,7 @@ bool exportingTools::exportSTEP(const TopoDS_Compound &aComp)
     }
     return false;
 }
+
 
 //! -----------------------
 //! function: exportResult

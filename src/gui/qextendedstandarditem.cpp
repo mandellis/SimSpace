@@ -6,14 +6,18 @@
 #include "postobject.h"
 #include "ng_meshvs_datasource2d.h"
 #include "ng_meshvs_datasource3d.h"
-#include "src/utils/tools.h"
-#include "src/registeredMetatypes/listofmesh.h"
+#include "tools.h"
+#include "listofmesh.h"
 #include "detailviewer.h"
-#include "src/main/simulationmanager.h"
-#include "src/gui/tabularData/customtablemodel.h"
-#include "src/main/maintreetools.h"
-#include "src/ccxSolver/ccxsolvermessage.h"
-#include "src/ccxSolver/solutioninfo.h"
+#include "simulationmanager.h"
+#include "customtablemodel.h"
+#include "maintreetools.h"
+#include "ccxsolvermessage.h"
+#include "solutioninfo.h"
+#include "ext/occ_extended/handle_ais_doublearrowmarker_reg.h"
+#include "src/registeredMetatypes/meshvs_mesh_handle_reg.h"
+#include "occhandle.h"
+#include <indexedmapofmeshdatasources.h>
 
 //! ----
 //! OCC
@@ -78,6 +82,7 @@ void QExtendedStandardItem::setData(const QVariant &value, int role)
         SimulationNodeClass::nodeType theType = node->getType();
         //cout<<"family "<<theFamily<<" type: "<<theType<<endl;
         if(theFamily == SimulationNodeClass::nodeType_StructuralAnalysisSolution &&
+                theFamily == SimulationNodeClass::nodeType_thermalAnalysisSolution &&
                 theType != SimulationNodeClass::nodeType_StructuralAnalysisSolutionInformation &&
                 theType != SimulationNodeClass::nodeType_StructuralAnalysisSolution)
         {
@@ -103,11 +108,6 @@ void QExtendedStandardItem::setData(const QVariant &value, int role)
 //! function: data
 //! details:
 //! ---------------
-#include "ext/occ_extended/handle_ais_doublearrowmarker_reg.h"
-#include "src/registeredMetatypes/meshvs_mesh_handle_reg.h"
-#include "occhandle.h"
-#include <indexedmapofmeshdatasources.h>
-
 QVariant QExtendedStandardItem::data(int role) const
 {
     if(role==Qt::DisplayRole)
@@ -163,6 +163,7 @@ QVariant QExtendedStandardItem::data(int role) const
             case Property::analysisType_frequencyResponse: data.setValue(QString("Frequency response")); break;
             case Property::analysisType_uncoupledTemperatureDisplacement: data.setValue(QString("Uncoupled temperature displacement")); break;
             case Property::analysisType_coupledTemperatureDisplacement: data.setValue(QString("Coupled temperature displacement")); break;
+            case Property::analysisType_CFD: data.setValue(QString("CFD")); break;
             }
             return data;
         }
@@ -509,6 +510,16 @@ QVariant QExtendedStandardItem::data(int role) const
             {
             case 0: data.setValue(QString("Equivalent strain")); break;
             case 1: data.setValue(QString("Equivalent plastic strain")); break;
+            }
+            return data;
+        }
+        if(name=="Source")
+        {
+            int val = QStandardItem::data(Qt::UserRole).value<Property>().getData().toInt();
+            switch(val)
+            {
+            case 0: data.setValue(QString("Temperature")); break;
+            case 1: data.setValue(QString("Equivalent von mises stress")); break;
             }
             return data;
         }
@@ -1010,6 +1021,14 @@ QVariant QExtendedStandardItem::data(int role) const
             return data;
         }
         else if(name=="Display time")
+        {
+            double val = QStandardItem::data(Qt::UserRole).value<Property>().getData().toDouble();
+            char v[16];
+            sprintf(v,"%g",val);
+            data.setValue(QString::fromLatin1(v));
+            return data;
+        }
+        else if(name=="Node ID")
         {
             double val = QStandardItem::data(Qt::UserRole).value<Property>().getData().toDouble();
             char v[16];
@@ -1615,8 +1634,8 @@ QVariant QExtendedStandardItem::data(int role) const
                 return data;
             }
             int row = nodeAnalysisSettings->getPropertyValue<int>("Current step number");
-            int SC = mainTreeTools::calculateStartColumn(sm->myTreeView);
             CustomTableModel *tabularDataModel = nodeAnalysisSettings->getTabularDataModel();
+            int SC = mainTreeTools::calculateStartColumn(sm->myTreeView,tabularDataModel->getColumnBeforeBC());
             double val = tabularDataModel->dataRC(row,SC,Qt::EditRole).toDouble();
             Property::loadDefinition theLoadDefinition = QStandardItem::data(Qt::UserRole).value<Property>().getData().value<Property::loadDefinition>();
             switch(theLoadDefinition)
@@ -1645,8 +1664,8 @@ QVariant QExtendedStandardItem::data(int role) const
                 return data;
             }
             int row = nodeAnalysisSettings->getPropertyValue<int>("Current step number");
-            int SC = mainTreeTools::calculateStartColumn(sm->myTreeView);
             CustomTableModel *tabularDataModel = nodeAnalysisSettings->getTabularDataModel();
+            int SC = mainTreeTools::calculateStartColumn(sm->myTreeView,tabularDataModel->getColumnBeforeBC());
             double val = tabularDataModel->dataRC(row,SC+1,Qt::EditRole).toDouble();
             Property::loadDefinition theLoadDefinition = QStandardItem::data(Qt::UserRole).value<Property>().getData().value<Property::loadDefinition>();
             switch(theLoadDefinition)
@@ -2366,6 +2385,7 @@ QIcon QExtendedStandardItem::getIcon(SimulationNodeClass::nodeType theNodeType) 
 {
     switch(theNodeType)
     {
+    case SimulationNodeClass::nodeType_CFDAnalysis: return QIcon(":/icons/icon_CFD.png"); break;
     case SimulationNodeClass::nodeType_combinedAnalysis: return QIcon(":/icons/icon_combined analysis.png"); break;
     case SimulationNodeClass::nodeType_particlesInFieldsAnalysis: return QIcon(":/icons/icon_a field.png"); break;
     case SimulationNodeClass::nodeType_meshMeshMetric: return QIcon(":/icons/icon_metric.png"); break;
@@ -2393,8 +2413,16 @@ QIcon QExtendedStandardItem::getIcon(SimulationNodeClass::nodeType theNodeType) 
     case SimulationNodeClass::nodeType_thermalAnalysisSettings:
     case SimulationNodeClass::nodeType_structuralAnalysisSettings:
     case SimulationNodeClass::nodeType_combinedAnalysisSettings:
+    case SimulationNodeClass::nodeType_CFDAnalysisSettings:
     case SimulationNodeClass::nodeType_particlesInFieldsAnalysisSettings:
         return QIcon(":/icons/icon_analysis settings.png"); break;
+
+        //! --------------------
+        //! "CFD BC"
+        //! --------------------
+    case SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionPressure:  return QIcon(":/icons/icon_CFD.png"); break;
+    case SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionVelocity:  return QIcon(":/icons/icon_CFD.png"); break;
+    case SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionWall: return QIcon(":/icons/icon_CFD.png"); break;
 
     case SimulationNodeClass::nodeType_root: return QIcon(":/icons/icon_model root item.png"); break;
     case SimulationNodeClass::nodeType_connection:
@@ -2423,6 +2451,7 @@ QIcon QExtendedStandardItem::getIcon(SimulationNodeClass::nodeType theNodeType) 
     case SimulationNodeClass::nodeType_StructuralAnalysisSolution:
     case SimulationNodeClass::nodeType_thermalAnalysisSolution:
     case SimulationNodeClass::nodeType_combinedAnalysisSolution:
+    case SimulationNodeClass::nodeType_CFDAnalysisSolution:
     case SimulationNodeClass::nodeType_particlesInFieldsSolution:
         return QIcon(":/icons/icon_solution.png"); break;
 
@@ -2435,6 +2464,10 @@ QIcon QExtendedStandardItem::getIcon(SimulationNodeClass::nodeType theNodeType) 
     case SimulationNodeClass::nodeType_solutionStructuralNodalDisplacement: return QIcon(":/icons/icon_deformation.png"); break;
     case SimulationNodeClass::nodeType_solutionStructuralStress: return QIcon(":/icons/icon_spring.png"); break;
     case SimulationNodeClass::nodeType_solutionStructuralTotalStrain: return QIcon(":/icons/icon_spring.png"); break;
+
+        //! "CFD Solution"
+    case SimulationNodeClass::nodeType_solutionCFDpressure: return QIcon(":/icons/icon_CFD.png"); break;
+    case SimulationNodeClass::nodeType_solutionCFDvelocity: return QIcon(":/icons/icon_CFD.png"); break;
 
         //! -----------------------
         //! "Solution information"
@@ -2464,6 +2497,7 @@ QIcon QExtendedStandardItem::getIcon(SimulationNodeClass::nodeType theNodeType) 
     case SimulationNodeClass::nodeType_solutionThermalFlux: return QIcon(":/icons/icon_thermal flux.png"); break;
     case SimulationNodeClass::nodeType_electrostaticPotential: return QIcon(":/icons/icon_electrostatic potential.png"); break;
     case SimulationNodeClass::nodeType_pointMass: return QIcon(":/icons/icon_point mass.png"); break;
+    case SimulationNodeClass::nodeType_probe:return QIcon(":/icons/icon_crack.png"); break;
 
 #ifdef COSTAMP_VERSION
     case SimulationNodeClass::nodeType_timeStepBuilder: return QIcon(":/icons/icon_clock.png"); break;

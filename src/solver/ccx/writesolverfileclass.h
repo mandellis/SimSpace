@@ -70,8 +70,8 @@ private:
     void writeElementSet(std::vector<GeometryTag> vecLoc,QList<QString> &bodyNameList);
     void writeNodesAndElements(QString aName,QMap<int,QList<int>> &nodeListByBody);
 
-    QExtendedStandardItem *ItemFromScope(const TopoDS_Shape &aShape);
-    QExtendedStandardItem* getTreeItem(SimulationNodeClass::nodeType theNodeType);
+    //QExtendedStandardItem *ItemFromScope(const TopoDS_Shape &aShape);
+    //QExtendedStandardItem* getTreeItem(SimulationNodeClass::nodeType theNodeType);
 
     //! -----------------------------------------------------------
     //! create element surface (uses face to element connectivity)
@@ -87,7 +87,7 @@ private:
                                  double a, double b, double c, double d);
 
     void writeDload(double aLoad, QString aName);
-    void writeFilm(double aLoad, QString aName,double refTemperature);
+    void writeFilm(double aLoad, QString aName, double refTemperature);
     void writeDflux(double aLoad, QString aName);
 
     void writeTemperatureHistory(sharedPostObject pObject, QString tName);

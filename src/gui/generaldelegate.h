@@ -64,9 +64,6 @@ public:
     //! size hint
     QSize sizeHint(const QStyleOptionViewItem & option, const QModelIndex & index) const override;
 
-    //! get working directory
-    QString getWorkingDir() const;
-
 private:
 
     DetailViewer *myDetailViewer;    

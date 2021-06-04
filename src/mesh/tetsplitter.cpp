@@ -115,7 +115,7 @@ std::vector<meshElementByCoords> tetSplitter::splitTri(const meshElementByCoords
 
     mesh::meshPoint C((P1.x+P2.x+P3.x)/3.0,(P1.y+P2.y+P3.y)/3.0,(P1.z+P2.z+P3.z)/3.0);
     meshElementByCoords element1, element2, element3;
-    element1.type = TRIG; element2.type = TRIG; element3.type = TRIG;
+    element1.type = QUAD; element2.type = QUAD; element3.type = QUAD;
     element1.pointList<<P1<<P4<<C<<P6;
     element2.pointList<<P4<<P2<<P5<<C;
     element3.pointList<<C<<P5<<P3<<P6;

@@ -88,14 +88,14 @@ bool postTools::getStepSubStepByTimeDTM(QMap<double,QVector<int>> discreteTimeMa
     {
         foundStep = discreteTimeMap.last().at(1);
         foundSubStep = discreteTimeMap.last().at(2);
-        cout<<"postTools::getStepSubStepbyTimeDTM->____curAnalysisTime"<<analysisTime<<", step substep "<<foundStep<<"  "<<foundSubStep<<endl;
+        cout<<"postTools::getStepSubStepbyTimeDTM->____curAnalysisTime "<<analysisTime<<", step substep "<<foundStep<<"  "<<foundSubStep<<endl;
         return true;
     }
 
     for(QMap<double,QVector<int>>::const_iterator mapIt = discreteTimeMap.cbegin(); mapIt!= discreteTimeMap.cend(); ++mapIt)
     {
         curAnalysisTime = mapIt.key();
-        cout<<"postTools::getStepSubStepbyTimeDTM->____curAnalysisTime"<<curAnalysisTime<<", analysisTime "<<analysisTime<<endl;
+        cout<<"postTools::getStepSubStepbyTimeDTM->____curAnalysisTime "<<curAnalysisTime<<", analysisTime "<<analysisTime<<endl;
         t = mapIt.value().toStdVector();
         if (curAnalysisTime == analysisTime)
         {

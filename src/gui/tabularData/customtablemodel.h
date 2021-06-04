@@ -44,10 +44,13 @@ public:
     bool appendColumn(const load &aLoad, const QModelIndex &parent = QModelIndex());
     load getColumn(int col) const;
     void addMapping(QString color, QRect area);
+
     void clearMapping()
     {
         m_mapping.clear();
     }
+
+    int getColumnBeforeBC() {return columBeforeBC;}
 
 private:
 
@@ -58,6 +61,8 @@ private:
     QList<Property::loadType> m_loadTypes;
     //QString getHeaderString(int section) const;
     load loadToAppend;
+
+    int columBeforeBC;
 
 public:
 

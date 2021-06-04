@@ -65,6 +65,9 @@ public:
     //! create a combined analysis root
     void createCombinedAnalysisRootNode();
 
+    //! create CFD analysis root
+    void createCFDAnalysisRootNode();
+
     //! create particles in fields root
     void createParticlesInFieldsRootNode();
 

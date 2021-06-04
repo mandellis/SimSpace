@@ -26,11 +26,11 @@ public:
 
     mainTreeTools(){;}
 
-    static int calculateStartColumn(QTreeView *tree);
-    static int calculateStartColumn(QStandardItem *anItem);
+    static int calculateStartColumn(QTreeView *tree, int columnsBeforeBC);
+    static int calculateStartColumn(QStandardItem *anItem, int columnsBeforeBC);
 
-    static QList<int> getColumnsToRead(QTreeView *tree);
-    static QList<int> getColumnsToRead(QStandardItem *anItem);
+    static QList<int> getColumnsToRead(QTreeView *tree, int columnsBeforeBC);
+    static QList<int> getColumnsToRead(QStandardItem *anItem, int columnsBeforeBC);
 
     static QStandardItem* getCurrentSimulationRoot(QTreeView *treeView);
 
@@ -55,6 +55,12 @@ public:
     static SimulationNodeClass* getAnalysisSettingsNodeFromCurrentItem(QTreeView *treeView);
     static QStandardItem* getFirstTreeItemOfType(SimulationNodeClass::nodeType aType, QStandardItemModel* model);
     static bool getTreeItemsFromShapes(QTreeView *tree, const std::vector<TopoDS_Shape> &vecShapes, std::vector<QStandardItem*> &vecItems);
+    static QExtendedStandardItem* getTreeItem(QStandardItemModel* model, SimulationNodeClass::nodeType theNodeType);
+    static QExtendedStandardItem* ItemFromScope(QStandardItemModel* model, const TopoDS_Shape &aShape);
+    static QList<QStandardItem*> getAllTreeItemOfType(QStandardItemModel* model, SimulationNodeClass::nodeType theNodeType);
+    static const int mainTreeTools::getInsertionRow(QTreeView *tree);
+    static QStandardItem* getSolutionItemFromCurrentItem(QTreeView *treeView);
+
 };
 
 #endif // MAINTREETOOLS_H

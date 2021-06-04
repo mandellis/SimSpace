@@ -15,7 +15,7 @@
 //! ----------------
 //! custom includes
 //! ----------------
-#include "src/registeredMetatypes/listofshape.h"
+#include "listofshape.h"
 
 class Property
 {
@@ -246,6 +246,8 @@ public:
 
     enum loadType
     {
+        loadType_scalar,
+
         //! force and remote force
         loadType_forceX,
         loadType_forceY,
@@ -269,6 +271,12 @@ public:
         loadType_accelerationY,
         loadType_accelerationZ,
         loadType_accelerationMagnitude,
+
+        //! velocity
+        loadType_velocityX,
+        loadType_velocityY,
+        loadType_velocityZ,
+        loadType_velocityMagnitude,
 
         //! displacement and remote displacement
         loadType_displacementX,
@@ -396,7 +404,8 @@ public:
         analysisType_modal,
         analysisType_frequencyResponse,
         analysisType_uncoupledTemperatureDisplacement,
-        analysisType_coupledTemperatureDisplacement
+        analysisType_coupledTemperatureDisplacement,
+        analysisType_CFD
     } ant;
     Q_ENUM(analysisType)
 

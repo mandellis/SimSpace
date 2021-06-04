@@ -10,58 +10,123 @@
 //! ---
 //! Qt
 //! ---
-#include <QtCharts/QChart>
-#include <QtCharts/QChartView>
-#include <QtCharts/QLineSeries>
-#include <QtCharts/QVXYModelMapper>
-#include <QtCharts/QValueAxis>
-#include <QHeaderView>
 #include <QWidget>
+#include <QList>
+#include <QVector>
+#include <QPoint>
+#include <QMenu>
+#include <QColor>
+#include <ext/QCustomPlot/qcp/qcustomplot.h>
+#include <QMouseEvent>
 
-using namespace QtCharts;
+//! ----
+//! C++
+//! ----
+#include <vector>
+#include <iostream>
+using namespace std;
 
-class TabularDataViewerClass: public QChartView
+class QAction;
+
+class TabularDataViewerClass: public QCustomPlot
 {
     Q_OBJECT
 
 private:
 
-    QVXYModelMapper *myMapper;
-
-    QChart *myChart;
-    QValueAxis *myAxisX;
-    QValueAxis *myAxisY;
-    QLineSeries *mySeries;
     CustomTableModel *myData;
+    QList<int> myColumns;
 
-    QList<int> myYseries;
+    int myX,myY;
 
 private:
 
-    void connectMarkers();
+    QCPLegend *myLegend;
+    bool myLegendIsVisible;
+
+private:
+
+    void connectMarkers(){;}
+
+    //! --------------------
+    //! context menu action
+    //! --------------------
+    QAction *myActionHideLegend;
+    QAction *myActionShowLegend;
+    QAction *myActionSaveImage;
+    QVector<QColor> myColors;
 
 private slots:
 
-    void configureAxis();
-    void handleMarkerClicked();
+    void configureAxis(){;}
+    void handleMarkerClicked(){;}
+    void ShowContextMenu(QPoint pos);
+    void showLegend();
+    void hideLegend();
+    void saveImage();
 
 public:
 
+    //! ------------
+    //! constructor
+    //! ------------
     TabularDataViewerClass(QWidget *parent=0);
+
+    //! -----------
+    //! destructor
+    //! -----------
     virtual ~TabularDataViewerClass()
     {
         cout<<"TabularDataViewerClass::~TabularDataViewerClass()->____DESTRUCTOR CALLED____"<<endl;
     }
 
+    //! ------------------------------
+    //! function: getTabularDataModel
+    //! details:
+    //! ------------------------------
     CustomTableModel* getTabularDataModel() { return myData; }
+
+    //! -------------------
+    //! function: setData
+    //! details:
+    //! -------------------
     void setData(CustomTableModel *tabularData){ myData = tabularData; }
 
 public slots:
 
+    //! ----------
+    //! show data
+    //! ----------
     void showData(CustomTableModel *tabData, const QList<int> &columnsToShow);
-    void clearGraphViewer();
 
+    //! -----------
+    //! clearPanel
+    //! -----------
+    void clearPanel();
+
+    //! ------------
+    //! updateViewer
+    //! ------------
     void updateViewer();
+
+private:
+
+    //! --------
+    //! plotXYs
+    //! --------
+    void plotXYs();
+
+    void showAxes();
+    void hideAxes();
+
+protected:
+
+    //! -------------
+    //! mouse events
+    //! -------------
+    void mouseMoveEvent(QMouseEvent* event);
+    void mousePressEvent(QMouseEvent *event);
+
 };
 
-#endif // TABULARDATAVIEWERCLASS_H
+#endif // TabularDataViewerClass_H

@@ -8,7 +8,7 @@
 #include <extendedrwstl.h>
 #include <stlapiwriter.h>
 #include <stldoctor.h>
-
+#include <stlwrappers.h>
 //! ---
 //! Qt
 //! ---
@@ -298,7 +298,7 @@ bool surfaceMeshToFaceMeshes::perform(std::map<int,occHandle(Ng_MeshVS_DataSourc
             aSTLFaceMeshDS->GetNodesByElement(globalElementID,nodeIDs,NbNodes);
             meshElement2D aMeshElement;
             aMeshElement.ID = globalElementID;
-            for(int n=1; n<=NbNodes; n++) aMeshElement.nodeIDs<<nodeIDs(n);
+            for(int n=1; n<=NbNodes; n++) aMeshElement.nodeIDs.push_back(nodeIDs(n));
             mapTriangleFaceNr.insert(std::make_pair(aMeshElement,faceNr));
         }
     }
@@ -353,17 +353,17 @@ bool surfaceMeshToFaceMeshes::perform(std::map<int,occHandle(Ng_MeshVS_DataSourc
         double nx,ny,nz;
         myMeshDS->GetNormal(globalElementID,10,nx,ny,nz);
 
-        //! --------------------------------------------------
-        //! shift the point outside the center of the element
+        //! -------------------------------------------------
+        //! shift the point outside the plane of the element
         //! cast a ray from outside towards the STL mesh
         //! . compute a proper shift
-        //! --------------------------------------------------
+        //! -------------------------------------------------
         Eigen::RowVector3f origin(Cx,Cy,Cz);
         Eigen::RowVector3f direction0(nx,ny,nz);    // this normal is directed towards the exterior
         Eigen::RowVector3f direction1(-nx,-ny,-nz); // this normal is directed towards the interior
         igl::Hit hit0, hit1;
-        bool isDone0 = myEmbree.intersectRay(origin.cast<float>(),direction0.cast<float>(),hit0,0.0,100.0);
-        bool isDone1 = myEmbree.intersectRay(origin.cast<float>(),direction1.cast<float>(),hit1,0.0,100.0);
+        bool isDone0 = myEmbree.intersectRay(origin.cast<float>(),direction0.cast<float>(),hit0,0.0,10.0);
+        bool isDone1 = myEmbree.intersectRay(origin.cast<float>(),direction1.cast<float>(),hit1,0.0,10.0);
 
         int intersectedElement = -1;    // dummy initialization
         if(isDone0 == true && isDone1 == false)
@@ -383,7 +383,7 @@ bool surfaceMeshToFaceMeshes::perform(std::map<int,occHandle(Ng_MeshVS_DataSourc
         {
             //! -----------------------------------------------------------
             //! this element cannot be associated through ray intersection
-            //! because the ray inersection with the an stl triangle does
+            //! because the ray intersection with the an stl triangle does
             //! not exist
             //! -----------------------------------------------------------
             NbElements_FEM_NotFound++;
@@ -396,9 +396,10 @@ bool surfaceMeshToFaceMeshes::perform(std::map<int,occHandle(Ng_MeshVS_DataSourc
             {
                 int s = 3*n;
                 mesh::meshPoint aMeshPoint(coords(s+1),coords(s+2),coords(s+3),nodeIDs(n+1));
-                aMeshElement.pointList<<aMeshPoint;
+                aMeshElement.pointList.push_back(aMeshPoint);
             }
             unassociatedElements.push_back(aMeshElement);
+            cout<<"surfaceMeshToFaceMeshes::perform()->(1)____raycast failure: the current element will be reassigned using brute force____"<<endl;
             continue;       // must continue!
         }
 
@@ -407,12 +408,12 @@ bool surfaceMeshToFaceMeshes::perform(std::map<int,occHandle(Ng_MeshVS_DataSourc
 
         //cout<<"surfaceMeshToFaceMeshes::perform()->____intersected element: ("<<localElementID_STL<<", "<<globalElementID_STL<<")____"<<endl;
 
-        int NbNodes_, buf[8];
+        int NbNodes_STL, buf[8];
         TColStd_Array1OfInteger nodeIDs(*buf,1,8);
-        STLMeshDS->GetNodesByElement(globalElementID_STL,nodeIDs,NbNodes_);
+        STLMeshDS->GetNodesByElement(globalElementID_STL,nodeIDs,NbNodes_STL);
         meshElement2D aMeshElement;
         aMeshElement.ID = globalElementID_STL;
-        for(int n=1; n<=NbNodes_; n++) aMeshElement.nodeIDs<<nodeIDs(n);
+        for(int n=1; n<=NbNodes_STL; n++) aMeshElement.nodeIDs.push_back(nodeIDs(n));
 
         std::map<meshElement2D,int>::iterator ite = mapTriangleFaceNr.find(aMeshElement);
         if(ite==mapTriangleFaceNr.end())
@@ -426,17 +427,15 @@ bool surfaceMeshToFaceMeshes::perform(std::map<int,occHandle(Ng_MeshVS_DataSourc
             int NbNodes_, bufn[8];
             TColStd_Array1OfInteger nodeIDs_(*bufn,1,8);
             myMeshDS->GetNodesByElement(globalElementID,nodeIDs_,NbNodes_);
-
             for(int n=0; n<NbNodes_;n++)
             {
                 int s = 3*n;
                 mesh::meshPoint aMeshPoint(coords(s+1),coords(s+2),coords(s+3),nodeIDs_(n+1));
-                aMeshElement.pointList<<aMeshPoint;
+                aMeshElement.pointList.push_back(aMeshPoint);
             }
             unassociatedElements.push_back(aMeshElement);
-
             NbElements_FEM_NotFound++;
-            cout<<"surfaceMeshToFaceMeshes::perform()->____raycast failure: the current element will be reassigned using brute force____"<<endl;
+            cout<<"surfaceMeshToFaceMeshes::perform()->(2)____raycast failure: the current element will be reassigned using brute force____"<<endl;
             continue;
         }
 
@@ -448,14 +447,14 @@ bool surfaceMeshToFaceMeshes::perform(std::map<int,occHandle(Ng_MeshVS_DataSourc
         int faceNr = ite->second;
         meshElementByCoords aMeshElementByCoords;
         aMeshElementByCoords.ID = globalElementID;
-
-        myMeshDS->GetNodesByElement(globalElementID,nodeIDs,NbNodes);
+        TColStd_Array1OfInteger nodeIDs__(*buf,1,8);
+        myMeshDS->GetNodesByElement(globalElementID,nodeIDs__,NbNodes);
         for(int n=0; n<NbNodes; n++)
         {
-            int globalNodeID = nodeIDs(n+1);
+            int globalNodeID = nodeIDs__(n+1);
             int s = 3*n;
             mesh::meshPoint aMeshPoint(coords(s+1),coords(s+2),coords(s+3),globalNodeID);
-            aMeshElementByCoords.pointList<<aMeshPoint;
+            aMeshElementByCoords.pointList.push_back(aMeshPoint);
         }
         std::map<int,std::vector<meshElementByCoords>>::iterator itt = elementsOfTheFaces.find(faceNr);
         if(itt==elementsOfTheFaces.end())
@@ -464,6 +463,17 @@ bool surfaceMeshToFaceMeshes::perform(std::map<int,occHandle(Ng_MeshVS_DataSourc
             elementsOfTheFaces.insert(std::make_pair(faceNr,v));
         }
         else itt->second.push_back(aMeshElementByCoords);
+    }
+
+    //! ---------------
+    //! temporary init
+    //! ---------------
+    for(std::map<int,std::vector<meshElementByCoords>>::iterator it = elementsOfTheFaces.begin(); it != elementsOfTheFaces.end(); it++)
+    {
+        int faceNr = it->first;
+        const std::vector<meshElementByCoords> &vecElem = it->second;
+        occHandle(Ng_MeshVS_DataSourceFace) faceDS = new Ng_MeshVS_DataSourceFace(vecElem,false,false);
+        theFaceMeshDataSources.insert(std::make_pair(faceNr,faceDS));
     }
 
     cout<<"surfaceMeshToFaceMeshes::perform()->____stage 1 - heuristic____"<<endl;
@@ -475,7 +485,8 @@ bool surfaceMeshToFaceMeshes::perform(std::map<int,occHandle(Ng_MeshVS_DataSourc
     //! handling "lost" surface elements
     //! 1. search by segments
     //! ---------------------------------
-    if(unassociatedElements.empty()==false)
+    std::vector<meshElementByCoords> unassociatedElements_step2;
+    if(!unassociatedElements.empty())
     {
         cout<<"surfaceMeshToFaceMeshes::perform()->____stage 2 - brute force____"<<endl;
 
@@ -488,12 +499,14 @@ bool surfaceMeshToFaceMeshes::perform(std::map<int,occHandle(Ng_MeshVS_DataSourc
         {
             int faceNr = it->first;
             occHandle(Ng_MeshVS_DataSourceFace) aFaceMeshDS = it->second;
-
             if(aFaceMeshDS->mySegmentToElement.isEmpty()) aFaceMeshDS->computeFreeMeshSegments();
+
+            //const SSMap<mesh::meshSegment,SSVector<int>> &segmentsToElement = aFaceMeshDS->myBoundarySegments;  // speed up!
             const QMap<mesh::meshSegment,QList<int>> &segmentsToElement = aFaceMeshDS->mySegmentToElement;
+
             for(QMap<mesh::meshSegment,QList<int>>::const_iterator it_ = segmentsToElement.cbegin(); it_!=segmentsToElement.cend(); it_++)
             {
-                mesh::meshSegment aSegment = it_.key();
+                const mesh::meshSegment &aSegment = it_.key();
                 std::map<mesh::meshSegment,std::vector<int>>::iterator it__ = segmentFaceNrMap.find(aSegment);
                 if(it__==segmentFaceNrMap.end())
                 {
@@ -510,44 +523,44 @@ bool surfaceMeshToFaceMeshes::perform(std::map<int,occHandle(Ng_MeshVS_DataSourc
         //! ---------------------------------------
         cout<<"surfaceMeshToFaceMeshes::perform()->____start reassociating: "<<unassociatedElements.size()<<" lost elements____"<<endl;
         int NbReassigned = 0;
-        for(std::vector<meshElementByCoords>::iterator it = unassociatedElements.begin(); it!=unassociatedElements.end(); /*it++*/)
+        for(int k=0; k<unassociatedElements.size(); k++)
         {
-            const meshElementByCoords &curElement = *it;
-            cout<<"surfaceMeshToFaceMeshes::perform()->____trying to assign element ID: "<<curElement.ID<<"____"<<endl;
-            int NbNodes = curElement.pointList.length();
+            const meshElementByCoords &curElement = unassociatedElements[k];
+            cout<<"surfaceMeshToFaceMeshes::perform()->____trying to assign element ID: "<<curElement.ID<<" with "<<curElement.pointList.size()<<" nodes____"<<endl;
 
             //! ---------------------------------------------
             //! store the segments of the unassigned element
             //! ---------------------------------------------
+            int NbNodes = int(curElement.pointList.size());
             std::vector<mesh::meshSegment> vecSegmentsOfElement;    // segments of the unassigned element
             for(int i=1; i<=NbNodes; i++)
             {
                 mesh::meshSegment aMeshSegment;
                 int firstIndex = (i-1)%NbNodes;
                 int secondIndex = i%NbNodes;
-                aMeshSegment.nodeIDs<<curElement.pointList[firstIndex].ID;
-                aMeshSegment.nodeIDs<<curElement.pointList[secondIndex].ID;
+                aMeshSegment.nodeIDs.push_back(curElement.pointList[firstIndex].ID);
+                aMeshSegment.nodeIDs.push_back(curElement.pointList[secondIndex].ID);
+                aMeshSegment.sort();
                 vecSegmentsOfElement.push_back(aMeshSegment);
+                //cout<<"____segment ("<<curElement.pointList[firstIndex].ID<<", "<<curElement.pointList[secondIndex].ID<<")____"<<endl;
             }
 
             //! --------------------------------------------------------------------
             //! check the position of the current segment into the segmentFaceNrMap
             //! => find one of the possibile faces of the element
             //! --------------------------------------------------------------------
-            bool currentElementReassigned = false;
+            //bool currentElementReassigned = false;
             for(std::vector<mesh::meshSegment>::iterator it_ = vecSegmentsOfElement.begin(); it_ !=vecSegmentsOfElement.end(); it_++)
             {
                 const mesh::meshSegment &curSegment = *it_;
                 std::map<mesh::meshSegment,std::vector<int>>::iterator its = segmentFaceNrMap.find(curSegment);
 
-                cout<<"surfaceMeshToFaceMeshes::perform()->____check position of segment ("<<curSegment.nodeIDs[0]<<", "<<
-                      curSegment.nodeIDs[1]<<")";
-
+                //cout<<"____analyzing segment ("<<curSegment.nodeIDs[0]<<", "<<curSegment.nodeIDs[1]<<")";
                 if(its!=segmentFaceNrMap.end())
                 {
-                    cout<<": found____"<<endl;
                     const std::vector<int> &possibleFaceNrs = its->second;
                     int faceNr = possibleFaceNrs[0];
+                    //cout<<": found => link to face: "<<faceNr<<"____"<<endl;
                     std::map<int,std::vector<meshElementByCoords>>::iterator ite = elementsOfTheFaces.find(faceNr);
                     if(ite == elementsOfTheFaces.end())
                     {
@@ -565,40 +578,40 @@ bool surfaceMeshToFaceMeshes::perform(std::map<int,occHandle(Ng_MeshVS_DataSourc
                         const mesh::meshSegment &aSegment = vecSegmentsOfElement[n];
                         if(aSegment == curSegment)
                         {
-                            cout<<"____found the already added segment: continue____"<<endl;
+                            //cout<<"____found the already added segment: continue____"<<endl;
+                            continue;
                         }
                         std::map<mesh::meshSegment,std::vector<int>>::iterator itss = segmentFaceNrMap.find(aSegment);
                         if(itss==segmentFaceNrMap.end())
                         {
-                            cout<<"____adding____"<<endl;
+                            //cout<<"____adding faceNr: "<<faceNr<<endl;
                             std::vector<int> v { faceNr };
-                            segmentFaceNrMap.insert(std::make_pair(v,faceNr));
+                            segmentFaceNrMap.insert(std::make_pair(aSegment,v));
                         }
                         else
                         {
-                            cout<<"____piling____"<<endl;
+                            //cout<<"____piling up faceNr: "<<faceNr<<endl;
                             itss->second.push_back(faceNr);
                         }
                     }
-
                     NbReassigned++;
-                    currentElementReassigned = true;
+                    //currentElementReassigned = true;
                     break;
                 }
                 else
                 {
+                    //currentElementReassigned = false;
+                    unassociatedElements_step2.push_back(curElement);
                     cout<<": not found____"<<endl;
                 }
             }
-            if(currentElementReassigned) it = unassociatedElements.erase(it);
-            else it++;
         }
 
         //! -------------------------------------------------------------------
         //! if needed try to associate using another strategy
         //! use std::map<mesh::meshPoint,std::vector<int>> pointsToFaceNumber;
         //! -------------------------------------------------------------------
-        for(std::vector<meshElementByCoords>::iterator it = unassociatedElements.begin(); it!=unassociatedElements.end(); /*it++*/)
+        for(int k=0; k<unassociatedElements_step2.size(); k++)
         {
             if(pointsToFaceNumber.empty())
             {
@@ -610,7 +623,7 @@ bool surfaceMeshToFaceMeshes::perform(std::map<int,occHandle(Ng_MeshVS_DataSourc
                     for(std::vector<meshElementByCoords>::const_iterator it2 =vecMeshElements.cbegin(); it2!=vecMeshElements.cend(); it2++)
                     {
                         const meshElementByCoords &aMeshElement = *it2;
-                        for(int j = 1; j<aMeshElement.pointList.length(); j++)
+                        for(int j = 1; j<aMeshElement.pointList.size(); j++)
                         {
                             const mesh::meshPoint &aMeshPoint = aMeshElement.pointList[j];
                             std::map<mesh::meshPoint,std::vector<int>>::iterator it3 = pointsToFaceNumber.find(aMeshPoint);
@@ -630,9 +643,9 @@ bool surfaceMeshToFaceMeshes::perform(std::map<int,occHandle(Ng_MeshVS_DataSourc
                 cout<<"surfaceMeshToFaceMeshes::perform()->____mesh point to face number map generated____"<<endl;
             }
 
-            bool reassigned = false;
-            const meshElementByCoords &curPendingElement = *it;
-            for(int j=0; j<curPendingElement.pointList.length(); j++)
+            //bool reassigned = false;
+            const meshElementByCoords &curPendingElement = unassociatedElements_step2[k];
+            for(int j=0; j<curPendingElement.pointList.size(); j++)
             {
                 const mesh::meshPoint &aMeshPoint = curPendingElement.pointList[j];
                 std::map<mesh::meshPoint,std::vector<int>>::iterator itf = pointsToFaceNumber.find(aMeshPoint);
@@ -652,7 +665,7 @@ bool surfaceMeshToFaceMeshes::perform(std::map<int,occHandle(Ng_MeshVS_DataSourc
                     //! other ... to complete
                     //! 1. update the pointsToFaceNumber map
                     //! -------------------------------------
-                    for(int k=0; k<curPendingElement.pointList.length(); k++)
+                    for(int k=0; k<curPendingElement.pointList.size(); k++)
                     {
                         const mesh::meshPoint &aPoint = curPendingElement.pointList[k];
                         if(aPoint==aMeshPoint) continue;
@@ -664,17 +677,12 @@ bool surfaceMeshToFaceMeshes::perform(std::map<int,occHandle(Ng_MeshVS_DataSourc
                         }
                         else itff->second.push_back(faceNr);
                     }
-
-                    it = unassociatedElements.erase(it);
-                    reassigned = true;
+                    //reassigned = true;
                     NbReassigned++;
                     break;
                 }
-                else it++;
             }
         }
-
-        cout<<"surfaceMeshToFaceMeshes::perform()->____# "<<unassociatedElements.size()<<" have not been reassigned____"<<endl;
     }
 
     //! ---------------------------------
@@ -685,8 +693,12 @@ bool surfaceMeshToFaceMeshes::perform(std::map<int,occHandle(Ng_MeshVS_DataSourc
         int faceNr = it->first;
         const std::vector<meshElementByCoords> &elements = it->second;
         occHandle(Ng_MeshVS_DataSourceFace) aFaceMeshDS = new Ng_MeshVS_DataSourceFace(elements,false,false);
-        theFaceMeshDataSources.insert(std::make_pair(faceNr,aFaceMeshDS));
+
+        std::map<int,occHandle(Ng_MeshVS_DataSourceFace)>::iterator it_ = theFaceMeshDataSources.find(faceNr);
+        if(it_ == theFaceMeshDataSources.end()) theFaceMeshDataSources.insert(std::make_pair(faceNr,aFaceMeshDS));
+        else it_->second = aFaceMeshDS;
     }
+
     if(unassociatedElements.size()==0) return false;
     return true;
 }

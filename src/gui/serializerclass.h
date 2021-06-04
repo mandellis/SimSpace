@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include "src/registeredMetatypes/listofshape.h"
+#include "QStandardItem"
 
 class QExtendedStandardItem;
 
@@ -19,7 +20,7 @@ private:
 public:
 
     serializerClass(QObject* parent=0);
-    void setItem(QExtendedStandardItem *anItem);
+    void setItem(QStandardItem *anItem);
     void setSavingDirPath(const QString &path);
     void serialize(int n=-1);       //! if n=-1 => automatic numbering
 };

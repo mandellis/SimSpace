@@ -7,7 +7,7 @@
 #include "src/utils/vectortool.h"
 #include "src/main/mydefines.h"
 #include "src/utils/geomtoolsclass.h"
-#include "src/gui/tabularData/customtablemodel.h"
+#include "customtablemodel.h"
 #include "src/utils/tools.h"
 #include "ng_meshvs_datasourceface.h"
 #include "qprogressevent.h"
@@ -20,6 +20,7 @@
 #include "src/main/maintreetools.h"
 #include <datasourcebuilder.h>
 #include <src/utils/feaTool/bolttool.h>
+#include <ofwrite.h>
 
 //! -------
 //! global
@@ -228,7 +229,8 @@ bool writeSolverFileClass::perform()
     //! .  named selections root
     //! .  simulation root
     //! -------------------------
-
+    ofwrite ofw(myDB, mySimulationRoot);
+    ofw.perform();
     //! --------------------------------------------
     //! [1] write element/node sets: read the setup
     //! --------------------------------------------
@@ -351,9 +353,9 @@ bool writeSolverFileClass::perform()
                     double a1 = dirData.at(4);
                     double a2 = dirData.at(5);
                     int h=500; //to handle
-                    rPx = refPoint.at(0)+h*a0;
-                    rPy = refPoint.at(1)+h*a1;
-                    rPz = refPoint.at(2)+h*a2;
+                    rPx = refPoint.at(0)+fabs(h*a0);
+                    rPy = refPoint.at(1)+fabs(h*a1);
+                    rPz = refPoint.at(2)+fabs(h*a2);
                 }
 #endif
 
@@ -549,7 +551,8 @@ bool writeSolverFileClass::perform()
     //! -----------------
     //! write point mass
     //! -----------------
-    QStandardItem *theGeometryRoot=this->getTreeItem(SimulationNodeClass::nodeType_geometry);
+    QStandardItemModel *model =myDB->getModel();
+    QStandardItem *theGeometryRoot=mainTreeTools::getTreeItem(model, SimulationNodeClass::nodeType_geometry);
     cout<<"writeSolverFileClass::perform()->____writing Point Mass___"<<endl;
     for(int k=0; k<theGeometryRoot->rowCount();k++)
     {
@@ -627,7 +630,8 @@ bool writeSolverFileClass::perform()
     //! map for storage of master and slave name
     QMap<QString,pair<QString,QString>> contactMapName;
 
-    QExtendedStandardItem *theConnectionItem = this->getTreeItem(SimulationNodeClass::nodeType_connection);
+    cout<<"writeSolverFileClass::perform()->____writing connection____"<<endl;
+    QExtendedStandardItem *theConnectionItem = mainTreeTools::getTreeItem(myDB->getModel(),SimulationNodeClass::nodeType_connection);
     for(int n=0; n<theConnectionItem->rowCount(); n++)
     {
         if(Global::status().code==0)
@@ -707,6 +711,7 @@ bool writeSolverFileClass::perform()
     //! [3] write the "contact pair" headers: rescan the tree
     //! ------------------------------------------------------
     int NtotCP = 0;     // total number of contact pair
+    cout<<"writeSolverFileClass::perform()->____writing contact pairs"<<endl;
     for(int n=0; n<theConnectionItem->rowCount(); n++)
     {
         if(Global::status().code==0)
@@ -746,6 +751,20 @@ bool writeSolverFileClass::perform()
                  std::vector<GeometryTag> tagsSlave = node->getPropertyValue<std::vector<GeometryTag>>("Tags slave");
                  QList<occHandle(Ng_MeshVS_DataSourceFace)> masterFaces,slaveFaces;
 
+                 IndexedMapOfMeshDataSources anIndexedMapOfFaceMeshDS_Slave = node->getPropertyValue<IndexedMapOfMeshDataSources>("Slave mesh data source");
+                 IndexedMapOfMeshDataSources anIndexedMapOfFaceMeshDS_Master = node->getPropertyValue<IndexedMapOfMeshDataSources>("Master mesh data source");
+
+                 for(QMap<int,opencascade::handle<MeshVS_DataSource>>::iterator it = anIndexedMapOfFaceMeshDS_Slave.begin(); it!= anIndexedMapOfFaceMeshDS_Slave.end(); ++it)
+                 {
+                     const occHandle(Ng_MeshVS_DataSourceFace) &faceMesh = occHandle(Ng_MeshVS_DataSourceFace)::DownCast(it.value());
+                     slaveFaces<<faceMesh;
+                 }
+                 for(QMap<int,opencascade::handle<MeshVS_DataSource>>::iterator it = anIndexedMapOfFaceMeshDS_Master.begin(); it!= anIndexedMapOfFaceMeshDS_Master.end(); ++it)
+                 {
+                     const occHandle(Ng_MeshVS_DataSourceFace) &faceMesh = occHandle(Ng_MeshVS_DataSourceFace)::DownCast(it.value());
+                     masterFaces<<faceMesh;
+                 }
+                 /*
                  for(std::vector<GeometryTag>::iterator it = tagsMaster.begin(); it!= tagsMaster.end(); ++it)
                  {
                      GeometryTag aLoc = *it;
@@ -764,8 +783,13 @@ bool writeSolverFileClass::perform()
                      const occHandle(Ng_MeshVS_DataSourceFace) &faceMesh = occHandle(Ng_MeshVS_DataSourceFace)::DownCast(myDB->ArrayOfMeshDSOnFaces.getValue(bodyIndex,faceIndex));
                      slaveFaces<<faceMesh;
                  }
+                 */
+                 cout<<"writeSolverFileClass::perform()->____calculating K "<<endl;
+
                  K = contactParameters::calc_K(masterFaces,slaveFaces);
                  KN = K*KF;
+                 cout<<"writeSolverFileClass::perform()->___ K calculated "<<endl;
+
                  //! C0
                  double C0 = node->getPropertyValue<double>("C0");
                  //! P0
@@ -1272,6 +1296,7 @@ bool writeSolverFileClass::perform()
     //! ----------------------------------
     //! [5] write the material properties
     //! ----------------------------------
+    cout<<"writeSolverFileClass::perform()->____writing materials"<<endl;
     for(int p=0;p<vecMatNames.size();p++)
     {
         std::string matName = vecMatNames.at(p);
@@ -1702,6 +1727,9 @@ bool writeSolverFileClass::perform()
         myInputFile<<"100,";
         myInputFile<<"25,"<<endl;
 
+        //myInputFile<<"*AMPLITUDE, NAME=A"<<i<<endl;
+        //myInputFile<<"0,0,"<<TimeWidth<<",1"<<endl;
+
         //! --------------------
         //! boundary conditions
         //! --------------------
@@ -1736,7 +1764,7 @@ bool writeSolverFileClass::perform()
                 {
                 case SimulationNodeClass::nodeType_structuralAnalysisBoltPretension:
                 {
-                    QList<int> ColumnList = mainTreeTools::getColumnsToRead(theCurItem);
+                    QList<int> ColumnList = mainTreeTools::getColumnsToRead(theCurItem,tabData->getColumnBeforeBC());
 
                     QString RN = SetName+"_RN";
 
@@ -1769,7 +1797,7 @@ bool writeSolverFileClass::perform()
                     break;
                 case SimulationNodeClass::nodeType_structuralAnalysisThermalCondition:
                 {
-                    QList<int> ColumnList = mainTreeTools::getColumnsToRead(theCurItem);
+                    QList<int> ColumnList = mainTreeTools::getColumnsToRead(theCurItem,tabData->getColumnBeforeBC());
                     for(int n=0;n<ColumnList.length();n++)
                     {
                         //! -----------------------------------
@@ -1930,7 +1958,7 @@ bool writeSolverFileClass::perform()
                     int itemType = theCurNode->getPropertyValue<int>("Item type");
                     QString type;
 
-                    QList<int> ColumnList = mainTreeTools::getColumnsToRead(theCurItem);
+                    QList<int> ColumnList = mainTreeTools::getColumnsToRead(theCurItem,tabData->getColumnBeforeBC());
                     int loadValue = tabData->dataRC(i,ColumnList.at(0)).toInt();
                     if(loadValue!=0)
                     {
@@ -1976,7 +2004,7 @@ bool writeSolverFileClass::perform()
                     break;
                 case SimulationNodeClass::nodeType_thermalAnalysisTemperature:
                 {
-                    QList<int> columnList = mainTreeTools::getColumnsToRead(theCurItem);
+                    QList<int> columnList = mainTreeTools::getColumnsToRead(theCurItem,tabData->getColumnBeforeBC());
                     double loadValue = tabData->dataRC(i,columnList.at(0)).toDouble();
                     if(loadValue!=0)
                     {
@@ -1987,16 +2015,35 @@ bool writeSolverFileClass::perform()
                     break;
                 case SimulationNodeClass::nodeType_thermalAnalysisConvection:
                 {
-                    QList<int> ColumnList = mainTreeTools::getColumnsToRead(theCurItem);                            ;
+                    QString aName = SetName;
+                    QString set = SetName;
+                    aName.append(QString("_%1").arg(i));
+                    set.chop(2);
+                    QList<int> ColumnList = mainTreeTools::getColumnsToRead(theCurItem,tabData->getColumnBeforeBC());                            ;
+                    double prevT;
                     double loadValue = tabData->dataRC(i,ColumnList.at(0)).toDouble();
-                    //double refTemperature = theCurNode->getPropertyValue<double>("Reference temperature");
+                    if(i!=1) prevT = tabData->dataRC(i-1,ColumnList.at(1)).toDouble();
+                    else prevT = 298;
                     double refTemperature = tabData->dataRC(i,ColumnList.at(1)).toDouble();
+                    double a = 1-(refTemperature-prevT)/refTemperature;
+                    //myInputFile<<"*AMPLITUDE, NAME=A"<<aName.toStdString()<<endl;
+                    //myInputFile<<"0,"<<a<<","<<TimeWidth<<","<<1<<endl;
                     if(loadValue!=0)
-                    this->writeFilm(loadValue,SetName,refTemperature);
+                    {
+                        //if(set=="water" || set=="external")
+                        //{
+                        //    int amp=0;
+                        //    this->writeFilm(loadValue,aName,refTemperature,amp);
+                        //}
+                        //else
+                            this->writeFilm(loadValue,aName,refTemperature);
+                    }
                 }
                     break;
                 case SimulationNodeClass::nodeType_thermalAnalysisAdiabaticWall:
                 {
+                    QString aName = SetName;
+                    aName.append(QString("_%1").arg(i));
                     double loadValue = 0;
                     this->writeDflux(loadValue,SetName);
                 }
@@ -2004,14 +2051,16 @@ bool writeSolverFileClass::perform()
                 case SimulationNodeClass::nodeType_thermalAnalysisThermalFlow:
                 case SimulationNodeClass::nodeType_thermalAnalysisThermalFlux:
                 {
-                    QList<int> ColumnList = mainTreeTools::getColumnsToRead(theCurItem);                            ;
+                    QString aName = SetName;
+                    aName.append(QString("_%1").arg(i));
+                    QList<int> ColumnList = mainTreeTools::getColumnsToRead(theCurItem,tabData->getColumnBeforeBC());                            ;
                     double loadValue = tabData->dataRC(i,ColumnList.at(0)).toDouble();
                     this->writeDflux(loadValue,SetName);
                 }
                     break;
                 case SimulationNodeClass::nodeType_thermalAnalysisThermalPower:
                 {
-                    QList<int> ColumnList = mainTreeTools::getColumnsToRead(theCurItem);
+                    QList<int> ColumnList = mainTreeTools::getColumnsToRead(theCurItem,tabData->getColumnBeforeBC());
                     //! -----------------------------------
                     //! the loadValue is the "Temperature"
                     //! -----------------------------------
@@ -2022,7 +2071,7 @@ bool writeSolverFileClass::perform()
                     break;
                 default:
                 {
-                    QList<int> ColumnList = mainTreeTools::getColumnsToRead(theCurItem);
+                    QList<int> ColumnList = mainTreeTools::getColumnsToRead(theCurItem,tabData->getColumnBeforeBC());
                     Property::defineBy theDefineBy = theCurNode->getPropertyValue<Property::defineBy>("Define by");
                     Property::ScopingMethod scopingMethod = theCurNode->getPropertyValue<Property::ScopingMethod>("Scoping method");
 
@@ -2162,17 +2211,22 @@ bool writeSolverFileClass::perform()
                             //! -------------
                             //! Displacement
                             //! -------------
-                            myInputFile<<"*BOUNDARY"<<endl;
+
                             if(loadDefinitionXcomponent!=Property::loadDefinition_free)
                             {
+                                if(loadX_global==0.0) myInputFile<<"*BOUNDARY,FIXED"<<endl;
                                 myInputFile<<SetName.toStdString()<<", 1, 1, "<<loadX_global<<endl;
                             }
                             if(loadDefinitionYcomponent!=Property::loadDefinition_free)
                             {
+                                if(loadY_global==0.0) myInputFile<<"*BOUNDARY,FIXED"<<endl;
+                                else myInputFile<<"*BOUNDARY"<<endl;
                                 myInputFile<<SetName.toStdString()<<", 2, 2, "<<loadY_global<<endl;
                             }
                             if(loadDefinitionZcomponent!=Property::loadDefinition_free)
                             {
+                                if(loadZ_global==0.0) myInputFile<<"*BOUNDARY,FIXED"<<endl;
+                                else myInputFile<<"*BOUNDARY"<<endl;
                                 myInputFile<<SetName.toStdString()<<", 3, 3, "<<loadZ_global<<endl;
                             }
                         }
@@ -2564,7 +2618,6 @@ void writeSolverFileClass::writeNodesAndElements(QString aName,QMap<int,QList<in
         if(!aMeshVS_DataSource.IsNull())
         {
             QList<int> listOfNodes;
-
             //! retrieve and write the nodes
             const TColStd_PackedMapOfInteger& aNodes = aMeshVS_DataSource->GetAllNodes();
             if(aNodes.Extent()!=0)
@@ -2604,7 +2657,8 @@ void writeSolverFileClass::writeNodesAndElements(QString aName,QMap<int,QList<in
     //! --------------------------------
     //! retrieve the integration scheme
     //! --------------------------------
-    QExtendedStandardItem *theGeometryRoot=static_cast<QExtendedStandardItem*>(this->getTreeItem(SimulationNodeClass::nodeType_geometry));
+    QStandardItemModel *model = myDB->getModel();
+    QExtendedStandardItem *theGeometryRoot=static_cast<QExtendedStandardItem*>(mainTreeTools::getTreeItem(model,SimulationNodeClass::nodeType_geometry));
     Property::elementControl theElementControl =  theGeometryRoot->data(Qt::UserRole).value<SimulationNodeClass*>()
             ->getPropertyValue<Property::elementControl>("Element control");
 
@@ -2618,7 +2672,8 @@ void writeSolverFileClass::writeNodesAndElements(QString aName,QMap<int,QList<in
         if(flag==true)
         {
             const TopoDS_Shape &theBody = myDB->bodyMap.value(bodyIndex);
-            QExtendedStandardItem *theGeometryItem = this->ItemFromScope(theBody);
+            QStandardItemModel *model = myDB->getModel();
+            QExtendedStandardItem *theGeometryItem = mainTreeTools::ItemFromScope(model,theBody);
             SimulationNodeClass *theNode = theGeometryItem->data(Qt::UserRole).value<SimulationNodeClass*>();
             theIntegrationScheme = theNode->getPropertyValue<Property::integrationScheme>("Integration scheme");
         }
@@ -3139,45 +3194,6 @@ void writeSolverFileClass::createElementSurface(std::vector<int> &theElementIDs,
      }
 }
 
-//! --------------------------------------------
-//! function: getTreeItem
-//! details:  already used in SimulationManager
-//! --------------------------------------------
-QExtendedStandardItem* writeSolverFileClass::getTreeItem(SimulationNodeClass::nodeType theNodeType)
-{
-    //! retrieve the root nodes
-    QStandardItemModel *myModel = myDB->getModel();
-    for(int k=0; k<myModel->invisibleRootItem()->child(0,0)->rowCount(); k++)
-    {
-        QExtendedStandardItem *item = static_cast<QExtendedStandardItem*>(myModel->invisibleRootItem()->child(0,0)->child(k,0));
-        if(item->data(Qt::UserRole).value<SimulationNodeClass*>()->getType()==theNodeType)
-        {
-            return item;
-        }
-    }
-    return NULL;
-}
-
-//! ----------------------------------------------------------------
-//! function: ItemFromScope
-//! details:  for a given shape in a geometry item, return the item
-//! ----------------------------------------------------------------
-QExtendedStandardItem* writeSolverFileClass::ItemFromScope(const TopoDS_Shape &aShape)
-{
-    QStandardItem *theGeometryRoot=this->getTreeItem(SimulationNodeClass::nodeType_geometry);
-    int N = theGeometryRoot->rowCount();
-    for(int k=0; k<N;k++)
-    {
-        QStandardItem *aGeometryItem = theGeometryRoot->child(k,0);
-        SimulationNodeClass *aNode = aGeometryItem->data(Qt::UserRole).value<SimulationNodeClass*>();
-        if(aNode->getType()==SimulationNodeClass::nodeType_pointMass) continue;
-        int mapIndex = aNode->getPropertyValue<int>("Map index");
-        TopoDS_Shape theShape = myDB->bodyMap.value(mapIndex);
-        if(theShape==aShape) return static_cast<QExtendedStandardItem*>(aGeometryItem);
-    }
-    return Q_NULLPTR;
-}
-
 //! ------------------------------------------
 //! function: writeDload
 //! details:  suitable for applyng a pressure
@@ -3287,12 +3303,14 @@ void writeSolverFileClass::writeFilm(double aLoad, QString aName,double refTempe
     myDload.precision(EXPFORMAT_PRECISION);
 
     ifstream mySet;
-
+    QString a = aName;
     QString extension=".dlo";
     QString extension1=".surf";
 
     //! this is the absolute path on the disk
     QString name = aName+extension;
+    QString suffix = aName.split("_").last();
+    aName.chop(suffix.size()+1);
     QString setName = aName+extension1;
 
     QString absFileName = myFileName.split("/").last();
@@ -3306,6 +3324,7 @@ void writeSolverFileClass::writeFilm(double aLoad, QString aName,double refTempe
     myDload.open(name.toStdString());
 
     //! write the header for the DLOAD
+    //myDload<<"*FILM, AMPLITUDE=A"<<a.toStdString()<<endl;
     myDload<<"*FILM"<<endl;
     //! assign LoadValue to each surface element
     //! In case of pressure a negative value means traction
@@ -3396,7 +3415,6 @@ void writeSolverFileClass::writeGapElement(const IndexedMapOfMeshDataSources &an
         occHandle(Ng_MeshVS_DataSourceFace) &faceMeshDS = occHandle(Ng_MeshVS_DataSourceFace)::DownCast(theCurMeshDS);
         if(faceMeshDS->myNodeNormals.isEmpty()) faceMeshDS->computeNormalAtNodes();
         const QMap<int,QList<double>> &nodeNormals = faceMeshDS->myNodeNormals;
-
         for(TColStd_MapIteratorOfPackedMapOfInteger anIter(theCurMeshDS->GetAllNodes()); anIter.More(); anIter.Next())
         {
             totalNumberOfNodes++;

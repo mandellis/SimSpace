@@ -161,6 +161,30 @@ public:
         nodeType_combinedAnalysisSolution,
         nodeType_combinedAnalysisSolutionInformation,
 
+        //! ------------------
+        //! CFD analysis
+        //! ------------------
+        nodeType_CFDAnalysis,
+        nodeType_CFDAnalysisSettings,
+        nodeType_CFDAnalysisSolution,
+        nodeType_CFDAnalysisSolutionInformation,
+        nodeType_CFDAnalysisBoundaryConditionPressure,
+        nodeType_CFDAnalysisBoundaryConditionVelocity,
+        nodeType_CFDAnalysisBoundaryConditionWall,
+        nodeType_solutionCFDvelocity,                    //! velocity
+        nodeType_solutionCFDpressure,                    //! pressure
+
+        nodeType_probe,               //! probe tool
+
+        //! ----------------------
+        //! Construction geometry
+        //! ----------------------
+        nodeType_constructionGeometry,
+        //! ----------------------
+        //! Construction geometry
+        //! ----------------------
+        nodeType_monitorAnalysis,
+
         //! --------------------
         //! particles in fields
         //! --------------------

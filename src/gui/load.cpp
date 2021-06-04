@@ -2,7 +2,7 @@
 //! custom includes
 //! ----------------
 #include "load.h"
-#include "src/utils/tools.h"
+#include "tools.h"
 
 //! -----------------------------------------
 //! function: constructor
@@ -208,12 +208,17 @@ void load::write(std::ofstream &out) const
     case Property::loadType_accelerationX:
     case Property::loadType_accelerationY:
     case Property::loadType_accelerationZ:
+    case Property::loadType_velocityMagnitude:
+    case Property::loadType_velocityX:
+    case Property::loadType_velocityY:
+    case Property::loadType_velocityZ:
     case Property::loadType_pressureMagnitude:
     case Property::loadType_thermalConditionTemperature:
     case Property::loadType_stepEndTime:
     case Property::loadType_time:
     case Property::loadType_boltForce:
     case Property::loadType_boltAdjustment:
+    case Property::loadType_scalar: //added for testing purpose
     {
         //! write the type of content
         QVariant data;
@@ -265,6 +270,10 @@ load load::readLoad(std::ifstream &in)
             loadType == "loadType_accelerationX" ||
             loadType == "loadType_accelerationY" ||
             loadType == "loadType_accelerationZ" ||
+            loadType == "loadType_velocityMagnitude" ||
+            loadType == "loadType_velocityX" ||
+            loadType == "loadType_velocityY" ||
+            loadType == "loadType_velocityZ" ||
             loadType == "loadType_momentX" ||
             loadType == "loadType_momentY" ||
             loadType == "loadType_momentZ" ||

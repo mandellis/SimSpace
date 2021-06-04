@@ -15,6 +15,7 @@
 #include "optionsWidget/colorselector.h"
 #include <itemselector.h>
 #include <qfileselect.h>
+#include "maintreetools.h"
 
 //! ---
 //! Qt
@@ -45,28 +46,6 @@ const QString sliderStyleSheet = QString("QSlider::groove:horizontal { "
                                  "width: 18px; "
                                  "margin: 0px 0px; "
                                  "} ");
-
-//! ------------------------
-//! function: getWorkingDir
-//! details:
-//! ------------------------
-QString GeneralDelegate::getWorkingDir() const
-{
-    ifstream is;
-    QString settingsFileName = QString(SYSTEM_PROGRAM_DATA).append("\\WB\\settings.txt");
-    cout<<"Settings file name: "<<settingsFileName.toStdString()<<endl;
-    is.open(settingsFileName.toStdString());
-    if(is.is_open())
-    {
-        std::string val;
-        char tmp[512],wd[512];
-        std::getline(is,val);
-        is.close();
-        sscanf(val.c_str(),"%s%s",tmp,wd);
-        return QString::fromLatin1(wd);
-    }
-    return "";
-}
 
 //! ----------------------
 //! function: constructor
@@ -195,6 +174,11 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
                 return Q_NULLPTR;
             }
                 break;
+            case SimulationNodeClass::nodeType_CFDAnalysis:
+            {
+                return Q_NULLPTR;
+            }
+                break;
             case SimulationNodeClass::nodeType_combinedAnalysis:
             {
                 data.setValue(Property::analysisType_structural);
@@ -237,7 +221,7 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
             //! retrieve the "Model" root item
             //! -------------------------------
             SimulationManager* sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
-            QStandardItem *itemModelRoot = sm->getTreeItem(SimulationNodeClass::nodeType_root);
+            QStandardItem *itemModelRoot = mainTreeTools::getTreeItem(sm->getModel(),SimulationNodeClass::nodeType_root);
 
             QStandardItem *curAnalysisRoot = Q_NULLPTR;
             for(int n=0; n<itemModelRoot->rowCount(); n++)
@@ -289,7 +273,7 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
             //! -----------------------------------------------------------------------
             QString timeTag = node->getPropertyValue<QString>("Time tag");
             SimulationManager* sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
-            QStandardItem *itemModelRoot = sm->getTreeItem(SimulationNodeClass::nodeType_root);
+            QStandardItem *itemModelRoot = mainTreeTools::getTreeItem(sm->getModel(),SimulationNodeClass::nodeType_root);
             //cout<<"____"<<itemModelRoot->data(Qt::DisplayRole).value<QString>().toStdString()<<"____"<<endl;
             bool found = false;
             QStandardItem *itemAnalysis;
@@ -354,7 +338,7 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
             //! retrieve the "Model" root item
             //! -------------------------------
             SimulationManager* sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
-            QStandardItem *itemModelRoot = sm->getTreeItem(SimulationNodeClass::nodeType_root);
+            QStandardItem *itemModelRoot = mainTreeTools::getTreeItem(sm->getModel(),SimulationNodeClass::nodeType_root);
             cout<<"____"<<itemModelRoot->data(Qt::DisplayRole).value<QString>().toStdString()<<"____"<<endl;
 
             //! -----------------------------------
@@ -733,6 +717,16 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
             editor->addItem("Equivalent plastic strain",1);
             return editor;
         }
+        //! ----------------------------------------
+        //! Source - for probe tool
+        //! ----------------------------------------
+        if(propertyName =="Source")
+        {
+            QComboBox *editor = new QComboBox(parent);
+            editor->addItem("Temperature",0);
+            editor->addItem("Equivalent von mises stress",1);
+            return editor;
+        }
         //! --------
         //! Mapping
         //! --------
@@ -992,7 +986,7 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
             //! -----------------------------------------------------------------
             QComboBox *editor = new QComboBox(parent);
             SimulationManager* sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
-            QStandardItem *itemRemotePointRoot = sm->getTreeItem(SimulationNodeClass::nodeType_remotePointRoot);
+            QStandardItem *itemRemotePointRoot = mainTreeTools::getTreeItem(sm->getModel(),SimulationNodeClass::nodeType_remotePointRoot);
             if(itemRemotePointRoot!=NULL)
             {
                 for(int k=0; k<itemRemotePointRoot->rowCount(); k++)
@@ -1204,10 +1198,9 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
             if(val == Property::contactBehavior_asymmetric)
             {
                 QComboBox *editor = new QComboBox(parent);
-                QVariant data;
-                data.setValue(0);
+                data.setValue(false);
                 editor->addItem("Off",data);
-                data.setValue(1);
+                data.setValue(true);
                 editor->addItem("On",data);
                 return editor;
             }
@@ -1224,13 +1217,12 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
 
             if(val == Property::contactBehavior_asymmetric || form ==Property::contactFormulation_MPC)
             {
-            QComboBox *editor = new QComboBox(parent);
-            QVariant data;
-            data.setValue(0);
-            editor->addItem("Off",data);
-            data.setValue(1);
-            editor->addItem("On",data);
-            return editor;
+                QComboBox *editor = new QComboBox(parent);
+                data.setValue(false);
+                editor->addItem("Off",data);
+                data.setValue(true);
+                editor->addItem("On",data);
+                return editor;
             }
             else return 0;
         }
@@ -1419,6 +1411,17 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
         //! "Display time"
         //! ---------------
         else if(propertyName =="Display time")
+        {
+            QLineEdit *editor = new QLineEdit(parent);
+            QDoubleValidator *doubleValidator = new QDoubleValidator();
+            doubleValidator->setBottom(0.0);
+            editor->setValidator(doubleValidator);
+            return editor;
+        }
+        //! ---------------
+        //! "Probe location"
+        //! ---------------
+        else if(propertyName =="Node ID")
         {
             QLineEdit *editor = new QLineEdit(parent);
             QDoubleValidator *doubleValidator = new QDoubleValidator();
@@ -1892,7 +1895,7 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
                 //! --------------------
                 DetailViewer *theDetailViewer = static_cast<DetailViewer*>(parent->parent());
                 SimulationManager *sm = theDetailViewer->parent()->parent()->findChild<SimulationManager*>();
-                int max = sm->getAnalysisSettingsNodeFromCurrentItem()->getPropertyItem("Number of steps")->
+                int max = mainTreeTools::getAnalysisSettingsNodeFromCurrentItem(sm->myTreeView)->getPropertyItem("Number of steps")->
                         data(Qt::UserRole).value<Property>().getData().toInt();
                 editor->setMaximum(max);
                 return editor;
@@ -1918,7 +1921,7 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
             editor->setFileMode(QFileDialog::ExistingFiles);
             editor->setNameFilter("Text files (*.txt *.dat)");
             //cout<<"GeneralDelegate::getWorkingDir()->____function called____"<<this->getWorkingDir().toStdString()<<"____"<<endl;
-            editor->setDirectory(this->getWorkingDir());
+            editor->setDirectory(tools::getWorkingDir());
             return editor;
         }
         else if(propertyName =="Source directory" || propertyName == "Target directory")
@@ -1930,7 +1933,7 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
             editor->setFileMode(QFileDialog::Directory);
             editor->setNameFilter("Text files (*.txt *.dat)");
             //cout<<"GeneralDelegate::getWorkingDir()->____function called____"<<this->getWorkingDir().toStdString()<<"____"<<endl;
-            editor->setDirectory(this->getWorkingDir());
+            editor->setDirectory(tools::getWorkingDir());
             return editor;
         }
         else if(propertyName =="Smoothing")
@@ -2239,8 +2242,7 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
         {
             cout<<"Creating editor for Coordinate system"<<endl;
             SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
-            QExtendedStandardItem *itemCSRoot = sm->getTreeItem(SimulationNodeClass::nodeType_coordinateSystems);
-
+            QExtendedStandardItem *itemCSRoot = mainTreeTools::getTreeItem(sm->getModel(),SimulationNodeClass::nodeType_coordinateSystems);
             QComboBox *editor = new QComboBox(parent);
             for(int k=0; k<itemCSRoot->rowCount(); k++)
             {
@@ -2259,7 +2261,7 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
         else if(propertyName =="Named selection" || propertyName =="Boundary named selection")
         {
             SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
-            QExtendedStandardItem *itemNSRoot = sm->getTreeItem(SimulationNodeClass::nodeType_namedSelection);
+            QExtendedStandardItem *itemNSRoot = mainTreeTools::getTreeItem(sm->getModel(),SimulationNodeClass::nodeType_namedSelection);
 
             QComboBox *editor = new QComboBox(parent);
             for(int k=0; k<itemNSRoot->rowCount(); k++)
@@ -2279,7 +2281,7 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
         else if(propertyName =="Contact pair")
         {
             SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
-            QExtendedStandardItem *itemConnectionRoot = sm->getTreeItem(SimulationNodeClass::nodeType_connection);
+            QExtendedStandardItem *itemConnectionRoot = mainTreeTools::getTreeItem(sm->getModel(),SimulationNodeClass::nodeType_connection);
 
             QComboBox *editor = new QComboBox(parent);
 
@@ -2350,7 +2352,7 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
                 //! the scope of master/slave is defined through a "Named selection"
                 //! -----------------------------------------------------------------
                 SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
-                QExtendedStandardItem *itemNSRoot = sm->getTreeItem(SimulationNodeClass::nodeType_namedSelection);
+                QExtendedStandardItem *itemNSRoot = mainTreeTools::getTreeItem(sm->getModel(),SimulationNodeClass::nodeType_namedSelection);
 
                 QComboBox *editor = new QComboBox(parent);
                 for(int k=0; k<itemNSRoot->rowCount(); k++)
@@ -2409,7 +2411,8 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
             SimulationNodeClass::nodeType type = node->getType();
 
             if(type!=SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Pressure &&
-                    type!=SimulationNodeClass::nodeType_structuralAnalysisBoltPretension)
+                    type!=SimulationNodeClass::nodeType_structuralAnalysisBoltPretension &&
+                    type!=SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionPressure)
             {
                 QComboBox *editor = new QComboBox(parent);
                 QVariant data;
@@ -2659,7 +2662,7 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
             //! (it automatically contains the "dummy" remote point "Select from list"
             //! -----------------------------------------------------------------------------------
             SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
-            if(sm->getTreeItem(SimulationNodeClass::nodeType_remotePointRoot)!=NULL)
+            if(mainTreeTools::getTreeItem(sm->getModel(),SimulationNodeClass::nodeType_remotePointRoot)!=NULL)
             {
                 if(nodeType == SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RemoteForce ||
                         nodeType == SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RemoteDisplacement ||
@@ -2948,7 +2951,15 @@ void GeneralDelegate::setEditorData(QWidget *editor, const QModelIndex &index) c
          {
              switch(at)
              {
-             case Property::analysisType_thermal: cb->setCurrentIndex(0); break;
+             case Property::analysisType_thermal: cb->setCurrentIndex(1); break;
+             }
+         }
+             break;
+         case SimulationNodeClass::nodeType_CFDAnalysis:
+         {
+             switch(at)
+             {
+             case Property::analysisType_CFD: cb->setCurrentIndex(6); break;
              }
          }
              break;
@@ -3435,6 +3446,16 @@ void GeneralDelegate::setEditorData(QWidget *editor, const QModelIndex &index) c
         cb->setCurrentIndex(val);
         connect(cb,SIGNAL(currentIndexChanged(int)),this,SLOT(commitAndCloseComboBox()));
     }
+    //! ---------------------------------------------
+    //! Source for fatigue tool
+    //! ---------------------------------------------
+    if(propertyName =="Source")
+    {
+        QComboBox *cb = static_cast<QComboBox*>(editor);
+        int val = data.value<Property>().getData().toInt();
+        cb->setCurrentIndex(val);
+        connect(cb,SIGNAL(currentIndexChanged(int)),this,SLOT(commitAndCloseComboBox()));
+    }
     //! ------------------------------------------------
     //! stress strain/strain component for fatigue tool
     //! ------------------------------------------------
@@ -3673,6 +3694,7 @@ void GeneralDelegate::setEditorData(QWidget *editor, const QModelIndex &index) c
         QLineEdit *le = static_cast<QLineEdit*>(editor);
         int value = data.value<Property>().getData().toInt();
         le->setText(QString("%1").arg(value));
+        connect(le,SIGNAL(editingFinished()),this,SLOT(commitAndCloseStoreResultsAt()));
     }
     //! ---------------------------------------
     //! Output settings for "Store results at"
@@ -3727,9 +3749,10 @@ void GeneralDelegate::setEditorData(QWidget *editor, const QModelIndex &index) c
         Property::contactBehavior val = curNode->getPropertyItem("Behavior")->data(Qt::UserRole).value<Property>().getData().value<Property::contactBehavior>();
         if(val == Property::contactBehavior_asymmetric)
         {
-            int value = data.value<Property>().getData().toInt();
             QComboBox *cb = static_cast<QComboBox*>(editor);
-            cb->setCurrentIndex(value);
+            bool val = data.value<Property>().getData().toBool();
+            if(val==false) cb->setCurrentIndex(0);
+            else cb->setCurrentIndex(1);
             connect(cb,SIGNAL(currentIndexChanged(int)),this,SLOT(commitAndCloseSmallSlidingControl()));
         }
     }
@@ -3743,9 +3766,10 @@ void GeneralDelegate::setEditorData(QWidget *editor, const QModelIndex &index) c
         Property::contactType type = curNode->getPropertyItem("Type")->data(Qt::UserRole).value<Property>().getData().value<Property::contactType>();
         if(val == Property::contactBehavior_asymmetric || type == Property::contactType_bonded)
         {
-            int value = data.value<Property>().getData().toInt();
             QComboBox *cb = static_cast<QComboBox*>(editor);
-            cb->setCurrentIndex(value);
+            bool val = data.value<Property>().getData().toBool();
+            if(val==false) cb->setCurrentIndex(0);
+            else cb->setCurrentIndex(1);
             connect(cb,SIGNAL(currentIndexChanged(int)),this,SLOT(commitAndCloseAdjustControl()));
         }
     }
@@ -3935,6 +3959,15 @@ void GeneralDelegate::setEditorData(QWidget *editor, const QModelIndex &index) c
     //! "Display time"
     //! ---------------
     else if(propertyName =="Display time")
+    {
+        double value = data.value<Property>().getData().toDouble();
+        QLineEdit *le = static_cast<QLineEdit*>(editor);
+        le->setText(QString("%1").arg(value));
+    }
+    //! ---------------
+    //! "Probe location"
+    //! ---------------
+    else if(propertyName =="Node ID")
     {
         double value = data.value<Property>().getData().toDouble();
         QLineEdit *le = static_cast<QLineEdit*>(editor);
@@ -5557,6 +5590,15 @@ void GeneralDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, c
             int val = cb->currentData().toInt();
             data.setValue(val);
         }
+        //! -----------------------
+        //! "Source"
+        //! -----------------------
+        if(propertyName == "Source")
+        {
+            QComboBox *cb = static_cast<QComboBox*>(editor);
+            int val = cb->currentData().toInt();
+            data.setValue(val);
+        }
         //! ------------------------------------------------
         //! stress strain/strain component for fatigue tool
         //! ------------------------------------------------
@@ -5867,10 +5909,9 @@ void GeneralDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, c
             Property::contactBehavior val = curNode->getPropertyItem("Behavior")->data(Qt::UserRole).value<Property>().getData().value<Property::contactBehavior>();
             if(val == Property::contactBehavior_asymmetric)
             {
-                int value = data.value<Property>().getData().toInt();
                 QComboBox *cb = static_cast<QComboBox*>(editor);
-                cb->setCurrentIndex(value);
-                connect(cb,SIGNAL(currentIndexChanged(int)),this,SLOT(commitAndCloseSmallSlidingControl()));
+                bool val = cb->currentData().toBool();
+                data.setValue(val);
             }
         }
         //! ----------------
@@ -5883,10 +5924,9 @@ void GeneralDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, c
             Property::contactType type = curNode->getPropertyItem("Type")->data(Qt::UserRole).value<Property>().getData().value<Property::contactType>();
             if(val == Property::contactBehavior_asymmetric || type == Property::contactType_bonded)
             {
-                int value = data.value<Property>().getData().toInt();
                 QComboBox *cb = static_cast<QComboBox*>(editor);
-                cb->setCurrentIndex(value);
-                connect(cb,SIGNAL(currentIndexChanged(int)),this,SLOT(commitAndCloseAdjustControl()));
+                bool val = cb->currentData().toBool();
+                data.setValue(val);
             }
         }
         //! ------------
@@ -6019,6 +6059,14 @@ void GeneralDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, c
         //! "Display time"
         //! ---------------
         else if(propertyName=="Display time")
+        {
+            QLineEdit *le = static_cast<QLineEdit*>(editor);
+            data.setValue(le->text().toDouble());
+        }
+        //! ---------------
+        //! "Probe location"
+        //! ---------------
+        else if(propertyName=="Node ID")
         {
             QLineEdit *le = static_cast<QLineEdit*>(editor);
             data.setValue(le->text().toDouble());

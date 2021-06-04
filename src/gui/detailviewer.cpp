@@ -455,10 +455,10 @@ void DetailViewer::setTheModel(const QModelIndex &anIndex)
             int currentStepNumber = nodeAnalysisSettings->getPropertyItem("Current step number")->data(Qt::UserRole).value<Property>().getData().toInt();
 
             SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
-            int SC = mainTreeTools::calculateStartColumn(sm->myTreeView);
+            CustomTableModel *tabularDataModel = nodeAnalysisSettings->getTabularDataModel();
+            int SC = mainTreeTools::calculateStartColumn(sm->myTreeView,tabularDataModel->getColumnBeforeBC());
             int row = currentStepNumber;
             int col = SC+2;
-            CustomTableModel *tabularDataModel = nodeAnalysisSettings->getTabularDataModel();
             QModelIndex index = tabularDataModel->makeIndex(row,col);
             tabularDataModel->setData(index,data,Qt::EditRole);
         }
@@ -476,13 +476,12 @@ void DetailViewer::setTheModel(const QModelIndex &anIndex)
             data.setValue(QString("N/A"));
             SimulationNodeClass *nodeAnalysisSettings = myCurModelIndex.parent().child(0,0).data(Qt::UserRole).value<SimulationNodeClass*>();
             int currentStepNumber = nodeAnalysisSettings->getPropertyValue<int>("Current step number");
-
+            CustomTableModel *tabularDataModel = nodeAnalysisSettings->getTabularDataModel();
             SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
-            int SC = mainTreeTools::calculateStartColumn(sm->myTreeView);
+            int SC = mainTreeTools::calculateStartColumn(sm->myTreeView,tabularDataModel->getColumnBeforeBC());
 
             int row = currentStepNumber;
             int col = SC+1;
-            CustomTableModel *tabularDataModel = nodeAnalysisSettings->getTabularDataModel();
             QModelIndex index = tabularDataModel->makeIndex(row,col);
             tabularDataModel->setData(index,data,Qt::EditRole);
         }
@@ -501,11 +500,12 @@ void DetailViewer::setTheModel(const QModelIndex &anIndex)
             SimulationNodeClass *nodeAnalysisSettings = myCurModelIndex.parent().child(0,0).data(Qt::UserRole).value<SimulationNodeClass*>();
             int currentStepNumber = nodeAnalysisSettings->getPropertyValue<int>("Current step number");
 
+            CustomTableModel *tabularDataModel = nodeAnalysisSettings->getTabularDataModel();
             SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
-            int SC = mainTreeTools::calculateStartColumn(sm->myTreeView);
+
+            int SC = mainTreeTools::calculateStartColumn(sm->myTreeView,tabularDataModel->getColumnBeforeBC());
             int row = currentStepNumber;
 
-            CustomTableModel *tabularDataModel = nodeAnalysisSettings->getTabularDataModel();
             QModelIndex indexLoad = tabularDataModel->makeIndex(row,SC+1);
             tabularDataModel->setData(indexLoad,data,Qt::EditRole);
 
@@ -769,30 +769,57 @@ void DetailViewer::handleScopingMethodChange()
         case Property::ScopingMethod_GeometrySelection:
         {
             myCurNode->removeProperty("Remote points");
+            myCurNode->removeProperty("Named selection");
+
             if(myCurNode->getType()==SimulationNodeClass::nodeType_connectionPair)
             {
-                myCurNode->removeProperty("Master");
-                myCurNode->removeProperty("Tags master");
-                myCurNode->removeProperty("Slave");
-                myCurNode->removeProperty("Tags slave");
+                std::vector<GeometryTag> masterTags = myCurNode->getPropertyValue<std::vector<GeometryTag>>("Tags master");
+                if(masterTags.size()!=0)
+                {
+                    myCurNode->removeProperty("Master");
+                    QVariant data;
+                    data.setValue(masterTags);
+                    myCurNode->addProperty(Property("Master",data,Property::PropertyGroup_Scope),1);
+                }
+                else
+                {
+                    myCurNode->removeProperty("Master");
+                    myCurNode->removeProperty("Tags master");
+                    QVariant data;
+                    std::vector<GeometryTag> vecLoc;
+                    data.setValue(vecLoc);
 
+                    Property prop_master("Master",data,Property::PropertyGroup_Scope);
+                    Property prop_tagsMaster("Tags master",data,Property::PropertyGroup_Scope);
+                    myCurNode->addProperty(prop_master);
+                    myCurNode->addProperty(prop_tagsMaster);
+                }
+
+                std::vector<GeometryTag> slaveTags = myCurNode->getPropertyValue<std::vector<GeometryTag>>("Tags slave");
+                if(slaveTags.size()!=0)
+                {
+                    myCurNode->removeProperty("Slave");
+                    QVariant data;
+                    data.setValue(slaveTags);
+                    myCurNode->addProperty(Property("Slave",data,Property::PropertyGroup_Scope),1);
+                }
+                else{
+
+                    myCurNode->removeProperty("Slave");
+                    myCurNode->removeProperty("Tags slave");
+
+                    QVariant data;
+                    std::vector<GeometryTag> vecLoc;
+                    data.setValue(vecLoc);
+
+                    Property prop_slave("Slave",data,Property::PropertyGroup_Scope);
+                    Property prop_tagsSlave("Tags slave",data,Property::PropertyGroup_Scope);
+
+                    myCurNode->addProperty(prop_slave);
+                    myCurNode->addProperty(prop_tagsSlave);
+                }
                 myCurNode->removeProperty("Master mesh data sources");
                 myCurNode->removeProperty("Slave mesh data sources");
-
-                QVariant data;
-                std::vector<GeometryTag> vecLoc;
-                data.setValue(vecLoc);
-
-                Property prop_master("Master",data,Property::PropertyGroup_Scope);
-                Property prop_slave("Slave",data,Property::PropertyGroup_Scope);
-
-                Property prop_tagsMaster("Tags master",data,Property::PropertyGroup_Scope);
-                Property prop_tagsSlave("Tags slave",data,Property::PropertyGroup_Scope);
-
-                myCurNode->addProperty(prop_master);
-                myCurNode->addProperty(prop_tagsMaster);
-                myCurNode->addProperty(prop_slave);
-                myCurNode->addProperty(prop_tagsSlave);
 
                 //! ----------------------------------------------------------------------------------------
                 //! The private slot "updateTags()" is called when the delegate emits "scopeChanged()"
@@ -846,7 +873,7 @@ void DetailViewer::handleScopingMethodChange()
                 myCurNode->removeProperty("Slave mesh data sources");
 
                 SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
-                QExtendedStandardItem *itemNSRoot = sm->getTreeItem(SimulationNodeClass::nodeType_namedSelection);
+                QExtendedStandardItem *itemNSRoot = mainTreeTools::getTreeItem(sm->getModel(),SimulationNodeClass::nodeType_namedSelection);
                 QExtendedStandardItem *itemNSempty = static_cast<QExtendedStandardItem*>(itemNSRoot->child(0,0));
                 void *p = (void*)itemNSempty;
 
@@ -879,7 +906,7 @@ void DetailViewer::handleScopingMethodChange()
                 myCurNode->removeProperty("Tags");
 
                 SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
-                QExtendedStandardItem *itemNSRoot = sm->getTreeItem(SimulationNodeClass::nodeType_namedSelection);
+                QExtendedStandardItem *itemNSRoot = mainTreeTools::getTreeItem(sm->getModel(),SimulationNodeClass::nodeType_namedSelection);
                 QExtendedStandardItem *itemNSempty = static_cast<QExtendedStandardItem*>(itemNSRoot->child(0,0));
                 void *p = (void*)itemNSempty;
                 QVariant data;
@@ -918,7 +945,7 @@ void DetailViewer::handleScopingMethodChange()
 
             //! scan the Remote point branch
             SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
-            QStandardItem *itemRemotePointRoot = sm->getTreeItem(SimulationNodeClass::nodeType_remotePointRoot);
+            QStandardItem *itemRemotePointRoot = mainTreeTools::getTreeItem(sm->getModel(),SimulationNodeClass::nodeType_remotePointRoot);
 
             //! this "if" statement is unessential, since the delegate does not return
             //! any editor if the remote point root has not been created
@@ -1183,10 +1210,10 @@ void DetailViewer::updateTags()
         SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
         simulationDataBase *sdb = sm->getDataBase();
         std::vector<GeometryTag> vecLoc = myCurNode->getPropertyValue<std::vector<GeometryTag>>("Tags");
-        QList<double> newReferencePoint = GeomToolsClass::calculateCentroid(sdb,vecLoc);
+        std::vector<double> newReferencePoint = GeomToolsClass::calculateCentroid(sdb,vecLoc);
         //cout<<"DetailViewer::updateTags()->____updating reference point ("<<newReferencePoint.at(0)<<", "<<newReferencePoint.at(1)<<", "<<newReferencePoint.at(2)<<")____"<<endl;
         QVariant data;
-        data.setValue(newReferencePoint.toVector());
+        data.setValue(newReferencePoint);
         Property prop_referencePoint("Reference point",data,Property::PropertyGroup_Hidden);
         myCurNode->replaceProperty("Reference point",prop_referencePoint);
     }
@@ -1230,12 +1257,26 @@ void DetailViewer::handleAnalysisTypeChanged()
 //! ---------------------------------------
 void DetailViewer::handleTimeIntegrationChanged()
 {
+
     Property::timeIntegration timeIntegration = myCurNode->getPropertyValue<Property::timeIntegration>("Static/Transient");
-    int tableRow = myCurNode->getPropertyValue<int>("Current step number");
+    //int tableRow = myCurNode->getPropertyValue<int>("Current step number");
+    Property::analysisType analysisType = myCurNode->getPropertyValue<Property::analysisType>("Analysis type");
+    int tableRow, tableCol;
+    if (analysisType == Property::analysisType::analysisType_CFD)
+    {
+        tableRow = 1;
+        tableCol = 5;
+    }
+    else
+    {
+        tableRow = myCurNode->getPropertyValue<int>("Current step number");
+        tableCol = TABULAR_DATA_TIME_INTEGRATION_COLUMN;
+    }
     QVariant data;
     data.setValue(timeIntegration);
     CustomTableModel *tabData = myCurNode->getTabularDataModel();
-    tabData->setDataRC(data,tableRow,TABULAR_DATA_TIME_INTEGRATION_COLUMN,Qt::EditRole);
+    tabData->setDataRC(data,tableRow,tableCol,Qt::EditRole);
+
 }
 
 //! -----------------------------------
@@ -1246,11 +1287,23 @@ void DetailViewer::handleStepEndTimeChanged()
 {
     //! the value of the "Step end time"
     double newStepEndTime = myCurNode->getPropertyValue<double>("Step end time");
-    int tableRow = myCurNode->getPropertyValue<int>("Current step number");
+    //int tableRow = myCurNode->getPropertyValue<int>("Current step number");
+    Property::analysisType analysisType = myCurNode->getPropertyValue<Property::analysisType>("Analysis type");
+    int tableRow, tableCol;
+    if (analysisType == Property::analysisType::analysisType_CFD)
+    {
+        tableRow = 1;
+        tableCol = 1;
+    }
+    else
+    {
+        tableRow = myCurNode->getPropertyValue<int>("Current step number");
+        tableCol = TABULAR_DATA_STEP_END_TIME_COLUMN;
+    }
     CustomTableModel *tabData = myCurNode->getTabularDataModel();
     QVariant data;
     data.setValue(newStepEndTime);
-    tabData->setDataRC(data,tableRow,TABULAR_DATA_STEP_END_TIME_COLUMN,Qt::EditRole);
+    tabData->setDataRC(data,tableRow,tableCol,Qt::EditRole);
     //tabData->setDataRC(newStepEndTime,tableRow,TABULAR_DATA_STEP_END_TIME_COLUMN,Qt::EditRole);
 }
 
@@ -1696,14 +1749,7 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
     //! retrieve the "Current step number"
     //! -----------------------------------
     SimulationNodeClass *nodeAnalysisSettings = Q_NULLPTR;
-    if(myCurNode->isAnalysisRoot()) nodeAnalysisSettings = myCurModelIndex.child(0,0).data(Qt::UserRole).value<SimulationNodeClass*>();
-    if(myCurNode->isAnalysisSettings()) nodeAnalysisSettings = myCurModelIndex.data(Qt::UserRole).value<SimulationNodeClass*>();
-    if(myCurNode->isSimulationSetUpNode()) nodeAnalysisSettings = myCurModelIndex.parent().child(0,0).data(Qt::UserRole).value<SimulationNodeClass*>();
-    if(myCurNode->isSolution()) nodeAnalysisSettings = myCurModelIndex.parent().child(0,0).data(Qt::UserRole).value<SimulationNodeClass*>();
-    if(myCurNode->isSolutionInformation()) nodeAnalysisSettings = myCurModelIndex.parent().parent().child(0,0).data(Qt::UserRole).value<SimulationNodeClass*>();
-    if(myCurNode->isAnalysisResult()) nodeAnalysisSettings = myCurModelIndex.parent().parent().child(0,0).data(Qt::UserRole).value<SimulationNodeClass*>();
-    if(myCurNode->isChildSimulationSetUpNode()) nodeAnalysisSettings = myCurModelIndex.parent().parent().child(0,0).data(Qt::UserRole).value<SimulationNodeClass*>();
-    if(myCurNode->isNephewSimulationSetUpNode()) nodeAnalysisSettings = myCurModelIndex.parent().parent().parent().child(0,0).data(Qt::UserRole).value<SimulationNodeClass*>();
+    nodeAnalysisSettings = mainTreeTools::getAnalysisSettingsNodeFromIndex(myCurModelIndex);
 
     if(nodeAnalysisSettings==Q_NULLPTR)
     {
@@ -1713,7 +1759,19 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
         return;
     }
 
-    int currentStepNumber = nodeAnalysisSettings->getPropertyValue<int>("Current step number");
+    int currentStepNumber;
+
+    cout<<nodeAnalysisSettings->type().toStdString()<<endl;
+
+    if (nodeAnalysisSettings->getType() == SimulationNodeClass::nodeType_CFDAnalysisSettings)
+    {
+        currentStepNumber = 1;
+    }
+    else
+    {
+        currentStepNumber = nodeAnalysisSettings->getPropertyValue<int>("Current step number");
+    }
+
     tabularDataModel = nodeAnalysisSettings->getTabularDataModel();
 
     //! -------------------------------------------------------------------------------------------------------------------------
@@ -1778,11 +1836,36 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
         }
             break;
 
+        case SimulationNodeClass::nodeType_CFDAnalysisSettings:
+        {
+            int column = topLeftIndex.column();
+            QVariant data = tabularDataModel->dataRC(row,column);
+            switch(column)
+            {
+            case 1:
+            {
+                double stepEndTime = data.toDouble();
+                data.setValue(stepEndTime);
+                myCurNode->replaceProperty("Step end time",Property("Step end time",data,Property::PropertyGroup_StepControls));
+            }
+                break;
+
+            case 5:
+            {
+                Property::timeIntegration timeIntegration = data.value<Property::timeIntegration>();
+                data.setValue(timeIntegration);
+                myCurNode->replaceProperty("Static/Transient",Property("Static/Transient",data,Property::PropertyGroup_StepControls));
+            }
+                break;
+            }
+        }
+            break;
+
         case SimulationNodeClass::nodeType_structuralAnalysisBoltPretension:
         {
             cout<<"DetailViewer::updateDetailViewerFromTabularData()->____updating \"Bolt pretension\"____"<<endl;
 
-            int SC = mainTreeTools::calculateStartColumn(sm->myTreeView);
+            int SC = mainTreeTools::calculateStartColumn(sm->myTreeView,tabularDataModel->getColumnBeforeBC());
 
             int col_boltStatus = SC;
             int col_boltLoad = SC+1;
@@ -1853,6 +1936,7 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
         case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Moment:
         case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RotationalVelocity:
         case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Acceleration:
+        case SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionVelocity:
         {
             cout<<"____function called for a vectorial quantity____"<<endl;
             Property::defineBy theDefineBy = myCurNode->getPropertyValue<Property::defineBy>("Define by");
@@ -1865,7 +1949,7 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
 
                 //! diagnostic - can be removed
                 SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
-                int col = mainTreeTools::calculateStartColumn(sm->myTreeView);
+                int col = mainTreeTools::calculateStartColumn(sm->myTreeView,tabularDataModel->getColumnBeforeBC());
 
                 int row = currentStepNumber;
                 double magnitude = tabularDataModel->dataRC(row,col,Qt::EditRole).toDouble();
@@ -1891,7 +1975,7 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
                     //! diagnostic - can be removed
                     //! ----------------------------
                     SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
-                    int col = mainTreeTools::calculateStartColumn(sm->myTreeView)+i;
+                    int col = mainTreeTools::calculateStartColumn(sm->myTreeView,tabularDataModel->getColumnBeforeBC())+i;
                     int row = currentStepNumber;
                     double componentValue = tabularDataModel->dataRC(row,col,Qt::EditRole).toDouble();
                     cout<<"____step nr: "<<row<<" tab col= "<<col<<" "<<propNames.at(i).toStdString()<<" read val: "<<componentValue<<"____"<<endl;
@@ -1917,7 +2001,36 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
             // add here the other cases...
         }
             break;
+        case SimulationNodeClass::nodeType_thermalAnalysisConvection:
+        {
 
+            cout<<"____function called for convection____"<<endl;
+
+            QList<QString> propNames;
+            propNames<<"Film coefficient"<<"Reference temperature";
+            for(int i=0; i<2; i++)
+            {
+                //! ----------------------------
+                //! diagnostic - can be removed
+                //! ----------------------------
+                SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
+                int col = mainTreeTools::calculateStartColumn(sm->myTreeView,tabularDataModel->getColumnBeforeBC())+i;
+                int row = currentStepNumber;
+                double componentValue = tabularDataModel->dataRC(row,col,Qt::EditRole).toDouble();
+                cout<<"____step nr: "<<row<<" tab col= "<<col<<" "<<propNames.at(i).toStdString()<<" read val: "<<componentValue<<"____"<<endl;
+                //! ---------------
+                //! end diagnostic
+                //! ---------------
+
+                QVariant data;
+                data.setValue(Property::loadDefinition_tabularData);
+                QString propName = propNames.at(i);
+                Property prop_component(propName,data,Property::PropertyGroup_Definition);
+                myCurNode->replaceProperty(propName,prop_component);
+            }
+
+        }
+            break;
         case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Displacement:
         case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RemoteDisplacement:
         case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RemoteRotation:
@@ -1933,7 +2046,7 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
 
                 //! diagnostic - can be removed
                 SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
-                int col = mainTreeTools::calculateStartColumn(sm->myTreeView);
+                int col = mainTreeTools::calculateStartColumn(sm->myTreeView,tabularDataModel->getColumnBeforeBC());
 
                 int row = currentStepNumber;
                 double magnitude = tabularDataModel->dataRC(row,col,Qt::EditRole).toDouble();
@@ -1975,7 +2088,7 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
                     //! diagnostic - can be removed
                     //int col = sm->calculateStartColumn();
                     SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
-                    int col = mainTreeTools::calculateStartColumn(sm->myTreeView);
+                    int col = mainTreeTools::calculateStartColumn(sm->myTreeView,tabularDataModel->getColumnBeforeBC());
                     int row = currentStepNumber;
                     double componentValue = tabularDataModel->dataRC(row,col,Qt::EditRole).toDouble();
                     cout<<"____step nr: "<<row<<" tab col= "<<col<<" "<<propertyName.toStdString()<<" read val: "<<componentValue<<"____"<<endl;
@@ -1997,7 +2110,7 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
                         int row = currentStepNumber;
                         //int col = sm->calculateStartColumn();
                         SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
-                        int col = mainTreeTools::calculateStartColumn(sm->myTreeView);
+                        int col = mainTreeTools::calculateStartColumn(sm->myTreeView,tabularDataModel->getColumnBeforeBC());
                         double componentValue1 = tabularDataModel->dataRC(row,col,Qt::EditRole).toDouble();
                         double componentValue2 = tabularDataModel->dataRC(row,col+1,Qt::EditRole).toDouble();
                         cout<<"____step nr: "<<row<<" tab col= "<<col<<" "<<" X component read val: "<<componentValue1<<"____"<<endl;
@@ -2017,7 +2130,7 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
                         int row = currentStepNumber;
                         //int col = sm->calculateStartColumn();
                         SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));//bubi
-                        int col = mainTreeTools::calculateStartColumn(sm->myTreeView);
+                        int col = mainTreeTools::calculateStartColumn(sm->myTreeView,tabularDataModel->getColumnBeforeBC());
                         double componentValue1 = tabularDataModel->dataRC(row,col,Qt::EditRole).toDouble();
                         double componentValue2 = tabularDataModel->dataRC(row,col+1,Qt::EditRole).toDouble();
                         cout<<"____step nr: "<<row<<" tab col= "<<col<<" "<<" X component read val: "<<componentValue1<<"____"<<endl;
@@ -2037,7 +2150,7 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
                         int row = currentStepNumber;
                         //int col = sm->calculateStartColumn();
                         SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));//bubi
-                        int col = mainTreeTools::calculateStartColumn(sm->myTreeView);
+                        int col = mainTreeTools::calculateStartColumn(sm->myTreeView,tabularDataModel->getColumnBeforeBC());
                         double componentValue1 = tabularDataModel->dataRC(row,col,Qt::EditRole).toDouble();
                         double componentValue2 = tabularDataModel->dataRC(row,col+1,Qt::EditRole).toDouble();
                         cout<<"____step nr: "<<row<<" tab col= "<<col<<" "<<" Y component read val: "<<componentValue1<<"____"<<endl;
@@ -2064,7 +2177,7 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
                         //! diagnostic - can be removed
                         //int col = sm->calculateStartColumn()+i;
                         SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));//bubi
-                        int col = mainTreeTools::calculateStartColumn(sm->myTreeView)+1;
+                        int col = mainTreeTools::calculateStartColumn(sm->myTreeView,tabularDataModel->getColumnBeforeBC())+1;
                         int row = currentStepNumber;
                         double componentValue = tabularDataModel->dataRC(row,col,Qt::EditRole).toDouble();
                         cout<<"____step nr: "<<row<<" tab col= "<<col<<" "<<propNames.at(i).toStdString()<<" read val: "<<componentValue<<"____"<<endl;
@@ -2084,11 +2197,11 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
             break;
         case SimulationNodeClass::nodeType_structuralAnalysisThermalCondition:
         case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Pressure:
-        case SimulationNodeClass::nodeType_thermalAnalysisConvection:
         case SimulationNodeClass::nodeType_thermalAnalysisTemperature:
         case SimulationNodeClass::nodeType_thermalAnalysisThermalFlow:
         case SimulationNodeClass::nodeType_thermalAnalysisThermalFlux:
         case SimulationNodeClass::nodeType_thermalAnalysisThermalPower:
+        case SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionPressure:
         {
             //cout<<"DetailViewer::updateDetailViewerFromTabularData()->____function called for \"Pressure\"____"<<endl;
             QVariant data;
@@ -2103,7 +2216,7 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
             //cout<<"DetailViewer::updateDetailViewerFromTabularData()->____function called for \"Model change\"____"<<endl;
 
             SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
-            int col = mainTreeTools::calculateStartColumn(sm->myTreeView);
+            int col = mainTreeTools::calculateStartColumn(sm->myTreeView,tabularDataModel->getColumnBeforeBC());
             int row = currentStepNumber;
             Property::modelChangeActivationStatus val = tabularDataModel->dataRC(row,col,Qt::EditRole).value<Property::modelChangeActivationStatus>();
 
@@ -3257,9 +3370,8 @@ void DetailViewer::handleDefineByChanged()
         QExtendedStandardItem *item_CS = myCurNode->getPropertyItem("Coordinate system");
         if(item_CS==Q_NULLPTR)
         {
-            SimulationManager *theSimulationManager = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
-
-            QExtendedStandardItem *itemCSroot = theSimulationManager->getTreeItem(SimulationNodeClass::nodeType_coordinateSystems);
+            SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
+            QExtendedStandardItem *itemCSroot = mainTreeTools::getTreeItem(sm->getModel(),SimulationNodeClass::nodeType_coordinateSystems);
             QExtendedStandardItem *itemGlobalCS = static_cast<QExtendedStandardItem*>(itemCSroot->child(0,0));
             void *itemGlobalCSvoid = (void*)itemGlobalCS;
             QVariant data;
@@ -3842,8 +3954,8 @@ void DetailViewer::handleBoltStatusDefinedByChanged()
     int row = currentStepNumber;
     //int col = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"))->calculateStartColumn();
     SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
-    int col = mainTreeTools::calculateStartColumn(sm->myTreeView);
     CustomTableModel *tabularDataModel = nodeAnalysisSettings->getTabularDataModel();
+    int col = mainTreeTools::calculateStartColumn(sm->myTreeView,tabularDataModel->getColumnBeforeBC());
     QVariant data;
 
     switch(boltDefineBy)
@@ -3938,7 +4050,7 @@ void DetailViewer::handleBoltLoadChanged()
 
     int row = currentTimeStep;
     SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
-    int col = mainTreeTools::calculateStartColumn(sm->myTreeView)+1;
+    int col = mainTreeTools::calculateStartColumn(sm->myTreeView,tabularDataModel->getColumnBeforeBC())+1;
 
     QModelIndex indexLoad = tabularDataModel->makeIndex(row,col);
     QVariant data;
@@ -3965,7 +4077,7 @@ void DetailViewer::handleBoltAdjustmentChanged()
     int row = currentTimeStep;
     //int col = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"))->calculateStartColumn()+2;
     SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
-    int col = mainTreeTools::calculateStartColumn(sm->myTreeView)+2;
+    int col = mainTreeTools::calculateStartColumn(sm->myTreeView,tabularDataModel->getColumnBeforeBC())+2;
 
     QModelIndex indexAdjustment = tabularDataModel->makeIndex(row,col);
     QVariant data;
@@ -5078,22 +5190,37 @@ void DetailViewer::handleStoreResultsAtChanged()
 
     case 2:
     {
-        //! -------------------------------------
-        //! "2" => "Specified recurrence rate"
-        //! add the "--Recurrence rate" selector
-        //! -------------------------------------
-        int recurrenceRate = 1;     //! set a default value for "--Recurrence rate"
-        QVariant data;
-        data.setValue(recurrenceRate);
-        Property prop_recurrenceRate("--Recurrence rate",data,Property::PropertyGroup_OutputSettings);
-        myCurNode->addProperty(prop_recurrenceRate);
+        if(myCurNode->getPropertyItem("--Recurrence rate")==Q_NULLPTR)
+        {
+            //! -------------------------------------
+            //! "2" => "Specified recurrence rate"
+            //! add the "--Recurrence rate" selector
+            //! -------------------------------------
+            int recurrenceRate = 1;     //! set a default value for "--Recurrence rate"
+            QVariant data;
+            data.setValue(recurrenceRate);
+            Property prop_recurrenceRate("--Recurrence rate",data,Property::PropertyGroup_OutputSettings);
+            myCurNode->addProperty(prop_recurrenceRate);
+        }
     }
         break;
     }
 
     //! row of the table - current step number
-    int currentStep = myCurNode->getPropertyValue<int>("Current step number");
+    //int currentStep = myCurNode->getPropertyValue<int>("Current step number");//MODIFICARE
+    SimulationNodeClass *nodeAnalysisSettings = mainTreeTools::getAnalysisSettingsNodeFromIndex(myCurModelIndex);
+    int currentStep, currentCol;
 
+    if (nodeAnalysisSettings->getType() == SimulationNodeClass::nodeType_CFDAnalysisSettings)
+    {
+        currentStep = 1;
+        currentCol = 4;
+    }
+    else
+    {
+        currentStep = myCurNode->getPropertyValue<int>("Current step number");
+        currentCol = TABULAR_DATA_STORE_RESULTS_AT_COLUMN;
+    }
     //! --------------------------------------------------
     //! update the table: the second value is FREQUENCY
     //! "All time points"           => in table (0,1)
@@ -5117,7 +5244,8 @@ void DetailViewer::handleStoreResultsAtChanged()
     flags1.push_back(FREQUENCY);
 
     QVariant data; data.setValue(flags1);
-    myCurNode->getTabularDataModel()->setDataRC(data,currentStep,TABULAR_DATA_STORE_RESULTS_AT_COLUMN,Qt::EditRole);
+
+    myCurNode->getTabularDataModel()->setDataRC(data,currentStep,currentCol,Qt::EditRole);
     cout<<"____writing pair: ("<<flags1.at(0)<<", "<<flags1.at(1)<<")____"<<endl;
 }
 
@@ -5576,7 +5704,7 @@ void DetailViewer::handleBoundaryScopingMethodChanged()
         myCurNode->removeProperty("Boundary tags");
 
         SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
-        QExtendedStandardItem *itemNSRoot = sm->getTreeItem(SimulationNodeClass::nodeType_namedSelection);
+        QExtendedStandardItem *itemNSRoot = mainTreeTools::getTreeItem(sm->getModel(),SimulationNodeClass::nodeType_namedSelection);
         QExtendedStandardItem *itemNSempty = static_cast<QExtendedStandardItem*>(itemNSRoot->child(0,0));
         void *p = (void*)itemNSempty;
         data.setValue(p);
@@ -6751,7 +6879,7 @@ void DetailViewer::handleModelChangeScopingMethodChanged()
         myCurNode->removeProperty("Tags");
 
         SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
-        QStandardItem *itemContactRoot = sm->getTreeItem(SimulationNodeClass::nodeType_connection);
+        QStandardItem *itemContactRoot = mainTreeTools::getTreeItem(sm->getModel(),SimulationNodeClass::nodeType_connection);
         //cout<<"____number of children: "<<itemContactGroup->rowCount()<<"____"<<endl;
         QStandardItem *itemDummyContactPair = itemContactRoot->child(0,0);
         if(itemDummyContactPair!=Q_NULLPTR)
@@ -6785,9 +6913,9 @@ void DetailViewer::handleModelChangeActivationStatusChanged()
     //! --------------------------
     //! retrieve the tabular data
     //! --------------------------
-    SimulationNodeClass *nodeAnalysisSettings = sm->getAnalysisSettingsNodeFromCurrentItem();
+    SimulationNodeClass *nodeAnalysisSettings = mainTreeTools::getAnalysisSettingsNodeFromCurrentItem(sm->myTreeView);
 
-    CustomTableModel *tabData = nodeAnalysisSettings->getTabularDataModel();
+    CustomTableModel *tabularDataModel = nodeAnalysisSettings->getTabularDataModel();
 
     //! --------------------------------------
     //! retrieve the current step time number
@@ -6795,7 +6923,7 @@ void DetailViewer::handleModelChangeActivationStatusChanged()
     int currentStepNumber = nodeAnalysisSettings->getPropertyValue<int>("Current step number");
 
     int row = currentStepNumber;
-    int col = mainTreeTools::calculateStartColumn(sm->myTreeView);
+    int col = mainTreeTools::calculateStartColumn(sm->myTreeView,tabularDataModel->getColumnBeforeBC());
 
     //! ----------------------
     //! generate the new data
@@ -6804,7 +6932,7 @@ void DetailViewer::handleModelChangeActivationStatusChanged()
     Property::modelChangeActivationStatus as = myCurNode->getPropertyValue<Property::modelChangeActivationStatus>("Activation status");
 
     data.setValue(as);
-    tabData->setDataRC(data,row,col,Qt::EditRole);
+    tabularDataModel->setDataRC(data,row,col,Qt::EditRole);
 
     //! -------------
     //! reconnection

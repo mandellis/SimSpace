@@ -5,8 +5,8 @@
 #include "simulationnodeclass.h"
 #include "src/gui/tabularData/tabulardatacolumns.h"
 #include "qextendedstandarditem.h"
-#include "src/ccxSolver/ccxsolvermessage.h"
-#include "src/ccxSolver/solutioninfo.h"
+#include "ccxsolvermessage.h"
+#include "solutioninfo.h"
 
 //! ---
 //! Qt
@@ -22,13 +22,13 @@
 //! function: getColumnsToRead
 //! details:
 //! ---------------------------
-QList<int> mainTreeTools::getColumnsToRead(QTreeView *tree)
+QList<int> mainTreeTools::getColumnsToRead(QTreeView *tree, int columnsBeforeBC)
 {
     //cout<<"mainTreeTools::getColumnsToRead()->____function called____"<<endl;
 
     QModelIndex currentIndex=tree->currentIndex();
     QStandardItem *anItem = static_cast<QStandardItemModel*>(tree->model())->itemFromIndex(currentIndex);
-    const QList<int> &theColumnsToShow = mainTreeTools::getColumnsToRead(anItem);
+    const QList<int> &theColumnsToShow = mainTreeTools::getColumnsToRead(anItem,columnsBeforeBC);
     return theColumnsToShow;
 }
 
@@ -36,12 +36,14 @@ QList<int> mainTreeTools::getColumnsToRead(QTreeView *tree)
 //! function: getColumnsToRead
 //! details:
 //! ---------------------------
-QList<int> mainTreeTools::getColumnsToRead(QStandardItem *anItem)
+QList<int> mainTreeTools::getColumnsToRead(QStandardItem *anItem,int columnsBeforeBC)
 {
     //cout<<"mainTreeTools::getColumnsToRead()->____function called____"<<endl;
 
+    //columnsBeforeBC = NUMBER_OF_COLUMNS_BEFORE_BC_DATA;
+
     QList<int> theColumnsToShow;
-    int SC = mainTreeTools::calculateStartColumn(anItem);
+    int SC = mainTreeTools::calculateStartColumn(anItem,columnsBeforeBC);
     SimulationNodeClass *aNode = anItem->data(Qt::UserRole).value<SimulationNodeClass*>();
     SimulationNodeClass::nodeType theType = aNode->getType();
 
@@ -69,6 +71,7 @@ QList<int> mainTreeTools::getColumnsToRead(QStandardItem *anItem)
                SimulationNodeClass::nodeType_thermalAnalysisThermalPower<<
                SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Pressure<<
                SimulationNodeClass::nodeType_modelChange<<
+               SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionPressure<<
                SimulationNodeClass::nodeType_electrostaticPotential;
 
     //! -----------------
@@ -80,8 +83,12 @@ QList<int> mainTreeTools::getColumnsToRead(QStandardItem *anItem)
                  SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_FrictionlessSupport<<
                  SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_CompressionOnlySupport<<
                  SimulationNodeClass::nodeType_thermalAnalysisAdiabaticWall<<
-                 SimulationNodeClass::nodeType_particlesInFieldsParticlePack;
-
+                 SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionWall<<
+                 SimulationNodeClass::nodeType_particlesInFieldsParticlePack
+             #ifdef COSTAMP_VERSION
+                 <<SimulationNodeClass::nodeType_timeStepBuilder
+                 #endif
+                   ;
     //! ------------
     //! 1/3 columns
     //! ------------
@@ -91,6 +98,7 @@ QList<int> mainTreeTools::getColumnsToRead(QStandardItem *anItem)
                      SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Moment<<
                      SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Acceleration<<
                      SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RotationalVelocity<<
+                     SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionVelocity<<
                      SimulationNodeClass::nodeType_magneticField;
 
     //! ----------------
@@ -155,9 +163,9 @@ QList<int> mainTreeTools::getColumnsToRead(QStandardItem *anItem)
     //! ----------------------------
     //! diagnostic - can be removed
     //! ----------------------------
-    //cout<<"mainTreeTools::getColumnsToRead()->____columns to read: {";
-    //int i; for(i=0;i<theColumnsToShow.length()-1;i++) cout<<theColumnsToShow.at(i)<<",";
-    //cout<<theColumnsToShow.at(i)<<"}"<<endl;
+    cout<<"mainTreeTools::getColumnsToRead()->____columns to read: {";
+    int i; for(i=0;i<theColumnsToShow.length()-1;i++) cout<<theColumnsToShow.at(i)<<",";
+    cout<<theColumnsToShow.at(i)<<"}"<<endl;
     //! ---------------
     //! end diagnostic
     //! ---------------
@@ -168,9 +176,11 @@ QList<int> mainTreeTools::getColumnsToRead(QStandardItem *anItem)
 //! function: calculateStartColumn
 //! details:
 //! -------------------------------
-int mainTreeTools::calculateStartColumn(QStandardItem *anItem)
+int mainTreeTools::calculateStartColumn(QStandardItem *anItem, int columnsBeforeBC)
 {
     //cout<<"mainTreeTools::calculateStartColumn()->____function called____"<<endl;
+
+    //columnsBeforeBC = NUMBER_OF_COLUMNS_BEFORE_BC_DATA;
 
     //! -----------------
     //! the start column
@@ -212,6 +222,7 @@ int mainTreeTools::calculateStartColumn(QStandardItem *anItem)
         case SimulationNodeClass::nodeType_structuralAnalysisBoundaryContidion_FixedSupport:
         case SimulationNodeClass::nodeType_thermalAnalysisAdiabaticWall:
         case SimulationNodeClass::nodeType_particlesInFieldsParticlePack:
+        case SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionWall:
 #ifdef COSTAMP_VERSION
         case SimulationNodeClass::nodeType_timeStepBuilder:
 #endif
@@ -224,6 +235,7 @@ int mainTreeTools::calculateStartColumn(QStandardItem *anItem)
             //! --------------------
         case SimulationNodeClass::nodeType_modelChange:
         case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Pressure:
+        case SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionPressure:
         case SimulationNodeClass::nodeType_structuralAnalysisThermalCondition:
         case SimulationNodeClass::nodeType_thermalAnalysisRadiation:
         case SimulationNodeClass::nodeType_thermalAnalysisTemperature:
@@ -249,6 +261,7 @@ int mainTreeTools::calculateStartColumn(QStandardItem *anItem)
         case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Moment:
         case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RemoteForce:
         case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Acceleration:
+        case SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionVelocity:
             theDefineBy = curNode->getPropertyValue<Property::defineBy>("Define by");
             if(theDefineBy==Property::defineBy_vector) delta = 0;
             else delta = 2;
@@ -290,7 +303,8 @@ int mainTreeTools::calculateStartColumn(QStandardItem *anItem)
     //! --------------------------------------------------
     //! number of columns defining the "Analysis setting"
     //! --------------------------------------------------
-    int initNumberOfColumns = NUMBER_OF_COLUMNS_BEFORE_BC_DATA;
+    //int initNumberOfColumns = NUMBER_OF_COLUMNS_BEFORE_BC_DATA;
+    int initNumberOfColumns = columnsBeforeBC;
     startColumn = (rrow+initNumberOfColumns)+offset;
     //cout<<"mainTreeTools::calculateStartColumn()->____exiting function: "<<startColumn<<"____"<<endl;
     return startColumn;
@@ -300,7 +314,7 @@ int mainTreeTools::calculateStartColumn(QStandardItem *anItem)
 //! function: calculateStartColumn
 //! details:
 //! -------------------------------
-int mainTreeTools::calculateStartColumn(QTreeView *tree)
+int mainTreeTools::calculateStartColumn(QTreeView *tree,int columnsBeforeBC)
 {
     //! -----------------
     //! the start column
@@ -309,7 +323,7 @@ int mainTreeTools::calculateStartColumn(QTreeView *tree)
 
     QModelIndex currentIndex=tree->currentIndex();
     QStandardItem *currentItem = static_cast<QStandardItemModel*>(tree->model())->itemFromIndex(currentIndex);
-    startColumn = mainTreeTools::calculateStartColumn(static_cast<QExtendedStandardItem*>(currentItem));
+    startColumn = mainTreeTools::calculateStartColumn(static_cast<QExtendedStandardItem*>(currentItem),columnsBeforeBC);
     return startColumn;
 }
 
@@ -345,7 +359,7 @@ void mainTreeTools::getTreeItemsRecursively(QStandardItemModel* model, QList<QSt
     for(int r = 0; r<model->rowCount(parent); ++r)
     {
         QModelIndex index = model->index(r, 0, parent);
-        QExtendedStandardItem *item = static_cast<QExtendedStandardItem*>(model->itemFromIndex(index));
+        QStandardItem *item = static_cast<QStandardItem*>(model->itemFromIndex(index));
         items.push_back(item);
         if(model->hasChildren(index))
         {
@@ -448,6 +462,7 @@ QStandardItem* mainTreeTools::getCurrentSimulationRoot(QTreeView *treeView)
     QModelIndex curIndex = treeView->currentIndex();
     QStandardItemModel *treeModel = static_cast<QStandardItemModel*>(treeView->model());
     QStandardItem *curItem = treeModel->itemFromIndex(curIndex);
+    if(curItem==NULL) return Q_NULLPTR;
     SimulationNodeClass* node = curIndex.data(Qt::UserRole).value<SimulationNodeClass*>();
 
     if(node->isAnalysisRoot()) return curItem;
@@ -508,6 +523,7 @@ void mainTreeTools::addSolution(QStandardItem *analysisRootItem)
     case SimulationNodeClass::nodeType_structuralAnalysis: typeOfSolution = SimulationNodeClass::nodeType_StructuralAnalysisSolution; break;
     case SimulationNodeClass::nodeType_thermalAnalysis: typeOfSolution = SimulationNodeClass::nodeType_thermalAnalysisSolution; break;
     case SimulationNodeClass::nodeType_combinedAnalysis: typeOfSolution = SimulationNodeClass::nodeType_combinedAnalysisSolution; break;
+    case SimulationNodeClass::nodeType_CFDAnalysis: typeOfSolution = SimulationNodeClass::nodeType_CFDAnalysisSolution; break;
     case SimulationNodeClass::nodeType_particlesInFieldsAnalysis: typeOfSolution = SimulationNodeClass::nodeType_particlesInFieldsSolution; break;
     }
 
@@ -594,6 +610,7 @@ void mainTreeTools::addSolutionInformation(QStandardItem* solutionItem)
     case SimulationNodeClass::nodeType_structuralAnalysis: typeOfSolutionInformation = SimulationNodeClass::nodeType_StructuralAnalysisSolutionInformation; break;
     case SimulationNodeClass::nodeType_thermalAnalysis: typeOfSolutionInformation = SimulationNodeClass::nodeType_thermalAnalysisSolutionInformation; break;
     case SimulationNodeClass::nodeType_combinedAnalysis: typeOfSolutionInformation = SimulationNodeClass::nodeType_combinedAnalysisSolutionInformation; break;
+    case SimulationNodeClass::nodeType_CFDAnalysis: typeOfSolutionInformation = SimulationNodeClass::nodeType_CFDAnalysisSolutionInformation; break;
     case SimulationNodeClass::nodeType_particlesInFieldsAnalysis: typeOfSolutionInformation = SimulationNodeClass::nodeType_particlesInFieldsSolutionInformation; break;
     }
 
@@ -735,7 +752,6 @@ SimulationNodeClass* mainTreeTools::getAnalysisSettingsNodeFromIndex(QModelIndex
 {
     if(curIndex.isValid()==false) return Q_NULLPTR;
     SimulationNodeClass *nodeAnalysisSettings = Q_NULLPTR;
-
     SimulationNodeClass *curNode = curIndex.data(Qt::UserRole).value<SimulationNodeClass*>();
     if(curNode->isAnalysisRoot()) nodeAnalysisSettings = curIndex.child(0,0).data(Qt::UserRole).value<SimulationNodeClass*>();
     if(curNode->isAnalysisSettings()) nodeAnalysisSettings = curIndex.data(Qt::UserRole).value<SimulationNodeClass*>();
@@ -750,12 +766,12 @@ SimulationNodeClass* mainTreeTools::getAnalysisSettingsNodeFromIndex(QModelIndex
 }
 
 //! -------------------------------------------------
-//! function: getAnalysisSettingsNodeFromCurrentItem
+//! function: getAnalysisSettingsItemFromCurrentItem
 //! details:
 //! -------------------------------------------------
 QStandardItem* mainTreeTools::getAnalysisSettingsItemFromCurrentItem(QTreeView *treeView)
 {
-    cout<<"mainTreeTools::getAnalysisSettingsNodeFromCurrentItem()->____function called____"<<endl;
+    cout<<"mainTreeTools::getAnalysisSettingsItemFromCurrentItem()->____function called____"<<endl;
 
     QModelIndex currentModelIndex = treeView->currentIndex();
     QStandardItem *curItem = static_cast<QStandardItemModel*>(treeView->model())->itemFromIndex(currentModelIndex);
@@ -767,15 +783,15 @@ QStandardItem* mainTreeTools::getAnalysisSettingsItemFromCurrentItem(QTreeView *
     if(curNode->isAnalysisRoot())
     {
         QStandardItem *item = curItem->child(0,0);
-        return static_cast<QExtendedStandardItem*>(item);
+        return item;
     }
     //! ---------------------------------------------------------
     //! case 2: the current item is a child of a simulation root
     //! ---------------------------------------------------------
-    if(curNode->isSimulationSetUpNode() || curNode->isAnalysisSettings())
+    if(curNode->isSimulationSetUpNode() || curNode->isAnalysisSettings() || curNode->isSolution())
     {
         QStandardItem *item = curItem->parent()->child(0,0);
-        return static_cast<QExtendedStandardItem*>(item);
+        return item;
     }
 
     //! -----------------------------------------------------------------------------------
@@ -784,7 +800,7 @@ QStandardItem* mainTreeTools::getAnalysisSettingsItemFromCurrentItem(QTreeView *
     if(curNode->isAnalysisResult() || curNode->isSolutionInformation() || curNode->isChildSimulationSetUpNode())
     {
         QStandardItem *item = curItem->parent()->parent()->child(0,0);
-        return static_cast<QExtendedStandardItem*>(item);
+        return item;
     }
 
     //! ----------------------------------------------------------
@@ -793,13 +809,74 @@ QStandardItem* mainTreeTools::getAnalysisSettingsItemFromCurrentItem(QTreeView *
     if(curNode->isNephewSimulationSetUpNode())
     {
         QStandardItem *item = curItem->parent()->parent()->parent()->child(0,0);
-        return static_cast<QExtendedStandardItem*>(item);
+        return item;
     }
     return Q_NULLPTR;
 }
 
 //! -------------------------------------------------
-//! function: getAnalysisSettingsItemFromCurrentItem
+//! function: getSolutionItemFromCurrentItem
+//! details:
+//! -------------------------------------------------
+QStandardItem* mainTreeTools::getSolutionItemFromCurrentItem(QTreeView *treeView)
+{
+    cout<<"mainTreeTools::getSolutionItemFromCurrentItem()->____function called____"<<endl;
+
+    QModelIndex currentModelIndex = treeView->currentIndex();
+    QStandardItem *curItem = static_cast<QStandardItemModel*>(treeView->model())->itemFromIndex(currentModelIndex);
+    SimulationNodeClass *curNode = currentModelIndex.data(Qt::UserRole).value<SimulationNodeClass*>();
+    cout<<"mainTreeTools::getSolutionItemFromCurrentItem()->____"<<curNode->getName().toStdString()<<"____"<<endl;
+/*
+    //! ----------------------------------------------
+    //! case 1: the current item is a simulation root
+    //! ----------------------------------------------
+    if(curNode->isAnalysisRoot())
+    {
+        QStandardItem *item = curItem->child(curItem->rowCount()-1,0);
+        return item;
+    }*/
+    //! ---------------------------------------------------------
+    //! case 2: the current item is a child of a simulation root
+    //! ---------------------------------------------------------
+    if(curNode->isSimulationSetUpNode() || curNode->isAnalysisSettings())
+    {
+        int rowCount = curItem->parent()->rowCount()-1;
+        QStandardItem *item = curItem->parent()->child(rowCount,0);
+        return item;
+    }
+
+    //! ---------------------------------------------------
+    //! case 3: the current item is a post processing item
+    //! ---------------------------------------------------
+    if(curNode->isSolution()) return curItem;
+    if(curNode->isSolutionInformation() || curNode->isAnalysisResult())
+        return curItem->parent();
+
+    //! -------------------------------------------------------
+    //! case 4: the current item is child of a simulation node
+    //! -------------------------------------------------------
+    if(curNode->isChildSimulationSetUpNode())
+    {
+        int rowCount = curItem->parent()->parent()->rowCount()-1;
+        QStandardItem *item = curItem->parent()->parent()->child(rowCount,0);
+        return item;
+    }
+
+    //! ----------------------------------------------------------
+    //! case 5: the current item is a nephew of a simulation node
+    //! ----------------------------------------------------------
+    if(curNode->isNephewSimulationSetUpNode())
+    {
+        int rowCount = curItem->parent()->parent()->parent()->rowCount()-1;
+        QStandardItem *item = curItem->parent()->parent()->parent()->child(rowCount,0);
+        return item;
+    }
+    return Q_NULLPTR;
+}
+
+
+//! -------------------------------------------------
+//! function: getAnalysisSettingsNodeFromCurrentItem
 //! details:
 //! -------------------------------------------------
 SimulationNodeClass* mainTreeTools::getAnalysisSettingsNodeFromCurrentItem(QTreeView *treeView)
@@ -807,4 +884,103 @@ SimulationNodeClass* mainTreeTools::getAnalysisSettingsNodeFromCurrentItem(QTree
     QStandardItem *item = mainTreeTools::getAnalysisSettingsItemFromCurrentItem(treeView);
     SimulationNodeClass *node = item->data(Qt::UserRole).value<SimulationNodeClass*>();
     return node;
+}
+
+//! --------------------------------------------
+//! function: getTreeItem
+//! details:  already used in SimulationManager
+//! --------------------------------------------
+QExtendedStandardItem* mainTreeTools::getTreeItem(QStandardItemModel *model, SimulationNodeClass::nodeType theNodeType)
+{
+    if(model==Q_NULLPTR)
+    {
+        cerr<<"SimulationManager::getTreeItem()->____NULL model____"<<endl;
+        return Q_NULLPTR;
+    }
+
+    //! retrieve the root nodes
+    QList<QStandardItem*> items;
+    mainTreeTools::getTreeItemsRecursively(model,items);
+    for(QList<QStandardItem*>::iterator it = items.begin(); it!=items.end(); it++)
+    {
+        QStandardItem* curItem = *it;
+        SimulationNodeClass *curNode = curItem->data(Qt::UserRole).value<SimulationNodeClass*>();
+
+        if(curNode==Q_NULLPTR) return Q_NULLPTR;
+
+        SimulationNodeClass::nodeType curNodeType = curNode->getType();
+        if(curNodeType==theNodeType)
+        {
+            return static_cast<QExtendedStandardItem*>(curItem);
+        }
+    }
+    return Q_NULLPTR;
+}
+
+
+//! ----------------------------------------------------------------
+//! function: ItemFromScope
+//! details:  for a given shape in a geometry item, return the item
+//! ----------------------------------------------------------------
+QExtendedStandardItem* mainTreeTools::ItemFromScope(QStandardItemModel *model,const TopoDS_Shape &aShape)
+{
+    QStandardItem *theGeometryRoot=mainTreeTools::getTreeItem(model,SimulationNodeClass::nodeType_geometry);
+    int N = theGeometryRoot->rowCount();
+    for(int k=0; k<N;k++)
+    {
+        QStandardItem *aGeometryItem = theGeometryRoot->child(k,0);
+        SimulationNodeClass *aNode = aGeometryItem->data(Qt::UserRole).value<SimulationNodeClass*>();
+        if(aNode->getType()==SimulationNodeClass::nodeType_pointMass) continue;
+        //int mapIndex = aNode->getPropertyValue<int>("Map index");
+        //TopoDS_Shape theShape = myDB->bodyMap.value(mapIndex);
+        //if(theShape==aShape) return static_cast<QExtendedStandardItem*>(aGeometryItem);
+        TopoDS_Shape shapeInItem = aNode->getPropertyValue<TopoDS_Shape>("Shape");
+        if(shapeInItem == aShape)
+        return static_cast<QExtendedStandardItem*>(aGeometryItem);
+
+    }
+    return Q_NULLPTR;
+}
+
+//! -------------------------------
+//! function: getAllTreeItemOfType
+//! details:
+//! -------------------------------
+QList<QStandardItem*> mainTreeTools::getAllTreeItemOfType(QStandardItemModel *model, SimulationNodeClass::nodeType theNodeType)
+{
+    if(model==Q_NULLPTR) return QList<QStandardItem*>();
+    QList<QStandardItem*> items, itemsout;
+    mainTreeTools::getTreeItemsRecursively(model,items);
+    for(QList<QStandardItem*>::iterator it = items.begin(); it!=items.end(); ++it)
+    {
+        QStandardItem* curItem = *it;
+        if(curItem->data(Qt::UserRole).value<SimulationNodeClass*>()->getType()==theNodeType) itemsout.append(curItem);
+    }
+    return itemsout;
+}
+
+//! ------------------------------------------------------------------------
+//! function: getInsertionRow
+//! details:  when adding a simulation setup item, that item must be placed
+//!           between the "Analysis settings" item and the "Solution" item.
+//!           The function finds the right row for inserting the new item
+//! ------------------------------------------------------------------------
+const int mainTreeTools::getInsertionRow(QTreeView *tree)
+{
+    QModelIndex theCurIndex = tree->currentIndex();
+    QStandardItem *theCurItem = static_cast<QStandardItemModel*>(tree->model())->itemFromIndex(theCurIndex);
+    SimulationNodeClass* theCurNode = theCurItem->data(Qt::UserRole).value<SimulationNodeClass*>();
+    int insertionRow;
+    if(theCurNode->isAnalysisRoot())
+    {
+        insertionRow = theCurItem->rowCount()-1;    //! the (-1) inserts before the "Solution" item
+    }
+    else
+    {
+        insertionRow = theCurItem->parent()->rowCount();
+        SimulationNodeClass *parentNode = theCurItem->parent()->data(Qt::UserRole).value<SimulationNodeClass*>();
+        if(parentNode->isAnalysisRoot()) insertionRow--;
+    }
+    //cout<<"____insertion row: "<<insertionRow<<"____"<<endl;
+    return insertionRow;
 }

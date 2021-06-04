@@ -471,19 +471,18 @@ std::vector<std::map<int,double>> postEngine::evaluateResultOnBody(const QString
     cout<<"@ -------------------------------------------------"<<endl;
     cout<<"@ - postEngine::evaluateResultOnBody "<<endl;
     cout<<"@ -------------------------------------------------"<<endl;
-
     //! ------------------------------------------------
     //! node conversion map: OCC node ID to CCX node ID
     //! ------------------------------------------------
     std::map<int,int> indexedMapOfNodes;
     int bodyIndex = bodyTag.parentShapeNr;
+
+    //indexedMapOfNodes = OCCMeshToCCXmesh::performOCCtoCCX(bodyTag,)
     int offset = 0;
     for(int k=1; k<bodyIndex; k++)
     {
         if(!myMeshDataBase->ArrayOfMeshDS.value(k).IsNull())
-
         {
-            cout<<"@ - postEngine::evaluateResultOnBody ____tag00"<<endl;
             offset = offset+myMeshDataBase->ArrayOfMeshDS.value(k)->GetAllNodes().Extent();
         }
     }
@@ -492,7 +491,6 @@ std::vector<std::map<int,double>> postEngine::evaluateResultOnBody(const QString
         int nodeID = anIter.Key()+offset;
         indexedMapOfNodes.insert(std::make_pair(nodeID,anIter.Key()));
     }
-
     //! ------------------------------------------------
     //! enter <...>/SolutionData/ResultsData
     //! ------------------------------------------------
@@ -506,7 +504,6 @@ std::vector<std::map<int,double>> postEngine::evaluateResultOnBody(const QString
 
     QList<QString> entryList = curDir.entryList();
     QList<QString> fileList;
-
     //! ------------------------------------------------------
     //! retrieve the files (discard directories)
     //! it could be used to setup the range of a progress bar
@@ -567,6 +564,7 @@ std::vector<std::map<int,double>> postEngine::evaluateResultOnBody(const QString
             {
                 requiredTime = time;
                 eval = true;
+                //cout<<"eval is tue"<<endl;
             }
         }
             break;
@@ -745,6 +743,7 @@ std::vector<std::map<int,double>> postEngine::evaluateResultOnBody(const QString
             case TypeOfResult_EPS:
             {
                 std::map<int,double> resT;
+                cout<<"  tag03  "<<endl;
 
                 //! <>::eof(): call getline before while, then inside {}, @ as last instruction
                 std::getline(curFile,val);
@@ -766,7 +765,7 @@ std::vector<std::map<int,double>> postEngine::evaluateResultOnBody(const QString
                 }
                 //! result
                 res.push_back(resT);
-                //cout<<"Number of components: "<<res.length();
+                cout<<"Number of components: "<<res.size();
             }
                 break;
 
@@ -1075,29 +1074,36 @@ bool postEngine::buildPostObject(const QString &keyName,
         std::map<int,gp_Vec> displMap;
         const std::vector<std::map<int,double>> &nodalDisplacements = this->evaluateResultOnBody("DISP", requiredSubStepNb, requiredStepNb,requiredMode, meshDS, aLoc, time);
 
-        const std::map<int,double> &displX = nodalDisplacements[1];
-        const std::map<int,double> &displY = nodalDisplacements[2];
-        const std::map<int,double> &displZ = nodalDisplacements[3];
-        std::map<int,double>::const_iterator itX = displX.cbegin();
-        std::map<int,double>::const_iterator itY = displY.cbegin();
-        std::map<int,double>::const_iterator itZ = displZ.cbegin();
-
-        for(;itX!=displX.cend() && itY!=displY.cend() && itZ!=displZ.cend(); ++itX, ++itY, ++itZ)
+        if(!nodalDisplacements.empty())
         {
-            int nodeID = itX->first;
-            gp_Vec aVec(itX->second,itY->second,itZ->second);
-            displMap[nodeID] = aVec;
+            const std::map<int,double> &displX = nodalDisplacements[1];
+            const std::map<int,double> &displY = nodalDisplacements[2];
+            const std::map<int,double> &displZ = nodalDisplacements[3];
+            std::map<int,double>::const_iterator itX = displX.cbegin();
+            std::map<int,double>::const_iterator itY = displY.cbegin();
+            std::map<int,double>::const_iterator itZ = displZ.cbegin();
+
+            for(;itX!=displX.cend() && itY!=displY.cend() && itZ!=displZ.cend(); ++itX, ++itY, ++itZ)
+            {
+                int nodeID = itX->first;
+                gp_Vec aVec(itX->second,itY->second,itZ->second);
+                displMap[nodeID] = aVec;
+            }
+
+            mapDisplMap_byBodies.insert(std::make_pair(aLoc,displMap));
         }
-        mapDisplMap_byBodies.insert(std::make_pair(aLoc,displMap));
         resMap_byBody.insert(std::make_pair(aLoc,res));
     }
+    if(resMap_byBody.empty()) return false;
 
     //! -----------------------------------------
     //! creating the result container postObject
     //! -----------------------------------------
     cout<<"postEngine::buildPostObject()->____creating the result container____"<<endl;
     bool useSurfaceMeshForVolumeResults = Global::status().myResultPresentation.useExteriorMeshForVolumeResults;
-    aPostObject = std::make_shared<postObject>(resMap_byBody,vecLoc_byBodies,mapDisplMap_byBodies,aResultName,useSurfaceMeshForVolumeResults);
+
+    if(mapDisplMap_byBodies.empty())     aPostObject = std::make_shared<postObject>(resMap_byBody,vecLoc_byBodies,aResultName);
+    else aPostObject = std::make_shared<postObject>(resMap_byBody,vecLoc_byBodies,mapDisplMap_byBodies,aResultName,useSurfaceMeshForVolumeResults);
     aPostObject->setMeshDataSources(meshDSforResults);  // replaces init()
     double magnifyFactor = Global::status().myResultPresentation.theScale;
     bool isDone = aPostObject->buildMeshIO(-1,-1,10,true,component,magnifyFactor);
@@ -1390,6 +1396,7 @@ bool postEngine::buildFatiguePostObject(int type, const std::vector<GeometryTag>
                     elasticModulusAve = 1.76e5;
                     altStress = 0.5*(mises+eps*elasticModulusAve);
                     Y = log10(28300*altStress/elasticModulusAve);
+                    //Y = log10(195000*altStress/elasticModulusAve);
 
                     r=35.9;
                     a=9.030556;
@@ -1438,7 +1445,196 @@ bool postEngine::buildFatiguePostObject(int type, const std::vector<GeometryTag>
     return isDone;
 }
 
+bool postEngine::buildProbe(int nodeID,const std::vector<GeometryTag> &locs,int source)
+{
 
+    //rainflow rf;
+    //rf.setFatigueModel(myFatigueModel);
+
+    const GeometryTag bodyTag = locs.at(0);
+
+    //! --------------------------------------
+    //! group the mesh data sources by bodies
+    //! --------------------------------------
+    std::map<GeometryTag,occHandle(MeshVS_DataSource)> meshDSforResults;
+    this->groupAndMergeMeshDataSourcesByBodies(locs,meshDSforResults);
+    const occHandle(MeshVS_DataSource) &aMeshDS = meshDSforResults.at(bodyTag);
+    //bool isDone = rf.perform(strainDistTimeHistory,damageDist);
+    //if(isDone == false) continue;                                   // try to handle this error
+
+    QString resultKeyName;
+    switch(source)
+    {
+    case 0:
+    {
+        resultKeyName = "NDTEMP";
+    }
+        break;
+    case 1:
+    {
+        resultKeyName = "STRESS";
+    }
+        break;
+    }
+
+    //! ------------------------------------------
+    //! generate the results grouped by body tags
+    //! access data by bodies
+    //! ------------------------------------------
+    std::vector<double> tempHistory,stressHistory;
+
+    //! -----------------------------------------------
+    //! node conversion map: from OCC to CCX numbering
+    //! -----------------------------------------------
+    int bodyIndex = bodyTag.parentShapeNr;
+    std::map<int,int> indexedMapOfNodes;
+
+    int offset = 0;
+    for(int k=1; k<bodyIndex; k++)
+    {
+        offset = offset+myMeshDataBase->ArrayOfMeshDS.value(k)->GetAllNodes().Extent();
+    }
+    for(TColStd_MapIteratorOfPackedMapOfInteger anIter(aMeshDS->GetAllNodes()); anIter.More(); anIter.Next())
+    {
+        int nodeID = anIter.Key()+offset;
+        indexedMapOfNodes.insert(std::make_pair(nodeID,anIter.Key()));
+    }
+    nodeID+=offset;
+
+    //! -------------------------------------
+    //! enter <...>/SolutionData/ResultsData
+    //! -------------------------------------
+    QString tmp = myResultsFilePath.split("/").last();
+    QString path = myResultsFilePath;
+    path.chop(tmp.length());
+
+    QDir curDir(path);
+    curDir.cd("ResultsData");
+    QFileInfoList entriesInfo = curDir.entryInfoList();
+
+    QList<QString> entryList = curDir.entryList();
+    QList<QString> fileList;
+
+    //! ------------------------------------------------------
+    //! retrieve the files (discard directories)
+    //! it could be used to setup the range of a progress bar
+    //! ------------------------------------------------------
+    for(int k=0; k<entryList.length(); k++)
+    {
+        if(entriesInfo.at(k).isFile() == false) continue;
+        QString fileName = curDir.absolutePath()+"/"+entryList.at(k);
+        fileList.append(fileName);
+    }
+
+    std::vector<double> times;
+
+    ofstream os;
+    os.open("D:/hystory.txt");
+    os<<"time   "<<"Val"<<endl;
+
+    int n = 0;
+
+    //! ---------------
+    //! scan the files
+    //! ---------------
+    for(int i=0; i<fileList.length(); i++)
+    {
+        cout<<"****************************************"<<endl;
+        cout<<"* scanning file: "<<i<<endl;
+
+        QString filePath = fileList.at(i);
+        ifstream curFile(filePath.toStdString());
+
+        std::string val;
+        std::getline(curFile,val);
+        cout<<"* "<<val<<endl;
+        std::getline(curFile,val);
+        cout<<"* "<<val<<endl;
+        double time;
+        sscanf(val.c_str(),"Time= %lf",&time);
+        std::getline(curFile,val);
+        cout<<"* "<<val<<endl;
+        int subStepNb, stepNb;
+        sscanf(val.c_str(),"Substep n=%d Step n=%d",&subStepNb,&stepNb);
+        std::getline(curFile,val);
+        cout<<"* "<<val<<endl;
+        char tdata[32];
+        sscanf(val.c_str(),"%s",tdata);
+        cout<<"****************************************"<<endl;
+
+        if(strcmp(tdata,resultKeyName.toStdString().c_str())==0)
+        {
+            cout<<"\n=> data file found: start reading data within <=\n"<<endl;
+            n++;
+
+            //! ----------------------------------------------------------------------------
+            //! <>::eof(): call getline before while, then inside {}, @ as last instruction
+            //! ----------------------------------------------------------------------------
+            std::getline(curFile,val);
+            while(curFile.eof()!=true)
+            {
+                //! read the components of the 3x3 data
+                int ni;
+                double cxx,cyy,czz,cxy,cyz,cxz;
+                switch(source)
+                {
+                case 0:
+                    sscanf(val.c_str(),"%d%lf%lf%lf%lf%lf%lf",&ni,&cxx);
+                    break;
+                case 1:
+                    sscanf(val.c_str(),"%d%lf%lf%lf%lf%lf%lf",&ni,&cxx,&cyy,&czz,&cxy,&cyz,&cxz);
+                    break;
+                }
+
+                //! nodeID within the MeshVS_dataSource
+                std::map<int,int>::iterator it = indexedMapOfNodes.find(ni);
+                if(it==indexedMapOfNodes.end())
+                {
+                    std::getline(curFile,val);
+                    continue;
+                }
+                if(ni==nodeID)
+                {
+                    //cout<<"node ID found "<<ni<<","<<nodeID<<endl;
+                    //int OCCnodeID = it->second;
+                    double value;
+
+
+                    switch(source)
+                    {
+                    case 0: value = cxx; break;
+                    case 1:
+                    {
+                        double sik[6] {cxx,cyy,czz,cxy,cyz,cxz};
+                        double s[3];
+                        postTools::principalComponents(sik,s);
+                        //s11 = s[2];
+                        value = (2.0/3.0)*sqrt((3.0/2.0)*(cxx*cxx+cyy*cyy+czz*czz)+(3.0/4.0)*(cxy*cxy+cyz*cyz+cxz*cxz));
+                    }
+                        break;
+                    }
+
+                    tempHistory.push_back(value);
+                    times.push_back(time);
+
+                    //os<<time<<" "<<cxx<<endl;
+                    switch(source)
+                    {
+                    case 0:os<<time<<" "<<value<<endl; break;
+                    case 1:
+                    os<<time<<" "<<value<<" "<<cxx<<" "<<cyy<<" "<<czz<<" "<<cxy<<" "<<cyz<<" "<<cxz<<endl;break;
+                    }
+                    std::getline(curFile,val);
+                    break;
+                }
+                else std::getline(curFile,val);
+            }
+            curFile.close();
+        }
+        else curFile.close();
+    }
+    os.close();
+}
 //! ---------------------------------------------------
 //! function: readFatigueResults
 //! details:  type = 1 => equivalent mechanical strain
@@ -1613,7 +1809,11 @@ std::map<int,std::vector<double>> postEngine::readFatigueResultsOnBody(int type,
     std::map<int,int> indexedMapOfNodes;
 
     int offset = 0;
-    for(int k=1; k<bodyIndex; k++) offset = offset+myMeshDataBase->ArrayOfMeshDS.value(k)->GetAllNodes().Extent();
+    for(int k=1; k<bodyIndex; k++)
+    {
+        if(!myMeshDataBase->ArrayOfMeshDS.value(k).IsNull())
+            offset = offset+myMeshDataBase->ArrayOfMeshDS.value(k)->GetAllNodes().Extent();
+    }
     for(TColStd_MapIteratorOfPackedMapOfInteger anIter(aMeshDS->GetAllNodes()); anIter.More(); anIter.Next())
     {
         int nodeID = anIter.Key()+offset;

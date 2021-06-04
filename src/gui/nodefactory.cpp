@@ -2,21 +2,21 @@
 //! custom includes
 //! ----------------
 #include "nodefactory.h"
-#include "src/registeredMetatypes/listofshape.h"
+#include "listofshape.h"
 #include "property.h"
-#include "src/main/mydefines.h"
-#include "src/utils/topologytools.h"
-#include "src/utils/tools.h"
+#include "mydefines.h"
+#include "topologytools.h"
+#include "tools.h"
 #include "parser.h"
-#include "src/connections/prebuiltcontactoptions.h"
+#include "prebuiltcontactoptions.h"
 #include "load.h"
 #include <occPreGLwidget.h>
 
 #include "markers.h"
-#include "ext/occ_extended/handle_ais_doublearrowmarker_reg.h"
-#include "ext/occ_extended/handle_ais_trihedron_reg.h"
+#include "handle_ais_doublearrowmarker_reg.h"
+#include "handle_ais_trihedron_reg.h"
 #include <indexedmapofmeshdatasources.h>        //! registered typedef for QMap<int,occHandle(MeshVS_DataSource)>
-#include <src/connections/connectionpairgenerationoptions.h>
+#include <connectionpairgenerationoptions.h>
 
 //! ----
 //! OCC
@@ -97,9 +97,93 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
 
     switch(type)
     {
+    //! -------------
+    //! probe tool
+    //! -------------
+    case SimulationNodeClass::nodeType_probe:
+    {
+        name = "Probe";
+
+        data.setValue(0);
+        Property prop_stressStrainSource("Source",data,Property::PropertyGroup_Definition);
+        vecProp.push_back(prop_stressStrainSource);
+
+        data.setValue(1);
+        Property prop_component("Component",data,Property::PropertyGroup_Definition);
+        vecProp.push_back(prop_component);
+
+        //! time info
+        data.setValue(0.0);
+        Property prop_location("Node ID",data,Property::PropertyGroup_Definition);
+
+        //! ------------
+        //! under scope
+        //! ------------
+        vecProp.push_back(prop_scopingMethod);
+        vecProp.push_back(prop_scope);
+        vecProp.push_back(prop_tags);
+        vecProp.push_back(prop_location);
+    }
+        break;
+
+    case SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionPressure:
+    case SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionVelocity:
+    {
+        //! -----------------
+        //! generate a name
+        //! -----------------
+        switch(type)
+        {
+        case SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionPressure: name = "Pressure"; break;
+        case SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionVelocity: name = "Velocity"; break;
+        }
+        //! -------------------------------------------------------
+        //! Add the property "Define by"
+        //! -------------------------------------------------------        
+        if(type == SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionVelocity)
+        {
+            Property::defineBy theDefineby = Property::defineBy_vector;
+            data.setValue(theDefineby);
+            Property prop_defineBy("Define by",data,Property::PropertyGroup_Definition);
+            vecProp.push_back(prop_defineBy);
+        }
+        else if(type == SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionPressure)
+        {
+            Property::defineBy theDefineby = Property::defineBy_normal;
+            data.setValue(theDefineby);
+            Property prop_defineBy("Define by",data,Property::PropertyGroup_Definition);
+            vecProp.push_back(prop_defineBy);
+
+            data.setValue(Property::loadDefinition_constant);
+            Property prop_loadMagnitude("Magnitude",data,Property::PropertyGroup_Definition);
+            data.setValue(prop_loadMagnitude);
+            vecProp.push_back(prop_loadMagnitude);
+        }
+
+        //! -------------------------------
+        //! under "Scope" and "Definition"
+        //! -------------------------------
+        vecProp.push_back(prop_suppressed);
+        vecProp.push_back(prop_scopingMethod);
+        vecProp.push_back(prop_scope);
+        vecProp.push_back(prop_tags);
+    }
+        break;
+    case SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionWall:
+    {
+        name = "Wall";
+        //! -------------------------------
+        //! under "Scope" and "Definition"
+        //! -------------------------------
+        vecProp.push_back(prop_suppressed);
+        vecProp.push_back(prop_scopingMethod);
+        vecProp.push_back(prop_scope);
+        vecProp.push_back(prop_tags);
+    }
+        break;
     case SimulationNodeClass::nodeType_pointMass:
     {
-        name = "Point mass"; //bubi
+        name = "Point mass";
 
         //! ------------
         //! under scope
@@ -340,13 +424,6 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
         vecProp.push_back(prop_scopeAllBodies);
         vecProp.push_back(prop_tagsAllBodies);
 
-        /*
-        //! under scope
-        vecProp.push_back(prop_scopingMethod);
-        vecProp.push_back(prop_scope);
-        vecProp.push_back(prop_tags);
-        */
-
         //! under definition
         Property prop_type("Type ",typeOfStrain,Property::PropertyGroup_Definition);
         vecProp.push_back(prop_type);
@@ -404,7 +481,6 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
         case 9: name = "Shear stress YZ"; break;
         case 10: name = "Shear stress XZ"; break;
         }
-
         //! -------------------------------------------------------------------
         //! redefine tags and scope:
         //! initially the scope is "All bodies" for the structural diagnostic
@@ -429,13 +505,6 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
         vecProp.push_back(prop_scopingMethod);
         vecProp.push_back(prop_scopeAllBodies);
         vecProp.push_back(prop_tagsAllBodies);
-
-        /*
-        //! under scope
-        vecProp.push_back(prop_scopingMethod);
-        vecProp.push_back(prop_scope);
-        vecProp.push_back(prop_tags);
-        */
 
         //! under definition
         Property prop_type("Type ",typeOfStress,Property::PropertyGroup_Definition);
@@ -820,11 +889,6 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
             vecProp.push_back(prop_tangential);
         }
             break;
-        case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_CompressionOnlySupport:
-        {
-            name = "Compression only support";
-        }
-            break;
         }
         //! -------------------
         //! under "Definition"
@@ -1149,7 +1213,7 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
         }
 
         //! -----------------------------------------------------------------------
-        //! the contact formualation: contact pair initially treated with lagrangian
+        //! the contact formualation: contact pair initially treated with MPC
         //! -----------------------------------------------------------------------
         Property::contactFormulation theContactFormulation = Property::contactFormulation_MPC;
         data.setValue(theContactFormulation);
@@ -1180,16 +1244,16 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
         vecProp.push_back(prop_frictionCoefficient);
 
         //! --------------------------------------------
-        //! small sliding: "0" => inactive "1" => active
+        //! small sliding: "false" => inactive "true" => active
         //! --------------------------------------------
-        data.setValue(int(1));
+        data.setValue(false);
         Property prop_smallSliding("Small sliding",data,Property::PropertyGroup_Definition);
         vecProp.push_back(prop_smallSliding);
 
         //! --------------------------------------------
-        //! adjust to touch: "0" => inactive "1" => active
+        //! adjust to touch: "false" => inactive "true" => active
         //! --------------------------------------------
-        data.setValue(int(1));
+        data.setValue(false);
         Property prop_adjust("Adjust to touch",data,Property::PropertyGroup_Definition);
         vecProp.push_back(prop_adjust);
 

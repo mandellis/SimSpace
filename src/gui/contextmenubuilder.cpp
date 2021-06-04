@@ -9,6 +9,7 @@
 #include "src/utils/tools.h"
 #include "mainwindow.h"
 #include "src/main/simulationmanager.h"
+#include "maintreetools.h"
 
 //! ---
 //! Qt
@@ -778,6 +779,15 @@ void contextMenuBuilder::buildModelRootContextMenu(QMenu *contextMenu, bool addC
 
     menuInsert->addSeparator();
 
+    //! ----------------------
+    //! add CFD analysis
+    //! ----------------------
+    QAction *ActionAddCFDAnalysisBranch = menuInsert->addAction("CFD analysis");
+    ActionAddCFDAnalysisBranch->setIcon(QIcon(":/icons/icon_CFD.png"));
+    ActionAddCFDAnalysisBranch->setData(400);
+
+    menuInsert->addSeparator();
+
     //! ---------------------------------
     //! add particles in fields analysis
     //! ---------------------------------
@@ -791,7 +801,7 @@ void contextMenuBuilder::buildModelRootContextMenu(QMenu *contextMenu, bool addC
     //! add remote points root - only one root is allowed
     //! --------------------------------------------------
     SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
-    if(sm->getTreeItem(SimulationNodeClass::nodeType_remotePointRoot)==Q_NULLPTR)
+    if(mainTreeTools::getTreeItem(sm->getModel(),SimulationNodeClass::nodeType_remotePointRoot)==Q_NULLPTR)
     {
         QAction *ActionInsertRemotePointRoot = menuInsert->addAction("Insert remote point");
         ActionInsertRemotePointRoot->setIcon(QIcon(":/icons/icon_remote point.png"));
@@ -1279,6 +1289,81 @@ void contextMenuBuilder::buildStructuralAnalysisContextMenu(QMenu *contextMenu, 
     }
 }
 
+//! ---------------------------------------------
+//! function: buildCFDAnalysisContextMenu
+//! details:
+//! ---------------------------------------------
+void contextMenuBuilder::buildCFDAnalysisContextMenu(QMenu *contextMenu, bool addCommonActions, bool isEnabled)
+{
+    if(isEnabled == false) return;
+
+    //! ---------------------------------------
+    //! preliminary: retrieve the current node
+    //! ---------------------------------------
+    SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
+    SimulationNodeClass *node = sm->myTreeView->currentIndex().data(Qt::UserRole).value<SimulationNodeClass*>();
+    SimulationNodeClass::nodeType nodeType = node->getType();
+
+    //! -----------------------------------------------
+    //! sub menu insert CFD boundary conditions
+    //! -----------------------------------------------
+    QMenu *menuInsertCFD = contextMenu->addMenu("CFD");
+    menuInsertCFD->setIcon(QIcon(":/icons/icon_insert.png"));
+
+    //! ---------------------------
+    //! insert velocity
+    //! ---------------------------
+    QAction *ActionInsertVelocity = menuInsertCFD->addAction("Velocity");
+    ActionInsertVelocity->setIcon(QIcon(":/icons/icon_CFD.png"));
+    ActionInsertVelocity->setData(402);
+
+    //! ----------------
+    //! insert pressure
+    //! -----------------
+    QAction *ActionInsertPressure = menuInsertCFD->addAction("Pressure");
+    ActionInsertPressure->setIcon(QIcon(":/icons/icon_CFD.png"));
+    ActionInsertPressure->setData(401);
+
+    //! -------------
+    //! insert wall
+    //! -------------
+    QAction *ActionInsertWall = menuInsertCFD->addAction("Wall");
+    ActionInsertWall->setIcon(QIcon(":/icons/icon_CFD.png"));
+    ActionInsertWall->setData(403);
+
+    //! add a separator
+    menuInsertCFD->addSeparator();
+
+    //! -----------------------
+    //! add the common actions
+    //! -----------------------
+    if(addCommonActions==true && isEnabled==true)
+    {
+        if(nodeType!=SimulationNodeClass::nodeType_CFDAnalysis &&
+                nodeType!=SimulationNodeClass::nodeType_CFDAnalysisSettings)
+        {
+            contextMenu->addSeparator();
+            contextMenuBuilder::buildCommonActions(contextMenu,isEnabled);
+        }
+
+        //! add separator
+        contextMenu->addSeparator();
+
+        contextMenuBuilder::addActionCreateNamedSelection(contextMenu);
+    }
+
+    //! ---------------------------------------
+    //! add the action "Solve" if the selected
+    //! item is an Analysis root
+    //! ---------------------------------------
+    if(node->isAnalysisRoot() && addCommonActions == true)
+    {
+        contextMenuBuilder::addActionRename(contextMenu);
+        contextMenu->addSeparator();
+        contextMenuBuilder::addActionDelete(contextMenu);
+    }
+}
+
 //! ---------------------------------
 //! function: buildImportContextMenu
 //! details:
@@ -1689,6 +1774,15 @@ void contextMenuBuilder::buildStructuralSolutionContextMenu(QMenu *contextMenu, 
     //! add separator
     contextMenu->addSeparator();
 
+    //! -------------
+    //! probe tool
+    //! -------------
+    QAction *ActionInsertProbeTool = menuInsert->addAction("Probe tool");
+    ActionInsertProbeTool->setIcon(QIcon(":/icons/icon_crack.png"));
+    ActionInsertProbeTool->setData(440);
+
+    //! add separator
+    contextMenu->addSeparator();
     if(node->getFamily() == SimulationNodeClass::nodeType_StructuralAnalysisSolution
             && node->getType() != SimulationNodeClass::nodeType_StructuralAnalysisSolutionInformation
             && node->getType() != SimulationNodeClass::nodeType_StructuralAnalysisSolution)
@@ -1782,6 +1876,16 @@ void contextMenuBuilder::buildThermalResultsContextMenu(QMenu *contextMenu, bool
     QAction *ActionInsertFlux = menuInsert->addAction("Flux");
     ActionInsertFlux->setIcon(QIcon(":/icons/icon_thermal flux.png"));
     ActionInsertFlux->setData(241);
+
+    //! add separator
+    contextMenu->addSeparator();
+
+    //! -------------
+    //! probe tool
+    //! -------------
+    QAction *ActionInsertProbeTool = menuInsert->addAction("Probe tool");
+    ActionInsertProbeTool->setIcon(QIcon(":/icons/icon_crack.png"));
+    ActionInsertProbeTool->setData(440);
 
     //! add separator
     contextMenu->addSeparator();
@@ -1937,8 +2041,119 @@ void contextMenuBuilder::buildCombinedAnalysisResultsContextMenu(QMenu* contextM
     //! add separator
     contextMenu->addSeparator();
 
+    if(node->getType() == SimulationNodeClass::nodeType_CFDAnalysisSolution ||
+      node->getType() == SimulationNodeClass::nodeType_CFDAnalysisSolutionInformation)
+    {
+        QAction *ActionEvaluateResult = contextMenu->addAction("Evaluate all results");
+        ActionEvaluateResult->setIcon(QIcon(":/icons/icon_solve.png"));
+        ActionEvaluateResult->setData(204);
+
+        //! add separator
+        contextMenu->addSeparator();
+
+        //! ---------------------
+        //! Clear generated data
+        //! ---------------------
+        QAction *ActionClearGeneratedData = contextMenu->addAction("Clear generated data");
+        ActionClearGeneratedData->setIcon(QIcon(":/icons/icon_clear data.png"));
+        ActionClearGeneratedData->setData(205);
+    }
+
+    //! add separator
+    contextMenu->addSeparator();
     contextMenuBuilder::addActionCreateNamedSelection(contextMenu);
 }
+
+//! -------------------------------------------
+//! function: buildCFDAnalysisContextMenu
+//! details:
+//! -------------------------------------------
+void contextMenuBuilder::buildCFDAnalysisResultsContextMenu(QMenu* contextMenu, bool addCommonActions, bool isEnabled)
+{
+    if(isEnabled == false) return;
+
+    //! ---------------------------------------------
+    //! preliminary: retrieve the simulation manager
+    //! ---------------------------------------------
+    SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
+    SimulationNodeClass *node = sm->myTreeView->currentIndex().data(Qt::UserRole).value<SimulationNodeClass*>();
+
+    QMenu *menuInsert = contextMenu->addMenu("Insert");
+    menuInsert->setIcon(QIcon(":/icons/icon_insert.png"));
+
+    //! -----------------------
+    //! action insert Velocity
+    //! -----------------------
+    QAction *ActionInsertCFDVelocity = menuInsert->addAction("Velocity");
+    ActionInsertCFDVelocity->setIcon(QIcon(":/icons/icon_CFD.png"));
+    ActionInsertCFDVelocity->setData(430);
+
+    //! -----------------------
+    //! action insert Pressure
+    //! -----------------------
+    QAction *ActionInsertCFDPressure = menuInsert->addAction("Pressure");
+    ActionInsertCFDPressure->setIcon(QIcon(":/icons/icon_CFD.png"));
+    ActionInsertCFDPressure->setData(431);
+
+    //! add separator
+    contextMenu->addSeparator();
+
+    if(node->isAnalysisResult())
+    {
+        QAction *ActionEvaluateResult = contextMenu->addAction("Evaluate result");
+        ActionEvaluateResult->setIcon(QIcon(":/icons/icon_solve.png"));
+        ActionEvaluateResult->setData(204);
+    }
+
+    //! --------------------------------------------------
+    //! generated on "Solution" or "Solution information"
+    //! --------------------------------------------------
+    if(node->getType() == SimulationNodeClass::nodeType_CFDAnalysisSolution ||
+            node->getType() == SimulationNodeClass::nodeType_CFDAnalysisSolutionInformation)
+    {
+        QAction *ActionEvaluateResult = contextMenu->addAction("Evaluate all results");
+        ActionEvaluateResult->setIcon(QIcon(":/icons/icon_solve.png"));
+        ActionEvaluateResult->setData(204);
+    }
+
+    //! add separator
+    contextMenu->addSeparator();
+
+    //! ---------------------
+    //! Clear generated data
+    //! ---------------------
+    QAction *ActionClearGeneratedData = contextMenu->addAction("Clear generated data");
+    ActionClearGeneratedData->setIcon(QIcon(":/icons/icon_clear data.png"));
+    ActionClearGeneratedData->setData(205);
+
+
+    //! add separator
+    contextMenu->addSeparator();
+
+    if(addCommonActions)
+    {
+        //! ----------------------
+        //! insert common actions
+        //! ----------------------
+        if(node->getType()!=SimulationNodeClass::nodeType_CFDAnalysisSolutionInformation &&
+                node->getType()!=SimulationNodeClass::nodeType_CFDAnalysisSolution)
+        {
+            contextMenu->addSeparator();
+            contextMenuBuilder::buildCommonActions(contextMenu,isEnabled);
+        }
+    }
+
+    //! add separator
+    contextMenu->addSeparator();
+
+    QAction *ActionExport = contextMenu->addAction("Export");
+    ActionExport->setIcon(QIcon(":/icons/icon_exporting tools.png"));
+    ActionExport->setData(109);
+
+    //! add separator
+    contextMenuBuilder::addActionCreateNamedSelection(contextMenu);
+}
+
 
 //! ------------------------------------------------
 //! function: -
@@ -2119,6 +2334,7 @@ void contextMenuBuilder::addActionCreateMeshNamedSelection(QMenu *contextMenu)
 //! add structural analysis                    105
 //! add thermal analysis                       104
 //! add combined analysis                      107
+//! add CFD analysis                           400
 //!
 //! update post object                         200
 //! insert total displacement                  201
@@ -2185,4 +2401,13 @@ void contextMenuBuilder::addActionCreateMeshNamedSelection(QMenu *contextMenu)
 //!
 //! insert particles in fields                 300
 //! insert electrostatic wall                  301
+//!
+//!
+//! CFD root                                   400
+//! insert Pressure                            401
+//! insert Velocity                            402
+//! insert Wall                                403
+//! insert CFD result velocity                 430
+//! insert CFD result pressure                 431
+//!
 //! -----------------------------------------------

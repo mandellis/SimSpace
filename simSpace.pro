@@ -60,7 +60,6 @@ SOURCES += src/mesh/ng_meshvs_datasource1d.cpp \
     src/mesh/netgentools.cpp \
     src/gui/qfileselect.cpp \
     src/memory/memoryprofiler.cpp \
-    src/geometry/geometryhealing.cpp \
     src/mesh/igtools.cpp \
     src/mesh/tetwildmesher.cpp \
     src/mesh/mshconvert.cpp \
@@ -72,11 +71,7 @@ SOURCES += src/mesh/ng_meshvs_datasource1d.cpp \
     src/mesh/nettgentool2.cpp \
     src/mesh/qmorph.cpp \
     src/mesh/triangleaccessor.cpp \
-    src/geometry/TriDist.cpp \
     src/gui/usermessagesmodel.cpp \
-    src/geometry/geometryface.cpp \
-    src/geometry/OCCface.cpp \
-    src/geometry/meshface.cpp \
     src/mesh/tetsplitter.cpp \
     src/mesh/tethex.cpp \
     src/mesh/meshselectnlayers.cpp \
@@ -108,11 +103,7 @@ SOURCES += src/mesh/ng_meshvs_datasource1d.cpp \
     ext/occ_extended/arrayofcolors.cpp \
     ext/pymesh/MshLoader.cpp \
     ext/pymesh/MshSaver.cpp \
-    src/ccxSolver/ccxconsoletofile.cpp \
-    src/ccxSolver/consolereader.cpp \
-    src/ccxSolver/inputfilegenerator.cpp \
     src/controller/solutionworker.cpp \
-    src/ccxSolver/writesolverfileclass.cpp \
     src/connections/contactfinder.cpp \
     src/connections/contactparameters.cpp \
     src/databases/geometrydatabase.cpp \
@@ -182,7 +173,6 @@ SOURCES += src/mesh/ng_meshvs_datasource1d.cpp \
     src/gui/tabularData/tableviewclass.cpp \
     src/gui/tabularData/tableviewclassitemdelegate.cpp \
     src/gui/tabularData/tablewidget.cpp \
-    src/gui/tabularData/tabulardataviewerclass1.cpp \
     ext/StlMesh/StlMesh.cxx \
     ext/StlMesh/StlMesh_Mesh.cxx \
     ext/StlMesh/StlMesh_MeshDomain.cxx \
@@ -193,7 +183,23 @@ SOURCES += src/mesh/ng_meshvs_datasource1d.cpp \
     src/controller/interpolatorcontroller.cpp \
     src/controller/openfoamcontroller.cpp \
     src/controller/ccxsolvermanager.cpp \
-    src/post/convergencedatachart.cpp
+    src/post/convergencedatachart.cpp \
+    src/solver/ccx/ccxconsoletofile.cpp \
+    src/solver/ccx/consolereader.cpp \
+    src/solver/ccx/writesolverfileclass.cpp \
+    src/solver/OF/ofwrite.cpp \
+    src/solver/inputfilegenerator.cpp \
+    src/gui/tabularData/tabulardataviewerclass.cpp \
+    src/utils/cfdTool/occtoof.cpp \
+    src/utils/geometry/geometryface.cpp \
+    src/utils/geometry/geometryhealing.cpp \
+    src/utils/geometry/meshface.cpp \
+    src/utils/geometry/OCCface.cpp \
+    src/utils/geometry/polygon.cpp \
+    src/utils/geometry/polyhedron.cpp \
+    src/utils/geometry/TriDist.cpp \
+    src/gui/tabularData/basetabledelegate.cpp \
+    src/gui/tabularData/xyviewer.cpp
 
 HEADERS  += src/mesh/ng_meshvs_datasource1d.h \
     src/mesh/ng_meshvs_datasource2d.h \
@@ -232,10 +238,7 @@ HEADERS  += src/mesh/ng_meshvs_datasource1d.h \
     src/mesh/netgentools.h \
     src/gui/qfileselect.h \
     src/memory/memoryprofiler.h \
-    src/geometry/geometryhealing.h \
     src/mesh/igtools.h \
-    src/geometry/geometrytag.h \
-    src/geometry/polygon.h \
     src/mesh/tetwildmesher.h \
     src/mesh/mshconvert.h \
     src/mesh/mshconvert.h \
@@ -245,27 +248,17 @@ HEADERS  += src/mesh/ng_meshvs_datasource1d.h \
     src/viewer/resultpresentation.h \
     src/mesh/surfacemeshcutter.h \
     src/mesh/simulationdata.h \
-    src/geometry/polyhedron.h \
     src/mesh/datasourcebuildercontroller.h \
     src/mesh/surfacemeshsmoother.h \
     src/mesh/nettgentool2.h \
     src/mesh/qmorph.h \
     src/mesh/triangleaccessor.h \
-    src/geometry/triangletotriangleintersection.h \
-    src/geometry/Tri.h \
-    src/geometry/TriDist.h \
-    src/geometry/PQP_Compile.h \
-    src/geometry/MatVec.h \
     src/gui/usermessagesmodel.h \
     src/mesh/userMessage.h \
-    src/geometry/geometryface.h \
-    src/geometry/OCCface.h \
-    src/geometry/meshface.h \
     src/mesh/tetsplitter.h \
     src/mesh/tethex.h \
     src/mesh/meshelementbycoords.h \
     src/mesh/meshselectnlayers.h \
-    src/geometry/shapecomparison.h \
     src/viewer/wbtrihedron.h \
     src/mesh/meshslicer.h \
     src/mesh/slicemeshvs_mesh.h \
@@ -285,19 +278,12 @@ HEADERS  += src/mesh/ng_meshvs_datasource1d.h \
     src/mesh/smoothingtools.h \
     src/mesh/pointtomeshdistance.h \
     src/mesh/surfacemeshtofacemeshes.h \
-    src/ccxSolver/ccxconsoletofile.h \
-    src/ccxSolver/ccxsolvermessage.h \
-    src/ccxSolver/consolereader.h \
-    src/ccxSolver/inputfilegenerator.h \
-    src/ccxSolver/qccxsolvermessageevent.h \
-    src/ccxSolver/writesolverfileclass.h \
     src/connections/connectionpairgenerationoptions.h \
     src/connections/contactfinder.h \
     src/connections/contactparameters.h \
     src/databases/geometrydatabase.h \
     src/databases/meshdatabase.h \
     src/databases/simulationdatabase.h \
-    src/geometry/PQP_Internal.h \
     src/main/maintreetools.h \
     src/main/mainwindow.h \
     src/main/mydefines.h \
@@ -335,7 +321,6 @@ HEADERS  += src/mesh/ng_meshvs_datasource1d.h \
     ext/occ_extended/handle_ais_trihedron_reg.h \
     ext/occ_extended/handle_meshvs_datasource_reg.h \
     ext/occ_extended/handle_qoccprogressindicator_reg.h \
-    src/ccxSolver/solutioninfo.h \
     src/connections/prebuiltcontactoptions.h \
     src/controller/meshingserver.h \
     src/controller/meshworker.h \
@@ -414,7 +399,6 @@ HEADERS  += src/mesh/ng_meshvs_datasource1d.h \
     src/gui/tabularData/tableviewclassitemdelegate.h \
     src/gui/tabularData/tablewidget.h \
     src/gui/tabularData/tabulardatacolumns.h \
-    src/gui/tabularData/tabulardataviewerclass1.h \
     src/utils/ccxtools.h \
     ext/StlMesh/NCollection_StlIterator.hxx \
     ext/StlMesh/StlAPI.hxx \
@@ -438,7 +422,36 @@ HEADERS  += src/mesh/ng_meshvs_datasource1d.h \
     src/controller/openfoamcontroller.h \
     src/controller/ccxsolvermanager.h \
     src/controller/solutionworker.h \
-    src/post/convergencedatachart.h
+    src/post/convergencedatachart.h \
+    src/solver/ccx/ccxconsoletofile.h \
+    src/solver/ccx/ccxsolvermessage.h \
+    src/solver/ccx/consolereader.h \
+    src/solver/ccx/qccxsolvermessageevent.h \
+    src/solver/ccx/solutioninfo.h \
+    src/solver/ccx/writesolverfileclass.h \
+    src/solver/OF/ofwrite.h \
+    src/solver/inputfilegenerator.h \
+    src/gui/tabularData/tabulardataviewerclass.h \
+    src/utils/cfdTool/occtoof.h \
+    src/utils/geometry/geometrydoctor.h \
+    src/utils/geometry/geometryface.h \
+    src/utils/geometry/geometryhealing.h \
+    src/utils/geometry/geometrytag.h \
+    src/utils/geometry/MatVec.h \
+    src/utils/geometry/meshface.h \
+    src/utils/geometry/OCCface.h \
+    src/utils/geometry/polygon.h \
+    src/utils/geometry/polyhedron.h \
+    src/utils/geometry/PQP_Compile.h \
+    src/utils/geometry/PQP_Internal.h \
+    src/utils/geometry/shapecomparison.h \
+    src/utils/geometry/Tri.h \
+    src/utils/geometry/triangletotriangleintersection.h \
+    src/utils/geometry/TriDist.h \
+    src/gui/tabularData/basetabledelegate.h \
+    src/gui/tabularData/basetablemodel.h \
+    src/gui/tabularData/xyviewer.h \
+    src/utils/stlwrappers.h
 
 FORMS    += src/main/mainwindow.ui
 
@@ -452,13 +465,14 @@ DEFINES += WNT  \
            #COSTAMP_VERSION \
            GENERATE_FACE_MESH_DATASOURCES   \
            #USE_MESHFIX
+           SIMSPACE_USES_QT
 
 DEFINES += QCUSTOMPLOT_USE_LIBRARY
 
 #DEFINES += ONLY_MESHER
 DEFINES += NEW_HASH
 
-INCLUDEPATH = $$PWD/src/geometry \
+INCLUDEPATH = $$PWD/src/utils/geometry \
               C:/OpenCASCADE7.3.0-vc14-64/opencascade-7.3.0/inc \
               $$PWD/ext/StlMesh    \
               "D:/Work/Costamp/OCC lib/EMESH_7.3.0_binaries_win64vc14/inc"     \
@@ -466,13 +480,14 @@ INCLUDEPATH = $$PWD/src/geometry \
               $$PWD/src/gui/optionsWidget    \
               $$PWD/src/connections \
               $$PWD/src/controller \
-              $$PWD/src/geometry \
               $$PWD/src/main \
               $$PWD/src/utils \
               $$PWD/src/gui/tabularData    \
               $$PWD/src/gui/systemConsole    \
               $$PWD/src/gui/stepGenerationWidget    \
-              $$PWD/src/ccxSolver    \
+              $$PWD/src/solver    \
+              $$PWD/src/solver/ccx    \
+              $$PWD/src/solver/OF    \
               $$PWD/src/mesh   \
               $$PWD/src/viewer   \
               $$PWD/src/post \

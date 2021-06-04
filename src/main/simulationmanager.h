@@ -30,16 +30,16 @@
 //! ----------------
 #include "simulationnodeclass.h"
 #include <simulationdatabase.h>
-#include "src/ccxSolver/writesolverfileclass.h"
+#include "writesolverfileclass.h"
 #include "writelabelclass.h"
 #include "serializerclass.h"
 #include "deserializerclass.h"
-#include "src/registeredMetatypes/listofmesh.h"
+#include "listofmesh.h"
 #include "postobject.h"
 #include "frdreader.h"
 #include "postengine.h"
 #include "qoccprogressindicator.h"
-#include "src/ccxSolver/solutioninfo.h"
+#include "solutioninfo.h"
 #include <indexedmapofmeshdatasources.h>
 #include "detailviewer.h"
 #include <userMessage.h>
@@ -154,7 +154,7 @@ private:
 
 private:
 
-    void getTreeItemsRecursively(QStandardItemModel* model, QList<QExtendedStandardItem*> &items, QModelIndex parent = QModelIndex());
+    //void getTreeItemsRecursively(QStandardItemModel* model, QList<QExtendedStandardItem*> &items, QModelIndex parent = QModelIndex());
     //int calculateStartColumn() const;
 
     TopoDS_Shape fromTagToShape(const GeometryTag &aTag);
@@ -205,9 +205,6 @@ private slots:
     //! update the mesh statistics
     void updateMeshStatistics();
 
-    //! suppress-unsuppress an item
-    void changeNodeSuppressionStatus(Property::SuppressionStatus newSuppressionStatus);
-
     //! unsuppress all the geometry items (geometry nodes)
     void unsuppressAllBodies();
 
@@ -249,6 +246,9 @@ private slots:
 
 
 public slots:
+
+    //! suppress-unsuppress an item
+    void changeNodeSuppressionStatus(Property::SuppressionStatus newSuppressionStatus);
 
     //! write solver input file (CCX) - initialized with a default parameter
     void writeSolverInputFile();
@@ -500,9 +500,9 @@ signals:
 
 private:
 
-    QList<QStandardItem*> ItemListFromListOfShape(TopTools_ListOfShape *listOfShapes);
+    //QList<QStandardItem*> ItemListFromListOfShape(TopTools_ListOfShape *listOfShapes);
     //QExtendedStandardItem* getTreeItem(nodeType theNodeType);
-    int getInsertionRow() const;
+    //int getInsertionRow() const;
 
     //SimulationNodeClass* getAnalysisSettingsNodeFromCurrentItem() const;
     //QExtendedStandardItem *getAnalysisSettingsItemFromCurrentItem() const;
@@ -512,10 +512,10 @@ private:
 
 public:
 
-    QExtendedStandardItem* getTreeItem(SimulationNodeClass::nodeType theNodeType);
-    QList<QExtendedStandardItem *> getAllTreeItemOfType(SimulationNodeClass::nodeType theNodeType);
-    SimulationNodeClass* getAnalysisSettingsNodeFromCurrentItem() const;
-    QExtendedStandardItem *getAnalysisSettingsItemFromCurrentItem() const;
+    //QExtendedStandardItem* getTreeItem(SimulationNodeClass::nodeType theNodeType);
+    //QList<QExtendedStandardItem *> getAllTreeItemOfType(SimulationNodeClass::nodeType theNodeType);
+    //SimulationNodeClass* getAnalysisSettingsNodeFromCurrentItem() const;
+    //QExtendedStandardItem *getAnalysisSettingsItemFromCurrentItem() const;
 
 public slots:
 
@@ -600,6 +600,8 @@ private slots:
 #ifdef COSTAMP_VERSION
     //! start time step builder
     void COSTAMP_startTimeStepBuilder();
+
+    void createCostampAutomaticConnections();
 
 private slots:
 

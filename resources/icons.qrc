@@ -169,5 +169,7 @@
         <file>icons/icon_open from file.png</file>
         <file>icons/icon_import.png</file>
         <file>icons/icon_export.png</file>
+        <file>icons/icon_CFD.png</file>
+        <file>icons/icon_CFD2.png</file>
     </qresource>
 </RCC>

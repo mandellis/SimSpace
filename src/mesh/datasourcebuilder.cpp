@@ -183,7 +183,7 @@ std::map<int,std::vector<TopoDS_Shape>> dataSourceBuilder::groupShapes()
             {
                 TopoDS_Face curFace = TopoDS::Face(curShape);
                 bodyIndex = it.key();
-                cout<<"faceDataSourceBuilder::groupShapes()->____working on body ___"<<bodyIndex<<endl;
+                //cout<<"faceDataSourceBuilder::groupShapes()->____working on body ___"<<bodyIndex<<endl;
 
                 const TopTools_IndexedMapOfShape &faceMap = myMDB->MapOfBodyTopologyMap.value(bodyIndex).faceMap;
                 if(faceMap.Contains(curFace))
@@ -241,7 +241,6 @@ bool dataSourceBuilder::perform(IndexedMapOfMeshDataSources &mapOfDS, bool doExa
     //! group them according to the parent
     //! ------------------------------------------------------
     std::map<int,std::vector<TopoDS_Shape>> bodyShapesMap  = this->groupShapes();
-
     //! -------------
     //! sanity check
     //! -------------
@@ -250,7 +249,6 @@ bool dataSourceBuilder::perform(IndexedMapOfMeshDataSources &mapOfDS, bool doExa
         emit taskFinished();
         return false;
     }
-
     //if(doExact)
     //{
     for(std::map<int,std::vector<TopoDS_Shape>>::iterator it = bodyShapesMap.begin(); it!=bodyShapesMap.end(); ++it)
@@ -289,8 +287,8 @@ bool dataSourceBuilder::perform(IndexedMapOfMeshDataSources &mapOfDS, bool doExa
             break;
         case TopAbs_FACE:
         {
-            if(doExact)
-            {
+            //if(doExact)
+            //{
                 QList<occHandle(Ng_MeshVS_DataSourceFace)> listOfFaceMeshDS;
                 TopTools_IndexedMapOfShape faceMap = myMDB->MapOfBodyTopologyMap.value(bodyIndex).faceMap;
                 if(faceMap.IsEmpty()) cerr<<"faceDataSourceBuilder::perform()->____strange error: empty face map in geometry____"<<endl;
@@ -309,7 +307,6 @@ bool dataSourceBuilder::perform(IndexedMapOfMeshDataSources &mapOfDS, bool doExa
                     }
                     listOfFaceMeshDS<<aFaceDS;
                 }
-
                 if(listOfFaceMeshDS.isEmpty())
                 {
                     cout<<"faceDataSourceBuilder::perform()->____list of face mesh ds empty____"<<endl;
@@ -323,7 +320,8 @@ bool dataSourceBuilder::perform(IndexedMapOfMeshDataSources &mapOfDS, bool doExa
                     continue;
                 }
                 mapOfDS.insert(bodyIndex,finalFaceDS);
-            }
+            //}
+         /*
             else
             {
                 //! -----------------------------
@@ -414,6 +412,7 @@ bool dataSourceBuilder::perform(IndexedMapOfMeshDataSources &mapOfDS, bool doExa
                 occHandle(Ng_MeshVS_DataSourceFace) finalFaceDS = new Ng_MeshVS_DataSourceFace(listOfFaceMeshDS);
                 mapOfDS.insert(bodyIndex, finalFaceDS);
             }
+        */
         }
             break;
         }

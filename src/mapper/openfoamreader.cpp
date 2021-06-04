@@ -290,7 +290,6 @@ bool OpenFoamReader::perform(SimulationNodeClass *OFnode)
 
     curDir.cdUp();
     curDir.cd("constant");
-    //cout<<"____tag02____"<<endl;
 
     //! ------------------------------
     //! entering the data directories
@@ -546,7 +545,7 @@ bool OpenFoamReader::perform(SimulationNodeClass *OFnode)
             //! the "Time" directory (curDirName is ->relative<-)
             const QString &curDirName = directoryListFiltered.at(t);
 
-            //cout<<"OpenFoamReader::perform()->____entering time directory: \""<<curDirName.toStdString()<<"\"____"<<endl;
+            cout<<"OpenFoamReader::perform()->____entering time directory: \""<<curDirName.toStdString()<<"\"____"<<endl;
 
             if(myProgressIndicator!=Q_NULLPTR)
             {
@@ -1257,7 +1256,7 @@ void OpenFoamReader::getCellCenters(fstream &is,
     //! ------------------------------------------------------
     //cout<<"OpenFoamReader::getCellCenters()->____decomposing cell faces into triangles____"<<endl;
 
-    FILE *fc = fopen("D:/centers.txt","w");
+    //FILE *fc = fopen("D:/centers.txt","w");
     for(NE=elementsByFaces.firstKey(); NE<=elementsByFaces.lastKey(); NE++)
     {
         //! -------------------------------------------------------------------------
@@ -1489,7 +1488,7 @@ void OpenFoamReader::getCellCenters(fstream &is,
             //aCenter[0] = Cx; aCenter[1] = Cy; aCenter[2] = Cz;
             std::vector<double> aCenter{Cx,Cy,Cz};
 
-            fprintf(fc,"%lf\t%lf\t%lf\n",Cx,Cy,Cz);
+            //fprintf(fc,"%lf\t%lf\t%lf\n",Cx,Cy,Cz);
             //cout<<"____CENTER("<<Cx<<", "<<Cy<<", "<<Cz<<")____"<<endl;
             myMapOfCellCenters.insert(NE,aCenter);
         }
@@ -1502,7 +1501,7 @@ void OpenFoamReader::getCellCenters(fstream &is,
             continue;
         }
     }
-    fclose(fc);
+    //fclose(fc);
 }
 
 //! -----------------------

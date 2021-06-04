@@ -2,8 +2,8 @@
 //! custom includes
 //! ----------------
 #include "convergencedatachart.h"
-#include "src/utils/tools.h"
-#include "src/ccxSolver/solutioninfo.h"
+#include "tools.h"
+#include "solutioninfo.h"
 
 //! ---
 //! Qt

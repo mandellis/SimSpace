@@ -20,6 +20,8 @@ CustomTableModel::CustomTableModel(const QVector<load> &vecLoads, bool addFirstR
         m_loadTypes.append(vecLoads.at(k).type());
 
     m_columnCount = vecLoads.size();
+    columBeforeBC = m_columnCount-1;
+    cout<<" CustomTable model COLUMN BEFORE BC"<<columBeforeBC<<endl;
     m_rowCount = vecLoads.at(0).NbTimes();  //! number of values
 
     for(int i=0; i<m_rowCount; i++)
@@ -340,7 +342,8 @@ QVariant CustomTableModel::data(const QModelIndex &index, int role) const
             cellStringVariant.setValue(cellString);
             return cellStringVariant;
         }
-        else if(m_loadTypes.at(index.column())==Property::loadType_forceMagnitude ||
+        else if(m_loadTypes.at(index.column())==Property::loadType_scalar ||
+                m_loadTypes.at(index.column())==Property::loadType_forceMagnitude ||
                 m_loadTypes.at(index.column())==Property::loadType_forceX ||
                 m_loadTypes.at(index.column())==Property::loadType_forceY ||
                 m_loadTypes.at(index.column())==Property::loadType_forceZ ||
@@ -352,6 +355,10 @@ QVariant CustomTableModel::data(const QModelIndex &index, int role) const
                 m_loadTypes.at(index.column())==Property::loadType_accelerationX ||
                 m_loadTypes.at(index.column())==Property::loadType_accelerationY ||
                 m_loadTypes.at(index.column())==Property::loadType_accelerationZ ||
+                m_loadTypes.at(index.column())==Property::loadType_velocityMagnitude ||
+                m_loadTypes.at(index.column())==Property::loadType_velocityX ||
+                m_loadTypes.at(index.column())==Property::loadType_velocityY ||
+                m_loadTypes.at(index.column())==Property::loadType_velocityZ ||
                 m_loadTypes.at(index.column())==Property::loadType_momentMagnitude ||
                 m_loadTypes.at(index.column())==Property::loadType_momentX ||
                 m_loadTypes.at(index.column())==Property::loadType_momentY ||
@@ -533,11 +540,23 @@ bool CustomTableModel::setDataRC(const QVariant &value, int row, int column, int
 //! function: strings for the horizontal header
 //! details:
 //! --------------------------------------------
+/*QString CustomTableModel::setHeaderString(int section) const
+{
+    QString horizontalHeaderString = QString("");
+
+}*/
+
+//! --------------------------------------------
+//! function: strings for the horizontal header
+//! details:
+//! --------------------------------------------
 QString CustomTableModel::getHeaderString(int section) const
 {
     QString horizontalHeaderString = QString("");
     switch(m_loadTypes.at(section))
     {
+    case Property::loadType_scalar: horizontalHeaderString = "SCA"; break;
+
     case Property::loadType_temperatureMagnitude: horizontalHeaderString = "T"; break;
     case Property::loadType_thermalConvectionFilmCoefficientMagnitude: horizontalHeaderString = "Film coeff"; break;
     case Property::loadType_thermalConvectionReferenceTemperatureMagnitude: horizontalHeaderString = "Ref temperature"; break;
@@ -565,6 +584,10 @@ QString CustomTableModel::getHeaderString(int section) const
     case Property::loadType_accelerationY: horizontalHeaderString = "Ay"; break;
     case Property::loadType_accelerationZ: horizontalHeaderString = "Az"; break;
     case Property::loadType_accelerationMagnitude: horizontalHeaderString = "A"; break;
+    case Property::loadType_velocityX: horizontalHeaderString = "Vx"; break;
+    case Property::loadType_velocityY: horizontalHeaderString = "Vy"; break;
+    case Property::loadType_velocityZ: horizontalHeaderString = "Vz"; break;
+    case Property::loadType_velocityMagnitude: horizontalHeaderString = "V"; break;
     case Property::loadType_momentX: horizontalHeaderString = "Mx"; break;
     case Property::loadType_momentY: horizontalHeaderString = "My"; break;
     case Property::loadType_momentZ: horizontalHeaderString = "Mz"; break;

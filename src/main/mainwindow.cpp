@@ -18,12 +18,12 @@
 #include "detailviewer.h"
 #include "shapeselector.h"
 #include "generaldelegate.h"
+#include "maintreetools.h"
+#include "tabularData/tabulardataviewerclass.h"
 
-#include "src/gui/tabularData/tabulardataviewerclass1.h"
-
-#include "src/gui/tabularData/tablewidget.h"
+#include "tabularData/tablewidget.h"
 #include "qpushbuttonextended.h"
-#include "src/utils/tools.h"
+#include "tools.h"
 #include "optionsWidget/optionswidget.h"
 #include "systemConsole/systemconsole.h"
 #include "src/utils/ccout.h"
@@ -382,7 +382,7 @@ MainWindow::MainWindow(QWidget *parent):QMainWindow(parent),ui(new Ui::MainWindo
     //! -----------------------------------------------------------
     //! the tabular data graph view - loads vs time through charts
     //! ------------------------------------------------------------
-    myTabularDataGraphViewer1 = new TabularDataViewerClass1(this);
+    myTabularDataGraphViewer1 = new TabularDataViewerClass(this);
 
     //! -----------------------------
     //! graph viewer and dock window
@@ -1177,7 +1177,7 @@ void MainWindow::createToolBars()
     actionMultipleSelect = new QAction(QIcon(":/icons/icon_multiple select.png"),"Box select");
     connect(actionMultipleSelect,SIGNAL(triggered(bool)),this,SLOT(setSelectionModeBox()));
 
-    actionSelectAll = new QAction(QIcon(":/icons/icon_select all.png"),"Salect all");
+    actionSelectAll = new QAction(QIcon(":/icons/icon_select all.png"),"Select all");
     connect(actionSelectAll,SIGNAL(triggered(bool)),this,SLOT(HandleSelectAll()));
 
     menuButtonTypeOfSelection->addAction(actionSingleSelect);
@@ -1522,7 +1522,7 @@ void MainWindow::importFile(QString &fileName)
                 //! -------------------------------------------------
                 //! feed the clip plane tool with coordinate systems
                 //! -------------------------------------------------
-                QStandardItem *itemCSRoot = mySimulationManager->getTreeItem(SimulationNodeClass::nodeType_coordinateSystems);
+                QStandardItem *itemCSRoot = mainTreeTools::getTreeItem(mySimulationManager->getModel(),SimulationNodeClass::nodeType_coordinateSystems);
                 myClipTool->setCoordinateSystemRoot(itemCSRoot);
 
                 //! -------------------------------------------------
@@ -1803,7 +1803,7 @@ void MainWindow::openProject()
             //! -------------------------------------------------
             //! feed the clip plane tool with coordinate systems
             //! -------------------------------------------------
-            QStandardItem *itemCSRoot = mySimulationManager->getTreeItem(SimulationNodeClass::nodeType_coordinateSystems);
+            QStandardItem *itemCSRoot = mainTreeTools::getTreeItem(mySimulationManager->getModel(),SimulationNodeClass::nodeType_coordinateSystems);
             myClipTool->setCoordinateSystemRoot(itemCSRoot);
 
             //! -------------------------------------------------
@@ -1822,6 +1822,24 @@ void MainWindow::openProject()
             //! inform the system the model has been loaded (it avoids multiple import operations)
             //! -----------------------------------------------------------------------------------
             myGeometryImportStatus = geometryImportStatus_Loaded;
+
+            QStandardItemModel *myModel = mySimulationManager->getModel();
+            //QStandardItem *geometryRoot =mySimulationManager->Geometry_RootItem;
+            QExtendedStandardItem *geometryRoot = static_cast<QExtendedStandardItem*>(mainTreeTools::getTreeItem(myModel,SimulationNodeClass::nodeType_geometry));
+
+            for(int i=0; i<geometryRoot->rowCount();i++)
+            {
+                QStandardItem *curBody = geometryRoot->child(i,0);
+                SimulationNodeClass *curBodyNode = curBody->data(Qt::UserRole).value<SimulationNodeClass*>();
+                curBodyNode->getModel()->blockSignals(true);
+
+                Property::SuppressionStatus ss = curBodyNode->getPropertyValue<Property::SuppressionStatus>("Suppressed");
+                mySimulationManager->myTreeView->setCurrentIndex(curBody->index());
+                if(ss == Property::SuppressionStatus_Suppressed)
+                    mySimulationManager->changeNodeSuppressionStatus(Property::SuppressionStatus_Suppressed);
+                else continue;
+                curBodyNode->getModel()->blockSignals(false);
+            }
         }
         else
         {
@@ -2482,6 +2500,7 @@ void MainWindow::saveProjectAs()
             QDir MDB_dir(_filesDir+("/MDB"));
             SDB_dir.removeRecursively();
             MDB_dir.removeRecursively();
+            //QStringList allDir = curDir.entryList();
         }
     }
 
@@ -2720,18 +2739,18 @@ void MainWindow::myClose()
     cout<<"MainWindow::myClose()->____application current directory: "<<QDir::current().absolutePath().toStdString()<<"____"<<endl;
     cout<<"MainWindow::myClose()->____directory to be removed: "<<dirToDelete.toStdString()<<"____"<<endl;
 
-    bool isDone = curDir.removeRecursively();
+    //bool isDone = curDir.removeRecursively();
 
     //! alternative to the previous line
-    //tools::clearDir(dirToDelete);
+    tools::clearDir(dirToDelete);
 
     curDir.cdUp();
     cout<<"MainWindow::myClose()->____going up to dir: "<<curDir.absolutePath().toStdString()<<"____"<<endl;
 
     //bool isDone = curDir.rmdir(dirToDelete);
 
-    if(isDone) cout<<"MainWindow::myClose()->____directory: "<<dirToDelete.toStdString()<<" successfully removed____"<<endl;
-    else cerr<<"MainWindow::myClose()->____directory: "<<dirToDelete.toStdString()<<" not removed____"<<endl;
+    //if(isDone) cout<<"MainWindow::myClose()->____directory: "<<dirToDelete.toStdString()<<" successfully removed____"<<endl;
+    //else cerr<<"MainWindow::myClose()->____directory: "<<dirToDelete.toStdString()<<" not removed____"<<endl;
     this->close();
 }
 
@@ -3091,7 +3110,7 @@ void MainWindow::readResultsFile()
         QString resultsDataDir = files_dir+"/"+QString("SolutionData_")+timeTag+"/"+QString("ResultsData");
 
         cout<<"____resultsDataDir: "<<resultsDataDir.toStdString()<<"____"<<endl;
-
+/*
         QDir d(resultsDataDir);
         if(d.exists())
         {
@@ -3113,7 +3132,7 @@ void MainWindow::readResultsFile()
             cout<<"MainWindow::readResultsFile()->____the \"SolutionData\" does not exist: creating it____"<<endl;
             dir.mkdir(resultsDataDir);
             dir.cd(resultsDataDir);
-        }
+        }*/
 
         mySimulationManager->readResultsFile(fileName, solutionDataDir);
     }
