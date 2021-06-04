@@ -32,6 +32,8 @@ public slots:
     //! write a CCX input file
     bool writeCCX();
 
+    bool writeOF();
+
 signals:
 
     //! emit input file written (true/false)

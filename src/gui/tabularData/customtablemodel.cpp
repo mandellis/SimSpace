@@ -355,6 +355,10 @@ QVariant CustomTableModel::data(const QModelIndex &index, int role) const
                 m_loadTypes.at(index.column())==Property::loadType_accelerationX ||
                 m_loadTypes.at(index.column())==Property::loadType_accelerationY ||
                 m_loadTypes.at(index.column())==Property::loadType_accelerationZ ||
+                m_loadTypes.at(index.column())==Property::loadType_velocityMagnitude ||
+                m_loadTypes.at(index.column())==Property::loadType_velocityX ||
+                m_loadTypes.at(index.column())==Property::loadType_velocityY ||
+                m_loadTypes.at(index.column())==Property::loadType_velocityZ ||
                 m_loadTypes.at(index.column())==Property::loadType_momentMagnitude ||
                 m_loadTypes.at(index.column())==Property::loadType_momentX ||
                 m_loadTypes.at(index.column())==Property::loadType_momentY ||
@@ -580,6 +584,10 @@ QString CustomTableModel::getHeaderString(int section) const
     case Property::loadType_accelerationY: horizontalHeaderString = "Ay"; break;
     case Property::loadType_accelerationZ: horizontalHeaderString = "Az"; break;
     case Property::loadType_accelerationMagnitude: horizontalHeaderString = "A"; break;
+    case Property::loadType_velocityX: horizontalHeaderString = "Vx"; break;
+    case Property::loadType_velocityY: horizontalHeaderString = "Vy"; break;
+    case Property::loadType_velocityZ: horizontalHeaderString = "Vz"; break;
+    case Property::loadType_velocityMagnitude: horizontalHeaderString = "V"; break;
     case Property::loadType_momentX: horizontalHeaderString = "Mx"; break;
     case Property::loadType_momentY: horizontalHeaderString = "My"; break;
     case Property::loadType_momentZ: horizontalHeaderString = "Mz"; break;

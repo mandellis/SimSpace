@@ -40,7 +40,7 @@ QList<int> mainTreeTools::getColumnsToRead(QStandardItem *anItem,int columnsBefo
 {
     //cout<<"mainTreeTools::getColumnsToRead()->____function called____"<<endl;
 
-    columnsBeforeBC = NUMBER_OF_COLUMNS_BEFORE_BC_DATA;
+    //columnsBeforeBC = NUMBER_OF_COLUMNS_BEFORE_BC_DATA;
 
     QList<int> theColumnsToShow;
     int SC = mainTreeTools::calculateStartColumn(anItem,columnsBeforeBC);
@@ -72,7 +72,6 @@ QList<int> mainTreeTools::getColumnsToRead(QStandardItem *anItem,int columnsBefo
                SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Pressure<<
                SimulationNodeClass::nodeType_modelChange<<
                SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionPressure<<
-               SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionVelocity<<
                SimulationNodeClass::nodeType_electrostaticPotential;
 
     //! -----------------
@@ -99,6 +98,7 @@ QList<int> mainTreeTools::getColumnsToRead(QStandardItem *anItem,int columnsBefo
                      SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Moment<<
                      SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Acceleration<<
                      SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RotationalVelocity<<
+                     SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionVelocity<<
                      SimulationNodeClass::nodeType_magneticField;
 
     //! ----------------
@@ -180,7 +180,7 @@ int mainTreeTools::calculateStartColumn(QStandardItem *anItem, int columnsBefore
 {
     //cout<<"mainTreeTools::calculateStartColumn()->____function called____"<<endl;
 
-    columnsBeforeBC = NUMBER_OF_COLUMNS_BEFORE_BC_DATA;
+    //columnsBeforeBC = NUMBER_OF_COLUMNS_BEFORE_BC_DATA;
 
     //! -----------------
     //! the start column
@@ -222,6 +222,7 @@ int mainTreeTools::calculateStartColumn(QStandardItem *anItem, int columnsBefore
         case SimulationNodeClass::nodeType_structuralAnalysisBoundaryContidion_FixedSupport:
         case SimulationNodeClass::nodeType_thermalAnalysisAdiabaticWall:
         case SimulationNodeClass::nodeType_particlesInFieldsParticlePack:
+        case SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionWall:
 #ifdef COSTAMP_VERSION
         case SimulationNodeClass::nodeType_timeStepBuilder:
 #endif
@@ -234,6 +235,7 @@ int mainTreeTools::calculateStartColumn(QStandardItem *anItem, int columnsBefore
             //! --------------------
         case SimulationNodeClass::nodeType_modelChange:
         case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Pressure:
+        case SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionPressure:
         case SimulationNodeClass::nodeType_structuralAnalysisThermalCondition:
         case SimulationNodeClass::nodeType_thermalAnalysisRadiation:
         case SimulationNodeClass::nodeType_thermalAnalysisTemperature:
@@ -259,6 +261,7 @@ int mainTreeTools::calculateStartColumn(QStandardItem *anItem, int columnsBefore
         case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Moment:
         case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RemoteForce:
         case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Acceleration:
+        case SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionVelocity:
             theDefineBy = curNode->getPropertyValue<Property::defineBy>("Define by");
             if(theDefineBy==Property::defineBy_vector) delta = 0;
             else delta = 2;

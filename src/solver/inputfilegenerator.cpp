@@ -18,6 +18,11 @@
 #include "writesolverfileclass.h"
 
 //! ----
+//! OF
+//! ----
+#include "ofwrite.h"
+
+//! ----
 //! C++
 //! ----
 #include <iostream>
@@ -59,7 +64,12 @@ void inputFileGenerator::run()
 {
     cout<<"inputFileGenerator::run()->____run called. Thread: "<<QThread::currentThreadId()<<"____"<<endl;
     bool isDone = false;
+
+    QExtendedStandardItem *simulationRootItem = static_cast<QExtendedStandardItem*>(myParameters[1]);
+    SimulationNodeClass *curNode = simulationRootItem->data(Qt::UserRole).value<SimulationNodeClass*>();
     int solverTarget = 0;
+    if(curNode->getType()==SimulationNodeClass::nodeType_CFDAnalysis) solverTarget = 1;
+
     switch(solverTarget)
     {
     case 0:
@@ -106,7 +116,8 @@ void inputFileGenerator::run()
         //! ------------------------
         //! put here another solver
         //! ------------------------
-        isDone = false;
+        isDone = this->writeOF();
+        if(myParameters.size() != 3) emit inputFileWritten(false);
     }
         break;
 
@@ -144,5 +155,26 @@ bool inputFileGenerator::writeCCX()
     CCXInputGenerator.setProgressIndicator(myProgressIndicator);
     CCXInputGenerator.setName(myInputFileName);
     bool isDone = CCXInputGenerator.perform();
+    return isDone;
+}
+
+bool inputFileGenerator::writeOF()
+{
+    cout<<"inputFileGenerator::writeOF()->____function called. Thread: "<<QThread::currentThreadId()<<"____"<<endl;
+    if(myParameters.size() != 3) return false;
+
+    //! -----------------------
+    //! unpack parameters:
+    //! - simulation data base
+    //! - simulation root
+    //! - file name
+    //! -----------------------
+    simulationDataBase *sDB = static_cast<simulationDataBase*>(myParameters[0]);
+    QExtendedStandardItem *simulationRootItem = static_cast<QExtendedStandardItem*>(myParameters[1]);
+    ofwrite OFInputGenerator(sDB,simulationRootItem);
+
+    OFInputGenerator.setProgressIndicator(myProgressIndicator);
+    OFInputGenerator.setName(myInputFileName);
+    bool isDone = OFInputGenerator.perform();
     return isDone;
 }

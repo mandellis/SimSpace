@@ -961,6 +961,73 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
             }
                 break;
 
+            case SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionWall:
+            {
+                emit requestHideAllResults();
+                emit requestUnhighlightBodies(true);
+                emit requestHideMeshes();
+                emit requestSetWorkingMode(2);
+                this->changeColor();
+
+                //! --------------
+                //! set the model
+                //! --------------
+                QModelIndex index_analysisSettings = mainTreeTools::getAnalysisSettingsItemFromCurrentItem(myTreeView)->index();
+                emit requestTabularData(index_analysisSettings);
+                emit requestHideFirstRow();
+                emit requestClearGraph();
+
+                QList<int> columnsToShow;
+                columnsToShow << 0 << 1;
+                emit requestShowColumns(columnsToShow);
+
+                bool isDone = markerBuilder::addMarker(this->getCurrentNode(), mySimulationDataBase);
+                if(isDone == true) this->displayMarker();
+            }
+                break;
+
+            case SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionPressure:
+            case SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionVelocity:
+            {
+                emit requestHideAllResults();
+                emit requestUnhighlightBodies(true);
+                emit requestHideMeshes();
+                emit requestSetWorkingMode(2);
+                this->changeColor();
+
+                //! --------------
+                //! set the model
+                //! --------------
+                QModelIndex index_analysisSettings = mainTreeTools::getAnalysisSettingsItemFromCurrentItem(myTreeView)->index();
+                emit requestTabularData(index_analysisSettings);
+
+                //! ---------------------------------------------------------------------
+                //! show the first row with Time = 0, apart from the item "Model change"
+                //! ---------------------------------------------------------------------
+                if(theNodeType==SimulationNodeClass::nodeType_modelChange) emit requestHideFirstRow();
+                else emit requestShowFirstRow();
+
+                //! -----------------------------------------------------------
+                //! calculate the number of columns to show => in the table <=
+                //! -----------------------------------------------------------
+                QList<int> columnsToShow;
+                CustomTableModel *tabData = index_analysisSettings.data(Qt::UserRole).value<SimulationNodeClass*>()->getTabularDataModel();
+                columnsToShow << 0 << 1 << mainTreeTools::getColumnsToRead(myTreeView,tabData->getColumnBeforeBC());
+                if(columnsToShow.length()>=3)
+                {
+                    emit requestShowColumns(columnsToShow);
+                    //! ------------------------------------
+                    //! remove the column showing the times
+                    //! ------------------------------------
+                    columnsToShow.removeFirst();
+                    emit requestShowGraph(tabData,columnsToShow);
+                }
+
+                bool isDone = markerBuilder::addMarker(this->getCurrentNode(), mySimulationDataBase);
+                if(isDone == true) this->displayMarker();
+            }
+                break;
+
             case SimulationNodeClass::nodeType_structuralAnalysisBoltPretension:
             {
                 emit requestHideAllResults();
@@ -1353,6 +1420,9 @@ void SimulationManager::deleteItem(QList<QModelIndex> indexesList)
                       //SimulationNodeClass::nodeType_thermalAnalysis<<
                       SimulationNodeClass::nodeType_thermalAnalysisSolution<<
                       SimulationNodeClass::nodeType_thermalAnalysisSolutionInformation<<
+                      SimulationNodeClass::nodeType_CFDAnalysisSettings<<
+                      SimulationNodeClass::nodeType_CFDAnalysisSolution<<
+                      SimulationNodeClass::nodeType_CFDAnalysisSolutionInformation<<
                       SimulationNodeClass::nodeType_geometry<<
                       SimulationNodeClass::nodeType_geometryBody<<
                       SimulationNodeClass::nodeType_connection<<
@@ -3100,9 +3170,22 @@ void SimulationManager::createSimulationNode(SimulationNodeClass::nodeType type,
         QVector<QVariant> vecData{data};
         aLoad.setData(vecData);
 
-        aLoad.setType(Property::loadType_scalar);
-        nodeAnalysisSettings->getTabularDataModel()->appendColumn(aLoad);
+        switch(type)
+        {
+        case SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionVelocity:
+        {
+            aLoad.setType(Property::loadType_velocityMagnitude);
+            nodeAnalysisSettings->getTabularDataModel()->appendColumn(aLoad);
+        }
+            break;
 
+        case SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionPressure:
+        {
+            aLoad.setType(Property::loadType_pressureMagnitude);
+            nodeAnalysisSettings->getTabularDataModel()->appendColumn(aLoad);
+        }
+            break;
+        }
         markerBuilder::addMarker(aNode,mySimulationDataBase);
         currentSimulationRoot->insertRow(mainTreeTools::getInsertionRow(myTreeView),item);
     }
@@ -7343,8 +7426,17 @@ void SimulationManager::writeSolverInputFile()
         return;
     }
     cout<<"SimulationManager::writeSolverInputFile()->____writing input file for Analysis root: \""<<curNode->getName().toStdString()<<"\"____"<<endl;
-    QString selectedFilter;
-    QString fileName = QFileDialog::getSaveFileName(this,"Save solver input file",tools::getWorkingDir(),INP_FILES,&selectedFilter,0);
+    QString fileName;
+    if(curNode->getType()==SimulationNodeClass::nodeType_CFDAnalysis)
+    {
+        fileName = QFileDialog::getExistingDirectory(this,"Save solver files",tools::getWorkingDir());
+    }
+    else
+    {
+        QString selectedFilter;
+        fileName = QFileDialog::getSaveFileName(this,"Save solver input file",tools::getWorkingDir(),INP_FILES,&selectedFilter,0);
+    }
+
     if(fileName.isEmpty()) return;
 
     //! ----------------------
@@ -7498,6 +7590,17 @@ void SimulationManager::HandleTabularData()
             load_componentX.setType(Property::loadType_accelerationX);
             load_componentY.setType(Property::loadType_accelerationY);
             load_componentZ.setType(Property::loadType_accelerationZ);
+            tabData->setLoadToInsert(load_componentX);
+            tabData->insertColumns(startColumn,1);
+            tabData->setLoadToInsert(load_componentY);
+            tabData->insertColumns(startColumn+1,1);
+            tabData->setLoadToInsert(load_componentZ);
+            tabData->insertColumns(startColumn+2,1);
+            break;
+        case SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionVelocity:
+            load_componentX.setType(Property::loadType_velocityX);
+            load_componentY.setType(Property::loadType_velocityY);
+            load_componentZ.setType(Property::loadType_velocityZ);
             tabData->setLoadToInsert(load_componentX);
             tabData->insertColumns(startColumn,1);
             tabData->setLoadToInsert(load_componentY);
@@ -7737,6 +7840,9 @@ void SimulationManager::HandleTabularData()
             break;
         case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Acceleration:
             load_magnitude.setType(Property::loadType_accelerationMagnitude);
+            break;
+        case SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionVelocity:
+            load_magnitude.setType(Property::loadType_velocityMagnitude);
             break;
         case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RotationalVelocity:
             load_magnitude.setType(Property::loadType_rotationalVelocityMagnitude);
@@ -8098,6 +8204,7 @@ void SimulationManager::handleLoadMagnitudeDefinitionChanged(const QString& text
         aLoadType = Property::loadType_remoteRotationMagnitude;
         break;
     case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Pressure:
+    case SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionPressure:
         aLoadType = Property::loadType_pressureMagnitude;
         break;
     case SimulationNodeClass::nodeType_thermalAnalysisTemperature:
@@ -8111,7 +8218,7 @@ void SimulationManager::handleLoadMagnitudeDefinitionChanged(const QString& text
         aLoadType = Property::loadType_thermalFluxMagnitude;
         break;
     case SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionVelocity:
-        aLoadType = Property::loadType_scalar;
+        aLoadType = Property::loadType_velocityMagnitude;
         break;
     }
     int startColumn = mainTreeTools::calculateStartColumn(myTreeView,tabData->getColumnBeforeBC());
@@ -8293,6 +8400,9 @@ void SimulationManager::handleLoadXDefinitionChanged(const QString &textData)
             break;
         case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Moment:
             aLoadType = Property::loadType_momentX;
+            break;
+        case SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionVelocity:
+            aLoadType = Property::loadType_velocityX;
             break;
         }
 
@@ -8487,6 +8597,9 @@ void SimulationManager::handleLoadYDefinitionChanged(const QString &textData)
             break;
         case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Moment:
             aLoadType = Property::loadType_momentY;
+            break;
+        case SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionVelocity:
+            aLoadType = Property::loadType_velocityY;
             break;
         }
 
@@ -8724,6 +8837,9 @@ void SimulationManager::handleLoadZDefinitionChanged(const QString &textData)
             break;
         case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Moment:
             aLoadType = Property::loadType_momentZ;
+            break;
+        case SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionVelocity:
+            aLoadType = Property::loadType_velocityZ;
             break;
         }
 

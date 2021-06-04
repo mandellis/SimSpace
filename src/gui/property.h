@@ -272,6 +272,12 @@ public:
         loadType_accelerationZ,
         loadType_accelerationMagnitude,
 
+        //! velocity
+        loadType_velocityX,
+        loadType_velocityY,
+        loadType_velocityZ,
+        loadType_velocityMagnitude,
+
         //! displacement and remote displacement
         loadType_displacementX,
         loadType_displacementY,
@@ -398,7 +404,8 @@ public:
         analysisType_modal,
         analysisType_frequencyResponse,
         analysisType_uncoupledTemperatureDisplacement,
-        analysisType_coupledTemperatureDisplacement
+        analysisType_coupledTemperatureDisplacement,
+        analysisType_CFD
     } ant;
     Q_ENUM(analysisType)
 

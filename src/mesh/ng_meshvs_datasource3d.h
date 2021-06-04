@@ -222,6 +222,11 @@ public:
     void buildFaceToElementConnectivity();
 
     //! -------------
+    //! OF nodes to elements weights;
+    //! -------------
+    std::vector<std::map<int, double>> pointsElementsWeights;
+
+    //! -------------
     //! experimental
     //! -------------
     //void buildCCXFaceToElementConnectivity(std::map<meshElement2D, std::vector<std::pair<int, std::string> > > &map);

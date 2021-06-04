@@ -139,16 +139,26 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
         }
         //! -------------------------------------------------------
         //! Add the property "Define by"
-        //! -------------------------------------------------------
-        Property::defineBy theDefineby = Property::defineBy_normal;
-        data.setValue(theDefineby);
-        Property prop_defineBy("Define by",data,Property::PropertyGroup_Definition);
-        vecProp.push_back(prop_defineBy);
+        //! -------------------------------------------------------        
+        if(type == SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionVelocity)
+        {
+            Property::defineBy theDefineby = Property::defineBy_vector;
+            data.setValue(theDefineby);
+            Property prop_defineBy("Define by",data,Property::PropertyGroup_Definition);
+            vecProp.push_back(prop_defineBy);
+        }
+        else if(type == SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionPressure)
+        {
+            Property::defineBy theDefineby = Property::defineBy_normal;
+            data.setValue(theDefineby);
+            Property prop_defineBy("Define by",data,Property::PropertyGroup_Definition);
+            vecProp.push_back(prop_defineBy);
 
-        data.setValue(Property::loadDefinition_constant);
-        Property prop_loadMagnitude("Magnitude",data,Property::PropertyGroup_Definition);
-        data.setValue(prop_loadMagnitude);
-        vecProp.push_back(prop_loadMagnitude);
+            data.setValue(Property::loadDefinition_constant);
+            Property prop_loadMagnitude("Magnitude",data,Property::PropertyGroup_Definition);
+            data.setValue(prop_loadMagnitude);
+            vecProp.push_back(prop_loadMagnitude);
+        }
 
         //! -------------------------------
         //! under "Scope" and "Definition"

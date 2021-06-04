@@ -23,8 +23,8 @@
 
 //#include <embree3/rtcore.h>
 //#include <embree3/rtcore_ray.h>
-#include <ext/libigl/external/embree/include/embree3/rtcore.h>
-#include <ext/libigl/external/embree/include/embree3/rtcore_ray.h>
+#include <ext/Embree/embree-3.11.0.x64.vc14.windows/include/embree3/rtcore.h>
+#include <ext/Embree/embree-3.11.0.x64.vc14.windows/include/embree3/rtcore_ray.h>
 #include <iostream>
 #include <vector>
 

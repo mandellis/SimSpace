@@ -109,7 +109,7 @@ bool ofwrite::perform()
     //! init the progress bar
     //! ----------------------
     int done = 0;
-    int Nevents = 7;
+    int Nevents = 1;
     if(myProgressIndicator!=Q_NULLPTR)
     {
         //! ---------------------------------
@@ -118,45 +118,22 @@ bool ofwrite::perform()
         myProgressIndicator->setSecondaryBarVisible(false);
 
         QProgressEvent *e = new QProgressEvent(QProgressEvent_Init,0,Nevents,0,"Writing solver input file",
-                                               QProgressEvent_None,-1,-1,-1,"Writing OF input file");
+                                               QProgressEvent_None,-1,-1,-1,"Writing OF solver input file");
         QApplication::postEvent(myProgressIndicator,e);
         QApplication::processEvents();
         QThread::msleep(1000);
     }
 
-    //! --------------------
-    //! update the progress
-    //! --------------------
-    if(myProgressIndicator!=Q_NULLPTR)
-    {
-        done++;
-        QProgressEvent *e = new QProgressEvent(QProgressEvent_Update,0,Nevents-1,done,"Connectivity maps generated",
-                                               QProgressEvent_None,-1,-1,-1,"Writing OF solver input file");
-        QApplication::postEvent(myProgressIndicator,e);
-        QApplication::processEvents();
-        QThread::msleep(250);
-
-        if(Global::status().code==0)
-        {
-            cout<<"writeSolverFileClass::perform()->____process stopped____"<<endl;
-            return false;
-        }
-    }
-
     //! ----------------------------------
     //! a default name for the input dir
     //! ----------------------------------
-    if(myFileDir=="") myFileDir ="D://test";  //qui ci va nome salvataggio
+    if(myFileDir=="") myFileDir ="OFinput.inp";
 
     QDir curDir;
     curDir.cd(myFileDir);
     curDir.mkdir("0");
     curDir.mkdir("system");
     curDir.mkdir("constant");
-
-    //! open the file and set current directory
-    //myInputFile.open(myFileName.toStdString());
-    //QString inputName = myFileName;
 
     //! number of items within the tree
     int N = mySimulationRoot->rowCount();
@@ -169,64 +146,30 @@ bool ofwrite::perform()
     myU.open((path+"/U").c_str());
     myP.open((path+"/p").c_str());
     myK.open((path+"/k").c_str());
-    myEPS.open((path+"/epsilon").c_str());
     myW.open((path+"/omega").c_str());
-    myNUT.open((path+"/nuTilda").c_str());
     myNu.open((path+"/nut").c_str());
-/*
-    std::vector<ofstream> allBCfiles;
-    allBCfiles.push_back(myU);
-    allBCfiles.push_back(myP);
-    allBCfiles.push_back(myK);
-    allBCfiles.push_back(myEPS);
-    allBCfiles.push_back(myW);
-    allBCfiles.push_back(myNUT);
-    allBCfiles.push_back(myNu);
-*/
+
+    std::vector<double> vect{0, 0, 0};
+
     of::printMark(myU);
     of::printHeading(myU,std::string("volVectorField"),std::string("U"),std::vector<int>());
-    myU<<"dimensions      [0 1 -1 0 0 0 0];"<<endl;
-    myU<<"internalField   uniform (0 0 0);"<<endl;
-    myU<<"boundaryField"<<endl;
-    myU<<"{"<<endl;
+    of::printBoundaryIntro(myU, 1, -1, vect);
 
     of::printMark(myP);
     of::printHeading(myP,std::string("volScalarField"),std::string("p"),std::vector<int>());
-    myP<<"dimensions      [0 2 -2 0 0 0 0];"<<endl;
-    myP<<"internalField   uniform 0;"<<endl;
-    myP<<"boundaryField"<<endl;
-    myP<<"{"<<endl;
+    of::printBoundaryIntro(myP, 2, -2, 0);
 
     of::printMark(myK);
     of::printHeading(myK,std::string("volScalarField"),std::string("k"),std::vector<int>());
-    myK<<"dimensions      [0 2 -2 0 0 0 0];"<<endl;
-    myK<<"internalField   uniform 1e-3;"<<endl;
-    myK<<"boundaryField"<<endl;
-    myK<<"{"<<endl;
+    of::printBoundaryIntro(myK, 2, -2, 0.003);
 
-    of::printHeading(myEPS,std::string("volScalarField"),std::string("epsilon"),std::vector<int>());
-    myEPS<<"dimensions      [0 2 -3 0 0 0 0];"<<endl;
-    myEPS<<"internalField   uniform 10;"<<endl;
-    myEPS<<"boundaryField"<<endl;
-    myEPS<<"{"<<endl;
-
+    of::printMark(myW);
     of::printHeading(myW,std::string("volScalarField"),std::string("omega"),std::vector<int>());
-    myW<<"dimensions      [0 0 -1 0 0 0 0];"<<endl;
-    myW<<"internalField   uniform 100000;"<<endl;
-    myW<<"boundaryField"<<endl;
-    myW<<"{"<<endl;
+    of::printBoundaryIntro(myW, 0, -1, 100000);
 
-    of::printHeading(myNUT,std::string("volScalarField"),std::string("nuTilda"),std::vector<int>());
-    myNUT<<"dimensions      [0 2 -1 0 0 0 0];"<<endl;
-    myNUT<<"internalField   uniform 0;"<<endl;
-    myNUT<<"boundaryField"<<endl;
-    myNUT<<"{"<<endl;
-
+    of::printMark(myNu);
     of::printHeading(myNu,std::string("volScalarField"),std::string("nut"),std::vector<int>());
-    myNu<<"dimensions      [0 2 -1 0 0 0 0];"<<endl;
-    myNu<<"internalField   uniform 0;"<<endl;
-    myNu<<"boundaryField"<<endl;
-    myNu<<"{"<<endl;
+    of::printBoundaryIntro(myW, 2, -1, 0);
 
     std::map<std::string,std::map<int,occHandle(Ng_MeshVS_DataSourceFace)>> oFMap;
     for(int k=1; k<N-1; k++)
@@ -241,7 +184,7 @@ bool ofwrite::perform()
 
         if(theNodeSS==Property::SuppressionStatus_Active)
         {
-            QString SetName = itemName.append("_").append(QString("%1").arg(k));
+            QString setName = itemName.append("_").append(QString("%1").arg(k));
             IndexedMapOfMeshDataSources anIndexedMapOfFaceMeshDS;
             anIndexedMapOfFaceMeshDS = theNode->getPropertyValue<IndexedMapOfMeshDataSources>("Mesh data sources");
             std::map<int,occHandle(Ng_MeshVS_DataSourceFace)> tempMap;
@@ -256,65 +199,70 @@ bool ofwrite::perform()
             }
 
             //! possible BC value
-            double p,U,k,w,eps,T,rho,v;
-            std::vector<double> e;
-            QList<int> columnList = mainTreeTools::getColumnsToRead(theItem,tabData->getColumnBeforeBC());
-            v = tabData->dataRC(1,columnList.at(0)).value<double>();
+
+            QList<int> columnList;
             std::vector<double> vec;
-            vec.push_back(v);
+
+            if (theNodeType != SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionWall)
+            {
+                columnList = mainTreeTools::getColumnsToRead(theItem,tabData->getColumnBeforeBC());
+                double val;
+                for (int i = 0; i < columnList.size(); i++)
+                {
+                    val = tabData->dataRC(1,columnList.at(i)).value<double>();
+                    vec.push_back(val);
+                }
+            }
+
+            std::string fullName;
 
             switch(theNodeType)
             {
             case SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionVelocity:
             {
-                SetName.prepend("inlet_");
-                of::printBoundary(myU,std::string("fixedValue"),vec);
-                of::printBoundary(myP,std::string("zeroGradient"),e);
-                of::printBoundary(myK,std::string("fixedValue"),std::string("$internalField"));
-                of::printBoundary(myEPS,std::string("fixedValue"),std::string("$internalField"));
-                of::printBoundary(myW,std::string("fixedValue"),std::string("$internalField"));
-                of::printBoundary(myNu,std::string("calculated"),std::string("$internalField"));
-                of::printBoundary(myNUT,std::string("calculated"),std::string("$internalField"));
+                fullName = setName.prepend("velocity_").toStdString();
+
+                of::printBoundary(myU,fullName,std::string("fixedValue"),vec);
+                of::printBoundary(myP,fullName,std::string("zeroGradient"),std::vector<double>());
+                of::printBoundary(myK,fullName,std::string("fixedValue"),std::string("$internalField"));
+                of::printBoundary(myW,fullName,std::string("fixedValue"),std::string("$internalField"));
+                of::printBoundary(myNu,fullName,std::string("calculated"),std::string("uniform 0"));
             }
                 break;
 
             case SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionPressure:
             {
-                SetName.prepend("pressure_");
-                of::printBoundary(myU,std::string("zeroGradient"),e);
-                of::printBoundary(myP,std::string("fixedValue"),vec);
-                of::printBoundary(myK,std::string("zeroGradient"),e);
-                of::printBoundary(myEPS,std::string("zeroGradient"),e);
-                of::printBoundary(myW,std::string("zeroGradient"),e);
-                of::printBoundary(myNu,std::string("calculated"),std::string("uniform 0"));
-                of::printBoundary(myNUT,std::string("calculated"),std::string("uniform 0"));
+                fullName = setName.prepend("pressure_").toStdString();
+
+                of::printBoundary(myU,fullName,std::string("zeroGradient"),std::vector<double>());
+                of::printBoundary(myP,fullName,std::string("fixedValue"),vec);
+                of::printBoundary(myK,fullName,std::string("zeroGradient"),std::vector<double>());
+                of::printBoundary(myW,fullName,std::string("zeroGradient"),std::vector<double>());
+                of::printBoundary(myNu,fullName,std::string("calculated"),std::string("uniform 0"));
             }
                 break;
 
             case SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionWall:
             {
-                SetName.prepend("wall_");
-                of::printBoundary(myU,std::string("noSlip"),e);
-                of::printBoundary(myP,std::string("zeroGradient"),e);
-                of::printBoundary(myK,std::string("kqRWallFunction;"),std::string("$internalField"));
-                of::printBoundary(myEPS,std::string("epsilonWallFunction;"),std::string("$internalField"));
-                of::printBoundary(myW,std::string("omegaWallFunction;"),std::string("$internalField"));
-                of::printBoundary(myNu,std::string("nutUBlendedWallFunction;"),std::string("uniform 0"));
-                of::printBoundary(myNUT,std::string("zeroGradient"),e);
+                fullName = setName.prepend("wall_").toStdString();
+
+                of::printBoundary(myU,fullName,std::string("noSlip"),std::vector<double>());
+                of::printBoundary(myP,fullName,std::string("zeroGradient"),std::vector<double>());
+                of::printBoundary(myK,fullName,std::string("kqRWallFunction"),std::string("$internalField"));
+                of::printBoundary(myW,fullName,std::string("omegaWallFunction"),std::string("$internalField"));
+                of::printBoundary(myNu,fullName,std::string("nutkWallFunction"),std::string("uniform 0"));
             }
                 break;
             }
 
-            oFMap.insert(std::make_pair(SetName.toStdString(), tempMap));
+            oFMap.insert(std::make_pair(fullName, tempMap));
         }
     }
 
     of::closeBoundary(myU);
     of::closeBoundary(myP);
     of::closeBoundary(myK);
-    of::closeBoundary(myEPS);
     of::closeBoundary(myW);
-    of::closeBoundary(myNUT);
     of::closeBoundary(myNu);
 
   /*  myU.close();
@@ -325,11 +273,39 @@ bool ofwrite::perform()
     myNUT.close();
     myNu.close();
 */
+
+    if(myProgressIndicator!=Q_NULLPTR)
+    {
+        done++;
+        QProgressEvent *e = new QProgressEvent(QProgressEvent_Update,0,Nevents-1,done,"Step 0 files generated",
+                                               QProgressEvent_None,-1,-1,-1,"Writing OF solver input file");
+        QApplication::postEvent(myProgressIndicator,e);
+        QApplication::processEvents();
+        QThread::msleep(250);
+
+        if(Global::status().code==0)
+        {
+            cout<<"writeSolverFileClass::perform()->____process stopped____"<<endl;
+            return false;
+        }
+    }
+
     const occHandle(MeshVS_DataSource) &bodyMesh =  myDB->ArrayOfMeshDS.value(1); //change in vector/array of MeshVS_DS
     bool writeMesh = of::occToOF(bodyMesh, oFMap, myFileDir.toStdString());
+    cout<<myFileDir.toStdString()<<endl;
 
+    if(myProgressIndicator!=Q_NULLPTR)
+    {
+        done++;
+        QProgressEvent *e = new QProgressEvent(QProgressEvent_Reset,-1,-1,-1,"",
+                                               QProgressEvent_Reset,-1,-1,-1,"");
+        QApplication::postEvent(myProgressIndicator,e);
+        QApplication::processEvents();
+        QThread::msleep(250);
+    }
 
-    return true;
+    if (writeMesh) return true;
+    return false;
 }
 
 void ofwrite::clock()

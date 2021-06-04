@@ -174,6 +174,11 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
                 return Q_NULLPTR;
             }
                 break;
+            case SimulationNodeClass::nodeType_CFDAnalysis:
+            {
+                return Q_NULLPTR;
+            }
+                break;
             case SimulationNodeClass::nodeType_combinedAnalysis:
             {
                 data.setValue(Property::analysisType_structural);
@@ -2406,7 +2411,8 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
             SimulationNodeClass::nodeType type = node->getType();
 
             if(type!=SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Pressure &&
-                    type!=SimulationNodeClass::nodeType_structuralAnalysisBoltPretension)
+                    type!=SimulationNodeClass::nodeType_structuralAnalysisBoltPretension &&
+                    type!=SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionPressure)
             {
                 QComboBox *editor = new QComboBox(parent);
                 QVariant data;
@@ -2945,7 +2951,15 @@ void GeneralDelegate::setEditorData(QWidget *editor, const QModelIndex &index) c
          {
              switch(at)
              {
-             case Property::analysisType_thermal: cb->setCurrentIndex(0); break;
+             case Property::analysisType_thermal: cb->setCurrentIndex(1); break;
+             }
+         }
+             break;
+         case SimulationNodeClass::nodeType_CFDAnalysis:
+         {
+             switch(at)
+             {
+             case Property::analysisType_CFD: cb->setCurrentIndex(6); break;
              }
          }
              break;
