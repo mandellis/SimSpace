@@ -582,6 +582,7 @@ bool postObject::buildMeshIO(double min, double max, int Nlevels, bool autoscale
         std::pair<double,double> minmax = this->getMinMax(component);
         myMin = minmax.first;
         myMax = minmax.second;
+        cout<<"postObject::buildMeshIO()->____min max____"<<myMin<<" "<<myMax<<endl;
     }
     else {
         myMin = min;
@@ -614,9 +615,7 @@ bool postObject::buildMeshIO(double min, double max, int Nlevels, bool autoscale
             }
         }
         else
-        {
             curMeshDS = anIt->second->GetNonDeformedDataSource();
-        }
 
         //! ----------------------------------
         //! build a deformed mesh data source
@@ -628,6 +627,7 @@ bool postObject::buildMeshIO(double min, double max, int Nlevels, bool autoscale
         try
         {
             displacementMap = myMapOfNodalDisplacements.at(loc);
+            cout<<"postObject::buildMeshIO()->____using displacement map____"<<endl;
         }
         catch(...)
         {
@@ -638,14 +638,22 @@ bool postObject::buildMeshIO(double min, double max, int Nlevels, bool autoscale
             myMapOfNodalDisplacements.insert(std::make_pair(loc,displacementMap));
         }
         theDeformedDS->SetNonDeformedDataSource(curMeshDS);
-
         for(TColStd_MapIteratorOfPackedMapOfInteger it(curMeshDS->GetAllNodes()); it.More(); it.Next())
         {
             int globalNodeID = it.Key();
-            const gp_Vec &d = displacementMap.at(globalNodeID);
+            gp_Vec &d = gp_Vec(0,0,0);
+            try
+            {
+                d = displacementMap.at(globalNodeID);
+            }
+            catch(...)
+            {
+               d =  gp_Vec(0,0,0);
+            }
             theDeformedDS->SetVector(globalNodeID,d);
         }
         theDeformedDS->SetMagnify(deformationScale);
+
         theMeshDataSourcesForView[loc]=theDeformedDS;   //! abruptly replace - do not use "insert"
 
         const std::vector<std::map<int, double>> &listOfRes = theData.at(loc);
@@ -725,7 +733,7 @@ std::pair<double,double> postObject::getMinMax(int component)
     //! -------------------
     //! scan the locations
     //! -------------------
-    if(theData.size()==0)
+    if(theData.empty())
     {
         cout<<"postObject::getMinMax()->___empty data____"<<endl;
         return std::make_pair(0.0,0.0);

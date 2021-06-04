@@ -717,6 +717,16 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
             editor->addItem("Equivalent plastic strain",1);
             return editor;
         }
+        //! ----------------------------------------
+        //! Source - for probe tool
+        //! ----------------------------------------
+        if(propertyName =="Source")
+        {
+            QComboBox *editor = new QComboBox(parent);
+            editor->addItem("Temperature",0);
+            editor->addItem("Equivalent von mises stress",1);
+            return editor;
+        }
         //! --------
         //! Mapping
         //! --------
@@ -1188,10 +1198,9 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
             if(val == Property::contactBehavior_asymmetric)
             {
                 QComboBox *editor = new QComboBox(parent);
-                QVariant data;
-                data.setValue(0);
+                data.setValue(false);
                 editor->addItem("Off",data);
-                data.setValue(1);
+                data.setValue(true);
                 editor->addItem("On",data);
                 return editor;
             }
@@ -1208,13 +1217,12 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
 
             if(val == Property::contactBehavior_asymmetric || form ==Property::contactFormulation_MPC)
             {
-            QComboBox *editor = new QComboBox(parent);
-            QVariant data;
-            data.setValue(0);
-            editor->addItem("Off",data);
-            data.setValue(1);
-            editor->addItem("On",data);
-            return editor;
+                QComboBox *editor = new QComboBox(parent);
+                data.setValue(false);
+                editor->addItem("Off",data);
+                data.setValue(true);
+                editor->addItem("On",data);
+                return editor;
             }
             else return 0;
         }
@@ -1403,6 +1411,17 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
         //! "Display time"
         //! ---------------
         else if(propertyName =="Display time")
+        {
+            QLineEdit *editor = new QLineEdit(parent);
+            QDoubleValidator *doubleValidator = new QDoubleValidator();
+            doubleValidator->setBottom(0.0);
+            editor->setValidator(doubleValidator);
+            return editor;
+        }
+        //! ---------------
+        //! "Probe location"
+        //! ---------------
+        else if(propertyName =="Node ID")
         {
             QLineEdit *editor = new QLineEdit(parent);
             QDoubleValidator *doubleValidator = new QDoubleValidator();
@@ -3427,6 +3446,16 @@ void GeneralDelegate::setEditorData(QWidget *editor, const QModelIndex &index) c
         cb->setCurrentIndex(val);
         connect(cb,SIGNAL(currentIndexChanged(int)),this,SLOT(commitAndCloseComboBox()));
     }
+    //! ---------------------------------------------
+    //! Source for fatigue tool
+    //! ---------------------------------------------
+    if(propertyName =="Source")
+    {
+        QComboBox *cb = static_cast<QComboBox*>(editor);
+        int val = data.value<Property>().getData().toInt();
+        cb->setCurrentIndex(val);
+        connect(cb,SIGNAL(currentIndexChanged(int)),this,SLOT(commitAndCloseComboBox()));
+    }
     //! ------------------------------------------------
     //! stress strain/strain component for fatigue tool
     //! ------------------------------------------------
@@ -3665,6 +3694,7 @@ void GeneralDelegate::setEditorData(QWidget *editor, const QModelIndex &index) c
         QLineEdit *le = static_cast<QLineEdit*>(editor);
         int value = data.value<Property>().getData().toInt();
         le->setText(QString("%1").arg(value));
+        connect(le,SIGNAL(editingFinished()),this,SLOT(commitAndCloseStoreResultsAt()));
     }
     //! ---------------------------------------
     //! Output settings for "Store results at"
@@ -3719,9 +3749,10 @@ void GeneralDelegate::setEditorData(QWidget *editor, const QModelIndex &index) c
         Property::contactBehavior val = curNode->getPropertyItem("Behavior")->data(Qt::UserRole).value<Property>().getData().value<Property::contactBehavior>();
         if(val == Property::contactBehavior_asymmetric)
         {
-            int value = data.value<Property>().getData().toInt();
             QComboBox *cb = static_cast<QComboBox*>(editor);
-            cb->setCurrentIndex(value);
+            bool val = data.value<Property>().getData().toBool();
+            if(val==false) cb->setCurrentIndex(0);
+            else cb->setCurrentIndex(1);
             connect(cb,SIGNAL(currentIndexChanged(int)),this,SLOT(commitAndCloseSmallSlidingControl()));
         }
     }
@@ -3735,9 +3766,10 @@ void GeneralDelegate::setEditorData(QWidget *editor, const QModelIndex &index) c
         Property::contactType type = curNode->getPropertyItem("Type")->data(Qt::UserRole).value<Property>().getData().value<Property::contactType>();
         if(val == Property::contactBehavior_asymmetric || type == Property::contactType_bonded)
         {
-            int value = data.value<Property>().getData().toInt();
             QComboBox *cb = static_cast<QComboBox*>(editor);
-            cb->setCurrentIndex(value);
+            bool val = data.value<Property>().getData().toBool();
+            if(val==false) cb->setCurrentIndex(0);
+            else cb->setCurrentIndex(1);
             connect(cb,SIGNAL(currentIndexChanged(int)),this,SLOT(commitAndCloseAdjustControl()));
         }
     }
@@ -3927,6 +3959,15 @@ void GeneralDelegate::setEditorData(QWidget *editor, const QModelIndex &index) c
     //! "Display time"
     //! ---------------
     else if(propertyName =="Display time")
+    {
+        double value = data.value<Property>().getData().toDouble();
+        QLineEdit *le = static_cast<QLineEdit*>(editor);
+        le->setText(QString("%1").arg(value));
+    }
+    //! ---------------
+    //! "Probe location"
+    //! ---------------
+    else if(propertyName =="Node ID")
     {
         double value = data.value<Property>().getData().toDouble();
         QLineEdit *le = static_cast<QLineEdit*>(editor);
@@ -5549,6 +5590,15 @@ void GeneralDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, c
             int val = cb->currentData().toInt();
             data.setValue(val);
         }
+        //! -----------------------
+        //! "Source"
+        //! -----------------------
+        if(propertyName == "Source")
+        {
+            QComboBox *cb = static_cast<QComboBox*>(editor);
+            int val = cb->currentData().toInt();
+            data.setValue(val);
+        }
         //! ------------------------------------------------
         //! stress strain/strain component for fatigue tool
         //! ------------------------------------------------
@@ -5859,10 +5909,9 @@ void GeneralDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, c
             Property::contactBehavior val = curNode->getPropertyItem("Behavior")->data(Qt::UserRole).value<Property>().getData().value<Property::contactBehavior>();
             if(val == Property::contactBehavior_asymmetric)
             {
-                int value = data.value<Property>().getData().toInt();
                 QComboBox *cb = static_cast<QComboBox*>(editor);
-                cb->setCurrentIndex(value);
-                connect(cb,SIGNAL(currentIndexChanged(int)),this,SLOT(commitAndCloseSmallSlidingControl()));
+                bool val = cb->currentData().toBool();
+                data.setValue(val);
             }
         }
         //! ----------------
@@ -5875,10 +5924,9 @@ void GeneralDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, c
             Property::contactType type = curNode->getPropertyItem("Type")->data(Qt::UserRole).value<Property>().getData().value<Property::contactType>();
             if(val == Property::contactBehavior_asymmetric || type == Property::contactType_bonded)
             {
-                int value = data.value<Property>().getData().toInt();
                 QComboBox *cb = static_cast<QComboBox*>(editor);
-                cb->setCurrentIndex(value);
-                connect(cb,SIGNAL(currentIndexChanged(int)),this,SLOT(commitAndCloseAdjustControl()));
+                bool val = cb->currentData().toBool();
+                data.setValue(val);
             }
         }
         //! ------------
@@ -6011,6 +6059,14 @@ void GeneralDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, c
         //! "Display time"
         //! ---------------
         else if(propertyName=="Display time")
+        {
+            QLineEdit *le = static_cast<QLineEdit*>(editor);
+            data.setValue(le->text().toDouble());
+        }
+        //! ---------------
+        //! "Probe location"
+        //! ---------------
+        else if(propertyName=="Node ID")
         {
             QLineEdit *le = static_cast<QLineEdit*>(editor);
             data.setValue(le->text().toDouble());

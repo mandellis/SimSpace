@@ -98,19 +98,23 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
     switch(type)
     {
     //! -------------
-    //! fatigue tool
+    //! probe tool
     //! -------------
     case SimulationNodeClass::nodeType_probe:
     {
         name = "Probe";
 
         data.setValue(0);
-        Property prop_stressStrainSource("Stress/strain source",data,Property::PropertyGroup_Definition);
+        Property prop_stressStrainSource("Source",data,Property::PropertyGroup_Definition);
         vecProp.push_back(prop_stressStrainSource);
 
         data.setValue(1);
         Property prop_component("Component",data,Property::PropertyGroup_Definition);
         vecProp.push_back(prop_component);
+
+        //! time info
+        data.setValue(0.0);
+        Property prop_location("Node ID",data,Property::PropertyGroup_Definition);
 
         //! ------------
         //! under scope
@@ -118,9 +122,9 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
         vecProp.push_back(prop_scopingMethod);
         vecProp.push_back(prop_scope);
         vecProp.push_back(prop_tags);
+        vecProp.push_back(prop_location);
     }
         break;
-
 
     case SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionPressure:
     case SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionVelocity:
@@ -1209,7 +1213,7 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
         }
 
         //! -----------------------------------------------------------------------
-        //! the contact formualation: contact pair initially treated with lagrangian
+        //! the contact formualation: contact pair initially treated with MPC
         //! -----------------------------------------------------------------------
         Property::contactFormulation theContactFormulation = Property::contactFormulation_MPC;
         data.setValue(theContactFormulation);
@@ -1240,16 +1244,16 @@ SimulationNodeClass* nodeFactory::nodeFromScratch(SimulationNodeClass::nodeType 
         vecProp.push_back(prop_frictionCoefficient);
 
         //! --------------------------------------------
-        //! small sliding: "0" => inactive "1" => active
+        //! small sliding: "false" => inactive "true" => active
         //! --------------------------------------------
-        data.setValue(int(1));
+        data.setValue(false);
         Property prop_smallSliding("Small sliding",data,Property::PropertyGroup_Definition);
         vecProp.push_back(prop_smallSliding);
 
         //! --------------------------------------------
-        //! adjust to touch: "0" => inactive "1" => active
+        //! adjust to touch: "false" => inactive "true" => active
         //! --------------------------------------------
-        data.setValue(int(1));
+        data.setValue(false);
         Property prop_adjust("Adjust to touch",data,Property::PropertyGroup_Definition);
         vecProp.push_back(prop_adjust);
 

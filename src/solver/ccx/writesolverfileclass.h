@@ -87,7 +87,7 @@ private:
                                  double a, double b, double c, double d);
 
     void writeDload(double aLoad, QString aName);
-    void writeFilm(double aLoad, QString aName,double refTemperature);
+    void writeFilm(double aLoad, QString aName, double refTemperature);
     void writeDflux(double aLoad, QString aName);
 
     void writeTemperatureHistory(sharedPostObject pObject, QString tName);

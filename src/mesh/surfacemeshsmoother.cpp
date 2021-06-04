@@ -492,7 +492,8 @@ bool surfaceMeshSmoother::buildShapeTessellation(const TopoDS_Shape &aShape,
     //! ----------------------------------------------------------------
     //! convert the shape into a tessellation with tags written on disk
     //! ----------------------------------------------------------------
-    std::string fileName("D:/support.stl");
+    std::string wDir = tools::getWorkingDir().toStdString();
+    std::string fileName(wDir.append("/support.stl"));
     STLAPIWriter aWriter;
     aWriter.WriteExtended(aShape,fileName.c_str());
 

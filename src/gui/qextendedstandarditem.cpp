@@ -513,6 +513,16 @@ QVariant QExtendedStandardItem::data(int role) const
             }
             return data;
         }
+        if(name=="Source")
+        {
+            int val = QStandardItem::data(Qt::UserRole).value<Property>().getData().toInt();
+            switch(val)
+            {
+            case 0: data.setValue(QString("Temperature")); break;
+            case 1: data.setValue(QString("Equivalent von mises stress")); break;
+            }
+            return data;
+        }
         if(name=="Component")
         {
             int val = QStandardItem::data(Qt::UserRole).value<Property>().getData().toInt();
@@ -1011,6 +1021,14 @@ QVariant QExtendedStandardItem::data(int role) const
             return data;
         }
         else if(name=="Display time")
+        {
+            double val = QStandardItem::data(Qt::UserRole).value<Property>().getData().toDouble();
+            char v[16];
+            sprintf(v,"%g",val);
+            data.setValue(QString::fromLatin1(v));
+            return data;
+        }
+        else if(name=="Node ID")
         {
             double val = QStandardItem::data(Qt::UserRole).value<Property>().getData().toDouble();
             char v[16];

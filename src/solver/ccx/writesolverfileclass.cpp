@@ -353,9 +353,9 @@ bool writeSolverFileClass::perform()
                     double a1 = dirData.at(4);
                     double a2 = dirData.at(5);
                     int h=500; //to handle
-                    rPx = refPoint.at(0)+h*a0;
-                    rPy = refPoint.at(1)+h*a1;
-                    rPz = refPoint.at(2)+h*a2;
+                    rPx = refPoint.at(0)+fabs(h*a0);
+                    rPy = refPoint.at(1)+fabs(h*a1);
+                    rPz = refPoint.at(2)+fabs(h*a2);
                 }
 #endif
 
@@ -1727,6 +1727,9 @@ bool writeSolverFileClass::perform()
         myInputFile<<"100,";
         myInputFile<<"25,"<<endl;
 
+        //myInputFile<<"*AMPLITUDE, NAME=A"<<i<<endl;
+        //myInputFile<<"0,0,"<<TimeWidth<<",1"<<endl;
+
         //! --------------------
         //! boundary conditions
         //! --------------------
@@ -2013,13 +2016,28 @@ bool writeSolverFileClass::perform()
                 case SimulationNodeClass::nodeType_thermalAnalysisConvection:
                 {
                     QString aName = SetName;
+                    QString set = SetName;
                     aName.append(QString("_%1").arg(i));
+                    set.chop(2);
                     QList<int> ColumnList = mainTreeTools::getColumnsToRead(theCurItem,tabData->getColumnBeforeBC());                            ;
+                    double prevT;
                     double loadValue = tabData->dataRC(i,ColumnList.at(0)).toDouble();
-                    //double refTemperature = theCurNode->getPropertyValue<double>("Reference temperature");
+                    if(i!=1) prevT = tabData->dataRC(i-1,ColumnList.at(1)).toDouble();
+                    else prevT = 298;
                     double refTemperature = tabData->dataRC(i,ColumnList.at(1)).toDouble();
+                    double a = 1-(refTemperature-prevT)/refTemperature;
+                    //myInputFile<<"*AMPLITUDE, NAME=A"<<aName.toStdString()<<endl;
+                    //myInputFile<<"0,"<<a<<","<<TimeWidth<<","<<1<<endl;
                     if(loadValue!=0)
-                    this->writeFilm(loadValue,aName,refTemperature);
+                    {
+                        //if(set=="water" || set=="external")
+                        //{
+                        //    int amp=0;
+                        //    this->writeFilm(loadValue,aName,refTemperature,amp);
+                        //}
+                        //else
+                            this->writeFilm(loadValue,aName,refTemperature);
+                    }
                 }
                     break;
                 case SimulationNodeClass::nodeType_thermalAnalysisAdiabaticWall:
@@ -2193,17 +2211,22 @@ bool writeSolverFileClass::perform()
                             //! -------------
                             //! Displacement
                             //! -------------
-                            myInputFile<<"*BOUNDARY"<<endl;
+
                             if(loadDefinitionXcomponent!=Property::loadDefinition_free)
                             {
+                                if(loadX_global==0.0) myInputFile<<"*BOUNDARY,FIXED"<<endl;
                                 myInputFile<<SetName.toStdString()<<", 1, 1, "<<loadX_global<<endl;
                             }
                             if(loadDefinitionYcomponent!=Property::loadDefinition_free)
                             {
+                                if(loadY_global==0.0) myInputFile<<"*BOUNDARY,FIXED"<<endl;
+                                else myInputFile<<"*BOUNDARY"<<endl;
                                 myInputFile<<SetName.toStdString()<<", 2, 2, "<<loadY_global<<endl;
                             }
                             if(loadDefinitionZcomponent!=Property::loadDefinition_free)
                             {
+                                if(loadZ_global==0.0) myInputFile<<"*BOUNDARY,FIXED"<<endl;
+                                else myInputFile<<"*BOUNDARY"<<endl;
                                 myInputFile<<SetName.toStdString()<<", 3, 3, "<<loadZ_global<<endl;
                             }
                         }
@@ -3280,7 +3303,7 @@ void writeSolverFileClass::writeFilm(double aLoad, QString aName,double refTempe
     myDload.precision(EXPFORMAT_PRECISION);
 
     ifstream mySet;
-
+    QString a = aName;
     QString extension=".dlo";
     QString extension1=".surf";
 
@@ -3301,6 +3324,7 @@ void writeSolverFileClass::writeFilm(double aLoad, QString aName,double refTempe
     myDload.open(name.toStdString());
 
     //! write the header for the DLOAD
+    //myDload<<"*FILM, AMPLITUDE=A"<<a.toStdString()<<endl;
     myDload<<"*FILM"<<endl;
     //! assign LoadValue to each surface element
     //! In case of pressure a negative value means traction

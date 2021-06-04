@@ -84,8 +84,11 @@ QList<int> mainTreeTools::getColumnsToRead(QStandardItem *anItem,int columnsBefo
                  SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_CompressionOnlySupport<<
                  SimulationNodeClass::nodeType_thermalAnalysisAdiabaticWall<<
                  SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionWall<<
-                 SimulationNodeClass::nodeType_particlesInFieldsParticlePack;
-
+                 SimulationNodeClass::nodeType_particlesInFieldsParticlePack
+             #ifdef COSTAMP_VERSION
+                 <<SimulationNodeClass::nodeType_timeStepBuilder
+                 #endif
+                   ;
     //! ------------
     //! 1/3 columns
     //! ------------

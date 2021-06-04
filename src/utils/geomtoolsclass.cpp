@@ -404,9 +404,9 @@ bool GeomToolsClass::isCollinear(double *A0, double *A1, double *A2)
     double L20 = sqrt(pow(x2-x0,2)+pow(y2-y0,2)+pow(z2-z0,2));
     double sp = (x1-x0)*(x2-x0)+(y1-y0)*(y2-y0)+(z1-z0)*(z2-z0);
     double r = fabs(sp/(L10*L20));
-    if(r<std::numeric_limits<double>::epsilon()) return false;
+    if(r<std::numeric_limits<double>::epsilon()) return true;
 
-    else return true;
+    else return false;
 }
 
 /*
