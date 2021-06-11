@@ -1867,7 +1867,7 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const QString &faceFileName,
 //! details:  build a mesh data source from a list of data sources
 //!           the faces must belong to the same body
 //! ---------------------------------------------------------------
-Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const QList<occHandle(Ng_MeshVS_DataSourceFace)> &faceDSList)
+Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const std::vector<occHandle(Ng_MeshVS_DataSourceFace)> &faceDSList)
 {
     //! ------------------
     //! fill the node map
@@ -1875,11 +1875,10 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const QList<occHandle(Ng_Mesh
     int NbSharedNodes = 0;
     //cerr<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____faceDS lenght____"<<faceDSList.length()<<endl;
 
-    for(int i=0; i<faceDSList.length(); i++)
+    for(std::vector<occHandle(Ng_MeshVS_DataSourceFace)>::const_iterator it=faceDSList.cbegin(); it<faceDSList.cend(); it++)
     {
-        const occHandle(Ng_MeshVS_DataSourceFace) &curFaceDS = faceDSList.at(i);
+        const occHandle(Ng_MeshVS_DataSourceFace) &curFaceDS = *it;
         if(curFaceDS.IsNull()) continue;
-
         //! -------------
         //! adding nodes
         //! -------------
@@ -1955,9 +1954,9 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const QList<occHandle(Ng_Mesh
     int NbSharedElements = 0;
     QMap<mesh::meshElement,int> alreadyVisitedElements;
     int localElementID=0;
-    for(int i=0; i<faceDSList.length(); i++)
+    for(std::vector<occHandle(Ng_MeshVS_DataSourceFace)>::const_iterator it=faceDSList.cbegin(); it<faceDSList.cend(); it++)
     {
-        const occHandle(Ng_MeshVS_DataSourceFace) &curFaceDS = faceDSList.at(i);
+        const occHandle(Ng_MeshVS_DataSourceFace) &curFaceDS = *it;
         if(curFaceDS.IsNull()) continue;
         TColStd_PackedMapOfInteger curEleMap = curFaceDS->GetAllElements();
         for(TColStd_MapIteratorOfPackedMapOfInteger anElemIt(curEleMap);anElemIt.More();anElemIt.Next())
@@ -2021,9 +2020,9 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const QList<occHandle(Ng_Mesh
     TColStd_PackedMapOfInteger alreadyVisitedNodes;
     //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____faceDS lenght____"<<faceDSList.length()<<endl;
 
-    for(int i=0; i<faceDSList.length(); i++)
+    for(std::vector<occHandle(Ng_MeshVS_DataSourceFace)>::const_iterator it=faceDSList.cbegin(); it<faceDSList.cend(); it++)
     {
-        const occHandle(Ng_MeshVS_DataSourceFace) &curFaceDS = faceDSList.at(i);
+        const occHandle(Ng_MeshVS_DataSourceFace) &curFaceDS = *it;
         if(curFaceDS.IsNull()) continue;
         //cerr<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____tag00____"<<endl;
 
@@ -2065,7 +2064,7 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const QList<occHandle(Ng_Mesh
     if(mySegmentToElement.isEmpty())
     {
         cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____start generating the segment to element connectivity map: ";
-        for(QList<occHandle(Ng_MeshVS_DataSourceFace)>::const_iterator it = faceDSList.cbegin(); it!=faceDSList.cend(); it++)
+        for(std::vector<occHandle(Ng_MeshVS_DataSourceFace)>::const_iterator it=faceDSList.cbegin(); it<faceDSList.cend(); it++)
         {
             const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS = *it;
             if(aMeshDS.IsNull()) { cout<<"____NULL mesh encountered____"<<endl; continue; }

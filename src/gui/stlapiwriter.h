@@ -1,54 +1,41 @@
 #ifndef STLAPIWRITER_H
 #define STLAPIWRITER_H
 
-//! redefinition of opencascade Handle() macro
 #include "occhandle.h"
-
-#include <Standard.hxx>
-#include <Standard_DefineAlloc.hxx>
-#include <Standard_Handle.hxx>
-
-#include <Standard_Boolean.hxx>
-#include <StlAPI_ErrorStatus.hxx>
-#include <Standard_CString.hxx>
+#include <gp_Trsf.hxx>
 
 class StlMesh_Mesh;
 class TopoDS_Shape;
+class TopoDS_Face;
+class gp_Vec;
+class gp_Pnt;
+class Poly_Triangulation;
 
-//! This class creates and writes
-//! STL files from Open CASCADE shapes. An STL file can be
-//! written to an existing STL file or to a new one..
+namespace STLAPIWriter
+{
 
-class STLAPIWriter
+//! Tool to get triangles from triangulation taking into account face
+//! orientation and location
+class TriangleAccessor
 {
 public:
 
-    DEFINE_STANDARD_ALLOC
-
-    //! Creates a writer object with
-    //! default parameters: ASCIIMode, canonical STL
-    Standard_EXPORT STLAPIWriter();
-
-    //! Returns the address to the
-    //! flag defining the mode for writing the file. This address
-    //! may be used to either read or change the flag.
-    //! If the mode returns True (default value) the generated
-    //! file is an ASCII file. If the mode returns False, the
-    //! generated file is a binary file.
-    Standard_EXPORT Standard_Boolean& ASCIIMode();
-
-    //! Converts a given shape to STL format and writes it to file with a given filename.
-    //! \return the error state.
-    Standard_EXPORT bool Write (const TopoDS_Shape& aShape, const Standard_CString aFileName);
-    Standard_EXPORT bool WriteExtended(const TopoDS_Shape& aShape, const Standard_CString aFileName);
-
-
-protected:
+    TriangleAccessor (const TopoDS_Face& aFace);
+    int NbTriangles () const { return myNbTriangles; }
+    void GetTriangle (int iTri, gp_Vec &theNormal, gp_Pnt &thePnt1, gp_Pnt &thePnt2, gp_Pnt &thePnt3);
 
 private:
 
-    Standard_Boolean theASCIIMode;
-    occHandle(StlMesh_Mesh) theStlMesh;
+    occHandle(Poly_Triangulation) myPoly;
+    gp_Trsf myTrsf;
+    int myNbTriangles;
+    bool myInvert;
 };
+
+bool Write(const TopoDS_Shape& aShape, const char* aFileName);
+bool WriteExtended(const TopoDS_Shape& aShape, const char *aFileName);
+
+//! end namespace
+}
 
 #endif // STLAPIWRITER_H

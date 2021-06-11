@@ -32,7 +32,7 @@ void pointToMeshDistance::init(const occHandle(Ng_MeshVS_DataSourceFace) &aMeshD
 {
     if(aMeshDS.IsNull()) return;
 
-    //cout<<"pointToMeshDistance::init()->____function called____"<<endl;
+    cout<<"pointToMeshDistance::init()->____function called____"<<endl;
     Eigen::MatrixXd V;
     Eigen::MatrixXi F;
 

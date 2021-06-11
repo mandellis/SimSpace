@@ -12787,10 +12787,8 @@ void SimulationManager::createAutomaticConnections()
     //! Note: using the default constructor the angular criterion is
     //! inizialied as angle = 20.0
     //! -------------------------------------------------------------
-    contactFinder aContactFinder;
-    aContactFinder.setBodyPairs(vectorOfTagPairs);
-    aContactFinder.setDataBase(this->getDataBase());
-    aContactFinder.setAngularCriterion(angularCriterion);
+    geometryDataBase *gdb = static_cast<geometryDataBase*>(mySimulationDataBase);
+    contactFinder aContactFinder(vectorOfTagPairs,gdb,Q_NULLPTR);
 
     //! -------------------------------------------------------
     //! set the progress indicator for the contactFinder tool
@@ -12812,8 +12810,9 @@ void SimulationManager::createAutomaticConnections()
     //! "4" => by slave body
     //! "5" => none - ungrouped
     //! --------------------------------------------------------------------------
-    bool stopped = aContactFinder.perform(vectorOfTagPairs,allContactPairs,tolerance,grouping);
+    bool stopped = aContactFinder.perform(allContactPairs,tolerance,grouping);
     if(stopped) return;
+    cout<<"____simmanger createatuo ____tag01____"<<allContactPairs.size()<<endl;
 
     //! -----------------------
     //! create the model items
@@ -13209,10 +13208,10 @@ std::vector<std::pair<std::vector<GeometryTag>,std::vector<GeometryTag>>> Simula
     //! Note: using the default constructor the angular criterion is
     //! inizialied as angle = 20.0
     //! -------------------------------------------------------------
-    contactFinder aContactFinder;
-    aContactFinder.setBodyPairs(vectorOfTagPairs);
-    aContactFinder.setDataBase(this->getDataBase());
-    aContactFinder.setAngularCriterion(angularCriterion);
+    contactFinder aContactFinder(vectorOfTagPairs,this->getDataBase(),Q_NULLPTR);
+    //aContactFinder.setBodyPairs(vectorOfTagPairs);
+    //aContactFinder.setDataBase();
+    //aContactFinder.setAngularCriterion(angularCriterion);
 
     //! -------------------------------------------------------
     //! set the progress indicator for the contactFinder tool
@@ -13220,8 +13219,8 @@ std::vector<std::pair<std::vector<GeometryTag>,std::vector<GeometryTag>>> Simula
     QProgressIndicator *myProgressIndicator = static_cast<QProgressIndicator*>(tools::getWidgetByName("progressIndicator"));
     if(myProgressIndicator!=Q_NULLPTR)
     {
-        myProgressIndicator->setSecondaryBarVisible(true);
-        aContactFinder.setProgressIndicator(myProgressIndicator);
+        //myProgressIndicator->setSecondaryBarVisible(true);
+        //aContactFinder.setProgressIndicator(myProgressIndicator);
     }
 
     //! --------------------------------------------------------------------------
@@ -13234,7 +13233,7 @@ std::vector<std::pair<std::vector<GeometryTag>,std::vector<GeometryTag>>> Simula
     //! "4" => by slave body
     //! "5" => none - ungrouped
     //! --------------------------------------------------------------------------
-    bool stopped = aContactFinder.perform(vectorOfTagPairs,allContactPairs,tolerance,grouping);
+    bool stopped = aContactFinder.perform(allContactPairs,tolerance,grouping);
     if(!stopped) return allContactPairs;
     else return allContactPairs;
 }
