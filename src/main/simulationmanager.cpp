@@ -12811,9 +12811,9 @@ void SimulationManager::createAutomaticConnections()
     //! "5" => none - ungrouped
     //! --------------------------------------------------------------------------
     bool stopped = aContactFinder.perform(allContactPairs,tolerance,grouping);
-    if(stopped) return;
-    cout<<"____simmanger createatuo ____tag01____"<<allContactPairs.size()<<endl;
-
+    if(stopped){
+        cout<<"____contact finder stopped"<<endl;
+        return;}
     //! -----------------------
     //! create the model items
     //! -----------------------

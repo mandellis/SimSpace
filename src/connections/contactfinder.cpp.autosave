@@ -405,7 +405,7 @@ bool contactFinder::perform(std::vector<std::pair<std::vector<GeometryTag>,std::
                     Eigen::RowVector3f direction0(nx,ny,nz);    // this normal is directed towards the exterior
                     igl::Hit hit;
                     bool isDone = false;
-                    try { isDone = rayCaster->intersectRay(origin.cast<float>(),direction0.cast<float>(),hit,0,0.1); }
+                    try { isDone = rayCaster->intersectRay(origin.cast<float>(),direction0.cast<float>(),hit,0); }
                     catch(...) { continue; }
                     if(fabs(hit.t)>tolerance) continue;
                     cout<<"contactFinder::perform()->___tag02_____"<<endl;
