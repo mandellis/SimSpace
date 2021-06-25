@@ -364,8 +364,6 @@ bool contactFinder::perform(std::vector<std::pair<std::vector<GeometryTag>,std::
                 std::vector<GeometryTag> tagsSource,tagsTarget;
 
                 int faceNr = it1->first;
-                cout<<"contactFinder::perform()->___faceNr source_____"<<faceNr<<endl;
-
                 const occHandle(Ng_MeshVS_DataSourceFace) &aMeshDS = it1->second;
                 if(aMeshDS.IsNull()) continue;
                 bool foundIntersectedFace = false;
@@ -376,15 +374,20 @@ bool contactFinder::perform(std::vector<std::pair<std::vector<GeometryTag>,std::
                 //! (e quindi la faccia target) intersecato
                 for(TColStd_MapIteratorOfPackedMapOfInteger it2(aMeshDS->GetAllElements()); it2.More(); it2.Next())
                 {
+                    cout<<"contactFinder::perform()->___tag00_____"<<endl;
+
                     int NbNodes;
                     int globalElementID = it2.Key();
                     MeshVS_EntityType aType;
                     double buf[60];
                     TColStd_Array1OfReal coords(*buf,1,60);
                     if(!aMeshDS->GetGeom(globalElementID,true,coords,NbNodes,aType)) continue;
+                    cout<<"contactFinder::perform()->___NbNodes_____"<<NbNodes<<" globalElementID "<<globalElementID<<endl;
 
                     double nx,ny,nz;
                     if(!aMeshDS->GetNormal(globalElementID,20,nx,ny,nz)) continue;
+                    cout<<"contactFinder::perform()->___nx_____"<<nx<<" ny "<<ny<<endl;
+
                     std::vector<polygon::Point> aSurfacePolygon;
                     for(int n=0; n<NbNodes; n++)
                     {
@@ -394,6 +397,7 @@ bool contactFinder::perform(std::vector<std::pair<std::vector<GeometryTag>,std::
                     polygon::Point C;
                     double area = 0;
                     polygon::getPolygonCenter(aSurfacePolygon,C,area);
+                    cout<<"contactFinder::perform()->___tag01_____"<<endl;
                     //! -----------
                     //! cast a ray
                     //! -----------
@@ -403,21 +407,20 @@ bool contactFinder::perform(std::vector<std::pair<std::vector<GeometryTag>,std::
                     bool isDone = false;
                     try { isDone = rayCaster->intersectRay(origin.cast<float>(),direction0.cast<float>(),hit,0); }
                     catch(...) { continue; }
-                    cout<<"contactFinder::perform()->___t_____"<<hit.t<<endl;
-
                     if(fabs(hit.t)>tolerance) continue;
+                    cout<<"contactFinder::perform()->___tag02_____"<<endl;
+
                     int interceptedElement = hit.id+1;
-                    cout<<"contactFinder::perform()->___element intercepted_____"<<interceptedElement<<endl;
+                    cout<<"contactFinder::perform()->___tag03_____"<<interceptedElement<<endl;
 
                     int globalElementID_intercepted = mapSurfaceMeshDS.at(targetIndex)->myElementsMap.FindKey(interceptedElement);
-                    cout<<"contactFinder::perform()->___globalElement intercepted_____"<<globalElementID_intercepted<<endl;
+                    cout<<"contactFinder::perform()->___tag04_____"<<globalElementID_intercepted<<endl;
 
                     const std::map<int,int> &M = MM.at(targetIndex);
                     std::map<int,int>::const_iterator it3 = M.find(globalElementID_intercepted);
-                    //std::map<int,int>::const_iterator it3 = M.find(interceptedElement);
                     if(it3==M.cend()) continue;
                     faceNr_Intercepted = it3->second;
-                    cout<<"contactFinder::perform()->___faceTarget_____"<<faceNr_Intercepted<<endl;
+                    cout<<"contactFinder::perform()->___tag05_____"<<faceNr_Intercepted<<endl;
 
                     foundIntersectedFace = true;
                     if(foundIntersectedFace) break;
@@ -425,6 +428,8 @@ bool contactFinder::perform(std::vector<std::pair<std::vector<GeometryTag>,std::
 
                 if(foundIntersectedFace)
                 {
+                    cout<<"contactFinder::perform()->___tag06_____"<<endl;
+
                     GeometryTag aSourceTag;
                     aSourceTag.isParent = false;
                     aSourceTag.parentShapeNr = sourceIndex;
@@ -439,12 +444,20 @@ bool contactFinder::perform(std::vector<std::pair<std::vector<GeometryTag>,std::
                     aTargetTag.subShapeType = TopAbs_FACE;
                     tagsTarget.push_back(aTargetTag);
 
+                    cout<<"contactFinder::perform()->_____targetFaceNr "<<aTargetTag.subTopNr<<" sourceFaceNr "<<aSourceTag.subTopNr<<endl;
+                    cout<<"contactFinder::perform()->_____tags target size "<<tagsTarget.size()<<" tagsource size "<<tagsSource.size()<<endl;
+
                     std::pair<std::vector<GeometryTag>,std::vector<GeometryTag>> apair_;
                     apair_.first = tagsSource;
                     apair_.second = tagsTarget;
                     allContactPairs.push_back(apair_);
+                    cout<<"contactFinder::perform()->___tag06_____"<<apair_.first.size()<<endl;
+                    cout<<"contactFinder::perform()->___tag06_____"<<allContactPairs.size()<<endl;
                 }
+                cout<<"contactFinder::perform()->___tag06_____"<<allContactPairs.size()<<endl;
             }
+            cout<<"contactFinder::perform()->___tag06_____"<<allContactPairs.size()<<endl;
+
         }
 
         if(stopped)
