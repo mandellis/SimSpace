@@ -52,7 +52,6 @@ userMessage TetHex::perform(int bodyIndex)
     //! generate the hexahedral mesh
     //! insert the data source into the data base
     //! ------------------------------------------
-    cout<<"____tag00____"<<endl;
     userMessage um = makeHexa(aTetMesh,HexaMeshDS);
 
     if(!um.isDone)

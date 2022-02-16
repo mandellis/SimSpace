@@ -22,9 +22,7 @@ public:
            <<", "<<coordSys->Transformation().TranslationPart().Z()<<"____"<<endl;
         try
         {
-            cout<<"____tag02____"<<endl;
             myShape.Location().NextLocation();
-            cout<<"____tag03____"<<endl;
         }
         catch(Standard_NoSuchObject)
         {

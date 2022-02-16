@@ -707,7 +707,6 @@ bool parser::Displacement(QExtendedStandardItem *item)
         parser::setItemBackground(node, invalidEntries);
         item->setCheckState(Qt::Unchecked);
         node->setValid(false);
-        cout<<"tag04"<<endl;
         return false;
     }
     else

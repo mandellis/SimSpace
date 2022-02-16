@@ -259,7 +259,6 @@ public:
             QVector<int> roles { role };
             m_data[row].replace(col,value);
             emit dataChanged(index, index, roles);
-            //cout<<"____tag00____"<<endl;
             return true;
         }
             break;

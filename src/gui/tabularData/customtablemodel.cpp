@@ -15,12 +15,20 @@ using namespace std;
 //! ----------------------------------
 CustomTableModel::CustomTableModel(const QVector<load> &vecLoads, bool addFirstRow, QObject *parent):QAbstractTableModel(parent)
 {
+    cout<<" CustomTable model constructor call "<<endl;
+    cout<<" CustomTable model size"<<vecLoads.size()<<endl;
+
     //! the list of load type
     for(int k=0; k<vecLoads.size(); k++)
+    {
         m_loadTypes.append(vecLoads.at(k).type());
-
+        if(vecLoads.at(k).type()==Property::loadType_timeIntegration){
+            columBeforeBC=k;
+        }
+    }
+    cout<<" CustomTable model vecLoad"<<m_columnCount<<endl;
     m_columnCount = vecLoads.size();
-    columBeforeBC = m_columnCount-1;
+    //columBeforeBC = m_columnCount-1;
     cout<<" CustomTable model COLUMN BEFORE BC"<<columBeforeBC<<endl;
     m_rowCount = vecLoads.at(0).NbTimes();  //! number of values
 

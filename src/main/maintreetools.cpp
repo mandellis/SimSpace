@@ -38,7 +38,7 @@ QList<int> mainTreeTools::getColumnsToRead(QTreeView *tree, int columnsBeforeBC)
 //! ---------------------------
 QList<int> mainTreeTools::getColumnsToRead(QStandardItem *anItem,int columnsBeforeBC)
 {
-    //cout<<"mainTreeTools::getColumnsToRead()->____function called____"<<endl;
+    cout<<"mainTreeTools::getColumnsToRead()->____function called____"<<endl;
 
     //columnsBeforeBC = NUMBER_OF_COLUMNS_BEFORE_BC_DATA;
 
@@ -451,8 +451,8 @@ void mainTreeTools::formNewPart(QTreeView *tree)
         TopoDS_Shape curShape = curNode->getPropertyValue<TopoDS_Shape_Reg>("Shape");
         shapeList.Append(curShape);
     }
-
 }
+
 //! -----------------------------------
 //! function: getCurrentSimulationRoot
 //! details:

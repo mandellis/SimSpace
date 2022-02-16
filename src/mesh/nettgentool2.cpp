@@ -2057,7 +2057,6 @@ userMessage NettgenTool2::meshVolumeFromSurfaceMesh(int bodyIndex,
     {
         QProgressEvent *progressEvent = new QProgressEvent(QProgressEvent_None,0,9999,0,"",QProgressEvent_Init,0,100,0,task);
         QApplication::postEvent(myProgressIndicator,progressEvent);
-        cout<<"____tag03____"<<endl;
     }
 
     //! ------------------------------------------------------------

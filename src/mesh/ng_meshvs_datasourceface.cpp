@@ -881,8 +881,8 @@ Standard_Boolean Ng_MeshVS_DataSourceFace::GetGeom(const Standard_Integer ID,
 {
     if(IsElement)
     {
-        //cout<<"Ng_MeshVS_DataSourceFace::GetGeom()->____function called for element ID: "<<ID<<"____"<<endl;
         int localElementID = myElementsMap.FindIndex(ID);
+
         if(localElementID>=1 && localElementID<=myNumberOfElements)
         {
             Type = MeshVS_ET_Face;
@@ -900,6 +900,7 @@ Standard_Boolean Ng_MeshVS_DataSourceFace::GetGeom(const Standard_Integer ID,
             {
                 int globalNodeID = myElemNodes->Value(localElementID,i);
                 int localNodeID = myNodesMap.FindIndex(globalNodeID);
+                cout<<localNodeID<<endl;
                 for(int j=1; j<=3; j++)
                 {
                     Coords(k)=myNodeCoords->Value(localNodeID,j);
@@ -916,7 +917,6 @@ Standard_Boolean Ng_MeshVS_DataSourceFace::GetGeom(const Standard_Integer ID,
     }
     else
     {
-        //cout<<"Ng_MeshVS_DataSourceFace::GetGeom()->____function called for node ID: "<<ID<<"____"<<endl;
         int localNodeID = myNodesMap.FindIndex(ID);
         if(localNodeID>=1 && localNodeID<=myNumberOfNodes)
         {
@@ -1413,31 +1413,36 @@ void Ng_MeshVS_DataSourceFace::computeFreeMeshSegments()
 //! ----------------------------------
 void Ng_MeshVS_DataSourceFace::computeNormalAtElements()
 {
-    //cout<<"Ng_MeshVS_DataSourceFace::computeNormalAtElements()->____function called____"<<endl;
+    cout<<"Ng_MeshVS_DataSourceFace::computeNormalAtElements()->____function called____"<<endl;
     for(TColStd_MapIteratorOfPackedMapOfInteger it(myElements); it.More(); it.Next())
     {
         std::vector<polygon::Point> aPolygon;
 
         int globalElementID = it.Key();
-        int localElementID = myElementsMap.FindIndex(globalElementID);
 
+        int localElementID = myElementsMap.FindIndex(globalElementID);
         int NbNodes;
         double buf[30];
         TColStd_Array1OfReal coords(*buf,1,30);
         MeshVS_EntityType type;
         bool isDone = this->GetGeom(globalElementID,true,coords,NbNodes,type);
+
         if(isDone == false)
         {
-            //cerr<<"Ng_MeshVS_DataSourceFace::computeNormalAtElements()->____cannot found element ID: "<<globalElementID<<"____"<<endl;
+            cerr<<"Ng_MeshVS_DataSourceFace::computeNormalAtElements()->____cannot found element ID: "<<globalElementID<<"____"<<endl;
             continue;
         }
 
         for(int i=0; i<NbNodes; i++)
         {
+
             int s = 3*i;
             double x = coords(s+1);
+
             double y = coords(s+2);
+
             double z = coords(s+3);
+
             polygon::Point aPoint(x,y,z);
             aPolygon.push_back(aPoint);
         }
@@ -1447,7 +1452,7 @@ void Ng_MeshVS_DataSourceFace::computeNormalAtElements()
         myElemNormals->SetValue(localElementID,2,n[1]);
         myElemNormals->SetValue(localElementID,3,n[2]);
     }
-    //cout<<"Ng_MeshVS_DataSourceFace::computeNormalAtElements()->____exiting function____"<<endl;
+    cout<<"Ng_MeshVS_DataSourceFace::computeNormalAtElements()->____exiting function____"<<endl;
 }
 
 //! -------------------------------------------------------------------
@@ -1873,7 +1878,7 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const QList<occHandle(Ng_Mesh
     //! fill the node map
     //! ------------------
     int NbSharedNodes = 0;
-    //cerr<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____faceDS lenght____"<<faceDSList.length()<<endl;
+    cerr<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____faceDS lenght____"<<faceDSList.length()<<endl;
 
     for(int i=0; i<faceDSList.length(); i++)
     {
@@ -1938,14 +1943,14 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const QList<occHandle(Ng_Mesh
     myElemNormals = new TColStd_HArray2OfReal(1,myNumberOfElements,1,3);
     myElemNodes = new TColStd_HArray2OfInteger(1,myNumberOfElements,1,8);
 
-    //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list. Number of shared nodes: "<<NbSharedNodes<<"____"<<endl;
-    //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list. Number of nodes: "<<myNumberOfNodes<<"____"<<endl;
-    //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list. Number of elements: "<<myNumberOfElements<<"____"<<endl;
+    cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list. Number of shared nodes: "<<NbSharedNodes<<"____"<<endl;
+    cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list. Number of nodes: "<<myNumberOfNodes<<"____"<<endl;
+    cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list. Number of elements: "<<myNumberOfElements<<"____"<<endl;
 
     //! --------------------
     //! define the elements
     //! --------------------
-    //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list. Start defining the elements____"<<endl;
+    cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list. Start defining the elements____"<<endl;
 
     //! ----------------------------------------------------------------
     //! note: I can not use QList for defining "alreadyVisitedElements"
@@ -1983,7 +1988,7 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const QList<occHandle(Ng_Mesh
 
             if(alreadyVisitedElements.contains(aMeshElement))
             {
-                //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list. A shared element has been found____"<<endl;
+                cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list. A shared element has been found____"<<endl;
                 NbSharedElements++;
                 continue;
             }
@@ -1994,7 +1999,7 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const QList<occHandle(Ng_Mesh
             for(int k=1; k<=NbNodes; k++)
             {
                 int globalNodeID = nodeIDs.Value(k);
-                //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list: globalNodeID: "<<globalNodeID<<"____"<<endl;
+                cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list: globalNodeID: "<<globalNodeID<<"____"<<endl;
                 myElemNodes->SetValue(localElementID,k,globalNodeID);
             }
 
@@ -2010,8 +2015,8 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const QList<occHandle(Ng_Mesh
             }
         }
     }
-    //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____number of shared elements: "<<NbSharedElements<<"____"<<endl;
-    //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list. Elements defined____"<<endl;
+    cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____number of shared elements: "<<NbSharedElements<<"____"<<endl;
+    cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list. Elements defined____"<<endl;
 
     //! -----------------------------------------
     //! insert the coordinates of each mesh node
@@ -2019,7 +2024,7 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const QList<occHandle(Ng_Mesh
     //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list. Start defining nodes____"<<endl;
     int localNodeID = 0;
     TColStd_PackedMapOfInteger alreadyVisitedNodes;
-    //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____faceDS lenght____"<<faceDSList.length()<<endl;
+    cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____faceDS lenght____"<<faceDSList.length()<<endl;
 
     for(int i=0; i<faceDSList.length(); i++)
     {
@@ -2047,7 +2052,7 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const QList<occHandle(Ng_Mesh
             myNodeCoords->SetValue(localNodeID,3,coords(3));
         }
     }
-    //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list. Nodes defined____"<<endl;
+    cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list. Nodes defined____"<<endl;
 
     //! --------------------------------
     //! compute the normals at elements
@@ -3471,6 +3476,7 @@ void Ng_MeshVS_DataSourceFace::setNodeNormal(int globalNodeID, double *n)
 //! function: constructor
 //! details:  build the data source from a list of mesh elements
 //! -------------------------------------------------------------
+/*
 Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const std::vector<meshElementByCoords> &meshElements, bool autoRenumberElements, bool autoRenumberNodes)
 {
     cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor called____"<<endl;
@@ -3695,8 +3701,8 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const std::vector<meshElement
     //! ------------------------
     this->buildElementsTopology();
 }
+*/
 
-/*
 //! --------------------------------------------------------------
 //! non optimized but woking constructor
 //! not sure about the previous (which has been optimized)
@@ -3722,6 +3728,13 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const std::vector<meshElement
 
     int localElementID = 0;
     int localNodeID = 0;
+
+    static int k;
+    char nome[20];
+    sprintf(nome,"D:\\file_%d.txt",++k);
+
+    FILE *file =fopen(nome,"w");
+
     for(std::vector<meshElementByCoords>::const_iterator it = meshElements.cbegin(); it!= meshElements.cend(); it++)
     {
         const meshElementByCoords &aMeshElement = *it;
@@ -3803,12 +3816,13 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const std::vector<meshElement
                 {
                     myNodes.Add(aPoint.ID);
                     myNodesMap.Add(aPoint.ID);
+                    fprintf(file,"%d\t%d\n",++localNodeID,aPoint.ID);
                 }
                 myElemNodes->SetValue(localElementID,i+1,aPoint.ID);
             }
         }
     }
-
+    fclose(file);
     myNumberOfNodes = myNodes.Extent();
     myNodeCoords = new TColStd_HArray2OfReal(1,myNumberOfNodes,1,3);
 
@@ -3831,7 +3845,6 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const std::vector<meshElement
     //! -----------------------
     this->buildElementsTopology();
 }
-*/
 
 //! ----------------------------------
 //! function: getSurroundingNodes

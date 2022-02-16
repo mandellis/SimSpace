@@ -490,8 +490,6 @@ simulationDataBase::simulationDataBase(const QList<SimulationNodeClass*> listOfN
             //! ---------------------------
             std::sort(vecChildKeys.begin(),vecChildKeys.end());
 
-            //cout<<"____tag01"<<endl;
-
             //! -----------------------------
             //! append in the original order
             //! -----------------------------

@@ -304,20 +304,13 @@ void occMesher::SEFunc_GenerateSurface()
 userMessage occMesher::performSurface(occHandle(MeshVS_DataSource)& theMeshVS_DataSource,
                                         NCollection_Handle<NCollection_List<Standard_Integer>> &badFacesIndices)
 {
-    cout<<"____tag01____"<<endl;
     //! --------------------
     //! load the parameters
     //! --------------------
     myTessellator.LoadParameters(myEMeshMeshParameters);
-    cout<<"____tag02____"<<endl;
-
     try
     {
-        cout<<"____tag03____"<<endl;
-
         _set_se_translator(trans_func_O);
-        cout<<"____tag04____"<<endl;
-
         this->SEFunc_GenerateSurface();
     }
     catch(int)
@@ -406,11 +399,7 @@ userMessage occMesher::performSurface(occHandle(MeshVS_DataSource)&  mainMesh2D,
 
     try
     {
-        cout<<"____tag09____"<<endl;
-
-        isDone = OMFTools::TriangulationToMesh(myTopoDS_Shape,myOMFDS_Mesh,isComputeNormals,isGroup);
-
-        cout<<"____tag10____"<<endl;
+        isDone = OMFTools::TriangulationToMesh(myTopoDS_Shape,myOMFDS_Mesh,isComputeNormals,isGroup);        cout<<"____tag10____"<<endl;
     }
     catch(...)
     {

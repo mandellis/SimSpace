@@ -743,7 +743,6 @@ std::vector<std::map<int,double>> postEngine::evaluateResultOnBody(const QString
             case TypeOfResult_EPS:
             {
                 std::map<int,double> resT;
-                cout<<"  tag03  "<<endl;
 
                 //! <>::eof(): call getline before while, then inside {}, @ as last instruction
                 std::getline(curFile,val);

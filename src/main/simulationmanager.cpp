@@ -846,19 +846,15 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 //! --------------
                 QModelIndex index_analysisSettings = mainTreeTools::getAnalysisSettingsItemFromCurrentItem(myTreeView)->index();
                 emit requestTabularData(index_analysisSettings);
-                cout<<"tag00"<<endl;
                 //! ---------------------------------
                 //! show the first row with Time = 0
                 //! ---------------------------------
                 emit requestShowFirstRow();
-                cout<<"tag01"<<endl;
-
                 //! -----------------------------------------------------------
                 //! calculate the number of columns to show => in the table <=
                 //! -----------------------------------------------------------
                 QList<int> columnsToShow;
                 CustomTableModel *tabData = index_analysisSettings.data(Qt::UserRole).value<SimulationNodeClass*>()->getTabularDataModel();
-                cout<<"tag02"<<endl;
 
                 columnsToShow << TABULAR_DATA_STEP_NUMBER_COLUMN << TABULAR_DATA_STEP_END_TIME_COLUMN << mainTreeTools::getColumnsToRead(myTreeView,tabData->getColumnBeforeBC());
                 cout<<"column to show "<<columnsToShow.at(0)<<" size "<<columnsToShow.size()<<endl;
@@ -877,7 +873,7 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 bool isDone = markerBuilder::addMarker(this->getCurrentNode(), mySimulationDataBase);
                 cout<<"tag03"<<endl;
 
-                if(isDone == true){ this->displayMarker();                    cout<<"tag03"<<endl;}
+                if(isDone == true){ this->displayMarker();}
 ;
             }
                 break;
