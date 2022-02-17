@@ -58,7 +58,6 @@ bool boltTool::sliceMeshWithPlane(double a, double b, double c, double d,
 
         int globalElementID = it.Key();
         int NbNodes, nbuf[20];
-
         TColStd_Array1OfInteger nodeIDs(*nbuf,1,20);
         myVolumeMesh->GetNodesByElement(globalElementID,nodeIDs,NbNodes);
 
@@ -103,10 +102,10 @@ bool boltTool::sliceMeshWithPlane(double a, double b, double c, double d,
         }
         bool intersect = polygon::testPolygonPlaneIntersection(aPointCloud,a,b,c,d);
         if(!intersect) continue;
-
         volumeElementsList.push_back(aVolumeMeshElement);
     }
     if(volumeElementsList.size()==0) return false;
+    cout<<"tag00"<<volumeElementsList.size()<<endl;
 
     occHandle(Ng_MeshVS_DataSource3D) volumeSlicedMesh = new Ng_MeshVS_DataSource3D(volumeElementsList,false,false);
 
@@ -120,18 +119,22 @@ bool boltTool::sliceMeshWithPlane(double a, double b, double c, double d,
     //! ---------------------------
     std::map<meshElement2D,std::vector<std::pair<int,int>>> CCXFaceConnectivity;
     volumeSlicedMesh->buildCCXFaceToElementConnectivity(CCXFaceConnectivity);
+    cout<<"tag00"<<endl;
 
     //! -----------------------------------------------
     //! corresponding surface mesh
     //! here the CCX connectivity should also be built
     //! -----------------------------------------------
     volumeSlicedMesh->buildFaceToElementConnectivity();
+    cout<<"tag01"<<endl;
+
     occHandle(Ng_MeshVS_DataSource2D) surfaceSlicedMesh = new Ng_MeshVS_DataSource2D(volumeSlicedMesh);
 
     //! ------------------------------------------------------------------
     //! test: visualization of the surface mesh of the sliced volume mesh
     //! ------------------------------------------------------------------
     //slicedMeshDS = surfaceSlicedMesh;
+    cout<<"tag03"<<endl;
 
     //! -----------------------------------------------------------------
     //! build the "two layers" mesh: the overall surface mesh is needed,
@@ -144,7 +147,7 @@ bool boltTool::sliceMeshWithPlane(double a, double b, double c, double d,
     //! use a map because faster when accessing
     //! ----------------------------------------
     std::map<meshElement2D,int> serviceMap;
-
+    cout<<"tag00"<<endl;
     int h=0;
     for(TColStd_MapIteratorOfPackedMapOfInteger it(overallSurfaceMesh->GetAllElements()); it.More(); it.Next())
     {
@@ -171,6 +174,7 @@ bool boltTool::sliceMeshWithPlane(double a, double b, double c, double d,
         //serviceMap.insert(apair);
         serviceMap.insert(std::make_pair(aMeshElement2D,++h));
     }
+    cout<<"tag01"<<endl;
 
     //! ------------------------------------------
     //! "Two layer mesh" S2
@@ -179,6 +183,8 @@ bool boltTool::sliceMeshWithPlane(double a, double b, double c, double d,
     //! Si = S intersection S1
     //! S2 = S1 - Si
     //! ------------------------------------------
+    cout<<"tag03"<<endl;
+
     std::vector<meshElementByCoords> twoLayersMeshElements;
     for(TColStd_MapIteratorOfPackedMapOfInteger it(surfaceSlicedMesh->GetAllElements()); it.More(); it.Next())
     {
@@ -243,6 +249,7 @@ bool boltTool::sliceMeshWithPlane(double a, double b, double c, double d,
 
         twoLayersMeshElements.push_back(aMeshElement);
     }
+    cout<<"tag04"<<endl;
 
     occHandle(Ng_MeshVS_DataSourceFace) twoLayerMeshFaceDS = new Ng_MeshVS_DataSourceFace(twoLayersMeshElements,false,false);
 
@@ -276,6 +283,8 @@ bool boltTool::sliceMeshWithPlane(double a, double b, double c, double d,
         const std::vector<double> &pc = twoLayerMeshFaceDS->getNodeCoordinates(localNodeID);
         aMeshElement.pointList<<mesh::meshPoint(pc[0],pc[1],pc[2],globalNodeID);
     }
+    cout<<"tag05"<<endl;
+
     switch(NbNodes)
     {
     case 3: aMeshElement.type = TRIG; break;
@@ -389,6 +398,7 @@ bool boltTool::sliceMeshWithPlane(double a, double b, double c, double d,
     //! for visualization - final check: show the final "mini mesh"
     //! ------------------------------------------------------------
     slicedMeshDS = oneElementMeshFaceDS;
+    cout<<"tag06"<<endl;
 
     //!-----------------------------------------------------------------------
     //! note: the vector of elements attached to the mesh element 2D always
@@ -432,6 +442,7 @@ bool boltTool::sliceMeshWithPlane(double a, double b, double c, double d,
         vecCCXFaceDefs.push_back(*volumeMeshGlobalID_CCXFace);
         //cout<<(*volumeMeshGlobalID_CCXFace).first<<", "<<(*volumeMeshGlobalID_CCXFace).second<<endl;
     }
+    cout<<"tag07"<<endl;
 
     return true;
 }

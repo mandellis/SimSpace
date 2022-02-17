@@ -2682,6 +2682,7 @@ void occGLWidget::displayTrihedron(QVector<double> Origin, QVector<QVector<doubl
         double X,Y;
         occView->Size(X,Y);
         axisLength = int(sqrt(X*Y)/TRIHEDRON_AXIS_LENGTH_DIAGONAL_FACTOR)+1;
+        cout<<"axis size X,Y "<<X<<" , "<<Y<<" axisLenght "<<axisLength<<endl;
     }
 
     theTrihedron->Attributes()->DatumAspect()->SetAxisLength(axisLength,axisLength,axisLength);

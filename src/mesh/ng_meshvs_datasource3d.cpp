@@ -60,7 +60,7 @@ QTime Ng_MeshVS_DataSource3D::clock()
     cout<<text.toStdString()<<endl;
     return time;
 }
-
+/*
 //! -------------------------------------
 //! function: constructor
 //! details:  from a list of 3D elements
@@ -198,7 +198,7 @@ Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(const std::vector<meshElementByCo
     this->buildElementsTopology();
 }
 
-/*
+*/
 Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(const std::vector<meshElementByCoords> &meshElements,
                                                bool autoNumberElements,
                                                bool autoNumberNodes)
@@ -332,7 +332,7 @@ Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(const std::vector<meshElementByCo
     //! ------------------
     this->buildElementsTopology();
 }
-*/
+
 
 //! ----------------------
 //! function: constructor
@@ -1391,37 +1391,34 @@ Standard_Boolean Ng_MeshVS_DataSource3D::GetNodesByElement(const Standard_Intege
                                                            TColStd_Array1OfInteger& theNodeIDs,
                                                            Standard_Integer& theNbNodes) const
 {
-    //!cout<<"Ng_MeshVS_DataSource3D::GetNodesByElement()->____function called for ID: "<<ID<<"____"<<endl;
+    //cout<<"Ng_MeshVS_DataSource3D::GetNodesByElement()->____function called for ID: "<<ID<<"____"<<endl;
     int localElementID = myElementsMap.FindIndex(ID);
-    if(localElementID>=1 && localElementID<=myNumberOfElements)
-    {
-        int eType = myElemType->Value(localElementID);
-        switch(eType)
-        {
-        case TET: theNbNodes=4; break;
-        case TET10: theNbNodes = 10; break;
-        case HEXA : theNbNodes = 8; break;
-        case HEXA20: theNbNodes = 20; break;
-        case PRISM: theNbNodes = 6; break;
-        case PRISM15: theNbNodes = 15; break;
-        case PYRAM: theNbNodes = 5; break;
-        case PYRAM13: theNbNodes = 13; break;
-        }
 
-        //Standard_Integer aLow = theNodeIDs.Lower();
-        //for(int i=0;i<theNbNodes;i++)
-        for(int i=1;i<=theNbNodes;i++)
-        {
-            theNodeIDs(i) = myElemNodes->Value(localElementID,i);
-            //theNodeIDs(aLow+i)=myElemNodes->Value(localElementID,i+1);
-        }
-        return true;
-    }
-    else
+    if(localElementID<1 || localElementID>myNumberOfElements)
     {
         cerr<<"Ng_MeshVS_DataSource3D::GetNodesByElement()->____function called for ID: "<<ID<<" out of range____"<<endl;
         return false;
     }
+    switch(myElemType->Value(localElementID))
+    {
+    case TET: theNbNodes=4; break;
+    case TET10: theNbNodes = 10; break;
+    case HEXA : theNbNodes = 8; break;
+    case HEXA20: theNbNodes = 20; break;
+    case PRISM: theNbNodes = 6; break;
+    case PRISM15: theNbNodes = 15; break;
+    case PYRAM: theNbNodes = 5; break;
+    case PYRAM13: theNbNodes = 13; break;
+    }
+
+    //Standard_Integer aLow = theNodeIDs.Lower();
+    //for(int i=0;i<theNbNodes;i++)
+    for(int i=1;i<=theNbNodes;i++)
+    {
+        theNodeIDs(i) = myElemNodes->Value(localElementID,i);
+        //theNodeIDs(aLow+i)=myElemNodes->Value(localElementID,i+1);
+    }
+    return true;
 }
 
 //! ----------------------

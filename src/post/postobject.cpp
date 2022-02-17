@@ -616,7 +616,6 @@ bool postObject::buildMeshIO(double min, double max, int Nlevels, bool autoscale
         }
         else
             curMeshDS = anIt->second->GetNonDeformedDataSource();
-
         //! ----------------------------------
         //! build a deformed mesh data source
         //! ----------------------------------

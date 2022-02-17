@@ -229,8 +229,8 @@ bool writeSolverFileClass::perform()
     //! .  named selections root
     //! .  simulation root
     //! -------------------------
-    ofwrite ofw(myDB, mySimulationRoot);
-    ofw.perform();
+    //ofwrite ofw(myDB, mySimulationRoot);
+    //ofw.perform();
     //! --------------------------------------------
     //! [1] write element/node sets: read the setup
     //! --------------------------------------------
@@ -933,7 +933,7 @@ bool writeSolverFileClass::perform()
                          //! 3rd) row
                          //! ---------
                          myInputFile<<"*SURFACE INTERACTION, NAME = "<<contactName<<"\n";
-                         // surface beahvior con be omitted
+                         myInputFile<<"*SURFACE BEHAVIOR, PRESSURE-OVERCLOSURE=HARD"<<endl;
                      }
                          break;
                      }
@@ -950,7 +950,7 @@ bool writeSolverFileClass::perform()
                          //! ---------
                          myInputFile<<frictionCoefficient<<", "<<lambda<<endl;
                      }
-                     if(theOverPressure != Property::overpressureFunction_hard)
+                     if(theOverPressure != Property::overpressureFunction_hard){
                      //! ----------------
                      //! GAP CONDUCTANCE
                      //! ----------------
@@ -958,6 +958,7 @@ bool writeSolverFileClass::perform()
                      //! default parameters conductance of 100 for all contact pressure and all temeprature
                      if(gapConductance==0) gapConductance=1E9;
                      myInputFile<<gapConductance<<",,273"<<endl;
+                     }
                  }
                      break;
                  case Property::contactType_noSeparation:

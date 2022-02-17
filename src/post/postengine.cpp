@@ -477,7 +477,10 @@ std::vector<std::map<int,double>> postEngine::evaluateResultOnBody(const QString
     std::map<int,int> indexedMapOfNodes;
     int bodyIndex = bodyTag.parentShapeNr;
 
-    //indexedMapOfNodes = OCCMeshToCCXmesh::performOCCtoCCX(bodyTag,)
+    indexedMapOfNodes = OCCMeshToCCXmesh::performOCCtoCCX(bodyTag,myMeshDataBase);
+    cout<<"postEngine::evaluateResult()->____indexed map of nodes created: "<<indexedMapOfNodes.size()<<"____"<<endl;
+
+    /*
     int offset = 0;
     for(int k=1; k<bodyIndex; k++)
     {
@@ -491,13 +494,13 @@ std::vector<std::map<int,double>> postEngine::evaluateResultOnBody(const QString
         int nodeID = anIter.Key()+offset;
         indexedMapOfNodes.insert(std::make_pair(nodeID,anIter.Key()));
     }
+    */
     //! ------------------------------------------------
     //! enter <...>/SolutionData/ResultsData
     //! ------------------------------------------------
     QString tmp = myResultsFilePath.split("/").last();
     QString path = myResultsFilePath;
     path.chop(tmp.length());
-
     QDir curDir(path);
     curDir.cd("ResultsData");
     QFileInfoList entriesInfo = curDir.entryInfoList();
@@ -541,7 +544,6 @@ std::vector<std::map<int,double>> postEngine::evaluateResultOnBody(const QString
         char analysisType[24];
         int mode;
         sscanf(val.c_str(),"%s%d",&analysisType,&mode);
-
         std::getline(curFile,val);
         double time;
         sscanf(val.c_str(),"Time= %lf",&time);
@@ -625,7 +627,6 @@ std::vector<std::map<int,double>> postEngine::evaluateResultOnBody(const QString
                 //case TypeOfResult_HFL:
             {
                 std::map<int,double> resComp_X,resComp_Y,resComp_Z,resComp_Total;
-
                 //! <>::eof(): call getline before while, then inside {}, @ as last instruction
                 std::getline(curFile,val);
                 while(curFile.eof()!=true)
@@ -636,6 +637,7 @@ std::vector<std::map<int,double>> postEngine::evaluateResultOnBody(const QString
 
                     //! nodeIDs defining the MeshVS_dataSource
                     std::map<int,int>::iterator it = indexedMapOfNodes.find(ni);
+
                     if(it!=indexedMapOfNodes.end())
                     {
                         int OCCnodeID = it->second;
@@ -655,7 +657,7 @@ std::vector<std::map<int,double>> postEngine::evaluateResultOnBody(const QString
                 res.push_back(resComp_Y);
                 res.push_back(resComp_Z);
 
-                //cout<<"postEngine::evaluateResult()->____Number of components: "<<res.length()<<"____"<<endl;
+                cout<<"postEngine::evaluateResult()->____Number of components: "<<res.size()<<"____"<<endl;
             }
                 break;
 
@@ -1066,7 +1068,6 @@ bool postEngine::buildPostObject(const QString &keyName,
         //! --------------------------------------------
         double time;
         const std::vector<std::map<int,double>> &res = this->evaluateResultOnBody(keyName, requiredSubStepNb, requiredStepNb, requiredMode, meshDS, aLoc, time);
-
         //! --------------------------------------------
         //! the nodal displacements on the current body
         //! --------------------------------------------

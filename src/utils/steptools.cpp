@@ -25,7 +25,8 @@ void STEPTools::dumpSTEPLabels(const STEPControl_Reader &reader, TColStd_ListOfA
         //! -------------
         //! Ascii string
         //! -------------
-        const TCollection_AsciiString &theName = theHName->String();        
+        const TCollection_AsciiString &theName = theHName->String();
+        cout<<"STEPTools::dumpSTEPLabels::_____name "<<theName.ToCString()<<endl;
         listOfNames.Append(theName);
     }
 }

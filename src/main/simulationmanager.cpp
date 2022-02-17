@@ -1720,7 +1720,7 @@ void SimulationManager::handleItem(int type)
 
         occHandle(MeshVS_DataSource) slicedMeshDS;
         bool isDone = bt.sliceMeshWithPlane(a,b,c,d,slicedMeshDS,vecCCXFaceDefs);
-
+/*
         //! -----------
         //! diagnostic
         //! -----------
@@ -1740,7 +1740,7 @@ void SimulationManager::handleItem(int type)
         //! ---------------
         //! end diagnostic
         //! ---------------
-
+*/
         if(isDone)
         {
             emit requestHideMeshes();

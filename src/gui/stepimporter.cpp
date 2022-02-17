@@ -311,8 +311,9 @@ bool STEPimporter::import(const QString &fileName, TopoDS_Compound &Comp, QList<
         TCollection_AsciiString cname = anIt.Value();
         cout<<"STEPimporter::import()->____name: "<<cname.ToCString()<<"____"<<endl;
         QString bodyName = QString::fromLatin1(cname.ToCString());
+        cout<<"STEPimporter::import()->____name: "<<bodyName.toStdString()<<"____"<<endl;
+
         if(bodyName.isEmpty()) continue;
-        cout<<"STEPimporter::import()->____size: "<<bodyName.size()<<"____"<<endl;
 
         if(bodyName == "") continue;
         if(bodyName.size() <= 1) continue;

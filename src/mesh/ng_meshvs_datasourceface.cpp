@@ -900,7 +900,6 @@ Standard_Boolean Ng_MeshVS_DataSourceFace::GetGeom(const Standard_Integer ID,
             {
                 int globalNodeID = myElemNodes->Value(localElementID,i);
                 int localNodeID = myNodesMap.FindIndex(globalNodeID);
-                cout<<localNodeID<<endl;
                 for(int j=1; j<=3; j++)
                 {
                     Coords(k)=myNodeCoords->Value(localNodeID,j);
@@ -3729,9 +3728,9 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const std::vector<meshElement
     int localElementID = 0;
     int localNodeID = 0;
 
-    static int k;
+    //static int k;
     char nome[20];
-    sprintf(nome,"D:\\file_%d.txt",++k);
+    //sprintf(nome,"D:\\file_%d.txt",++k);
 
     FILE *file =fopen(nome,"w");
 
@@ -3816,13 +3815,13 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const std::vector<meshElement
                 {
                     myNodes.Add(aPoint.ID);
                     myNodesMap.Add(aPoint.ID);
-                    fprintf(file,"%d\t%d\n",++localNodeID,aPoint.ID);
+                    //fprintf(file,"%d\t%d\n",++localNodeID,aPoint.ID);
                 }
                 myElemNodes->SetValue(localElementID,i+1,aPoint.ID);
             }
         }
     }
-    fclose(file);
+    //fclose(file);
     myNumberOfNodes = myNodes.Extent();
     myNodeCoords = new TColStd_HArray2OfReal(1,myNumberOfNodes,1,3);
 
