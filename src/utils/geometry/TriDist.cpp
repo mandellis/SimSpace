@@ -62,7 +62,6 @@ PQP_REAL X[3], PQP_REAL Y[3],             // closest points
 const PQP_REAL P[3], const PQP_REAL A[3], // seg 1 origin, vector
 const PQP_REAL Q[3], const PQP_REAL B[3]) // seg 2 origin, vector
 {
-    //cout<<"_____tag00____"<<endl;
     PQP_REAL T[3], A_dot_A, B_dot_B, A_dot_B, A_dot_T, B_dot_T;
     PQP_REAL TMP[3];
 

@@ -13395,7 +13395,6 @@ void SimulationManager::generateBoundaryConditionsMeshDS(bool computeDual)
     {
 
         QStandardItem *meshControl = Mesh_RootItem->child(k,0);
-        cout<<"SimulationManager::generateBoundaryConditionsMeshDS()->____tag00____"<<endl;
 
         SimulationNodeClass *meshNode = meshControl->data(Qt::UserRole).value<SimulationNodeClass*>();
         cout<<"SimulationManager::generateBoundaryConditionsMeshDS()->____tag01____"<<endl;

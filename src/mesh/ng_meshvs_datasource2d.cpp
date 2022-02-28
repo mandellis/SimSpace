@@ -1735,7 +1735,6 @@ void Ng_MeshVS_DataSource2D::computeNormalAtElements()
         TColStd_Array1OfReal coords(*buf,1,24);
         MeshVS_EntityType type;
         this->GetGeom(globalElementID,true,coords,NbNodes,type);
-
         for(int i=0; i<NbNodes; i++)
         {
             int s = 3*i;
@@ -1744,7 +1743,6 @@ void Ng_MeshVS_DataSource2D::computeNormalAtElements()
             double z = coords(s+3);
             polygon::Point aPoint(x,y,z);
             points.push_back(aPoint);
-
         }
 
         const std::vector<double> &n = polygon::getNormal(points);
@@ -1752,11 +1750,14 @@ void Ng_MeshVS_DataSource2D::computeNormalAtElements()
         myElemNormals->SetValue(localElementID,2,n[1]);
         myElemNormals->SetValue(localElementID,3,n[2]);
     }
+    cout<<"tag00"<<endl;
 
     //! -----------------------
     //! put here for debugging
     //! -----------------------
     this->computeNormalAtNodes();
+    cout<<"tag02"<<endl;
+
 }
 
 //! -----------------------------
@@ -2480,9 +2481,11 @@ Ng_MeshVS_DataSource2D::Ng_MeshVS_DataSource2D(const occHandle(Ng_MeshVS_DataSou
     //! compute normal at elements
     //! ---------------------------
     this->computeNormalAtElements();
-
+    cout<<"tag00"<<endl;
     //! ------------------
     //! elements topology
     //! ------------------
     this->buildElementsTopology();
+    cout<<"tag01"<<endl;
+
 }

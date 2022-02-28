@@ -1924,7 +1924,7 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const QList<occHandle(Ng_Mesh
     myNumberOfNodes = myNodes.Extent();
     if(myNumberOfNodes<3)
     {
-        cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list. Wrong number of nodes: "<<myNumberOfNodes<<"____"<<endl;
+        //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list. Wrong number of nodes: "<<myNumberOfNodes<<"____"<<endl;
         return;
     }
     myNumberOfElements = myElements.Extent();
@@ -2029,7 +2029,6 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const QList<occHandle(Ng_Mesh
     {
         const occHandle(Ng_MeshVS_DataSourceFace) &curFaceDS = faceDSList.at(i);
         if(curFaceDS.IsNull()) continue;
-        //cerr<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____tag00____"<<endl;
 
         TColStd_PackedMapOfInteger curNodeMap = curFaceDS->GetAllNodes();
         for(TColStd_MapIteratorOfPackedMapOfInteger aNodeIt(curNodeMap);aNodeIt.More();aNodeIt.Next())

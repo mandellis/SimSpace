@@ -105,7 +105,6 @@ bool boltTool::sliceMeshWithPlane(double a, double b, double c, double d,
         volumeElementsList.push_back(aVolumeMeshElement);
     }
     if(volumeElementsList.size()==0) return false;
-    cout<<"tag00"<<volumeElementsList.size()<<endl;
 
     occHandle(Ng_MeshVS_DataSource3D) volumeSlicedMesh = new Ng_MeshVS_DataSource3D(volumeElementsList,false,false);
 
@@ -119,14 +118,12 @@ bool boltTool::sliceMeshWithPlane(double a, double b, double c, double d,
     //! ---------------------------
     std::map<meshElement2D,std::vector<std::pair<int,int>>> CCXFaceConnectivity;
     volumeSlicedMesh->buildCCXFaceToElementConnectivity(CCXFaceConnectivity);
-    cout<<"tag00"<<endl;
 
     //! -----------------------------------------------
     //! corresponding surface mesh
     //! here the CCX connectivity should also be built
     //! -----------------------------------------------
     volumeSlicedMesh->buildFaceToElementConnectivity();
-    cout<<"tag01"<<endl;
 
     occHandle(Ng_MeshVS_DataSource2D) surfaceSlicedMesh = new Ng_MeshVS_DataSource2D(volumeSlicedMesh);
 
@@ -134,7 +131,6 @@ bool boltTool::sliceMeshWithPlane(double a, double b, double c, double d,
     //! test: visualization of the surface mesh of the sliced volume mesh
     //! ------------------------------------------------------------------
     //slicedMeshDS = surfaceSlicedMesh;
-    cout<<"tag03"<<endl;
 
     //! -----------------------------------------------------------------
     //! build the "two layers" mesh: the overall surface mesh is needed,
@@ -147,7 +143,6 @@ bool boltTool::sliceMeshWithPlane(double a, double b, double c, double d,
     //! use a map because faster when accessing
     //! ----------------------------------------
     std::map<meshElement2D,int> serviceMap;
-    cout<<"tag00"<<endl;
     int h=0;
     for(TColStd_MapIteratorOfPackedMapOfInteger it(overallSurfaceMesh->GetAllElements()); it.More(); it.Next())
     {

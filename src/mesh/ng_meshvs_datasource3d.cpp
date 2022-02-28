@@ -60,7 +60,7 @@ QTime Ng_MeshVS_DataSource3D::clock()
     cout<<text.toStdString()<<endl;
     return time;
 }
-/*
+
 //! -------------------------------------
 //! function: constructor
 //! details:  from a list of 3D elements
@@ -69,7 +69,7 @@ Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(const std::vector<meshElementByCo
                                                bool autoNumberElements,
                                                bool autoNumberNodes)
 {
-    //cout<<"Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D()->____constructor from a vec meshElementByCoords called____"<<endl;
+    cout<<"Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D()->____constructor from a vec meshElementByCoords called____"<<endl;
 
     //! ------------------------
     //! purge the null elements
@@ -90,7 +90,6 @@ Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(const std::vector<meshElementByCo
         cerr<<"Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D()->____the mesh has no element____"<<endl;
         return;
     }
-
 
     myElemType = new TColStd_HArray1OfInteger(1,myNumberOfElements);
     myElemNodes = new TColStd_HArray2OfInteger(1,myNumberOfElements,1,20);
@@ -116,7 +115,7 @@ Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(const std::vector<meshElementByCo
             if(meshPointMap.count(curMeshPoint)==0)
             {
                 //! ----------------------------------------------------------
-                //! if autoNumberNodes == true the ID of the node is the ID
+                //! if autoNumberNodes == false the ID of the node is the ID
                 //! of read from the meshPoint, otherwise it is automatically
                 //! incremented
                 //! ----------------------------------------------------------
@@ -198,7 +197,7 @@ Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(const std::vector<meshElementByCo
     this->buildElementsTopology();
 }
 
-*/
+/*
 Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(const std::vector<meshElementByCoords> &meshElements,
                                                bool autoNumberElements,
                                                bool autoNumberNodes)
@@ -333,7 +332,7 @@ Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(const std::vector<meshElementByCo
     this->buildElementsTopology();
 }
 
-
+*/
 //! ----------------------
 //! function: constructor
 //! details:
@@ -1263,21 +1262,16 @@ Standard_Boolean Ng_MeshVS_DataSource3D::GetGeom(const Standard_Integer ID,
 {
     if(IsElement)
     {
-        //cout<<"____tag000: globalElementID: "<<ID<<"____"<<endl;
         int localElementID = myElementsMap.FindIndex(ID);
-        //cout<<"____tag001: localElementID: "<<localElementID<<"____"<<endl;
 
         if(localElementID>=1 && localElementID<=myNumberOfElements)
         {
-            //cout<<"____tag002: in range____"<<endl;
-
             Type = MeshVS_ET_Volume;
             switch(myElemType->Value(localElementID))
             {
             case TET:
             {
                 NbNodes=4;
-                //cout<<"____tag003: TET found____"<<endl;
             }
                 break;
             case TET10: NbNodes=10; break;
@@ -1309,8 +1303,6 @@ Standard_Boolean Ng_MeshVS_DataSource3D::GetGeom(const Standard_Integer ID,
 
                     Coords(k) = myNodeCoords->Value(localNodeID,j);
                     //Coords(k) = myNodeCoords->Value(nodeID,j);
-
-                    //cout<<"____tag007____"<<endl;
 
                     k++;
                 }
@@ -2244,7 +2236,7 @@ void Ng_MeshVS_DataSource3D::buildFaceToElementConnectivity()
 
             int NbNodes_, bufn[20];
             TColStd_Array1OfInteger nodeIDs(*bufn,1,20);
-            int globalElementID = myElementsMap.FindIndex(localElementID);
+            int globalElementID = myElementsMap.FindKey(localElementID);
             this->GetNodesByElement(globalElementID,nodeIDs,NbNodes_);
 
             int thePoint = -1;
@@ -2711,7 +2703,6 @@ void Ng_MeshVS_DataSource3D::buildCCXFaceToElementConnectivity(std::map<meshElem
         case PYRAM: topology = PYRAM5MeshData; NbFaces = 5; break;
         case PRISM: topology = PRISM6MeshData; NbFaces = 5; break;
         case HEXA: topology = HEXA8MeshData; NbFaces = 6; break;
-
         case TET10: topology = TET10MeshData; NbFaces = 4; break;
         //case HEXA20: topology = HEXA20MeshData; NbFaces = 8; break;
         //case PRISM15: topology = PRISM15MeshData; NbFaces = 6; break;

@@ -302,7 +302,6 @@ void ConvergenceDataChart::plotConvergenceData(const QList<solutionInfo> &soluti
     //! ---------------------------------------
     if(solutionInfoList.isEmpty()) return;
     int NbData = solutionInfoList.length();
-    //cout<<"ConvergenceDataChart::plotConvergenceData()->____tag00____"<<endl;
 
     //! ---------------
     //! top panel data
