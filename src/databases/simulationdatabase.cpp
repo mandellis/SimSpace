@@ -1528,7 +1528,628 @@ void simulationDataBase::createCFDAnalysisRootNode()
     //! ---------------------------------------------
     QExtendedStandardItem *CFDAnalysisSettingsItem = new QExtendedStandardItem();
 
+    //! ------------------
+    //! "Number of steps"
+    //! ------------------
+    data.setValue(1);
+    Property property_numberOfSteps("Number of steps",data,Property::PropertyGroup_StepControls);
 
+    //! ----------------------
+    //! "Current step number"
+    //! ----------------------
+    data.setValue(1);
+    Property property_currentStepNumber("Current step number",data,Property::PropertyGroup_StepControls);
+
+    //! ------------------------------
+    //! the default analysis end time
+    //! ------------------------------
+    double endTime =1.0;
+    data.setValue(endTime);
+    Property property_stepEndTime("Step end time",data,Property::PropertyGroup_StepControls);
+
+    //! --------------
+    //! analysis type
+    //! --------------
+    Property::analysisType analysisType = Property::analysisType_CFD;
+    data.setValue(analysisType);
+    Property property_analysisType("Analysis type",data,Property::PropertyGroup_StepControls);
+
+    //! -----------------------
+    //! steady state/transient
+    //! -----------------------
+    Property::timeIntegration timeIntegration = Property::timeIntegration_steadyState;
+    data.setValue(timeIntegration);
+    Property property_timeIntegration("Static/Transient",data,Property::PropertyGroup_StepControls);
+
+    //! --------------
+    //! time stepping
+    //! --------------
+    Property::autoTimeStepping theTimeStepping = Property::autoTimeStepping_ProgramControlled;
+    data.setValue(theTimeStepping);
+    Property property_autoTimeStepping("Auto time stepping",data,Property::PropertyGroup_StepControls);
+
+    //! --------------
+    //! "Solver type"
+    //! --------------
+    Property::solverType theSolverType = Property::solverType_programControlled;
+    data.setValue(theSolverType);
+    Property property_solverType("Solver type",data,Property::PropertyGroup_SolverControls);
+
+    //! ---------------------------
+    //! non linear geometry
+    //! 0 -> NL "Off" 1 -> NL "On"
+    //! ---------------------------
+    Property property_NLgeometry("Large deflection",int(0),Property::PropertyGroup_SolverControls);
+
+    //! ------------------
+    //! number of threads
+    //! ------------------
+    int numberOfThreads = 4;
+    data.setValue(numberOfThreads);
+    Property property_numberOfThreads("Number of threads",data,Property::PropertyGroup_SolverControls);
+
+    props.push_back(property_numberOfSteps);
+    props.push_back(property_currentStepNumber);
+    props.push_back(property_stepEndTime);
+    props.push_back(property_analysisType);
+    props.push_back(property_timeIntegration);
+    props.push_back(property_autoTimeStepping);
+    props.push_back(property_solverType);
+    props.push_back(property_numberOfThreads);
+    props.push_back(property_NLgeometry);
+
+    //! -------------------------------------
+    //! Time incrementation
+    //! 0 = > Custom 1 => program controlled
+    //! -------------------------------------
+    int timeIncrementation = 0;
+    data.setValue(timeIncrementation);
+    Property property_timeIncrementation("Time incrementation",data,Property::PropertyGroup_TimeIncrementation);
+    props.push_back(property_timeIncrementation);
+
+    data.setValue(timeIncrementation);
+    QVector<QVariant> values4;
+    values4.push_back(data);
+    load loadTimeIncrementationType(values4,Property::loadType_timeIncrementation);
+
+    int I_0 = 4;
+    int I_R = 8;
+    int I_P = 9;
+    int I_C = 16;
+    int I_L = 10;
+    int I_G = 4;
+    int I_S = -1;       //! "-1" means "unused"
+    int I_A = 5;
+    int I_J = -1;       //! "-1" means "unused"
+    int I_T = -1;       //! "-1" means "unused"
+
+    data.setValue(I_0);
+    Property property_I_0("I_0",data,Property::PropertyGroup_TimeIncrementation);
+    props.push_back(property_I_0);
+    data.setValue(I_R);
+    Property property_I_R("I_R",data,Property::PropertyGroup_TimeIncrementation);
+    props.push_back(property_I_R);
+    data.setValue(I_P);
+    Property property_I_P("I_P",data,Property::PropertyGroup_TimeIncrementation);
+    props.push_back(property_I_P);
+    data.setValue(I_C);
+    Property property_I_C("I_C",data,Property::PropertyGroup_TimeIncrementation);
+    props.push_back(property_I_C);
+    data.setValue(I_L);
+    Property property_I_L("I_L",data,Property::PropertyGroup_TimeIncrementation);
+    props.push_back(property_I_L);
+    data.setValue(I_G);
+    Property property_I_G("I_G",data,Property::PropertyGroup_TimeIncrementation);
+    props.push_back(property_I_G);
+    data.setValue(I_S);
+    Property property_I_S("I_S",data,Property::PropertyGroup_TimeIncrementation);
+    props.push_back(property_I_S);
+    data.setValue(I_A);
+    Property property_I_A("I_A",data,Property::PropertyGroup_TimeIncrementation);
+    props.push_back(property_I_A);
+    data.setValue(I_J);
+    Property property_I_J("I_J",data,Property::PropertyGroup_TimeIncrementation);
+    props.push_back(property_I_J);
+    data.setValue(I_T);
+    Property property_I_T("I_T",data,Property::PropertyGroup_TimeIncrementation);
+    props.push_back(property_I_T);
+
+    QVector<int> timeIncrementationParameters;
+    timeIncrementationParameters.push_back(I_0);
+    timeIncrementationParameters.push_back(I_R);
+    timeIncrementationParameters.push_back(I_P);
+    timeIncrementationParameters.push_back(I_C);
+    timeIncrementationParameters.push_back(I_L);
+    timeIncrementationParameters.push_back(I_G);
+    timeIncrementationParameters.push_back(I_S);
+    timeIncrementationParameters.push_back(I_A);
+    timeIncrementationParameters.push_back(I_J);
+    timeIncrementationParameters.push_back(I_T);
+
+    data.setValue(timeIncrementationParameters);
+    QVector<QVariant> values3;
+    values3.append(data);
+    load loadTimeIncrementation(values3,Property::loadType_timeIncrementationParameters);
+
+    //! ----------------------------------------------------------
+    //! cutback type: "0" => "Program controlled" "1" => "Custom"
+    //! ----------------------------------------------------------
+    int typeOfCutback = 0;
+    data.setValue(typeOfCutback);
+    Property property_cutBackType("Cutback factors",data,Property::PropertyGroup_CutBack);
+    props.push_back(property_cutBackType);
+
+    data.setValue(typeOfCutback);
+    QVector<QVariant> values5;
+    values5.push_back(data);
+    load loadCutBackType(values5,Property::loadType_cutBack);
+
+    //! -------------------------------------
+    //! cutback factors: CCX solver defaluts
+    //! -------------------------------------
+    double D_f = 0.25;
+    double D_C = 0.5;
+    double D_B = 0.75;
+    double D_A = 0.85;
+    double D_S = -1.0;      //! "-1.0" means "currently unused"
+    double D_H = -1.0;      //! "-1.0" means "currently unused"
+    double D_D = 1.5;
+    double W_G = -1.0;      //! "-1.0" means "currently unused"
+
+    data.setValue(D_f);
+    Property property_D_f("D_f",data,Property::PropertyGroup_CutBack);
+    data.setValue(D_C);
+    Property property_D_C("D_C",data,Property::PropertyGroup_CutBack);
+    data.setValue(D_B);
+    Property property_D_B("D_B",data,Property::PropertyGroup_CutBack);
+    data.setValue(D_A);
+    Property property_D_A("D_A",data,Property::PropertyGroup_CutBack);
+    data.setValue(D_S);
+    Property property_D_S("D_S",data,Property::PropertyGroup_CutBack);
+    data.setValue(D_H);
+    Property property_D_H("D_H",data,Property::PropertyGroup_CutBack);
+    data.setValue(D_D);
+    Property property_D_D("D_D",data,Property::PropertyGroup_CutBack);
+    data.setValue(W_G);
+    Property property_W_G("W_G",data,Property::PropertyGroup_CutBack);
+
+    props.push_back(property_D_f);
+    props.push_back(property_D_C);
+    props.push_back(property_D_B);
+    props.push_back(property_D_A);
+    props.push_back(property_D_S);
+    props.push_back(property_D_H);
+    props.push_back(property_D_D);
+    props.push_back(property_W_G);
+
+    QVector<double> cutBackParameters;
+    cutBackParameters.push_back(D_f);
+    cutBackParameters.push_back(D_C);
+    cutBackParameters.push_back(D_B);
+    cutBackParameters.push_back(D_A);
+    cutBackParameters.push_back(D_S);
+    cutBackParameters.push_back(D_H);
+    cutBackParameters.push_back(D_D);
+    cutBackParameters.push_back(W_G);
+    data.setValue(cutBackParameters);
+    QVector<QVariant> values6;
+    values6.push_back(data);
+    load loadCutBackParameters(values6,Property::loadType_cutBackParameters);
+
+    //! ---------------------------------------------------------
+    //! Convergence criteria - "Flux convergence"
+    //! 0 = > Deactivated 1 => On 2 => Program controlled
+    //! The item is created with the option "2" using default
+    //! values for the parameters
+    //! ---------------------------------------------------------
+    int fluxConvergenceType = 2;
+    data.setValue(fluxConvergenceType);
+    Property property_fluxConvergence("Flux convergence",data,Property::PropertyGroup_ConvergenceCriteria);
+    props.append(property_fluxConvergence);
+
+    //! q_alpha_u   => "0" is Program controlled
+    double q_alpha_u = 0.0;
+    data.setValue(q_alpha_u);
+    Property property_value("--Value",data,Property::PropertyGroup_ConvergenceCriteria);
+    props.append(property_value);
+
+    //! q_alpha_0   => "0" is Program controlled
+    double q_alpha_0 = 0.0;
+    data.setValue(q_alpha_0);
+    Property property_q_alpha_0("--q_alpha_0",data,Property::PropertyGroup_ConvergenceCriteria);
+    props.append(property_q_alpha_0);
+
+    //! First tolerance in case of non zero flux
+    double R_alpha_n = 0.005;
+    data.setValue(R_alpha_n);
+    Property property_R_alpha_n("--R_alpha_n",data,Property::PropertyGroup_ConvergenceCriteria);
+    props.append(property_R_alpha_n);
+
+    //! Second tolerance in case of non zero flux
+    double R_alpha_P = 0.02;
+    data.setValue(R_alpha_P);
+    Property property_R_alpha_P("--R_alpha_P",data,Property::PropertyGroup_ConvergenceCriteria);
+    props.append(property_R_alpha_P);
+
+    //! Third tolerance parameter: R_alpha_l
+    double R_alpha_l = 1e-8;
+    data.setValue(R_alpha_l);
+    Property property_R_alpha_l("--R_alpha_l",data,Property::PropertyGroup_ConvergenceCriteria);
+    props.append(property_R_alpha_l);
+
+    //! zero flux parameter
+    double epsilon_alpha = 1e-5;
+    data.setValue(epsilon_alpha);
+    Property property_epsilon_n("--epsilon_alpha",data,Property::PropertyGroup_ConvergenceCriteria);
+    props.append(property_epsilon_n);
+
+    //! --------------------------------------------------
+    //! Convergence criteria: "Solution convergence"
+    //! 0 = > Deactivated 1 => On 2 => Program controlled
+    //! --------------------------------------------------
+    int solutionConvergenceType = 2;
+    data.setValue(solutionConvergenceType);
+    Property property_solutionConvergence("Solution convergence",data,Property::PropertyGroup_ConvergenceCriteria);
+    props.append(property_solutionConvergence);
+
+    //! First tolerance in case of non zero flux
+    double C_alpha_n = 0.02;
+    data.setValue(C_alpha_n);
+    Property property_C_alpha_n("--C_alpha_n",data,Property::PropertyGroup_ConvergenceCriteria);
+    props.append(property_C_alpha_n);
+
+    //! Second tolerance in case of zero flux
+    double C_alpha_epsilon = 0.001;
+    data.setValue(C_alpha_epsilon);
+    Property property_C_alpha_epsilon("--C_alpha_epsilon",data,Property::PropertyGroup_ConvergenceCriteria);
+    props.append(property_C_alpha_epsilon);
+
+    //! --------------------------------------------------------------------------------------------
+    //! field parameters
+    //! (R_alpha_n,C_alpha_n,q_alpha_0,q_alpha_u,R_alpha_P,epsilon_alpha,C_alpha_epsilon,R_alpha_l)
+    //! --------------------------------------------------------------------------------------------
+    QVector<double> fieldParameters;
+
+    fieldParameters.append(R_alpha_n);
+    fieldParameters.append(C_alpha_n);
+    fieldParameters.append(q_alpha_0);
+    fieldParameters.append(q_alpha_u);
+    fieldParameters.append(R_alpha_P);
+    fieldParameters.append(epsilon_alpha);
+    fieldParameters.append(C_alpha_epsilon);
+    fieldParameters.append(R_alpha_l);
+
+    data.setValue(fieldParameters);
+    QVector<QVariant> values;
+    values.append(data);
+
+    load loadFieldParameters(values,Property::loadType_fieldParameters);
+
+    data.setValue(fluxConvergenceType);
+    QVector<QVariant> values1;
+    values1.append(data);
+    load loadFluxConvergence(values1,Property::loadType_fluxConvergence);
+
+    data.setValue(solutionConvergenceType);
+    QVector<QVariant> values2;
+    values2.append(data);
+    load loadSolutionConvergence(values2,Property::loadType_solutionConvergence);
+
+    //! --------------------------------------------
+    //! line search
+    //! "0" => "Program controlled" "1" => "Custom"
+    //! --------------------------------------------
+    int lineSearch = 0;
+    data.setValue(lineSearch);
+    Property property_lineSearch("Line search",data,Property::PropertyGroup_LineSearch);
+
+    double minLineSearch = 0.25;
+    data.setValue(minLineSearch);
+    Property property_minLineSearch("Min value",data,Property::PropertyGroup_LineSearch);
+
+    double maxLineSearch = 1.01;
+    data.setValue(maxLineSearch);
+    Property property_maxLineSearch("Max value",data,Property::PropertyGroup_LineSearch);
+
+    props.push_back(property_lineSearch);
+    props.push_back(property_minLineSearch);
+    props.push_back(property_maxLineSearch);
+
+    QVector<QVariant> values7;
+    data.setValue(lineSearch);
+    values7.push_back(data);
+    load loadLineSearch(values7,Property::loadType_lineSearch);
+
+    QVector<QVariant> values8;
+    QVector<double> lineSearchParameters;
+    lineSearchParameters.push_back(minLineSearch);
+    lineSearchParameters.push_back(maxLineSearch);
+    data.setValue(lineSearchParameters);
+    values8.push_back(data);
+    load loadLineSearchParameters(values8,Property::loadType_lineSearchParameters);
+
+    //! -------------------------------
+    //! "Output settings"
+    //! "0" => do not save "1" => save
+    //! -------------------------------
+    QVector<int> outputSettings;
+
+    int saveStress = 1;
+    data.setValue(saveStress);
+    outputSettings.push_back(saveStress);
+    Property property_stress("Stress",data,Property::PropertyGroup_OutputSettings);
+    props.push_back(property_stress);
+
+    int saveStrain = 1;
+    data.setValue(saveStrain);
+    outputSettings.push_back(saveStrain);
+    Property property_strain("Strain",data,Property::PropertyGroup_OutputSettings);
+    props.push_back(property_strain);
+
+    int saveReactionForces = 1;
+    data.setValue(saveReactionForces);
+    outputSettings.push_back(saveReactionForces);
+    Property property_RF("Reaction forces",data,Property::PropertyGroup_OutputSettings);
+    props.push_back(property_RF);
+
+    int saveContactData = 1;
+    data.setValue(saveContactData);
+    outputSettings.push_back(saveContactData);
+    Property property_contactData("Contact data",data,Property::PropertyGroup_OutputSettings);
+    props.push_back(property_contactData);
+
+    data.setValue(outputSettings);
+    QVector<QVariant> values9; values9.push_back(data);
+    load loadOuputSettings(values9,Property::loadType_outputSettings);
+
+    //! -------------------------------------
+    //! options for storing analysis results
+    //! "0" => "All time points" (defaults)
+    //! "1" => "Last time point"
+    //! "2" => "Specified recurrence rate"
+    //! -------------------------------------
+    int storeResultsAt = 0;
+    data.setValue(storeResultsAt);
+    Property property_storeResultsAt("Store results at",data,Property::PropertyGroup_OutputSettings);
+    props.push_back(property_storeResultsAt);
+
+    int FREQUENCY = 1;
+    QVector<int> storeResultsAtFlags;
+    storeResultsAtFlags.push_back(storeResultsAt);
+    storeResultsAtFlags.push_back(FREQUENCY);
+    data.setValue(storeResultsAtFlags);
+    QVector<QVariant> values10; values10.push_back(data);
+    load loadStoreResultsAt(values10,Property::loadType_storeResultsAt);
+
+    //! ------------------------------------
+    //! create the "Analysis settings" node
+    //! ------------------------------------
+    SimulationNodeClass *nodeCFDAnalysisSettings =
+            new SimulationNodeClass("Analysis settings",SimulationNodeClass::nodeType_CFDAnalysisSettings,props,this);
+
+    //! -------------------------------------------------
+    //! create the tabular data for the time step policy
+    //! -------------------------------------------------
+    QVector<QVariant> stepNumbers;
+    QVector<QVariant> stepEndTimes;
+    QVector<QVariant> solverTypes;
+    QVector<QVariant> vecSubsteps;
+
+    //! time step number - a default value
+    data.setValue(1);
+    stepNumbers.push_back(data);
+
+    //! Step end time - a default value
+    double aStepEndTime = 1.0;
+    data.setValue(aStepEndTime);
+    stepEndTimes.push_back(data);
+
+    //! Solver type - a default value
+    data.setValue(Property::solverType_programControlled);
+    solverTypes.push_back(data);
+
+    //! ----------------------------------------------------------------------
+    //! time step divisions
+    //! the last value is for the time step policy (Auto = 0, ON = 1, OFF =2)
+    //! ----------------------------------------------------------------------
+    QVector<int> T;
+    T.append(5); T.append(2); T.append(10);
+    //! the time step policy
+    T.append(0);
+
+    data.setValue(T);
+    vecSubsteps.append(data);
+
+    load aLoad1(stepNumbers,Property::loadType_stepNumber);
+    load aLoad2(stepEndTimes,Property::loadType_stepEndTime);
+    load aLoad3(solverTypes,Property::loadType_solverType);
+    load aLoad4(vecSubsteps,Property::loadType_autoTimeStepping);
+
+    //! --------------
+    //! analysis type
+    //! --------------
+    data.setValue(analysisType);
+    QVector<QVariant> vecAnalysisType;
+    vecAnalysisType.push_back(data);
+    load loadAnalysisType(vecAnalysisType,Property::loadType_analysisType);
+
+    //! --------------------------
+    //! static/transient in table
+    //! --------------------------
+    data.setValue(timeIntegration);
+    QVector<QVariant> vecTimeIntegration;
+    vecTimeIntegration.push_back(data);
+    load loadTimeIntegration(vecTimeIntegration,Property::loadType_timeIntegration);
+
+    //! -------------------------
+    //! build the internal table
+    //! -------------------------
+    QVector<load> vecLoad;
+
+    //! 1-st time step numner (column # 0)
+    vecLoad.push_back(aLoad1);
+    //! 2-nd step end time (column # 1)
+    vecLoad.push_back(aLoad2);
+    //! 3-rd column solver type (column # 2)
+    vecLoad.push_back(aLoad3);
+    //! 4-th column time step policy (column # 3)
+    vecLoad.push_back(aLoad4);
+    //! 5-th column (column # 4)
+    vecLoad.push_back(loadFieldParameters);
+    //! 6-th column (column # 5)
+    vecLoad.push_back(loadFluxConvergence);
+    //! 7-th column (column # 6)
+    vecLoad.push_back(loadSolutionConvergence);
+    //! 8-th column (column # 7)
+    vecLoad.push_back(loadTimeIncrementation);
+    //! 9-th column (column # 8)
+    vecLoad.push_back(loadTimeIncrementationType);
+    //! 10-th column (column # 9)
+    vecLoad.push_back(loadCutBackType);
+    //! 11-th column (column #10)
+    vecLoad.push_back(loadCutBackParameters);
+    //! 12-th column (column #11)
+    vecLoad.push_back(loadLineSearch);
+    //! 13-th column (column #12)
+    vecLoad.push_back(loadLineSearchParameters);
+    //! 14-th column (column #13)
+    vecLoad.push_back(loadOuputSettings);
+    //! 15-th column (column #14)
+    vecLoad.push_back(loadStoreResultsAt);
+    //! 16-th column (column #15)
+    vecLoad.push_back(loadAnalysisType);
+    //! 17-th column (column #16)
+    vecLoad.push_back(loadTimeIntegration);
+
+    //! ------------------------
+    //! create the tabular data
+    //! ------------------------
+    nodeCFDAnalysisSettings->createTabularData(vecLoad);
+
+    //! -----------------------------
+    //! time tag and parent time tag
+    //! -----------------------------
+    nodeCFDAnalysisSettings->addTimeTag();
+    QString parentTimeTag = CFDAnalysisItem->data(Qt::UserRole).value<SimulationNodeClass*>()->getPropertyValue<QString>("Time tag");
+    data.setValue(parentTimeTag);
+    nodeCFDAnalysisSettings->addProperty(Property("Parent time tag",data,Property::PropertyGroup_Identifier));
+
+    //! ------------------------------------------------------
+    //! create the item and append to the "CFD analysis"
+    //! ------------------------------------------------------
+    data.setValue(nodeCFDAnalysisSettings);
+    CFDAnalysisSettingsItem->setData(data,Qt::UserRole);
+    CFDAnalysisSettingsItem->setData("Analysis settings", Qt::DisplayRole);
+    CFDAnalysisItem->appendRow(CFDAnalysisSettingsItem);
+
+    //! ---------------------------
+    //! create the "Status" item
+    //! ---------------------------
+    props.clear();
+    Property::solutionInformation theSolutionStatus = Property::solutionInformation_solveRequired;
+    data.setValue(theSolutionStatus);
+    Property prop_status("Status",data,Property::PropertyGroup_Information);
+    props.push_back(prop_status);
+
+    //! --------------------
+    //! "Project files dir"
+    //! --------------------
+    data.setValue(QString("undefined"));
+    Property prop_solutionFileDir("Project files dir",data,Property::PropertyGroup_Information);
+    props.push_back(prop_solutionFileDir);
+    SimulationNodeClass *nodeSolution = new SimulationNodeClass("Solution",SimulationNodeClass::nodeType_CFDAnalysisSolution,props,this);
+    data.setValue(nodeSolution);
+
+    //! -----------------------------
+    //! time tag and parent time tag
+    //! -----------------------------
+    nodeSolution->addTimeTag();
+    parentTimeTag = CFDAnalysisItem->data(Qt::UserRole).value<SimulationNodeClass*>()->getPropertyValue<QString>("Time tag");
+    data.setValue(parentTimeTag);
+    nodeSolution->addProperty(Property("Parent time tag",data,Property::PropertyGroup_Identifier));
+
+    //! ----------------
+    //! create the item
+    //! ----------------
+    QExtendedStandardItem *SolutionItem = new QExtendedStandardItem();
+    data.setValue(nodeSolution);
+    SolutionItem->setData(data,Qt::UserRole);
+    SolutionItem->setData("Solution",Qt::DisplayRole);
+
+    CFDAnalysisItem->appendRow(SolutionItem);
+
+    //! ---------------------------------------
+    //! create the item "Solution information"
+    //! ---------------------------------------
+    props.clear();
+
+    //! ------------------------------
+    //! 0 => solver txt messages
+    //! 1 => force convergence
+    //! 2 => displacement convergence
+    //! 3 => line search
+    //! 4 => time step size
+    //! ------------------------------
+    data.setValue(int(0));
+    Property prop_solutionInfoType("Solution information",data,Property::PropertyGroup_SolutionInfo);
+    double updateInterval = 2.5;
+    data.setValue(updateInterval);
+    Property prop_updateInterval("Update interval",data,Property::PropertyGroup_SolutionInfo);
+
+    props.push_back(prop_solutionInfoType);
+    props.push_back(prop_updateInterval);
+
+    //! ---------------------------
+    //! hidden: solver text output
+    //! ---------------------------
+    CCXSolverMessage msg;
+    data.setValue(msg);
+    Property prop_solverOutput("Solver output",data,Property::PropertyGroup_Hidden);
+    props.push_back(prop_solverOutput);
+
+    //! ------------------
+    //! discrete time map
+    //! ------------------
+    QMap<double,QVector<int>> dtm;
+    data.setValue(dtm);
+    Property prop_discreteTimeMap("Discrete time map",data,Property::PropertyGroup_Hidden);
+    props.push_back(prop_discreteTimeMap);
+
+    //! -----------------
+    //! convergence data
+    //! -----------------
+    QList<solutionInfo> solInfoList;
+    data.setValue(solInfoList);
+    Property prop_solInfoList("Convergence data",data,Property::PropertyGroup_Hidden);
+    props.push_back(prop_solInfoList);
+
+    SimulationNodeClass *solInfoNode =
+            new SimulationNodeClass("Solution information",SimulationNodeClass::nodeType_CFDAnalysisSolutionInformation,props,this);
+
+    //! -----------------------------------------------------------
+    //! time tag and parent time tag - the time tag property
+    //! has been already created by the node factory for this node
+    //! -----------------------------------------------------------
+    solInfoNode->addTimeTag();
+    parentTimeTag = nodeSolution->getPropertyValue<QString>("Time tag");
+    data.setValue(parentTimeTag);
+    solInfoNode->addProperty(Property("Parent time tag",data,Property::PropertyGroup_Identifier));
+
+    //! -------------------------------------
+    //! create the solution information item
+    //! -------------------------------------
+    QExtendedStandardItem *itemSolutionInformation = new QExtendedStandardItem;
+
+    data.setValue(solInfoNode);
+    itemSolutionInformation->setData(data,Qt::UserRole);
+    data.setValue(solInfoNode->getName());
+    itemSolutionInformation->setData(data,Qt::DisplayRole);
+    SolutionItem->appendRow(itemSolutionInformation);
+
+    cout<<"simulationDataBase::createCFDAnalysisRootNode()->____creating a static structural: done____"<<endl;
+
+
+/*  //CFD analysis settings for OF solver
     //! ------------------------------
     //! the default analysis end time
     //! ------------------------------
@@ -1724,7 +2345,7 @@ void simulationDataBase::createCFDAnalysisRootNode()
 
     CFDAnalysisItem->appendRow(SolutionItem);
 
-    mainTreeTools::addSolutionInformation(CFDAnalysisItem->child(CFDAnalysisItem->rowCount()-1,0));
+    mainTreeTools::addSolutionInformation(CFDAnalysisItem->child(CFDAnalysisItem->rowCount()-1,0));*/
 }
 
 //! --------------------------------

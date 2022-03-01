@@ -193,6 +193,8 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
                 cb->addItem("Uncoupled temperature displacement",data);
                 data.setValue(Property::analysisType_coupledTemperatureDisplacement);
                 cb->addItem("Coupled temperature displacement",data);
+                data.setValue(Property::analysisType_CFD);
+                cb->addItem("CFD",data);
             }
                 break;
             }

@@ -478,6 +478,7 @@ QVariant CustomTableModel::data(const QModelIndex &index, int role) const
             case Property::analysisType_frequencyResponse: cellString = QString("Frequency response"); break;
             case Property::analysisType_uncoupledTemperatureDisplacement: cellString = QString("Uncoupled temperature displacement"); break;
             case Property::analysisType_coupledTemperatureDisplacement: cellString = QString("Temperature displacement"); break;
+            case Property::analysisType_CFD: cellString = QString("CFD"); break;
             }
             QVariant cellStringVariant;
             cellStringVariant.setValue(cellString);

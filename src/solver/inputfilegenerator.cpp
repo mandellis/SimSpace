@@ -68,7 +68,7 @@ void inputFileGenerator::run()
     QExtendedStandardItem *simulationRootItem = static_cast<QExtendedStandardItem*>(myParameters[1]);
     SimulationNodeClass *curNode = simulationRootItem->data(Qt::UserRole).value<SimulationNodeClass*>();
     int solverTarget = 0;
-    if(curNode->getType()==SimulationNodeClass::nodeType_CFDAnalysis) solverTarget = 1;
+    //if(curNode->getType()==SimulationNodeClass::nodeType_CFDAnalysis) solverTarget = 1;
 
     switch(solverTarget)
     {

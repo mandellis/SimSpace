@@ -1568,6 +1568,14 @@ bool writeSolverFileClass::perform()
             else myInputFile<<"*COUPLED TEMPERATURE-DISPLACEMENT,";
         }
             break;
+        case Property::analysisType_CFD:
+        {
+            myInputFile<<"*STEP, INC=20000"<<endl;
+            if(timeIntegration==Property::timeIntegration_steadyState) myInputFile<<"*CFD, STEADY STATE,";
+            else myInputFile<<"*CFD,";
+        }
+            break;
+
         }
 
         //! ------------
