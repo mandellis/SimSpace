@@ -577,6 +577,7 @@ SimulationNodeClass::nodeType SimulationNodeClass::getFamily()
 
     case nodeType_solutionCFDpressure:
     case nodeType_solutionCFDvelocity:
+    case nodeType_solutionCFDK:
         RV = nodeType_CFDAnalysisSolution;
         break;
 
@@ -1481,6 +1482,7 @@ bool SimulationNodeClass::isAnalysisResult()
             myNodeType == SimulationNodeClass::nodeType_solutionStructuralContact ||
             myNodeType == SimulationNodeClass::nodeType_solutionCFDpressure ||
             myNodeType == SimulationNodeClass::nodeType_solutionCFDvelocity ||
+            myNodeType == SimulationNodeClass::nodeType_solutionCFDK ||
         myNodeType == SimulationNodeClass::nodeType_probe )
         return true;
     return false;

@@ -566,6 +566,9 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
             case SimulationNodeClass::nodeType_solutionStructuralEquivalentPlasticStrain:
             case SimulationNodeClass::nodeType_solutionStructuralContact:
             case SimulationNodeClass::nodeType_solutionStructuralFatigueTool:
+            case SimulationNodeClass::nodeType_solutionCFDK:
+            case SimulationNodeClass::nodeType_solutionCFDpressure:
+            case SimulationNodeClass::nodeType_solutionCFDvelocity:
             {
                 //! ---------------------------------------------------------------------
                 //! hide the meshes: keep the bodies in wireframe mode for the selection
@@ -953,7 +956,10 @@ void SimulationManager::highlighter(QModelIndex modelIndex)
                 }
 
                 bool isDone = markerBuilder::addMarker(this->getCurrentNode(), mySimulationDataBase);
+                cout<<"tag00"<<endl;
                 if(isDone == true) this->displayMarker();
+                cout<<"tag0"<<isDone<<endl;
+
             }
                 break;
 
@@ -2528,6 +2534,7 @@ void SimulationManager::handleItem(int type)
     case 403: this->createSimulationNode(SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionWall); break;
     case 431: this->createSimulationNode(SimulationNodeClass::nodeType_solutionCFDpressure); break;
     case 432: this->createSimulationNode(SimulationNodeClass::nodeType_solutionCFDvelocity); break;
+    case 433: this->createSimulationNode(SimulationNodeClass::nodeType_solutionCFDK); break;
 
 #ifdef COSTAMP_VERSION
     case 1000:
@@ -11601,7 +11608,7 @@ bool SimulationManager::previewPrismaticLayer()
 //! ------------------------
 void SimulationManager::displayMarker()
 {
-    //cout<<"SimulationManager::displayMarker()->____function called____"<<endl;
+    cout<<"SimulationManager::displayMarker()->____function called____"<<endl;
     SimulationNodeClass *curNode = this->getCurrentNode();
     if(curNode->getPropertyItem("Graphic object")!=NULL)
     {

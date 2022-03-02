@@ -303,7 +303,7 @@ bool FrdReader::readResults(ifstream &is, QString path/*, int &sb,int &st,double
             //! -----------------------------------
             //! read displacement, force reactions
             //! -----------------------------------
-            if(strcmp(tdata,"DISP")==0 || strcmp(tdata,"FORC")==0 || strcmp(tdata,"FLUX")==0)
+            if(strcmp(tdata,"DISP")==0 || strcmp(tdata,"FORC")==0 || strcmp(tdata,"FLUX")==0 || strcmp(tdata,"V3DF")==0)
             {
                 for(int i=0;i<nv;i++)
                 {
@@ -344,7 +344,8 @@ bool FrdReader::readResults(ifstream &is, QString path/*, int &sb,int &st,double
                     strcmp(tdata,"PE")==0 ||
                     strcmp(tdata,"CELS")==0 ||
                     strcmp(tdata,"ERROR")==0 ||
-                    strcmp(tdata,"HERROR")==0)
+                    strcmp(tdata,"HERROR")==0||
+                    strcmp(tdata,"PS3DF")==0)
             {
                 cout<<"FrdReader::readResults()->____reading a scalar from .frd____"<<endl;
                 for(int i=0;i<nv;i++)
@@ -384,7 +385,8 @@ bool FrdReader::readResults(ifstream &is, QString path/*, int &sb,int &st,double
             if(strcmp(tdata,"STRESS")== 0 ||
                     strcmp(tdata,"MESTRAIN")==0 ||
                     strcmp(tdata,"TOSTRAIN")==0 ||
-                    strcmp(tdata,"CONTACT")==0)
+                    strcmp(tdata,"CONTACT")==0
+                    )
             {
                 cout<<"FrdReader::readResults()->____reading 3x3 from .frd____"<<endl;
                 for(int i=0;i<nv;i++)
@@ -418,6 +420,44 @@ bool FrdReader::readResults(ifstream &is, QString path/*, int &sb,int &st,double
                 aResultFile.close();
                 return isOK;
             }
+            //! -----------------------------------------------------
+            //! read turbulence data from CFD analysis
+            //! -----------------------------------------------------
+            if(strcmp(tdata,"TURB3DF")==0)
+            {
+                cout<<"FrdReader::readResults()->____reading 3x3 from .frd____"<<endl;
+                for(int i=0;i<nv;i++)
+                {
+                    std::getline(is,val);
+                }
+                bool isOK = false;
+                if(nd!=0)
+                {
+                    for(int i=0;i<nd;i++)
+                    {
+                        std::getline(is,val);
+                        if(sscanf(val.c_str(),"%d%d%lf%lf%lf%lf%lf%lf",&c,&ni,&cxx,&cyy,&czz,&cxy,&cyz)==7)
+                        {
+                            isOK = true;
+                            aResultFile<<ni<<" "<<cxx<<" "<<cyy<<" "<<czz<<" "<<cxy<<" "<<cyz<<endl;
+                        }
+                        else
+                        {
+                            //! incomplete data
+                            //! consider using throw()
+                            isOK = false;
+                            break;
+                        }
+                    }
+                }
+                else
+                {
+                    isOK=true;
+                }
+                aResultFile.close();
+                return isOK;
+            }
+
             //! -------------------------------------------
             //! read structural error, heat transfer error
             //! -------------------------------------------

@@ -79,6 +79,10 @@ bool parser::parseItem(QExtendedStandardItem* item)
     case SimulationNodeClass::nodeType_solutionStructuralStress:
     case SimulationNodeClass::nodeType_solutionStructuralThermalStrain:
     case SimulationNodeClass::nodeType_solutionStructuralTotalStrain:
+    case SimulationNodeClass::nodeType_solutionCFDK:
+    case SimulationNodeClass::nodeType_solutionCFDpressure:
+    case SimulationNodeClass::nodeType_solutionCFDvelocity:
+
         return parser::PostProcessingItem(item);
     break;
     case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Acceleration:

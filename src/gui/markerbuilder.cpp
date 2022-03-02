@@ -118,6 +118,7 @@ bool markerBuilder::addMarker(SimulationNodeClass *node, geometryDataBase *gDB)
         break;
 
     case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Acceleration:
+    case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Force:
     {
         const std::vector<GeometryTag> &locs = node->getPropertyValue<std::vector<GeometryTag>>("Geometry");
         //! ---------------------------------------------------------
@@ -285,16 +286,32 @@ bool markerBuilder::addMarker(SimulationNodeClass *node, geometryDataBase *gDB)
         TopoDS_Compound compound;
         TopoDS_Builder theBuilder;
         theBuilder.MakeCompound(compound);
+        cout<<"markerBuilder::addMarker()->____tag00____"<<endl;
+        //double Area;
         for(int i=0; i<locs.size(); i++)
         {
             int bodyIndex = locs.at(i).parentShapeNr;
             int faceIndex = locs.at(i).subTopNr;
+            cout<<"markerBuilder::addMarker()->____BI____"<<bodyIndex<<endl;
+            cout<<"markerBuilder::addMarker()->____FI____"<<faceIndex<<endl;
+
             const TopoDS_Shape &curFace = gDB->MapOfBodyTopologyMap.value(bodyIndex).faceMap.FindKey(faceIndex);
+            //GProp_GProps prop;
+            //BRepGProp::SurfaceProperties(compound/*curFace*/,prop);
+            cout<<"markerBuilder::addMarker()->____tag01"<<endl;
+
+            //Area += prop.Mass();
             theBuilder.Add(compound,curFace);
+            //gp_Pnt p = prop.CentreOfMass();
+
         }
+        cout<<"markerBuilder::addMarker()->____tag01"<<endl;
         GProp_GProps prop;
         BRepGProp::SurfaceProperties(compound,prop);
+        cout<<"markerBuilder::addMarker()->____tag02"<<endl;
+
         double Area = prop.Mass();
+        cout<<"markerBuilder::addMarker()->____mass____"<<Area<<endl;
 
         //! ----------------------------------------------
         //! this sets the size of the curved arrow marker
@@ -305,7 +322,7 @@ bool markerBuilder::addMarker(SimulationNodeClass *node, geometryDataBase *gDB)
         //! marker placement
         //! -----------------
         gp_Ax2 axes;
-        gp_Pnt P = prop.CentreOfMass();
+        gp_Pnt P = GeomToolsClass::getCenterOfMass(compound)/* prop.CentreOfMass()*/;
         axes.SetLocation(P);
 
         //! ------------------------------------------------------
@@ -319,6 +336,7 @@ bool markerBuilder::addMarker(SimulationNodeClass *node, geometryDataBase *gDB)
         Property::defineBy defineBy = node->getPropertyValue<Property::defineBy>("Define by");
 
         int curStepNumber = nodeAnalysisSetting->getPropertyValue<int>("Current step number");
+        cout<<"markerBuilder::addMarker()->____ts____"<<curStepNumber<<endl;
 
         switch(defineBy)
         {
@@ -402,6 +420,7 @@ bool markerBuilder::addMarker(SimulationNodeClass *node, geometryDataBase *gDB)
         }
             break;
         }
+        cout<<"markerBuilder::addMarker()->____tag01____"<<endl;
 
         //! ---------------------------
         //! actually create the marker
@@ -418,6 +437,8 @@ bool markerBuilder::addMarker(SimulationNodeClass *node, geometryDataBase *gDB)
         //! ---------------------------------------
         if(node->getPropertyItem("Graphic object")==NULL) node->addProperty(prop_marker);
         else node->replaceProperty("Graphic object",prop_marker);
+        cout<<"markerBuilder::addMarker()->____tag02____"<<endl;
+
     }
         break;
 

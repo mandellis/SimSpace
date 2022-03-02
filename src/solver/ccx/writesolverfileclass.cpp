@@ -191,6 +191,7 @@ bool writeSolverFileClass::perform()
     int N = mySimulationRoot->rowCount();
 
     //! read the "Analysis settings" item
+    SimulationNodeClass *nodeAnalysis = mySimulationRoot->data(Qt::UserRole).value<SimulationNodeClass*>();
     SimulationNodeClass *nodeAnalysisSettings = mySimulationRoot->child(0,0)->data(Qt::UserRole).value<SimulationNodeClass*>();
     CustomTableModel *tabData = nodeAnalysisSettings->getTabularDataModel();
 
@@ -432,6 +433,9 @@ bool writeSolverFileClass::perform()
             case SimulationNodeClass::nodeType_structuralAnalysisThermalCondition:
             case SimulationNodeClass::nodeType_thermalAnalysisTemperature:
             case SimulationNodeClass::nodeType_thermalAnalysisThermalPower:
+            case SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionPressure:
+            case SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionVelocity:
+            case SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionWall:
             {
                 this->writeNodalSet(SetName,anIndexedMapOfFaceMeshDS);
             }
@@ -1053,8 +1057,7 @@ bool writeSolverFileClass::perform()
 
         SimulationNodeClass *theCurNode = mySimulationRoot->child(k,0)->data(Qt::UserRole).value<SimulationNodeClass*>();
         SimulationNodeClass::nodeType theNodeType = theCurNode->getType();
-        Property::SuppressionStatus theNodeSS = theCurNode->getPropertyValue<Property::SuppressionStatus>("Suppressed");
-
+        Property::SuppressionStatus theNodeSS = theCurNode->getPropertyValue<Property::SuppressionStatus>("Suppressed");        
         if(theNodeSS==Property::SuppressionStatus_Active)
         {
             QString SetName;
@@ -1250,6 +1253,38 @@ bool writeSolverFileClass::perform()
         }
     }
 
+    if(nodeAnalysis->getType()==SimulationNodeClass::nodeType_CFDAnalysis){
+        myInputFile<<"*NSET,NSET=FREESTREAMSURFACE"<<endl;
+        for(int k=1; k<mySimulationRoot->rowCount()-1; k++)
+        {
+            QString itemName = itemNameClearSpaces(mySimulationRoot->child(k,0)->data(Qt::DisplayRole).toString());
+            SimulationNodeClass *theCurNode = mySimulationRoot->child(k,0)->data(Qt::UserRole).value<SimulationNodeClass*>();
+            SimulationNodeClass::nodeType theNodeType = theCurNode->getType();
+            Property::SuppressionStatus theNodeSS = theCurNode->getPropertyValue<Property::SuppressionStatus>("Suppressed");
+            if(theNodeSS==Property::SuppressionStatus_Active && theNodeType==SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionPressure
+                    && theNodeType==SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionVelocity)
+            {
+                QString SetName = itemName.append("_").append(QString("%1").arg(k));
+                myInputFile<<SetName.toStdString()<<",";
+            }
+        }
+        myInputFile<<endl;
+        myInputFile<<"*NSET,NSET=SOLIDSURFACE"<<endl;
+        for(int k=1; k<mySimulationRoot->rowCount()-1; k++)
+        {
+            QString itemName = itemNameClearSpaces(mySimulationRoot->child(k,0)->data(Qt::DisplayRole).toString());
+            SimulationNodeClass *theCurNode = mySimulationRoot->child(k,0)->data(Qt::UserRole).value<SimulationNodeClass*>();
+            SimulationNodeClass::nodeType theNodeType = theCurNode->getType();
+            Property::SuppressionStatus theNodeSS = theCurNode->getPropertyValue<Property::SuppressionStatus>("Suppressed");
+            if(theNodeSS==Property::SuppressionStatus_Active && theNodeType==SimulationNodeClass::nodeType_CFDAnalysisBoundaryConditionWall)
+            {
+                QString SetName = itemName.append("_").append(QString("%1").arg(k));
+                myInputFile<<SetName.toStdString()<<",";
+            }
+        }
+        myInputFile<<endl;
+    }
+
     //! --------------------
     //! update the progress
     //! --------------------
@@ -1298,15 +1333,24 @@ bool writeSolverFileClass::perform()
     //! [5] write the material properties
     //! ----------------------------------
     cout<<"writeSolverFileClass::perform()->____writing materials"<<endl;
-    for(int p=0;p<vecMatNames.size();p++)
+    if(nodeAnalysis->getType()==SimulationNodeClass::nodeType_CFDAnalysis)
     {
-        std::string matName = vecMatNames.at(p);
-        QString materialDBPath = QCoreApplication::applicationDirPath();
-        QString matIncludeFileAbsPosition = materialDBPath+"/material/"+QString::fromStdString(matName)+".mat";
-        myInputFile<<"*MATERIAL, Name="<<matName<<endl;
-        myInputFile<<"*INCLUDE, INPUT="<<matIncludeFileAbsPosition.toStdString()<<endl;
+        myInputFile<<"*MATERIAL, Name=WATER"<<endl;
+        myInputFile<<"*DENSITY"<<endl;
+        myInputFile<<"1000."<<endl;
+        myInputFile<<"*FLUID CONSTANTS"<<endl;
+        myInputFile<<",0.00131,293."<<endl;
     }
-
+    else{
+        for(int p=0;p<vecMatNames.size();p++)
+        {
+            std::string matName = vecMatNames.at(p);
+            QString materialDBPath = QCoreApplication::applicationDirPath();
+            QString matIncludeFileAbsPosition = materialDBPath+"/material/"+QString::fromStdString(matName)+".mat";
+            myInputFile<<"*MATERIAL, Name="<<matName<<endl;
+            myInputFile<<"*INCLUDE, INPUT="<<matIncludeFileAbsPosition.toStdString()<<endl;
+        }
+    }
     for(int k=0; k<theGeometryRoot->rowCount();k++)
     {
         if(Global::status().code==0)
@@ -1319,12 +1363,19 @@ bool writeSolverFileClass::perform()
         SimulationNodeClass *theCurNode = theGeometryItem->data(Qt::UserRole).value<SimulationNodeClass*>();
         Property::SuppressionStatus theNodeSS = theCurNode->getPropertyValue<Property::SuppressionStatus>("Suppressed");
 
-        if(theNodeSS==Property::SuppressionStatus_Active && theCurNode->getType()!=SimulationNodeClass::nodeType_pointMass)
+        if(theNodeSS==Property::SuppressionStatus_Active && theCurNode->getType()!=SimulationNodeClass::nodeType_pointMass
+                && nodeAnalysis->getType()!=SimulationNodeClass::nodeType_CFDAnalysis)
         {
             int matNumber = theCurNode->getPropertyValue<int>("Assignment");
             std::string matName = vecMatNames.at(matNumber);
             std::string bodyName =theGeometryItem->data(Qt::DisplayRole).toString().toStdString();
             myInputFile<<"*SOLID SECTION, ELSET= E"<<bodyName<<", MATERIAL="<<matName<<endl;
+        }
+        if(theNodeSS==Property::SuppressionStatus_Active && theCurNode->getType()!=SimulationNodeClass::nodeType_pointMass
+                && nodeAnalysis->getType()==SimulationNodeClass::nodeType_CFDAnalysis)
+        {
+            std::string bodyName =theGeometryItem->data(Qt::DisplayRole).toString().toStdString();
+            myInputFile<<"*SOLID SECTION, ELSET= E"<<bodyName<<", MATERIAL=WATER"<<endl;
         }
     }
 

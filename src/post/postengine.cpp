@@ -49,6 +49,9 @@ void postEngine::buildMap()
     m.insert("PE",TypeOfResult_EPS);
     m.insert("FLUX",TypeOfResult_HFL);
     m.insert("CONTACT",TypeOfResult_CONT);
+    m.insert("V3DF",TypeOfResult_V);
+    m.insert("P3DF",TypeOfResult_P);
+    m.insert("TURB3DF",TypeOfResult_TURB);
 }
 
 //! -----------------------------
@@ -249,6 +252,7 @@ std::map<GeometryTag,std::vector<std::map<int,double>>> postEngine::evaluateResu
 
                 case TypeOfResult_U:
                 case TypeOfResult_F:
+                case TypeOfResult_V:
                 //case TypeOfResult_HFL:
                 {
                     std::map<int,double> resComp_X,resComp_Y,resComp_Z,resComp_Total;
@@ -368,6 +372,7 @@ std::map<GeometryTag,std::vector<std::map<int,double>>> postEngine::evaluateResu
 
                 case TypeOfResult_NT:
                 case TypeOfResult_EPS:
+                case TypeOfResult_P:
                 {
                     std::map<int,double> resT;
 
@@ -433,6 +438,42 @@ std::map<GeometryTag,std::vector<std::map<int,double>>> postEngine::evaluateResu
                     res.push_back(resContFrictStress);
                     res.push_back(resContPenetration);
                     res.push_back(resContSliding);
+                }
+                    break;
+                case TypeOfResult_TURB:
+                {
+                    //!                         col 1     col 2     col 3      col 4       col5
+                    std::map<int,double>        turb,     OM,       nut,      Yplus ,    Uplus;
+
+                    //! <>::eof(): call getline before while, then inside {}, @ as last instruction
+                    std::getline(curFile,val);
+                    while(curFile.eof()!=true)
+                    {
+                        //! read the components of the 3x3 data
+                        int ni;
+                        double cxx,cyy,czz,cxy,cyz;
+                        sscanf(val.c_str(),"%d%lf%lf%lf%lf%lf%lf",&ni,&cxx,&cyy,&czz,&cxy,&cyz);
+
+                        //! nodeIDs defining the MeshVS_dataSource
+                        std::map<int,int>::iterator it = indexedMapOfNodes.find(ni);
+                        if(it!=indexedMapOfNodes.end())
+                        {
+                            int OCCnodeID = it->second;
+
+                            turb.insert(std::make_pair(OCCnodeID,cxx));
+                            OM.insert(std::make_pair(OCCnodeID,cyy));
+                            nut.insert(std::make_pair(OCCnodeID,czz));
+                            Yplus.insert(std::make_pair(OCCnodeID,cxy));
+                            Uplus.insert(std::make_pair(OCCnodeID,cyz));
+                        }
+                        std::getline(curFile,val);
+                    }
+                    //! result
+                    res.push_back(turb);
+                    res.push_back(OM);
+                    res.push_back(nut);
+                    res.push_back(Yplus);
+                    res.push_back(Uplus);
                 }
                     break;
                 }
@@ -844,6 +885,32 @@ QString postEngine::resultName(const QString &keyName, int component, int step, 
     TypeOfResult tor = m.value(keyName);
     switch(tor)
     {
+    case TypeOfResult_V:
+        switch(component)
+        {
+        case 0: resultName="Velocity magnitude"; break;
+        case 1: resultName="Vx"; break;
+        case 2: resultName="Vy"; break;
+        case 3: resultName="Vz"; break;
+        }
+        break;
+    case TypeOfResult_P:
+        switch(component)
+        {
+        case 0: resultName="Pressure"; break;
+        }
+        break;
+    case TypeOfResult_TURB:
+        switch(component)
+        {
+        case 0: resultName="K"; break;
+        case 1: resultName="OM"; break;
+        case 2: resultName="NUT"; break;
+        case 3: resultName="Y+"; break;
+        case 4: resultName="U+"; break;
+        }
+        break;
+
     case TypeOfResult_HFL:
         switch(component)
         {

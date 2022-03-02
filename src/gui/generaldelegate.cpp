@@ -1495,6 +1495,9 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
             case SimulationNodeClass::nodeType_solutionStructuralTotalStrain:
             case SimulationNodeClass::nodeType_solutionStructuralEquivalentPlasticStrain:
             case SimulationNodeClass::nodeType_solutionStructuralNodalForces:
+            case SimulationNodeClass::nodeType_solutionCFDK:
+            case SimulationNodeClass::nodeType_solutionCFDpressure:
+            case SimulationNodeClass::nodeType_solutionCFDvelocity:
             {
                 data.setValue(0); editor->addItem("Time",data);
                 data.setValue(1); editor->addItem("Set",data);
@@ -1524,6 +1527,29 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
 
             switch(type)
             {
+            case SimulationNodeClass::nodeType_solutionCFDvelocity:
+            {
+                editor = new QComboBox(parent);
+                data.setValue(0); editor->addItem("Velocity magnitude",data);
+                data.setValue(1); editor->addItem("Vx",data);
+                data.setValue(2); editor->addItem("Vy",data);
+                data.setValue(3); editor->addItem("Vz",data);
+            }
+            case SimulationNodeClass::nodeType_solutionCFDK:
+            {
+                editor = new QComboBox(parent);
+                data.setValue(0); editor->addItem("K",data);
+                data.setValue(1); editor->addItem("Omega",data);
+                data.setValue(2); editor->addItem("Nut",data);
+                data.setValue(3); editor->addItem("Y+",data);
+                data.setValue(4); editor->addItem("U+",data);
+            }
+            case SimulationNodeClass::nodeType_solutionCFDpressure:
+            {
+                editor = new QComboBox(parent);
+                data.setValue(0); editor->addItem("Pressure",data);
+            }
+                break;
             case SimulationNodeClass::nodeType_solutionThermalTemperature:
             case SimulationNodeClass::nodeType_solutionThermalFlux:
                 return Q_NULLPTR;
@@ -4041,6 +4067,9 @@ void GeneralDelegate::setEditorData(QWidget *editor, const QModelIndex &index) c
         case SimulationNodeClass::nodeType_solutionStructuralTotalStrain:
         case SimulationNodeClass::nodeType_solutionStructuralEquivalentPlasticStrain:
         case SimulationNodeClass::nodeType_solutionStructuralNodalForces:
+        case SimulationNodeClass::nodeType_solutionCFDK:
+        case SimulationNodeClass::nodeType_solutionCFDpressure:
+        case SimulationNodeClass::nodeType_solutionCFDvelocity:
         {
             int val = data.value<Property>().getData().toInt();
             QComboBox *cb = static_cast<QComboBox*>(editor);
@@ -7749,6 +7778,9 @@ void GeneralDelegate::commitAndCloseBySelector()
     case SimulationNodeClass::nodeType_solutionStructuralTemperature:
     case SimulationNodeClass::nodeType_solutionStructuralThermalStrain:
     case SimulationNodeClass::nodeType_solutionStructuralTotalStrain:
+    case SimulationNodeClass::nodeType_solutionCFDK:
+    case SimulationNodeClass::nodeType_solutionCFDpressure:
+    case SimulationNodeClass::nodeType_solutionCFDvelocity:
     {
         emit byChanged();
     }

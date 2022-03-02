@@ -1066,6 +1066,9 @@ QVariant QExtendedStandardItem::data(int role) const
             case SimulationNodeClass::nodeType_solutionStructuralTemperature:
             case SimulationNodeClass::nodeType_solutionStructuralThermalStrain:
             case SimulationNodeClass::nodeType_solutionStructuralTotalStrain:
+            case SimulationNodeClass::nodeType_solutionCFDK:
+            case SimulationNodeClass::nodeType_solutionCFDpressure:
+            case SimulationNodeClass::nodeType_solutionCFDvelocity:
             {
                 int val = QStandardItem::data(Qt::UserRole).value<Property>().getData().toInt();
                 switch(val)
@@ -1168,6 +1171,30 @@ QVariant QExtendedStandardItem::data(int role) const
                 case 1: data.setValue(QString("Frictional stress")); break;
                 case 2: data.setValue(QString("Penetration")); break;
                 case 3: data.setValue(QString("Sliding")); break;
+                }
+                break;
+            case SimulationNodeClass::nodeType_solutionCFDvelocity:
+                switch(val)
+                {
+                case 0: data.setValue(QString("Velocity magnitude")); break;
+                case 1: data.setValue(QString("Vx")); break;
+                case 2: data.setValue(QString("Vy")); break;
+                case 3: data.setValue(QString("Vz")); break;
+                }
+                break;case SimulationNodeClass::nodeType_solutionCFDK:
+                switch(val)
+                {
+                case 0: data.setValue(QString("K")); break;
+                case 1: data.setValue(QString("Omega")); break;
+                case 2: data.setValue(QString("Nut")); break;
+                case 3: data.setValue(QString("Y+")); break;
+                case 4: data.setValue(QString("U+")); break;
+                }
+                break;
+            case SimulationNodeClass::nodeType_solutionCFDpressure:
+                switch(val)
+                {
+                case 0: data.setValue(QString("Pressure")); break;
                 }
                 break;
             }
@@ -2468,6 +2495,7 @@ QIcon QExtendedStandardItem::getIcon(SimulationNodeClass::nodeType theNodeType) 
         //! "CFD Solution"
     case SimulationNodeClass::nodeType_solutionCFDpressure: return QIcon(":/icons/icon_CFD.png"); break;
     case SimulationNodeClass::nodeType_solutionCFDvelocity: return QIcon(":/icons/icon_CFD.png"); break;
+    case SimulationNodeClass::nodeType_solutionCFDK: return QIcon(":/icons/icon_CFD.png"); break;
 
         //! -----------------------
         //! "Solution information"

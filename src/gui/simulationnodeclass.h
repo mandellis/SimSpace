@@ -173,6 +173,7 @@ public:
         nodeType_CFDAnalysisBoundaryConditionWall,
         nodeType_solutionCFDvelocity,                    //! velocity
         nodeType_solutionCFDpressure,                    //! pressure
+        nodeType_solutionCFDK,                          //! K
 
         nodeType_probe,               //! probe tool
 
