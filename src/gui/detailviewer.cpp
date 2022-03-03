@@ -152,7 +152,7 @@ void DetailViewer::createConnections()
     //! ------
     connect(myGeneralDelegate,SIGNAL(boltCSChanged()),this,SLOT(handleBoltCSChanged()));
 
-    connect(myGeneralDelegate,SIGNAL(accelerationChanged()),this,SLOT(handleAccelerationChanged()));
+    connect(myGeneralDelegate,SIGNAL(vectorChanged()),this,SLOT(handleVectorChanged()));
     connect(myGeneralDelegate,SIGNAL(momentChanged()),this,SLOT(handleMomentChanged()));
 
     connect(myGeneralDelegate,SIGNAL(fluxConvegernceChanged()),this,SLOT(handleFluxConvergenceChanged()));
@@ -1997,7 +1997,8 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
             //! the following for updating the marker when the data changes occur in table
             //! ---------------------------------------------------------------------------
             if(nodeType==SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Moment) this->handleMomentChanged();
-            if(nodeType==SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Acceleration) this->handleAccelerationChanged();
+            if(nodeType==SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Acceleration) this->handleVectorChanged();
+            if(nodeType==SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Force) this->handleVectorChanged();
             // add here the other cases...
         }
             break;
@@ -5811,12 +5812,12 @@ void DetailViewer::handleBoltCSChanged()
 }
 
 //! ---------------------------------------------------------------
-//! function: handleAccelerationChanged
+//! function: handleVectorChanged
 //! details:  for the moment it changes the position of the marker
 //! ---------------------------------------------------------------
-void DetailViewer::handleAccelerationChanged()
+void DetailViewer::handleVectorChanged()
 {
-    cout<<"DetailViewer::handleAccelerationChanged()->____function called____"<<endl;
+    cout<<"DetailViewer::handleVectorChanged()->____function called____"<<endl;
     SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
     emit requestHideAllMarkers(true);
     bool isDone = markerBuilder::addMarker(myCurNode,sm->getDataBase());

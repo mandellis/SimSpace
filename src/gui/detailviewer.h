@@ -203,10 +203,10 @@ private slots:
     void handleBoltAdjustmentChanged();
     void handleBoltCSChanged();             // marker changed
 
-    //! -------------
-    //! acceleration
-    //! -------------
-    void handleAccelerationChanged();       // marker changed
+    //! -------------------
+    //! acceleration/force
+    //! -------------------
+    void handleVectorChanged();       // marker changed
 
     //! -------
     //! moment

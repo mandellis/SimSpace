@@ -28,6 +28,7 @@
 #include <gp_Pnt.hxx>
 #include <GProp_GProps.hxx>
 #include <BRepGProp.hxx>
+#include <TopoDS.hxx>
 
 //! ------------------------------------------------------------
 //! function: addMarker
@@ -170,9 +171,9 @@ bool markerBuilder::addMarker(SimulationNodeClass *node, geometryDataBase *gDB)
 
             QStandardItem *itemCS = static_cast<QStandardItem*>(CS);
             SimulationNodeClass *nodeCS = itemCS->data(Qt::UserRole).value<SimulationNodeClass*>();
-            cout<<"____"<<nodeCS->getName().toStdString()<<"____"<<endl;
-            cout<<"____"<<nodeCS->type().toStdString()<<"____"<<endl;
-            cout<<nodeCS->getType()<<endl;
+            //cout<<"____"<<nodeCS->getName().toStdString()<<"____"<<endl;
+            //cout<<"____"<<nodeCS->type().toStdString()<<"____"<<endl;
+            //cout<<nodeCS->getType()<<endl;
             QVector<QVector<double>> directionalData;
             switch(nodeCS->getType())
             {
@@ -286,37 +287,40 @@ bool markerBuilder::addMarker(SimulationNodeClass *node, geometryDataBase *gDB)
         TopoDS_Compound compound;
         TopoDS_Builder theBuilder;
         theBuilder.MakeCompound(compound);
-        cout<<"markerBuilder::addMarker()->____tag00____"<<endl;
-        //double Area;
+        double Area=0;
         for(int i=0; i<locs.size(); i++)
         {
             int bodyIndex = locs.at(i).parentShapeNr;
             int faceIndex = locs.at(i).subTopNr;
-            cout<<"markerBuilder::addMarker()->____BI____"<<bodyIndex<<endl;
-            cout<<"markerBuilder::addMarker()->____FI____"<<faceIndex<<endl;
+            cout<<"markerBuilder::addMarker()->____tag00 "<<bodyIndex<<" "<<faceIndex<<endl;
+
+            cout<<"markerBuilder::addMarker()->____tag00 "<<gDB->MapOfBodyTopologyMap.contains(bodyIndex)<<endl;
+            cout<<"markerBuilder::addMarker()->____tag00 "<<gDB->MapOfBodyTopologyMap.value(bodyIndex).faceMap.IsEmpty()<<endl;
 
             const TopoDS_Shape &curFace = gDB->MapOfBodyTopologyMap.value(bodyIndex).faceMap.FindKey(faceIndex);
-            //GProp_GProps prop;
-            //BRepGProp::SurfaceProperties(compound/*curFace*/,prop);
-            cout<<"markerBuilder::addMarker()->____tag01"<<endl;
 
-            //Area += prop.Mass();
+            cout<<"markerBuilder::addMarker()->___is face convex "<<curFace.Convex()<<endl;
+            GProp_GProps prop;
+            BRepGProp::SurfaceProperties(/*compound*/curFace,prop);
+            Area += prop.Mass();
+
+            cout<<"markerBuilder::addMarker()->____tag00 "<<Area<<endl;
+
             theBuilder.Add(compound,curFace);
             //gp_Pnt p = prop.CentreOfMass();
-
+            cout<<"markerBuilder::addMarker()->____tag01"<<endl;
         }
-        cout<<"markerBuilder::addMarker()->____tag01"<<endl;
-        GProp_GProps prop;
-        BRepGProp::SurfaceProperties(compound,prop);
+        //GProp_GProps prop;
+        //BRepGProp::SurfaceProperties(compound,prop);
         cout<<"markerBuilder::addMarker()->____tag02"<<endl;
 
-        double Area = prop.Mass();
-        cout<<"markerBuilder::addMarker()->____mass____"<<Area<<endl;
+        //double Area = prop.Mass();
 
         //! ----------------------------------------------
         //! this sets the size of the curved arrow marker
         //! ----------------------------------------------
         double Rin = sqrt(Area)/10.0;
+        cout<<"markerBuilder::addMarker()->____mass____"<<Area<<" Rin "<<Rin<<endl;
 
         //! -----------------
         //! marker placement

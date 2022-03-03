@@ -7192,7 +7192,8 @@ void GeneralDelegate::commitAndCloseDefineByControlComboBox()
     switch(this->getCurrentNode()->getType())
     {
     case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Acceleration:
-        emit accelerationChanged();
+    case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Force:
+        emit vectorChanged();
         break;
     case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Moment:
         emit momentChanged();
@@ -7266,7 +7267,8 @@ void GeneralDelegate::commitAndCloseCSSelector()
     {
     case SimulationNodeClass::nodeType_remotePoint: emit remotePointSystemOfReferenceChanged(); break;
     case SimulationNodeClass::nodeType_structuralAnalysisBoltPretension: emit boltCSChanged(); break;
-    case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Acceleration: emit accelerationChanged(); break;
+    case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Acceleration: emit vectorChanged(); break;
+    case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Force: emit vectorChanged(); break;
     case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Moment: emit momentChanged(); break;
     }
 }
@@ -7388,7 +7390,8 @@ void GeneralDelegate::commitAndCloseLe_magnitude()
     switch(this->getCurrentNode()->getType())
     {
     case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Acceleration:
-        emit accelerationChanged();
+    case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Force:
+        emit vectorChanged();
         break;
     case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Moment:
         emit momentChanged();
@@ -7410,7 +7413,8 @@ void GeneralDelegate::commitAndCloseLe_Xcomponent()
     switch(this->getCurrentNode()->getType())
     {
     case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Acceleration:
-        emit accelerationChanged();
+    case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Force:
+        emit vectorChanged();
         break;
     case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Moment:
         emit momentChanged();
@@ -7432,7 +7436,8 @@ void GeneralDelegate::commitAndCloseLe_Ycomponent()
     switch(this->getCurrentNode()->getType())
     {
     case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Acceleration:
-        emit accelerationChanged();
+    case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Force:
+        emit vectorChanged();
         break;
     case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Moment:
         emit momentChanged();
@@ -7454,7 +7459,8 @@ void GeneralDelegate::commitAndCloseLe_Zcomponent()
     switch(this->getCurrentNode()->getType())
     {
     case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Acceleration:
-        emit accelerationChanged();
+    case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Force:
+        emit vectorChanged();
         break;
     case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Moment:
         emit momentChanged();
@@ -7475,7 +7481,8 @@ void GeneralDelegate::commitAndCloseDirectionSelector()
     switch(this->getCurrentNode()->getType())
     {
     case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Acceleration:
-        emit accelerationChanged();
+    case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Force:
+        emit vectorChanged();
         break;
     case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Moment:
         emit momentChanged();

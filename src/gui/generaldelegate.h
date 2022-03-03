@@ -324,7 +324,7 @@ signals:
     void boundaryScopeChanged();
 
     void boltCSChanged();
-    void accelerationChanged();
+    void vectorChanged();
     void momentChanged();
 
     void BRepFlagChanged();
