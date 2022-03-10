@@ -80,16 +80,20 @@ writeSolverFileClass::writeSolverFileClass(simulationDataBase *aDB, QExtendedSta
 
     vecMatNames.push_back("Structural_steel");
     vecMatNames.push_back("Bilinear_steel");
-    vecMatNames.push_back("H11_fatigue");
-    vecMatNames.push_back("F22_fatigue");
-    vecMatNames.push_back("B16_fatigue");
-    vecMatNames.push_back("F6NM_fatigue");
-    vecMatNames.push_back("F92_fatigue");
-    vecMatNames.push_back("A479_fatigue");
-    vecMatNames.push_back("SA479_XM19_fatigue");
-    vecMatNames.push_back("SA182-B8M_CL2");
-    vecMatNames.push_back("SA182-F316");
-    vecMatNames.push_back("SA352-LCB");
+    vecMatNames.push_back("PP_elastic");
+    vecMatNames.push_back("ASA_elastic");
+    vecMatNames.push_back("PAEK_elastic");
+    vecMatNames.push_back("PAEK_orto");
+    //vecMatNames.push_back("H11_fatigue");
+    //vecMatNames.push_back("F22_fatigue");
+    //vecMatNames.push_back("B16_fatigue");
+    //vecMatNames.push_back("F6NM_fatigue");
+    //vecMatNames.push_back("F92_fatigue");
+    //vecMatNames.push_back("A479_fatigue");
+    //vecMatNames.push_back("SA479_XM19_fatigue");
+    //vecMatNames.push_back("SA182-B8M_CL2");
+    //vecMatNames.push_back("SA182-F316");
+    //vecMatNames.push_back("SA352-LCB");
 }
 
 

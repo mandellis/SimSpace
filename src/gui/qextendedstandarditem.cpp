@@ -248,16 +248,16 @@ QVariant QExtendedStandardItem::data(int role) const
             {
             case 0: matName = "Structural steel"; break;
             case 1: matName = "Bilinear steel"; break;
-            case 2: matName = "H11 fatigue"; break;
-            case 3: matName = "F22 fatigue"; break;
-            case 4: matName = "B16_fatigue"; break;
-            case 5: matName = "F6NM_fatigue"; break;
-            case 6: matName = "F92_fatigue"; break;
-            case 7: matName = "A479_fatigue"; break;
-            case 8: matName = "SA479_XM19_fatigue"; break;
-            case 9: matName = "SA182-B8M_CL2"; break;
-            case 10: matName = "SA182-F316"; break;
-            case 11: matName = "SA352-LCB"; break;
+            case 2: matName = "PP elastic"; break;
+            case 3: matName = "ASA elastic"; break;
+            case 4: matName = "PAEK elastic"; break;
+            case 5: matName = "PAEK orto"; break;
+            //case 6: matName = "F92_fatigue"; break;
+            //case 7: matName = "A479_fatigue"; break;
+            //case 8: matName = "SA479_XM19_fatigue"; break;
+            //case 9: matName = "SA182-B8M_CL2"; break;
+            //case 10: matName = "SA182-F316"; break;
+            //case 11: matName = "SA352-LCB"; break;
             }
             data.setValue(matName);
             return data;
