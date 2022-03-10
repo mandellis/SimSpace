@@ -119,7 +119,6 @@ bool markerBuilder::addMarker(SimulationNodeClass *node, geometryDataBase *gDB)
         break;
 
     case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Acceleration:
-    case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Force:
     {
         const std::vector<GeometryTag> &locs = node->getPropertyValue<std::vector<GeometryTag>>("Geometry");
         //! ---------------------------------------------------------
@@ -186,9 +185,9 @@ bool markerBuilder::addMarker(SimulationNodeClass *node, geometryDataBase *gDB)
                 directionalData.push_back(XAxisData);
                 directionalData.push_back(YAxisData);
                 directionalData.push_back(ZAxisData);
-                cout<<XAxisData.at(0)<<" "<<XAxisData.at(1)<<" "<<XAxisData.at(2)<<endl;
-                cout<<YAxisData.at(0)<<" "<<YAxisData.at(1)<<" "<<YAxisData.at(2)<<endl;
-                cout<<ZAxisData.at(0)<<" "<<ZAxisData.at(1)<<" "<<ZAxisData.at(2)<<endl;
+                //cout<<XAxisData.at(0)<<" "<<XAxisData.at(1)<<" "<<XAxisData.at(2)<<endl;
+                //cout<<YAxisData.at(0)<<" "<<YAxisData.at(1)<<" "<<YAxisData.at(2)<<endl;
+                //cout<<ZAxisData.at(0)<<" "<<ZAxisData.at(1)<<" "<<ZAxisData.at(2)<<endl;
             }
                 break;
 
@@ -270,6 +269,7 @@ bool markerBuilder::addMarker(SimulationNodeClass *node, geometryDataBase *gDB)
         break;
 
     case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Moment:
+    case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Force:
     {
         const std::vector<GeometryTag> &locs = node->getPropertyValue<std::vector<GeometryTag>>("Geometry");
         //! ---------------------------------------------------------
@@ -292,35 +292,17 @@ bool markerBuilder::addMarker(SimulationNodeClass *node, geometryDataBase *gDB)
         {
             int bodyIndex = locs.at(i).parentShapeNr;
             int faceIndex = locs.at(i).subTopNr;
-            cout<<"markerBuilder::addMarker()->____tag00 "<<bodyIndex<<" "<<faceIndex<<endl;
-
-            cout<<"markerBuilder::addMarker()->____tag00 "<<gDB->MapOfBodyTopologyMap.contains(bodyIndex)<<endl;
-            cout<<"markerBuilder::addMarker()->____tag00 "<<gDB->MapOfBodyTopologyMap.value(bodyIndex).faceMap.IsEmpty()<<endl;
-
-            const TopoDS_Shape &curFace = gDB->MapOfBodyTopologyMap.value(bodyIndex).faceMap.FindKey(faceIndex);
-
-            cout<<"markerBuilder::addMarker()->___is face convex "<<curFace.Convex()<<endl;
+            const TopoDS_Shape curFace = gDB->MapOfBodyTopologyMap.value(bodyIndex).faceMap.FindKey(faceIndex);
             GProp_GProps prop;
             BRepGProp::SurfaceProperties(/*compound*/curFace,prop);
             Area += prop.Mass();
-
-            cout<<"markerBuilder::addMarker()->____tag00 "<<Area<<endl;
-
             theBuilder.Add(compound,curFace);
-            //gp_Pnt p = prop.CentreOfMass();
-            cout<<"markerBuilder::addMarker()->____tag01"<<endl;
         }
-        //GProp_GProps prop;
-        //BRepGProp::SurfaceProperties(compound,prop);
-        cout<<"markerBuilder::addMarker()->____tag02"<<endl;
-
-        //double Area = prop.Mass();
 
         //! ----------------------------------------------
         //! this sets the size of the curved arrow marker
         //! ----------------------------------------------
         double Rin = sqrt(Area)/10.0;
-        cout<<"markerBuilder::addMarker()->____mass____"<<Area<<" Rin "<<Rin<<endl;
 
         //! -----------------
         //! marker placement
@@ -328,6 +310,7 @@ bool markerBuilder::addMarker(SimulationNodeClass *node, geometryDataBase *gDB)
         gp_Ax2 axes;
         gp_Pnt P = GeomToolsClass::getCenterOfMass(compound)/* prop.CentreOfMass()*/;
         axes.SetLocation(P);
+        gp_Dir dir;
 
         //! ------------------------------------------------------
         //! this for reading the components from the tabular data
@@ -340,7 +323,6 @@ bool markerBuilder::addMarker(SimulationNodeClass *node, geometryDataBase *gDB)
         Property::defineBy defineBy = node->getPropertyValue<Property::defineBy>("Define by");
 
         int curStepNumber = nodeAnalysisSetting->getPropertyValue<int>("Current step number");
-        cout<<"markerBuilder::addMarker()->____ts____"<<curStepNumber<<endl;
 
         switch(defineBy)
         {
@@ -363,7 +345,7 @@ bool markerBuilder::addMarker(SimulationNodeClass *node, geometryDataBase *gDB)
             double nz = direction.at(5);
 
             gp_Vec v(nx,ny,nz);
-            gp_Dir dir = gp_Dir(v);
+            dir = gp_Dir(v);
             axes.SetDirection(dir);
         }
             break;
@@ -418,21 +400,32 @@ bool markerBuilder::addMarker(SimulationNodeClass *node, geometryDataBase *gDB)
             double Zcomp = Xcomp_local*directionalData.at(0).at(2)+Ycomp_local*directionalData.at(1).at(2)+Zcomp_local*directionalData.at(2).at(2);
 
             gp_Vec v(Xcomp,Ycomp,Zcomp);
-            gp_Dir dir = gp_Dir(v);
+            dir = gp_Dir(v);
 
             axes.SetDirection(dir);
         }
             break;
         }
-        cout<<"markerBuilder::addMarker()->____tag01____"<<endl;
 
-        //! ---------------------------
-        //! actually create the marker
-        //! ---------------------------
-        AIS_CurvedArrowMarker_handle_reg marker = markers::buildCurvedArrow(axes,Rin,false);
+
+        AIS_ArrowMarker_handle_reg arrMarker;
+        AIS_CurvedArrowMarker_handle_reg curMarker;
+        //! --------------------------
+        //! actually create the arrow
+        //! --------------------------
+        if(nodeType==SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Force)
+            arrMarker =  markers::buildArrowMarker(P,dir,Rin);
+
+        //! ---------------------------------
+        //! actually create the curved arrow
+        //! ---------------------------------
+        else  curMarker = markers::buildCurvedArrow(axes,Rin,false);
 
         QVariant data;
-        data.setValue(marker);
+        if(nodeType==SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Force)
+        data.setValue(arrMarker);
+        else data.setValue(curMarker);
+
         Property prop_marker("Graphic object",data,Property::PropertyGroup_GraphicObjects);
 
         //! ---------------------------------------
@@ -441,8 +434,6 @@ bool markerBuilder::addMarker(SimulationNodeClass *node, geometryDataBase *gDB)
         //! ---------------------------------------
         if(node->getPropertyItem("Graphic object")==NULL) node->addProperty(prop_marker);
         else node->replaceProperty("Graphic object",prop_marker);
-        cout<<"markerBuilder::addMarker()->____tag02____"<<endl;
-
     }
         break;
 

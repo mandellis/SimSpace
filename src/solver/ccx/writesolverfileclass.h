@@ -135,6 +135,7 @@ public:
 private:
 
     std::vector<std::string> vecMatNames;
+    std::map<QString,int> remotePointNameMap;
 };
 
 #endif // WRITESOLVERFILECLASS_H

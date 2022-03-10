@@ -536,6 +536,11 @@ std::vector<std::map<int,double>> postEngine::evaluateResultOnBody(const QString
         indexedMapOfNodes.insert(std::make_pair(nodeID,anIter.Key()));
     }
     */
+    //! ---------------------------------
+    //! the result that will be returned
+    //! ---------------------------------
+    std::vector<std::map<int,double>> res;
+
     //! ------------------------------------------------
     //! enter <...>/SolutionData/ResultsData
     //! ------------------------------------------------
@@ -544,6 +549,7 @@ std::vector<std::map<int,double>> postEngine::evaluateResultOnBody(const QString
     path.chop(tmp.length());
     QDir curDir(path);
     curDir.cd("ResultsData");
+    if(!curDir.exists()) return res;
     QFileInfoList entriesInfo = curDir.entryInfoList();
 
     QList<QString> entryList = curDir.entryList();
@@ -561,10 +567,6 @@ std::vector<std::map<int,double>> postEngine::evaluateResultOnBody(const QString
         }
     }
 
-    //! ---------------------------------
-    //! the result that will be returned
-    //! ---------------------------------
-    std::vector<std::map<int,double>> res;
 
     //! ---------------
     //! scan the files

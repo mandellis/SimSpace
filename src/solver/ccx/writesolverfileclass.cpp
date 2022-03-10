@@ -370,6 +370,8 @@ bool writeSolverFileClass::perform()
                 myInputFile<<++totalNumberOfNodes<<","<<rPx<<","<<rPy<<","<<rPz<<endl;
                 myInputFile<<"*COUPLING,REF NODE="<<totalNumberOfNodes<<",SURFACE="<<SetName.toStdString()<<",CONSTRAINT NAME="<<SetName.toStdString()<<endl;
 
+                remotePointNameMap.insert(std::make_pair(QString("CM_")+SetName,totalNumberOfNodes));
+
                 switch(TOC)
                 {
                 case 0:
@@ -2295,27 +2297,35 @@ bool writeSolverFileClass::perform()
                         case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Force:
                         case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RemoteForce:
                         {
+
+                            std::map<QString,int>::iterator it = remotePointNameMap.find(QString("CM_")+SetName);
+                            int nodeNumber = it->second;
+
                             //! ------
                             //! Force
                             //! ------
                             myInputFile<<"*CLOAD"<<endl;
-                            myInputFile<<(QString("CM_")+SetName).toStdString()<<", 1, "<<loadX_global<<endl;
-                            myInputFile<<(QString("CM_")+SetName).toStdString()<<", 2, "<<loadY_global<<endl;
-                            myInputFile<<(QString("CM_")+SetName).toStdString()<<", 3, "<<loadZ_global<<endl;
+                            myInputFile<<nodeNumber<<", 1, "<<loadX_global<<endl;
+                            myInputFile<<nodeNumber<<", 2, "<<loadY_global<<endl;
+                            myInputFile<<nodeNumber<<", 3, "<<loadZ_global<<endl;
                         }
                             break;
 
                         case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Moment:
                         {
+
+                            std::map<QString,int>::iterator it = remotePointNameMap.find(QString("CM_")+SetName);
+                            int nodeNumber = it->second;
+
                             //! -------
                             //! Moment
                             //! -------
                             myInputFile<<"*CLOAD"<<endl;
-                            myInputFile<<(QString("CM_")+SetName).toStdString()<<", 4, "<<loadX_global<<endl;
+                            myInputFile<<nodeNumber<<", 4, "<<loadX_global<<endl;
                             myInputFile<<"*CLOAD"<<endl;
-                            myInputFile<<(QString("CM_")+SetName).toStdString()<<", 5, "<<loadY_global<<endl;
+                            myInputFile<<nodeNumber<<", 5, "<<loadY_global<<endl;
                             myInputFile<<"*CLOAD"<<endl;
-                            myInputFile<<(QString("CM_")+SetName).toStdString()<<", 6, "<<loadZ_global<<endl;
+                            myInputFile<<nodeNumber<<", 6, "<<loadZ_global<<endl;
                             cout<<" - writing moment (Mx, My, Mz) = ("<<loadX_global<<", "<<loadY_global<<", "<<loadZ_global<<")"<<endl;
                         }
                             break;
@@ -2379,20 +2389,31 @@ bool writeSolverFileClass::perform()
                             switch(theNodeType)
                             {
                             case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Displacement:
-                            case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RemoteDisplacement:
                             {
-                                if(scopingMethod == Property::ScopingMethod_RemotePoint)
-                                    SetName = ("CM_")+SetName;
-
                                 myInputFile<<"*BOUNDARY"<<endl;
                                 myInputFile<<SetName.toStdString()<<", 1, 1, "<<Xcomp<<endl;
                                 myInputFile<<SetName.toStdString()<<", 2, 2, "<<Ycomp<<endl;
                                 myInputFile<<SetName.toStdString()<<", 3, 3, "<<Zcomp<<endl;
                             }
+                            break;
+
+                            case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RemoteDisplacement:
+                            {
+                                std::map<QString,int>::iterator it = remotePointNameMap.find(QString("CM_")+SetName);
+                                int nodeNumber = it->second;
+
+                                myInputFile<<"*BOUNDARY"<<endl;
+                                myInputFile<<nodeNumber<<", 1, 1, "<<Xcomp<<endl;
+                                myInputFile<<nodeNumber<<", 2, 2, "<<Ycomp<<endl;
+                                myInputFile<<nodeNumber<<", 3, 3, "<<Zcomp<<endl;
+                            }
                                 break;
                             case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Force:
                             case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RemoteForce:
                             {
+                                std::map<QString,int>::iterator it = remotePointNameMap.find(QString("CM_")+SetName);
+                                int nodeNumber = it->second;
+
 #ifdef COSTAMP_VERSION
                                 if(loadValue ==0.0)
                                 {
@@ -2403,9 +2424,9 @@ bool writeSolverFileClass::perform()
                                 {
 #endif
                                     myInputFile<<"*CLOAD"<<endl;
-                                    myInputFile<<(QString("CM_")+SetName).toStdString()<<", 1, "<<Xcomp<<endl;
-                                    myInputFile<<(QString("CM_")+SetName).toStdString()<<", 2, "<<Ycomp<<endl;
-                                    myInputFile<<(QString("CM_")+SetName).toStdString()<<", 3, "<<Zcomp<<endl;
+                                    myInputFile<<nodeNumber<<", 1, "<<Xcomp<<endl;
+                                    myInputFile<<nodeNumber<<", 2, "<<Ycomp<<endl;
+                                    myInputFile<<nodeNumber<<", 3, "<<Zcomp<<endl;
 #ifdef COSTAMP_VERSION
                                 }
 #endif
@@ -2413,10 +2434,14 @@ bool writeSolverFileClass::perform()
                                 break;
                             case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Moment:
                             {
+
+                                std::map<QString,int>::iterator it = remotePointNameMap.find(QString("CM_")+SetName);
+                                int nodeNumber = it->second;
+
                                 myInputFile<<"*CLOAD"<<endl;
-                                myInputFile<<(QString("CM_")+SetName).toStdString()<<", 4, "<<Xcomp<<endl;
-                                myInputFile<<(QString("CM_")+SetName).toStdString()<<", 5, "<<Ycomp<<endl;
-                                myInputFile<<(QString("CM_")+SetName).toStdString()<<", 6, "<<Zcomp<<endl;
+                                myInputFile<<nodeNumber<<", 4, "<<Xcomp<<endl;
+                                myInputFile<<nodeNumber<<", 5, "<<Ycomp<<endl;
+                                myInputFile<<nodeNumber<<", 6, "<<Zcomp<<endl;
                             }
                                 break;
                             case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Acceleration:

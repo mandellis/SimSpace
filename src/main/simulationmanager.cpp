@@ -10659,8 +10659,6 @@ void SimulationManager::callPostEngineEvaluateResult_private(QStandardItem *curI
 
     if(type!=SimulationNodeClass::nodeType_solutionStructuralFatigueTool && type!=SimulationNodeClass::nodeType_probe)
     {
-        cout<<" tags 01"<<endl;
-
         int component = curNode->getPropertyValue<int>("Type ");
         int mode = curNode->getPropertyValue<int>("Mode number");
         if(curNode->getPropertyItem("Post object")!=Q_NULLPTR)
@@ -11620,6 +11618,8 @@ void SimulationManager::displayMarker()
             break;
 
         case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Acceleration:
+        case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_Force:
+        case SimulationNodeClass::nodeType_structuralAnalysisBoundaryCondition_RemoteForce:
             theMarker = curNode->getPropertyValue<AIS_ArrowMarker_handle_reg>("Graphic object");
             break;
 

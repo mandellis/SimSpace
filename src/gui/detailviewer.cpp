@@ -1211,11 +1211,16 @@ void DetailViewer::updateTags()
         simulationDataBase *sdb = sm->getDataBase();
         std::vector<GeometryTag> vecLoc = myCurNode->getPropertyValue<std::vector<GeometryTag>>("Tags");
         std::vector<double> newReferencePoint = GeomToolsClass::calculateCentroid(sdb,vecLoc);
-        //cout<<"DetailViewer::updateTags()->____updating reference point ("<<newReferencePoint.at(0)<<", "<<newReferencePoint.at(1)<<", "<<newReferencePoint.at(2)<<")____"<<endl;
+        QVector<double> refP;
+        refP.push_back(newReferencePoint.at(0));
+        refP.push_back(newReferencePoint.at(1));
+        refP.push_back(newReferencePoint.at(2));
+        cout<<"DetailViewer::updateTags()->____updating reference point ("<<newReferencePoint.at(0)<<", "<<newReferencePoint.at(1)<<", "<<newReferencePoint.at(2)<<")____"<<endl;
         QVariant data;
-        data.setValue(newReferencePoint);
+        data.setValue(refP);
         Property prop_referencePoint("Reference point",data,Property::PropertyGroup_Hidden);
-        myCurNode->replaceProperty("Reference point",prop_referencePoint);
+        myCurNode->removeProperty("Reference point");
+        myCurNode->addProperty(prop_referencePoint);
     }
 
     emit requestChangeColor();
@@ -2130,7 +2135,7 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
                         //! diagnostic - can be removed
                         int row = currentStepNumber;
                         //int col = sm->calculateStartColumn();
-                        SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));//bubi
+                        SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
                         int col = mainTreeTools::calculateStartColumn(sm->myTreeView,tabularDataModel->getColumnBeforeBC());
                         double componentValue1 = tabularDataModel->dataRC(row,col,Qt::EditRole).toDouble();
                         double componentValue2 = tabularDataModel->dataRC(row,col+1,Qt::EditRole).toDouble();
@@ -2150,7 +2155,7 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
                         //! diagnostic - can be removed
                         int row = currentStepNumber;
                         //int col = sm->calculateStartColumn();
-                        SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));//bubi
+                        SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
                         int col = mainTreeTools::calculateStartColumn(sm->myTreeView,tabularDataModel->getColumnBeforeBC());
                         double componentValue1 = tabularDataModel->dataRC(row,col,Qt::EditRole).toDouble();
                         double componentValue2 = tabularDataModel->dataRC(row,col+1,Qt::EditRole).toDouble();
@@ -2177,7 +2182,7 @@ void DetailViewer::updateDetailViewerFromTabularData(QModelIndex topLeftIndex, Q
                     {
                         //! diagnostic - can be removed
                         //int col = sm->calculateStartColumn()+i;
-                        SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));//bubi
+                        SimulationManager *sm = static_cast<SimulationManager*>(tools::getWidgetByName("simmanager"));
                         int col = mainTreeTools::calculateStartColumn(sm->myTreeView,tabularDataModel->getColumnBeforeBC())+1;
                         int row = currentStepNumber;
                         double componentValue = tabularDataModel->dataRC(row,col,Qt::EditRole).toDouble();
