@@ -1196,10 +1196,10 @@ Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(const Eigen::MatrixXd &V, const E
         myElementsMap.Add(i);
         myElemType->SetValue(i,TET);
         int row = i-1;
-        myElemNodes->SetValue(i,1,T(row,0)+1);
-        myElemNodes->SetValue(i,2,T(row,1)+1);
-        myElemNodes->SetValue(i,3,T(row,2)+1);
-        myElemNodes->SetValue(i,4,T(row,3)+1);
+        myElemNodes->SetValue(i,4,T(row,0)+1);
+        myElemNodes->SetValue(i,1,T(row,1)+1);
+        myElemNodes->SetValue(i,2,T(row,2)+1);
+        myElemNodes->SetValue(i,3,T(row,3)+1);
     }
 
     //! -----------------
