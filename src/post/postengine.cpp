@@ -1092,7 +1092,6 @@ bool postEngine::buildPostObject(const QString &keyName,
     return isDone;
 }
 */
-
 //#include <posttools.h>
 bool postEngine::buildPostObject(const QString &keyName,
                                  int component,

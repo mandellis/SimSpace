@@ -1418,8 +1418,12 @@ void Ng_MeshVS_DataSourceFace::computeNormalAtElements()
         std::vector<polygon::Point> aPolygon;
 
         int globalElementID = it.Key();
+        //cout<<"Ng_MeshVS_DataSourceFace::computeNormalAtElements()->_____map is empty "<<myElementsMap.IsEmpty()<<endl;
 
         int localElementID = myElementsMap.FindIndex(globalElementID);
+        //cout<<"Ng_MeshVS_DataSourceFace::computeNormalAtElements()->_____local el ID "<<localElementID<<
+          // "global el ID "<<globalElementID<<endl;
+
         int NbNodes;
         double buf[30];
         TColStd_Array1OfReal coords(*buf,1,30);
@@ -1468,9 +1472,12 @@ void Ng_MeshVS_DataSourceFace::displaceMySelf(const QMap<int, QList<double>> &di
         int localNodeID = this->myNodesMap.FindIndex(globalNodeID);
         if(localNodeID<1 || localNodeID>myNumberOfNodes) continue;
         const QList<double> &curVec = it.value();
+        //cout<<"moving nodes from "<<myNodeCoords->Value(localNodeID,1)<<endl;
         myNodeCoords->ChangeValue(localNodeID,1) = myNodeCoords->Value(localNodeID,1)+curVec[0];
         myNodeCoords->ChangeValue(localNodeID,2) = myNodeCoords->Value(localNodeID,2)+curVec[1];
         myNodeCoords->ChangeValue(localNodeID,3) = myNodeCoords->Value(localNodeID,3)+curVec[2];
+        //cout<<"to "<<myNodeCoords->Value(localNodeID,1)<<"  displacement of "<<curVec[0]<<endl;
+
     }
 
     //! -----------------------------
@@ -1882,15 +1889,27 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const QList<occHandle(Ng_Mesh
     for(int i=0; i<faceDSList.length(); i++)
     {
         const occHandle(Ng_MeshVS_DataSourceFace) &curFaceDS = faceDSList.at(i);
-        if(curFaceDS.IsNull()) continue;
+        cerr<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____ faceDS____"<<i<<endl;
+        cerr<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____ faceDS____"<<curFaceDS->GetAllNodes().Extent()<<endl;
+        cerr<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____ faceDS____"<<curFaceDS->GetAllElements().Extent()<<endl;
 
+        /*if(curFaceDS.IsNull()) {
+            cerr<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____null faceDS____"<<endl;
+            exit(10000);
+            continue;
+        }*/
+
+        cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____ tag00"<<endl;
         //! -------------
         //! adding nodes
         //! -------------
         TColStd_PackedMapOfInteger curNodeMap = curFaceDS->GetAllNodes();
+        cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____node map extent"<<curNodeMap.Extent()<<"____"<<endl;
+
         for(TColStd_MapIteratorOfPackedMapOfInteger aNodeIt(curNodeMap);aNodeIt.More();aNodeIt.Next())
         {
             int globalNodeID = aNodeIt.Key();
+            //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____tag"<<globalNodeID<<"____"<<endl;
             if(!myNodes.Contains(globalNodeID))
             {
                 myNodes.Add(globalNodeID);
@@ -1898,7 +1917,7 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const QList<occHandle(Ng_Mesh
             }
             else NbSharedNodes++;
         }
-
+        cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____exit for"<<curFaceDS->GetAllElements().Extent()<<"____"<<endl;
         //! ----------------
         //! adding elements
         //! ----------------
@@ -1920,6 +1939,7 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const QList<occHandle(Ng_Mesh
             }
         }
     }
+    cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____tag00"<<"____"<<endl;
 
     myNumberOfNodes = myNodes.Extent();
     if(myNumberOfNodes<3)
@@ -1933,6 +1953,7 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const QList<occHandle(Ng_Mesh
         cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list. Wrong number of elements: "<<myNumberOfElements<<"____"<<endl;
         return;
     }
+    cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____tag02"<<"____"<<endl;
 
     //! --------------------
     //! allocate the arrays
@@ -1998,7 +2019,7 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const QList<occHandle(Ng_Mesh
             for(int k=1; k<=NbNodes; k++)
             {
                 int globalNodeID = nodeIDs.Value(k);
-                cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list: globalNodeID: "<<globalNodeID<<"____"<<endl;
+                //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____constructor from a list: globalNodeID: "<<globalNodeID<<"____"<<endl;
                 myElemNodes->SetValue(localElementID,k,globalNodeID);
             }
 
@@ -2119,7 +2140,7 @@ Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace(const QList<occHandle(Ng_Mesh
         }
         cout<<"done____"<<endl;
     }
-    //cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____"<<faceDSList.length()<<" meshes merged. Exiting____"<<endl;
+    cout<<"Ng_MeshVS_DataSourceFace::Ng_MeshVS_DataSourceFace()->____"<<faceDSList.length()<<" meshes merged. Exiting____"<<endl;
 }
 
 //! ------------------------------

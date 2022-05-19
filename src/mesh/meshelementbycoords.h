@@ -158,8 +158,8 @@ struct meshElementByCoords
             mesh::meshPoint pointFace1 = face1.at(i);
             mesh::meshPoint pointFace2 = face2.at(i);
 
-            //!cout<<"____face 1("<<pointFace1.x<<", "<<pointFace1.y<<", "<<pointFace1.z<<")____"<<endl;
-            //!cout<<"____face 2("<<pointFace2.x<<", "<<pointFace2.y<<", "<<pointFace2.z<<")____"<<endl;
+            cout<<"____face 1("<<pointFace1.x<<", "<<pointFace1.y<<", "<<pointFace1.z<<")____"<<endl;
+            cout<<"____face 2("<<pointFace2.x<<", "<<pointFace2.y<<", "<<pointFace2.z<<")____"<<endl;
 
             if(pointFace1==pointFace2)
             {

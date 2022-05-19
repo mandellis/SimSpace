@@ -179,8 +179,10 @@ Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(const std::vector<meshElementByCo
     //! ---------------------------------------------------
     //! build the definition of the elements through nodes
     //! ---------------------------------------------------
+    cout<<"Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D()->____create myElemNodesMap"<<endl;;
     for(int i=1; i<=myNumberOfElements; i++)
     {
+        cout<<"Element number: "<<i<< " nodes ";
         const meshElementByCoords &curmeshElementByCoords = meshElements.at(i-1);
         int NbNodes = curmeshElementByCoords.pointList.length();
         for(int j=0; j<NbNodes; j++)
@@ -188,7 +190,9 @@ Ng_MeshVS_DataSource3D::Ng_MeshVS_DataSource3D(const std::vector<meshElementByCo
             const mesh::meshPoint &curMeshPoint = curmeshElementByCoords.pointList.at(j);
             int indexOfPoint = meshPointMap.at(curMeshPoint);
             myElemNodes->SetValue(i,j+1,indexOfPoint);
+            cout<<indexOfPoint<<" ";
         }
+        cout<<endl;
     }
 
     //! ------------------
@@ -2694,6 +2698,7 @@ void Ng_MeshVS_DataSource3D::buildCCXFaceToElementConnectivity(std::map<meshElem
     //! -------------------------
     for(int localElementID=1; localElementID<=myNumberOfElements; localElementID++)
     {
+        cout<<"buildCCXfacetoElementconnettivity local element ID "<<localElementID<<endl;
         ElemType type = static_cast<ElemType>(myElemType->Value(localElementID));
         occHandle(MeshVS_HArray1OfSequenceOfInteger) topology;
         int NbFaces;
@@ -2715,18 +2720,20 @@ void Ng_MeshVS_DataSource3D::buildCCXFaceToElementConnectivity(std::map<meshElem
         for(int f=1; f<=NbFaces; f++)
         {
             TColStd_SequenceOfInteger indices = topology->Value(f);
-
+//bubi
             //! -------------------------
             //! create the meshElement2D
             //! -------------------------
             meshElement2D aMeshElement2D;
             int NbIndices = indices.Length();
+            cout<<"mesh element ";
             for(int n=1; n<=NbIndices; n++)
             {
                 int index = indices.Value(n);
                 aMeshElement2D.nodeIDs<<myElemNodes->Value(localElementID,index+1);
+                cout<<aMeshElement2D.nodeIDs.at(n)<<" ";
             }
-
+            cout<<endl;
             //! ----------------------------------------------
             //! check if the current meshElement2D is present
             //! within the map defined at the beginning
@@ -2734,6 +2741,7 @@ void Ng_MeshVS_DataSource3D::buildCCXFaceToElementConnectivity(std::map<meshElem
             std::map<meshElement2D,std::vector<std::pair<int,int>>>::iterator it = map.find(aMeshElement2D);
             if(it!=map.end())
             {
+                //cout<<"buildCCXfacetoElementconnettivity element already recorded"<<endl;
                 //! ---------------------------------------------------------------
                 //! the current mesh element 2D has been already recorded one time
                 //! ---------------------------------------------------------------
@@ -2763,6 +2771,8 @@ void Ng_MeshVS_DataSource3D::buildCCXFaceToElementConnectivity(std::map<meshElem
             }
             else
             {
+                //cout<<"buildCCXfacetoElementconnettivity mesh element not recorded"<<endl;
+
                 //! -------------------------------------------------------
                 //! the current mesh element has not been already recorded
                 //! -------------------------------------------------------

@@ -80,8 +80,10 @@ writeSolverFileClass::writeSolverFileClass(simulationDataBase *aDB, QExtendedSta
 
     vecMatNames.push_back("Structural_steel");
     vecMatNames.push_back("Bilinear_steel");
-    vecMatNames.push_back("PP_elastic");
-    vecMatNames.push_back("ASA_elastic");
+    //vecMatNames.push_back("PP_elastic");
+    //vecMatNames.push_back("ASA_elastic");
+    vecMatNames.push_back("F51");
+    vecMatNames.push_back("Tungsten_carbide");
     vecMatNames.push_back("PAEK_elastic");
     vecMatNames.push_back("PAEK_orto");
     //vecMatNames.push_back("H11_fatigue");
@@ -1369,13 +1371,25 @@ bool writeSolverFileClass::perform()
         SimulationNodeClass *theCurNode = theGeometryItem->data(Qt::UserRole).value<SimulationNodeClass*>();
         Property::SuppressionStatus theNodeSS = theCurNode->getPropertyValue<Property::SuppressionStatus>("Suppressed");
 
-        if(theNodeSS==Property::SuppressionStatus_Active && theCurNode->getType()!=SimulationNodeClass::nodeType_pointMass
+        /*if(theNodeSS==Property::SuppressionStatus_Active && theCurNode->getType()!=SimulationNodeClass::nodeType_pointMass
                 && nodeAnalysis->getType()!=SimulationNodeClass::nodeType_CFDAnalysis)
         {
             int matNumber = theCurNode->getPropertyValue<int>("Assignment");
             std::string matName = vecMatNames.at(matNumber);
             std::string bodyName =theGeometryItem->data(Qt::DisplayRole).toString().toStdString();
             myInputFile<<"*SOLID SECTION, ELSET= E"<<bodyName<<", MATERIAL="<<matName<<endl;
+        }*/
+        if(theNodeSS==Property::SuppressionStatus_Active && theCurNode->getType()!=SimulationNodeClass::nodeType_pointMass
+                && nodeAnalysis->getType()!=SimulationNodeClass::nodeType_CFDAnalysis)
+        {
+            int matNumber = theCurNode->getPropertyValue<int>("Assignment");
+            std::string matName = vecMatNames.at(matNumber);
+            std::string bodyName =theGeometryItem->data(Qt::DisplayRole).toString().toStdString();
+            if(matName == "Structural_steel")
+                myInputFile<<"*SOLID SECTION, ELSET= E"<<bodyName<<", MATERIAL="<<matName<<endl;
+            else{
+                myInputFile<<"*SOLID SECTION, ELSET= tet_"<<bodyName<<", MATERIAL="<<matName<<endl;
+                myInputFile<<"*SOLID SECTION, ELSET= layer_"<<bodyName<<", MATERIAL=Tungsten_carbide"<<endl;}
         }
         if(theNodeSS==Property::SuppressionStatus_Active && theCurNode->getType()!=SimulationNodeClass::nodeType_pointMass
                 && nodeAnalysis->getType()==SimulationNodeClass::nodeType_CFDAnalysis)
@@ -1639,7 +1653,7 @@ bool writeSolverFileClass::perform()
         //! solver type
         //! ------------
         Property::solverType theSolverType = tabData->dataRC(i,TABULAR_DATA_SOLVER_TYPE_COLUMN).value<Property::solverType>();
-        if(theSolverType == Property::solverType_direct || theSolverType == Property::solverType_programControlled) {; }
+        if(theSolverType == Property::solverType_direct || theSolverType == Property::solverType_programControlled) {myInputFile<<"SOLVER = PARDISO, "; }
         else myInputFile<<"SOLVER = ITERATIVE CHOLESKY, ";
 
         double TimeWidth = tabData->dataRC(i,1).toDouble()-tabData->dataRC(i-1,1).toDouble();
@@ -2937,12 +2951,17 @@ void writeSolverFileClass::writeNodesAndElements(QString aName,QMap<int,QList<in
             //! face (see the struct definition at the beginning). This allow to access the
             //! element number (element ID) using a triad {V1,V2,V3} (or a quaternion {V1,V2,V3,V4})
             //! -------------------------------------------------------------------------------------
+            int tet_begin;
+            int tet_end;
 
             //! ---------------------
             //! write the tet4 group
             //! ---------------------
             if(Ntet4>0)
             {
+                tet_begin=arrayTet4[0][0];
+                tet_end=arrayTet4[Ntet4-1][0];
+
                 switch(theIntegrationScheme)
                 {
                 case Property::integrationScheme_full: myMesh<<"*ELEMENT,TYPE = C3D4"<<endl; break;
@@ -2986,11 +3005,27 @@ void writeSolverFileClass::writeNodesAndElements(QString aName,QMap<int,QList<in
             }
             for(int i=0; i<Ntet10; i++) delete[] arrayTet10[i]; delete[] arrayTet10;
 
+            myMesh<<"*ELSET, ELSET = tet_"<<bodyName<<", GENERATE"<<endl;
+            myMesh<<tet_begin<<", ";
+            myMesh<<tet_end<<endl;
+
+            int layer_begin;
+            int layer_end;
+
             //! -----------------------
             //! write the prism6 group
             //! -----------------------
             if(Nprism6>0)
             {
+                if(Npyr5>0)
+                {
+                    layer_begin = (arrayPrism6[0][0]<arrayPyr5[0][0]) ? arrayPrism6[0][0] : arrayPyr5[0][0];
+                    layer_end = (arrayPrism6[Nprism6-1][0]>arrayPyr5[Npyr5-1][0]) ? arrayPrism6[Nprism6-1][0] : arrayPyr5[Npyr5-1][0];
+                }
+                else {
+                    layer_end = arrayPrism6[Nprism6-1][0];
+                    layer_begin=arrayPrism6[0][0];
+                }
                 switch(theIntegrationScheme)
                 {
                 case Property::integrationScheme_full:
@@ -3059,8 +3094,10 @@ void writeSolverFileClass::writeNodesAndElements(QString aName,QMap<int,QList<in
             //! write the pyr5 group
             //! details: in calculix they are a degenerate form of a C3D6
             //! ----------------------------------------------------------
+
             if(Npyr5>0)
             {
+
                 switch(theIntegrationScheme)
                 {
                 case Property::integrationScheme_full: myMesh<<"*ELEMENT,TYPE = C3D8"<<endl; break;
@@ -3083,6 +3120,12 @@ void writeSolverFileClass::writeNodesAndElements(QString aName,QMap<int,QList<in
             }
             for(int i=0; i<Npyr5; i++) delete[] arrayPyr5[i]; delete[] arrayPyr5;
 
+            if(Npyr5>0 || Nprism6>0){
+
+            myMesh<<"*ELSET, ELSET = layer_"<<bodyName<<", GENERATE"<<endl;
+            myMesh<<layer_begin<<", ";
+            myMesh<<layer_end<<endl;
+            }
             //! ----------------------
             //! write the hexa8 group
             //! ----------------------
@@ -3230,6 +3273,8 @@ void writeSolverFileClass::createElementSurface(std::vector<int> &theElementIDs,
                                                 std::vector<int> &theFaceNumbers,
                                                 const IndexedMapOfMeshDataSources &anIndexedMapOfFaceMeshDS)
 {
+    cout<<" create element surface "<<endl;
+
     for(QMap<int,opencascade::handle<MeshVS_DataSource>>::const_iterator it = anIndexedMapOfFaceMeshDS.cbegin(); it!= anIndexedMapOfFaceMeshDS.cend(); ++it)
     {
         int bodyIndex = it.key();
@@ -3242,8 +3287,9 @@ void writeSolverFileClass::createElementSurface(std::vector<int> &theElementIDs,
             offset = offset+K;
         }
         std::map<meshElement2D,std::vector<std::pair<int,int>>> facesToElements = bigMap.at(bodyIndex);
-
         opencascade::handle<MeshVS_DataSource> faceMeshDS = anIndexedMapOfFaceMeshDS.value(bodyIndex);
+        cout<<" faceMeshDS number of elements "<<faceMeshDS->GetAllElements().Extent()<<endl;
+
         for(TColStd_MapIteratorOfPackedMapOfInteger it(faceMeshDS->GetAllElements()); it.More(); it.Next())
         {
             int surfaceElementID = it.Key();
@@ -3252,10 +3298,15 @@ void writeSolverFileClass::createElementSurface(std::vector<int> &theElementIDs,
             int NbNodes, nbuf[8];
             TColStd_Array1OfInteger nodeIDs(*nbuf,1,8);
             faceMeshDS->GetNodesByElement(surfaceElementID,nodeIDs,NbNodes);
+            cout<<" surface ID "<<surfaceElementID<<" "<<NbNodes<<endl;
+            cout<<" node ID ";
             for(int i=1; i<=NbNodes; i++)
             {
                 aMeshElement2D.nodeIDs<<nodeIDs(i);
+                cout<<" "<<nodeIDs(i);
             }
+            cout<<endl;
+
             switch(NbNodes)
             {
             case 3: aMeshElement2D.type = TRIG; break;
@@ -3278,6 +3329,8 @@ void writeSolverFileClass::createElementSurface(std::vector<int> &theElementIDs,
                 //! ------------------------------------------
                 int CCXnumber = p.second;
                 theFaceNumbers.push_back(CCXnumber);
+                cout<<" element ID "<<globalElementID+offset<<endl;
+                cout<<" face nr ID "<<CCXnumber<<endl;
             }
         }
      }

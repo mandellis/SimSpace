@@ -299,12 +299,13 @@ bool dataSourceBuilder::perform(IndexedMapOfMeshDataSources &mapOfDS, bool doExa
                     TopoDS_Shape aShape = *n;
                     if(aShape.IsNull()) cout<<"faceDataSourceBuilder::perform()->____NULL face____"<<endl;
                     int faceNr = faceMap.FindIndex(aShape);
+                    cout<<"faceDataSourceBuilder::perform()->____ mesh data source of face nr: "<<faceNr<<" of body nr:____"<<bodyIndex<<endl;
 
                     occHandle(Ng_MeshVS_DataSourceFace) aFaceDS = occHandle(Ng_MeshVS_DataSourceFace)::DownCast(myMDB->ArrayOfMeshDSOnFaces.getValue(bodyIndex,faceNr));
 
                     if(aFaceDS.IsNull())
                     {
-                        //cout<<"faceDataSourceBuilder::perform()->____the mesh data source of face nr: "<<faceNr<<" is null: jumping over it____"<<endl;
+                        cout<<"faceDataSourceBuilder::perform()->____the mesh data source of face nr: "<<faceNr<<" is null: jumping over it____"<<endl;
                         continue;
                     }
                     listOfFaceMeshDS<<aFaceDS;

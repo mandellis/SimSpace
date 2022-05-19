@@ -267,18 +267,21 @@ void prismaticLayer::computeVecFieldCutOff(bool lockBoundary)
     {
         myLayerHCutOff.insert(it.Key(),0);
     }
-    cout<<"prismaticLayer::computeVecFieldCutOff()->____number of points on the prismatic faces boundary: "<<myPrismaticFacesSumMeshDS->myBoundaryPoints.length()<<"____"<<endl;
     for(TColStd_MapIteratorOfPackedMapOfInteger it(myPrismaticFacesSumMeshDS->GetAllNodes()); it.More(); it.Next())
     {
         myLayerHCutOff.insert(it.Key(),1);
     }
+    //cout<<"prismaticLayer::computeVecFieldCutOff()->____number of points on the prismatic faces boundary: "<<myPrismaticFacesSumMeshDS->myBoundaryPoints.length()<<"____"<<endl;
     if(lockBoundary==true)
     {
         const QList<int> &bps = myPrismaticFacesSumMeshDS->myBoundaryPoints;
         for(int i=0; i<bps.length(); i++) myLayerHCutOff.insert(bps[i],0);
     }
-
     cout<<"prismaticLayer::computeVecFieldCutOff()->____exiting function____"<<endl;
+    /* for(QMap<int,double>::iterator it = myLayerHCutOff.begin(); it!= myLayerHCutOff.end(); ++it)
+    {
+        cout<<"prismaticLayer::myLayerHCutOff()->____"<<it.key()<<"____"<<it.value()<<endl;
+    }*/
 }
 
 //! ---------------------------------------------------
@@ -484,8 +487,10 @@ bool prismaticLayer::inflateMesh(QList<occHandle(Ng_MeshVS_DataSourceFace)> &inf
         for(QMap<int,QList<double>>::const_iterator it = normals.cbegin(); it!= normals.cend(); ++it)
         {
             int globalNodeID = it.key();
+            //cout<<"NodeID "<<globalNodeID<<endl;
             double shrinkFactor = shrinkFactors.value(globalNodeID);
             double cutOff = myLayerHCutOff.value(globalNodeID);
+            //cout<<"cutOff "<<cutOff<<" shrink "<<shrinkFactor<<endl;
             double marchingDistance = displacement*(1+shrinkFactor)*cutOff*mapOfFirstLayerReductionFactor.at(globalNodeID);
             marchingDistanceMap.insert(globalNodeID,marchingDistance);
         }
@@ -534,11 +539,6 @@ bool prismaticLayer::inflateMesh(QList<occHandle(Ng_MeshVS_DataSourceFace)> &inf
         //! ------------------------
         if(myCheckSelfIntersections==true) this->checkSelfIntersection(theMeshToInflate_new,theMeshToInflate_old,true);
 
-        //! ---------------------------------------------------------
-        //! start correcting nodes coordinates if the inflated layer
-        //! has an intersection with the mesh it originates from
-        //! ---------------------------------------------------------
-        if(myCheckMutualIntersections==true) this->checkMutualIntersection(theMeshToInflate_new,theMeshToInflate_old,true);
 
         //! --------------------------------
         //! generate the displacement field
@@ -552,12 +552,16 @@ bool prismaticLayer::inflateMesh(QList<occHandle(Ng_MeshVS_DataSourceFace)> &inf
             //! --------------------
             //! nodal displacements
             //! --------------------
-            double marchingDistance = marchingDistanceMap.value(globalNodeID);
+
+            double marchingDistance = marchingDistanceMap.value(globalNodeID);            
             double cutOff = myLayerHCutOff.value(globalNodeID);
+
+            //cout<< "marching "<<marchingDistance<<" , cutOFF "<<cutOff<<" , normal "<<curNormal[0]<<endl;
+
             double vx = -curNormal[0]*marchingDistance*cutOff;
             double vy = -curNormal[1]*marchingDistance*cutOff;
             double vz = -curNormal[2]*marchingDistance*cutOff;
-
+            //cout<< "displacement field "<<vx<<" , "<<vy<<" , "<<vz<<endl;
             QList<double> localFieldValue;
             localFieldValue<<vx<<vy<<vz;
             displacementsField.insert(globalNodeID,localFieldValue);
@@ -567,6 +571,13 @@ bool prismaticLayer::inflateMesh(QList<occHandle(Ng_MeshVS_DataSourceFace)> &inf
         //! displace the mesh
         //! ------------------
         theMeshToInflate_new->displaceMySelf(displacementsField);
+
+        //! ---------------------------------------------------------
+        //! start correcting nodes coordinates if the inflated layer
+        //! has an intersection with the mesh it originates from
+        //! ---------------------------------------------------------
+        if(myCheckMutualIntersections==true) this->checkMutualIntersection(theMeshToInflate_new,theMeshToInflate_old,true);
+        //to do -> action for update the displaced mesh
 
         //! ----------------------------------------------
         //! add the displaced mesh to the list of results

@@ -421,8 +421,8 @@ QWidget* GeneralDelegate::createEditor(QWidget *parent, const QStyleOptionViewIt
             QList<QString> matNames;
             matNames<<"Structural steel"<<
                       "Bilinear steel"<<
-                      "PP elastic"<<
-                      "ASA elastic"<<
+                      "F51"<<
+                      "Tungsten Carbide"<<
                       "PAEK elastic"<<
                       "PAEK orto";
                       //"H11 fatigue"<<

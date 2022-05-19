@@ -248,8 +248,8 @@ QVariant QExtendedStandardItem::data(int role) const
             {
             case 0: matName = "Structural steel"; break;
             case 1: matName = "Bilinear steel"; break;
-            case 2: matName = "PP elastic"; break;
-            case 3: matName = "ASA elastic"; break;
+            case 2: matName = "F51"; break;
+            case 3: matName = "Tungsten Carbide"; break;
             case 4: matName = "PAEK elastic"; break;
             case 5: matName = "PAEK orto"; break;
             //case 6: matName = "F92_fatigue"; break;
