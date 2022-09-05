@@ -11377,8 +11377,12 @@ void SimulationManager::readResultsFile(const QString &fileName, const QString &
     //! -----------------------------------------
     QStandardItem *itemCurrentRoot =myModel->itemFromIndex(myTreeView->currentIndex());
     QStandardItem *itemSolution = itemCurrentRoot->child(itemCurrentRoot->rowCount()-1,0);
+    cout<<"SimulationManager::readResultsFile()->____function called____"<<endl;
+
     SimulationNodeClass *nodeSolution = itemSolution->data(Qt::UserRole).value<SimulationNodeClass*>();
-    QStandardItem *itemSolutionInformation = itemCurrentRoot->child(itemCurrentRoot->rowCount()-1,0)->child(0,0);
+    QStandardItem *itemSolutionInformation = itemSolution->child(0,0);
+    cout<<"SimulationManager::readResultsFile()->____function called____"<<endl;
+
     SimulationNodeClass *nodeSolutionInformation = itemSolutionInformation->data(Qt::UserRole).value<SimulationNodeClass*>();
     QVariant data;
 
@@ -11388,17 +11392,17 @@ void SimulationManager::readResultsFile(const QString &fileName, const QString &
     //! -------------------------------------------
     bool meshOK = true;
     int NbBodies = mySimulationDataBase->bodyMap.size();
-    for(int i=1; i<=NbBodies; i++)
+    /*for(int i=1; i<=NbBodies; i++)
     {
         if(mySimulationDataBase->ArrayOfMeshDS.value(i).IsNull())
         {
             meshOK = false;
             break;
         }
-    }
+    }*/
     if(meshOK == true)
     {
-        //cout<<"SimulationManager::readResultsFile()->____the mesh is OK____"<<endl;
+        cout<<"SimulationManager::readResultsFile()->____the mesh is OK____"<<endl;
         //! -------------------
         //! read the .sta file
         //! -------------------

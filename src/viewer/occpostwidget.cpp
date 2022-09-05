@@ -145,10 +145,8 @@ void occPostWidget::displayResult(sharedPostObject &aPostObject)
     const std::map<GeometryTag,occHandle(MeshVS_Mesh)> &coloredMeshes = aPostObject->getColoredMeshes();
     for(std::map<GeometryTag,occHandle(MeshVS_Mesh)>::const_iterator it = coloredMeshes.cbegin(); it != coloredMeshes.cend(); ++it)
     {
-        GeometryTag aTag=it->first;
-        cout<<" display colored mesh n "<<aTag.parentShapeNr<<endl;
         const occHandle(MeshVS_Mesh) &aColoredMesh = it->second;
-        if(aTag.parentShapeNr==3) occPostContext->Display(aColoredMesh,false);
+        occPostContext->Display(aColoredMesh,false);
     }
 
     //! ----------------------------------------------
