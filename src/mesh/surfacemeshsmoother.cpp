@@ -494,8 +494,7 @@ bool surfaceMeshSmoother::buildShapeTessellation(const TopoDS_Shape &aShape,
     //! ----------------------------------------------------------------
     std::string wDir = tools::getWorkingDir().toStdString();
     std::string fileName(wDir.append("/support.stl"));
-    STLAPIWriter aWriter;
-    aWriter.WriteExtended(aShape,fileName.c_str());
+    STLAPIWriter::WriteExtended(aShape,fileName.c_str());
 
     //! ------------------------------------------------
     //! init a vector of (NbFaces+1) empty StlMesh_Mesh

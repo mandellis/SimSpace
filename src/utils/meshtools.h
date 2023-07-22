@@ -56,7 +56,7 @@ public:
     //! ---------------------------------------------------------------------
     //! extract the STL visualization mesh from the shape (it uses the disk)
     //! ---------------------------------------------------------------------
-    static bool toSTLMesh1(const TopoDS_Shape &shape,
+    static bool toSTLMesh(const TopoDS_Shape &shape,
                           const QString &surfaceMeshFilePath,
                           occHandle(Ng_MeshVS_DataSource2D) &surfaceMeshDS,
                           std::vector<occHandle(Ng_MeshVS_DataSourceFace)> &arrayOfFaceSTL_MeshVS_DataSource,

@@ -289,7 +289,7 @@ bool dataSourceBuilder::perform(IndexedMapOfMeshDataSources &mapOfDS, bool doExa
         {
             //if(doExact)
             //{
-                QList<occHandle(Ng_MeshVS_DataSourceFace)> listOfFaceMeshDS;
+                std::vector<occHandle(Ng_MeshVS_DataSourceFace)> listOfFaceMeshDS;
                 TopTools_IndexedMapOfShape faceMap = myMDB->MapOfBodyTopologyMap.value(bodyIndex).faceMap;
                 if(faceMap.IsEmpty()) cerr<<"faceDataSourceBuilder::perform()->____strange error: empty face map in geometry____"<<endl;
 
@@ -305,9 +305,9 @@ bool dataSourceBuilder::perform(IndexedMapOfMeshDataSources &mapOfDS, bool doExa
                         cout<<"faceDataSourceBuilder::perform()->____the mesh data source of face nr: "<<faceNr<<" is null: jumping over it____"<<endl;
                         continue;
                     }
-                    listOfFaceMeshDS<<aFaceDS;
+                    listOfFaceMeshDS.push_back(aFaceDS);
                 }
-                if(listOfFaceMeshDS.isEmpty())
+                if(listOfFaceMeshDS.empty())
                 {
                     cout<<"faceDataSourceBuilder::perform()->____list of face mesh ds empty____"<<endl;
                     continue;

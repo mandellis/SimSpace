@@ -619,7 +619,7 @@ bool prismaticLayer::mergeFaceMeshes()
     //! faceList1 => prismatic faces
     //! faceList2 => non prismatic faces
     //! ---------------------------------
-    QList<occHandle(Ng_MeshVS_DataSourceFace)> faceList0, faceList1, faceList2;
+    std::vector<occHandle(Ng_MeshVS_DataSourceFace)> faceList0, faceList1, faceList2;
     for(int faceNr = 1; faceNr <= NbGeometryFaces; faceNr++)
     {
         const occHandle(MeshVS_DataSource) &aMeshDS = myMeshDB->ArrayOfMeshDSOnFaces.getValue(bodyIndex,faceNr);
@@ -630,14 +630,14 @@ bool prismaticLayer::mergeFaceMeshes()
         }
         const occHandle(Ng_MeshVS_DataSourceFace) &aFaceMeshDS = occHandle(Ng_MeshVS_DataSourceFace)::DownCast(aMeshDS);
 
-        faceList0<<aFaceMeshDS;
-        if(std::find(myPrismaticFaces.begin(), myPrismaticFaces.end(), faceNr)!=myPrismaticFaces.end()) faceList1<<aFaceMeshDS;
-        if(std::find(myPrismaticFaces.begin(), myPrismaticFaces.end(), faceNr)==myPrismaticFaces.end()) faceList2<<aFaceMeshDS;
+        faceList0.push_back(aFaceMeshDS);
+        if(std::find(myPrismaticFaces.begin(), myPrismaticFaces.end(), faceNr)!=myPrismaticFaces.end()) faceList1.push_back(aFaceMeshDS);
+        if(std::find(myPrismaticFaces.begin(), myPrismaticFaces.end(), faceNr)==myPrismaticFaces.end()) faceList2.push_back(aFaceMeshDS);
     }
 
-    cout<<"____number of faces: "<<faceList0.length()<<"____"<<endl;
-    cout<<"____number of wall faces: "<<faceList1.length()<<"____"<<endl;
-    cout<<"____number of non-wall faces: "<<faceList2.length()<<"____"<<endl;
+    cout<<"____number of faces: "<<faceList0.size()<<"____"<<endl;
+    cout<<"____number of wall faces: "<<faceList1.size()<<"____"<<endl;
+    cout<<"____number of non-wall faces: "<<faceList2.size()<<"____"<<endl;
 
     myOverallSumMeshDS = new Ng_MeshVS_DataSourceFace(faceList0);               //! surface mesh
     myPrismaticFacesSumMeshDS = new Ng_MeshVS_DataSourceFace(faceList1);        //! prismatic/wall mesh

@@ -113,7 +113,7 @@ public:
     //! ---------------------------------------------------
     //! constructor: from a list of face mesh data sources
     //! ---------------------------------------------------
-    Standard_EXPORT Ng_MeshVS_DataSourceFace(const QList<occHandle(Ng_MeshVS_DataSourceFace)> &faceDSList);
+    Standard_EXPORT Ng_MeshVS_DataSourceFace(const std::vector<occHandle(Ng_MeshVS_DataSourceFace)> &faceDSList);
 
     //! --------------------------------------------
     //! constructor: from a volume mesh data source

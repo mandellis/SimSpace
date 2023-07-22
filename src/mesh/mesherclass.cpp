@@ -524,7 +524,7 @@ void MesherClass::generateMesh()
                         std::vector<occHandle(Ng_MeshVS_DataSourceFace)> array_STL_meshDS;
                         for(int i=0; i<=NbGeometryFaces; i++) array_STL_meshDS.push_back(occHandle(Ng_MeshVS_DataSourceFace)());
                         const TopoDS_Shape &shape = myMeshDB->bodyMap.value(bodyIndex);
-                        bool isDone = MeshTools::toSTLMesh1(shape, inputExtendedSTL_S, anSTL_MeshVS_DataSource, array_STL_meshDS);
+                        bool isDone = MeshTools::toSTLMesh(shape, inputExtendedSTL_S, anSTL_MeshVS_DataSource, array_STL_meshDS);
 
                         if(isDone)
                         {
@@ -1122,7 +1122,7 @@ userMessage MesherClass::Netgen_STL_generateSurfaceMesh(int bodyIndex,
     int NbGeometryFaces = myMeshDB->MapOfBodyTopologyMap.value(bodyIndex).faceMap.Extent();
     for(int i=0; i<=NbGeometryFaces; i++) array_STL_meshDS.push_back(occHandle(Ng_MeshVS_DataSourceFace)());
     const TopoDS_Shape &shape = myMeshDB->bodyMap.value(bodyIndex);
-    bool isDone = MeshTools::toSTLMesh1(shape, inputExtendedSTL_S, anSTL_MeshVS_DataSource, array_STL_meshDS);
+    bool isDone = MeshTools::toSTLMesh(shape, inputExtendedSTL_S, anSTL_MeshVS_DataSource, array_STL_meshDS);
 
     if(!isDone)
     {
@@ -1235,7 +1235,7 @@ bool MesherClass::STL_generateSurfaceMesh(const meshParam &mp, int bodyIndex, oc
 
     std::vector<occHandle(Ng_MeshVS_DataSourceFace)> array_STL_meshDS;
     for(int i=0; i<=NbGeometryFaces; i++) array_STL_meshDS.push_back(occHandle(Ng_MeshVS_DataSourceFace)());
-    bool isDone = MeshTools::toSTLMesh1(shape, inputExtendedSTL_S, anSTL_meshDS, array_STL_meshDS);
+    bool isDone = MeshTools::toSTLMesh(shape, inputExtendedSTL_S, anSTL_meshDS, array_STL_meshDS);
 
     if(!isDone) return false;
 
@@ -1986,7 +1986,7 @@ userMessage MesherClass::Netgen_STL_generateVolumeMesh(int bodyIndex,
     std::vector<occHandle(Ng_MeshVS_DataSourceFace)> array_STL_meshDS;
     for(int i=0; i<=NbGeometryFaces; i++) array_STL_meshDS.push_back(occHandle(Ng_MeshVS_DataSourceFace)());
     const TopoDS_Shape &shape = myMeshDB->bodyMap.value(bodyIndex);
-    bool isDone = MeshTools::toSTLMesh1(shape, inputExtendedSTL_S, anSTL_MeshVS_DataSource, array_STL_meshDS);
+    bool isDone = MeshTools::toSTLMesh(shape, inputExtendedSTL_S, anSTL_MeshVS_DataSource, array_STL_meshDS);
 
     if(!isDone)
     {
@@ -2337,8 +2337,7 @@ QString MesherClass::processTetWildSTL(int bodyIndex)
 
     QString inputStandardSTL = tools::getWorkingDir()+"/inputStandardSTLMesh.stl";
     const TopoDS_Shape &shape = myMeshDB->bodyMap.value(bodyIndex);
-    STLAPIWriter aWriter;
-    aWriter.Write(shape,inputStandardSTL.toStdString().c_str());
+    STLAPIWriter::Write(shape,inputStandardSTL.toStdString().c_str());
     return inputStandardSTL;
 }
 
@@ -2448,9 +2447,9 @@ QString MesherClass::processSTL(int bodyIndex)
     QString inputExtendedSTL = tools::getWorkingDir()+"/inputExtendedSTLMesh.stl";
 
     const TopoDS_Shape &shape = myMeshDB->bodyMap.value(bodyIndex);
-    STLAPIWriter aWriter;
-    aWriter.Write(shape,inputStandardSTL.toStdString().c_str());
-    aWriter.WriteExtended(shape,inputExtendedSTL.toStdString().c_str());
+
+    STLAPIWriter::Write(shape,inputStandardSTL.toStdString().c_str());
+    STLAPIWriter::WriteExtended(shape,inputExtendedSTL.toStdString().c_str());
 
     if(isHealingOn==false && isSimplificationOn==false) return inputExtendedSTL;
 
@@ -2466,9 +2465,9 @@ QString MesherClass::processSTL(int bodyIndex)
         for(int i=0; i<=NbFaces; i++) vecFaceMeshDS.push_back(occHandle(Ng_MeshVS_DataSourceFace)());
         //cout<<"____"<<NbFaces<<"____"<<endl;
 
-        MeshTools::toSTLMesh1(shape,inputExtendedSTL,surfaceMeshDS,vecFaceMeshDS);
+        MeshTools::toSTLMesh(shape,inputExtendedSTL,surfaceMeshDS,vecFaceMeshDS);
 
-        QList<occHandle(Ng_MeshVS_DataSourceFace)> listOfFaces;
+        std::vector<occHandle(Ng_MeshVS_DataSourceFace)> listOfFaces;
         for(int i=0; i<myMeshDB->featuredTags.size(); i++)
         {
             //cout<<"____feature tag: ("<<myMeshDB->featuredTags[i].parentShapeNr<<", "<<myMeshDB->featuredTags[i].subTopNr<<")____"<<endl;
@@ -2476,11 +2475,11 @@ QString MesherClass::processSTL(int bodyIndex)
             if(aTag.parentShapeNr != bodyIndex) continue;
             occHandle(Ng_MeshVS_DataSourceFace) aFaceDS = vecFaceMeshDS.at(aTag.subTopNr);
             if(aFaceDS.IsNull()) continue;
-            listOfFaces<<aFaceDS;
+            listOfFaces.push_back(aFaceDS);
         }
 
         occHandle(Ng_MeshVS_DataSourceFace) BCMeshDS;
-        if(listOfFaces.isEmpty()==false)
+        if(listOfFaces.empty()==false)
         {
             BCMeshDS = new Ng_MeshVS_DataSourceFace(listOfFaces);
             BCMeshDS->computeFreeMeshSegments();

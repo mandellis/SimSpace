@@ -176,7 +176,7 @@ bool particlesInFieldsSolver::init(QStandardItem* simulationRoot)
         {
             const std::vector<GeometryTag> &vecLoc = curNode->getPropertyValue<std::vector<GeometryTag>>("Tags");
             int NbPatches = vecLoc.size();
-            QList<occHandle(Ng_MeshVS_DataSourceFace)> listOfFaceMeshDS;
+            std::vector<occHandle(Ng_MeshVS_DataSourceFace)> listOfFaceMeshDS;
             for(int n=0; n<NbPatches; n++)
             {
                 std::pair<int,occHandle(Ng_MeshVS_DataSourceFace)> apair;
@@ -188,7 +188,7 @@ bool particlesInFieldsSolver::init(QStandardItem* simulationRoot)
                 //! -------------------------------
                 //! sum the face mesh data sources
                 //! -------------------------------
-                listOfFaceMeshDS.append(aFaceMeshDS);
+                listOfFaceMeshDS.push_back(aFaceMeshDS);
             }
 
             double val = curNode->getPropertyValue<double>("Potential");

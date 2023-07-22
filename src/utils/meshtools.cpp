@@ -847,7 +847,7 @@ static void Normal(const TopoDS_Face& aFace, Poly_Connect& pc, TColgp_Array1OfDi
 //! details:  take a shape and extract the STL mesh of the shaded presentation
 //!           it uses disk => change ... to do ...
 //! ---------------------------------------------------------------------------
-bool MeshTools::toSTLMesh1(const TopoDS_Shape &shape,
+bool MeshTools::toSTLMesh(const TopoDS_Shape &shape,
                            const QString &surfaceMeshFilePath,
                            occHandle(Ng_MeshVS_DataSource2D) &surfaceMeshDS,
                            std::vector<occHandle(Ng_MeshVS_DataSourceFace)> &vecFaceMeshDS,
