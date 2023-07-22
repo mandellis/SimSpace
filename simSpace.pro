@@ -475,8 +475,8 @@ DEFINES += NEW_HASH
 INCLUDEPATH = $$PWD/src/utils/geometry \
               C:/OpenCASCADE7.3.0-vc14-64/opencascade-7.3.0/inc \
               $$PWD/ext/StlMesh    \
-              "D:/Work/Costamp/OCC lib/EMESH_7.3.0_binaries_win64vc14/inc"     \
-              "D:/Work/Costamp/OCC lib/OMF_7.3.0_binaries_win64vc14/inc"   \
+              "D:/Work/OCC lib/EMESH_7.3.0_binaries_win64vc14/inc"     \
+              "D:/Work/OCC lib/OMF_7.3.0_binaries_win64vc14/inc"   \
               $$PWD/src/gui/optionsWidget    \
               $$PWD/src/connections \
               $$PWD/src/controller \
@@ -499,9 +499,9 @@ INCLUDEPATH = $$PWD/src/utils/geometry \
               $$PWD/src/utils  \
               $$PWD/ext/eigen    \
               $$PWD    \
-              C:/CGAL-4.14/include    \
+              $$PWD/ext/CGAL/include    \
               C:/local/boost_1_69_0   \                 # needed by cgal
-              C:/CGAL-4.14/auxiliary/gmp/include    \   # needed by cgal
+              $$PWD/ext/CGAL/auxiliary/gmp/include    \   # needed by cgal
               $$PWD/ext/libigl   \
               $$PWD/ext/pymesh    \
               $$PWD/ext/occ_extended
@@ -566,27 +566,31 @@ LIBS += \
 -lC:\OpenCASCADE7.3.0-vc14-64\opencascade-7.3.0\win64\vc14\lib\TKXmlXCAF   \
 -lC:\OpenCASCADE7.3.0-vc14-64\opencascade-7.3.0\win64\vc14\lib\TKXSBase   \
 -lC:\OpenCASCADE7.3.0-vc14-64\opencascade-7.3.0\win64\vc14\lib\TKXSDRAW   \
--l"D:\Work\Costamp\OCC lib\OMF_7.3.0_binaries_win64vc14\win64\vc14\lib\TKOCCLicense"    \
--l"D:\Work\Costamp\OCC lib\OMF_7.3.0_binaries_win64vc14\win64\vc14\lib\TKOMF"    \
--l"D:\Work\Costamp\OCC lib\OMF_7.3.0_binaries_win64vc14\win64\vc14\lib\TKOMFBase"    \
--l"D:\Work\Costamp\OCC lib\OMF_7.3.0_binaries_win64vc14\win64\vc14\lib\TKOMFCAF" \
--l"D:\Work\Costamp\OCC lib\OMF_7.3.0_binaries_win64vc14\win64\vc14\lib\TKOMFCAM" \
--l"D:\Work\Costamp\OCC lib\OMF_7.3.0_binaries_win64vc14\win64\vc14\lib\TKOMFCAMTest" \
--l"D:\Work\Costamp\OCC lib\OMF_7.3.0_binaries_win64vc14\win64\vc14\lib\TKOMFQM"  \
--l"D:\Work\Costamp\OCC lib\OMF_7.3.0_binaries_win64vc14\win64\vc14\lib\TKOMFQMTest"  \
--l"D:\Work\Costamp\OCC lib\OMF_7.3.0_binaries_win64vc14\win64\vc14\lib\TKOMFTest"    \
--l"D:\Work\Costamp\OCC lib\OMF_7.3.0_binaries_win64vc14\win64\vc14\lib\TKOMFVS"  \
--l"D:\Work\Costamp\OCC lib\OMF_7.3.0_binaries_win64vc14\win64\vc14\lib\TKOMFXCAF" \
--l"D:\Work\Costamp\OCC lib\EMESH_7.3.0_binaries_win64vc14\win64\vc14\lib\TKOCCLicense"    \
--l"D:\Work\Costamp\OCC lib\EMESH_7.3.0_binaries_win64vc14\win64\vc14\lib\TKQMesh"    \
--l"D:\Work\Costamp\OCC lib\EMESH_7.3.0_binaries_win64vc14\win64\vc14\lib\TKEMeshTest"    \
--l"D:\Work\Costamp\OCC lib\EMESH_7.3.0_binaries_win64vc14\win64\vc14\lib\TKEMesh"    \
+-l"D:\Work\OCC lib\OMF_7.3.0_binaries_win64vc14\win64\vc14\lib\TKOCCLicense"    \
+-l"D:\Work\OCC lib\OMF_7.3.0_binaries_win64vc14\win64\vc14\lib\TKOMF"    \
+-l"D:\Work\OCC lib\OMF_7.3.0_binaries_win64vc14\win64\vc14\lib\TKOMFBase"    \
+-l"D:\Work\OCC lib\OMF_7.3.0_binaries_win64vc14\win64\vc14\lib\TKOMFCAF" \
+-l"D:\Work\OCC lib\OMF_7.3.0_binaries_win64vc14\win64\vc14\lib\TKOMFCAM" \
+-l"D:\Work\OCC lib\OMF_7.3.0_binaries_win64vc14\win64\vc14\lib\TKOMFCAMTest" \
+-l"D:\Work\OCC lib\OMF_7.3.0_binaries_win64vc14\win64\vc14\lib\TKOMFQM"  \
+-l"D:\Work\OCC lib\OMF_7.3.0_binaries_win64vc14\win64\vc14\lib\TKOMFQMTest"  \
+-l"D:\Work\OCC lib\OMF_7.3.0_binaries_win64vc14\win64\vc14\lib\TKOMFTest"    \
+-l"D:\Work\OCC lib\OMF_7.3.0_binaries_win64vc14\win64\vc14\lib\TKOMFVS"  \
+-l"D:\Work\OCC lib\OMF_7.3.0_binaries_win64vc14\win64\vc14\lib\TKOMFXCAF" \
+-l"D:\Work\OCC lib\EMESH_7.3.0_binaries_win64vc14\win64\vc14\lib\TKOCCLicense"    \
+-l"D:\Work\OCC lib\EMESH_7.3.0_binaries_win64vc14\win64\vc14\lib\TKQMesh"    \
+-l"D:\Work\OCC lib\EMESH_7.3.0_binaries_win64vc14\win64\vc14\lib\TKEMeshTest"    \
+-l"D:\Work\OCC lib\EMESH_7.3.0_binaries_win64vc14\win64\vc14\lib\TKEMesh"    \
 -l"D:\quazip-0.7.3\build-quazip-Desktop_Qt_5_8_0_MSVC2013_64bit-Release\release\quazip" \
 -l"C:\local\boost_1_69_0\lib64-msvc-14.0\libboost_thread-vc140-mt-x64-1_69" \
--l"C:\CGAL-4.14\build_MSVC14.0\lib\Release\CGAL-vc140-mt-4.14"   \
--l"C:\CGAL-4.14\build_MSVC14.0\lib\Release\CGAL_Core-vc140-mt-4.14" \
-#-l"C:\CGAL-4.14\build_MSVC14.0\lib\Debug\CGAL-vc140-mt-gd-4.14"   \
-#-l"C:\CGAL-4.14\build_MSVC14.0\lib\Debug\CGAL_Core-vc140-mt-gd-4.14" \
+
+# ---------------
+# CGAL libraries
+# ---------------
+LIBS += -l$$PWD/ext/CGAL/lib/Release/CGAL-vc140-mt-4.14   \
+        -l$$PWD/ext/CGAL/lib/Release/CGAL_Core-vc140-mt-4.14 \
+        -l$$PWD/ext/CGAL/lib/Debug/CGAL-vc140-mt-gd-4.14   \
+        -l$$PWD/ext/CGAL/lib/Debug/CGAL_Core-vc140-mt-gd-4.14
 
 RESOURCES += \
     resources/cursors.qrc \
@@ -641,24 +645,24 @@ DEPENDPATH += $$PWD/ext/tetgen/inc
 win32:!win32-g++: PRE_TARGETDEPS += $$PWD/ext/tetgen/bin/tet.lib
 else:win32-g++: PRE_TARGETDEPS += $$PWD/ext/tetgen/bin/libtet.a
 
-win32: LIBS += -LC:/CGAL-4.14/auxiliary/gmp/lib/ -llibgmp-10
+win32: LIBS += -LC:/CGAL/auxiliary/gmp/lib/ -llibgmp-10
 
 #----------------------------------------------------
 # CGAL dependencies - this feature is not documented
 #----------------------------------------------------
-INCLUDEPATH += C:/CGAL-4.14/auxiliary/gmp/include
-DEPENDPATH += C:/CGAL-4.14/auxiliary/gmp/include
 
-win32:!win32-g++: PRE_TARGETDEPS += C:/CGAL-4.14/auxiliary/gmp/lib/libgmp-10.lib
-else:win32-g++: PRE_TARGETDEPS += C:/CGAL-4.14/auxiliary/gmp/lib/liblibgmp-10.a
+INCLUDEPATH += $$PWD/ext/CGAL/auxiliary/gmp/include
+DEPENDPATH += $$PWD/ext/CGAL/auxiliary/gmp/include
 
-win32: LIBS += -LC:/CGAL-4.14/auxiliary/gmp/lib/ -llibmpfr-4
+win32:!win32-g++: PRE_TARGETDEPS += $$PWD/ext/CGAL/auxiliary/gmp/lib/libgmp-10.lib
+else:win32-g++: PRE_TARGETDEPS += $$PWD/ext/CGAL/auxiliary/gmp/lib/liblibgmp-10.a
 
-INCLUDEPATH += C:/CGAL-4.14/auxiliary/gmp/include
-DEPENDPATH += C:/CGAL-4.14/auxiliary/gmp/include
+win32: LIBS += -L$$PWD/ext/CGAL/auxiliary/gmp/lib/ -llibmpfr-4
+INCLUDEPATH += $$PWD/ext/CGAL/auxiliary/gmp/include
+DEPENDPATH += $$PWD/ext/CGAL/auxiliary/gmp/include
 
-win32:!win32-g++: PRE_TARGETDEPS += C:/CGAL-4.14/auxiliary/gmp/lib/libmpfr-4.lib
-else:win32-g++: PRE_TARGETDEPS += C:/CGAL-4.14/auxiliary/gmp/lib/liblibmpfr-4.a
+win32:!win32-g++: PRE_TARGETDEPS += $$PWD/ext/CGAL/auxiliary/gmp/lib/libmpfr-4.lib
+else:win32-g++: PRE_TARGETDEPS += $$PWD/ext/CGAL/auxiliary/gmp/lib/liblibmpfr-4.a
 
 # ---------------
 # TetWild mesher
