@@ -229,8 +229,8 @@ bool writeSolverFileClass::perform()
     //! .  named selections root
     //! .  simulation root
     //! -------------------------
-    ofwrite ofw(myDB, mySimulationRoot);
-    ofw.perform();
+    //ofwrite ofw(myDB, mySimulationRoot);
+    //ofw.perform();
     //! --------------------------------------------
     //! [1] write element/node sets: read the setup
     //! --------------------------------------------
