@@ -167,13 +167,12 @@ bool surfaceMeshToFaceMeshes::buildShapeTessellation(const TopoDS_Shape &aShape,
     //std::string fileName = this->getPathOfExecutable()+"\\tessellationExtended.stl";
     std::string fileName("D:/tessellationExtended.stl");
     cout<<"surfaceMeshToFaceMeshes::buildShapeTessellation()->____tessellation file path: "<<fileName<<"____"<<endl;
-    STLAPIWriter aWriter;
 
     BRepTools::Clean(aShape);
     bool isInParallel = true;
     bool isRelative = true;
     BRepMesh_IncrementalMesh tessellator(aShape,0.01,isRelative,0.1,isInParallel);
-    aWriter.WriteExtended(aShape,fileName.c_str());
+    STLAPIWriter::WriteExtended(aShape,fileName.c_str());
 
     QString outputFileName;
     bool healTessellation = false;

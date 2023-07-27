@@ -1352,7 +1352,7 @@ void occPreGLWidget::showFaceMesh()
     }
 
     occHandle(Ng_MeshVS_DataSourceFace) summedDS;
-    QList<occHandle(Ng_MeshVS_DataSourceFace)> listOfMeshDS;
+    std::vector<occHandle(Ng_MeshVS_DataSourceFace)> listOfMeshDS;
     for(int k=0; k<vecPairs.size(); k++)
     {
         int bodyIndex = vecPairs.at(k).first;
@@ -1360,7 +1360,7 @@ void occPreGLWidget::showFaceMesh()
 
         const occHandle(Ng_MeshVS_DataSourceFace) &curFaceDS = occHandle(Ng_MeshVS_DataSourceFace)::DownCast(myDS2->ArrayOfMeshDSOnFaces.getValue(bodyIndex,faceIndex));
         if(curFaceDS.IsNull()) continue;
-        listOfMeshDS.append(curFaceDS);
+        listOfMeshDS.push_back(curFaceDS);
 
         cout<<"occPreGLWidget::showFaceMesh()->____number of elements: "<<curFaceDS->GetAllElements().Extent()<<"____"<<endl;
         cout<<"occPreGLWidget::showFaceMesh()->____number of nodes: "<<curFaceDS->GetAllNodes().Extent()<<"____"<<endl;
@@ -3333,7 +3333,7 @@ void occPreGLWidget::displayCurvatureMap()
         //! ------------------------------
         //! pile up the mesh data sources
         //! ------------------------------
-        QList<occHandle(Ng_MeshVS_DataSourceFace)> faceMeshDSlist;
+        std::vector<occHandle(Ng_MeshVS_DataSourceFace)> faceMeshDSlist;
         for(int k=0; k<vecPairs.size(); k++)
         {
             int bodyIndex = vecPairs.at(k).first;
@@ -3341,7 +3341,7 @@ void occPreGLWidget::displayCurvatureMap()
 
             const occHandle(Ng_MeshVS_DataSourceFace) &curFaceMesh =
                     occHandle(Ng_MeshVS_DataSourceFace)::DownCast(myDS2->ArrayOfMeshDSOnFaces.getValue(bodyIndex,faceIndex));
-            faceMeshDSlist<<curFaceMesh;
+            faceMeshDSlist.push_back(curFaceMesh);
         }
 
         //! -------------------------------
